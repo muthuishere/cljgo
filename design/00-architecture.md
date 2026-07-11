@@ -216,9 +216,16 @@ eval-then-serialize model is explicitly rejected, doc 04 §0).
 - Truthiness is a single helper `lang.IsTruthy` used by both paths.
 - Direct linking (bypassing Var indirection) is **forbidden in the evaluator
   and default-off in the emitter** (docs 03 §7a / 04 §5) — REPL re-def must
-  stay live. The doc 04 §5 performance ladder (direct calls, fixed-arity fn
-  types, primitive hints, intrinsics) is opt-in and changes only call
-  instructions, never semantics.
+  stay live. Spike S6 proved per-call atomic Var deref costs ~2% (1.7ns,
+  0 allocs): liveness is effectively free and stays on everywhere.
+- **Fixed-arity fn fields are M2's DEFAULT emission, not ladder rung**
+  (spikes S1+S6, 2026-07-11): the variadic `func(...any) any` convention
+  heap-allocates an args slice per call and lands at 20–22× raw Go —
+  failing the §1.4 perf budget — while known-arity call sites through
+  fixed-arity closure fields (`f.Deref1()(x)`) with per-call var deref hit
+  3.5–7.8× raw with ~650× fewer allocs. Variadic `Fn`/`Apply` remains the
+  apply/HOF/interop fallback only. The rest of the doc 04 §5 ladder
+  (primitive hints, intrinsics, opt-in direct linking) stays post-M2.
 
 ### 4.3 Error mapping for Go interop — doc 05 wins
 

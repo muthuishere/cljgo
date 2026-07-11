@@ -12,3 +12,7 @@ gen/
 .DS_Store
 .idea/
 .vscode/
+
+# compiled spike binaries (rebuild with go build)
+spikes/**/*.bin
+s3repl

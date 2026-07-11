@@ -1,5 +1,30 @@
 # 07 — Spikes: riskiest assumptions to prove before/while building
 
+## OUTCOMES (all ten run 2026-07-11 — every bet validated)
+
+| Spike | Verdict | Headline |
+|---|---|---|
+| S1 emitter slice | VALIDATED | Flattening + labeled-continue recur, zero IIFEs; warm rebuild 65ms; binary starts in 2.3ms (M2 target <50ms) |
+| S2 go/packages | PASS | Direct non-reflective third-party calls from type facts; warm loads 50–95ms, batch ≈ single; gcexportdata disk cache ~1ms/pkg |
+| S3 self-rebuild | WORKS | add-dep→regen→exec cycle 1.7–2.9s warm (5.5s worst); state carry = replay journal; stdin must be unbuffered pre-exec |
+| S4 vendor pkg/lang | PASS | 16.7k LOC severed, ZERO external deps, unique.Handle interning verified; both doc-02 defects confirmed (fixes: 1–2d + 3–5d) |
+| S5 recur stress | VALIDATED | One real divergence found+fixed: closures capturing loop carriers need per-iteration copies (naive = 3 3 3, Clojure = 0 1 2); analyzer owns "cannot recur across try" |
+| S6 var indirection | VALIDATED | Per-call var deref FREE (~2%); variadic calling convention FAILS budget (22×); fixed-arity fields pass (3.5–7.8×) → now M2 default (00 §4.2) |
+| S7 purego FFI | PASS | sqlite via dlopen incl. Go callbacks, CGO_ENABLED=0, cross-compiles; variadic C fns silently break on arm64 — deflib must reject them; cgo baseline fine (+0.44s) |
+| S8 syntax-quote harness | PASS | 58 goldens from JVM Clojure 1.12.5; gensym normalizer byte-stable; ReadString injection point = pkg/reader CI |
+| S9 core.clj census | VALIDATED | 76% of upstream core.clj loads unmodified if analyzer resolves clojure.lang.* to pkg/lang; ~140 forms (~2k lines) to hand-port |
+| S10 dynamic alts! | PASS | reflect.Select fine (95ns@2, linear); static alt!→select 37.5ns/0 allocs; fairness matches core.async; synctest works (no global cached channels/timers) |
+
+Rules the spikes feed back into the design: fixed-arity default emission
+(00 §4.2 amended); per-iteration copies for loop-captured carriers +
+analyzer-owned try/recur rejection (pkg/emit + pkg/analyzer); `_ = x` after
+every declaration and `_ = nil` special-case (pkg/emit); ffi/deflib rejects
+variadic C fns; runtime helpers never cache global channels/timers
+(synctest); pkg/host caches signatures via gcexportdata, not JSON.
+
+---
+
+
 Each spike is a throwaway prototype (days, not weeks) that validates a bet the
 architecture makes. Ordered by how much of the design collapses if the bet is
 wrong. Spike code lives in `spikes/<id>-<slug>/`, never in `pkg/`.

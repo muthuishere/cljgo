@@ -1,0 +1,88 @@
+;; S8 syntax-quote conformance corpus.
+;; One reader input per line. Lines starting with ";;" and blank lines are ignored.
+;; Golden outputs are (pr-str (read-string LINE)) from JVM Clojure — the reader's
+;; syntax-quote EXPANSION, printed unevaluated.
+
+;; -- plain symbols (resolution to current ns) --
+`x
+`foo/bar
+`clojure.core/map
+`some.ns/thing
+
+;; -- special symbols stay unqualified --
+`if
+`def
+`fn*
+`&
+`(if a b c)
+
+;; -- fn? / var resolution special cases --
+`(fn? x)
+`fn?
+`(var x)
+`#'x
+
+;; -- self-evaluating atoms --
+`:kw
+`:ns/kw
+`42
+`2.5
+`"str"
+`\c
+`true
+`nil
+
+;; -- lists --
+`(a b c)
+`()
+`(a (b (c d)))
+
+;; -- unquote --
+~x
+`~x
+`~(f x)
+`(a ~b)
+`(a ~(b c))
+
+;; -- unquote-splicing --
+`(a ~@xs)
+`(a ~@xs b)
+`(~@xs)
+
+;; -- ~'x escape --
+`~'x
+`(list ~'x)
+
+;; -- vectors / maps / sets (incl. empty; sets kept <=1 element: JVM print order) --
+`[]
+`[a b]
+`[1 [2 [3]]]
+`[~@xs]
+`{}
+`{:k v}
+`{:a {:b c}}
+`{~k ~v}
+`#{}
+`#{a}
+`#{~x}
+
+;; -- auto-gensym --
+`x#
+`(x# x#)
+`(x# y#)
+`(let [x# 1] x#)
+[`x# `x#]
+`(when ~test ~@body)
+
+;; -- nesting: backquote inside backquote --
+`(a `(b ~c))
+`(a `(b ~~c))
+``x
+
+;; -- metadata inside syntax-quote --
+`^:private x
+`^:private [a]
+`^{:doc "d"} (a)
+
+;; -- error cases --
+`~@x

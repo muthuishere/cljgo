@@ -1,0 +1,28 @@
+version: "3"
+
+tasks:
+  golden:
+    desc: Regenerate golden.txt from corpus.txt via JVM Clojure (requires clojure CLI + java)
+    cmds:
+      - clojure -M gen_golden.clj corpus.txt > golden.raw.txt
+      - go run ./cmd/mkgolden golden.raw.txt golden.txt
+      - rm -f golden.raw.txt
+      - 'echo "golden.txt: $(grep -c ''^IN: '' golden.txt) cases (Clojure: $(clojure -M -e ''(print (clojure-version))''))"'
+
+  test:
+    desc: Unit-test the normalizer and harness
+    cmds:
+      - go test ./...
+
+  conformance:
+    desc: Run the golden corpus against the candidate reader (stub today -> all FAIL, exit 1)
+    cmds:
+      - go run ./cmd/conformance -golden golden.txt
+
+  verify-stable:
+    desc: Prove goldens are stable across JVM runs (regenerate, normalize, byte-diff)
+    cmds:
+      - clojure -M gen_golden.clj corpus.txt > /tmp/s8-golden.raw.txt
+      - go run ./cmd/mkgolden /tmp/s8-golden.raw.txt /tmp/s8-golden.txt
+      - diff golden.txt /tmp/s8-golden.txt
+      - echo "STABLE - byte-identical"
