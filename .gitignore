@@ -1,0 +1,14 @@
+# reference clones — read-only study material, never committed
+refs/
+
+# emitted output (user-owned generated Go modules)
+gen/
+
+# go
+*.test
+*.out
+
+# editor/os
+.DS_Store
+.idea/
+.vscode/
