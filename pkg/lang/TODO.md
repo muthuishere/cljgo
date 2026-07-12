@@ -25,6 +25,25 @@ design risk):
 Related (also deferred, <1 day per S4): Clojure-shaped
 `conj!/assoc!/pop!` adapter over the existing elvish vector transients.
 
-## Printer defects (found M1-A, 2026-07-12)
-- EmptyList prints as `(nil)` via the ISeq branch in strconv.go — should print `()`.
-- Inf/NaN floats print as `Infinity`/`NaN` — Clojure pr-str prints `##Inf` `##-Inf` `##NaN`.
+## Printer divergences found but deferred (M1-A sweep vs clojure 1.12.5 CLI, 2026-07-12)
+
+Fixed in this sweep (see PROVENANCE.md): double formatting
+(Double.toString semantics incl. subnormal quirk), `##Inf`/`##-Inf`/
+`##NaN`, empty list `()`. Spot-checked OK against the oracle: ratios
+(`1/3`), BigInt `N` suffix, BigDecimal `M` suffix, map `, ` separator,
+string quoting/escapes in pr, keywords/symbols. Still open (not
+printer-internal, so out of scope for the printer fix):
+
+- **Reader has no character literals** — `\a` / `\newline` fail at read
+  time ("unable to resolve symbol: ewline"), so `Print`'s Char branch
+  (`CharLiteralFromRune`: `\a`, `\newline`, `\space`, `\tab`, ...) is
+  unreachable from source and has no conformance file yet. Fix lives in
+  `pkg/reader`; add `print-char.clj` when it lands (oracle: `(pr-str \a)`
+  => `\a`, `(pr-str \newline)` => `\newline`).
+- **`str`, `prn`, `print` not yet in core** (M1 core surface) — the
+  ToString/non-readably print path (`(str ##Inf)` => `"Infinity"`,
+  `(str 42N)` => `"42"`, `(println "s")` unquoted) can't be pinned by
+  conformance files until they exist; behavior is implemented in
+  `ToString`/`Print(readably=false)`.
+- **Regex literals** `#"..."` unverified end-to-end (reader support
+  unclear); printer side (`#"` + pattern + `"`) matches the oracle shape.

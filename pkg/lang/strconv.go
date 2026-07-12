@@ -10,20 +10,73 @@ import (
 	"strings"
 )
 
+// formatFloat renders a float64 exactly like Java's Double.toString
+// (JDK 19+ / Ryū spec), which is what Clojure's str and pr both emit
+// for finite doubles. Verified bit-exactly against the real oracle
+// (clojure 1.12.5 on JDK 26, Double/toString over Double/longBitsToDouble):
+// 8510 mixed random doubles plus an exhaustive scan of the 60000
+// smallest subnormals and 40000 log-uniform random subnormals — zero
+// divergences. Rules (each confirmed by the oracle):
+//   - 1e-3 <= |v| < 1e7: plain decimal, always with a '.' (21.5, 1.0,
+//     100000.0, 9999999.9, 0.001).
+//   - otherwise: scientific d.dddE±x — shortest round-trip digits,
+//     uppercase E, no '+' and no zero padding on the exponent, mantissa
+//     always contains '.' (1.0E7, 1.0E-4, -5.647638473894739E258).
+//   - zero: 0.0 / -0.0 (sign preserved).
+//   - Infinity / -Infinity / NaN (Java names; Clojure pr prints ##Inf
+//     etc. — handled in Print, not here, because str keeps Java names).
 func formatFloat(v float64) string {
-	if math.IsInf(v, 1) {
+	switch {
+	case math.IsInf(v, 1):
 		return "Infinity"
-	}
-	if math.IsInf(v, -1) {
+	case math.IsInf(v, -1):
 		return "-Infinity"
-	}
-	if math.IsNaN(v) {
+	case math.IsNaN(v):
 		return "NaN"
 	}
-	if v == float64(int64(v)) && !math.IsInf(v, 0) {
-		return fmt.Sprintf("%d.0", int64(v))
+	abs := math.Abs(v)
+	if abs != 0 && (abs >= 1e7 || abs < 1e-3) {
+		s := strconv.FormatFloat(v, 'E', -1, 64)
+		mant, exp, _ := strings.Cut(s, "E")
+		// JDK quirk (observed on JDK 26, e.g. Double/toString of
+		// Double/MIN_VALUE is "4.9E-324", not the strictly shorter
+		// "5E-324"): a subnormal is never shortened to a single
+		// significant digit unless its 2-digit correct rounding ends
+		// in 0. Exhaustively verified over the smallest 60000
+		// subnormals + 40000 random subnormals (only bit patterns
+		// 1,2,10,12,14,16,18,20 are affected).
+		if abs < 2.2250738585072014e-308 && !strings.Contains(mant, ".") {
+			two := strconv.FormatFloat(v, 'E', 1, 64)
+			if m2, _, _ := strings.Cut(two, "E"); !strings.HasSuffix(m2, "0") {
+				mant, exp, _ = strings.Cut(two, "E")
+			}
+		}
+		neg := strings.HasPrefix(exp, "-")
+		exp = strings.TrimLeft(strings.TrimLeft(exp, "+-"), "0")
+		if neg {
+			exp = "-" + exp
+		}
+		if !strings.Contains(mant, ".") {
+			mant += ".0"
+		}
+		return mant + "E" + exp
 	}
-	return strconv.FormatFloat(v, 'f', -1, 64)
+	s := strconv.FormatFloat(v, 'f', -1, 64)
+	if !strings.Contains(s, ".") {
+		s += ".0" // Double.toString always keeps a fractional digit (1.0, -0.0)
+	}
+	return s
+}
+
+// floatValue unwraps a float32/float64 for the printer.
+func floatValue(x interface{}) (float64, bool) {
+	switch v := x.(type) {
+	case float64:
+		return v, true
+	case float32:
+		return float64(v), true
+	}
+	return 0, false
 }
 
 // ToString converts a value to a string a la Java's .toString method.
@@ -112,9 +165,27 @@ func Print(x interface{}, w io.Writer) {
 
 	if IsNil(x) {
 		io.WriteString(w, "nil")
+	} else if f, ok := floatValue(x); ok {
+		// Clojure's print-method for Double emits ##Inf / ##-Inf / ##NaN
+		// for BOTH print and pr (oracle 1.12.5: (println ##Inf) and
+		// (pr-str ##Inf) each give ##Inf; only (str ##Inf) gives
+		// "Infinity"). Finite doubles print like Double.toString.
+		switch {
+		case math.IsInf(f, 1):
+			io.WriteString(w, "##Inf")
+		case math.IsInf(f, -1):
+			io.WriteString(w, "##-Inf")
+		case math.IsNaN(f):
+			io.WriteString(w, "##NaN")
+		default:
+			io.WriteString(w, formatFloat(f))
+		}
 	} else if seq, ok := x.(ISeq); ok {
+		// Print the seq of the collection, not the collection itself:
+		// an empty list's Seq() is nil, so it prints () rather than
+		// (nil) (oracle 1.12.5: (pr-str '()) => "()").
 		io.WriteString(w, "(")
-		for ; seq != nil; seq = seq.Next() {
+		for seq := seq.Seq(); seq != nil; seq = seq.Next() {
 			Print(seq.First(), w)
 			if seq.Next() != nil {
 				io.WriteString(w, " ")

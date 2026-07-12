@@ -43,3 +43,21 @@
   - Acceptance: `equiv_test.go` (new) + inverted defect-1 pins in
     `s4_defects_test.go`.
 - **S4 defect #2 (HAMT transients) deferred** — see `TODO.md`.
+
+## Printer fidelity surgery (M1-A, 2026-07-12, `strconv.go`)
+
+Ground truth: real Clojure 1.12.5 CLI on JDK 26.
+
+- `formatFloat` rewritten to Java `Double.toString` semantics (upstream
+  printed `%d.0` for integral doubles and `'f'` expansion otherwise,
+  zero-padding huge magnitudes): plain decimal for 1e-3 <= |v| < 1e7,
+  scientific `d.dddE±x` otherwise, shortest round-trip digits, `-0.0`
+  sign preserved, plus the JDK subnormal quirk (`4.9E-324`, not
+  `5E-324`). Verified bit-exactly against `Double/toString` on ~108k
+  doubles (random + exhaustive small-subnormal scan): zero divergences.
+- `Print` now emits `##Inf` / `##-Inf` / `##NaN` for non-finite doubles
+  (was `Infinity`/`NaN`; those Java names remain in `ToString`/str).
+- `Print`'s ISeq branch walks `x.Seq()`, so empty lists print `()`
+  instead of `(nil)`.
+- Acceptance: `conformance/tests/print-double-{plain,scientific,subnormal}.clj`,
+  `print-inf-nan.clj`, `print-empty-list.clj`.
