@@ -23,37 +23,52 @@ var _ lang.IFn = (*evalFn)(nil)
 // Invoke picks the method (exact fixed arity wins, else the variadic
 // method if enough args), binds self-name and params on a scope pushed on
 // the CAPTURED env (not the caller's — lexical scoping), and evaluates the
-// body.
+// body. Each method is its own recur target (design/03 §5): a recurSignal
+// carrying this method's LoopID rebinds the params and loops — a plain Go
+// loop, constant stack — never re-dispatching arities. On recur to a
+// variadic method the rest param is rebound to the last recur value
+// as-is (no re-packing), as in Clojure.
 func (f *evalFn) Invoke(args ...any) any {
 	m := f.pickMethod(len(args))
 	if m == nil {
 		panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), f.name()))
 	}
 
-	scope := f.env.Push()
-	if f.node.Local != nil {
-		self := f.node.Local.Sub.(*ast.BindingNode)
-		scope.Define(self.Name.Name(), f)
-	}
+	// One value per param: fixed args, then the packed rest for variadics.
+	vals := make([]any, 0, len(m.Params))
 	for i := 0; i < m.FixedArity; i++ {
-		b := m.Params[i].Sub.(*ast.BindingNode)
-		scope.Define(b.Name.Name(), args[i])
+		vals = append(vals, args[i])
 	}
 	if m.IsVariadic {
-		b := m.Params[len(m.Params)-1].Sub.(*ast.BindingNode)
 		rest := args[m.FixedArity:]
 		if len(rest) == 0 {
-			scope.Define(b.Name.Name(), nil) // zero rest args → nil binding
+			vals = append(vals, nil) // zero rest args → nil binding
 		} else {
-			scope.Define(b.Name.Name(), lang.NewList(rest...))
+			vals = append(vals, lang.NewList(rest...))
 		}
 	}
 
-	v, err := f.eval.Eval(m.Body, scope)
-	if err != nil {
+	for {
+		scope := f.env.Push()
+		if f.node.Local != nil {
+			self := f.node.Local.Sub.(*ast.BindingNode)
+			scope.Define(self.Name.Name(), f)
+		}
+		for i, pn := range m.Params {
+			b := pn.Sub.(*ast.BindingNode)
+			scope.Define(b.Name.Name(), vals[i])
+		}
+
+		v, err := f.eval.Eval(m.Body, scope)
+		if err == nil {
+			return v
+		}
+		if rs, ok := err.(*recurSignal); ok && rs.loopID == m.LoopID {
+			vals = rs.vals // analysis guarantees len == len(m.Params)
+			continue
+		}
 		panic(err) // the IFn-boundary conversion (design/00 §4.2)
 	}
-	return v
 }
 
 func (f *evalFn) ApplyTo(args lang.ISeq) any {

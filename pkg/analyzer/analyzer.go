@@ -6,10 +6,12 @@
 // analyze ↔ eval (design/03 §4, §9.2). Analysis errors carry source
 // position taken from the offending form's metadata (design/00 §4.5).
 //
-// v0 scope: literals, collection literals, symbol resolution
-// (locals → vars), and the specials quote / if / do / def / let* / fn*,
-// plus invoke. loop*/recur, var, set!, macros, letfn*, try/throw and host
-// interop are later phases.
+// M1 scope: literals, collection literals, symbol resolution
+// (locals → vars), the specials quote / if / do / def / let* / fn* /
+// loop* / recur / var / set! / binding, plus invoke. Macros, letfn*,
+// try/throw and host interop are later phases. (`binding` is a special
+// here until macros land in v2 — in Clojure it is a core macro over
+// push/popThreadBindings; the semantics match.)
 package analyzer
 
 import (
@@ -33,10 +35,15 @@ const (
 )
 
 // RecurFrame marks the innermost recur target (fn method or loop*).
-// Recorded in v0 so fn methods carry their LoopID; recur itself is v1.
+// Blocked, when non-empty, names a construct (e.g. "try") that sits
+// between the recur and its target — the target is visible but crossing
+// it is an error ("Cannot recur across try", design/03 §2 Phase 4). The
+// `binding` form sets it because in Clojure binding expands to
+// try/finally around push/popThreadBindings.
 type RecurFrame struct {
-	LoopID string
-	Arity  int
+	LoopID  string
+	Arity   int
+	Blocked string
 }
 
 // Env is the immutable analysis-time environment, threaded through
@@ -124,7 +131,9 @@ func (a *Analyzer) analyzeSymbol(sym *lang.Symbol, env Env) (*ast.Node, error) {
 	if err != nil {
 		return nil, a.errPos(sym, err)
 	}
-	return &ast.Node{Op: ast.OpVar, Form: sym, Sub: &ast.VarNode{Var: v}}, nil
+	// Vars are set! targets; whether the var is dynamic and thread-bound
+	// is the evaluator's runtime check, as in Clojure (design/03 §2).
+	return &ast.Node{Op: ast.OpVar, Form: sym, Sub: &ast.VarNode{Var: v}, IsAssignable: true}, nil
 }
 
 func (a *Analyzer) analyzeVector(v lang.IPersistentVector, env Env) (*ast.Node, error) {
@@ -222,6 +231,16 @@ func (a *Analyzer) specialParser(name string) (specialParserFn, bool) {
 		return a.parseDef, true
 	case "let*":
 		return a.parseLet, true
+	case "loop*":
+		return a.parseLoop, true
+	case "recur":
+		return a.parseRecur, true
+	case "var":
+		return a.parseVar, true
+	case "set!":
+		return a.parseSetBang, true
+	case "binding":
+		return a.parseBinding, true
 	case "fn*":
 		return a.parseFnStar, true
 	}
@@ -338,6 +357,10 @@ func (a *Analyzer) parseDef(seq lang.ISeq, env Env) (*ast.Node, error) {
 	}
 	if meta != nil {
 		v.SetMeta(meta)
+		// ^:dynamic marks the var dynamically rebindable (binding/set!).
+		if lang.IsTruthy(lang.Get(meta, lang.KWDynamic)) {
+			v.SetDynamic()
+		}
 	}
 
 	var init *ast.Node
@@ -355,16 +378,31 @@ func (a *Analyzer) parseDef(seq lang.ISeq, env Env) (*ast.Node, error) {
 // parseLet handles let*: an even-count binding vector of simple symbols,
 // sequentially scoped; body is an implicit do (design/03 §2).
 func (a *Analyzer) parseLet(seq lang.ISeq, env Env) (*ast.Node, error) {
+	return a.parseLetOrLoop(seq, env, false)
+}
+
+// parseLoop handles loop*: same parser as let* (Compiler.java uses
+// LetExpr.Parser for both), but the body is a recur target — analyzed in
+// return context with a fresh RecurFrame (design/03 §2 Phase 2).
+func (a *Analyzer) parseLoop(seq lang.ISeq, env Env) (*ast.Node, error) {
+	return a.parseLetOrLoop(seq, env, true)
+}
+
+func (a *Analyzer) parseLetOrLoop(seq lang.ISeq, env Env, isLoop bool) (*ast.Node, error) {
+	formName, kind, op := "let*", ast.BindLet, ast.OpLet
+	if isLoop {
+		formName, kind, op = "loop*", ast.BindLoop, ast.OpLoop
+	}
 	args := seqToSlice(seq.Next())
 	if len(args) < 1 {
-		return nil, a.errf(seq, "let* requires a binding vector")
+		return nil, a.errf(seq, "%s requires a binding vector", formName)
 	}
 	bvec, ok := args[0].(lang.IPersistentVector)
 	if !ok {
-		return nil, a.errf(seq, "let* requires a vector for its bindings")
+		return nil, a.errf(seq, "%s requires a vector for its bindings", formName)
 	}
 	if bvec.Count()%2 != 0 {
-		return nil, a.errf(seq, "let* requires an even number of forms in binding vector")
+		return nil, a.errf(seq, "%s requires an even number of forms in binding vector", formName)
 	}
 
 	bodyEnv := env
@@ -382,16 +420,151 @@ func (a *Analyzer) parseLet(seq lang.ISeq, env Env) (*ast.Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		b := &ast.BindingNode{Name: sym, Init: init, Kind: ast.BindLet}
+		b := &ast.BindingNode{Name: sym, Init: init, Kind: kind}
 		bindings = append(bindings, &ast.Node{Op: ast.OpBinding, Form: sym, Sub: b})
 		bodyEnv = bodyEnv.withLocal(b)
 	}
 
+	loopID := ""
+	if isLoop {
+		loopID = a.gensym("loop_")
+		bodyEnv.Context = CtxReturn
+		bodyEnv.RecurFrame = &RecurFrame{LoopID: loopID, Arity: len(bindings)}
+	}
 	body, err := a.analyzeBody(seq, args[1:], bodyEnv)
 	if err != nil {
 		return nil, err
 	}
-	return &ast.Node{Op: ast.OpLet, Form: seq, Sub: &ast.LetNode{Bindings: bindings, Body: body, LoopID: ""}}, nil
+	return &ast.Node{Op: op, Form: seq, Sub: &ast.LetNode{Bindings: bindings, Body: body, LoopID: loopID}}, nil
+}
+
+// parseRecur checks — at analysis time, as Clojure does — that recur sits
+// in tail position of the innermost loop*/fn-method frame and that its
+// arg count matches that frame's arity (design/03 §2 Phase 2). Args are
+// analyzed with the frame cleared: no recur inside recur args.
+func (a *Analyzer) parseRecur(seq lang.ISeq, env Env) (*ast.Node, error) {
+	frame := env.RecurFrame
+	if frame == nil || env.Context != CtxReturn {
+		return nil, a.errf(seq, "can only recur from tail position")
+	}
+	if frame.Blocked != "" {
+		return nil, a.errf(seq, "cannot recur across %s", frame.Blocked)
+	}
+	args := seqToSlice(seq.Next())
+	if len(args) != frame.Arity {
+		return nil, a.errf(seq, "mismatched argument count to recur, expected: %d args, got: %d", frame.Arity, len(args))
+	}
+	argEnv := env.withContext(CtxExpr)
+	argEnv.RecurFrame = nil
+	argEnv.IsTopLevel = false
+	exprs := make([]*ast.Node, 0, len(args))
+	for _, f := range args {
+		n, err := a.analyzeForm(f, argEnv)
+		if err != nil {
+			return nil, err
+		}
+		exprs = append(exprs, n)
+	}
+	return &ast.Node{Op: ast.OpRecur, Form: seq, Sub: &ast.RecurNode{Exprs: exprs, LoopID: frame.LoopID}}, nil
+}
+
+// parseVar handles (var sym): resolve to an EXISTING var or error; the
+// node evaluates to the Var object itself (design/03 §2 Phase 2).
+func (a *Analyzer) parseVar(seq lang.ISeq, env Env) (*ast.Node, error) {
+	args := seqToSlice(seq.Next())
+	if len(args) != 1 {
+		return nil, a.errf(seq, "wrong number of args (%d) passed to var", len(args))
+	}
+	sym, ok := args[0].(*lang.Symbol)
+	if !ok {
+		return nil, a.errf(seq, "var requires a symbol, got: %s", lang.PrintString(args[0]))
+	}
+	v, err := a.ResolveVar(sym)
+	if err != nil {
+		return nil, a.errf(seq, "unable to resolve var: %s in this context", sym.FullName())
+	}
+	return &ast.Node{Op: ast.OpTheVar, Form: seq, Sub: &ast.TheVarNode{Var: v}}, nil
+}
+
+// parseSetBang handles (set! target val). v1 targets: an OpVar only —
+// per Clojure, whether the var is dynamic AND thread-bound is enforced
+// by the evaluator at runtime, not here (design/03 §2 Phase 2). Locals
+// get Clojure's "cannot assign to non-mutable" error.
+func (a *Analyzer) parseSetBang(seq lang.ISeq, env Env) (*ast.Node, error) {
+	args := seqToSlice(seq.Next())
+	if len(args) != 2 {
+		return nil, a.errf(seq, "malformed assignment, expecting (set! target val)")
+	}
+	exprEnv := env.withContext(CtxExpr)
+	exprEnv.IsTopLevel = false
+	target, err := a.analyzeForm(args[0], exprEnv)
+	if err != nil {
+		return nil, err
+	}
+	if !target.IsAssignable {
+		if target.Op == ast.OpLocal {
+			return nil, a.errf(seq, "cannot assign to non-mutable: %s", target.Sub.(*ast.LocalNode).Name.Name())
+		}
+		return nil, a.errf(seq, "invalid assignment target")
+	}
+	val, err := a.analyzeForm(args[1], exprEnv)
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Node{Op: ast.OpSetBang, Form: seq, Sub: &ast.SetBangNode{Target: target, Val: val}}, nil
+}
+
+// parseBinding handles (binding [sym val ...] body...). Each sym must
+// resolve to a Var (locals are ignored — Clojure's binding var-izes its
+// names); vals are analyzed in expression context and evaluated before
+// any binding is pushed. The body's recur frame is marked Blocked:
+// Clojure's binding expands to try/finally, so recur out of a binding
+// body is "cannot recur across try".
+func (a *Analyzer) parseBinding(seq lang.ISeq, env Env) (*ast.Node, error) {
+	args := seqToSlice(seq.Next())
+	if len(args) < 1 {
+		return nil, a.errf(seq, "binding requires a binding vector")
+	}
+	bvec, ok := args[0].(lang.IPersistentVector)
+	if !ok {
+		return nil, a.errf(seq, "binding requires a vector for its bindings")
+	}
+	if bvec.Count()%2 != 0 {
+		return nil, a.errf(seq, "binding requires an even number of forms in binding vector")
+	}
+
+	exprEnv := env.withContext(CtxExpr)
+	exprEnv.IsTopLevel = false
+	var vars, vals []*ast.Node
+	for i := 0; i < bvec.Count(); i += 2 {
+		sym, ok := bvec.Nth(i).(*lang.Symbol)
+		if !ok {
+			return nil, a.errf(seq, "bad binding form, expected symbol, got: %s", lang.PrintString(bvec.Nth(i)))
+		}
+		v, err := a.ResolveVar(sym)
+		if err != nil {
+			return nil, a.errPos(sym, err)
+		}
+		vars = append(vars, &ast.Node{Op: ast.OpVar, Form: sym, Sub: &ast.VarNode{Var: v}, IsAssignable: true})
+		val, err := a.analyzeForm(bvec.Nth(i+1), exprEnv)
+		if err != nil {
+			return nil, err
+		}
+		vals = append(vals, val)
+	}
+
+	bodyEnv := env
+	bodyEnv.IsTopLevel = false
+	if bodyEnv.RecurFrame != nil {
+		blocked := *bodyEnv.RecurFrame
+		blocked.Blocked = "try"
+		bodyEnv.RecurFrame = &blocked
+	}
+	body, err := a.analyzeBody(seq, args[1:], bodyEnv)
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Node{Op: ast.OpDynBind, Form: seq, Sub: &ast.DynBindNode{Vars: vars, Vals: vals, Body: body}}, nil
 }
 
 // simpleBindingSym validates a binding name: a simple (non-namespaced,

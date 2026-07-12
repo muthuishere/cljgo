@@ -2,6 +2,7 @@ package eval_test
 
 import (
 	"bytes"
+	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -388,6 +389,209 @@ func TestRuntimeErrorsSurfaceAsErrors(t *testing.T) {
 	mustErr(t, e, list(list(sym("quote"), int64(1)), int64(2)))
 	// Division by zero style arithmetic panic → error.
 	mustErr(t, e, list(sym("+"), int64(1), "not-a-number"))
+}
+
+// loopSum builds (loop* [i 0 acc 0] (if (< i n+1) (recur (+ i 1) (+ acc i)) acc)).
+func loopSum(n int64) any {
+	return list(sym("loop*"), vec(sym("i"), int64(0), sym("acc"), int64(0)),
+		list(sym("if"), list(sym("<"), sym("i"), n+1),
+			list(sym("recur"),
+				list(sym("+"), sym("i"), int64(1)),
+				list(sym("+"), sym("acc"), sym("i"))),
+			sym("acc")))
+}
+
+func TestLoopRecurIterates(t *testing.T) {
+	e := eval.New()
+	// Oracle (Clojure 1.12): → 5050.
+	if got := evalAll(t, e, loopSum(100)); got != int64(5050) {
+		t.Fatalf("loop sum = %v, want 5050", got)
+	}
+}
+
+// TestLoopRecurConstantStack is the M1 exit check (design/03 §8 v1):
+// 100k iterations on a goroutine whose stack CANNOT grow beyond 128 KiB.
+// If recur consumed stack per iteration the goroutine would die; a plain
+// Go loop finishes.
+func TestLoopRecurConstantStack(t *testing.T) {
+	old := debug.SetMaxStack(128 << 10)
+	defer debug.SetMaxStack(old)
+
+	done := make(chan any, 1)
+	go func() {
+		e := eval.New()
+		var res any
+		var err error
+		for _, f := range []any{loopSum(100000)} {
+			res, err = e.EvalForm(f)
+			if err != nil {
+				done <- err
+				return
+			}
+		}
+		done <- res
+	}()
+	// Oracle (Clojure 1.12): → 5000050000.
+	if got := <-done; !lang.Equiv(got, int64(5000050000)) {
+		t.Fatalf("loop* at n=100000 = %v, want 5000050000 (constant stack)", got)
+	}
+}
+
+func TestLoopRecurSwapSemantics(t *testing.T) {
+	e := eval.New()
+	// (loop* [i 0 a 1 b 2] (if (< i 1) (recur (+ i 1) b a) [a b]))
+	// Oracle (Clojure 1.12): → [2 1] — recur args all evaluate before
+	// any rebinding.
+	got := evalAll(t, e, list(sym("loop*"),
+		vec(sym("i"), int64(0), sym("a"), int64(1), sym("b"), int64(2)),
+		list(sym("if"), list(sym("<"), sym("i"), int64(1)),
+			list(sym("recur"), list(sym("+"), sym("i"), int64(1)), sym("b"), sym("a")),
+			vec(sym("a"), sym("b")))))
+	if !lang.Equiv(got, lang.NewVector(int64(2), int64(1))) {
+		t.Fatalf("swap loop = %v, want [2 1]", lang.PrintString(got))
+	}
+}
+
+func TestFnMethodRecur(t *testing.T) {
+	e := eval.New()
+	// ((fn* [n acc] (if (< n 1) acc (recur (- n 1) (+ acc n)))) 10 0)
+	// Oracle (Clojure 1.12): → 55.
+	got := evalAll(t, e, list(
+		list(sym("fn*"), vec(sym("n"), sym("acc")),
+			list(sym("if"), list(sym("<"), sym("n"), int64(1)),
+				sym("acc"),
+				list(sym("recur"), list(sym("-"), sym("n"), int64(1)), list(sym("+"), sym("acc"), sym("n"))))),
+		int64(10), int64(0)))
+	if got != int64(55) {
+		t.Fatalf("fn recur = %v, want 55", got)
+	}
+
+	// Nested: recur targets the INNER loop, and the fn body continues.
+	// (fn* [x] (+ x (loop* [n x] (if (< 0 n) (recur (- n 1)) n)))) at 3 → 3.
+	got = evalAll(t, e, list(
+		list(sym("fn*"), vec(sym("x")),
+			list(sym("+"), sym("x"),
+				list(sym("loop*"), vec(sym("n"), sym("x")),
+					list(sym("if"), list(sym("<"), int64(0), sym("n")),
+						list(sym("recur"), list(sym("-"), sym("n"), int64(1))),
+						sym("n"))))),
+		int64(3)))
+	if got != int64(3) {
+		t.Fatalf("nested loop-in-fn = %v, want 3", got)
+	}
+}
+
+func dynSym(name string) *lang.Symbol {
+	return lang.NewSymbol(name).WithMeta(lang.NewMap(lang.KWDynamic, true)).(*lang.Symbol)
+}
+
+func TestDynamicBindingAndSetBang(t *testing.T) {
+	e := eval.New()
+	evalAll(t, e, list(sym("def"), dynSym("*dv*"), int64(1)))
+	evalAll(t, e, list(sym("def"), sym("probe-dv"), list(sym("fn*"), vec(), sym("*dv*"))))
+
+	// Oracle (Clojure 1.12): (binding [*dv* 2] (probe-dv)) → 2; after → 1.
+	got := evalAll(t, e, vec(
+		list(sym("binding"), vec(sym("*dv*"), int64(2)), list(sym("probe-dv"))),
+		list(sym("probe-dv"))))
+	if !lang.Equiv(got, lang.NewVector(int64(2), int64(1))) {
+		t.Fatalf("binding = %v, want [2 1]", lang.PrintString(got))
+	}
+
+	// set! mutates the thread binding; root untouched after pop.
+	// Oracle: (binding [*dv* 10] (set! *dv* 42) *dv*) → 42, then *dv* → 1.
+	got = evalAll(t, e, vec(
+		list(sym("binding"), vec(sym("*dv*"), int64(10)),
+			list(sym("set!"), sym("*dv*"), int64(42)),
+			sym("*dv*")),
+		sym("*dv*")))
+	if !lang.Equiv(got, lang.NewVector(int64(42), int64(1))) {
+		t.Fatalf("set! in binding = %v, want [42 1]", lang.PrintString(got))
+	}
+
+	// set! without a thread binding fails (oracle: "Can't
+	// change/establish root binding of: ... with set").
+	err := mustErr(t, e, list(sym("set!"), sym("*dv*"), int64(5)))
+	if !strings.Contains(err.Error(), "change/establish root binding") {
+		t.Errorf("set! no-binding error = %v", err)
+	}
+
+	// binding a non-dynamic var fails at runtime (oracle: "Can't
+	// dynamically bind non-dynamic var: ...").
+	evalAll(t, e, list(sym("def"), sym("plain-var"), int64(1)))
+	err = mustErr(t, e, list(sym("binding"), vec(sym("plain-var"), int64(2)), sym("plain-var")))
+	if !strings.Contains(err.Error(), "bind non-dynamic var") {
+		t.Errorf("bind non-dynamic error = %v", err)
+	}
+	// ... and the failed push must not leave the frame stack unbalanced:
+	// a dynamic binding afterwards still works.
+	got = evalAll(t, e, list(sym("binding"), vec(sym("*dv*"), int64(7)), sym("*dv*")))
+	if got != int64(7) {
+		t.Fatalf("binding after failed push = %v, want 7", got)
+	}
+}
+
+func TestBindingParallelSemantics(t *testing.T) {
+	e := eval.New()
+	evalAll(t, e, list(sym("def"), dynSym("*pa*"), int64(1)))
+	evalAll(t, e, list(sym("def"), dynSym("*pb*"), int64(2)))
+	// Oracle (Clojure 1.12): (binding [*pa* 10 *pb* *pa*] [*pa* *pb*]) → [10 1].
+	got := evalAll(t, e, list(sym("binding"),
+		vec(sym("*pa*"), int64(10), sym("*pb*"), sym("*pa*")),
+		vec(sym("*pa*"), sym("*pb*"))))
+	if !lang.Equiv(got, lang.NewVector(int64(10), int64(1))) {
+		t.Fatalf("parallel binding = %v, want [10 1]", lang.PrintString(got))
+	}
+}
+
+func TestTheVarEvaluatesToVar(t *testing.T) {
+	e := eval.New()
+	evalAll(t, e, list(sym("def"), sym("tv"), int64(3)))
+	got := evalAll(t, e, list(sym("var"), sym("tv")))
+	v, ok := got.(*lang.Var)
+	if !ok || v.Symbol().Name() != "tv" {
+		t.Fatalf("(var tv) = %v, want the var object", got)
+	}
+}
+
+func TestInNsAliasRefer(t *testing.T) {
+	e := eval.New()
+	evalAll(t, e, list(sym("def"), sym("here"), int64(42)))
+
+	// in-ns creates and switches; the new ns is bare (no core refers).
+	evalAll(t, e, list(sym("in-ns"), list(sym("quote"), sym("eval-test.fresh"))))
+	if got := e.CurrentNS().Name().Name(); got != "eval-test.fresh" {
+		t.Fatalf("current ns = %q, want eval-test.fresh", got)
+	}
+	if _, err := e.EvalForm(list(sym("+"), int64(1), int64(1))); err == nil {
+		t.Fatalf("bare ns must not see core's + unqualified")
+	}
+	// Qualified resolution still works from the bare ns.
+	if got := evalAll(t, e, list(sym("clojure.core/+"), int64(1), int64(1))); got != int64(2) {
+		t.Fatalf("qualified core call = %v, want 2", got)
+	}
+	// refer all of core, then unqualified works.
+	evalAll(t, e, list(sym("clojure.core/refer"), list(sym("quote"), sym("clojure.core"))))
+	if got := evalAll(t, e, list(sym("+"), int64(2), int64(2))); got != int64(4) {
+		t.Fatalf("after refer, + = %v, want 4", got)
+	}
+	evalAll(t, e, list(sym("def"), sym("there"), int64(7)))
+
+	// Back to user: qualified cross-ns resolution and alias.
+	evalAll(t, e, list(sym("in-ns"), list(sym("quote"), sym("user"))))
+	if got := evalAll(t, e, list(sym("+"), sym("user/here"), sym("eval-test.fresh/there"))); got != int64(49) {
+		t.Fatalf("cross-ns sum = %v, want 49", got)
+	}
+	evalAll(t, e, list(sym("alias"), list(sym("quote"), sym("fr")), list(sym("quote"), sym("eval-test.fresh"))))
+	if got := evalAll(t, e, sym("fr/there")); got != int64(7) {
+		t.Fatalf("alias deref = %v, want 7", got)
+	}
+
+	// Unknown namespaces still error.
+	err := mustErr(t, e, sym("no.such.ns/x"))
+	if !strings.Contains(err.Error(), "no such namespace") {
+		t.Errorf("unknown ns error = %v", err)
+	}
 }
 
 func TestEvaluatorsShareUserNamespace(t *testing.T) {

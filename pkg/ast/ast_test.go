@@ -3,8 +3,8 @@ package ast
 import "testing"
 
 func TestOpString(t *testing.T) {
-	// Every v0 op has a name (keeps the enum and opNames in sync).
-	for op := OpConst; op <= OpQuote; op++ {
+	// Every op has a name (keeps the enum and opNames in sync).
+	for op := OpConst; op <= OpDynBind; op++ {
 		if _, ok := opNames[op]; !ok {
 			t.Errorf("op %d has no name", op)
 		}
@@ -18,7 +18,7 @@ func TestOpString(t *testing.T) {
 }
 
 func TestBindKindString(t *testing.T) {
-	for k, want := range map[BindKind]string{BindLet: "let", BindArg: "arg", BindFn: "fn"} {
+	for k, want := range map[BindKind]string{BindLet: "let", BindArg: "arg", BindFn: "fn", BindLoop: "loop"} {
 		if k.String() != want {
 			t.Errorf("%d.String() = %q, want %q", k, k.String(), want)
 		}

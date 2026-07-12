@@ -17,10 +17,10 @@ import (
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
-// Driver owns one evaluator session. In M0 *1 *2 *3 *e are plain vars
-// interned in `user` and root-rebound after each eval; once core.clj
-// exists they become dynamic vars in core (design/03 §7b) and this
-// driver switches to thread bindings — the API does not change.
+// Driver owns one evaluator session. *1 *2 *3 *e are proper dynamic
+// vars in clojure.core (design/03 §7b): Run pushes a session frame
+// binding them (plus *ns*) and set!s them after each eval; they revert
+// to their nil roots when the session ends, as on JVM Clojure.
 type Driver struct {
 	// Prompts controls whether Run writes a prompt to Out before each
 	// line of input (on for a terminal, off for piped input).
@@ -36,14 +36,12 @@ type Driver struct {
 // New returns a driver with a fresh evaluator. in may be nil when only
 // EvalReader/EvalString will be used (e.g. `cljgo run`).
 func New(in io.Reader, out, errOut io.Writer) *Driver {
-	ev := eval.New()
+	ev := eval.New() // interns the core builtins incl. *1 *2 *3 *e
 	d := &Driver{ev: ev, in: in, out: out, errOut: errOut}
-	intern := func(name string) *lang.Var {
-		v := ev.CurrentNS.Intern(lang.NewSymbol(name))
-		v.BindRoot(nil)
-		return v
+	find := func(name string) *lang.Var {
+		return lang.NSCore.FindInternedVar(lang.NewSymbol(name))
 	}
-	d.v1, d.v2, d.v3, d.ve = intern("*1"), intern("*2"), intern("*3"), intern("*e")
+	d.v1, d.v2, d.v3, d.ve = find("*1"), find("*2"), find("*3"), find("*e")
 	return d
 }
 
@@ -57,13 +55,23 @@ func (d *Driver) Evaluator() *eval.Evaluator { return d.ev }
 // (with position when available) and the loop continues; only input
 // exhaustion or an I/O error ends it.
 func (d *Driver) Run() error {
+	// The session frame (design/03 §7b): *ns* and the result/error vars
+	// are thread-bound for the session's goroutine; in-ns and the per-eval
+	// set!s below mutate the bindings, and everything reverts on exit.
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, d.ev.CurrentNS(),
+		d.v1, nil, d.v2, nil, d.v3, nil, d.ve, nil,
+	))
+	defer lang.PopThreadBindings()
+
 	sc := bufio.NewScanner(d.in)
 	sc.Buffer(make([]byte, 0, 64*1024), 1<<20)
 	var pending strings.Builder
 	for {
 		if d.Prompts {
 			if pending.Len() == 0 {
-				fmt.Fprintf(d.out, "%s=> ", d.ev.CurrentNS.Name().Name())
+				// The prompt names the CURRENT namespace (in-ns moves it).
+				fmt.Fprintf(d.out, "%s=> ", d.ev.CurrentNS().Name().Name())
 			} else {
 				fmt.Fprint(d.out, "  #_=> ")
 			}
@@ -119,11 +127,12 @@ func (d *Driver) dispatch(src string, atEOF bool) (consumed bool) {
 	return true
 }
 
-// evalAndPrint runs one top-level form through Analyze+Eval, binds
-// *1 *2 *3 on success (results shift) or *e on error, and prints the
-// result with pr-str. EvalForm already recovers evaluator panics into
-// errors; the deferred recover here additionally guards the driver's
-// own seams (e.g. printing) so a panic never kills the loop.
+// evalAndPrint runs one top-level form through Analyze+Eval, set!s the
+// session bindings of *1 *2 *3 on success (results shift) or *e on
+// error, and prints the result with pr-str. EvalForm already recovers
+// evaluator panics into errors; the deferred recover here additionally
+// guards the driver's own seams (e.g. printing) so a panic never kills
+// the loop. Only called under Run's session frame — Var.Set needs it.
 func (d *Driver) evalAndPrint(form any) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -131,19 +140,19 @@ func (d *Driver) evalAndPrint(form any) {
 			if !ok {
 				err = fmt.Errorf("%v", r)
 			}
-			d.ve.BindRoot(err)
+			d.ve.Set(err)
 			d.reportError(err)
 		}
 	}()
 	res, err := d.ev.EvalForm(form)
 	if err != nil {
-		d.ve.BindRoot(err)
+		d.ve.Set(err)
 		d.reportError(err)
 		return
 	}
-	d.v3.BindRoot(d.v2.Deref())
-	d.v2.BindRoot(d.v1.Deref())
-	d.v1.BindRoot(res)
+	d.v3.Set(d.v2.Deref())
+	d.v2.Set(d.v1.Deref())
+	d.v1.Set(res)
 	fmt.Fprintln(d.out, lang.PrintString(res))
 }
 
@@ -155,8 +164,16 @@ func (d *Driver) reportError(err error) {
 // EvalReader reads and evaluates every form from r (e.g. a .clj file),
 // returning the value of the last form. No REPL affordances: results
 // are not printed and *1/*e are not bound; errors return immediately
-// with position. This is the `cljgo run` and conformance-harness path.
+// with position. *ns* and *file* are bound for the load, as Clojure's
+// load does (design/03 §7a) — an in-ns inside the file is undone when
+// the load finishes. This is the `cljgo run` and conformance path.
 func (d *Driver) EvalReader(r io.Reader, filename string) (any, error) {
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, d.ev.CurrentNS(),
+		lang.VarFile, filename,
+	))
+	defer lang.PopThreadBindings()
+
 	rd := reader.New(bufio.NewReader(r), reader.WithFilename(filename))
 	var last any
 	for {

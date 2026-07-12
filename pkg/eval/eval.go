@@ -17,37 +17,49 @@ import (
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
-// Evaluator wires analyzer ↔ eval (design/03 §4, §9.2) and holds the
-// current namespace. v0: one `user` namespace, no macros (Macroexpand1
-// stays nil — every seq is a special or an invoke).
+// Evaluator wires analyzer ↔ eval (design/03 §4, §9.2). The current
+// namespace is the *ns* dynamic var (lang.VarCurrentNS), read per form —
+// in-ns rebinds it (design/03 §7a). No macros yet (Macroexpand1 stays
+// nil — every seq is a special or an invoke).
 type Evaluator struct {
-	CurrentNS *lang.Namespace
-	analyzer  *analyzer.Analyzer
+	analyzer *analyzer.Analyzer
 }
 
-// New returns an evaluator with the `user` namespace (created if absent)
-// and the v0 builtins interned.
+// New returns an evaluator with the builtins interned in clojure.core,
+// the `user` namespace (created if absent) referring core's publics, and
+// *ns* rooted at user.
 func New() *Evaluator {
-	e := &Evaluator{
-		CurrentNS: lang.FindOrCreateNamespace(lang.NewSymbol("user")),
-	}
+	e := &Evaluator{}
 	e.analyzer = &analyzer.Analyzer{
-		Macroexpand1: nil, // v0: no macro support
+		Macroexpand1: nil, // no macro support until v2
 		ResolveVar:   e.resolveVar,
 		InternVar:    e.internVar,
 	}
 	e.internBuiltins()
+	user := lang.FindOrCreateNamespace(lang.NewSymbol("user"))
+	referAll(user, lang.NSCore)
+	lang.VarCurrentNS.BindRoot(user)
 	return e
 }
 
 // Analyzer exposes the wired analyzer (for tests and the REPL driver).
 func (e *Evaluator) Analyzer() *analyzer.Analyzer { return e.analyzer }
 
+// CurrentNS is the current namespace: the value of *ns* (thread binding
+// if present, else root). The analyzer hooks and the REPL prompt read it
+// per form so in-ns takes effect immediately.
+func (e *Evaluator) CurrentNS() *lang.Namespace {
+	if ns, ok := lang.VarCurrentNS.Deref().(*lang.Namespace); ok {
+		return ns
+	}
+	return lang.NSCore
+}
+
 // resolveVar is the analyzer's var-resolution hook (design/03 §3a).
 func (e *Evaluator) resolveVar(sym *lang.Symbol) (*lang.Var, error) {
 	if sym.HasNamespace() {
 		nsSym := lang.NewSymbol(sym.Namespace())
-		ns := e.CurrentNS.LookupAlias(nsSym)
+		ns := e.CurrentNS().LookupAlias(nsSym)
 		if ns == nil {
 			ns = lang.FindNamespace(nsSym)
 		}
@@ -60,7 +72,7 @@ func (e *Evaluator) resolveVar(sym *lang.Symbol) (*lang.Var, error) {
 		}
 		return v, nil
 	}
-	if m := e.CurrentNS.Mappings().ValAt(sym); m != nil {
+	if m := e.CurrentNS().Mappings().ValAt(sym); m != nil {
 		if v, ok := m.(*lang.Var); ok {
 			return v, nil
 		}
@@ -73,12 +85,12 @@ func (e *Evaluator) resolveVar(sym *lang.Symbol) (*lang.Var, error) {
 // unqualified or qualified into the current ns.
 func (e *Evaluator) internVar(sym *lang.Symbol) (*lang.Var, error) {
 	if sym.HasNamespace() {
-		if sym.Namespace() != e.CurrentNS.Name().Name() {
+		if sym.Namespace() != e.CurrentNS().Name().Name() {
 			return nil, fmt.Errorf("can't create defs outside of current ns: %s", sym.FullName())
 		}
 		sym = lang.NewSymbol(sym.Name())
 	}
-	return e.CurrentNS.Intern(sym), nil
+	return e.CurrentNS().Intern(sym), nil
 }
 
 // EvalForm analyzes and evaluates one top-level form, converting runtime
@@ -267,6 +279,91 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 		// panics per the IFn-boundary convention and are recovered at the
 		// top level.
 		return lang.Apply(fnVal, args), nil
+
+	case ast.OpLoop:
+		sub := n.Sub.(*ast.LetNode)
+		// Sequential initial bindings, one child scope each (as OpLet).
+		names := make([]string, len(sub.Bindings))
+		cur := s
+		for i, bn := range sub.Bindings {
+			b := bn.Sub.(*ast.BindingNode)
+			names[i] = b.Name.Name()
+			v, err := e.Eval(b.Init, cur)
+			if err != nil {
+				return nil, err
+			}
+			cur = cur.Push()
+			cur.Define(names[i], v)
+		}
+		// The recur target: a plain Go loop — constant stack (design/03
+		// §5). A recurSignal tagged with this LoopID rebinds and loops;
+		// any other error (incl. other loops' signals) propagates.
+		for {
+			v, err := e.Eval(sub.Body, cur)
+			if err == nil {
+				return v, nil
+			}
+			rs, ok := err.(*recurSignal)
+			if !ok || rs.loopID != sub.LoopID {
+				return nil, err
+			}
+			// Fresh frames per iteration: closures made in iteration k
+			// keep seeing iteration k's values.
+			cur = s
+			for i, val := range rs.vals {
+				cur = cur.Push()
+				cur.Define(names[i], val)
+			}
+		}
+
+	case ast.OpRecur:
+		sub := n.Sub.(*ast.RecurNode)
+		// Evaluate all args first — rebinding is simultaneous:
+		// (recur b a) swaps.
+		vals := make([]any, len(sub.Exprs))
+		for i, ex := range sub.Exprs {
+			v, err := e.Eval(ex, s)
+			if err != nil {
+				return nil, err
+			}
+			vals[i] = v
+		}
+		return nil, &recurSignal{loopID: sub.LoopID, vals: vals}
+
+	case ast.OpTheVar:
+		return n.Sub.(*ast.TheVarNode).Var, nil
+
+	case ast.OpSetBang:
+		sub := n.Sub.(*ast.SetBangNode)
+		v := sub.Target.Sub.(*ast.VarNode).Var
+		val, err := e.Eval(sub.Val, s)
+		if err != nil {
+			return nil, err
+		}
+		// Var.Set requires a thread binding (only dynamic vars can have
+		// one) and panics with "can't change/establish root binding of:
+		// ..." otherwise — exactly Clojure's runtime rule for set!; the
+		// panic is recovered into an error at the top level.
+		return v.Set(val), nil
+
+	case ast.OpDynBind:
+		sub := n.Sub.(*ast.DynBindNode)
+		// All vals evaluate before any binding is pushed — bindings are
+		// made in parallel, each val sees the OLD bindings.
+		kvs := make([]any, 0, 2*len(sub.Vars))
+		for i := range sub.Vars {
+			v := sub.Vars[i].Sub.(*ast.VarNode).Var
+			val, err := e.Eval(sub.Vals[i], s)
+			if err != nil {
+				return nil, err
+			}
+			kvs = append(kvs, v, val)
+		}
+		if err := pushThreadBindings(lang.NewMap(kvs...)); err != nil {
+			return nil, err
+		}
+		defer lang.PopThreadBindings()
+		return e.Eval(sub.Body, s)
 
 	case ast.OpBinding, ast.OpFnMethod:
 		// Structural children of OpLet / OpFn — never evaluated directly.

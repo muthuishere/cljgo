@@ -5,10 +5,11 @@
 // Node.Op. Passes that need annotations use side tables keyed by *Node,
 // never mutation.
 //
-// v0 op vocabulary only (design/03 §8, milestone v0): Const, collection
+// v0 op vocabulary (design/03 §8, milestone v0): Const, collection
 // literals, Var, Local, Do, If, Def, Let, Binding, Fn, FnMethod, Invoke,
-// Quote. Later phases (loop*/recur, var, set!, letfn*, throw/try/catch,
-// host interop) add their ops to this enum and to both consumers together.
+// Quote. v1 (milestone M1) adds Loop, Recur, TheVar, SetBang and DynBind
+// (the `binding` form). Later phases (letfn*, throw/try/catch, host
+// interop) add their ops to this enum and to both consumers together.
 package ast
 
 import (
@@ -38,6 +39,11 @@ const (
 	OpFnMethod
 	OpInvoke
 	OpQuote
+	OpLoop
+	OpRecur
+	OpTheVar
+	OpSetBang
+	OpDynBind
 )
 
 var opNames = map[Op]string{
@@ -56,6 +62,11 @@ var opNames = map[Op]string{
 	OpFnMethod: "fn-method",
 	OpInvoke:   "invoke",
 	OpQuote:    "quote",
+	OpLoop:     "loop",
+	OpRecur:    "recur",
+	OpTheVar:   "the-var",
+	OpSetBang:  "set!",
+	OpDynBind:  "dyn-bind",
 }
 
 func (op Op) String() string {
@@ -81,9 +92,10 @@ type Node struct {
 type BindKind uint8
 
 const (
-	BindLet BindKind = iota + 1 // let* binding
-	BindArg                     // fn method parameter
-	BindFn                      // fn* self-name
+	BindLet  BindKind = iota + 1 // let* binding
+	BindArg                      // fn method parameter
+	BindFn                       // fn* self-name
+	BindLoop                     // loop* binding (a recur target)
 )
 
 func (k BindKind) String() string {
@@ -94,6 +106,8 @@ func (k BindKind) String() string {
 		return "arg"
 	case BindFn:
 		return "fn"
+	case BindLoop:
+		return "loop"
 	}
 	return fmt.Sprintf("BindKind(%d)", uint8(k))
 }
@@ -158,9 +172,10 @@ type DefNode struct {
 	Meta *Node
 }
 
-// LetNode is the payload of OpLet. Bindings are OpBinding nodes, in order
-// (let* is sequential). LoopID is "" for let* (not a recur target); loop*
-// (v1) sets it.
+// LetNode is the payload of OpLet and OpLoop. Bindings are OpBinding
+// nodes, in order (let* and loop* bindings are both sequential). LoopID
+// is "" for let* (not a recur target); loop* sets it and its OpRecur
+// nodes carry the same id (design/03 §5).
 type LetNode struct {
 	Bindings []*Node
 	Body     *Node
@@ -207,4 +222,37 @@ type InvokeNode struct {
 // QuoteNode is the payload of OpQuote: the datum is unanalyzed.
 type QuoteNode struct {
 	Value any
+}
+
+// RecurNode is the payload of OpRecur. LoopID names the owning loop* or
+// fn-method frame; the evaluator's recur signal and the emitter's labeled
+// `continue` both match on it (design/03 §5).
+type RecurNode struct {
+	Exprs  []*Node
+	LoopID string
+}
+
+// TheVarNode is the payload of OpTheVar: (var sym) resolved to an
+// existing Var. Evaluates to the Var object itself, not its value.
+type TheVarNode struct {
+	Var *lang.Var
+}
+
+// SetBangNode is the payload of OpSetBang. Target is an assignable node —
+// in v1 only an OpVar (the dynamic/thread-binding check is the
+// evaluator's, per Clojure); host fields join in a later phase.
+type SetBangNode struct {
+	Target *Node
+	Val    *Node
+}
+
+// DynBindNode is the payload of OpDynBind, the `binding` form. Vars[i]
+// (an OpVar node) is bound to the value of Vals[i] for the dynamic
+// extent of Body via push/popThreadBindings. Vals are evaluated before
+// any binding is pushed (bindings are made "in parallel", as in
+// Clojure's binding macro).
+type DynBindNode struct {
+	Vars []*Node // OpVar
+	Vals []*Node
+	Body *Node
 }

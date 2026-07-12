@@ -87,8 +87,11 @@ func TestSyntaxErrorWithPositionThenRecovers(t *testing.T) {
 }
 
 func TestEvalErrorBindsStarEAndContinues(t *testing.T) {
-	in := "(undefined-sym 1)\n(f 1 2 3)\n(+ 1 1)\n"
-	d, _, errOut := newSession("(def f (fn* f [x] x))\n" + in)
+	// *e is a session-bound dynamic var: it must hold the LAST error
+	// while the session runs (checked in-session via the if below) and
+	// revert to its nil root once Run's session frame pops.
+	in := "(undefined-sym 1)\n(f 1 2 3)\n(if *e :err-bound :no-err)\n(+ 1 1)\n"
+	d, out, errOut := newSession("(def f (fn* f [x] x))\n" + in)
 	if err := d.Run(); err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -98,11 +101,12 @@ func TestEvalErrorBindsStarEAndContinues(t *testing.T) {
 	if !strings.Contains(errOut.String(), "wrong number of args (3) passed to: f") {
 		t.Fatalf("missing arity error (panic must be recovered): %q", errOut.String())
 	}
-	// *e holds the LAST error (the recovered arity panic) as a value.
-	ve := d.Evaluator().CurrentNS.FindInternedVar(lang.NewSymbol("*e"))
-	err, ok := ve.Deref().(error)
-	if !ok || !strings.Contains(err.Error(), "wrong number of args (3)") {
-		t.Fatalf("*e = %v, want the last error", ve.Deref())
+	if !strings.Contains(out.String(), ":err-bound") {
+		t.Fatalf("*e not bound in-session: %q", out.String())
+	}
+	ve := lang.NSCore.FindInternedVar(lang.NewSymbol("*e"))
+	if got := ve.Deref(); got != nil {
+		t.Fatalf("*e after session = %v, want nil root (session binding popped)", got)
 	}
 }
 
@@ -138,6 +142,42 @@ func TestPrompts(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "user=> ") || !strings.Contains(out.String(), "#_=> ") {
 		t.Fatalf("want primary and continuation prompts, got %q", out.String())
+	}
+}
+
+func TestPromptFollowsInNs(t *testing.T) {
+	lang.RemoveNamespace(lang.NewSymbol("user"))
+	lang.RemoveNamespace(lang.NewSymbol("repl-test.moved"))
+	var out, errOut strings.Builder
+	d := New(strings.NewReader("(in-ns 'repl-test.moved)\n(clojure.core/refer 'clojure.core)\n(clojure.core/+ 1 2)\n"), &out, &errOut)
+	d.Prompts = true
+	if err := d.Run(); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !strings.Contains(out.String(), "user=> ") || !strings.Contains(out.String(), "repl-test.moved=> ") {
+		t.Fatalf("prompt should follow in-ns, got %q", out.String())
+	}
+	// The session's *ns* binding pops with the session: a fresh driver
+	// starts back in user.
+	if got := d.Evaluator().CurrentNS().Name().Name(); got != "user" {
+		t.Fatalf("ns after session = %q, want user (session *ns* binding popped)", got)
+	}
+	if errOut.String() != "" {
+		t.Fatalf("unexpected error output: %q", errOut.String())
+	}
+}
+
+func TestStar123AreSessionDynamicVars(t *testing.T) {
+	// *1 *2 *3 are core dynamic vars bound per session: usable via
+	// binding/set! semantics in-session, nil roots after.
+	out, _ := run(t, "7\n(binding [*1 :shadow] *1)\n")
+	lines := outLines(out)
+	if lines[len(lines)-1] != ":shadow" {
+		t.Fatalf("*1 should be dynamically rebindable, got %q", lines)
+	}
+	v1 := lang.NSCore.FindInternedVar(lang.NewSymbol("*1"))
+	if got := v1.Deref(); got != nil {
+		t.Fatalf("*1 after session = %v, want nil root", got)
 	}
 }
 

@@ -326,6 +326,171 @@ func TestErrorsCarryPositionFromFormMeta(t *testing.T) {
 	}
 }
 
+func TestLoopStarShape(t *testing.T) {
+	a, _ := newAnalyzer(t)
+	n := analyze(t, a, list(sym("loop*"), vec(sym("x"), int64(1)), list(sym("recur"), sym("x"))))
+	sub := n.Sub.(*ast.LetNode)
+	if n.Op != ast.OpLoop || sub.LoopID == "" || len(sub.Bindings) != 1 {
+		t.Fatalf("loop node: %+v", sub)
+	}
+	if k := sub.Bindings[0].Sub.(*ast.BindingNode).Kind; k != ast.BindLoop {
+		t.Errorf("loop binding kind = %v, want loop", k)
+	}
+	// The recur in tail position carries the loop's LoopID.
+	rec := sub.Body.Sub.(*ast.DoNode).Ret
+	if rec.Op != ast.OpRecur || rec.Sub.(*ast.RecurNode).LoopID != sub.LoopID {
+		t.Errorf("recur should target the enclosing loop: %+v", rec.Sub)
+	}
+	// Sequential bindings, like let*.
+	n = analyze(t, a, list(sym("loop*"), vec(sym("p"), int64(1), sym("q"), sym("p")), sym("q")))
+	qInit := n.Sub.(*ast.LetNode).Bindings[1].Sub.(*ast.BindingNode).Init
+	if qInit.Op != ast.OpLocal {
+		t.Errorf("loop* bindings should be sequential, q's init = %v", qInit.Op)
+	}
+}
+
+func TestRecurAnalysisChecks(t *testing.T) {
+	a, ns := newAnalyzer(t)
+	ns.Intern(sym("+"))
+
+	// Tail position through nested if/do is fine.
+	analyze(t, a, list(sym("loop*"), vec(sym("n"), int64(3)),
+		list(sym("do"), int64(1),
+			list(sym("if"), true, list(sym("recur"), int64(1)), int64(0)))))
+
+	// fn methods are their own recur targets.
+	fn := analyze(t, a, list(sym("fn*"), vec(sym("x")), list(sym("recur"), sym("x"))))
+	m := fn.Sub.(*ast.FnNode).Methods[0].Sub.(*ast.FnMethodNode)
+	rec := m.Body.Sub.(*ast.DoNode).Ret
+	if rec.Op != ast.OpRecur || rec.Sub.(*ast.RecurNode).LoopID != m.LoopID {
+		t.Errorf("recur should target the fn method: %+v", rec.Sub)
+	}
+
+	// Non-tail position (oracle: "Can only recur from tail position").
+	err := analyzeErr(t, a, list(sym("loop*"), vec(sym("x"), int64(1)),
+		list(sym("+"), list(sym("recur"), int64(2)), int64(1))))
+	if !strings.Contains(err.Error(), "recur from tail position") {
+		t.Errorf("non-tail recur error = %v", err)
+	}
+	// No enclosing frame at all.
+	if err := analyzeErr(t, a, list(sym("recur"), int64(1))); !strings.Contains(err.Error(), "recur from tail position") {
+		t.Errorf("top-level recur error = %v", err)
+	}
+	// Statement position inside the loop body is not tail.
+	if err := analyzeErr(t, a, list(sym("loop*"), vec(), list(sym("recur")), int64(1))); !strings.Contains(err.Error(), "recur from tail position") {
+		t.Errorf("statement-position recur error = %v", err)
+	}
+	// Arity mismatch (oracle: "Mismatched argument count to recur,
+	// expected: 2 args, got: 1").
+	err = analyzeErr(t, a, list(sym("loop*"), vec(sym("x"), int64(1), sym("y"), int64(2)),
+		list(sym("recur"), int64(5))))
+	if !strings.Contains(err.Error(), "argument count to recur, expected: 2 args, got: 1") {
+		t.Errorf("recur arity error = %v", err)
+	}
+	// No recur inside recur args (frame cleared).
+	err = analyzeErr(t, a, list(sym("loop*"), vec(sym("x"), int64(1)),
+		list(sym("recur"), list(sym("recur"), int64(1)))))
+	if !strings.Contains(err.Error(), "recur from tail position") {
+		t.Errorf("recur-in-recur-args error = %v", err)
+	}
+	// Variadic method arity counts the rest param.
+	analyze(t, a, list(sym("fn*"), vec(sym("x"), sym("&"), sym("r")),
+		list(sym("recur"), int64(1), sym("r"))))
+}
+
+func TestVarSpecial(t *testing.T) {
+	a, ns := newAnalyzer(t)
+	v := ns.Intern(sym("known-var"))
+	n := analyze(t, a, list(sym("var"), sym("known-var")))
+	if n.Op != ast.OpTheVar || n.Sub.(*ast.TheVarNode).Var != v {
+		t.Fatalf("var node: %+v", n)
+	}
+	// Oracle: "Unable to resolve var: no-such-var in this context".
+	err := analyzeErr(t, a, list(sym("var"), sym("no-such-var")))
+	if !strings.Contains(err.Error(), "unable to resolve var: no-such-var in this context") {
+		t.Errorf("var resolve error = %v", err)
+	}
+	analyzeErr(t, a, list(sym("var")))
+	analyzeErr(t, a, list(sym("var"), int64(1)))
+}
+
+func TestSetBangAnalysis(t *testing.T) {
+	a, ns := newAnalyzer(t)
+	ns.Intern(sym("target-var"))
+
+	n := analyze(t, a, list(sym("set!"), sym("target-var"), int64(2)))
+	sub := n.Sub.(*ast.SetBangNode)
+	if n.Op != ast.OpSetBang || sub.Target.Op != ast.OpVar || !sub.Target.IsAssignable {
+		t.Fatalf("set! node: %+v", sub)
+	}
+
+	// Locals are not assignable (oracle: "Cannot assign to non-mutable: q").
+	err := analyzeErr(t, a, list(sym("let*"), vec(sym("q"), int64(1)), list(sym("set!"), sym("q"), int64(2))))
+	if !strings.Contains(err.Error(), "assign to non-mutable: q") {
+		t.Errorf("set! local error = %v", err)
+	}
+	// Arbitrary expressions neither (oracle: "Invalid assignment target").
+	err = analyzeErr(t, a, list(sym("set!"), "notatarget", int64(3)))
+	if !strings.Contains(err.Error(), "invalid assignment target") {
+		t.Errorf("set! target error = %v", err)
+	}
+	analyzeErr(t, a, list(sym("set!"), sym("target-var")))
+}
+
+func TestDefDynamicMetaMarksVar(t *testing.T) {
+	a, ns := newAnalyzer(t)
+	dyn := sym("*dyn*").WithMeta(lang.NewMap(lang.KWDynamic, true)).(*lang.Symbol)
+	analyze(t, a, list(sym("def"), dyn, int64(1)))
+	v := ns.FindInternedVar(sym("*dyn*"))
+	// No exported dynamic-flag getter on lang.Var: prove it behaviorally —
+	// PushThreadBindings panics on non-dynamic vars.
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("^:dynamic var not marked dynamic: %v", r)
+			}
+		}()
+		lang.PushThreadBindings(lang.NewMap(v, int64(2)))
+		lang.PopThreadBindings()
+	}()
+}
+
+func TestBindingFormAnalysis(t *testing.T) {
+	a, ns := newAnalyzer(t)
+	ns.Intern(sym("*b*"))
+
+	n := analyze(t, a, list(sym("binding"), vec(sym("*b*"), int64(2)), sym("*b*")))
+	sub := n.Sub.(*ast.DynBindNode)
+	if n.Op != ast.OpDynBind || len(sub.Vars) != 1 || len(sub.Vals) != 1 || sub.Body == nil {
+		t.Fatalf("binding node: %+v", sub)
+	}
+	if sub.Vars[0].Op != ast.OpVar {
+		t.Errorf("binding var node = %v, want var", sub.Vars[0].Op)
+	}
+
+	// The binding name must resolve to a var — locals are ignored
+	// (Clojure's binding var-izes its names).
+	err := analyzeErr(t, a, list(sym("let*"), vec(sym("loc"), int64(1)),
+		list(sym("binding"), vec(sym("loc"), int64(2)), sym("loc"))))
+	if !strings.Contains(err.Error(), "unable to resolve symbol: loc") {
+		t.Errorf("binding local error = %v", err)
+	}
+
+	// recur cannot cross a binding form (oracle: "Cannot recur across
+	// try" — Clojure's binding expands to try/finally).
+	err = analyzeErr(t, a, list(sym("loop*"), vec(sym("x"), int64(1)),
+		list(sym("binding"), vec(sym("*b*"), int64(2)), list(sym("recur"), int64(2)))))
+	if !strings.Contains(err.Error(), "recur across try") {
+		t.Errorf("recur-across-binding error = %v", err)
+	}
+
+	// Shape errors.
+	analyzeErr(t, a, list(sym("binding")))
+	analyzeErr(t, a, list(sym("binding"), int64(1)))
+	analyzeErr(t, a, list(sym("binding"), vec(sym("*b*"))))
+	analyzeErr(t, a, list(sym("binding"), vec(int64(1), int64(2)), int64(3)))
+}
+
 func TestMacroexpand1HookIsUsed(t *testing.T) {
 	a, ns := newAnalyzer(t)
 	ns.Intern(sym("g"))
