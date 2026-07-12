@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  cljgo — a Clojure implementation hosted on Go (module github.com/muthuishere/cljgo, go 1.26).
+  AOT-emits plain Go source (the ClojureScript model with Go as the JS) plus a
+  tree-walk evaluator that IS the REPL and the macro engine.
+
+  Priorities (in order, owner-mandated):
+  1. Universal interop — any Go module importable with zero bindings; C via cgo + purego FFI.
+  2. Full REPL-driven development (live re-def, defmacro at prompt, nREPL later).
+  3. Faithful Clojure principles (persistent data, macros, seqs, vars).
+  4. High performance in BOTH modes — a feature, not an option; CI-benchmarked budgets.
+  5. cgo builds are first-class (CGO_ENABLED=1 supported, pure-Go default).
+
+  Authority chain: docs/adr/ (decisions) > design/00-architecture.md (contracts,
+  roadmap M0–M5) > design/01–07 (component internals). Read design/00 before any
+  architectural work. Runtime pkg/lang is vendored from Glojure (EPL headers kept)
+  and owned/reshaped freely.
+
+  PROCESS for every non-trivial change: (1) ADR in docs/adr/ if a new decision or
+  a reversal is involved; (2) openspec propose — proposal + design + spec deltas;
+  (3) apply via tasks with gates; (4) archive. Trivial fixes skip openspec, never
+  skip gates.
+
+  Gates before ANY commit: go build ./... && go vet ./... && gofmt -l clean &&
+  go test ./... green (refs/ is fenced). Conformance: every semantic test is a
+  conformance/tests/*.clj file with a frozen `;; expect:` verified against real
+  JVM Clojure 1.12.5 (the semantic oracle, authoring-time only); from M2 the same
+  files also run compiled (dual-harness — divergence is a release blocker).
+  Never commit binaries. Never add Co-authored-by to commits.
+
+rules:
+  proposal:
+    - State which ADR(s) the change relies on; write the ADR first if none covers it
+    - Include a Non-goals section
+    - Cite the design/ doc section that owns the touched contract
+  design:
+    - Verify claimed behavior against real Clojure (clojure CLI) or Go source, not priors
+    - Any cross-package contract change must name every consumer it touches
+  tasks:
+    - Every task ends with the build/vet/gofmt/test gates
+    - New semantics require conformance .clj files with oracle-verified expectations
