@@ -10,7 +10,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"os/signal"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -31,6 +35,17 @@ type Driver struct {
 	out            io.Writer // results and prompts
 	errOut         io.Writer // error reports
 	v1, v2, v3, ve *lang.Var
+
+	// interrupted is set by Interrupt (SIGINT or a frontend op) and
+	// consumed by Run's loop: the pending unfinished input is discarded.
+	interrupted atomic.Bool
+	// outMu serializes writes to out/errOut between Run's goroutine and
+	// Interrupt (which runs on a signal goroutine).
+	outMu sync.Mutex
+	// promptNS is the namespace name last shown in the prompt; Interrupt
+	// reads it (under outMu) because the session's *ns* binding is only
+	// visible on Run's goroutine.
+	promptNS string
 }
 
 // New returns a driver with a fresh evaluator. in may be nil when only
@@ -50,10 +65,18 @@ func (d *Driver) Evaluator() *eval.Evaluator { return d.ev }
 
 // Run is the interactive loop. Input is accumulated line by line; when
 // the buffer ends mid-form (reader.ErrIncomplete) more input is read
-// before anything is evaluated, so a form may span lines and one line
-// may hold many forms. Reader syntax errors and eval errors are printed
-// (with position when available) and the loop continues; only input
-// exhaustion or an I/O error ends it.
+// before the unfinished form is evaluated, so a form may span lines and
+// one line may hold many forms. Each form is evaluated and printed AS
+// IT COMPLETES: a syntax error later in the buffer never discards the
+// result (or error) of a form that already closed. Reader syntax errors
+// and eval errors are printed (with position when available) and the
+// loop continues; only input exhaustion or an I/O error ends it.
+//
+// Interrupts: Run listens for SIGINT for its whole lifetime. Ctrl-C
+// discards the pending unfinished input (the "  #_=> " continuation)
+// and redraws a fresh prompt; it NEVER exits the session — like JVM
+// Clojure's REPL under rlwrap (`clj`). The session ends on Ctrl-D
+// (EOF at the prompt), exactly as clojure.main does.
 func (d *Driver) Run() error {
 	// The session frame (design/03 §7b): *ns* and the result/error vars
 	// are thread-bound for the session's goroutine; in-ns and the per-eval
@@ -64,68 +87,143 @@ func (d *Driver) Run() error {
 	))
 	defer lang.PopThreadBindings()
 
+	// SIGINT → Interrupt for the duration of the session (terminal
+	// frontend). A future nREPL frontend calls Interrupt directly.
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
+	done := make(chan struct{})
+	defer func() { signal.Stop(sigCh); close(done) }()
+	go func() {
+		for {
+			select {
+			case <-sigCh:
+				d.Interrupt()
+			case <-done:
+				return
+			}
+		}
+	}()
+
 	sc := bufio.NewScanner(d.in)
 	sc.Buffer(make([]byte, 0, 64*1024), 1<<20)
-	var pending strings.Builder
+	pending := ""
 	for {
 		if d.Prompts {
-			if pending.Len() == 0 {
-				// The prompt names the CURRENT namespace (in-ns moves it).
-				fmt.Fprintf(d.out, "%s=> ", d.ev.CurrentNS().Name().Name())
-			} else {
-				fmt.Fprint(d.out, "  #_=> ")
-			}
+			d.printPrompt(pending == "")
 		}
 		if !sc.Scan() {
 			break
 		}
-		pending.WriteString(sc.Text())
-		pending.WriteString("\n")
-		if d.dispatch(pending.String(), false) {
-			pending.Reset()
+		if d.interrupted.Swap(false) {
+			pending = "" // Interrupt already redrew the prompt
 		}
+		pending += sc.Text() + "\n"
+		pending = d.dispatch(pending, false)
 	}
 	if err := sc.Err(); err != nil {
 		return err
 	}
+	if d.interrupted.Swap(false) {
+		pending = ""
+	}
 	// Input ended with an unfinished form: report it as the positioned
 	// reader error it is (atEOF forces ErrIncomplete to be an error).
-	if strings.TrimSpace(pending.String()) != "" {
-		d.dispatch(pending.String(), true)
+	if strings.TrimSpace(pending) != "" {
+		d.dispatch(pending, true)
 	}
 	if d.Prompts {
+		d.outMu.Lock()
 		fmt.Fprintln(d.out)
+		d.outMu.Unlock()
 	}
 	return nil
 }
 
-// dispatch reads every form in src and, if none is incomplete,
-// evaluates and prints them in order, returning true (buffer consumed).
-// If src ends mid-form and !atEOF it returns false so the caller reads
-// more input before evaluating anything. A syntax error consumes the
-// buffer: it is reported with its position and dispatch returns true.
-func (d *Driver) dispatch(src string, atEOF bool) (consumed bool) {
-	r := reader.New(strings.NewReader(src), reader.WithFilename("REPL"),
+// printPrompt writes the primary (current-namespace) or continuation
+// prompt, remembering the namespace name for Interrupt's redraw.
+func (d *Driver) printPrompt(primary bool) {
+	d.outMu.Lock()
+	defer d.outMu.Unlock()
+	if primary {
+		// The prompt names the CURRENT namespace (in-ns moves it).
+		d.promptNS = d.ev.CurrentNS().Name().Name()
+		fmt.Fprintf(d.out, "%s=> ", d.promptNS)
+	} else {
+		fmt.Fprint(d.out, "  #_=> ")
+	}
+}
+
+// Interrupt aborts the input continuation in progress: the pending
+// unfinished form is discarded and a fresh primary prompt is drawn.
+// The session itself keeps running — at an empty prompt an interrupt
+// is just a newline + new prompt. Safe to call from any goroutine
+// (Run's SIGINT listener, a future nREPL interrupt op).
+func (d *Driver) Interrupt() {
+	d.interrupted.Store(true)
+	d.outMu.Lock()
+	defer d.outMu.Unlock()
+	fmt.Fprintln(d.out)
+	if d.Prompts {
+		// promptNS, not CurrentNS(): the session's *ns* binding is only
+		// visible on Run's goroutine.
+		fmt.Fprintf(d.out, "%s=> ", d.promptNS)
+	}
+}
+
+// dispatch reads forms from src, evaluating and printing each one AS IT
+// COMPLETES, and returns the unconsumed rest of the buffer. If src ends
+// mid-form and !atEOF, the rest is that incomplete tail — the caller
+// appends more input to it; everything already evaluated is trimmed so
+// it can never run twice. A syntax error is reported with its position
+// and consumes the whole buffer (rest ""), but only AFTER the forms
+// completed before it have been evaluated and printed.
+func (d *Driver) dispatch(src string, atEOF bool) (rest string) {
+	cs := &countingScanner{rs: strings.NewReader(src)}
+	r := reader.New(cs, reader.WithFilename("REPL"),
 		reader.WithResolver(d.ev.ReaderResolver()))
-	var forms []any
+	consumed := 0
 	for {
 		form, err := r.ReadOne()
 		if errors.Is(err, reader.ErrEOF) {
-			break
+			return ""
 		}
 		if errors.Is(err, reader.ErrIncomplete) && !atEOF {
-			return false
+			return src[consumed:]
 		}
 		if err != nil {
 			d.reportError(err)
-			return true
+			return ""
 		}
-		forms = append(forms, form)
+		consumed = cs.off
+		d.evalAndPrint(form)
 	}
-	for _, f := range forms {
-		d.evalAndPrint(f)
+}
+
+// countingScanner tracks the byte offset consumed from the underlying
+// scanner so dispatch can trim evaluated forms off the pending buffer.
+// One rune of pushback suffices: the reader never Unreads twice in a
+// row (pkg/reader's scanner panics if it does).
+type countingScanner struct {
+	rs       io.RuneScanner
+	off      int
+	lastSize int
+}
+
+func (c *countingScanner) ReadRune() (r rune, size int, err error) {
+	r, size, err = c.rs.ReadRune()
+	if err == nil {
+		c.off += size
+		c.lastSize = size
 	}
-	return true
+	return r, size, err
+}
+
+func (c *countingScanner) UnreadRune() error {
+	err := c.rs.UnreadRune()
+	if err == nil {
+		c.off -= c.lastSize
+	}
+	return err
 }
 
 // evalAndPrint runs one top-level form through Analyze+Eval, set!s the
@@ -154,12 +252,17 @@ func (d *Driver) evalAndPrint(form any) {
 	d.v3.Set(d.v2.Deref())
 	d.v2.Set(d.v1.Deref())
 	d.v1.Set(res)
-	fmt.Fprintln(d.out, lang.PrintString(res))
+	s := lang.PrintString(res) // may panic — recovered above into *e
+	d.outMu.Lock()
+	fmt.Fprintln(d.out, s)
+	d.outMu.Unlock()
 }
 
 func (d *Driver) reportError(err error) {
 	// Reader and analyzer errors carry file:line:col in their message.
+	d.outMu.Lock()
 	fmt.Fprintf(d.errOut, "error: %v\n", err)
+	d.outMu.Unlock()
 }
 
 // EvalReader reads and evaluates every form from r (e.g. a .clj file),
