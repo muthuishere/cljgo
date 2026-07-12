@@ -1,7 +1,7 @@
 package reader
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 	"unicode/utf8"
 
@@ -70,7 +70,7 @@ func (r *Reader) readString(start Position) (any, error) {
 	for {
 		c, err := r.s.Read()
 		if err != nil {
-			return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: errors.New("EOF while reading string")}
+			return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w string", ErrIncomplete)}
 		}
 		if c == '"' {
 			return b.String(), nil
@@ -82,7 +82,7 @@ func (r *Reader) readString(start Position) (any, error) {
 		escPos := r.s.Pos() // position of the escape selector rune
 		c, err = r.s.Read()
 		if err != nil {
-			return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: errors.New("EOF while reading string")}
+			return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w string", ErrIncomplete)}
 		}
 		switch c {
 		case 't':
@@ -102,7 +102,7 @@ func (r *Reader) readString(start Position) (any, error) {
 		case 'u':
 			c, err = r.s.Read()
 			if err != nil {
-				return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: errors.New("EOF while reading string")}
+				return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w string", ErrIncomplete)}
 			}
 			if digitVal(c, 16) == -1 {
 				return nil, r.errAt(escPos, "Invalid unicode escape: \\u%c", c)
@@ -143,7 +143,7 @@ func (r *Reader) readString(start Position) (any, error) {
 func (r *Reader) readChar(start Position) (any, error) {
 	c, err := r.s.Read()
 	if err != nil {
-		return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: errors.New("EOF while reading character")}
+		return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w character", ErrIncomplete)}
 	}
 	token := r.readToken(c)
 	if utf8.RuneCountInString(token) == 1 {

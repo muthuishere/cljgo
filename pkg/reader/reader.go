@@ -252,7 +252,7 @@ func (r *Reader) readToken(first rune) string {
 func (r *Reader) readWrapped(start Position, sym string) (any, error) {
 	form, err := r.readForm()
 	if errors.Is(err, ErrEOF) {
-		return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: errors.New("EOF while reading")}
+		return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: ErrIncomplete}
 	}
 	if err != nil {
 		return nil, err
@@ -265,7 +265,7 @@ func (r *Reader) readWrapped(start Position, sym string) (any, error) {
 func (r *Reader) readDispatch(start Position) (form any, again bool, err error) {
 	c, err := r.s.Read()
 	if err != nil {
-		return nil, false, &Error{Pos: r.s.Pos(), Start: &start, Err: errors.New("EOF while reading dispatch character")}
+		return nil, false, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w dispatch character", ErrIncomplete)}
 	}
 	switch c {
 	case '{':
@@ -276,7 +276,7 @@ func (r *Reader) readDispatch(start Position) (form any, again bool, err error) 
 		// discarded form is read with full recursion.
 		if _, err := r.readForm(); err != nil {
 			if errors.Is(err, ErrEOF) {
-				return nil, false, &Error{Pos: r.s.Pos(), Start: &start, Err: errors.New("EOF while reading")}
+				return nil, false, &Error{Pos: r.s.Pos(), Start: &start, Err: ErrIncomplete}
 			}
 			return nil, false, err
 		}
@@ -302,7 +302,7 @@ func (r *Reader) readDelimited(what string, end rune, start Position) ([]any, er
 		return &Error{
 			Pos:   pos,
 			Start: &start,
-			Err:   fmt.Errorf("EOF while reading %s, expected %q to close it", what, string(end)),
+			Err:   fmt.Errorf("%w %s, expected %q to close it", ErrIncomplete, what, string(end)),
 		}
 	}
 	var forms []any
@@ -396,7 +396,7 @@ func (r *Reader) readMeta(start Position) (any, error) {
 	metaPos := r.s.Pos()
 	m, err := r.readForm()
 	if errors.Is(err, ErrEOF) {
-		return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: errors.New("EOF while reading metadata")}
+		return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w metadata", ErrIncomplete)}
 	}
 	if err != nil {
 		return nil, err
@@ -420,7 +420,7 @@ func (r *Reader) readMeta(start Position) (any, error) {
 
 	form, err := r.readForm()
 	if errors.Is(err, ErrEOF) {
-		return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: errors.New("EOF while reading metadata")}
+		return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w metadata", ErrIncomplete)}
 	}
 	if err != nil {
 		return nil, err
