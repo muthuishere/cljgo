@@ -88,3 +88,5 @@ error; wired as a structured diagnostic (W-band) per ADR 0015.
 ## Open Questions
 
 - Spike S1 outcome could overturn D1's struct hypothesis (then D4/D5 stand unchanged; only pkg/lang internals move).
+
+> RATIFIED (owner, 2026-07-12): constructors are `just`/`none` — clojure.core/some is untouchable per the precedence principle in CLAUDE.md.

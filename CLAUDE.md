@@ -52,3 +52,12 @@ All green, no exceptions. `refs/` is fenced with a stub go.mod — leave it.
 `pkg/repl` · `cmd/cljgo` · `core/` (core.clj, Clojure-in-Clojure) ·
 `conformance/` · `design/` · `docs/adr/` · `openspec/` · `spikes/` (frozen) ·
 `refs/` (gitignored clones).
+
+## The precedence principle (owner, 2026-07-12)
+
+**Clojure is first-class.** Everything we add (comptime, Result/Option, ffi,
+testing forms, diagnostics) exists to make it BETTER, never different: an
+addition may not shadow, rename, or change the semantics of anything in
+clojure.core or the reader. When a new feature's natural name collides with
+Clojure (e.g. `some`), the NEW feature renames (=> `just`/`none`), never
+Clojure. Ratified example: ADR 0014 constructors are `just`/`none`.
