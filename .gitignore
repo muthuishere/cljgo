@@ -16,3 +16,6 @@ gen/
 # compiled spike binaries (rebuild with go build)
 spikes/**/*.bin
 s3repl
+
+# local build artifact
+/cljgo

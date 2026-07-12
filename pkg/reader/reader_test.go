@@ -845,19 +845,14 @@ func TestErrorPositions(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Phase 1+ syntax is rejected with clear errors (not silently misread)
+// Phase 2+ syntax is rejected with clear errors (not silently misread)
+// (Phase 1 forms — ` ~ #' #() #"" ## #^ — are implemented and tested
+// in sqconformance_test.go / syntaxquote_test.go / dispatch_test.go.)
 
 func TestUnimplementedReaderMacros(t *testing.T) {
 	tests := []struct {
 		src, wantSub string
 	}{
-		{"`(x)", "syntax-quote"},
-		{"~x", "unquote"},
-		{"#'x", "not yet implemented"},
-		{"#(inc %)", "not yet implemented"},
-		{`#"a+b"`, "not yet implemented"},
-		{"##Inf", "not yet implemented"},
-		{"#^:legacy x", "not yet implemented"},
 		{"#?(:clj 1)", "not yet implemented"},
 		{"#::{:a 1}", "not yet implemented"},
 		{"#=(+ 1 2)", "not yet implemented"},

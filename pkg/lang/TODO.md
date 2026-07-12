@@ -24,3 +24,7 @@ design risk):
 
 Related (also deferred, <1 day per S4): Clojure-shaped
 `conj!/assoc!/pop!` adapter over the existing elvish vector transients.
+
+## Printer defects (found M1-A, 2026-07-12)
+- EmptyList prints as `(nil)` via the ISeq branch in strconv.go — should print `()`.
+- Inf/NaN floats print as `Infinity`/`NaN` — Clojure pr-str prints `##Inf` `##-Inf` `##NaN`.

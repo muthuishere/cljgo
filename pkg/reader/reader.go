@@ -38,6 +38,18 @@ type Resolver interface {
 type Reader struct {
 	s        *scanner
 	resolver Resolver
+
+	// nextID supplies gensym ids (auto-gensym x#, #() params); the
+	// default is the package-global atomic counter (NextID).
+	nextID func() int64
+	// gensymEnv maps x# names to minted symbols; non-nil only while
+	// expanding a syntax-quote, fresh per ` (design/01-reader.md §2).
+	gensymEnv map[string]*lang.Symbol
+	// fnArgs maps %-arg numbers (%& = -1) to param symbols; non-nil
+	// only inside #().
+	fnArgs map[int]*lang.Symbol
+	// sqDepth tracks syntax-quote nesting for the depth limit.
+	sqDepth int
 }
 
 // Option configures a Reader.
@@ -50,18 +62,24 @@ func WithFilename(file string) Option {
 }
 
 // WithResolver injects the namespace resolver used for auto-resolved
-// (::) keywords.
+// (::) keywords and syntax-quote symbol resolution.
 func WithResolver(res Resolver) Option {
 	return func(r *Reader) { r.resolver = res }
 }
 
 // New creates a Reader over rs.
 func New(rs io.RuneScanner, opts ...Option) *Reader {
-	r := &Reader{s: newScanner(rs, "NO_SOURCE_FILE")}
+	r := &Reader{s: newScanner(rs, "NO_SOURCE_FILE"), nextID: NextID}
 	for _, o := range opts {
 		o(r)
 	}
 	return r
+}
+
+// ReadString reads a single form from src (convenience wrapper used
+// by tests, the REPL and the conformance harness).
+func ReadString(src string, opts ...Option) (any, error) {
+	return New(strings.NewReader(src), opts...).ReadOne()
 }
 
 // ReadOne reads and returns the next form. It returns ErrEOF when the
@@ -210,9 +228,11 @@ func (r *Reader) readForm() (any, error) {
 				continue
 			}
 		case c == '`':
-			return nil, r.errAt(start, "syntax-quote (`) is not yet implemented (reader Phase 1)")
+			form, err = r.readSyntaxQuote(start)
 		case c == '~':
-			return nil, r.errAt(start, "unquote (~) is not yet implemented (reader Phase 1)")
+			form, err = r.readUnquote(start)
+		case c == '%':
+			form, err = r.readArg(start)
 		case isDigit(c):
 			r.s.Unread()
 			form, err = r.readNumber(start, "")
@@ -287,8 +307,26 @@ func (r *Reader) readDispatch(start Position) (form any, again bool, err error) 
 		return nil, true, nil
 	case '<':
 		return nil, false, r.errAt(start, "Unreadable form")
-	case '\'', '"', '(', '^', '?', ':', '#', '=':
-		return nil, false, r.errAt(start, "#%c reader macro is not yet implemented (reader Phase 1+)", c)
+	case '\'':
+		// #'x => (var x). CLI check: (read-string "#'x") => (var x).
+		f, err := r.readWrapped(start, "var")
+		return f, false, err
+	case '(':
+		f, err := r.readFnLiteral(start)
+		return f, false, err
+	case '"':
+		f, err := r.readRegex(start)
+		return f, false, err
+	case '^':
+		// #^ legacy metadata, alias of ^. CLI check:
+		// (meta (read-string "#^:private [a]")) => {:private true}.
+		f, err := r.readMeta(start)
+		return f, false, err
+	case '#':
+		f, err := r.readSymbolicValue(start)
+		return f, false, err
+	case '?', ':', '=':
+		return nil, false, r.errAt(start, "#%c reader macro is not yet implemented (reader Phase 2)", c)
 	default:
 		return nil, false, r.errAt(start, "No dispatch macro for: %c", c)
 	}
