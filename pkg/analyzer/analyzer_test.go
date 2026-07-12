@@ -495,7 +495,7 @@ func TestMacroexpand1HookIsUsed(t *testing.T) {
 	a, ns := newAnalyzer(t)
 	ns.Intern(sym("g"))
 	// A hook that rewrites (my-macro x) → (g x); everything else unchanged.
-	a.Macroexpand1 = func(form any) (any, error) {
+	a.Macroexpand1 = func(form any, locals map[string]*ast.BindingNode) (any, error) {
 		seq, ok := form.(lang.ISeq)
 		if !ok {
 			return form, nil

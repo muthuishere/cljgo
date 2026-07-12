@@ -27,17 +27,28 @@ func (n *nativeFn) ApplyTo(args lang.ISeq) any { return n.Invoke(lang.ToSlice(ar
 func (n *nativeFn) String() string             { return "#object[" + n.nm + "]" }
 
 // internBuiltins pre-interns the native IFns into clojure.core: the v0
-// set (+ - * / = < > pr-str println; design/03 §8) plus the M1 namespace
-// ops (in-ns alias refer) and the REPL affordance dynamic vars
-// (*1 *2 *3 *e; design/03 §7b). Namespaces made with `New` refer core's
+// set (+ - * / = < > pr-str println; design/03 §8), the M1 namespace
+// ops (in-ns alias refer), the REPL affordance dynamic vars
+// (*1 *2 *3 *e; design/03 §7b), and the v2 seq/coll primitives that
+// syntax-quote expansions and core.clj's macros consume (list, cons,
+// first, next, rest, second, seq, concat, apply, vector, hash-map,
+// hash-set, with-meta, meta, seq?, string?, not) plus macroexpand-1 /
+// macroexpand (design/03 §4). Namespaces made with `New` refer core's
 // publics, as Clojure's `user` does; a bare in-ns namespace starts empty
 // and reaches core via qualified names or (clojure.core/refer ...).
 // Arithmetic goes through lang's numeric tower (int64 fast path, overflow
 // checked); = is lang.Equiv.
 func (e *Evaluator) internBuiltins() {
-	def := func(name string, fn func(args ...any) any) {
+	def := func(name string, fn func(args ...any) any) *lang.Var {
 		v := lang.NSCore.Intern(lang.NewSymbol(name))
 		v.BindRoot(&nativeFn{nm: name, fn: fn})
+		return v
+	}
+	// defPrivate interns a core-internal helper (:private true — skipped
+	// by refer, invisible to user code by unqualified name).
+	defPrivate := func(name string, fn func(args ...any) any) {
+		v := def(name, fn)
+		v.SetMeta(v.Meta().Assoc(lang.KWPrivate, true).(lang.IPersistentMap))
 	}
 
 	def("+", func(args ...any) any {
@@ -121,6 +132,139 @@ func (e *Evaluator) internBuiltins() {
 		return nil
 	})
 
+	// --- v2 seq/coll primitives (macro fuel: syntax-quote expands to
+	// clojure.core/{list,concat,seq,apply,vector,hash-map,hash-set,
+	// with-meta}, and core.clj's macro bodies use the rest). Eager and
+	// minimal for M1; the lazy seq library is M5.
+
+	def("list", func(args ...any) any {
+		return lang.NewList(args...)
+	})
+	def("cons", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: cons", len(args)))
+		}
+		return lang.NewCons(args[0], args[1])
+	})
+	def("first", func(args ...any) any {
+		return lang.First(oneArg("first", args))
+	})
+	def("next", func(args ...any) any {
+		return lang.Next(oneArg("next", args))
+	})
+	def("rest", func(args ...any) any {
+		return lang.Rest(oneArg("rest", args))
+	})
+	def("second", func(args ...any) any {
+		return lang.First(lang.Next(oneArg("second", args)))
+	})
+	def("seq", func(args ...any) any {
+		return lang.Seq(oneArg("seq", args))
+	})
+	// concat is EAGER in M1 (real Clojure's is lazy); fine for macro
+	// expansion fuel, revisit with the seq library (M5).
+	def("concat", func(args ...any) any {
+		var items []any
+		for _, a := range args {
+			for s := lang.Seq(a); s != nil; s = s.Next() {
+				items = append(items, s.First())
+			}
+		}
+		return lang.NewList(items...)
+	})
+	def("apply", func(args ...any) any {
+		if len(args) < 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: apply", len(args)))
+		}
+		spread := make([]any, 0, len(args))
+		spread = append(spread, args[1:len(args)-1]...)
+		for s := lang.Seq(args[len(args)-1]); s != nil; s = s.Next() {
+			spread = append(spread, s.First())
+		}
+		return lang.Apply(args[0], spread)
+	})
+	def("vector", func(args ...any) any {
+		return lang.NewVector(args...)
+	})
+	def("hash-map", func(args ...any) any {
+		return lang.NewMap(args...)
+	})
+	def("hash-set", func(args ...any) any {
+		return lang.NewSet(args...)
+	})
+	def("with-meta", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: with-meta", len(args)))
+		}
+		var m lang.IPersistentMap
+		if args[1] != nil {
+			mm, ok := args[1].(lang.IPersistentMap)
+			if !ok {
+				panic(fmt.Errorf("with-meta expects a map, got: %s", lang.PrintString(args[1])))
+			}
+			m = mm
+		}
+		v, err := lang.WithMeta(args[0], m)
+		if err != nil {
+			panic(err)
+		}
+		return v
+	})
+	def("meta", func(args ...any) any {
+		if im, ok := oneArg("meta", args).(lang.IMeta); ok {
+			if m := im.Meta(); m != nil {
+				return m
+			}
+		}
+		return nil
+	})
+	def("seq?", func(args ...any) any {
+		_, ok := oneArg("seq?", args).(lang.ISeq)
+		return ok
+	})
+	def("string?", func(args ...any) any {
+		_, ok := oneArg("string?", args).(string)
+		return ok
+	})
+	def("not", func(args ...any) any {
+		return !lang.IsTruthy(oneArg("not", args))
+	})
+
+	// macroexpand-1 / macroexpand expose the compiler's expander
+	// (design/03 §4) — same code path the analyzer uses, &env = nil.
+	def("macroexpand-1", func(args ...any) any {
+		res, err := e.macroexpand1(oneArg("macroexpand-1", args), nil)
+		if err != nil {
+			panic(err)
+		}
+		return res
+	})
+	def("macroexpand", func(args ...any) any {
+		res, err := e.macroexpand(oneArg("macroexpand", args))
+		if err != nil {
+			panic(err)
+		}
+		return res
+	})
+
+	// -set-macro! backs defmacro's expansion: flip the var's :macro flag
+	// (design/03 §4 setMacro; JVM spells it (. (var name) (setMacro)) —
+	// host interop is v3, so M1 keeps a private core hook).
+	defPrivate("-set-macro!", func(args ...any) any {
+		v, ok := oneArg("-set-macro!", args).(*lang.Var)
+		if !ok {
+			panic(fmt.Errorf("-set-macro! expects a var, got: %s", lang.PrintString(args[0])))
+		}
+		v.SetMacro()
+		return v
+	})
+	// -illegal-argument backs core.clj's expansion-time errors (cond's
+	// odd-clause check) until `throw` lands in v3.
+	defPrivate("-illegal-argument", func(args ...any) any {
+		msg, _ := oneArg("-illegal-argument", args).(string)
+		panic(lang.NewIllegalArgumentError(msg))
+	})
+
 	// in-ns: create-if-absent and switch *ns* (design/03 §7a). Under a
 	// bound *ns* (REPL session, file load) this sets the thread binding,
 	// exactly Clojure's in-ns; without one it rebinds the root (Clojure
@@ -170,6 +314,14 @@ func (e *Evaluator) internBuiltins() {
 	for _, name := range []string{"*1", "*2", "*3", "*e"} {
 		lang.InternVarReplaceRoot(lang.NSCore, lang.NewSymbol(name), nil).SetDynamic()
 	}
+}
+
+// oneArg asserts a 1-arg builtin's arity and returns the argument.
+func oneArg(op string, args []any) any {
+	if len(args) != 1 {
+		panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), op))
+	}
+	return args[0]
 }
 
 // symbolArg extracts the single symbol argument of a namespace op.

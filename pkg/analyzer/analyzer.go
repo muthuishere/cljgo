@@ -8,10 +8,10 @@
 //
 // M1 scope: literals, collection literals, symbol resolution
 // (locals → vars), the specials quote / if / do / def / let* / fn* /
-// loop* / recur / var / set! / binding, plus invoke. Macros, letfn*,
-// try/throw and host interop are later phases. (`binding` is a special
-// here until macros land in v2 — in Clojure it is a core macro over
-// push/popThreadBindings; the semantics match.)
+// loop* / recur / var / set! / binding, plus macroexpansion (v2, §4)
+// and invoke. letfn*, try/throw and host interop are later phases.
+// (`binding` is a special here until it can move to core as a macro
+// over push/popThreadBindings; the semantics match.)
 package analyzer
 
 import (
@@ -73,9 +73,13 @@ func (e Env) withContext(c Ctx) Env {
 // Analyzer analyzes forms. All fields are injection points.
 type Analyzer struct {
 	// Macroexpand1 expands a form by one macro step, returning the form
-	// unchanged when it is not a macro call. nil means no macro support
-	// (v0): every seq is a special form or an invoke.
-	Macroexpand1 func(form any) (any, error)
+	// unchanged (identical value) when it is not a macro call. locals is
+	// the analysis-time lexical environment at the call site: a local
+	// shadowing a macro name suppresses expansion (Compiler.isMacro),
+	// and the expander derives the macro's hidden &env argument from it
+	// (design/03 §4). nil means no macro support (v0): every seq is a
+	// special form or an invoke.
+	Macroexpand1 func(form any, locals map[string]*ast.BindingNode) (any, error)
 
 	// ResolveVar resolves a non-local symbol to a Var. The returned error
 	// is the resolution failure message ("Unable to resolve symbol...",
@@ -184,39 +188,63 @@ func (a *Analyzer) analyzeSet(set lang.IPersistentSet, env Env) (*ast.Node, erro
 	return &ast.Node{Op: ast.OpSet, Form: set, Sub: &ast.SetNode{Items: items}}, nil
 }
 
+// maxMacroExpansions bounds the macroexpansion loop in analyzeSeq so a
+// self-expanding macro ((defmacro m [] '(m))) is a positioned error, not
+// a stack overflow. JVM Clojure has no limit; the bound is deliberate.
+const maxMacroExpansions = 1000
+
 // analyzeSeq is Compiler.java's analyzeSeq: specials first, then
-// macroexpand-1 (re-analyzing if the form changed), else invoke.
+// macroexpand-1 (re-analyzing if the form changed), else invoke. The
+// fixed-point loop of design/03 §4 is explicit here: while an expansion
+// yields another non-empty seq the loop continues (checking specials
+// again each round, so intermediate expansions that produce specials
+// stop expanding); a non-seq expansion re-enters analyzeForm.
 func (a *Analyzer) analyzeSeq(seq lang.ISeq, env Env) (*ast.Node, error) {
 	if lang.Seq(seq) == nil {
 		// The empty list is self-evaluating.
 		return &ast.Node{Op: ast.OpConst, Form: seq, Sub: &ast.ConstNode{Value: seq}, IsLiteral: true}, nil
 	}
 
-	op := seq.First()
-	if sym, ok := op.(*lang.Symbol); ok && !sym.HasNamespace() {
-		// Specials are checked before locals and macros: they cannot be
-		// shadowed (Compiler.java analyzeSeq).
-		if parse, isSpecial := a.specialParser(sym.Name()); isSpecial {
-			return parse(seq, env)
+	form := seq
+	for i := 0; i < maxMacroExpansions; i++ {
+		if sym, ok := form.First().(*lang.Symbol); ok && !sym.HasNamespace() {
+			// Specials are checked before locals and macros: they cannot
+			// be shadowed (Compiler.java analyzeSeq).
+			if parse, isSpecial := a.specialParser(sym.Name()); isSpecial {
+				return parse(form, env)
+			}
 		}
-	}
 
-	if a.Macroexpand1 != nil {
-		expanded, err := a.Macroexpand1(seq)
+		if a.Macroexpand1 == nil {
+			return a.parseInvoke(form, env)
+		}
+		expanded, err := a.Macroexpand1(form, env.Locals)
 		if err != nil {
-			return nil, a.errPos(seq, err)
+			return nil, a.errPos(form, err)
 		}
-		if expanded != seq {
-			// The form changed: re-enter analyze (the fixed-point loop,
-			// design/03 §4).
-			return a.analyzeForm(expanded, env)
+		if expanded == any(form) {
+			return a.parseInvoke(form, env)
 		}
+		if eseq, ok := expanded.(lang.ISeq); ok && lang.Seq(eseq) != nil {
+			form = eseq // expanded to another call form: keep expanding
+			continue
+		}
+		// Expanded to a non-seq (or empty seq): re-enter analyze.
+		return a.analyzeForm(expanded, env)
 	}
-
-	return a.parseInvoke(seq, env)
+	return nil, a.errf(seq, "too many macroexpansions (limit %d) expanding: %s", maxMacroExpansions, lang.PrintString(seq.First()))
 }
 
 type specialParserFn func(seq lang.ISeq, env Env) (*ast.Node, error)
+
+// IsSpecial reports whether name names a special form (Compiler.java's
+// specials map). Specials are never macros: the runtime's macroexpand1
+// consults this before resolving the operator to a var (design/03 §4).
+func IsSpecial(name string) bool {
+	var probe Analyzer
+	_, ok := probe.specialParser(name)
+	return ok
+}
 
 // specialParser returns the parser for a v0 special form name.
 func (a *Analyzer) specialParser(name string) (specialParserFn, bool) {

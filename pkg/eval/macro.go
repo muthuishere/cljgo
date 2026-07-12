@@ -1,0 +1,235 @@
+package eval
+
+// Macroexpansion (eval v2, design/03 §4): macroexpand1 is the analyzer's
+// injected hook; the bootstrap defmacro is a hand-built macro fn; the
+// embedded core/core.clj defines the user-facing macros on top.
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/muthuishere/cljgo/core"
+	"github.com/muthuishere/cljgo/pkg/analyzer"
+	"github.com/muthuishere/cljgo/pkg/ast"
+	"github.com/muthuishere/cljgo/pkg/lang"
+	"github.com/muthuishere/cljgo/pkg/reader"
+)
+
+var (
+	symDo           = lang.NewSymbol("do")
+	symDef          = lang.NewSymbol("def")
+	symFnStar       = lang.NewSymbol("fn*")
+	symVar          = lang.NewSymbol("var")
+	symAmpForm      = lang.NewSymbol("&form")
+	symAmpEnv       = lang.NewSymbol("&env")
+	symSetMacroBang = lang.NewSymbol("clojure.core/-set-macro!")
+)
+
+// macroexpand1 expands form by one macro step, exactly Compiler.java's
+// macroexpand1 (design/03 §4): non-seqs, specials, locals-shadowed
+// operators, and operators that do not resolve to a :macro var pass
+// through unchanged (the identical value — the analyzer loops on
+// identity). A macro var's fn is invoked NOW, at analysis time, with
+// &form (the whole call form) and &env (a map keyed by the local
+// symbols in scope, nil when none) prepended to the call's arguments.
+func (e *Evaluator) macroexpand1(form any, locals map[string]*ast.BindingNode) (any, error) {
+	seq, ok := form.(lang.ISeq)
+	if !ok || lang.Seq(seq) == nil {
+		return form, nil
+	}
+	op, ok := seq.First().(*lang.Symbol)
+	if !ok {
+		return form, nil
+	}
+	if !op.HasNamespace() {
+		if analyzer.IsSpecial(op.Name()) {
+			return form, nil // specials are not macros
+		}
+		if _, shadowed := locals[op.Name()]; shadowed {
+			return form, nil // a local shadows the macro name
+		}
+	}
+	v, err := e.resolveVar(op)
+	if err != nil || !v.IsMacro() {
+		// Unresolvable operators are NOT an expansion error: the form is
+		// simply not a macro call (parseInvoke reports resolution errors
+		// with position).
+		return form, nil
+	}
+
+	// (macrofn &form &env args...) — the two hidden leading args, per
+	// Compiler.java l.7583.
+	rest := lang.ToSlice(seq.Next())
+	margs := make([]any, 0, 2+len(rest))
+	margs = append(margs, form, localsEnvMap(locals))
+	margs = append(margs, rest...)
+
+	// The macro fn runs under the IFn panic convention; expansion happens
+	// during analysis (outside evalTop's recover), so recover here.
+	var expanded any
+	err = func() (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				rerr, ok := r.(error)
+				if !ok {
+					rerr = fmt.Errorf("%v", r)
+				}
+				err = rerr
+			}
+		}()
+		expanded = lang.Apply(v.Deref(), margs)
+		return nil
+	}()
+	if err != nil {
+		return nil, fmt.Errorf("macroexpanding %s: %w", op.Name(), err)
+	}
+	return expanded, nil
+}
+
+// localsEnvMap builds the &env value from the analysis-time locals: a
+// map keyed by the local symbols (values nil — we carry no per-binding
+// info yet), or nil when no locals are in scope, as on JVM Clojure.
+func localsEnvMap(locals map[string]*ast.BindingNode) any {
+	if len(locals) == 0 {
+		return nil
+	}
+	kvs := make([]any, 0, 2*len(locals))
+	for name := range locals {
+		kvs = append(kvs, lang.NewSymbol(name), nil)
+	}
+	return lang.NewMap(kvs...)
+}
+
+// macroexpand is user-facing (macroexpand form): repeat macroexpand1 on
+// the returned form until the operator is no longer a macro. Subforms
+// are not expanded, as on JVM Clojure. Called with no locals in scope
+// (&env = nil), like the clojure.core fns it backs.
+func (e *Evaluator) macroexpand(form any) (any, error) {
+	for i := 0; i < maxUserMacroExpansions; i++ {
+		expanded, err := e.macroexpand1(form, nil)
+		if err != nil {
+			return nil, err
+		}
+		if expanded == form {
+			return form, nil
+		}
+		form = expanded
+	}
+	return nil, fmt.Errorf("too many macroexpansions (limit %d)", maxUserMacroExpansions)
+}
+
+// maxUserMacroExpansions bounds the user-facing macroexpand loop (the
+// analyzer's own loop has its own limit).
+const maxUserMacroExpansions = 1000
+
+// installDefmacro interns the bootstrap defmacro (design/03 §4): a
+// hand-built macro fn — a Var flagged :macro whose value rewrites
+//
+//	(defmacro name doc? ([params] body...)+)   ; or single [params] body...
+//
+// into
+//
+//	(do (def name doc? (fn* name ([&form &env params...] body...)+))
+//	    (clojure.core/-set-macro! (var name))
+//	    (var name))
+//
+// JVM-style: the macro fn takes &form/&env as explicit leading params
+// on every arity (clojure/core.clj's defmacro does the same rewrite),
+// and the expansion sets the :macro flag on the var at eval time, so a
+// defmacro typed at the REPL is a macro for the very next form
+// (design/03 §7a). -set-macro! is the M1 stand-in for JVM Clojure's
+// (. (var name) (setMacro)) — host interop lands in v3.
+func (e *Evaluator) installDefmacro() {
+	v := lang.NSCore.Intern(lang.NewSymbol("defmacro"))
+	v.BindRoot(&nativeFn{nm: "defmacro", fn: defmacroExpand})
+	v.SetMacro()
+}
+
+// defmacroExpand is defmacro's expander. args = [&form &env name doc?
+// fdecl...]; the two hidden args are ignored.
+func defmacroExpand(args ...any) any {
+	if len(args) < 4 {
+		panic(fmt.Errorf("wrong number of args (%d) passed to: defmacro", len(args)-2))
+	}
+	name, ok := args[2].(*lang.Symbol)
+	if !ok {
+		panic(fmt.Errorf("first argument to defmacro must be a symbol, got: %s", lang.PrintString(args[2])))
+	}
+	fdecl := args[3:]
+
+	var doc any
+	if s, isStr := fdecl[0].(string); isStr && len(fdecl) > 1 {
+		doc = s
+		fdecl = fdecl[1:]
+	}
+
+	// Normalize the single-arity shorthand [params] body... to one
+	// ([params] body...) method; otherwise every element is a method.
+	var methods []any
+	if _, isVec := fdecl[0].(lang.IPersistentVector); isVec {
+		methods = []any{lang.NewList(fdecl...)}
+	} else {
+		methods = fdecl
+	}
+
+	fnParts := []any{symFnStar, name}
+	for _, m := range methods {
+		mseq, isSeq := m.(lang.ISeq)
+		if !isSeq {
+			panic(fmt.Errorf("invalid defmacro method form: %s", lang.PrintString(m)))
+		}
+		parts := lang.ToSlice(mseq)
+		pvec, isVec := parts[0].(lang.IPersistentVector)
+		if !isVec {
+			panic(fmt.Errorf("defmacro method requires a parameter vector, got: %s", lang.PrintString(parts[0])))
+		}
+		// Prepend the hidden params. A trailing "& rest" pair keeps its
+		// invariant (& stays second-to-last).
+		params := append([]any{symAmpForm, symAmpEnv}, lang.ToSlice(pvec)...)
+		method := append([]any{lang.NewVector(params...)}, parts[1:]...)
+		fnParts = append(fnParts, lang.NewList(method...))
+	}
+
+	defParts := []any{symDef, name}
+	if doc != nil {
+		defParts = append(defParts, doc)
+	}
+	defParts = append(defParts, lang.NewList(fnParts...))
+
+	theVar := lang.NewList(symVar, name)
+	return lang.NewList(symDo,
+		lang.NewList(defParts...),
+		lang.NewList(symSetMacroBang, theVar),
+		theVar)
+}
+
+// loadCore reads and evaluates the embedded core/core.clj into the
+// clojure.core namespace, form by form, exactly as a file load
+// (design/03 §7a): *ns* and *file* are bound for the duration. Boot is
+// programmer-owned input — errors panic. Measured cost of the whole
+// eval.New() boot (builtins + defmacro + core.clj): ~5ms on darwin/arm64
+// (TestBootUnderBudget logs it; budget 100ms, design/00 §6 M1).
+func (e *Evaluator) loadCore() {
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, lang.NSCore,
+		lang.VarFile, "core.clj",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.Source),
+		reader.WithFilename("core.clj"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading core.clj: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating core.clj: %w", err))
+		}
+	}
+}

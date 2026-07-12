@@ -31,4 +31,6 @@ go test ./conformance/
 
 `m0_demo_test.go` additionally builds the real `cljgo` binary and pipes
 the M0 exit demo (design/00 §6) through `cljgo repl`, asserting the
-factorial result and live re-def end to end.
+factorial result and live re-def end to end. `m1_demo_test.go` does the
+same for the M1 exit demo: a `defmacro` typed at the prompt working on
+the next form, plus `defn`/`when`/`->` from the embedded core.clj.

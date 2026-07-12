@@ -19,23 +19,28 @@ import (
 
 // Evaluator wires analyzer ↔ eval (design/03 §4, §9.2). The current
 // namespace is the *ns* dynamic var (lang.VarCurrentNS), read per form —
-// in-ns rebinds it (design/03 §7a). No macros yet (Macroexpand1 stays
-// nil — every seq is a special or an invoke).
+// in-ns rebinds it (design/03 §7a). Macroexpand1 is this evaluator's
+// macroexpand1 (macro.go): the analyzer invokes macro fns through the
+// evaluator at analysis time.
 type Evaluator struct {
 	analyzer *analyzer.Analyzer
 }
 
-// New returns an evaluator with the builtins interned in clojure.core,
-// the `user` namespace (created if absent) referring core's publics, and
-// *ns* rooted at user.
+// New returns an evaluator with the boot sequence of design/00 §6 (M1)
+// done: the Go builtins and the bootstrap defmacro interned in
+// clojure.core, the embedded core/core.clj loaded into clojure.core,
+// the `user` namespace (created if absent) referring core's publics,
+// and *ns* rooted at user. The whole boot is ~5ms (TestBootUnderBudget).
 func New() *Evaluator {
 	e := &Evaluator{}
 	e.analyzer = &analyzer.Analyzer{
-		Macroexpand1: nil, // no macro support until v2
+		Macroexpand1: e.macroexpand1,
 		ResolveVar:   e.resolveVar,
 		InternVar:    e.internVar,
 	}
 	e.internBuiltins()
+	e.installDefmacro()
+	e.loadCore()
 	user := lang.FindOrCreateNamespace(lang.NewSymbol("user"))
 	referAll(user, lang.NSCore)
 	lang.VarCurrentNS.BindRoot(user)

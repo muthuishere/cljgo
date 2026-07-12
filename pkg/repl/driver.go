@@ -105,7 +105,8 @@ func (d *Driver) Run() error {
 // more input before evaluating anything. A syntax error consumes the
 // buffer: it is reported with its position and dispatch returns true.
 func (d *Driver) dispatch(src string, atEOF bool) (consumed bool) {
-	r := reader.New(strings.NewReader(src), reader.WithFilename("REPL"))
+	r := reader.New(strings.NewReader(src), reader.WithFilename("REPL"),
+		reader.WithResolver(d.ev.ReaderResolver()))
 	var forms []any
 	for {
 		form, err := r.ReadOne()
@@ -174,7 +175,8 @@ func (d *Driver) EvalReader(r io.Reader, filename string) (any, error) {
 	))
 	defer lang.PopThreadBindings()
 
-	rd := reader.New(bufio.NewReader(r), reader.WithFilename(filename))
+	rd := reader.New(bufio.NewReader(r), reader.WithFilename(filename),
+		reader.WithResolver(d.ev.ReaderResolver()))
 	var last any
 	for {
 		form, err := rd.ReadOne()
