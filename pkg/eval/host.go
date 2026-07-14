@@ -3,6 +3,7 @@ package eval
 import (
 	"fmt"
 	"math"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -81,6 +82,33 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 		// reflect through CallGoMethod — the AOT emitter reaches the very
 		// same function via rt.CallMethod, guaranteeing byte-identity.
 		return CallGoMethod(recv, m.Method, m.Throw, argVals), nil
+
+	case ast.OpHostField:
+		f := n.Sub.(*ast.HostFieldNode)
+		recv, err := e.Eval(f.Recv, s)
+		if err != nil {
+			return nil, err
+		}
+		// Reflective in both modes (v0); the AOT emitter reaches the same
+		// GoFieldGet via rt.FieldGet.
+		return GoFieldGet(recv, f.Field), nil
+
+	case ast.OpHostNew:
+		nw := n.Sub.(*ast.HostNewNode)
+		if nw.Zero {
+			return NewGoStruct(nw.Pkg, nw.Type), nil
+		}
+		var fields any
+		if nw.Fields != nil {
+			v, err := e.Eval(nw.Fields, s)
+			if err != nil {
+				return nil, err
+			}
+			fields = v
+		}
+		// Reflective in both modes (v0); the AOT emitter reaches the same
+		// MakeGoStruct via rt.MakeStruct.
+		return MakeGoStruct(nw.Pkg, nw.Type, fields), nil
 
 	default:
 		return nil, fmt.Errorf("evalHost: unexpected op %v", n.Op)
@@ -229,7 +257,35 @@ func buildHostRegistry() map[string]map[string]reflect.Value {
 		"fmt": {
 			"Sprintf": reflect.ValueOf(fmt.Sprintf),
 		},
+		"net/url": {
+			"Parse": reflect.ValueOf(url.Parse),
+		},
 	}
+}
+
+// hostTypeRegistry maps import-path → type-name → reflect.Type, built once
+// at package load — the type side of the seed set (ADR 0010, design/05 §1).
+// It backs struct constructors (`(url/URL. {...})`) and `(go/new url/URL)`:
+// both the interpreter and the AOT-emitted binary reach it through the SAME
+// shared MakeGoStruct / NewGoStruct, so reflection resolves the identical
+// reflect.Type on both paths and the results are byte-identical.
+var hostTypeRegistry = buildHostTypeRegistry()
+
+func buildHostTypeRegistry() map[string]map[string]reflect.Type {
+	return map[string]map[string]reflect.Type{
+		"net/url": {
+			"URL": reflect.TypeOf(url.URL{}),
+		},
+	}
+}
+
+func lookupHostType(pkg, typeName string) (reflect.Type, bool) {
+	if m, ok := hostTypeRegistry[pkg]; ok {
+		if t, ok := m[typeName]; ok {
+			return t, true
+		}
+	}
+	return nil, false
 }
 
 func lookupHostMember(pkg, member string) (reflect.Value, bool) {
@@ -264,6 +320,154 @@ func CallGoMethod(recv any, method string, throw bool, args []any) any {
 		panic(fmt.Errorf("no method %s on %s", method, rv.Type()))
 	}
 	return callHostFn("."+method, mv, args, throw)
+}
+
+// GoFieldGet reads an exported struct field by name via reflection and
+// normalizes the result exactly as a method/fn result (design/05 §1, ADR
+// 0010). It is the SINGLE implementation shared by both paths: the
+// interpreter calls it for OpHostField, and AOT-emitted code reaches it
+// through rt.FieldGet — so `(.-Field recv)` is byte-identical in REPL and
+// binary. Pointers are auto-dereferenced (Go's field selection does the
+// same). Panics on nil, a non-struct receiver, or an unknown field —
+// recovered at the IFn/recover boundary like every other interop failure.
+func GoFieldGet(recv any, field string) any {
+	if recv == nil {
+		panic(fmt.Errorf("cannot read field .-%s on nil", field))
+	}
+	rv := reflect.ValueOf(recv)
+	for rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			panic(fmt.Errorf("cannot read field .-%s on nil", field))
+		}
+		rv = rv.Elem()
+	}
+	if rv.Kind() != reflect.Struct {
+		panic(fmt.Errorf("cannot read field .-%s on %s", field, reflect.TypeOf(recv)))
+	}
+	fv := rv.FieldByName(field)
+	if !fv.IsValid() {
+		panic(fmt.Errorf("no field %s on %s", field, reflect.TypeOf(recv)))
+	}
+	return normalizeResult(fv)
+}
+
+// GoFieldSet assigns an exported struct field by name via reflection and
+// returns the assigned (normalized) value, matching Clojure's set! (design/05
+// §1, ADR 0010). Shared by both paths (interpreter OpSetBang → OpHostField
+// target; AOT via rt.FieldSet), so byte-identical. Field assignment needs an
+// addressable receiver, so recv MUST be a non-nil pointer to the struct.
+// Panics on a value receiver, an unknown/unexported field, or a coercion
+// failure.
+func GoFieldSet(recv any, field string, val any) any {
+	if recv == nil {
+		panic(fmt.Errorf("cannot set field .-%s on nil", field))
+	}
+	rv := reflect.ValueOf(recv)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		panic(fmt.Errorf("cannot set field .-%s: receiver must be a non-nil pointer, got %s", field, reflect.TypeOf(recv)))
+	}
+	sv := rv.Elem()
+	if sv.Kind() != reflect.Struct {
+		panic(fmt.Errorf("cannot set field .-%s on %s", field, reflect.TypeOf(recv)))
+	}
+	fv := sv.FieldByName(field)
+	if !fv.IsValid() {
+		panic(fmt.Errorf("no field %s on %s", field, sv.Type()))
+	}
+	if !fv.CanSet() {
+		panic(fmt.Errorf("cannot set unexported field %s on %s", field, sv.Type()))
+	}
+	cv, err := coerceArg(val, fv.Type())
+	if err != nil {
+		panic(err)
+	}
+	fv.Set(cv)
+	return normalizeResult(fv)
+}
+
+// MakeGoStruct builds a Go struct from a Clojure field map and returns a
+// POINTER to it (design/05 §1: `(T. {...})` => `&T{...}`), shared by both
+// paths (interpreter OpHostNew; AOT via rt.MakeStruct) so byte-identical.
+// v0 populates via reflection — reflect.New + per-field Set from the keyword
+// map — deferring direct `&T{...}` emission (which needs go/types field
+// typing). fields is a Clojure map (keyword → value) or nil. Panics on an
+// unknown type, a non-keyword key, an unknown/unexported field, or a
+// coercion failure.
+func MakeGoStruct(pkg, typeName string, fields any) any {
+	t, ok := lookupHostType(pkg, typeName)
+	if !ok {
+		panic(fmt.Errorf("unable to resolve Go type: %s.%s", pkg, typeName))
+	}
+	ptr := reflect.New(t)
+	elem := ptr.Elem()
+	if fields != nil {
+		m, ok := fields.(lang.IPersistentMap)
+		if !ok {
+			panic(fmt.Errorf("struct constructor %s.%s requires a map of fields", pkg, typeName))
+		}
+		for s := lang.Seq(m); s != nil; s = s.Next() {
+			ent, ok := s.First().(lang.IMapEntry)
+			if !ok {
+				panic(fmt.Errorf("struct constructor %s.%s: malformed field map", pkg, typeName))
+			}
+			kw, ok := ent.Key().(lang.Keyword)
+			if !ok {
+				panic(fmt.Errorf("struct field key must be a keyword, got: %s", lang.PrintString(ent.Key())))
+			}
+			name := kw.Name()
+			fv := elem.FieldByName(name)
+			if !fv.IsValid() {
+				panic(fmt.Errorf("no field %s on %s", name, t))
+			}
+			if !fv.CanSet() {
+				panic(fmt.Errorf("cannot set unexported field %s on %s", name, t))
+			}
+			cv, err := coerceArg(ent.Val(), fv.Type())
+			if err != nil {
+				panic(err)
+			}
+			fv.Set(cv)
+		}
+	}
+	return ptr.Interface()
+}
+
+// NewGoStruct returns a pointer to a zero-valued Go struct (design/05 §1:
+// `(go/new T)` => `new(T)`), shared by both paths (interpreter OpHostNew
+// Zero; AOT via rt.NewStruct). Panics on an unknown type.
+func NewGoStruct(pkg, typeName string) any {
+	t, ok := lookupHostType(pkg, typeName)
+	if !ok {
+		panic(fmt.Errorf("unable to resolve Go type: %s.%s", pkg, typeName))
+	}
+	return reflect.New(t).Interface()
+}
+
+// resolveHostType is the analyzer's Go-type-resolution hook
+// (ResolveHostType). It mirrors resolveHost's precedence exactly — Clojure
+// namespaces/aliases win — but resolves the symbol's name against the type
+// registry rather than the member registry (ADR 0010, design/05 §1).
+func (e *Evaluator) resolveHostType(sym *lang.Symbol) (pkg, typeName string, ok bool) {
+	if !sym.HasNamespace() || sym.Namespace() == "" {
+		return "", "", false
+	}
+	nsName := sym.Namespace()
+	nsSym := lang.NewSymbol(nsName)
+	if e.CurrentNS().LookupAlias(nsSym) != nil {
+		return "", "", false
+	}
+	if lang.FindNamespace(nsSym) != nil {
+		return "", "", false
+	}
+	aliases := e.hostAliases[e.CurrentNS().Name().Name()]
+	path, found := aliases[nsName]
+	if !found {
+		return "", "", false
+	}
+	if _, inReg := lookupHostType(path, sym.Name()); !inReg {
+		return "", "", false
+	}
+	return path, sym.Name(), true
 }
 
 // callHostFn coerces args, reflect-Calls, and shapes the results. It

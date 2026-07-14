@@ -47,6 +47,8 @@ const (
 	OpHostRef
 	OpHostCall
 	OpHostMethod
+	OpHostField
+	OpHostNew
 )
 
 var opNames = map[Op]string{
@@ -73,6 +75,8 @@ var opNames = map[Op]string{
 	OpHostRef:    "host-ref",
 	OpHostCall:   "host-call",
 	OpHostMethod: "host-method",
+	OpHostField:  "host-field",
+	OpHostNew:    "host-new",
 }
 
 func (op Op) String() string {
@@ -245,8 +249,9 @@ type TheVarNode struct {
 }
 
 // SetBangNode is the payload of OpSetBang. Target is an assignable node —
-// in v1 only an OpVar (the dynamic/thread-binding check is the
-// evaluator's, per Clojure); host fields join in a later phase.
+// an OpVar (the dynamic/thread-binding check is the evaluator's, per
+// Clojure) or, since M3.2, an OpHostField for Go field assignment
+// (`(set! (.-Field recv) v)` => `recv.Field = v`).
 type SetBangNode struct {
 	Target *Node
 	Val    *Node
@@ -293,6 +298,41 @@ type HostMethodNode struct {
 	Recv   *Node
 	Args   []*Node
 	Throw  bool
+}
+
+// HostFieldNode is the payload of OpHostField: a Clojure dot-form FIELD
+// access on a Go object — `(.-Field recv)` => `recv.Field` (design/05 §1,
+// ADR 0010). M3.2-v0: the receiver's type is only known at runtime, so BOTH
+// modes read the field reflectively — the interpreter via
+// reflect.Value.FieldByName, the AOT emitter via rt.FieldGet (which delegates
+// to the SAME eval.GoFieldGet), making the two paths byte-identical by
+// construction. Field is the exported identifier as written, no
+// auto-capitalization. The node is IsAssignable so it can be a `set!` target
+// (`(set! (.-Field recv) v)` => `recv.Field = v`), handled by OpSetBang.
+type HostFieldNode struct {
+	Field string
+	Recv  *Node
+}
+
+// HostNewNode is the payload of OpHostNew: Go struct construction. Two
+// surfaces, one node (design/05 §1, ADR 0010):
+//   - `(pkg/Type. {:Field v ...})` — a struct-literal ctor: a pointer to a
+//     freshly-populated struct (Zero=false; Fields is the OpMap of field
+//     initializers, or nil for `(pkg/Type. {})`).
+//   - `(go/new pkg/Type)` — a pointer to a zero-valued struct (Zero=true;
+//     Fields is nil).
+//
+// Pkg is the resolved Go import path (e.g. "net/url"); Type is the exported
+// type name as written. M3.2-v0: BOTH modes build the value reflectively —
+// the interpreter via reflect.New, the AOT emitter via rt.MakeStruct /
+// rt.NewStruct (which delegate to the SAME eval.MakeGoStruct / eval.NewGoStruct)
+// — byte-identical by construction, deferring direct `&T{...}` emission (which
+// needs go/types field typing) to a later milestone.
+type HostNewNode struct {
+	Pkg    string
+	Type   string
+	Fields *Node // OpMap of field initializers, or nil
+	Zero   bool  // true for (go/new T): zero-valued, Fields must be nil
 }
 
 // DynBindNode is the payload of OpDynBind, the `binding` form. Vars[i]

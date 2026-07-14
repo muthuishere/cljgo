@@ -25,9 +25,49 @@ func (g *generator) genHost(n *ast.Node) string {
 		return g.genHostCall(n.Sub.(*ast.HostCallNode))
 	case ast.OpHostMethod:
 		return g.genHostMethod(n.Sub.(*ast.HostMethodNode))
+	case ast.OpHostField:
+		return g.genHostField(n.Sub.(*ast.HostFieldNode))
+	case ast.OpHostNew:
+		return g.genHostNew(n.Sub.(*ast.HostNewNode))
 	default:
 		return g.failf("genHost: unexpected op %v", n.Op)
 	}
+}
+
+// genHostField emits a Clojure dot-form field read `(.-Field recv)`
+// (design/05 §1, ADR 0010). Like OpHostMethod, the receiver's static type is
+// unknown in M3.2, so the read is reflective: rt.FieldGet(recv, "Field")
+// delegates to the SAME eval.GoFieldGet the interpreter uses — byte-identical
+// by construction, no go/packages resolution needed. The receiver is forced
+// through an `any` temp so the reflective boundary sees an interface value.
+func (g *generator) genHostField(f *ast.HostFieldNode) string {
+	recvT := g.temp()
+	g.wf("var %s any = %s\n", recvT, g.gen(f.Recv))
+	res := g.temp()
+	g.wf("var %s any = rt.FieldGet(%s, %q)\n", res, recvT, f.Field)
+	return res
+}
+
+// genHostNew emits a Go struct constructor `(pkg/Type. {...})` or
+// `(go/new pkg/Type)` (design/05 §1, ADR 0010). v0 builds the value
+// reflectively via rt.MakeStruct / rt.NewStruct — the SAME shared
+// eval.MakeGoStruct / eval.NewGoStruct the interpreter uses — so the two
+// harnesses are byte-identical and no go/types field typing is needed
+// (direct `&T{...}` emission is deferred). The field map is forced through an
+// `any` temp so the reflective boundary sees the Clojure map as an interface.
+func (g *generator) genHostNew(nw *ast.HostNewNode) string {
+	res := g.temp()
+	if nw.Zero {
+		g.wf("var %s any = rt.NewStruct(%q, %q)\n", res, nw.Pkg, nw.Type)
+		return res
+	}
+	fieldsT := "nil"
+	if nw.Fields != nil {
+		fieldsT = g.temp()
+		g.wf("var %s any = %s\n", fieldsT, g.gen(nw.Fields))
+	}
+	g.wf("var %s any = rt.MakeStruct(%q, %q, %s)\n", res, nw.Pkg, nw.Type, fieldsT)
+	return res
 }
 
 // genHostMethod emits a Clojure dot-form method call `(.Method recv arg...)`

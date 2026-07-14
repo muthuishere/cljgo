@@ -274,6 +274,12 @@ func eachChild(n *ast.Node, visit func(child *ast.Node, entersFn bool)) {
 		for _, c := range s.Args {
 			visit(c, false)
 		}
+	case ast.OpHostField:
+		visit(n.Sub.(*ast.HostFieldNode).Recv, false)
+	case ast.OpHostNew:
+		if f := n.Sub.(*ast.HostNewNode).Fields; f != nil {
+			visit(f, false)
+		}
 	case ast.OpVector:
 		for _, c := range n.Sub.(*ast.VectorNode).Items {
 			visit(c, false)
@@ -589,6 +595,19 @@ func (g *generator) gen(n *ast.Node) string {
 
 	case ast.OpSetBang:
 		s := n.Sub.(*ast.SetBangNode)
+		// A Go field target (`(set! (.-Field recv) v)`) assigns via the
+		// shared rt.FieldSet → eval.GoFieldSet — the SAME path the
+		// interpreter takes, byte-identical (ADR 0010, design/05 §1).
+		if s.Target.Op == ast.OpHostField {
+			f := s.Target.Sub.(*ast.HostFieldNode)
+			recvT := g.temp()
+			g.wf("var %s any = %s\n", recvT, g.gen(f.Recv))
+			valT := g.temp()
+			g.wf("var %s any = %s\n", valT, g.gen(s.Val))
+			t := g.temp()
+			g.wf("var %s any = rt.FieldSet(%s, %q, %s)\n", t, recvT, f.Field, valT)
+			return t
+		}
 		gv := g.hoistVar(s.Target.Sub.(*ast.VarNode).Var)
 		rv := g.gen(s.Val)
 		t := g.temp()
@@ -615,11 +634,14 @@ func (g *generator) gen(n *ast.Node) string {
 		g.wf("lang.PopThreadBindings()\n")
 		return t
 
-	case ast.OpHostRef, ast.OpHostCall, ast.OpHostMethod:
-		// Go interop (ADR 0010, M3-v0/M3.1). AOT direct-call emission —
+	case ast.OpHostRef, ast.OpHostCall, ast.OpHostMethod, ast.OpHostField, ast.OpHostNew:
+		// Go interop (ADR 0010, M3-v0/M3.1/M3.2). AOT direct-call emission —
 		// go/packages signature resolution, real imports, [v err]/!
 		// shaping, go.mod pinning — lands in host.go (ports spike S2).
-		// Method calls (OpHostMethod) emit a reflective rt.CallMethod.
+		// Method calls (OpHostMethod), field access (OpHostField) and struct
+		// construction (OpHostNew) emit reflective rt.CallMethod / rt.FieldGet
+		// / rt.MakeStruct / rt.NewStruct — the SAME shared eval fns the
+		// interpreter uses, byte-identical by construction.
 		return g.genHost(n)
 
 	case ast.OpBinding, ast.OpFnMethod:

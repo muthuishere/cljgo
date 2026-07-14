@@ -102,6 +102,15 @@ type Analyzer struct {
 	// to the ordinary var-resolution error. Optional.
 	ResolveHost func(sym *lang.Symbol) (pkg, member string, ok bool)
 
+	// ResolveHostType resolves a namespaced symbol whose namespace is a
+	// `:require-go` alias to a Go TYPE (ADR 0010, design/05 §1): it returns
+	// the import path and the exported type name as written. Used by struct
+	// constructors (`(url/URL. {...})`) and `(go/new url/URL)`. Precedence is
+	// identical to ResolveHost — Clojure namespaces/aliases win, so a host
+	// alias never shadows Clojure. nil hook means no Go-type interop is wired.
+	// Optional.
+	ResolveHostType func(sym *lang.Symbol) (pkg, typeName string, ok bool)
+
 	gensymCounter atomic.Int64
 }
 
@@ -778,6 +787,19 @@ func (a *Analyzer) parseInvoke(seq lang.ISeq, env Env) (*ast.Node, error) {
 	// `!`, so stripping it is unambiguous. Clojure operators are tried
 	// first (ResolveHost yields false for Clojure namespaces), preserving
 	// precedence.
+	// Go struct constructor: an operator symbol whose Name ends with `.`
+	// (`url/URL.`), the type resolving via ResolveHostType (ADR 0010,
+	// design/05 §1). Checked before host-fn resolution — a `.`-terminated
+	// name can never be a package fn. `(go/new pkg/Type)` builds a
+	// zero-valued struct under the reserved `go/` pseudo-namespace.
+	if op, ok := seq.First().(*lang.Symbol); ok && a.ResolveHostType != nil {
+		if isCtorName(op) {
+			return a.parseHostNew(op, seq, exprEnv)
+		}
+		if op.HasNamespace() && op.Namespace() == "go" && op.Name() == "new" {
+			return a.parseGoNew(seq, exprEnv)
+		}
+	}
 	if op, ok := seq.First().(*lang.Symbol); ok && op.HasNamespace() && a.ResolveHost != nil {
 		if hc, matched, err := a.parseHostCall(op, seq, exprEnv); matched {
 			return hc, err
@@ -787,18 +809,16 @@ func (a *Analyzer) parseInvoke(seq lang.ISeq, env Env) (*ast.Node, error) {
 	// with `.` (but not `.-` field access nor the `..` sugar) — the Clojure
 	// dot form `(.Method recv arg...)` => `recv.Method(args...)` (ADR 0010,
 	// design/05 §1). Host-independent: the receiver's type is only known at
-	// runtime for v0, so no ResolveHost is consulted. Field access (`.-`),
-	// `set!` of fields, struct ctors and `go/new` are out of scope for M3.1.
+	// runtime for v0, so no ResolveHost is consulted.
 	if op, ok := seq.First().(*lang.Symbol); ok && !op.HasNamespace() && isDotMethodName(op.Name()) {
 		return a.parseHostMethod(op, seq, exprEnv)
 	}
-	// Field access (`.-Field`) and struct construction (`T.`) share the dot
-	// surface but are out of M3.1 scope (method calls only) — fail with a
-	// scoped message rather than a confusing "unable to resolve symbol".
-	if op, ok := seq.First().(*lang.Symbol); ok && a.ResolveHost != nil {
-		if !op.HasNamespace() && strings.HasPrefix(op.Name(), ".-") {
-			return nil, a.errf(seq, "field access %s is not yet supported (M3.1 scope: Go method calls only)", op.Name())
-		}
+	// Go interop field access: a non-namespaced operator whose name starts
+	// with `.-` — the Clojure dot form `(.-Field recv)` => `recv.Field`
+	// (ADR 0010, design/05 §1). Reflective in both modes (M3.2-v0), like the
+	// method call. The resulting node is a `set!` target too (field write).
+	if op, ok := seq.First().(*lang.Symbol); ok && !op.HasNamespace() && strings.HasPrefix(op.Name(), ".-") {
+		return a.parseHostField(op, seq, exprEnv)
 	}
 	fn, err := a.analyzeForm(seq.First(), exprEnv)
 	if err != nil {
@@ -888,6 +908,86 @@ func (a *Analyzer) parseHostMethod(op *lang.Symbol, seq lang.ISeq, exprEnv Env) 
 		args = append(args, n)
 	}
 	return &ast.Node{Op: ast.OpHostMethod, Form: seq, Sub: &ast.HostMethodNode{Method: method, Recv: recv, Args: args, Throw: throw}}, nil
+}
+
+// parseHostField builds an OpHostField from a dot form `(.-Field recv)`
+// (ADR 0010, design/05 §1). The leading `.-` is stripped to the Go field
+// name; the single following form is the receiver. The node is marked
+// IsAssignable so `set!` accepts it as a field-write target.
+func (a *Analyzer) parseHostField(op *lang.Symbol, seq lang.ISeq, exprEnv Env) (*ast.Node, error) {
+	field := strings.TrimPrefix(op.Name(), ".-")
+	if field == "" {
+		return nil, a.errf(seq, "malformed member expression: %s", op.Name())
+	}
+	rest := seq.Next()
+	if rest == nil {
+		return nil, a.errf(seq, "field access %s requires a receiver", op.Name())
+	}
+	if rest.Next() != nil {
+		return nil, a.errf(seq, "field access %s takes a single receiver", op.Name())
+	}
+	recv, err := a.analyzeForm(rest.First(), exprEnv)
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Node{Op: ast.OpHostField, Form: seq, Sub: &ast.HostFieldNode{Field: field, Recv: recv}, IsAssignable: true}, nil
+}
+
+// isCtorName reports whether an operator symbol names a Go struct
+// constructor: its Name ends with `.` and is more than the bare `.` special.
+// `url/URL.` (namespaced) is the common shape; a non-namespaced `Type.` is
+// accepted too (resolution decides membership).
+func isCtorName(op *lang.Symbol) bool {
+	n := op.Name()
+	return len(n) > 1 && strings.HasSuffix(n, ".") && !strings.HasSuffix(n, "..")
+}
+
+// parseHostNew builds an OpHostNew from a struct-literal ctor
+// `(pkg/Type. {:Field v ...})` (ADR 0010, design/05 §1). The trailing `.`
+// is stripped and the base symbol resolves via ResolveHostType to
+// (import-path, type-name); the single argument (optional) is a map of
+// exported-field initializers.
+func (a *Analyzer) parseHostNew(op *lang.Symbol, seq lang.ISeq, exprEnv Env) (*ast.Node, error) {
+	base := lang.InternSymbol(op.Namespace(), strings.TrimSuffix(op.Name(), "."))
+	pkg, typeName, ok := a.ResolveHostType(base)
+	if !ok {
+		return nil, a.errf(seq, "unable to resolve Go type: %s", base)
+	}
+	rest := seq.Next()
+	var fields *ast.Node
+	if rest != nil {
+		if rest.Next() != nil {
+			return nil, a.errf(seq, "struct constructor %s takes a single field map", op.Name())
+		}
+		f, err := a.analyzeForm(rest.First(), exprEnv)
+		if err != nil {
+			return nil, err
+		}
+		if f.Op != ast.OpMap {
+			return nil, a.errf(seq, "struct constructor %s requires a map of fields", op.Name())
+		}
+		fields = f
+	}
+	return &ast.Node{Op: ast.OpHostNew, Form: seq, Sub: &ast.HostNewNode{Pkg: pkg, Type: typeName, Fields: fields}}, nil
+}
+
+// parseGoNew builds an OpHostNew for `(go/new pkg/Type)` — a pointer to a
+// zero-valued struct (ADR 0010, design/05 §1). The single argument is a
+// type-designator symbol resolved via ResolveHostType.
+func (a *Analyzer) parseGoNew(seq lang.ISeq, exprEnv Env) (*ast.Node, error) {
+	rest := seq.Next()
+	if rest == nil || rest.Next() != nil {
+		return nil, a.errf(seq, "go/new takes a single type argument")
+	}
+	tsym, ok := rest.First().(*lang.Symbol)
+	if !ok {
+		return nil, a.errf(seq, "go/new type argument must be a symbol, got: %s", lang.PrintString(rest.First()))
+	}
+	pkg, typeName, ok := a.ResolveHostType(tsym)
+	if !ok {
+		return nil, a.errf(seq, "unable to resolve Go type: %s", tsym)
+	}
+	return &ast.Node{Op: ast.OpHostNew, Form: seq, Sub: &ast.HostNewNode{Pkg: pkg, Type: typeName, Zero: true}}, nil
 }
 
 func constNil() *ast.Node {
