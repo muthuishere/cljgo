@@ -44,6 +44,10 @@ func run(args []string) int {
 		return runFile(args[1])
 	case "build":
 		return runBuild(args[1:])
+	case "check":
+		return runCheck(args[1:], os.Stdout, os.Stderr)
+	case "explain":
+		return runExplain(args[1:], os.Stdout, os.Stderr)
 	case "version", "--version", "-v":
 		fmt.Println(version)
 		return 0
@@ -155,6 +159,8 @@ usage:
   cljgo repl                       start a REPL
   cljgo run <file.clj>             evaluate a file
   cljgo build [-o out] <file.clj>  compile a file to a native binary
+  cljgo check <file.clj> [--json]  analyze a file, report diagnostics (ADR 0015)
+  cljgo explain <code> [--json]    show an error code's explain page
   cljgo version                    print the version
 `, version)
 }
