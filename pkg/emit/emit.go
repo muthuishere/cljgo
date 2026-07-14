@@ -75,6 +75,9 @@ type generator struct {
 	usesFmt  bool
 	usesMath bool
 	mainVar  string // hoisted Go name of a def'd -main, if any
+
+	host        *hostFacts        // loaded go/packages type facts (nil = no interop)
+	hostImports map[string]string // import path → package name, for interop
 }
 
 func newGenerator() *generator {
@@ -86,7 +89,16 @@ func newGenerator() *generator {
 		kws:     map[lang.Keyword]string{},
 		syms:    map[string]string{},
 		taken:   map[string]bool{},
+
+		hostImports: map[string]string{},
 	}
+}
+
+// addHostImport records an interop import (path → package name) and
+// returns the local package name used at the call site. Idempotent.
+func (g *generator) addHostImport(path, name string) string {
+	g.hostImports[path] = name
+	return name
 }
 
 func (g *generator) wf(format string, a ...any) { fmt.Fprintf(&g.buf, format, a...) }

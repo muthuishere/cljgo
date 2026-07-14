@@ -60,6 +60,23 @@ func EmitMain(forms []*ast.Node, opts Options) (formatted []byte, raw []byte, er
 	}()
 
 	g := newGenerator()
+
+	// Pre-scan for Go-interop references and batch-load their type facts
+	// (ADR 0010, design/05 §2) BEFORE emission — a non-interop program
+	// pays no go/packages cost. The load runs in this compiler process;
+	// the emitted binary calls the resolved functions directly.
+	if hostPaths := collectHostPaths(forms); len(hostPaths) > 0 {
+		dir := opts.RuntimeDir
+		if dir == "" {
+			if dir, err = FindRuntimeDir(); err != nil {
+				return nil, nil, err
+			}
+		}
+		if g.host, err = loadHostFacts(dir, hostPaths); err != nil {
+			return nil, nil, err
+		}
+	}
+
 	for i, n := range forms {
 		g.wf("// %s\n", provenance(n))
 		rv := g.gen(n)
@@ -106,6 +123,21 @@ func EmitMain(forms []*ast.Node, opts Options) (formatted []byte, raw []byte, er
 	fmt.Fprintf(&out, "rt %q\n", runtimeModule+"/pkg/emit/rt")
 	if usesLang {
 		fmt.Fprintf(&out, "lang %q\n", runtimeModule+"/pkg/lang")
+	}
+	// Go-interop imports (ADR 0010): an explicit alias only when it differs
+	// from the path's last segment; go/format tidies grouping.
+	hostPaths := make([]string, 0, len(g.hostImports))
+	for p := range g.hostImports {
+		hostPaths = append(hostPaths, p)
+	}
+	sort.Strings(hostPaths)
+	for _, p := range hostPaths {
+		name := g.hostImports[p]
+		if base := p[strings.LastIndex(p, "/")+1:]; base == name {
+			fmt.Fprintf(&out, "%q\n", p)
+		} else {
+			fmt.Fprintf(&out, "%s %q\n", name, p)
+		}
 	}
 	out.WriteString(")\n\n")
 

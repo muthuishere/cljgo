@@ -275,6 +275,52 @@ func TestMacroExpandedSource(t *testing.T) {
 `, "11\n")
 }
 
+// --- M3-v0 Go interop (ADR 0010, spike S2) -----------------------------
+
+// TestInteropCompiled exercises the AOT direct-call path end-to-end:
+// (T,error) → [v err] vector (with the Go zero value in the error branch),
+// int→int64 widening, arg coercion (int64→int), and the `!` unwrap. The
+// dual-mode-identical bar is the examples/interop diff; this pins the
+// shaping in-package.
+func TestInteropCompiled(t *testing.T) {
+	expectRun(t, `
+(require-go '[strconv])
+[(strconv/Atoi "123") (strconv/Itoa 42) (strconv/Atoi! "7") (strconv/Atoi "bad")]
+`, `[[123 nil] "42" 7 [0 #object[*strconv.NumError]]]`+"\n")
+}
+
+// TestInteropEmittedShape asserts the emitted Go is a direct, non-reflective
+// call shaped through the rt helpers — never the interpreter's reflect path.
+func TestInteropEmittedShape(t *testing.T) {
+	lang.RemoveNamespace(lang.NewSymbol("user"))
+	oldOut := eval.Out
+	eval.Out = io.Discard
+	forms, err := CompileReader(strings.NewReader(`
+(require-go '[strconv])
+(strconv/Atoi "123")
+`), "test.clj")
+	eval.Out = oldOut
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	src, _, err := EmitMain(forms, Options{})
+	if err != nil {
+		t.Fatalf("emit: %v", err)
+	}
+	s := string(src)
+	for _, want := range []string{
+		`"strconv"`,             // real import, not reflect
+		"strconv.Atoi(",         // direct call
+		".(string)",             // arg coercion
+		"lang.NewVector(int64(", // [v err] with int widening
+		"rt.NormErr(",           // nil-normalized error slot
+	} {
+		if !strings.Contains(s, want) {
+			t.Errorf("emitted source missing %q:\n%s", want, s)
+		}
+	}
+}
+
 func TestDeterministicOutput(t *testing.T) {
 	src := `
 (def fact (fn* fact [n] (if (< n 2) 1 (* n (fact (- n 1))))))

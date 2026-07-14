@@ -20,6 +20,9 @@
 package rt
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -190,4 +193,56 @@ func EQBool(v *lang.Var, x, y any) bool {
 		return lang.IsTruthy(lang.Apply2(f, x, y))
 	}
 	return lang.Equiv(x, y)
+}
+
+// --- Go interop shaping helpers (ADR 0010, design/05 §2) ----------------
+//
+// These back the AOT emitter's [v err] / `!` / normalization shaping so it
+// is byte-identical to the interpreter's reflect path (pkg/eval/host.go).
+
+// NormErr nil-normalizes a Go error into the [v err] slot: a nil error
+// becomes Clojure nil (falsy in if/when), a non-nil error stays truthy and
+// prints as the same #object[...] the interpreter renders (same type, same
+// lang.PrintString).
+func NormErr(err error) any {
+	if err == nil {
+		return nil
+	}
+	return err
+}
+
+// GoError is the value thrown by a `!` interop call whose trailing error is
+// non-nil (or whose comma-ok is false). It satisfies `error` and is
+// panicked exactly like any other cljgo exception, so the surrounding
+// recover machinery handles it uniformly — matching the interpreter, which
+// panics the raw error value.
+func GoError(err error) error { return err }
+
+// NilNorm maps a typed-nil Go result (pointer/interface/map/slice/chan/
+// func) to Clojure nil; any other value passes through. Boxing a nil
+// pointer into `any` yields a non-nil interface, so the reflect check is
+// required (mirrors normalizeResult).
+func NilNorm(v any) any {
+	if v == nil {
+		return nil
+	}
+	switch rv := reflect.ValueOf(v); rv.Kind() {
+	case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func:
+		if rv.IsNil() {
+			return nil
+		}
+	}
+	return v
+}
+
+// ToFloat64 coerces a cljgo numeric arg (int64 or float64) to a Go float,
+// matching the interpreter's coerceArg leniency for float parameters.
+func ToFloat64(v any) float64 {
+	switch x := v.(type) {
+	case float64:
+		return x
+	case int64:
+		return float64(x)
+	}
+	panic(fmt.Errorf("cannot coerce %T to Go float64", v))
 }
