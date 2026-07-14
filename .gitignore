@@ -26,3 +26,6 @@ spikes/s11-result-rep/cljgo-spike*
 # overnight-loop runtime lock (not project content)
 scheduled_tasks.lock
 .claude/scheduled_tasks.lock
+
+# agent worktrees (runtime, branches merged into main)
+.claude/worktrees/
