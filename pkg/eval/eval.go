@@ -377,8 +377,8 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 		defer lang.PopThreadBindings()
 		return e.Eval(sub.Body, s)
 
-	case ast.OpHostRef, ast.OpHostCall:
-		// Go interop (ADR 0010, M3-v0). The interpreted path — reflect
+	case ast.OpHostRef, ast.OpHostCall, ast.OpHostMethod:
+		// Go interop (ADR 0010, M3-v0/M3.1). The interpreted path — reflect
 		// registry + [v err]/!/nil-norm shaping — lands in host.go.
 		return e.evalHost(n, s)
 

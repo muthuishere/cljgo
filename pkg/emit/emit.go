@@ -268,6 +268,12 @@ func eachChild(n *ast.Node, visit func(child *ast.Node, entersFn bool)) {
 		for _, c := range n.Sub.(*ast.HostCallNode).Args {
 			visit(c, false)
 		}
+	case ast.OpHostMethod:
+		s := n.Sub.(*ast.HostMethodNode)
+		visit(s.Recv, false)
+		for _, c := range s.Args {
+			visit(c, false)
+		}
 	case ast.OpVector:
 		for _, c := range n.Sub.(*ast.VectorNode).Items {
 			visit(c, false)
@@ -609,10 +615,11 @@ func (g *generator) gen(n *ast.Node) string {
 		g.wf("lang.PopThreadBindings()\n")
 		return t
 
-	case ast.OpHostRef, ast.OpHostCall:
-		// Go interop (ADR 0010, M3-v0). AOT direct-call emission —
+	case ast.OpHostRef, ast.OpHostCall, ast.OpHostMethod:
+		// Go interop (ADR 0010, M3-v0/M3.1). AOT direct-call emission —
 		// go/packages signature resolution, real imports, [v err]/!
 		// shaping, go.mod pinning — lands in host.go (ports spike S2).
+		// Method calls (OpHostMethod) emit a reflective rt.CallMethod.
 		return g.genHost(n)
 
 	case ast.OpBinding, ast.OpFnMethod:

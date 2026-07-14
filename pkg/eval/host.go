@@ -63,6 +63,25 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 		// how builtins.go signals runtime failures.
 		return callHostFn(c.Pkg+"."+c.Member, rv, argVals, c.Throw), nil
 
+	case ast.OpHostMethod:
+		m := n.Sub.(*ast.HostMethodNode)
+		recv, err := e.Eval(m.Recv, s)
+		if err != nil {
+			return nil, err
+		}
+		argVals := make([]any, len(m.Args))
+		for i, an := range m.Args {
+			v, aerr := e.Eval(an, s)
+			if aerr != nil {
+				return nil, aerr
+			}
+			argVals[i] = v
+		}
+		// The receiver's type is only known at runtime (v0), so BOTH modes
+		// reflect through CallGoMethod — the AOT emitter reaches the very
+		// same function via rt.CallMethod, guaranteeing byte-identity.
+		return CallGoMethod(recv, m.Method, m.Throw, argVals), nil
+
 	default:
 		return nil, fmt.Errorf("evalHost: unexpected op %v", n.Op)
 	}
@@ -183,13 +202,14 @@ var hostRegistry = buildHostRegistry()
 func buildHostRegistry() map[string]map[string]reflect.Value {
 	return map[string]map[string]reflect.Value{
 		"strings": {
-			"ToUpper":   reflect.ValueOf(strings.ToUpper),
-			"ToLower":   reflect.ValueOf(strings.ToLower),
-			"Repeat":    reflect.ValueOf(strings.Repeat),
-			"Contains":  reflect.ValueOf(strings.Contains),
-			"Split":     reflect.ValueOf(strings.Split),
-			"TrimSpace": reflect.ValueOf(strings.TrimSpace),
-			"HasPrefix": reflect.ValueOf(strings.HasPrefix),
+			"ToUpper":     reflect.ValueOf(strings.ToUpper),
+			"ToLower":     reflect.ValueOf(strings.ToLower),
+			"Repeat":      reflect.ValueOf(strings.Repeat),
+			"Contains":    reflect.ValueOf(strings.Contains),
+			"Split":       reflect.ValueOf(strings.Split),
+			"TrimSpace":   reflect.ValueOf(strings.TrimSpace),
+			"HasPrefix":   reflect.ValueOf(strings.HasPrefix),
+			"NewReplacer": reflect.ValueOf(strings.NewReplacer),
 		},
 		"strconv": {
 			"Itoa":       reflect.ValueOf(strconv.Itoa),
@@ -224,6 +244,27 @@ func lookupHostMember(pkg, member string) (reflect.Value, bool) {
 // --- call + shaping -----------------------------------------------------
 
 var errType = reflect.TypeOf((*error)(nil)).Elem()
+
+// CallGoMethod invokes a Go method by name on a receiver via reflection and
+// shapes the result exactly as a package fn does (design/05 §1–§2, ADR
+// 0010). It is the SINGLE implementation shared by both execution paths: the
+// interpreter calls it directly for OpHostMethod, and AOT-emitted code
+// reaches it through rt.CallMethod — so `(.Method recv arg...)` is
+// byte-identical in REPL and binary by construction (the receiver's static
+// type is unknown in v0, so AOT reflects too). Panics on an unknown method,
+// a coercion failure, or a thrown (`!`) error — recovered at the IFn/recover
+// boundary like every other interop failure.
+func CallGoMethod(recv any, method string, throw bool, args []any) any {
+	if recv == nil {
+		panic(fmt.Errorf("cannot call method .%s on nil", method))
+	}
+	rv := reflect.ValueOf(recv)
+	mv := rv.MethodByName(method)
+	if !mv.IsValid() {
+		panic(fmt.Errorf("no method %s on %s", method, rv.Type()))
+	}
+	return callHostFn("."+method, mv, args, throw)
+}
 
 // callHostFn coerces args, reflect-Calls, and shapes the results. It
 // panics (not returns) on a coercion error or a thrown (`!`) error — the

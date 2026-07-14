@@ -235,6 +235,15 @@ func NilNorm(v any) any {
 	return v
 }
 
+// CallMethod backs the AOT emission of a Clojure dot-form method call
+// `(.Method recv arg...)` (ADR 0010, design/05 §1). The receiver's static
+// type is unknown in M3.1, so the call is reflective in AOT too — and it
+// delegates to the SAME eval.CallGoMethod the interpreter uses, so the REPL
+// and the compiled binary produce byte-identical results by construction.
+func CallMethod(recv any, method string, throw bool, args ...any) any {
+	return eval.CallGoMethod(recv, method, throw, args)
+}
+
 // ToFloat64 coerces a cljgo numeric arg (int64 or float64) to a Go float,
 // matching the interpreter's coerceArg leniency for float parameters.
 func ToFloat64(v any) float64 {

@@ -783,6 +783,23 @@ func (a *Analyzer) parseInvoke(seq lang.ISeq, env Env) (*ast.Node, error) {
 			return hc, err
 		}
 	}
+	// Go interop method call: a non-namespaced operator whose name starts
+	// with `.` (but not `.-` field access nor the `..` sugar) — the Clojure
+	// dot form `(.Method recv arg...)` => `recv.Method(args...)` (ADR 0010,
+	// design/05 §1). Host-independent: the receiver's type is only known at
+	// runtime for v0, so no ResolveHost is consulted. Field access (`.-`),
+	// `set!` of fields, struct ctors and `go/new` are out of scope for M3.1.
+	if op, ok := seq.First().(*lang.Symbol); ok && !op.HasNamespace() && isDotMethodName(op.Name()) {
+		return a.parseHostMethod(op, seq, exprEnv)
+	}
+	// Field access (`.-Field`) and struct construction (`T.`) share the dot
+	// surface but are out of M3.1 scope (method calls only) — fail with a
+	// scoped message rather than a confusing "unable to resolve symbol".
+	if op, ok := seq.First().(*lang.Symbol); ok && a.ResolveHost != nil {
+		if !op.HasNamespace() && strings.HasPrefix(op.Name(), ".-") {
+			return nil, a.errf(seq, "field access %s is not yet supported (M3.1 scope: Go method calls only)", op.Name())
+		}
+	}
 	fn, err := a.analyzeForm(seq.First(), exprEnv)
 	if err != nil {
 		return nil, err
@@ -824,6 +841,53 @@ func (a *Analyzer) parseHostCall(op *lang.Symbol, seq lang.ISeq, exprEnv Env) (n
 		args = append(args, n)
 	}
 	return &ast.Node{Op: ast.OpHostCall, Form: seq, Sub: &ast.HostCallNode{Pkg: pkg, Member: member, Args: args, Throw: throw}}, true, nil
+}
+
+// isDotMethodName reports whether an operator symbol names a dot-form method
+// call: it begins with `.` and is not `.-` (field access) nor `..` (the
+// threading sugar). The bare `.` (the host special) is excluded too.
+func isDotMethodName(name string) bool {
+	if len(name) < 2 || name[0] != '.' {
+		return false
+	}
+	if name[1] == '-' || name[1] == '.' {
+		return false
+	}
+	return true
+}
+
+// parseHostMethod builds an OpHostMethod from a dot form `(.Method recv
+// arg...)` (ADR 0010, design/05 §1). The leading `.` is stripped to the Go
+// method name; a trailing `!` sets Throw (unambiguous — Go exports can never
+// end in `!`), sharing the exact shaping of OpHostCall. The first form after
+// the operator is the receiver; the rest are call args.
+func (a *Analyzer) parseHostMethod(op *lang.Symbol, seq lang.ISeq, exprEnv Env) (*ast.Node, error) {
+	method := strings.TrimPrefix(op.Name(), ".")
+	throw := false
+	if strings.HasSuffix(method, "!") {
+		method = strings.TrimSuffix(method, "!")
+		throw = true
+	}
+	if method == "" {
+		return nil, a.errf(seq, "malformed member expression: %s", op.Name())
+	}
+	rest := seq.Next()
+	if rest == nil {
+		return nil, a.errf(seq, "method call %s requires a receiver", op.Name())
+	}
+	recv, err := a.analyzeForm(rest.First(), exprEnv)
+	if err != nil {
+		return nil, err
+	}
+	args := make([]*ast.Node, 0, 4)
+	for s := rest.Next(); s != nil; s = s.Next() {
+		n, aerr := a.analyzeForm(s.First(), exprEnv)
+		if aerr != nil {
+			return nil, aerr
+		}
+		args = append(args, n)
+	}
+	return &ast.Node{Op: ast.OpHostMethod, Form: seq, Sub: &ast.HostMethodNode{Method: method, Recv: recv, Args: args, Throw: throw}}, nil
 }
 
 func constNil() *ast.Node {
