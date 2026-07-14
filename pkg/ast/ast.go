@@ -46,31 +46,33 @@ const (
 	OpDynBind
 	OpHostRef
 	OpHostCall
+	OpHostMethod
 )
 
 var opNames = map[Op]string{
-	OpConst:    "const",
-	OpVector:   "vector",
-	OpMap:      "map",
-	OpSet:      "set",
-	OpVar:      "var",
-	OpLocal:    "local",
-	OpDo:       "do",
-	OpIf:       "if",
-	OpDef:      "def",
-	OpLet:      "let",
-	OpBinding:  "binding",
-	OpFn:       "fn",
-	OpFnMethod: "fn-method",
-	OpInvoke:   "invoke",
-	OpQuote:    "quote",
-	OpLoop:     "loop",
-	OpRecur:    "recur",
-	OpTheVar:   "the-var",
-	OpSetBang:  "set!",
-	OpDynBind:  "dyn-bind",
-	OpHostRef:  "host-ref",
-	OpHostCall: "host-call",
+	OpConst:      "const",
+	OpVector:     "vector",
+	OpMap:        "map",
+	OpSet:        "set",
+	OpVar:        "var",
+	OpLocal:      "local",
+	OpDo:         "do",
+	OpIf:         "if",
+	OpDef:        "def",
+	OpLet:        "let",
+	OpBinding:    "binding",
+	OpFn:         "fn",
+	OpFnMethod:   "fn-method",
+	OpInvoke:     "invoke",
+	OpQuote:      "quote",
+	OpLoop:       "loop",
+	OpRecur:      "recur",
+	OpTheVar:     "the-var",
+	OpSetBang:    "set!",
+	OpDynBind:    "dyn-bind",
+	OpHostRef:    "host-ref",
+	OpHostCall:   "host-call",
+	OpHostMethod: "host-method",
 }
 
 func (op Op) String() string {
@@ -272,6 +274,23 @@ type HostRefNode struct {
 type HostCallNode struct {
 	Pkg    string
 	Member string
+	Args   []*Node
+	Throw  bool
+}
+
+// HostMethodNode is the payload of OpHostMethod: a Clojure dot-form method
+// call on a Go object — `(.Method recv arg...)` => `recv.Method(args...)`
+// (design/05 §1, ADR 0010). M3.1-v0: the receiver's type is only known at
+// runtime, so BOTH modes call the method reflectively — the interpreter via
+// reflect.Value.MethodByName, the AOT emitter via rt.CallMethod (which
+// delegates to the SAME eval.CallGoMethod), making the two paths
+// byte-identical by construction. Method is the exported identifier as
+// written, no auto-capitalization. Throw carries the `!` suffix sugar
+// (`(.Method! recv)`): the trailing (T,error)/(T,bool) is unwrapped-or-thrown
+// instead of returned as a [v err]/[v ok] vector, exactly as OpHostCall.
+type HostMethodNode struct {
+	Method string
+	Recv   *Node
 	Args   []*Node
 	Throw  bool
 }
