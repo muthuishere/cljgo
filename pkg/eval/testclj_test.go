@@ -174,18 +174,63 @@ func TestSuccessfulPredicate(t *testing.T) {
 	}
 }
 
-func TestThrownIsDeferred(t *testing.T) {
+func TestThrownSupported(t *testing.T) {
 	e := bootTest(t)
 	discardOut(t)
-	// (is (thrown? ...)) is a deferred error path (needs host-class
-	// interop): it must report :error, not crash the run or fake a pass.
-	evalSrc(t, e, `(deftest t (is (thrown? Exception (/ 1 0))))`)
+	// (is (thrown? Class body)) now uses real try/catch: it passes when the
+	// body throws a matching exception and fails when the body does not
+	// throw. Class matching is the evaluator's CatchMatches (Exception =
+	// any thrown value, ExceptionInfo = an ex-info).
+	evalSrc(t, e, `
+		(deftest t-thrown
+		  (is (thrown? Exception (throw (ex-info "boom" {}))))  ;; pass
+		  (is (thrown? ExceptionInfo (throw (ex-info "b" {})))) ;; pass
+		  (is (thrown? Exception 42)))                          ;; fail (no throw)`)
 	summary := evalSrc(t, e, `(run-tests)`)
-	if got := summaryCount(t, summary, "error"); got != 1 {
-		t.Errorf("thrown? should be a deferred :error; :error = %d, want 1", got)
+	for _, tc := range []struct {
+		key  string
+		want int64
+	}{
+		{"pass", 2},
+		{"fail", 1},
+		{"error", 0},
+	} {
+		if got := summaryCount(t, summary, tc.key); got != tc.want {
+			t.Errorf("thrown?: :%s = %d, want %d", tc.key, got, tc.want)
+		}
 	}
-	if got := summaryCount(t, summary, "pass"); got != 0 {
-		t.Errorf("thrown? must not fake a pass; :pass = %d, want 0", got)
+}
+
+func TestThrownWithMsgSupported(t *testing.T) {
+	e := bootTest(t)
+	discardOut(t)
+	// (is (thrown-with-msg? Class #"re" body)) passes only when the body
+	// throws a matching class AND the message matches the regex.
+	evalSrc(t, e, `
+		(deftest t-msg
+		  (is (thrown-with-msg? Exception #"bo+m" (throw (ex-info "boom!" {})))) ;; pass
+		  (is (thrown-with-msg? Exception #"xyz"  (throw (ex-info "boom!" {}))))) ;; fail`)
+	summary := evalSrc(t, e, `(run-tests)`)
+	if got := summaryCount(t, summary, "pass"); got != 1 {
+		t.Errorf("thrown-with-msg?: :pass = %d, want 1", got)
+	}
+	if got := summaryCount(t, summary, "fail"); got != 1 {
+		t.Errorf("thrown-with-msg?: :fail = %d, want 1", got)
+	}
+}
+
+func TestAreExpandsToIsForms(t *testing.T) {
+	e := bootTest(t)
+	discardOut(t)
+	// (are [argv] expr & rows) => a do of `is` forms, one per row of
+	// (count argv) values.
+	evalSrc(t, e, `(deftest t-are (are [x y] (= x y) 1 1 2 2 3 3))`)
+	summary := evalSrc(t, e, `(run-tests)`)
+	if got := summaryCount(t, summary, "pass"); got != 3 {
+		t.Errorf("are: :pass = %d, want 3", got)
+	}
+	if got := summaryCount(t, summary, "fail"); got != 0 {
+		t.Errorf("are: :fail = %d, want 0", got)
 	}
 }
 

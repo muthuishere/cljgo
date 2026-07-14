@@ -464,6 +464,9 @@ func (e *Evaluator) internBuiltins() {
 	// --- Exceptions: ex-info / ex-data / ex-message / ex-cause -----------
 	e.registerExceptionBuiltins(def)
 
+	// --- clojure.test host seams (core/test.cljg, ADR 0012) --------------
+	e.registerTestBuiltins(defPrivate)
+
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
 	// Constructors, predicates and combinators over the pkg/lang tagged
