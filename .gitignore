@@ -19,3 +19,6 @@ s3repl
 
 # local build artifact
 /cljgo
+
+# spike modules are self-contained
+spikes/s11-result-rep/cljgo-spike*
