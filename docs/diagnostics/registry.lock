@@ -1,0 +1,18 @@
+A2001 unable to resolve symbol
+A2002 recur outside tail position
+A2003 recur argument count mismatch
+A2004 wrong number of forms in special form
+A2005 def name is not a symbol
+A2006 malformed binding vector
+A2007 invalid binding form
+A2008 conflicting fn overloads
+G5000 uncategorized compiler error
+R1001 unterminated form
+R1002 unmatched delimiter
+R1003 map literal with odd number of forms
+R1004 duplicate key in map or set literal
+R1005 invalid token
+R1006 invalid number literal
+R1007 invalid escape sequence in string
+R1008 invalid character literal
+R1009 invalid metadata
