@@ -594,6 +594,93 @@ func (e *Evaluator) internBuiltins() {
 		return nil
 	})
 
+	// --- M4 channels & go (design/05 §4) ---------------------------------
+	//
+	// Goroutines ARE the cheap thing core.async's CPS `go` emulates on the
+	// JVM, so there is NO IOC rewrite: `(go ...)` runs its body in a REAL
+	// goroutine and <!/>! simply block (design/05 §4). All ops are Go
+	// builtins wrapping the pkg/lang runtime helpers, so BOTH modes behave
+	// identically — the interpreter calls them directly and rt.Boot() interns
+	// the same builtins into an emitted binary. These are core.async names
+	// (chan/>!/<!/close!/go/thread), none of which exist in clojure.core, so
+	// this is a precedence-safe addition (CLAUDE.md), never a shadow/rename.
+
+	// (chan) unbuffered; (chan n) buffered.
+	def("chan", func(args ...any) any {
+		switch len(args) {
+		case 0:
+			return lang.NewChan(0)
+		case 1:
+			n, ok := args[0].(int64)
+			if !ok {
+				panic(fmt.Errorf("chan expects an integer buffer size, got: %s", lang.PrintString(args[0])))
+			}
+			return lang.NewChan(int(n))
+		default:
+			panic(fmt.Errorf("wrong number of args (%d) passed to: chan", len(args)))
+		}
+	})
+
+	// >! / >!! : blocking put (aliases — no parking distinction without IOC).
+	chanSend := func(op string) func(args ...any) any {
+		return func(args ...any) any {
+			if len(args) != 2 {
+				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), op))
+			}
+			c, ok := args[0].(*lang.Channel)
+			if !ok {
+				panic(fmt.Errorf("%s expects a channel, got: %s", op, lang.PrintString(args[0])))
+			}
+			return lang.ChanSend(c, args[1])
+		}
+	}
+	def(">!", chanSend(">!"))
+	def(">!!", chanSend(">!!"))
+
+	// <! / <!! : blocking take; closed+drained => nil (aliases).
+	chanRecv := func(op string) func(args ...any) any {
+		return func(args ...any) any {
+			c, ok := oneArg(op, args).(*lang.Channel)
+			if !ok {
+				panic(fmt.Errorf("%s expects a channel, got: %s", op, lang.PrintString(args[0])))
+			}
+			return lang.ChanRecv(c)
+		}
+	}
+	def("<!", chanRecv("<!"))
+	def("<!!", chanRecv("<!!"))
+
+	def("close!", func(args ...any) any {
+		c, ok := oneArg("close!", args).(*lang.Channel)
+		if !ok {
+			panic(fmt.Errorf("close! expects a channel, got: %s", lang.PrintString(args[0])))
+		}
+		return lang.ChanClose(c)
+	})
+
+	// go* is the runtime seam: (go* thunk) spawns a goroutine running the
+	// 0-arg thunk and returns its result channel (design/05 §4). `go` and
+	// `thread` are macros (below) that wrap their body in (fn* [] body...)
+	// and call go* — so the emitter needs NO new op: it compiles the fn
+	// literal and the go* invoke like any other call, and lang.Go does the
+	// real `go func(){}()` for both modes.
+	def("go*", func(args ...any) any {
+		return lang.Go(oneArg("go*", args))
+	})
+
+	// go / thread macros: (go body...) => (clojure.core/go* (fn* [] body...)).
+	// thread is an alias of go (no parking distinction without IOC,
+	// design/05 §4). Registered as native macros (like defmacro) so the
+	// whole feature stays in pkg/lang + pkg/eval builtins — no core.clj edit.
+	goMacro := func(args ...any) any {
+		// args = [&form &env body...]; wrap the body in a 0-arg fn* thunk.
+		body := args[2:]
+		fnParts := append([]any{symFnStar, lang.NewVector()}, body...)
+		return lang.NewList(lang.NewSymbol("clojure.core/go*"), lang.NewList(fnParts...))
+	}
+	def("go", goMacro).SetMacro()
+	def("thread", goMacro).SetMacro()
+
 	// *1 *2 *3 *e are proper dynamic vars in core (design/03 §7b); the
 	// REPL driver binds them per session and set!s them after each eval.
 	for _, name := range []string{"*1", "*2", "*3", "*e"} {
