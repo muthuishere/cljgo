@@ -251,7 +251,11 @@ func (g *generator) constExpr(v any) string {
 // (used by the capture walk).
 func eachChild(n *ast.Node, visit func(child *ast.Node, entersFn bool)) {
 	switch n.Op {
-	case ast.OpConst, ast.OpQuote, ast.OpVar, ast.OpTheVar, ast.OpLocal:
+	case ast.OpConst, ast.OpQuote, ast.OpVar, ast.OpTheVar, ast.OpLocal, ast.OpHostRef:
+	case ast.OpHostCall:
+		for _, c := range n.Sub.(*ast.HostCallNode).Args {
+			visit(c, false)
+		}
 	case ast.OpVector:
 		for _, c := range n.Sub.(*ast.VectorNode).Items {
 			visit(c, false)
@@ -592,6 +596,12 @@ func (g *generator) gen(n *ast.Node) string {
 		g.wf("var %s any = %s\n", t, rv)
 		g.wf("lang.PopThreadBindings()\n")
 		return t
+
+	case ast.OpHostRef, ast.OpHostCall:
+		// Go interop (ADR 0010, M3-v0). AOT direct-call emission —
+		// go/packages signature resolution, real imports, [v err]/!
+		// shaping, go.mod pinning — lands in host.go (ports spike S2).
+		return g.genHost(n)
 
 	case ast.OpBinding, ast.OpFnMethod:
 		return g.failf("emit: internal: op %v is not directly emittable", n.Op)

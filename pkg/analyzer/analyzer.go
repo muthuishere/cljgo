@@ -92,6 +92,16 @@ type Analyzer struct {
 	// references and self-recursion). Required.
 	InternVar func(sym *lang.Symbol) (*lang.Var, error)
 
+	// ResolveHost resolves a namespaced symbol whose namespace is a
+	// `:require-go` alias to a Go package member (ADR 0010, design/05 §1):
+	// it returns the import path and the exported member name as written.
+	// Precedence principle (CLAUDE.md): Clojure is first-class, so the
+	// runtime MUST return ok=false whenever the namespace resolves as a
+	// Clojure namespace/alias — a host alias never shadows Clojure. nil
+	// hook means no Go interop is wired (pre-M3): host symbols fall through
+	// to the ordinary var-resolution error. Optional.
+	ResolveHost func(sym *lang.Symbol) (pkg, member string, ok bool)
+
 	gensymCounter atomic.Int64
 }
 
@@ -133,6 +143,15 @@ func (a *Analyzer) analyzeSymbol(sym *lang.Symbol, env Env) (*ast.Node, error) {
 	}
 	v, err := a.ResolveVar(sym)
 	if err != nil {
+		// A namespaced symbol whose namespace is a :require-go alias is a
+		// Go package member in value position (fn-as-value/const/var) —
+		// ADR 0010. Clojure wins (ResolveVar tried first); host is the
+		// fallback only when Clojure resolution failed.
+		if sym.HasNamespace() && a.ResolveHost != nil {
+			if pkg, member, ok := a.ResolveHost(sym); ok {
+				return &ast.Node{Op: ast.OpHostRef, Form: sym, Sub: &ast.HostRefNode{Pkg: pkg, Member: member}}, nil
+			}
+		}
 		return nil, a.errPos(sym, err)
 	}
 	// Vars are set! targets; whether the var is dynamic and thread-bound
@@ -753,6 +772,17 @@ func (a *Analyzer) parseInvoke(seq lang.ISeq, env Env) (*ast.Node, error) {
 	}
 	exprEnv := env.withContext(CtxExpr)
 	exprEnv.IsTopLevel = false
+	// Go interop call: a namespaced operator whose namespace is a
+	// :require-go alias (ADR 0010, design/05 §2). The `!` suffix
+	// (`os/Open!`) is throw-shaping sugar — Go exports can never end in
+	// `!`, so stripping it is unambiguous. Clojure operators are tried
+	// first (ResolveHost yields false for Clojure namespaces), preserving
+	// precedence.
+	if op, ok := seq.First().(*lang.Symbol); ok && op.HasNamespace() && a.ResolveHost != nil {
+		if hc, matched, err := a.parseHostCall(op, seq, exprEnv); matched {
+			return hc, err
+		}
+	}
 	fn, err := a.analyzeForm(seq.First(), exprEnv)
 	if err != nil {
 		return nil, err
@@ -766,6 +796,34 @@ func (a *Analyzer) parseInvoke(seq lang.ISeq, env Env) (*ast.Node, error) {
 		args = append(args, n)
 	}
 	return &ast.Node{Op: ast.OpInvoke, Form: seq, Sub: &ast.InvokeNode{Fn: fn, Args: args}}, nil
+}
+
+// parseHostCall resolves a namespaced operator to a Go package member and
+// builds an OpHostCall (ADR 0010, design/05 §2). matched is false when the
+// operator is not a host member (e.g. a real Clojure namespaced var), so
+// the caller falls through to the ordinary invoke path. The `!` suffix
+// sets Throw: the full name is tried first, then the `!`-stripped base.
+func (a *Analyzer) parseHostCall(op *lang.Symbol, seq lang.ISeq, exprEnv Env) (node *ast.Node, matched bool, err error) {
+	pkg, member, ok := a.ResolveHost(op)
+	throw := false
+	if !ok && strings.HasSuffix(op.Name(), "!") {
+		base := lang.InternSymbol(op.Namespace(), strings.TrimSuffix(op.Name(), "!"))
+		if pkg, member, ok = a.ResolveHost(base); ok {
+			throw = true
+		}
+	}
+	if !ok {
+		return nil, false, nil
+	}
+	args := make([]*ast.Node, 0, 4)
+	for s := seq.Next(); s != nil; s = s.Next() {
+		n, aerr := a.analyzeForm(s.First(), exprEnv)
+		if aerr != nil {
+			return nil, true, aerr
+		}
+		args = append(args, n)
+	}
+	return &ast.Node{Op: ast.OpHostCall, Form: seq, Sub: &ast.HostCallNode{Pkg: pkg, Member: member, Args: args, Throw: throw}}, true, nil
 }
 
 func constNil() *ast.Node {

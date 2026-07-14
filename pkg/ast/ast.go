@@ -44,6 +44,8 @@ const (
 	OpTheVar
 	OpSetBang
 	OpDynBind
+	OpHostRef
+	OpHostCall
 )
 
 var opNames = map[Op]string{
@@ -67,6 +69,8 @@ var opNames = map[Op]string{
 	OpTheVar:   "the-var",
 	OpSetBang:  "set!",
 	OpDynBind:  "dyn-bind",
+	OpHostRef:  "host-ref",
+	OpHostCall: "host-call",
 }
 
 func (op Op) String() string {
@@ -244,6 +248,32 @@ type TheVarNode struct {
 type SetBangNode struct {
 	Target *Node
 	Val    *Node
+}
+
+// HostRefNode is the payload of OpHostRef: a Go package member used in
+// value position — a function-as-value, exported const, or exported var
+// (design/05 §1, ADR 0010). Pkg is the import path (e.g. "net/http",
+// "strings"); Member is the exported identifier as written, no
+// auto-capitalization. The analyzer produces this when a namespaced
+// symbol's namespace resolves as a `:require-go` alias rather than a
+// Clojure namespace (precedence: Clojure wins, so the runtime's
+// ResolveHost yields false when the namespace resolves as Clojure).
+type HostRefNode struct {
+	Pkg    string
+	Member string
+}
+
+// HostCallNode is the payload of OpHostCall: an invocation of a Go
+// package member (design/05 §2). Throw carries the `!` suffix sugar —
+// `(strconv/Atoi! "x")` sets Throw so the trailing (T,error)/(T,bool) is
+// unwrapped-or-thrown instead of returned as a [v err]/[v ok] vector.
+// Both consumers (evaluator via reflect, emitter via go/types) apply the
+// identical shaping rules so behavior is dual-mode-identical.
+type HostCallNode struct {
+	Pkg    string
+	Member string
+	Args   []*Node
+	Throw  bool
 }
 
 // DynBindNode is the payload of OpDynBind, the `binding` form. Vars[i]

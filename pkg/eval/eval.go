@@ -371,6 +371,11 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 		defer lang.PopThreadBindings()
 		return e.Eval(sub.Body, s)
 
+	case ast.OpHostRef, ast.OpHostCall:
+		// Go interop (ADR 0010, M3-v0). The interpreted path — reflect
+		// registry + [v err]/!/nil-norm shaping — lands in host.go.
+		return e.evalHost(n)
+
 	case ast.OpBinding, ast.OpFnMethod:
 		// Structural children of OpLet / OpFn — never evaluated directly.
 		panic(fmt.Sprintf("eval: op %v is not directly evaluable", n.Op))
