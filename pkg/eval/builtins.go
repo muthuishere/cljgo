@@ -473,6 +473,9 @@ func (e *Evaluator) internBuiltins() {
 	// --- clojure.test host seams (core/test.cljg, ADR 0012) --------------
 	e.registerTestBuiltins(defPrivate)
 
+	// --- regex core fns + clojure.string host prims (core/string.cljg) ---
+	e.internStringBuiltins(def, defPrivate)
+
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
 	// Constructors, predicates and combinators over the pkg/lang tagged
