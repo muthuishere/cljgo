@@ -39,10 +39,11 @@ type Evaluator struct {
 func New() *Evaluator {
 	e := &Evaluator{hostAliases: map[string]map[string]string{}}
 	e.analyzer = &analyzer.Analyzer{
-		Macroexpand1: e.macroexpand1,
-		ResolveVar:   e.resolveVar,
-		InternVar:    e.internVar,
-		ResolveHost:  e.resolveHost,
+		Macroexpand1:    e.macroexpand1,
+		ResolveVar:      e.resolveVar,
+		InternVar:       e.internVar,
+		ResolveHost:     e.resolveHost,
+		ResolveHostType: e.resolveHostType,
 	}
 	e.internBuiltins()
 	e.installDefmacro()
@@ -347,6 +348,21 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 
 	case ast.OpSetBang:
 		sub := n.Sub.(*ast.SetBangNode)
+		// A Go field target (`(set! (.-Field recv) v)`) assigns through the
+		// shared GoFieldSet — same path as the AOT emitter's rt.FieldSet, so
+		// byte-identical (ADR 0010, design/05 §1).
+		if sub.Target.Op == ast.OpHostField {
+			f := sub.Target.Sub.(*ast.HostFieldNode)
+			recv, err := e.Eval(f.Recv, s)
+			if err != nil {
+				return nil, err
+			}
+			val, err := e.Eval(sub.Val, s)
+			if err != nil {
+				return nil, err
+			}
+			return GoFieldSet(recv, f.Field, val), nil
+		}
 		v := sub.Target.Sub.(*ast.VarNode).Var
 		val, err := e.Eval(sub.Val, s)
 		if err != nil {
@@ -377,9 +393,10 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 		defer lang.PopThreadBindings()
 		return e.Eval(sub.Body, s)
 
-	case ast.OpHostRef, ast.OpHostCall, ast.OpHostMethod:
-		// Go interop (ADR 0010, M3-v0/M3.1). The interpreted path — reflect
-		// registry + [v err]/!/nil-norm shaping — lands in host.go.
+	case ast.OpHostRef, ast.OpHostCall, ast.OpHostMethod, ast.OpHostField, ast.OpHostNew:
+		// Go interop (ADR 0010, M3-v0/M3.1/M3.2). The interpreted path —
+		// reflect registry + [v err]/!/nil-norm shaping, field access and
+		// struct construction — lands in host.go.
 		return e.evalHost(n, s)
 
 	case ast.OpBinding, ast.OpFnMethod:

@@ -244,6 +244,34 @@ func CallMethod(recv any, method string, throw bool, args ...any) any {
 	return eval.CallGoMethod(recv, method, throw, args)
 }
 
+// FieldGet backs the AOT emission of a Clojure dot-form field read
+// `(.-Field recv)` (ADR 0010, design/05 §1). Reflective in AOT too (the
+// receiver's static type is unknown in M3.2) and delegating to the SAME
+// eval.GoFieldGet the interpreter uses — byte-identical by construction.
+func FieldGet(recv any, field string) any {
+	return eval.GoFieldGet(recv, field)
+}
+
+// FieldSet backs the AOT emission of a Go field assignment
+// `(set! (.-Field recv) v)` (ADR 0010, design/05 §1), delegating to the SAME
+// eval.GoFieldSet the interpreter uses.
+func FieldSet(recv any, field string, val any) any {
+	return eval.GoFieldSet(recv, field, val)
+}
+
+// MakeStruct backs the AOT emission of a struct-literal constructor
+// `(pkg/Type. {...})` (ADR 0010, design/05 §1). v0 builds reflectively via
+// the SAME eval.MakeGoStruct the interpreter uses — byte-identical.
+func MakeStruct(pkg, typeName string, fields any) any {
+	return eval.MakeGoStruct(pkg, typeName, fields)
+}
+
+// NewStruct backs the AOT emission of `(go/new pkg/Type)` (ADR 0010,
+// design/05 §1), delegating to the SAME eval.NewGoStruct the interpreter uses.
+func NewStruct(pkg, typeName string) any {
+	return eval.NewGoStruct(pkg, typeName)
+}
+
 // ToFloat64 coerces a cljgo numeric arg (int64 or float64) to a Go float,
 // matching the interpreter's coerceArg leniency for float parameters.
 func ToFloat64(v any) float64 {
