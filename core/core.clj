@@ -341,3 +341,460 @@
   (if (string? (first fdecl))
     (list 'def name (first fdecl) (cons 'clojure.core/fn (next fdecl)))
     (list 'def name (cons 'clojure.core/fn fdecl))))
+
+;; ===========================================================================
+;; Sequence & collection library (clojure.core). Standard Clojure — every fn
+;; matches JVM Clojure 1.12.5 exactly (no renames; CLAUDE.md precedence
+;; principle). LAZINESS: map/filter/take/… are lazy, built on the `lazy-seq`
+;; macro over the `lazy-seq*` host primitive (pkg/eval/coll_builtins.go), which
+;; wraps a lang.LazySeq — the faithful Clojure model. Producers range/repeat/
+;; iterate/cycle are native lang seqs (also lazy). Runtime primitives that need
+;; host support (lazy-seq*, the producers, sort/sort-by/dissoc/vec/vals,
+;; reduced, <=/>=/quot/rem/max/min, zero?/pos?/neg?/nil?/some?/true?/false?)
+;; live in coll_builtins.go; everything else is defined here in Clojure over
+;; first/next/seq/cons/reduce. Behavior oracle-verified against the `clojure`
+;; CLI (conformance/tests/seq-*.clj, coll-*.clj).
+
+;; list* : prepend leading args onto a trailing seq (clojure.core).
+(defn list*
+  ([args] (seq args))
+  ([a args] (cons a args))
+  ([a b args] (cons a (cons b args)))
+  ([a b c args] (cons a (cons b (cons c args))))
+  ([a b c d & more] (cons a (cons b (cons c (cons d (apply list* more)))))))
+
+;; lazy-seq : wrap a body as a lazily-realized seq. Expands to a 0-arg thunk
+;; handed to the lazy-seq* host primitive.
+;; oracle: (macroexpand-1 '(lazy-seq a)) => (clojure.core/lazy-seq* (fn* [] a))-shape
+(defmacro lazy-seq [& body]
+  (list 'lazy-seq* (cons 'fn* (cons [] body))))
+
+;; if-let / when-let : bind + branch on the truthiness of a single value.
+;; oracle: (if-let [x v] a b) tests v, binds x=v in the taken branch.
+(defmacro if-let
+  ([bindings then] `(if-let ~bindings ~then nil))
+  ([bindings then else]
+   (let [form (first bindings) tst (second bindings)]
+     `(let [temp# ~tst]
+        (if temp# (let [~form temp#] ~then) ~else)))))
+
+(defmacro when-let [bindings & body]
+  (let [form (first bindings) tst (second bindings)]
+    `(let [temp# ~tst]
+       (if temp# (let [~form temp#] ~@body) nil))))
+
+;; --- Core higher-order fns ------------------------------------------------
+
+;; oracle: (map inc [1 2 3]) => (2 3 4); (map + [1 2 3] [10 20 30]) => (11 22 33)
+(defn map
+  ([f coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (cons (f (first s)) (map f (rest s))))))
+  ([f c1 c2]
+   (lazy-seq
+    (let [s1 (seq c1) s2 (seq c2)]
+      (when (and s1 s2)
+        (cons (f (first s1) (first s2))
+              (map f (rest s1) (rest s2))))))))
+
+;; oracle: (filter even? (range 10)) => (0 2 4 6 8)
+(defn filter [pred coll]
+  (lazy-seq
+   (when-let [s (seq coll)]
+     (let [x (first s)]
+       (if (pred x)
+         (cons x (filter pred (rest s)))
+         (filter pred (rest s)))))))
+
+;; oracle: (remove even? (range 10)) => (1 3 5 7 9)
+(defn remove [pred coll]
+  (filter (fn [x] (not (pred x))) coll))
+
+;; oracle: (reduce + 0 (range 1 11)) => 55; (reduce + (range 1 11)) => 55.
+;; Honors the `reduced` short-circuit box.
+(defn reduce
+  ([f coll]
+   (let [s (seq coll)]
+     (if s (reduce f (first s) (rest s)) (f))))
+  ([f val coll]
+   (loop [acc val s (seq coll)]
+     (if s
+       (let [ret (f acc (first s))]
+         (if (reduced? ret) (deref ret) (recur ret (next s))))
+       acc))))
+
+;; oracle: (reduce-kv (fn [a k v] (+ a v)) 0 {:a 1 :b 2 :c 3}) => 6
+(defn reduce-kv [f init coll]
+  (reduce (fn [acc k] (f acc k (get coll k))) init (keys coll)))
+
+;; oracle: (keep #(when (even? %) %) (range 6)) => (0 2 4)
+(defn keep [f coll]
+  (lazy-seq
+   (when-let [s (seq coll)]
+     (let [x (f (first s))]
+       (if (nil? x)
+         (keep f (rest s))
+         (cons x (keep f (rest s))))))))
+
+;; oracle: (mapcat (fn [x] [x x]) [1 2 3]) => (1 1 2 2 3 3)
+(defn mapcat [f & colls]
+  (apply concat (apply map f colls)))
+
+;; oracle: (mapv inc [1 2 3]) => [2 3 4]
+(defn mapv
+  ([f coll] (vec (map f coll)))
+  ([f c1 c2] (vec (map f c1 c2))))
+
+;; oracle: (filterv even? (range 10)) => [0 2 4 6 8]
+(defn filterv [pred coll] (vec (filter pred coll)))
+
+;; oracle: (run! println [1 2]) prints, returns nil.
+(defn run! [proc coll]
+  (reduce (fn [_ x] (proc x) nil) nil coll)
+  nil)
+
+;; --- Take / drop ----------------------------------------------------------
+
+;; oracle: (take 3 (range)) => (0 1 2); (take 3 (range 10)) => (0 1 2)
+(defn take [n coll]
+  (lazy-seq
+   (when (pos? n)
+     (when-let [s (seq coll)]
+       (cons (first s) (take (dec n) (rest s)))))))
+
+;; oracle: (drop 2 [1 2 3 4]) => (3 4)
+(defn drop [n coll]
+  (loop [n n s (seq coll)]
+    (if (and (pos? n) s)
+      (recur (dec n) (next s))
+      s)))
+
+;; oracle: (take-while #(< % 3) (range 10)) => (0 1 2)
+(defn take-while [pred coll]
+  (lazy-seq
+   (when-let [s (seq coll)]
+     (when (pred (first s))
+       (cons (first s) (take-while pred (rest s)))))))
+
+;; oracle: (drop-while #(< % 3) (range 10)) => (3 4 5 6 7 8 9)
+(defn drop-while [pred coll]
+  (loop [s (seq coll)]
+    (if (and s (pred (first s)))
+      (recur (next s))
+      s)))
+
+;; oracle: (take-nth 2 (range 10)) => (0 2 4 6 8)
+(defn take-nth [n coll]
+  (lazy-seq
+   (when-let [s (seq coll)]
+     (cons (first s) (take-nth n (drop n s))))))
+
+;; oracle: (partition 2 (range 6)) => ((0 1) (2 3) (4 5))
+(defn partition [n coll]
+  (lazy-seq
+   (let [s (seq coll)]
+     (when s
+       (let [p (take n s)]
+         (when (= n (count p))
+           (cons p (partition n (drop n s)))))))))
+
+;; oracle: (partition-all 2 (range 5)) => ((0 1) (2 3) (4))
+(defn partition-all [n coll]
+  (lazy-seq
+   (let [s (seq coll)]
+     (when s
+       (cons (take n s) (partition-all n (drop n s)))))))
+
+;; oracle: (split-at 2 [1 2 3 4 5]) => [(1 2) (3 4 5)]
+(defn split-at [n coll]
+  [(take n coll) (drop n coll)])
+
+;; --- Producers (core.clj half; the lazy natives are host builtins) --------
+
+;; oracle: (take 3 (repeatedly (fn [] 1))) => (1 1 1)
+(defn repeatedly
+  ([f] (lazy-seq (cons (f) (repeatedly f))))
+  ([n f] (take n (repeatedly f))))
+
+;; --- Collection ops -------------------------------------------------------
+
+;; oracle: (into [] (range 3)) => [0 1 2]; (into {} [[:a 1] [:b 2]]) => {:a 1, :b 2}
+(defn into [to from]
+  (reduce conj to from))
+
+;; oracle: (reverse [1 2 3]) => (3 2 1)
+(defn reverse [coll]
+  (reduce conj () coll))
+
+;; sequential? : true for lists/seqs/vectors (used by flatten). Approximates
+;; clojure.core/sequential? over the collections cljgo currently ships.
+(defn sequential? [x]
+  (if (vector? x) true (seq? x)))
+
+;; oracle: (flatten [1 [2 [3 [4]]]]) => (1 2 3 4)
+(defn flatten [x]
+  (lazy-seq
+   (when-let [s (seq x)]
+     (let [f (first s)]
+       (if (sequential? f)
+         (concat (flatten f) (flatten (rest s)))
+         (cons f (flatten (rest s))))))))
+
+;; oracle: (distinct [1 1 2 3 3 3 4]) => (1 2 3 4)
+(defn -distinct-step [xs seen]
+  (lazy-seq
+   (loop [xs xs seen seen]
+     (when-let [s (seq xs)]
+       (let [f (first s)]
+         (if (contains? seen f)
+           (recur (rest s) seen)
+           (cons f (-distinct-step (rest s) (conj seen f)))))))))
+
+(defn distinct [coll] (-distinct-step coll #{}))
+
+;; oracle: (interpose 0 [1 2 3]) => (1 0 2 0 3)
+(defn interpose [sep coll]
+  (drop 1 (mapcat (fn [x] (list sep x)) coll)))
+
+;; oracle: (interleave [1 2 3] [:a :b :c]) => (1 :a 2 :b 3 :c)
+(defn interleave [c1 c2]
+  (lazy-seq
+   (let [s1 (seq c1) s2 (seq c2)]
+     (when (and s1 s2)
+       (cons (first s1)
+             (cons (first s2)
+                   (interleave (rest s1) (rest s2))))))))
+
+;; oracle: (frequencies [1 1 2 3 3 3]) => {1 2, 2 1, 3 3}
+(defn frequencies [coll]
+  (reduce (fn [m x] (assoc m x (inc (get m x 0)))) {} coll))
+
+;; oracle: (group-by even? (range 6)) => {true [0 2 4], false [1 3 5]}
+(defn group-by [f coll]
+  (reduce (fn [ret x]
+            (let [k (f x)]
+              (assoc ret k (conj (get ret k []) x))))
+          {} coll))
+
+;; oracle: (zipmap [:a :b :c] [1 2 3]) => {:a 1, :b 2, :c 3}
+(defn zipmap [keys vals]
+  (loop [m {} ks (seq keys) vs (seq vals)]
+    (if (and ks vs)
+      (recur (assoc m (first ks) (first vs)) (next ks) (next vs))
+      m)))
+
+;; oracle: (merge {:a 1} {:b 2} {:a 3}) => {:a 3, :b 2}
+(defn merge [& maps]
+  (reduce (fn [a b]
+            (if (nil? b) a
+                (reduce (fn [m k] (assoc m k (get b k))) (if (nil? a) {} a) (keys b))))
+          nil maps))
+
+;; oracle: (merge-with + {:a 1 :b 2} {:a 10}) => {:a 11, :b 2}
+(defn merge-with [f & maps]
+  (reduce (fn [a b]
+            (if (nil? b) a
+                (reduce (fn [m k]
+                          (let [v (get b k)]
+                            (if (contains? m k)
+                              (assoc m k (f (get m k) v))
+                              (assoc m k v))))
+                        (if (nil? a) {} a) (keys b))))
+          nil maps))
+
+;; oracle: (select-keys {:a 1 :b 2 :c 3} [:a :c]) => {:a 1, :c 3}
+(defn select-keys [m ks]
+  (reduce (fn [acc k] (if (contains? m k) (assoc acc k (get m k)) acc)) {} ks))
+
+;; oracle: (get-in {:a {:b 5}} [:a :b]) => 5; (get-in m ks nf) with a missing
+;; key returns nf.
+(defn get-in
+  ([m ks] (reduce get m ks))
+  ([m ks not-found]
+   (loop [m m ks (seq ks)]
+     (if ks
+       (if (contains? m (first ks))
+         (recur (get m (first ks)) (next ks))
+         not-found)
+       m))))
+
+;; oracle: (assoc-in {:a {:b 1}} [:a :c] 9) => {:a {:b 1, :c 9}}
+(defn assoc-in [m [k & ks] v]
+  (if ks
+    (assoc m k (assoc-in (get m k) ks v))
+    (assoc m k v)))
+
+;; oracle: (update {:a 1} :a inc) => {:a 2}
+(defn update
+  ([m k f] (assoc m k (f (get m k))))
+  ([m k f x] (assoc m k (f (get m k) x)))
+  ([m k f x y] (assoc m k (f (get m k) x y)))
+  ([m k f x y & more] (assoc m k (apply f (get m k) x y more))))
+
+;; oracle: (update-in {:a {:b 1}} [:a :b] inc) => {:a {:b 2}}
+(defn update-in [m [k & ks] f & args]
+  (if ks
+    (assoc m k (apply update-in (get m k) ks f args))
+    (assoc m k (apply f (get m k) args))))
+
+;; oracle: (empty? []) => true; (empty? [1]) => false
+(defn empty? [coll] (not (seq coll)))
+
+;; oracle: (not-empty [1 2]) => [1 2]; (not-empty []) => nil
+(defn not-empty [coll] (if (seq coll) coll nil))
+
+;; --- Numeric predicates & mod (tower primitives are host builtins) --------
+
+;; oracle: (even? 4) => true; (odd? 3) => true
+(defn even? [n] (zero? (rem n 2)))
+(defn odd? [n] (not (even? n)))
+
+;; oracle: (mod 7 3) => 1; (mod -7 3) => 2
+(defn mod [num div]
+  (let [m (rem num div)]
+    (if (if (zero? m) true (= (pos? num) (pos? div)))
+      m
+      (+ m div))))
+
+;; --- Function combinators -------------------------------------------------
+
+;; oracle: (identity 7) => 7
+(defn identity [x] x)
+
+;; oracle: ((constantly 42) 1 2 3) => 42
+(defn constantly [x] (fn [& _] x))
+
+;; oracle: ((comp inc inc) 5) => 7
+(defn comp
+  ([] identity)
+  ([f] f)
+  ([f g] (fn [& args] (f (apply g args))))
+  ([f g & fs] (reduce comp (list* f g fs))))
+
+;; oracle: ((partial + 10) 5) => 15
+(defn partial
+  ([f] f)
+  ([f a] (fn [& args] (apply f a args)))
+  ([f a b] (fn [& args] (apply f a b args)))
+  ([f a b c] (fn [& args] (apply f a b c args)))
+  ([f a b c & more] (fn [& args] (apply f a b c (concat more args)))))
+
+;; oracle: ((complement even?) 3) => true
+(defn complement [f]
+  (fn [& args] (not (apply f args))))
+
+;; oracle: ((fnil inc 0) nil) => 1
+(defn fnil
+  ([f a] (fn [x & args] (apply f (if (nil? x) a x) args)))
+  ([f a b] (fn [x y & args] (apply f (if (nil? x) a x) (if (nil? y) b y) args))))
+
+;; oracle: ((juxt inc dec) 5) => [6 4]
+(defn juxt
+  ([f] (fn [& args] [(apply f args)]))
+  ([f g] (fn [& args] [(apply f args) (apply g args)]))
+  ([f g h] (fn [& args] [(apply f args) (apply g args) (apply h args)]))
+  ([f g h & fs]
+   (fn [& args]
+     (reduce (fn [v p] (conj v (apply p args))) [] (list* f g h fs)))))
+
+;; oracle: ((every-pred even? pos?) 4) => true
+(defn every-pred [& preds]
+  (fn [& args]
+    (loop [ps (seq preds)]
+      (if ps
+        (if (loop [as (seq args)]
+              (if as
+                (if ((first ps) (first as)) (recur (next as)) false)
+                true))
+          (recur (next ps))
+          false)
+        true))))
+
+;; oracle: ((some-fn even? neg?) 3) => false
+(defn some-fn [& preds]
+  (fn [& args]
+    (loop [ps (seq preds)]
+      (if ps
+        (let [r (loop [as (seq args)]
+                  (if as
+                    (or ((first ps) (first as)) (recur (next as)))
+                    false))]
+          (if r r (recur (next ps))))
+        false))))
+
+;; --- Predicates / reducers ------------------------------------------------
+
+;; oracle: (every? even? [2 4 6]) => true
+(defn every? [pred coll]
+  (loop [s (seq coll)]
+    (if s
+      (if (pred (first s)) (recur (next s)) false)
+      true)))
+
+(defn not-every? [pred coll] (not (every? pred coll)))
+
+;; oracle: (some even? [1 3 4]) => true. clojure.core seq predicate — NOT the
+;; Result-track `just`/`none` (CLAUDE.md precedence: `some` stays Clojure's).
+(defn some [pred coll]
+  (loop [s (seq coll)]
+    (when s
+      (or (pred (first s)) (recur (next s))))))
+
+(defn not-any? [pred coll] (not (some pred coll)))
+
+;; oracle: (max-key count "a" "ccc" "bb") => "ccc"
+(defn max-key
+  ([k x] x)
+  ([k x y] (if (> (k x) (k y)) x y))
+  ([k x y & more]
+   (reduce (fn [a b] (if (> (k a) (k b)) a b)) (if (> (k x) (k y)) x y) more)))
+
+;; oracle: (min-key count "a" "ccc" "bb") => "a"
+(defn min-key
+  ([k x] x)
+  ([k x y] (if (< (k x) (k y)) x y))
+  ([k x y & more]
+   (reduce (fn [a b] (if (< (k a) (k b)) a b)) (if (< (k x) (k y)) x y) more)))
+
+;; --- Iteration macros -----------------------------------------------------
+
+;; oracle: (dotimes [i 3] ...) runs the body for i=0,1,2, returns nil.
+(defmacro dotimes [bindings & body]
+  (let [i (first bindings) n (second bindings)]
+    `(let [n# ~n]
+       (loop [~i 0]
+         (if (< ~i n#)
+           (do ~@body (recur (inc ~i)))
+           nil)))))
+
+;; oracle: (doseq [x coll] ...) runs the body per element, returns nil.
+;; Multiple binding pairs nest; modifiers (:when/:let/:while) are not yet
+;; supported (v0). TODO: modifiers.
+(defmacro doseq [bindings & body]
+  (if (empty? bindings)
+    `(do ~@body nil)
+    (let [x (first bindings) coll (second bindings) more (nnext bindings)]
+      `(loop [s# (seq ~coll)]
+         (if s#
+           (do (let [~x (first s#)]
+                 (doseq [~@more] ~@body))
+               (recur (next s#)))
+           nil)))))
+
+;; for — simplified list comprehension (v0): one or more [binding coll] pairs,
+;; no modifiers. Expands to nested map/mapcat, so the result is a lazy seq.
+;; oracle: (for [x (range 3)] (* x x)) => (0 1 4)
+;; TODO: :when / :let / :while modifiers.
+(defn -for-expand [pairs body]
+  (if (seq pairs)
+    (let [x (first (first pairs))
+          coll (second (first pairs))
+          more (rest pairs)]
+      (if (seq more)
+        (list 'clojure.core/mapcat (list 'clojure.core/fn (vector x) (-for-expand more body)) coll)
+        (list 'clojure.core/map (list 'clojure.core/fn (vector x) body) coll)))
+    body))
+
+(defmacro for [bindings body]
+  (-for-expand (-pairs bindings) body))

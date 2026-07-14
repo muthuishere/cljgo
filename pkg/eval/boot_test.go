@@ -10,17 +10,21 @@ import (
 
 // TestBootUnderBudget times the full boot of design/00 §6 (M1): Go
 // builtins → bootstrap defmacro → embedded core.clj loaded into
-// clojure.core → user refers core's publics. Budget is 100ms with lots
-// of headroom (measured ~1ms on darwin/arm64); the point is catching a
-// regression that makes boot do something pathological, not a precise
-// benchmark (BenchmarkBoot is that).
+// clojure.core → user refers core's publics. Budget is 250ms (ADR 0019):
+// every core.clj def is macroexpanded through the tree-walk evaluator, so
+// interpreter-boot cost grows ~linearly with the size of clojure.core (the
+// seq/coll library and future core growth). The point is catching a
+// *pathological* regression (O(n²) blowup, runaway realization, per-form
+// I/O), not the expected linear cost of a larger core (BenchmarkBoot is the
+// precise benchmark). Compiled-binary startup (<50ms, design/00 §5) is a
+// separate budget, unaffected by interpret-time boot.
 func TestBootUnderBudget(t *testing.T) {
 	start := time.Now()
 	ev := eval.New()
 	elapsed := time.Since(start)
 	t.Logf("boot (builtins + defmacro + core.clj): %v", elapsed)
-	if elapsed > 100*time.Millisecond {
-		t.Fatalf("boot took %v, budget 100ms (design/00 §6 M1)", elapsed)
+	if elapsed > 250*time.Millisecond {
+		t.Fatalf("boot took %v, budget 250ms (design/00 §6 M1, ADR 0019)", elapsed)
 	}
 
 	// Boot must leave the macros live: core.clj's macros are interned in
