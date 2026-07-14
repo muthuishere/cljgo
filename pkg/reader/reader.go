@@ -184,9 +184,35 @@ func (r *Reader) annotate(form any, start Position) any {
 	return iobj.WithMeta(m.(lang.IPersistentMap))
 }
 
+// sentinel is a unique internal marker value returned by readWithDelim.
+type sentinel struct{ name string }
+
+// sentReadFinished is returned by readWithDelim when it consumed the
+// enclosing collection's closing delimiter in place of a form. It
+// mirrors clojure.lang.LispReader's READ_FINISHED: it lets the reader
+// loop over discards (#_) and non-matching reader conditionals (#?)
+// that sit immediately before the closer without misreading the closer
+// as an "Unmatched delimiter".
+var sentReadFinished = &sentinel{"read-finished"}
+
+// spliceForms carries the forms produced by a matched splicing reader
+// conditional (#?@); readDelimited splices them into the enclosing
+// collection. It never escapes to a top-level (non-collection) read.
+type spliceForms struct{ items []any }
+
 // readForm reads exactly one form, skipping whitespace, comments and
-// #_ discards. It returns ErrEOF only at clean end of input.
+// #_ discards. It returns ErrEOF only at clean end of input. It is the
+// non-collection entry point: splicing (#?@) is disallowed here.
 func (r *Reader) readForm() (any, error) {
+	return r.readWithDelim(0, false, false)
+}
+
+// readWithDelim reads one form. When hasDelim is set and the reader
+// encounters returnOn (a collection's closing delimiter), it returns
+// sentReadFinished instead of a form. spliceOK reports whether a
+// splicing reader conditional (#?@) is permitted here (only directly
+// inside a collection).
+func (r *Reader) readWithDelim(returnOn rune, hasDelim, spliceOK bool) (any, error) {
 	for {
 		r.skipWhitespace()
 		start := r.s.Pos()
@@ -196,6 +222,9 @@ func (r *Reader) readForm() (any, error) {
 				return nil, ErrEOF
 			}
 			return nil, r.errAt(start, "read error: %v", err)
+		}
+		if hasDelim && c == returnOn {
+			return sentReadFinished, nil
 		}
 
 		var form any
@@ -223,7 +252,7 @@ func (r *Reader) readForm() (any, error) {
 			continue
 		case c == '#':
 			var again bool
-			form, again, err = r.readDispatch(start)
+			form, again, err = r.readDispatch(start, spliceOK)
 			if err == nil && again {
 				continue
 			}
@@ -243,6 +272,11 @@ func (r *Reader) readForm() (any, error) {
 		}
 		if err != nil {
 			return nil, err
+		}
+		if _, ok := form.(spliceForms); ok {
+			// The splice sentinel is handled by readDelimited; it is
+			// not an IObj and must not be annotated.
+			return form, nil
 		}
 		return r.annotate(form, start), nil
 	}
@@ -281,8 +315,11 @@ func (r *Reader) readWrapped(start Position, sym string) (any, error) {
 }
 
 // readDispatch handles the # dispatch character. again=true means the
-// caller should continue its read loop (comment or discard consumed).
-func (r *Reader) readDispatch(start Position) (form any, again bool, err error) {
+// caller should continue its read loop (comment, discard, or a reader
+// conditional with no matching branch was consumed). spliceOK reports
+// whether a splicing reader conditional (#?@) is allowed in this
+// position (only directly inside a collection).
+func (r *Reader) readDispatch(start Position, spliceOK bool) (form any, again bool, err error) {
 	c, err := r.s.Read()
 	if err != nil {
 		return nil, false, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w dispatch character", ErrIncomplete)}
@@ -325,8 +362,15 @@ func (r *Reader) readDispatch(start Position) (form any, again bool, err error) 
 	case '#':
 		f, err := r.readSymbolicValue(start)
 		return f, false, err
-	case '?', ':', '=':
-		return nil, false, r.errAt(start, "#%c reader macro is not yet implemented (reader Phase 2)", c)
+	case '?':
+		// Reader conditional: #?(...) selecting, #?@(...) splicing.
+		return r.readConditional(start, spliceOK)
+	case ':':
+		// Namespaced map: #:ns{...}, #::{...}, #::alias{...}.
+		f, err := r.readNamespacedMap(start)
+		return f, false, err
+	case '=':
+		return nil, false, r.errAt(start, "#= reader macro is not yet implemented (reader Phase 2)")
 	default:
 		// A letter after # begins a tagged literal (#tag form). cljgo's
 		// Result/Option values print/read as #cljgo/ok, #cljgo/err,
@@ -382,6 +426,25 @@ func (r *Reader) readTaggedLiteral(start Position) (any, error) {
 		// The following form is ignored by convention (none is the
 		// nullary sentinel; it also prints simply as `none`).
 		return lang.None, nil
+	case "uuid":
+		s, ok := val.(string)
+		if !ok {
+			return nil, r.errAt(start, "UUID literal expects a string, not %s", lang.PrintString(val))
+		}
+		if !uuidRe.MatchString(s) {
+			return nil, r.errAt(start, "Invalid UUID string: %s", s)
+		}
+		return UUID{s: strings.ToLower(s)}, nil
+	case "inst":
+		s, ok := val.(string)
+		if !ok {
+			return nil, r.errAt(start, "Instant literal expects a string, not %s", lang.PrintString(val))
+		}
+		return Inst{s: s}, nil
+	}
+	// Extension point: a program-registered *data-readers* function.
+	if fn, ok := dataReaderFor(sym); ok {
+		return fn.Invoke(val), nil
 	}
 	return nil, r.errAt(start, "No reader function for tag #%s", sym.FullName())
 }
@@ -399,23 +462,20 @@ func (r *Reader) readDelimited(what string, end rune, start Position) ([]any, er
 	}
 	var forms []any
 	for {
-		r.skipWhitespace()
-		pos := r.s.Pos()
-		c, err := r.s.Read()
-		if err != nil {
-			return nil, unterminated(pos)
-		}
-		if c == end {
-			return forms, nil
-		}
-		r.s.Unread()
-		f, err := r.readForm()
+		f, err := r.readWithDelim(end, true, true)
 		if errors.Is(err, ErrEOF) {
-			// A comment or discard consumed the rest of the input.
+			// EOF, a comment, or a discard consumed the rest of the input.
 			return nil, unterminated(r.s.Pos())
 		}
 		if err != nil {
 			return nil, err
+		}
+		if f == sentReadFinished {
+			return forms, nil
+		}
+		if sp, ok := f.(spliceForms); ok {
+			forms = append(forms, sp.items...)
+			continue
 		}
 		forms = append(forms, f)
 	}
