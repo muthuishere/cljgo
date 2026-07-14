@@ -354,6 +354,20 @@ func eachChild(n *ast.Node, visit func(child *ast.Node, entersFn bool)) {
 		if init := n.Sub.(*ast.BindingNode).Init; init != nil {
 			visit(init, false)
 		}
+	case ast.OpThrow:
+		visit(n.Sub.(*ast.ThrowNode).Exception, false)
+	case ast.OpTry:
+		s := n.Sub.(*ast.TryNode)
+		visit(s.Body, false)
+		for _, c := range s.Catches {
+			visit(c, false)
+		}
+		if s.Finally != nil {
+			visit(s.Finally, false)
+		}
+	case ast.OpCatch:
+		// The catch binding has no init; only the body has children.
+		visit(n.Sub.(*ast.CatchNode).Body, false)
 	default:
 		panic(&emitErr{fmt.Errorf("emit: walk: unhandled op %v", n.Op)})
 	}
@@ -644,7 +658,20 @@ func (g *generator) gen(n *ast.Node) string {
 		// interpreter uses, byte-identical by construction.
 		return g.genHost(n)
 
-	case ast.OpBinding, ast.OpFnMethod:
+	case ast.OpThrow:
+		// throw = panic; the value transferred control and yields no
+		// r-value (like recur, "" tells callers not to assign). rt.Throw
+		// wraps a non-error so the catch-all classes still catch it — the
+		// SAME eval.Throw the interpreter uses, byte-identical.
+		s := n.Sub.(*ast.ThrowNode)
+		rv := g.gen(s.Exception)
+		g.wf("panic(rt.Throw(%s))\n", rv)
+		return ""
+
+	case ast.OpTry:
+		return g.genTry(n.Sub.(*ast.TryNode))
+
+	case ast.OpBinding, ast.OpFnMethod, ast.OpCatch:
 		return g.failf("emit: internal: op %v is not directly emittable", n.Op)
 
 	default:
@@ -785,6 +812,56 @@ func (g *generator) genLoop(s *ast.LetNode) string {
 	}
 	g.wf("}\n")
 	g.wf("}\n")
+	return t
+}
+
+// genTry emits (try body* catch* finally?). This is the ONE sanctioned
+// IIFE for control flow (design/04 §3): try genuinely needs a func
+// boundary for Go's defer/recover. The result var is declared OUTSIDE the
+// closure and assigned by the body (normal path) or a catch body (recover
+// path); a finally runs via a deferred closure with its value discarded.
+// Defers are LIFO, so the catch-defer (emitted last) recovers first and
+// the finally-defer (emitted first) runs after — finally on every path,
+// including an uncaught throw unwinding through the closure. recur cannot
+// cross a try (analysis-blocked), so no `continue` ever needs to escape
+// the closure. rt.Throw / rt.Recover / rt.CatchMatches are the SAME
+// eval.* functions the interpreter uses, so both modes are byte-identical.
+func (g *generator) genTry(s *ast.TryNode) string {
+	t := g.temp()
+	g.wf("var %s any\n_ = %s\n", t, t)
+	g.wf("func() {\n")
+
+	if s.Finally != nil {
+		g.wf("defer func() {\n")
+		g.discard(g.gen(s.Finally)) // finally value discarded
+		g.wf("}()\n")
+	}
+
+	if len(s.Catches) > 0 {
+		g.wf("defer func() {\n")
+		g.wf("if r := recover(); r != nil {\n")
+		g.wf("thrown := rt.Recover(r)\n")
+		for _, cn := range s.Catches {
+			c := cn.Sub.(*ast.CatchNode)
+			g.wf("if rt.CatchMatches(%q, thrown) {\n", c.ClassName)
+			b := c.Binding.Sub.(*ast.BindingNode)
+			gn := g.bindLocal(b)
+			g.wf("var %s any = thrown\n_ = %s\n", gn, gn)
+			if rv := g.gen(c.Body); rv != "" {
+				g.wf("%s = %s\n", t, rv)
+			}
+			g.wf("return\n")
+			g.wf("}\n")
+		}
+		g.wf("panic(r)\n") // no catch matched: re-throw (finally still runs)
+		g.wf("}\n")
+		g.wf("}()\n")
+	}
+
+	if rv := g.gen(s.Body); rv != "" {
+		g.wf("%s = %s\n", t, rv)
+	}
+	g.wf("}()\n")
 	return t
 }
 

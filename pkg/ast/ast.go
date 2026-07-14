@@ -49,6 +49,9 @@ const (
 	OpHostMethod
 	OpHostField
 	OpHostNew
+	OpThrow
+	OpTry
+	OpCatch
 )
 
 var opNames = map[Op]string{
@@ -77,6 +80,9 @@ var opNames = map[Op]string{
 	OpHostMethod: "host-method",
 	OpHostField:  "host-field",
 	OpHostNew:    "host-new",
+	OpThrow:      "throw",
+	OpTry:        "try",
+	OpCatch:      "catch",
 }
 
 func (op Op) String() string {
@@ -102,10 +108,11 @@ type Node struct {
 type BindKind uint8
 
 const (
-	BindLet  BindKind = iota + 1 // let* binding
-	BindArg                      // fn method parameter
-	BindFn                       // fn* self-name
-	BindLoop                     // loop* binding (a recur target)
+	BindLet   BindKind = iota + 1 // let* binding
+	BindArg                       // fn method parameter
+	BindFn                        // fn* self-name
+	BindLoop                      // loop* binding (a recur target)
+	BindCatch                     // try catch-clause binding (the caught exception)
 )
 
 func (k BindKind) String() string {
@@ -118,6 +125,8 @@ func (k BindKind) String() string {
 		return "fn"
 	case BindLoop:
 		return "loop"
+	case BindCatch:
+		return "catch"
 	}
 	return fmt.Sprintf("BindKind(%d)", uint8(k))
 }
@@ -333,6 +342,43 @@ type HostNewNode struct {
 	Type   string
 	Fields *Node // OpMap of field initializers, or nil
 	Zero   bool  // true for (go/new T): zero-valued, Fields must be nil
+}
+
+// ThrowNode is the payload of OpThrow: `(throw expr)`. Exception is the
+// analyzed thrown value. Both consumers realize throw as a Go panic (the
+// evaluator panics the value, the emitter emits `panic(rt.Throw(v))`), so
+// it unwinds to the nearest OpTry recover or the top-level boundary. A
+// thrown value that is not a Go `error` is wrapped in a runtime exception
+// so `Throwable`/`Exception`/`RuntimeException` still catch it — cljgo v0
+// allows throwing any value (JVM Clojure requires a Throwable), documented
+// on eval.Throw.
+type ThrowNode struct {
+	Exception *Node
+}
+
+// TryNode is the payload of OpTry: `(try body* catch* finally?)`. Body is
+// the implicit-do protected body; Catches are OpCatch nodes tried in
+// order (first whose class matches the thrown value binds it and runs);
+// Finally (an OpDo, or nil) always runs for side effect with its value
+// discarded. recur cannot cross a try (the analyzer marks the inherited
+// RecurFrame Blocked="try"), so the emitter's deferred-recover closure —
+// the ONE sanctioned IIFE for control flow (design/04 §3) — never needs to
+// carry a `continue` across the func boundary.
+type TryNode struct {
+	Body    *Node
+	Catches []*Node // OpCatch
+	Finally *Node   // OpDo or nil
+}
+
+// CatchNode is the payload of OpCatch: `(catch Class binding body*)`.
+// ClassName is the catch class symbol as written (its full name, e.g.
+// "Exception" or "clojure.lang.ExceptionInfo"); the runtime maps it to a
+// cljgo exception kind (eval.CatchMatches). Binding is the OpBinding
+// (BindCatch) the caught exception binds to for the body's scope.
+type CatchNode struct {
+	ClassName string
+	Binding   *Node // OpBinding (BindCatch)
+	Body      *Node
 }
 
 // DynBindNode is the payload of OpDynBind, the `binding` form. Vars[i]

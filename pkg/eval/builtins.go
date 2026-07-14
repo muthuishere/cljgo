@@ -456,6 +456,9 @@ func (e *Evaluator) internBuiltins() {
 		panic(lang.NewIllegalArgumentError(msg))
 	})
 
+	// --- Exceptions: ex-info / ex-data / ex-message / ex-cause -----------
+	e.registerExceptionBuiltins(def)
+
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
 	// Constructors, predicates and combinators over the pkg/lang tagged

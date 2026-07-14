@@ -272,6 +272,26 @@ func NewStruct(pkg, typeName string) any {
 	return eval.NewGoStruct(pkg, typeName)
 }
 
+// --- Exception shaping helpers (design/03 §6) ---------------------------
+//
+// These back the AOT emitter's throw/try emission so it is byte-identical
+// to the interpreter's OpThrow panic and OpTry recover: all three delegate
+// to the SAME eval functions the tree-walk evaluator calls.
+
+// Throw normalizes a thrown value into the error `panic` carries — a value
+// already satisfying `error` throws as-is, anything else wraps so the
+// catch-all classes still catch it (eval.Throw).
+func Throw(v any) error { return eval.Throw(v) }
+
+// Recover normalizes a recovered panic into the thrown error (eval.Recover).
+func Recover(r any) error { return eval.Recover(r) }
+
+// CatchMatches reports whether a catch clause's class symbol matches the
+// thrown value (eval.CatchMatches).
+func CatchMatches(className string, thrown error) bool {
+	return eval.CatchMatches(className, thrown)
+}
+
 // ToFloat64 coerces a cljgo numeric arg (int64 or float64) to a Go float,
 // matching the interpreter's coerceArg leniency for float parameters.
 func ToFloat64(v any) float64 {
