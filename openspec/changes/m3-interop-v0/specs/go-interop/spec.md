@@ -41,7 +41,7 @@ shaping is byte-identical across interpreted and compiled modes.
 
 #### Scenario: error is a truthy value in the error slot
 - **WHEN** `(strconv/Atoi "x")` is evaluated
-- **THEN** the result is a 2-element vector whose first element is `nil` and whose second element is truthy (a non-nil error)
+- **THEN** the result is a 2-element vector `[0 <err>]` whose first element is the Go zero value passed through (`0`, exactly what `v, err := strconv.Atoi("x")` binds so AOT and eval agree) and whose second element is truthy (a non-nil error)
 
 #### Scenario: bang unwraps on success
 - **WHEN** `(strconv/Atoi! "42")` is evaluated
