@@ -22,3 +22,7 @@ s3repl
 
 # spike modules are self-contained
 spikes/s11-result-rep/cljgo-spike*
+
+# overnight-loop runtime lock (not project content)
+scheduled_tasks.lock
+.claude/scheduled_tasks.lock
