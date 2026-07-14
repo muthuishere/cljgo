@@ -90,3 +90,12 @@ error; wired as a structured diagnostic (W-band) per ADR 0015.
 - Spike S1 outcome could overturn D1's struct hypothesis (then D4/D5 stand unchanged; only pkg/lang internals move).
 
 > RATIFIED (owner, 2026-07-12): constructors are `just`/`none` — clojure.core/some is untouchable per the precedence principle in CLAUDE.md.
+
+
+---
+## D1 RESOLVED (spike S11, 2026-07-12)
+Adopt **variant D — type-per-tag**: distinct `okT{v any}` / `errT{v any}` /
+`justT{v any}` structs + shared `none` sentinel. Fastest & lowest-alloc
+(171ns/256B happy path), predicates are Go type switches, `(ok nil)` vs
+`none` distinct for free, tagged-literal printing `#cljgo/ok`. Vector rep
+rejected (8x slower). See spikes/s11-result-rep/RESULTS.md.
