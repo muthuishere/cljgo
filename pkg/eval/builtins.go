@@ -286,6 +286,11 @@ func (e *Evaluator) internBuiltins() {
 	// macros expand onto (protocols.go).
 	e.internProtocolBuiltins(def)
 
+	// Multimethod substrate (defmulti/defmethod + methods/get-method/
+	// remove-method): the flat =-based dispatch table the core.clj
+	// defmulti/defmethod macros expand onto (multimethod_builtins.go).
+	e.internMultimethodBuiltins(def)
+
 	// atom / swap! / reset! / deref: the minimal mutable-cell set
 	// (clojure.core). test.cljg holds its report counters in an atom.
 	def("atom", func(args ...any) any {
