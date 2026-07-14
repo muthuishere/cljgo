@@ -1,0 +1,183 @@
+;; test.cljg — cljgo's clojure.test bootstrap (interpreted slice of
+;; ADR 0012 / openspec testing-first-class, task 1.1). Loaded at startup
+;; into the clojure.test namespace by pkg/eval (loadClojureTest), AFTER
+;; clojure.core is up. The .cljg extension follows ADR 0017.
+;;
+;; Behavior is oracle-verified against JVM Clojure 1.12.5 clojure.test:
+;;   (run-tests) over {2 pass-assertions, 1 fail, 1 error, 1 testing-pass}
+;;   => {:test 4, :pass 3, :fail 1, :error 1, :type :summary}
+;; where :test counts deftests run and pass+fail+error counts assertions
+;; ("Ran N tests containing M assertions.").
+;;
+;; DEVIATIONS from JVM clojure.test (documented, interim until the seams
+;; below land):
+;;   * try/catch does not exist in the evaluator yet (analyzer blocks
+;;     "try"), so the error boundary is the Go host seam
+;;     clojure.core/-guarded-call (recover→handler). It gives faithful
+;;     :error counting for assertions that throw and for uncaught
+;;     exceptions in a test body.
+;;   * (is (thrown? ...)) is DEFERRED: it needs to catch a *specific*
+;;     exception class, which needs host-class interop (v3). `is`
+;;     recognizes the form and routes it to a clearly-deferred :error
+;;     report rather than pretending to pass.
+;;   * use-fixtures / *test-out* / per-ns "Testing <ns>" banner are not
+;;     in this slice (task 1.2).
+
+;; The loader (pkg/eval loadClojureTest) already binds *ns* to a fresh
+;; clojure.test; these two forms make it explicit and refer clojure.core so
+;; the rest of the file resolves unqualified core names. Both are qualified
+;; because clojure.test has nothing referred until the refer runs.
+(clojure.core/in-ns 'clojure.test)
+(clojure.core/refer 'clojure.core)
+
+;; --- dynamic state (clojure.test shape) -----------------------------
+
+;; *report-counters* is an atom holding {:test :pass :fail :error} while a
+;; run is in progress, nil otherwise (bare (test-var) calls no-op counters).
+(def ^:dynamic *report-counters* nil)
+;; the vars whose test bodies are currently executing (innermost first).
+(def ^:dynamic *testing-vars* nil)
+;; the (testing "...") context strings currently in scope (innermost first).
+(def ^:dynamic *testing-contexts* nil)
+
+(def initial-report-counters {:test 0 :pass 0 :fail 0 :error 0})
+
+;; --- counters + reporting -------------------------------------------
+
+(defn inc-report-counter [k]
+  (when *report-counters*
+    (swap! *report-counters*
+           (fn [m] (assoc m k (inc (get m k 0)))))))
+
+(defn testing-vars-str []
+  (if (seq *testing-vars*)
+    (pr-str (first *testing-vars*))
+    ""))
+
+(defn testing-contexts-str []
+  (loop [cs *testing-contexts* s ""]
+    (if (seq cs)
+      (recur (next cs) (str (first cs) " " s))
+      s)))
+
+;; do-report tallies every assertion by :type and prints failures/errors
+;; showing the failing form (:expected) and the observed value (:actual).
+(defn do-report [m]
+  (let [t (:type m)]
+    (inc-report-counter t)
+    (cond
+      (= t :fail)
+      (do (println)
+          (println "FAIL in" (testing-vars-str) (testing-contexts-str))
+          (println "expected:" (pr-str (:expected m)))
+          (println "  actual:" (pr-str (:actual m))))
+      (= t :error)
+      (do (println)
+          (println "ERROR in" (testing-vars-str) (testing-contexts-str))
+          (println "expected:" (pr-str (:expected m)))
+          (println "  actual:" (pr-str (:actual m))))
+      :else nil)))
+
+;; --- is / testing / deftest -----------------------------------------
+
+;; `is` supports (= a b), a plain (pred args...) call, a bare expression,
+;; and (thrown? ...) (deferred). Every branch runs under the -guarded-call
+;; error boundary so a throwing assertion reports :error and the run
+;; continues, matching clojure.test's per-assertion try/catch.
+(defmacro is
+  ([form] (list 'clojure.test/is form nil))
+  ([form msg]
+   (cond
+     (and (seq? form) (= (first form) 'thrown?))
+     ;; DEFERRED: needs host-class interop (v3) to check the thrown type.
+     `(do-report {:type :error
+                  :message "is with thrown? is not yet supported (host-class interop pending)"
+                  :expected '~form
+                  :actual nil})
+
+     (seq? form)
+     `(clojure.core/-guarded-call
+        (fn []
+          (let [values# (clojure.core/list ~@(rest form))
+                result# (clojure.core/apply ~(first form) values#)]
+            (if result#
+              (do-report {:type :pass :message ~msg :expected '~form
+                          :actual (clojure.core/cons '~(first form) values#)})
+              ;; '~'not => the bare symbol `not`, so :actual prints as
+              ;; (not (= 1 2)) like JVM clojure.test, not clojure.core/not.
+              (do-report {:type :fail :message ~msg :expected '~form
+                          :actual (clojure.core/list '~'not (clojure.core/cons '~(first form) values#))}))
+            result#))
+        (fn [e#]
+          (do-report {:type :error :message ~msg :expected '~form :actual e#})))
+
+     :else
+     `(clojure.core/-guarded-call
+        (fn []
+          (let [value# ~form]
+            (if value#
+              (do-report {:type :pass :message ~msg :expected '~form :actual value#})
+              (do-report {:type :fail :message ~msg :expected '~form :actual value#}))
+            value#))
+        (fn [e#]
+          (do-report {:type :error :message ~msg :expected '~form :actual e#}))))))
+
+;; `binding` is a cljgo special form (not in the reader's syntax-quote
+;; special list, which knows only standard-Clojure specials), so force the
+;; bare symbol with ~'binding — otherwise syntax-quote would qualify it to
+;; clojure.test/binding and it would not resolve.
+(defmacro testing [string & body]
+  `(~'binding [*testing-contexts* (cons ~string *testing-contexts*)]
+     ~@body))
+
+;; deftest interns a test var: its value is a thunk that runs the test,
+;; and its :test metadata holds the actual body thunk (as JVM clojure.test
+;; does). run-tests discovers vars by that :test metadata.
+(defmacro deftest [name & body]
+  `(do
+     (def ~name (fn [] (test-var (var ~name))))
+     (clojure.core/alter-meta! (var ~name) clojure.core/assoc :test (fn [] ~@body))
+     (var ~name)))
+
+;; --- running --------------------------------------------------------
+
+(defn test-var [v]
+  (let [t (:test (meta v))]
+    (when t
+      (binding [*testing-vars* (cons v *testing-vars*)]
+        (inc-report-counter :test)
+        (clojure.core/-guarded-call
+          t
+          (fn [e]
+            (do-report {:type :error
+                        :message "Uncaught exception, not in assertion."
+                        :expected nil
+                        :actual e})))))))
+
+(defn report-summary [m]
+  (println)
+  (println "Ran" (:test m) "tests containing"
+           (+ (:pass m) (:fail m) (:error m)) "assertions.")
+  (println (:fail m) "failures," (:error m) "errors."))
+
+(defn run-test-vars [vars]
+  (binding [*report-counters* (atom initial-report-counters)]
+    (loop [vs vars]
+      (when (seq vs)
+        (test-var (first vs))
+        (recur (next vs))))
+    (let [summary (assoc (deref *report-counters*) :type :summary)]
+      (report-summary summary)
+      summary)))
+
+;; run-tests with no args runs the current namespace; with namespace
+;; symbols, runs those. Returns the {:test :pass :fail :error :type}
+;; summary map, exactly clojure.test's shape.
+(defn run-tests [& namespaces]
+  (run-test-vars (clojure.core/-collect-test-vars namespaces)))
+
+(defn run-all-tests []
+  (run-test-vars (clojure.core/-all-test-vars)))
+
+(defn successful? [summary]
+  (and (= 0 (:fail summary)) (= 0 (:error summary))))

@@ -230,6 +230,184 @@ func (e *Evaluator) internBuiltins() {
 		return !lang.IsTruthy(oneArg("not", args))
 	})
 
+	// --- data + state primitives that core/test.cljg consumes. All are
+	// real clojure.core fns (precedence-safe additions, not renames).
+
+	def("inc", func(args ...any) any {
+		return lang.Add(oneArg("inc", args), int64(1))
+	})
+	def("dec", func(args ...any) any {
+		return lang.Sub(oneArg("dec", args), int64(1))
+	})
+	def("get", func(args ...any) any {
+		switch len(args) {
+		case 2:
+			return lang.Get(args[0], args[1])
+		case 3:
+			return lang.GetDefault(args[0], args[1], args[2])
+		default:
+			panic(fmt.Errorf("wrong number of args (%d) passed to: get", len(args)))
+		}
+	})
+	def("assoc", func(args ...any) any {
+		if len(args) < 3 || len(args)%2 == 0 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: assoc", len(args)))
+		}
+		acc := args[0]
+		for i := 1; i < len(args); i += 2 {
+			acc = lang.Assoc(acc, args[i], args[i+1])
+		}
+		return acc
+	})
+	def("str", func(args ...any) any {
+		var b strings.Builder
+		for _, a := range args {
+			if a == nil {
+				continue // (str nil) => "", per clojure.core
+			}
+			b.WriteString(lang.ToString(a))
+		}
+		return b.String()
+	})
+
+	// atom / swap! / reset! / deref: the minimal mutable-cell set
+	// (clojure.core). test.cljg holds its report counters in an atom.
+	def("atom", func(args ...any) any {
+		return lang.NewAtom(oneArg("atom", args))
+	})
+	def("swap!", func(args ...any) any {
+		if len(args) < 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: swap!", len(args)))
+		}
+		a, ok := args[0].(*lang.Atom)
+		if !ok {
+			panic(fmt.Errorf("swap! expects an atom, got: %s", lang.PrintString(args[0])))
+		}
+		f, ok := args[1].(lang.IFn)
+		if !ok {
+			panic(fmt.Errorf("swap! expects a function, got: %s", lang.PrintString(args[1])))
+		}
+		return a.Swap(f, lang.NewList(args[2:]...))
+	})
+	def("reset!", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: reset!", len(args)))
+		}
+		a, ok := args[0].(*lang.Atom)
+		if !ok {
+			panic(fmt.Errorf("reset! expects an atom, got: %s", lang.PrintString(args[0])))
+		}
+		return a.Reset(args[1])
+	})
+	def("deref", func(args ...any) any {
+		d, ok := oneArg("deref", args).(lang.IDeref)
+		if !ok {
+			panic(fmt.Errorf("deref expects a dereferenceable, got: %s", lang.PrintString(args[0])))
+		}
+		return d.Deref()
+	})
+
+	// alter-meta!: (alter-meta! ref f & args) => (f (meta ref) & args)
+	// becomes the new metadata (clojure.core). Backs deftest attaching a
+	// :test thunk onto the test var.
+	def("alter-meta!", func(args ...any) any {
+		if len(args) < 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: alter-meta!", len(args)))
+		}
+		f, ok := args[1].(lang.IFn)
+		if !ok {
+			panic(fmt.Errorf("alter-meta! expects a function, got: %s", lang.PrintString(args[1])))
+		}
+		rest := lang.NewList(args[2:]...)
+		switch ref := args[0].(type) {
+		case *lang.Var:
+			return ref.AlterMeta(f, rest)
+		case *lang.Namespace:
+			return ref.AlterMeta(f, rest)
+		default:
+			panic(fmt.Errorf("alter-meta! expects a var or namespace, got: %s", lang.PrintString(args[0])))
+		}
+	})
+
+	// require: minimal M1 semantics — the embedded namespaces (e.g.
+	// clojure.test) are loaded at boot, so (require 'clojure.test) just
+	// asserts the namespace exists; filesystem loading is not wired yet.
+	// It does NOT refer names into the caller (users refer explicitly).
+	def("require", func(args ...any) any {
+		for _, a := range args {
+			sym := requireLibSym(a)
+			if lang.FindNamespace(sym) == nil {
+				panic(fmt.Errorf("could not locate namespace %s (filesystem loading not yet supported; only embedded namespaces are available)", sym.FullName()))
+			}
+		}
+		return nil
+	})
+
+	// -guarded-call is the interim try/catch seam for core/test.cljg:
+	// (-guarded-call thunk handler) runs (thunk); on a panic it runs
+	// (handler recovered-value) and returns that. The evaluator has no
+	// try/catch yet (analyzer blocks "try"); this host recover is how
+	// clojure.test counts :error without it.
+	defPrivate("-guarded-call", func(args ...any) (result any) {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -guarded-call", len(args)))
+		}
+		thunk, ok := args[0].(lang.IFn)
+		if !ok {
+			panic(fmt.Errorf("-guarded-call expects a thunk, got: %s", lang.PrintString(args[0])))
+		}
+		handler, ok := args[1].(lang.IFn)
+		if !ok {
+			panic(fmt.Errorf("-guarded-call expects a handler, got: %s", lang.PrintString(args[1])))
+		}
+		defer func() {
+			if r := recover(); r != nil {
+				var caught any = r
+				if err, isErr := r.(error); isErr {
+					caught = err
+				}
+				result = handler.Invoke(caught)
+			}
+		}()
+		return thunk.Invoke()
+	})
+
+	// -collect-test-vars / -all-test-vars back run-tests / run-all-tests:
+	// clojure.test discovers tests by :test metadata, not by filename.
+	defPrivate("-collect-test-vars", func(args ...any) any {
+		var nsList []*lang.Namespace
+		if len(args) >= 1 && args[0] != nil {
+			for s := lang.Seq(args[0]); s != nil; s = s.Next() {
+				sym, ok := s.First().(*lang.Symbol)
+				if !ok {
+					panic(fmt.Errorf("-collect-test-vars expects namespace symbols, got: %s", lang.PrintString(s.First())))
+				}
+				ns := lang.FindNamespace(sym)
+				if ns == nil {
+					panic(fmt.Errorf("no namespace: %s", sym.FullName()))
+				}
+				nsList = append(nsList, ns)
+			}
+		}
+		if len(nsList) == 0 {
+			nsList = append(nsList, currentNS())
+		}
+		var vars []any
+		for _, ns := range nsList {
+			vars = collectTestVars(ns, vars)
+		}
+		return lang.NewList(vars...)
+	})
+	defPrivate("-all-test-vars", func(args ...any) any {
+		var vars []any
+		for s := lang.AllNamespaces(); s != nil; s = s.Next() {
+			if ns, ok := s.First().(*lang.Namespace); ok {
+				vars = collectTestVars(ns, vars)
+			}
+		}
+		return lang.NewList(vars...)
+	})
+
 	// macroexpand-1 / macroexpand expose the compiler's expander
 	// (design/03 §4) — same code path the analyzer uses, &env = nil.
 	def("macroexpand-1", func(args ...any) any {
@@ -372,6 +550,45 @@ func referAll(ns, from *lang.Namespace) {
 		}
 		ns.Refer(sym, v)
 	}
+}
+
+// kwTest is the :test metadata key clojure.test tags test vars with.
+var kwTest = lang.NewKeyword("test")
+
+// collectTestVars appends every var interned in ns (not merely referred
+// into it) that carries truthy :test metadata — clojure.test's
+// metadata-driven discovery. Order follows the namespace's mapping seq.
+func collectTestVars(ns *lang.Namespace, acc []any) []any {
+	for s := lang.Seq(ns.Mappings()); s != nil; s = s.Next() {
+		entry, ok := s.First().(lang.IMapEntry)
+		if !ok {
+			continue
+		}
+		v, ok := entry.Val().(*lang.Var)
+		if !ok || v.Namespace() != ns {
+			continue
+		}
+		if lang.IsTruthy(lang.Get(v.Meta(), kwTest)) {
+			acc = append(acc, v)
+		}
+	}
+	return acc
+}
+
+// requireLibSym extracts the namespace symbol from a require arg: a bare
+// symbol, or a libspec seq/vector whose first element is the symbol
+// (`[clojure.test ...]`). Options past the symbol are ignored in this
+// minimal require (no :refer/:as — users refer explicitly).
+func requireLibSym(a any) *lang.Symbol {
+	if sym, ok := a.(*lang.Symbol); ok {
+		return sym
+	}
+	if seq := lang.Seq(a); seq != nil {
+		if sym, ok := seq.First().(*lang.Symbol); ok {
+			return sym
+		}
+	}
+	panic(fmt.Errorf("require expects a namespace symbol or libspec, got: %s", lang.PrintString(a)))
 }
 
 func chainCompare(name string, cmp func(x, y any) bool) func(args ...any) any {

@@ -233,3 +233,36 @@ func (e *Evaluator) loadCore() {
 		}
 	}
 }
+
+// loadClojureTest reads and evaluates the embedded core/test.cljg into the
+// clojure.test namespace (the interpreted clojure.test slice, ADR 0012).
+// It runs after loadCore so clojure.core is fully up. *ns* is bound to a
+// freshly-created clojure.test for the load; test.cljg's own (in-ns ...) /
+// (refer 'clojure.core) forms make its body resolve unqualified core
+// names. This is the "embedded-ns registration" that makes clojure.test
+// loadable — (require 'clojure.test) then finds it (builtins.go require).
+// It does NOT refer clojure.test into user; users refer it explicitly.
+func (e *Evaluator) loadClojureTest() {
+	ns := lang.FindOrCreateNamespace(lang.NewSymbol("clojure.test"))
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, ns,
+		lang.VarFile, "test.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.TestSource),
+		reader.WithFilename("test.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading test.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating test.cljg: %w", err))
+		}
+	}
+}

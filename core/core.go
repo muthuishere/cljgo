@@ -11,3 +11,11 @@ import _ "embed"
 //
 //go:embed core.clj
 var Source string
+
+// TestSource is the contents of test.cljg — the interpreted clojure.test
+// slice (ADR 0012 / openspec testing-first-class). pkg/eval loads it into
+// the clojure.test namespace after clojure.core is up (loadClojureTest).
+// The loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed test.cljg
+var TestSource string

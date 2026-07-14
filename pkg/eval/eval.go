@@ -41,6 +41,7 @@ func New() *Evaluator {
 	e.internBuiltins()
 	e.installDefmacro()
 	e.loadCore()
+	e.loadClojureTest()
 	user := lang.FindOrCreateNamespace(lang.NewSymbol("user"))
 	referAll(user, lang.NSCore)
 	lang.VarCurrentNS.BindRoot(user)
