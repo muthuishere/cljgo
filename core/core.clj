@@ -798,3 +798,175 @@
 
 (defmacro for [bindings body]
   (-for-expand (-pairs bindings) body))
+
+;; ===========================================================================
+;; Control-flow macros (clojure.core) — conditional threading, constant/
+;; predicate dispatch, some/nil-aware binding, and side-effecting iteration.
+;; Standard Clojure; behavior oracle-verified against JVM Clojure 1.12.5
+;; (conformance/tests/macro-*.clj). No renames; nothing here shadows or
+;; changes clojure.core semantics (CLAUDE.md precedence principle).
+;;
+;; v0 deviations (semantics-identical, only the emitted shape differs):
+;;   - `case` expands to a sequential `=` comparison chain (cond-style), not
+;;     the JVM's O(1) constant-hash jump table — an optimization only; the
+;;     analyzer has no `case*` special yet (design/00). Test constants are
+;;     unevaluated; a list `(a b c)` in test position matches any member.
+;;   - `letfn` is deliberately NOT provided: it needs a `letfn*` special to
+;;     give the local fns mutually-recursive scope, which the analyzer/eval
+;;     does not implement (only referenced in comments). A let-over-atoms
+;;     emulation cannot preserve plain cross-call syntax, so shipping it
+;;     would be broken; skipped cleanly until letfn* lands (see report).
+
+;; --- Conditional threading: cond-> / cond->> ------------------------------
+;; Thread the (once-evaluated) initial value through a step ONLY when its
+;; paired test is truthy; each step and the init are evaluated once.
+;; oracle: (cond-> 1 true inc false (* 100) true (* 2)) => 4
+;; oracle: (cond->> 1 true inc true (- 10))             => 8
+(defn -cond-thread [arrow g clauses]
+  (if (seq clauses)
+    (let [test (first clauses)
+          step (second clauses)
+          g2 (gensym "cond__")]
+      `(let [~g2 (if ~test (~arrow ~g ~step) ~g)]
+         ~(-cond-thread arrow g2 (nnext clauses))))
+    g))
+
+(defmacro cond-> [expr & clauses]
+  (let [g (gensym "cond__")]
+    `(let [~g ~expr] ~(-cond-thread '-> g (seq clauses)))))
+
+(defmacro cond->> [expr & clauses]
+  (let [g (gensym "cond__")]
+    `(let [~g ~expr] ~(-cond-thread '->> g (seq clauses)))))
+
+;; --- Nil-short-circuiting threading: some-> / some->> ---------------------
+;; Thread while non-nil; the first nil short-circuits the whole form to nil.
+;; oracle: (some-> {:a {:b 5}} :a :b inc)            => 6
+;; oracle: (some-> nil :a)                            => nil
+;; oracle: (some->> [1 2 3] (map inc) (reduce +))     => 9
+(defn -some-thread [arrow g forms]
+  (if (seq forms)
+    (let [form (first forms)
+          g2 (gensym "some__")]
+      `(let [~g2 (if (nil? ~g) nil (~arrow ~g ~form))]
+         ~(-some-thread arrow g2 (rest forms))))
+    g))
+
+(defmacro some-> [expr & forms]
+  (let [g (gensym "some__")]
+    `(let [~g ~expr] ~(-some-thread '-> g (seq forms)))))
+
+(defmacro some->> [expr & forms]
+  (let [g (gensym "some__")]
+    `(let [~g ~expr] ~(-some-thread '->> g (seq forms)))))
+
+;; --- as-> : thread into a named binding at any position -------------------
+;; oracle: (as-> 5 x (+ x 1) (* x 2)) => 12
+(defn -as-steps [name forms]
+  (if (seq forms)
+    `(let [~name ~(first forms)] ~(-as-steps name (rest forms)))
+    name))
+
+(defmacro as-> [expr name & forms]
+  `(let [~name ~expr] ~(-as-steps name (seq forms))))
+
+;; --- if-some / when-some : bind + branch on non-nil (some?) ----------------
+;; Unlike if-let/when-let (truthiness), these test only for nil, so a bound
+;; `false` still takes the "some" branch.
+;; oracle: (macroexpand-1 '(if-some [x v] a b)) =>
+;;   (clojure.core/let [temp__auto__ v]
+;;     (if (clojure.core/nil? temp__auto__) b
+;;       (clojure.core/let [x temp__auto__] a)))
+;; oracle: (if-some [x (get {:a 1} :a)] x :none) => 1; (when-some [x false] :got) => :got
+(defmacro if-some
+  ([bindings then] `(if-some ~bindings ~then nil))
+  ([bindings then else]
+   (let [form (first bindings) tst (second bindings)]
+     `(let [temp# ~tst]
+        (if (nil? temp#) ~else (let [~form temp#] ~then))))))
+
+(defmacro when-some [bindings & body]
+  (let [form (first bindings) tst (second bindings)]
+    `(let [temp# ~tst]
+       (if (nil? temp#) nil (let [~form temp#] ~@body)))))
+
+;; --- condp : dispatch by a binary predicate --------------------------------
+;; (condp pred expr t1 r1 t2 r2 ... default?) — returns r for the first
+;; clause where (pred t expr) is truthy; the ternary `t :>> f` form calls
+;; (f (pred t expr)). No match + no default throws (runtime).
+;; oracle: (condp = 3 1 :a 3 :c :none)                    => :c
+;; oracle: (condp = 2 1 :a 2 :>> (fn [x] [:got x]) :none) => [:got true]
+(defn -condp-emit [pred expr clauses]
+  (let [n (if (= :>> (second clauses)) 3 2)
+        clause (take n clauses)
+        more (drop n clauses)
+        c (count clause)]
+    (cond
+      (= 0 c) `(clojure.core/-illegal-argument (str "No matching clause: " ~expr))
+      (= 1 c) (first clause)
+      (= 2 c) `(if (~pred ~(first clause) ~expr)
+                 ~(second clause)
+                 ~(-condp-emit pred expr more))
+      :else `(if-let [p# (~pred ~(first clause) ~expr)]
+               (~(nth clause 2) p#)
+               ~(-condp-emit pred expr more)))))
+
+(defmacro condp [pred expr & clauses]
+  (let [gpred (gensym "pred__") gexpr (gensym "expr__")]
+    `(let [~gpred ~pred ~gexpr ~expr]
+       ~(-condp-emit gpred gexpr (seq clauses)))))
+
+;; --- case : constant dispatch (v0 = sequential = comparison) --------------
+;; Test constants are unevaluated literals; a list matches any of its members.
+;; A trailing odd clause is the default; no match + no default throws.
+;; oracle: (case 2 1 :one 2 :two :default)     => :two
+;; oracle: (case 9 1 :one :default)            => :default
+;; oracle: (case :b :a 1 (:b :c) 2 :d)         => 2
+(defn -case-test [ge const]
+  (if (seq? const)
+    (cons 'clojure.core/or (map (fn [c] `(= ~ge (quote ~c))) const))
+    `(= ~ge (quote ~const))))
+
+(defn -case-emit [ge clauses]
+  (if (seq clauses)
+    (if (next clauses)
+      `(if ~(-case-test ge (first clauses))
+         ~(second clauses)
+         ~(-case-emit ge (nnext clauses)))
+      (first clauses))
+    `(clojure.core/-illegal-argument (str "No matching clause: " ~ge))))
+
+(defmacro case [e & clauses]
+  (let [ge (gensym "case__")]
+    `(let [~ge ~e] ~(-case-emit ge (seq clauses)))))
+
+;; --- doto : side-effect a value, then return it ---------------------------
+;; oracle: (doto (atom 0) (reset! 5)) => the atom (deref => 5)
+(defmacro doto [x & forms]
+  (let [g (gensym "doto__")]
+    `(let [~g ~x]
+       ~@(map (fn [f]
+                (if (seq? f)
+                  `(~(first f) ~g ~@(next f))
+                  `(~f ~g)))
+              forms)
+       ~g)))
+
+;; --- while : loop for side effects while test is truthy -------------------
+;; oracle: (while false 1) => nil
+(defmacro while [test & body]
+  `(loop []
+     (when ~test
+       ~@body
+       (recur))))
+
+;; --- dorun / doall : force a lazy seq -------------------------------------
+;; oracle: (dorun (map identity [1 2 3])) => nil (walks for effect)
+;; oracle: (doall (map inc [1 2 3]))      => (2 3 4) (forces AND returns)
+(defn dorun [coll]
+  (loop [s (seq coll)]
+    (if s (recur (next s)) nil)))
+
+(defn doall [coll]
+  (dorun coll)
+  coll)
