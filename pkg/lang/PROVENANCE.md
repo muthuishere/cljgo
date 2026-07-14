@@ -61,3 +61,18 @@ Ground truth: real Clojure 1.12.5 CLI on JDK 26.
   instead of `(nil)`.
 - Acceptance: `conformance/tests/print-double-{plain,scientific,subnormal}.clj`,
   `print-inf-nan.clj`, `print-empty-list.clj`.
+
+## Polymorphism value types (M5, 2026-07-15, ADR 0020)
+
+New (non-vendored, no EPL header) `instance.go` adds `*DType` (deftype
+instances) and `*Record` (defrecord instances — an `IPersistentMap` with a
+type identity). Minimal surgery to two vendored files so records behave
+faithfully:
+
+- `strconv.go` `Print`: a `*Record` case (`#ns.Name{:a 1, :b 2}`) placed
+  BEFORE the generic `IPersistentMap` branch (a record IS a map).
+- `apersistentmap.go` `apersistentmapEquiv`: a one-line `IsRecord(obj)`
+  guard so `(= plain-map record)` is false (records carry a type identity;
+  `Record.Equiv` enforces the record→map direction).
+- Acceptance: `conformance/tests/{protocol,deftype,defrecord,extend}-*.clj`,
+  dual-harness, byte-matched vs Clojure CLI 1.12.5.

@@ -198,6 +198,10 @@ func Print(x interface{}, w io.Writer) {
 		} else {
 			io.WriteString(w, strconv.Quote(s))
 		}
+	} else if r, ok := x.(*Record); ok {
+		// A defrecord prints as `#ns.Name{:a 1, :b 2}` — checked before the
+		// generic IPersistentMap branch (a record IS an IPersistentMap).
+		printRecord(r, w)
 	} else if m, ok := x.(IPersistentMap); ok {
 		io.WriteString(w, "{")
 		for seq := m.Seq(); seq != nil; seq = seq.Next() {

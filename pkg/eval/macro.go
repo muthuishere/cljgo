@@ -234,6 +234,37 @@ func (e *Evaluator) loadCore() {
 	}
 }
 
+// loadProtocols reads and evaluates the embedded core/protocols.cljg into
+// clojure.core — the defprotocol / deftype / defrecord / extend-type /
+// extend-protocol macros (design/00 §6 M5). It runs after loadCore (so
+// defn/defmacro/destructuring and the seq library are available) and its
+// publics are referred into user like the rest of core. The runtime
+// dispatch/instance builtins the macros expand onto are already interned
+// by internProtocolBuiltins.
+func (e *Evaluator) loadProtocols() {
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, lang.NSCore,
+		lang.VarFile, "protocols.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.ProtocolsSource),
+		reader.WithFilename("protocols.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading protocols.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating protocols.cljg: %w", err))
+		}
+	}
+}
+
 // loadClojureTest reads and evaluates the embedded core/test.cljg into the
 // clojure.test namespace (the interpreted clojure.test slice, ADR 0012).
 // It runs after loadCore so clojure.core is fully up. *ns* is bound to a

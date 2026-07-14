@@ -1,0 +1,159 @@
+;; protocols.cljg — cljgo's polymorphism macro surface (design/00 §6 M5):
+;; defprotocol / deftype / defrecord / extend-type / extend-protocol.
+;;
+;; These are ordinary macros over the private dispatch/instance builtins
+;; interned in clojure.core by pkg/eval/protocols.go (-protocol, -extend-key,
+;; -invoke-method, -new-type, -new-record, -map->record, -field, -type-key,
+;; -type-marker, -qualified-name, -satisfies?). Because the surface is
+;; macros-over-builtins with NO new AST op, and the AOT-compiled binary boots
+;; the SAME evaluator (rt.Boot -> eval.New) that interns these builtins and
+;; loads this file, a protocol dispatches identically interpreted and
+;; compiled. Loaded into clojure.core after core.clj (loadProtocols).
+
+(in-ns 'clojure.core)
+
+;; ---- shared parsing helpers (private) --------------------------------------
+
+;; -group-impls turns the tail of a deftype/defrecord/extend-* form —
+;; protocol symbols interleaved with method forms — into a flat list of
+;; [protocol-symbol method-form] pairs.
+;;   (P1 (m1 [t] ..) (m2 [t] ..) P2 (m3 [t] ..))
+;;   => ([P1 (m1 ..)] [P1 (m2 ..)] [P2 (m3 ..)])
+(defn ^:private -group-impls [specs]
+  (loop [s (seq specs) proto nil acc []]
+    (if (nil? s)
+      acc
+      (let [x (first s)]
+        ;; A type slot is a symbol (deftype/record name or built-in
+        ;; designator) or nil (the nil type); a method is a list.
+        (if (or (symbol? x) (nil? x))
+          (recur (next s) x acc)
+          (recur (next s) proto (conj acc [proto x])))))))
+
+;; -method-specs keeps only the method forms of a defprotocol body (drops an
+;; optional leading docstring and any non-list options).
+(defn ^:private -method-specs [specs]
+  (filter seq? specs))
+
+;; -field-lets builds the let-binding vector that makes a deftype/defrecord's
+;; declared fields visible as locals inside a method body — excluding any
+;; field shadowed by an explicit method parameter (Clojure: params win). The
+;; receiver is the method's first parameter.
+(defn ^:private -field-lets [fields params]
+  (let [pset (apply hash-set params)
+        this (first params)]
+    (vec (mapcat (fn [f] [f (list (quote -field) this (name f))])
+                 (remove (fn [f] (contains? pset f)) fields)))))
+
+;; -typed-fn builds a method impl fn WITH field locals bound (deftype/record).
+(defn ^:private -typed-fn [fields mform]
+  (let [params (second mform)
+        body (drop 2 mform)
+        lets (-field-lets fields params)]
+    (if (empty? lets)
+      (list* (quote fn) params body)
+      (list (quote fn) params (list* (quote let) lets body)))))
+
+;; -plain-fn builds a method impl fn WITHOUT field locals (extend-type/proto).
+(defn ^:private -plain-fn [mform]
+  (list* (quote fn) (second mform) (drop 2 mform)))
+
+;; ---- defprotocol -----------------------------------------------------------
+
+;; (defprotocol P
+;;   (m1 [this] [this a])   ; signatures are documentation in v0
+;;   (m2 [this]))
+;; Defines P (a protocol value) and a dispatching fn per method: each fn
+;; dispatches on the TYPE of its first argument to the impl registered for
+;; that type, or throws "No implementation of method ...".
+(defmacro defprotocol [pname & specs]
+  (let [methods (-method-specs specs)
+        mnames (vec (map (fn [m] (name (first m))) methods))
+        defs (map (fn [m]
+                    (let [mn (first m)]
+                      (list (quote def) mn
+                            (list (quote fn) (quote [& args])
+                                  (list (quote -invoke-method) pname (name mn) (quote args))))))
+                  methods)]
+    (list* (quote do)
+           (list (quote def) pname
+                 (list (quote -protocol) (list (quote -qualified-name) (name pname)) mnames))
+           (concat defs (list pname)))))
+
+;; ---- deftype ---------------------------------------------------------------
+
+;; (deftype T [f1 f2] P (m [this a] body))
+;; A bare typed value with positional fields and inline protocol impls.
+;; Ctors: (->T v1 v2). Fields are visible as locals in method bodies and via
+;; (.-f1 x). Equality is identity.
+(defmacro deftype [tname fields & specs]
+  (let [tnstr (name tname)
+        ctor (symbol (str "->" tnstr))
+        fstrs (vec (map name fields))
+        qn (list (quote -qualified-name) tnstr)
+        extends (map (fn [pair]
+                       (list (quote -extend-key) (first pair) qn
+                             (name (first (second pair)))
+                             (-typed-fn fields (second pair))))
+                     (-group-impls specs))]
+    (list* (quote do)
+           (list (quote def) tname (list (quote -type-marker) qn))
+           (list (quote def) ctor
+                 (list* (quote fn) fields
+                        (list (list* (quote -new-type) qn fstrs fields))))
+           (concat extends (list tname)))))
+
+;; ---- defrecord -------------------------------------------------------------
+
+;; (defrecord R [a b] P (m [this] body))
+;; Like deftype but ALSO a map: get/assoc/keys/vals/seq/count/= all work,
+;; = is by value (and type), printing is #ns.R{:a 1, :b 2}. Ctors: (->R 1 2)
+;; and (map->R {:a 1 :b 2}).
+(defmacro defrecord [tname fields & specs]
+  (let [tnstr (name tname)
+        ctor (symbol (str "->" tnstr))
+        mapctor (symbol (str "map->" tnstr))
+        fstrs (vec (map name fields))
+        qn (list (quote -qualified-name) tnstr)
+        extends (map (fn [pair]
+                       (list (quote -extend-key) (first pair) qn
+                             (name (first (second pair)))
+                             (-typed-fn fields (second pair))))
+                     (-group-impls specs))]
+    (list* (quote do)
+           (list (quote def) tname (list (quote -type-marker) qn))
+           (list (quote def) ctor
+                 (list* (quote fn) fields
+                        (list (list* (quote -new-record) qn fstrs fields))))
+           (list (quote def) mapctor
+                 (list (quote fn) (quote [m])
+                       (list (quote -map->record) qn fstrs (quote m))))
+           (concat extends (list tname)))))
+
+;; ---- extend-type / extend-protocol -----------------------------------------
+
+;; (extend-type T P (m [this] body) Q (n [this] body))
+;; Extend a type (built-in or deftype/defrecord) to protocols after the fact.
+;; The type is resolved to a dispatch key at load time: a deftype/defrecord
+;; name resolves to its qualified type name; a built-in designator (String,
+;; Long, Double, Boolean, Keyword, ...) is used as written.
+(defmacro extend-type [tsym & specs]
+  (let [tkey (list (quote -type-key) (list (quote quote) tsym))
+        extends (map (fn [pair]
+                       (list (quote -extend-key) (first pair) tkey
+                             (name (first (second pair)))
+                             (-plain-fn (second pair))))
+                     (-group-impls specs))]
+    (list* (quote do) (concat extends (list nil)))))
+
+;; (extend-protocol P T1 (m [this] ..) T2 (m [this] ..))
+;; The protocol-centric inverse of extend-type: one protocol, many types.
+(defmacro extend-protocol [pname & specs]
+  (let [pairs (-group-impls specs)   ; here "proto" slot holds the TYPE symbol
+        extends (map (fn [pair]
+                       (list (quote -extend-key) pname
+                             (list (quote -type-key) (list (quote quote) (first pair)))
+                             (name (first (second pair)))
+                             (-plain-fn (second pair))))
+                     pairs)]
+    (list* (quote do) (concat extends (list nil)))))
