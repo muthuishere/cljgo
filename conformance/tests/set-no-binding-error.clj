@@ -3,4 +3,5 @@
 ;;   "Can't change/establish root binding of: *s2* with set".
 (def ^:dynamic *s2* 1)
 (set! *s2* 5)
+;; harness: eval — expects an error: cljgo build fails at compile/eval time; v0 has no compiled error-output contract
 ;; expect-error: change/establish root binding

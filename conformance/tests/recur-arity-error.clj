@@ -2,4 +2,5 @@
 ;; checked at analysis time.
 ;; Oracle (Clojure 1.12, 2026-07-12): "Mismatched argument count to recur, expected: 2 args, got: 1".
 (loop* [x 1 y 2] (recur 5))
+;; harness: eval — expects an error: cljgo build fails at compile/eval time; v0 has no compiled error-output contract
 ;; expect-error: argument count to recur, expected: 2 args, got: 1

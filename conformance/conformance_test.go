@@ -1,9 +1,11 @@
 // Package conformance is the shared conformance suite (design/00 §6,
-// design/03 §7d) in its M0, eval-only form: each tests/*.clj file runs
-// through the same Read→Analyze→Eval path as the REPL and its last
-// value's pr-str is compared against the file's `;; expect:` comment
-// (or its error against `;; expect-error:`). The emitter harness joins
-// at M2 and replays the same files.
+// design/03 §7d), dual-harness since M2 (ADR 0007): each tests/*.clj
+// file runs through the Read→Analyze→Eval path (this file) AND through
+// the Go emitter as a compiled binary (compiled_test.go) with
+// byte-identical output required; ORACLE=1 (oracle_test.go) re-audits
+// the frozen expectations against the real `clojure` CLI. Per-file
+// directives: `;; harness: eval — reason` (eval-only waiver) and
+// `;; oracle: skip — reason`.
 package conformance
 
 import (
@@ -46,6 +48,33 @@ func parseExpectation(path, src string) (expectation, error) {
 		return exp, fmt.Errorf("%s: want exactly one ;; expect(-error): comment, found %d", path, found)
 	}
 	return exp, nil
+}
+
+// directives are the per-file harness waivers (README.md).
+type directives struct {
+	evalOnly   string // reason after ";; harness: eval", "" = dual
+	oracleSkip string // reason after ";; oracle: skip", "" = audited
+}
+
+func parseDirectives(src string) directives {
+	var d directives
+	sc := bufio.NewScanner(strings.NewReader(src))
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if rest, ok := strings.CutPrefix(line, ";; harness: eval"); ok {
+			d.evalOnly = strings.TrimSpace(strings.TrimLeft(rest, " —-"))
+			if d.evalOnly == "" {
+				d.evalOnly = "marked eval-only"
+			}
+		}
+		if rest, ok := strings.CutPrefix(line, ";; oracle: skip"); ok {
+			d.oracleSkip = strings.TrimSpace(strings.TrimLeft(rest, " —-"))
+			if d.oracleSkip == "" {
+				d.oracleSkip = "marked oracle-skip"
+			}
+		}
+	}
+	return d
 }
 
 // evalFile runs one file through the eval harness in a fresh `user`

@@ -4,4 +4,5 @@
 ;; Oracle (Clojure 1.12, 2026-07-12): "Cannot recur across try".
 (def ^:dynamic *d* 1)
 (loop* [a 1] (binding [*d* 2] (recur 2)))
+;; harness: eval — expects an error: cljgo build fails at compile/eval time; v0 has no compiled error-output contract
 ;; expect-error: recur across try

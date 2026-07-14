@@ -5,4 +5,5 @@
 ;; loop (identity check), matching Compiler.macroexpand1's ret != x.
 (defmacro m [] (list 'm))
 (m)
+;; harness: eval — expects an error: cljgo build fails at compile/eval time; v0 has no compiled error-output contract
 ;; expect-error: too many macroexpansions
