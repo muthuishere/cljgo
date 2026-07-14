@@ -343,6 +343,19 @@ func (e *Evaluator) internBuiltins() {
 		return nil
 	})
 
+	// require-go registers Go import aliases for the interpreted interop
+	// path (ADR 0010, design/05 §1): (require-go '[strings]),
+	// (require-go '[strconv :as sc]), (require-go '["net/http" :as http]).
+	// Each libspec is a vector whose head is the path (a symbol — one
+	// segment — or a string that may contain slashes) with an optional
+	// `:as alias`; the default alias is the path's last `/`-segment. The
+	// mapping is scoped to the current namespace. A precedence-safe
+	// addition (CLAUDE.md): resolveHost yields to Clojure namespaces.
+	def("require-go", func(args ...any) any {
+		e.registerRequireGo(args)
+		return nil
+	})
+
 	// -guarded-call is the interim try/catch seam for core/test.cljg:
 	// (-guarded-call thunk handler) runs (thunk); on a panic it runs
 	// (handler recovered-value) and returns that. The evaluator has no

@@ -24,6 +24,11 @@ import (
 // evaluator at analysis time.
 type Evaluator struct {
 	analyzer *analyzer.Analyzer
+
+	// hostAliases maps current-ns-name → require-go alias → Go import path
+	// (ADR 0010, design/05 §1). Populated by the `require-go` builtin,
+	// read by resolveHost (the analyzer's ResolveHost hook).
+	hostAliases map[string]map[string]string
 }
 
 // New returns an evaluator with the boot sequence of design/00 §6 (M1)
@@ -32,11 +37,12 @@ type Evaluator struct {
 // the `user` namespace (created if absent) referring core's publics,
 // and *ns* rooted at user. The whole boot is ~5ms (TestBootUnderBudget).
 func New() *Evaluator {
-	e := &Evaluator{}
+	e := &Evaluator{hostAliases: map[string]map[string]string{}}
 	e.analyzer = &analyzer.Analyzer{
 		Macroexpand1: e.macroexpand1,
 		ResolveVar:   e.resolveVar,
 		InternVar:    e.internVar,
+		ResolveHost:  e.resolveHost,
 	}
 	e.internBuiltins()
 	e.installDefmacro()
@@ -374,7 +380,7 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 	case ast.OpHostRef, ast.OpHostCall:
 		// Go interop (ADR 0010, M3-v0). The interpreted path — reflect
 		// registry + [v err]/!/nil-norm shaping — lands in host.go.
-		return e.evalHost(n)
+		return e.evalHost(n, s)
 
 	case ast.OpBinding, ast.OpFnMethod:
 		// Structural children of OpLet / OpFn — never evaluated directly.
