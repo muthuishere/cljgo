@@ -1,0 +1,147 @@
+;; string.cljg — cljgo's clojure.string namespace. Loaded at startup into
+;; the clojure.string namespace by pkg/eval (loadClojureString), AFTER
+;; clojure.core is up. The .cljg extension follows ADR 0017.
+;;
+;; This is a thin Clojure layer over Go-backed host primitives
+;; (pkg/eval/string_builtins.go): the `-str-*` private clojure.core fns do
+;; the strings/regexp work; the public names here match clojure.string in
+;; JVM Clojure 1.12.5 (oracle-verified, see conformance/tests/string-*.clj).
+;; join is pure Clojure. Regex separators/matches use Go's RE2 engine — see
+;; the RE2 caveat in string_builtins.go.
+
+;; The loader binds *ns* to a fresh clojure.string; these make it explicit
+;; and refer clojure.core so unqualified core names resolve. Private core
+;; helpers (-str-*) are NOT referred, so they are called fully qualified.
+(clojure.core/in-ns 'clojure.string)
+
+;; reverse is the one public name here that also exists in clojure.core.
+;; JVM clojure.string uses (:refer-clojure :exclude [reverse replace]); cljgo's
+;; refer has no :exclude, so instead we INTERN clojure.string/reverse FIRST
+;; (qualified defn, before the wholesale refer). The later (refer 'clojure.core)
+;; then sees clojure.string already owns an interned `reverse` and skips it —
+;; no "being replaced" warning. (replace is not yet in cljgo's clojure.core,
+;; so it needs no such guard today.)
+(clojure.core/defn reverse
+  "Returns s with its characters reversed."
+  [s]
+  (clojure.core/-str-reverse s))
+
+(clojure.core/refer 'clojure.core)
+
+;; --- joining --------------------------------------------------------
+
+(defn join
+  "Returns a string of all elements in coll, as returned by (seq coll),
+  separated by an optional separator."
+  ([coll] (apply str coll))
+  ([separator coll]
+   (if (seq coll)
+     (reduce (fn [acc x] (str acc separator x)) (str (first coll)) (next coll))
+     "")))
+
+;; --- splitting ------------------------------------------------------
+
+(defn split
+  "Splits string on a regular expression. Optional argument limit is the
+  maximum number of parts. Not lazy. Returns a vector of the parts."
+  ([s re] (clojure.core/-str-split re s 0))
+  ([s re limit] (clojure.core/-str-split re s limit)))
+
+(defn split-lines
+  "Splits s on \\n or \\r\\n. Trailing empty lines are not returned."
+  [s]
+  (split s #"\r?\n"))
+
+;; --- replacing ------------------------------------------------------
+
+(defn replace
+  "Replaces all instance of match with replacement in s. match/replacement
+  can be:  string / string,  char / char,  pattern / string (with $1 group
+  refs)."
+  [s match replacement]
+  (clojure.core/-str-replace s match replacement))
+
+(defn replace-first
+  "Replaces the first instance of match with replacement in s. Same match/
+  replacement combinations as replace."
+  [s match replacement]
+  (clojure.core/-str-replace-first s match replacement))
+
+;; --- trimming -------------------------------------------------------
+
+(defn trim
+  "Removes whitespace from both ends of string."
+  [s]
+  (clojure.core/-str-trim s))
+
+(defn triml
+  "Removes whitespace from the left side of string."
+  [s]
+  (clojure.core/-str-triml s))
+
+(defn trimr
+  "Removes whitespace from the right side of string."
+  [s]
+  (clojure.core/-str-trimr s))
+
+(defn trim-newline
+  "Removes all trailing newline \\n or return \\r characters from string."
+  [s]
+  (clojure.core/-str-trim-newline s))
+
+;; --- casing ---------------------------------------------------------
+
+(defn upper-case
+  "Converts string to all upper-case."
+  [s]
+  (clojure.core/-str-upper-case s))
+
+(defn lower-case
+  "Converts string to all lower-case."
+  [s]
+  (clojure.core/-str-lower-case s))
+
+(defn capitalize
+  "Converts first character of the string to upper-case, all other
+  characters to lower-case."
+  [s]
+  (clojure.core/-str-capitalize s))
+
+;; --- predicates & search --------------------------------------------
+
+(defn blank?
+  "True if s is nil, empty, or contains only whitespace."
+  [s]
+  (clojure.core/-str-blank? s))
+
+(defn starts-with?
+  "True if s starts with substr."
+  [s substr]
+  (clojure.core/-str-starts-with? s substr))
+
+(defn ends-with?
+  "True if s ends with substr."
+  [s substr]
+  (clojure.core/-str-ends-with? s substr))
+
+(defn includes?
+  "True if s includes substr."
+  [s substr]
+  (clojure.core/-str-includes? s substr))
+
+(defn index-of
+  "Return the index of the first occurrence of value (string or char) in s,
+  optionally searching forward from from-index. Return nil if value not
+  found."
+  ([s value] (clojure.core/-str-index-of s value))
+  ([s value from-index] (clojure.core/-str-index-of s value from-index)))
+
+(defn last-index-of
+  "Return the index of the last occurrence of value (string or char) in s,
+  optionally searching backward from from-index. Return nil if value not
+  found."
+  ([s value] (clojure.core/-str-last-index-of s value))
+  ([s value from-index] (clojure.core/-str-last-index-of s value from-index)))
+
+;; reverse is defined near the top (before the clojure.core refer) — see the
+;; comment there for why.

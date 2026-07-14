@@ -234,6 +234,38 @@ func (e *Evaluator) loadCore() {
 	}
 }
 
+// loadClojureString reads and evaluates the embedded core/string.cljg into
+// the clojure.string namespace. It runs after loadCore so clojure.core (and
+// the regex core fns + private -str-* host prims) are fully up. *ns* is
+// bound to a freshly-created clojure.string for the load; string.cljg's own
+// (in-ns ...) / (refer 'clojure.core) forms make its body resolve unqualified
+// core names. This "embedded-ns registration" makes clojure.string loadable —
+// (require 'clojure.string) then finds it (builtins.go require).
+func (e *Evaluator) loadClojureString() {
+	ns := lang.FindOrCreateNamespace(lang.NewSymbol("clojure.string"))
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, ns,
+		lang.VarFile, "string.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.StringSource),
+		reader.WithFilename("string.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading string.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating string.cljg: %w", err))
+		}
+	}
+}
+
 // loadClojureTest reads and evaluates the embedded core/test.cljg into the
 // clojure.test namespace (the interpreted clojure.test slice, ADR 0012).
 // It runs after loadCore so clojure.core is fully up. *ns* is bound to a
