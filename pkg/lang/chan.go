@@ -26,9 +26,17 @@ type Channel struct {
 	ch     chan any
 	mu     sync.Mutex
 	closed bool
+	// policy is the over-capacity put behaviour (design/05 §4 "buffer
+	// policies"). PolicyFixed (the zero value) blocks the producer when the
+	// buffer is full — plain (chan)/(chan n). PolicyDropping / PolicySliding
+	// never block the producer: see ChanSend. Go channels have no native
+	// drop/slide, so the policy is a thin layer over a non-blocking send
+	// (let-go's chanPolicy).
+	policy BufPolicy
 }
 
-// NewChan builds an unbuffered (n == 0) or fixed-buffer (n > 0) channel.
+// NewChan builds an unbuffered (n == 0) or fixed-buffer (n > 0) channel with
+// the default (blocking) buffer policy.
 func NewChan(n int) *Channel {
 	if n < 0 {
 		panic(fmt.Errorf("chan buffer size must be non-negative, got %d", n))
@@ -54,8 +62,35 @@ func ChanSend(c *Channel, v any) (res any) {
 			res = nil
 		}
 	}()
-	c.ch <- v
-	return nil
+	switch c.policy {
+	case PolicyDropping:
+		// Never block: if the buffer is full, the new value is dropped.
+		select {
+		case c.ch <- v:
+		default:
+		}
+		return nil
+	case PolicySliding:
+		// Never block: if the buffer is full, evict the oldest buffered
+		// value to make room, then put. The evict+put pair makes progress
+		// under the single-producer discipline these buffers are for.
+		select {
+		case c.ch <- v:
+		default:
+			select {
+			case <-c.ch: // drop oldest
+			default:
+			}
+			select {
+			case c.ch <- v:
+			default: // a racing consumer refilled it; drop rather than block
+			}
+		}
+		return nil
+	default:
+		c.ch <- v
+		return nil
+	}
 }
 
 // ChanRecv implements (<! c) / (<!! c): blocking take. A closed+drained
