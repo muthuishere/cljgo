@@ -28,3 +28,13 @@ var StringSource string
 //
 //go:embed test.cljg
 var TestSource string
+
+// ProtocolsSource is the contents of protocols.cljg — the Clojure-level
+// macro surface for the polymorphism layer (defprotocol / deftype /
+// defrecord / extend-type / extend-protocol). pkg/eval loads it into
+// clojure.core after core.clj is up (loadProtocols), so the macros are
+// referred into user like the rest of core. The runtime dispatch/instance
+// builtins they expand onto live in pkg/eval/protocols.go.
+//
+//go:embed protocols.cljg
+var ProtocolsSource string

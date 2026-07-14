@@ -53,6 +53,13 @@ func apersistentmapEquiv(a APersistentMap, obj any) bool {
 		return true
 	}
 
+	// A defrecord is never `=` to a plain map (Clojure: records carry a
+	// type identity). Record.Equiv enforces the record→map direction;
+	// this enforces map→record.
+	if IsRecord(obj) {
+		return false
+	}
+
 	if c, ok := obj.(Counted); ok {
 		if a.Count() != c.Count() {
 			return false

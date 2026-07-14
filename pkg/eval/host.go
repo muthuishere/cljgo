@@ -334,6 +334,11 @@ func GoFieldGet(recv any, field string) any {
 	if recv == nil {
 		panic(fmt.Errorf("cannot read field .-%s on nil", field))
 	}
+	// deftype / defrecord instances address fields by name, not through Go
+	// reflection — `(.-f x)` reads a declared field (ADR: polymorphism v0).
+	if v, ok := instanceField(recv, field); ok {
+		return v
+	}
 	rv := reflect.ValueOf(recv)
 	for rv.Kind() == reflect.Ptr {
 		if rv.IsNil() {

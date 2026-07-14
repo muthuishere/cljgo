@@ -281,6 +281,11 @@ func (e *Evaluator) internBuiltins() {
 	// that core.clj's map/filter/reduce/take/… are built on.
 	e.internCollBuiltins(def)
 
+	// Polymorphism substrate (defprotocol/deftype/defrecord/extend-*):
+	// dispatch table + instance/registry builtins the core/protocols.cljg
+	// macros expand onto (protocols.go).
+	e.internProtocolBuiltins(def)
+
 	// atom / swap! / reset! / deref: the minimal mutable-cell set
 	// (clojure.core). test.cljg holds its report counters in an atom.
 	def("atom", func(args ...any) any {
