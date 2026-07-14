@@ -30,7 +30,11 @@ REPL↔binary divergence is a release blocker).
 | **M1** | ✅ | Macroexpansion, `defmacro` at the prompt, embedded `core.clj`, `clojure.test` |
 | **M2** | ✅ | `cljgo build` → native binary, <10 ms startup, fixed-arity calling convention |
 | **M3-v0** | ✅ | **Zero-ceremony Go interop, both modes** — `require-go`, package fns/consts, `(T,error)`→`[v err]`, `!` unwrap-or-throw |
-| M3.1+ | ◦ | Member access (`.Method`/`.-Field`), third-party modules via `deps.edn`, channels/`go`, Result/Option, FFI |
+| **M3.1/3.2** | ✅ | Members: `(.Method r …)`, `(.-Field r)`, `(set! (.-Field r) v)`, ctors `(pkg/T. {…})`, `(go/new T)` |
+| **M4-v0** | ✅ | Concurrency: `(chan)`/`(chan n)`, `(>! c v)`/`(<! c)`, `(close! c)`, `(go …)` over **real goroutines** — no CPS rewrite |
+| **Result/Option** | ✅ | `ok`/`err`/`just`/`none` + `unwrap`/`and-then`/`map-ok` + `let?`, `#cljgo/ok` literals (ADR 0014) |
+| **Diagnostics** | ✅ | `cljgo check --json` structured records, `cljgo explain <code>` (ADR 0015) |
+| Next | ◦ | Third-party modules via `deps.edn`, `alts!`/`timeout`/`select`, C FFI (purego), generics, self-hosted `core.clj` |
 
 ### Try it
 
