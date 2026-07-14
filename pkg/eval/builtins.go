@@ -456,6 +456,100 @@ func (e *Evaluator) internBuiltins() {
 		panic(lang.NewIllegalArgumentError(msg))
 	})
 
+	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
+	//
+	// Constructors, predicates and combinators over the pkg/lang tagged
+	// types (result.go). Registered as Go builtins so BOTH modes have them
+	// identically — rt.Boot() interns these into clojure.core before an
+	// emitted binary's Load() runs. `none` is a VALUE (a var bound to the
+	// shared sentinel), not a call; `let?` is a core.clj macro over these.
+	def("ok", func(args ...any) any { return lang.NewOk(oneArg("ok", args)) })
+	def("err", func(args ...any) any { return lang.NewErr(oneArg("err", args)) })
+	def("just", func(args ...any) any { return lang.NewJust(oneArg("just", args)) })
+
+	// none: the single Option-absence value (not a function).
+	noneVar := lang.NSCore.Intern(lang.NewSymbol("none"))
+	noneVar.BindRoot(lang.None)
+
+	def("result?", func(args ...any) any { return lang.IsResult(oneArg("result?", args)) })
+	def("ok?", func(args ...any) any { return lang.IsOk(oneArg("ok?", args)) })
+	def("err?", func(args ...any) any { return lang.IsErr(oneArg("err?", args)) })
+	def("option?", func(args ...any) any { return lang.IsOption(oneArg("option?", args)) })
+	def("just?", func(args ...any) any { return lang.IsJust(oneArg("just?", args)) })
+	def("none?", func(args ...any) any { return lang.IsNone(oneArg("none?", args)) })
+
+	// unwrap: the bridge to the exception world. ok/just -> payload;
+	// err/none -> throw an ex-info carrying the failure payload (so a
+	// railway value can escape into try/catch). Anything else is an error.
+	def("unwrap", func(args ...any) any {
+		x := oneArg("unwrap", args)
+		switch {
+		case lang.IsOk(x), lang.IsJust(x):
+			return lang.ResultPayload(x)
+		case lang.IsErr(x):
+			data := lang.NewMap(lang.NewKeyword("cljgo/error"), lang.ResultPayload(x))
+			panic(lang.NewExceptionInfo("unwrap called on "+lang.PrintString(x), data))
+		case lang.IsNone(x):
+			panic(lang.NewExceptionInfo("unwrap called on none", lang.NewMap()))
+		}
+		panic(fmt.Errorf("unwrap expects a Result or Option, got: %s", lang.PrintString(x)))
+	})
+
+	// unwrap-or: payload of ok/just, else the supplied default (err/none
+	// and non-tagged values yield the default — never throws).
+	def("unwrap-or", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: unwrap-or", len(args)))
+		}
+		x := args[0]
+		if lang.IsOk(x) || lang.IsJust(x) {
+			return lang.ResultPayload(x)
+		}
+		return args[1]
+	})
+
+	// map-ok: apply f to an ok/just payload, re-wrapping in the same tag;
+	// err/none pass through unchanged (railway happy-path map).
+	def("map-ok", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: map-ok", len(args)))
+		}
+		f, x := args[0], args[1]
+		switch {
+		case lang.IsOk(x):
+			return lang.NewOk(lang.Apply1(f, lang.ResultPayload(x)))
+		case lang.IsJust(x):
+			return lang.NewJust(lang.Apply1(f, lang.ResultPayload(x)))
+		}
+		return x
+	})
+
+	// map-err: apply f to an err payload, re-wrapping as err; everything
+	// else (ok/just/none) passes through unchanged.
+	def("map-err", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: map-err", len(args)))
+		}
+		f, x := args[0], args[1]
+		if lang.IsErr(x) {
+			return lang.NewErr(lang.Apply1(f, lang.ResultPayload(x)))
+		}
+		return x
+	})
+
+	// and-then: railway bind. f receives the UNWRAPPED ok/just payload and
+	// must itself return a Result/Option; err/none short-circuit unchanged.
+	def("and-then", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: and-then", len(args)))
+		}
+		f, x := args[0], args[1]
+		if lang.IsOk(x) || lang.IsJust(x) {
+			return lang.Apply1(f, lang.ResultPayload(x))
+		}
+		return x
+	})
+
 	// in-ns: create-if-absent and switch *ns* (design/03 §7a). Under a
 	// bound *ns* (REPL session, file load) this sets the thread binding,
 	// exactly Clojure's in-ns; without one it rebinds the root (Clojure

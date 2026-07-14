@@ -857,7 +857,9 @@ func TestUnimplementedReaderMacros(t *testing.T) {
 		{"#::{:a 1}", "not yet implemented"},
 		{"#=(+ 1 2)", "not yet implemented"},
 		{"#<unreadable>", "Unreadable form"},
-		{"#zzz", "No dispatch macro for: z"},
+		// #tag form is a tagged literal (data reader); an unknown tag is
+		// rejected after the tag+form are read (ADR 0014 added #cljgo/...).
+		{"#zzz 1", "No reader function for tag"},
 	}
 	for _, tt := range tests {
 		err := mustErr(t, tt.src)

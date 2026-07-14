@@ -107,3 +107,25 @@
             (second clauses)
             (-illegal-argument "cond requires an even number of forms"))
           (cons 'clojure.core/cond (next (next clauses))))))
+
+;; let? — railway binding (ADR 0014 D5; cljgo extension, no JVM oracle).
+;; Bindings evaluate left to right: a value satisfying err?/none? short-
+;; circuits the WHOLE form to that value; an ok/just value binds its
+;; UNWRAPPED payload; a plain value binds unchanged. A core macro over the
+;; Result/Option builtins — no analyzer/emitter change, so both modes get
+;; it identically. (M1 deviation: simple-symbol bindings only, matching
+;; core `let`; destructuring-after-unwrap arrives with `let` destructuring.)
+(defn -let?-expand [bindings body]
+  (if (seq bindings)
+    (let [name (first bindings)
+          expr (second bindings)
+          more (next (next bindings))]
+      `(let [v# ~expr]
+         (if (or (err? v#) (none? v#))
+           v#
+           (let [~name (if (or (ok? v#) (just? v#)) (unwrap v#) v#)]
+             ~(-let?-expand more body)))))
+    (cons 'do body)))
+
+(defmacro let? [bindings & body]
+  (-let?-expand bindings body))
