@@ -25,6 +25,12 @@ import (
 
 // Equiv is Clojure `=` — a faithful port of clojure.lang.Util.equiv.
 func Equiv(a, b any) bool {
+	// Result/Option tagged values (ADR 0014): routed before the `a == b`
+	// fast path below, whose struct comparison would panic on an
+	// incomparable payload. Same tag + Equiv on payload.
+	if IsResultOption(a) || IsResultOption(b) {
+		return resultOptionEquiv(a, b)
+	}
 	// Check functions first, because == panics on func comparison.
 	aVal, bVal := reflect.ValueOf(a), reflect.ValueOf(b)
 	if aVal.Kind() == reflect.Func || bVal.Kind() == reflect.Func {
@@ -93,6 +99,11 @@ func Equiv(a, b any) bool {
 // Equals is the Java Object.equals analog — a port of
 // clojure.lang.Util.equals with Java's type-strict number semantics.
 func Equals(a, b any) bool {
+	// Result/Option tagged values (ADR 0014): same routing as Equiv —
+	// avoids the incomparable-payload panic and gives value semantics.
+	if IsResultOption(a) || IsResultOption(b) {
+		return resultOptionEquiv(a, b)
+	}
 	// Check functions first, because == panics on func comparison.
 	aVal, bVal := reflect.ValueOf(a), reflect.ValueOf(b)
 	if aVal.Kind() == reflect.Func || bVal.Kind() == reflect.Func {

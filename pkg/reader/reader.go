@@ -328,8 +328,62 @@ func (r *Reader) readDispatch(start Position) (form any, again bool, err error) 
 	case '?', ':', '=':
 		return nil, false, r.errAt(start, "#%c reader macro is not yet implemented (reader Phase 2)", c)
 	default:
+		// A letter after # begins a tagged literal (#tag form). cljgo's
+		// Result/Option values print/read as #cljgo/ok, #cljgo/err,
+		// #cljgo/just, #cljgo/none (ADR 0014 D4).
+		if isSymbolLead(c) {
+			r.s.Unread()
+			f, err := r.readTaggedLiteral(start)
+			return f, false, err
+		}
 		return nil, false, r.errAt(start, "No dispatch macro for: %c", c)
 	}
+}
+
+// isSymbolLead reports whether c can begin a reader tag symbol (a subset
+// of Clojure's symbol-lead chars, enough for #cljgo/... tags).
+func isSymbolLead(c rune) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+		c == '_' || c == '.' || c == '*' || c == '+' || c == '!' ||
+		c == '-' || c == '?' || c == '$' || c == '%' || c == '&' || c == '='
+}
+
+// readTaggedLiteral reads `tag form` (the leading '#' already consumed by
+// readDispatch) and constructs the value for a known tag. cljgo owns the
+// namespaced `cljgo/...` tags for Result/Option (ADR 0014); other tags
+// are not yet supported.
+func (r *Reader) readTaggedLiteral(start Position) (any, error) {
+	tagForm, err := r.readForm()
+	if err != nil {
+		if errors.Is(err, ErrEOF) {
+			return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w tagged literal", ErrIncomplete)}
+		}
+		return nil, err
+	}
+	sym, ok := tagForm.(*lang.Symbol)
+	if !ok {
+		return nil, r.errAt(start, "Reader tag must be a symbol")
+	}
+	val, err := r.readForm()
+	if err != nil {
+		if errors.Is(err, ErrEOF) {
+			return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w tagged literal %s", ErrIncomplete, sym.FullName())}
+		}
+		return nil, err
+	}
+	switch sym.FullName() {
+	case "cljgo/ok":
+		return lang.NewOk(val), nil
+	case "cljgo/err":
+		return lang.NewErr(val), nil
+	case "cljgo/just":
+		return lang.NewJust(val), nil
+	case "cljgo/none":
+		// The following form is ignored by convention (none is the
+		// nullary sentinel; it also prints simply as `none`).
+		return lang.None, nil
+	}
+	return nil, r.errAt(start, "No reader function for tag #%s", sym.FullName())
 }
 
 // readDelimited reads forms until the closing delimiter end. start is
