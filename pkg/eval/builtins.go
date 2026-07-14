@@ -350,16 +350,22 @@ func (e *Evaluator) internBuiltins() {
 		}
 	})
 
-	// require: minimal M1 semantics — the embedded namespaces (e.g.
-	// clojure.test) are loaded at boot, so (require 'clojure.test) just
-	// asserts the namespace exists; filesystem loading is not wired yet.
-	// It does NOT refer names into the caller (users refer explicitly).
+	// require: M1 semantics with libspec support — the embedded namespaces
+	// (e.g. clojure.string, clojure.test) are loaded at boot, so require
+	// asserts the namespace exists (filesystem loading is not wired yet) and
+	// then honors the libspec options. Accepted spec shapes match Clojure:
+	//   (require 'clojure.string)                       ; bare symbol
+	//   (require '[clojure.string :as str])             ; :as alias
+	//   (require '[clojure.string :refer [join]])       ; :refer some
+	//   (require '[clojure.string :refer :all])         ; :refer all publics
+	//   (require '[clojure.string :as s :refer [join]]) ; both
+	//   (require '(clojure string set))                 ; prefix list (bonus)
+	// :as creates a namespace alias in the CURRENT ns (so the analyzer's
+	// alias resolution — CurrentNS().LookupAlias — sees it); :refer interns
+	// the named public vars into the current ns. Unknown options are no-ops.
 	def("require", func(args ...any) any {
 		for _, a := range args {
-			sym := requireLibSym(a)
-			if lang.FindNamespace(sym) == nil {
-				panic(fmt.Errorf("could not locate namespace %s (filesystem loading not yet supported; only embedded namespaces are available)", sym.FullName()))
-			}
+			requireSpec(a, nil)
 		}
 		return nil
 	})
@@ -612,15 +618,45 @@ func (e *Evaluator) internBuiltins() {
 		return nil
 	})
 
-	// refer: minimal M1 semantics — map ALL public interned vars of the
-	// named namespace into the current one (no :only/:exclude filters).
+	// refer: (refer 'ns) maps ALL public interned vars of the named
+	// namespace into the current one; (refer 'ns :only '[a b]) restricts to
+	// the listed names and (refer 'ns :exclude '[c]) omits the listed names
+	// (Clojure's refer filters — :rename is not supported in M1).
 	def("refer", func(args ...any) any {
-		sym := symbolArg("refer", args)
+		if len(args) == 0 {
+			panic(fmt.Errorf("wrong number of args (0) passed to: refer"))
+		}
+		sym, ok := args[0].(*lang.Symbol)
+		if !ok {
+			panic(fmt.Errorf("refer expects a symbol, got: %s", lang.PrintString(args[0])))
+		}
 		target := lang.FindNamespace(sym)
 		if target == nil {
 			panic(fmt.Errorf("no namespace: %s", sym.FullName()))
 		}
-		referAll(currentNS(), target)
+		only := map[string]struct{}{}
+		exclude := map[string]struct{}{}
+		haveOnly := false
+		for i := 1; i < len(args); i += 2 {
+			kw, ok := args[i].(lang.Keyword)
+			if !ok {
+				panic(fmt.Errorf("refer option must be a keyword, got: %s", lang.PrintString(args[i])))
+			}
+			if i+1 >= len(args) {
+				panic(fmt.Errorf("refer option %s is missing a value", kw.String()))
+			}
+			val := args[i+1]
+			switch kw.Name() {
+			case "only":
+				haveOnly = true
+				collectSymNames(val, only)
+			case "exclude":
+				collectSymNames(val, exclude)
+			default:
+				// :rename and other options are no-ops in M1.
+			}
+		}
+		referSelected(currentNS(), target, only, haveOnly, exclude)
 		return nil
 	})
 
@@ -765,6 +801,13 @@ func setVarValue(v *lang.Var, val any) {
 // referAll refers every public var interned in `from` into ns — the
 // minimal whole-namespace refer of design/00 §6 (M1).
 func referAll(ns, from *lang.Namespace) {
+	referSelected(ns, from, nil, false, nil)
+}
+
+// referSelected refers the public vars interned in `from` into ns, honoring
+// refer's :only / :exclude filters. When haveOnly is true, only names in
+// `only` are referred; names in `exclude` are always skipped.
+func referSelected(ns, from *lang.Namespace, only map[string]struct{}, haveOnly bool, exclude map[string]struct{}) {
 	for s := lang.Seq(from.Mappings()); s != nil; s = s.Next() {
 		entry := s.First().(lang.IMapEntry)
 		sym, ok := entry.Key().(*lang.Symbol)
@@ -775,7 +818,25 @@ func referAll(ns, from *lang.Namespace) {
 		if !ok || v.Namespace() != from || !v.IsPublic() {
 			continue
 		}
+		name := sym.Name()
+		if haveOnly {
+			if _, in := only[name]; !in {
+				continue
+			}
+		}
+		if _, ex := exclude[name]; ex {
+			continue
+		}
 		ns.Refer(sym, v)
+	}
+}
+
+// collectSymNames adds every symbol name in the seqable spec to set.
+func collectSymNames(spec any, set map[string]struct{}) {
+	for s := lang.Seq(spec); s != nil; s = s.Next() {
+		if sym, ok := s.First().(*lang.Symbol); ok {
+			set[sym.Name()] = struct{}{}
+		}
 	}
 }
 
@@ -802,20 +863,106 @@ func collectTestVars(ns *lang.Namespace, acc []any) []any {
 	return acc
 }
 
-// requireLibSym extracts the namespace symbol from a require arg: a bare
-// symbol, or a libspec seq/vector whose first element is the symbol
-// (`[clojure.test ...]`). Options past the symbol are ignored in this
-// minimal require (no :refer/:as — users refer explicitly).
-func requireLibSym(a any) *lang.Symbol {
-	if sym, ok := a.(*lang.Symbol); ok {
-		return sym
+// requireSpec processes one require spec: a bare namespace symbol, a libspec
+// vector `[lib & opts]`, or a prefix list `(prefix sub ...)`. `prefix` (may
+// be nil) is the dotted prefix accumulated from an enclosing prefix list.
+func requireSpec(spec any, prefix *lang.Symbol) {
+	if sym, ok := spec.(*lang.Symbol); ok {
+		loadLib(combinePrefix(prefix, sym), nil)
+		return
 	}
-	if seq := lang.Seq(a); seq != nil {
-		if sym, ok := seq.First().(*lang.Symbol); ok {
-			return sym
+	seq := lang.Seq(spec)
+	if seq == nil {
+		panic(fmt.Errorf("require expects a namespace symbol or libspec, got: %s", lang.PrintString(spec)))
+	}
+	head, ok := seq.First().(*lang.Symbol)
+	if !ok {
+		panic(fmt.Errorf("require expects a libspec whose head is a symbol, got: %s", lang.PrintString(spec)))
+	}
+	rest := seq.Next()
+	// Distinguish a libspec-with-options from a prefix list: options are
+	// keyword/value pairs (`[lib :as x]`); a prefix list holds further
+	// libspecs (symbols/vectors) after the prefix (`(clojure string set)`).
+	if rest != nil {
+		if _, isKw := rest.First().(lang.Keyword); !isKw {
+			full := combinePrefix(prefix, head)
+			for x := rest; x != nil; x = x.Next() {
+				requireSpec(x.First(), full)
+			}
+			return
 		}
 	}
-	panic(fmt.Errorf("require expects a namespace symbol or libspec, got: %s", lang.PrintString(a)))
+	loadLib(combinePrefix(prefix, head), rest)
+}
+
+// combinePrefix joins a prefix-list prefix with a leaf symbol into a dotted
+// namespace symbol (`clojure` + `string` => `clojure.string`).
+func combinePrefix(prefix, sym *lang.Symbol) *lang.Symbol {
+	if prefix == nil {
+		return sym
+	}
+	return lang.NewSymbol(prefix.Name() + "." + sym.Name())
+}
+
+// loadLib asserts the (embedded) namespace exists, then applies the libspec
+// options: :as adds an alias to the current ns; :refer interns the named
+// public vars (or all publics for :refer :all) into the current ns.
+func loadLib(libSym *lang.Symbol, opts lang.ISeq) {
+	target := lang.FindNamespace(libSym)
+	if target == nil {
+		panic(fmt.Errorf("could not locate namespace %s (filesystem loading not yet supported; only embedded namespaces are available)", libSym.FullName()))
+	}
+	for s := opts; s != nil; s = s.Next() {
+		kw, ok := s.First().(lang.Keyword)
+		if !ok {
+			panic(fmt.Errorf("require libspec option must be a keyword, got: %s", lang.PrintString(s.First())))
+		}
+		s = s.Next()
+		if s == nil {
+			panic(fmt.Errorf("require libspec option %s is missing a value", kw.String()))
+		}
+		val := s.First()
+		switch kw.Name() {
+		case "as":
+			aliasSym, ok := val.(*lang.Symbol)
+			if !ok {
+				panic(fmt.Errorf(":as expects a symbol, got: %s", lang.PrintString(val)))
+			}
+			currentNS().AddAlias(aliasSym, target)
+		case "refer":
+			referSpec(currentNS(), target, val)
+		default:
+			// :reload, :verbose, :as-alias, etc. — no-ops in M1.
+		}
+	}
+}
+
+// referSpec handles a :refer value: `:all` refers every public var; a vector
+// of symbols interns exactly those (throwing if a name is not interned in the
+// target namespace, as Clojure does).
+func referSpec(ns, from *lang.Namespace, spec any) {
+	if kw, ok := spec.(lang.Keyword); ok {
+		if kw.Name() == "all" {
+			referAll(ns, from)
+			return
+		}
+		panic(fmt.Errorf(":refer expects a vector of symbols or :all, got: %s", lang.PrintString(spec)))
+	}
+	seq := lang.Seq(spec)
+	if seq == nil {
+		panic(fmt.Errorf(":refer expects a vector of symbols or :all, got: %s", lang.PrintString(spec)))
+	}
+	for s := seq; s != nil; s = s.Next() {
+		sym, ok := s.First().(*lang.Symbol)
+		if !ok {
+			panic(fmt.Errorf(":refer expects symbols, got: %s", lang.PrintString(s.First())))
+		}
+		v := from.FindInternedVar(sym)
+		if v == nil {
+			panic(fmt.Errorf("%s does not exist in namespace %s", sym.Name(), from.Name().Name()))
+		}
+		ns.Refer(sym, v)
+	}
 }
 
 func chainCompare(name string, cmp func(x, y any) bool) func(args ...any) any {
