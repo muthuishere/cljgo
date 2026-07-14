@@ -275,6 +275,12 @@ func (e *Evaluator) internBuiltins() {
 	// contains?, keys, name, namespace, symbol, keyword, and predicates).
 	e.internSeqBuiltins(def)
 
+	// Sequence & collection library runtime primitives (lazy-seq*, the
+	// range/repeat/iterate/cycle producers, sort/sort-by/dissoc/vec/vals,
+	// reduced, <=/>=/quot/rem/max/min and the numeric/value predicates)
+	// that core.clj's map/filter/reduce/take/… are built on.
+	e.internCollBuiltins(def)
+
 	// atom / swap! / reset! / deref: the minimal mutable-cell set
 	// (clojure.core). test.cljg holds its report counters in an atom.
 	def("atom", func(args ...any) any {
