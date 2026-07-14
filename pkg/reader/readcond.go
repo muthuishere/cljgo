@@ -1,0 +1,136 @@
+package reader
+
+// Reader conditionals (design/01-reader.md §Phase 2), a faithful port
+// of clojure.lang.LispReader$ConditionalReader:
+//
+//	#?(:cljgo x :default z)   selecting  => x    (feature :cljgo matches)
+//	#?@(:cljgo [a b])         splicing   => a b  (spliced into the parent)
+//
+// PLATFORM FEATURE DECISION: cljgo is its own Clojure platform, so its
+// reader feature is :cljgo (never :clj — that is the JVM's feature, and
+// claiming it would silently pull JVM-only branches). :default always
+// matches, as a last resort. Unlike JVM Clojure, cljgo does not gate
+// reader conditionals behind an opt-in :read-cond flag: file and REPL
+// reading always process them.
+//
+// The mechanism (first-branch-wins, whole-body-read-then-select,
+// non-keyword-feature rejection, top-level-splice rejection, elision of
+// an unmatched non-splicing conditional) was verified against clojure
+// 1.12.5 with {:read-cond :allow}. The :clj vs :cljgo mapping is the
+// mirror image of the JVM oracle (JVM always injects :clj); cited per
+// case in readcond_test.go.
+
+import (
+	"fmt"
+
+	"github.com/muthuishere/cljgo/pkg/lang"
+)
+
+// kwDefault always matches; kwCljgo is cljgo's platform feature.
+var (
+	kwDefault = lang.NewKeyword("default")
+	kwCljgo   = lang.NewKeyword("cljgo")
+)
+
+// matchesFeature reports whether a reader-conditional feature keyword
+// is satisfied by the cljgo platform.
+func matchesFeature(feat lang.Keyword) bool {
+	return feat == kwCljgo || feat == kwDefault
+}
+
+// readConditional reads a reader conditional whose leading "#?" has been
+// consumed. It returns again=true when no branch matched (the form is
+// elided, exactly like a #_ discard). A matched selecting branch returns
+// its form; a matched splicing branch returns a spliceForms sentinel for
+// readDelimited to splice into the enclosing collection.
+func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again bool, err error) {
+	incomplete := func() (any, bool, error) {
+		return nil, false, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w reader conditional", ErrIncomplete)}
+	}
+
+	// Optional '@' => splicing conditional.
+	splicing := false
+	c, e := r.s.Read()
+	if e != nil {
+		return incomplete()
+	}
+	if c == '@' {
+		splicing = true
+	} else {
+		r.s.Unread()
+	}
+
+	if splicing && !spliceOK {
+		return nil, false, r.errAt(start, "Reader conditional splicing not allowed at the top level.")
+	}
+
+	// The body must be a list: #?(...).
+	r.skipWhitespace()
+	oc, e := r.s.Read()
+	if e != nil {
+		return incomplete()
+	}
+	if oc != '(' {
+		return nil, false, r.errAt(start, "read-cond body must be a list")
+	}
+
+	// Read the entire body first (matching Clojure, which errors on
+	// malformed forms even in unselected branches).
+	forms, err := r.readDelimited("reader conditional", ')', start)
+	if err != nil {
+		return nil, false, err
+	}
+
+	// Scan feature/form pairs left to right; first match wins.
+	for i := 0; i+1 < len(forms); i += 2 {
+		feat, ok := forms[i].(lang.Keyword)
+		if !ok {
+			return nil, false, r.errAt(start, "Feature should be a keyword: %s", featureString(forms[i]))
+		}
+		if !matchesFeature(feat) {
+			continue
+		}
+		val := forms[i+1]
+		if !splicing {
+			return val, false, nil
+		}
+		items, ok := spliceItems(val)
+		if !ok {
+			return nil, false, r.errAt(start, "Spliced form list in read-cond-splicing must implement clojure.lang.Sequential")
+		}
+		return spliceForms{items: items}, false, nil
+	}
+	// No branch matched: the conditional reads as nothing.
+	return nil, true, nil
+}
+
+// spliceItems returns the elements of a matched splicing branch's value.
+// The value must be a sequential collection (list or vector).
+func spliceItems(val any) ([]any, bool) {
+	switch v := val.(type) {
+	case lang.IPersistentVector:
+		items := make([]any, 0, v.Count())
+		for i := 0; i < v.Count(); i++ {
+			items = append(items, lang.MustNth(v, i))
+		}
+		return items, true
+	case lang.ISeq:
+		var items []any
+		for s := lang.Seq(v); s != nil; s = s.Next() {
+			items = append(items, s.First())
+		}
+		return items, true
+	default:
+		return nil, false
+	}
+}
+
+// featureString renders a non-keyword feature for the error message,
+// matching Clojure's toString-based formatting (a bad string feature
+// "clj" prints as clj, not "clj").
+func featureString(v any) string {
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return lang.PrintString(v)
+}

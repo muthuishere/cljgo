@@ -853,8 +853,8 @@ func TestUnimplementedReaderMacros(t *testing.T) {
 	tests := []struct {
 		src, wantSub string
 	}{
-		{"#?(:clj 1)", "not yet implemented"},
-		{"#::{:a 1}", "not yet implemented"},
+		// #? and #: are implemented in reader Phase 2 (readcond.go,
+		// namespacedmap.go); #= (eval reader) remains unimplemented.
 		{"#=(+ 1 2)", "not yet implemented"},
 		{"#<unreadable>", "Unreadable form"},
 		// #tag form is a tagged literal (data reader); an unknown tag is
