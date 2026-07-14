@@ -1,0 +1,27 @@
+(ns examples.ffi
+  "ADR 0011 — purego dlopen FFI, live at the REPL.")
+
+;; Declarative C binding: usable interactively, no rebuild, no C toolchain.
+(ffi/deflib sqlite "libsqlite3"
+  (version [] :string)
+  (open [path :string db* :ptr*] :int)
+  (close [db :ptr] :int)
+  (errmsg [db :ptr] :string))
+
+;; C int return codes shape into the [v err] convention (ADR 0005);
+;; let? short-circuits on the error rail (ADR 0014).
+(defn db-version-of [path]
+  (let? [[db err] (sqlite/open path)
+         _ (when err (throw err))]
+    (try
+      (sqlite/version)
+      (finally (sqlite/close db)))))
+
+(comptime-assert (some? (resolve 'sqlite/version))
+                 "deflib expansion must define sqlite/version")
+
+(def error-pattern #"(?i)sqlite error code (\d+)")
+
+(defn classify [msg]
+  (let? [[_ code] (re-find error-pattern msg)]
+    (parse-long code)))

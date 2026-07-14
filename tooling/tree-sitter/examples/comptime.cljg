@@ -1,0 +1,24 @@
+(ns examples.comptime
+  "ADR 0009 — Zig-style comptime alongside untouched Clojure macros.")
+
+;; Value computed once at compile time, embedded as a literal constant.
+(def lookup-table
+  (comptime
+    (into {} (map (fn [n] [n (* n n)]) (range 256)))))
+
+;; Build fails when the predicate is false.
+(comptime-assert (= 65536 (count (str lookup-table)))
+                 "lookup table drifted")
+
+;; File contents embedded at build time (the disciplined #= replacement).
+(def license (embed-file "LICENSE"))
+
+;; #"" is RE2 in cljgo — no backtracking, linear time.
+(def semver #"^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$")
+
+(defn parse-version [s]
+  (let? [m (re-matches semver s)
+         [_ major minor patch] m]
+    {:major (parse-long major)
+     :minor (parse-long minor)
+     :patch (parse-long patch)}))

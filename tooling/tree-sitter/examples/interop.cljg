@@ -1,0 +1,34 @@
+(ns examples.interop
+  "ADR 0010 — Go interop like Clojure's Java interop: zero ceremony."
+  (:require-go [net/http :as http]
+               [strings]
+               [time :as gotime]))
+
+;; Package fns look like namespaced calls; Go names appear as themselves.
+(defn fetch [url]
+  (http/Get url))
+
+;; Constructor form (trailing dot), member call, field access.
+(defn client-with-timeout [secs]
+  (let [client (http/Client. {})]
+    (set! (.-Timeout client) (gotime/Duration (* secs 1000000000)))
+    client))
+
+(defn run [client req]
+  (.Do client req))
+
+;; go/ reserved pseudo-namespace: operators the surface can't spell natively.
+(defn buffers [n]
+  (let [b (go/new strings/Builder)
+        xs (go/slice-of :string n)]
+    (go/instantiate xs b)))
+
+;; Reader conditional: :cljgo is the feature key (ADR 0017 §1).
+(defn now []
+  #?(:cljgo (gotime/Now)
+     :clj (java.time.Instant/now)))
+
+;; At the REPL (no ns form), require-go works standalone.
+(comment
+  (require-go '[os/exec :as exec])
+  (.Output (exec/Command "uname" "-a")))

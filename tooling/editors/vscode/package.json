@@ -1,0 +1,42 @@
+{
+  "name": "cljgo",
+  "displayName": "cljgo",
+  "description": "File type support for cljgo (.cljg) — Clojure hosted on Go. Syntax reuses the Clojure grammar (cljgo adds zero new syntax); LSP client pointing at `cljgo lsp` lands with M3 (ADR 0017 §5).",
+  "version": "0.0.1",
+  "publisher": "cljgo",
+  "private": true,
+  "license": "EPL-1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "icon": "icons/cljgo.png",
+  "contributes": {
+    "languages": [
+      {
+        "id": "cljgo",
+        "aliases": [
+          "cljgo",
+          "Clojure (Go)"
+        ],
+        "extensions": [
+          ".cljg"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/cljg-light.svg",
+          "dark": "./icons/cljg-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cljgo",
+        "scopeName": "source.cljgo",
+        "path": "./syntaxes/cljgo.tmLanguage.json"
+      }
+    ]
+  }
+}

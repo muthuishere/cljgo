@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "cljgo",
+  "scopeName": "source.cljgo",
+  "patterns": [
+    {
+      "comment": "cljgo builtin forms (ADR 0009/0011/0014): highlighted before delegating to the Clojure grammar",
+      "match": "(?<=\\()(comptime-assert|comptime|embed-file|ffi/deflib|let\\?|require-go)(?=[\\s)])",
+      "name": "keyword.control.cljgo"
+    },
+    {
+      "comment": "go/ reserved pseudo-namespace operators (ADR 0010)",
+      "match": "(?<=[\\s(\\[{])go/[a-zA-Z*+!_?<>=-]+",
+      "name": "support.function.interop.cljgo"
+    },
+    {
+      "comment": "Everything else is stock Clojure — cljgo adds zero new syntax",
+      "include": "source.clojure"
+    }
+  ]
+}
