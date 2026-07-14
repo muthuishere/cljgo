@@ -270,6 +270,11 @@ func (e *Evaluator) internBuiltins() {
 		return b.String()
 	})
 
+	// Seq/coll + symbol/keyword primitives that core.clj's destructuring
+	// machinery consumes (nth, nthnext, nnext, count, gensym, conj,
+	// contains?, keys, name, namespace, symbol, keyword, and predicates).
+	e.internSeqBuiltins(def)
+
 	// atom / swap! / reset! / deref: the minimal mutable-cell set
 	// (clojure.core). test.cljg holds its report counters in an atom.
 	def("atom", func(args ...any) any {
