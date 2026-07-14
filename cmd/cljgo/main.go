@@ -60,6 +60,7 @@ func run(args []string) int {
 func runREPL() int {
 	d := repl.New(os.Stdin, os.Stdout, os.Stderr)
 	d.Prompts = isTerminal(os.Stdin)
+	d.Interactive = d.Prompts
 	if d.Prompts {
 		fmt.Println(version)
 	}

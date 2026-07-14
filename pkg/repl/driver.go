@@ -30,6 +30,12 @@ type Driver struct {
 	// line of input (on for a terminal, off for piped input).
 	Prompts bool
 
+	// Interactive gates the ADR 0018 exit/quit/help affordances: they
+	// only fire at an interactive prompt, so piped scripts keep the
+	// historical unresolved-symbol semantics. Frontends set it for a tty;
+	// tests inject it directly (no real tty needed).
+	Interactive bool
+
 	ev             *eval.Evaluator
 	in             io.Reader
 	out            io.Writer // results and prompts
@@ -46,6 +52,18 @@ type Driver struct {
 	// reads it (under outMu) because the session's *ns* binding is only
 	// visible on Run's goroutine.
 	promptNS string
+
+	// exiting is set by the exit/quit affordance (ADR 0018 §1); Run's
+	// loop ends the session when it sees it. Only touched on Run's
+	// goroutine.
+	exiting bool
+
+	// Session journaling (ADR 0016): journalOn is decided once at Run
+	// start (tty or CLJGO_SESSION=1); the journal file opens lazily on
+	// the first journaled form. All on Run's goroutine.
+	journalOn   bool
+	sessionID   string
+	journalFile *os.File
 }
 
 // New returns a driver with a fresh evaluator. in may be nil when only
@@ -87,6 +105,15 @@ func (d *Driver) Run() error {
 	))
 	defer lang.PopThreadBindings()
 
+	// Session journaling (ADR 0016): decide once, per input, and flush at
+	// the end. journalWriter opens the file lazily on the first form, so
+	// an empty session leaves nothing behind.
+	d.journalOn = sessionEnabled(d.in)
+	if d.journalOn && d.sessionID == "" {
+		d.sessionID = newSessionID()
+	}
+	defer d.closeJournal()
+
 	// SIGINT → Interrupt for the duration of the session (terminal
 	// frontend). A future nREPL frontend calls Interrupt directly.
 	sigCh := make(chan os.Signal, 1)
@@ -117,8 +144,18 @@ func (d *Driver) Run() error {
 		if d.interrupted.Swap(false) {
 			pending = "" // Interrupt already redrew the prompt
 		}
-		pending += sc.Text() + "\n"
+		line := sc.Text()
+		// Session commands (:sessions / :resume <id>) are whole-line and
+		// only intercepted at an empty prompt while journaling — otherwise
+		// the line flows to the reader with ordinary keyword semantics.
+		if pending == "" && d.journalOn && d.sessionCommand(strings.TrimSpace(line)) {
+			continue
+		}
+		pending += line + "\n"
 		pending = d.dispatch(pending, false)
+		if d.exiting {
+			break // exit/quit affordance (ADR 0018 §1) ended the session
+		}
 	}
 	if err := sc.Err(); err != nil {
 		return err
@@ -194,8 +231,26 @@ func (d *Driver) dispatch(src string, atEOF bool) (rest string) {
 			d.reportError(err)
 			return ""
 		}
+		prev := consumed
 		consumed = cs.off
-		d.evalAndPrint(form)
+		// ADR 0018 §1-2: bare exit/quit/help (or (exit)/(quit)) at an
+		// interactive prompt are handled here, BEFORE eval would raise an
+		// unresolved-symbol error — but only when the symbol doesn't
+		// resolve (a user-defined var always wins, checked in affordanceWord).
+		if d.Interactive {
+			if word, ok := d.affordanceWord(form); ok {
+				switch word {
+				case "exit", "quit":
+					d.farewell()
+					d.exiting = true
+					return ""
+				case "help":
+					d.printHelp()
+				}
+				continue
+			}
+		}
+		d.evalAndPrint(form, src[prev:consumed])
 	}
 }
 
@@ -232,23 +287,31 @@ func (c *countingScanner) UnreadRune() error {
 // evaluator panics into errors; the deferred recover here additionally
 // guards the driver's own seams (e.g. printing) so a panic never kills
 // the loop. Only called under Run's session frame — Var.Set needs it.
-func (d *Driver) evalAndPrint(form any) {
+func (d *Driver) evalAndPrint(form any, src string) {
+	// The namespace the form runs IN (captured before eval, so an in-ns
+	// inside the form journals under the ns it started in — ADR 0016 §1).
+	ns := d.ev.CurrentNS().Name().Name()
 	defer func() {
 		if r := recover(); r != nil {
 			err, ok := r.(error)
 			if !ok {
 				err = fmt.Errorf("%v", r)
 			}
+			d.journalFailure(ns, src, err)
 			d.ve.Set(err)
-			d.reportError(err)
+			d.reportEvalError(err)
 		}
 	}()
 	res, err := d.ev.EvalForm(form)
 	if err != nil {
+		d.journalFailure(ns, src, err)
 		d.ve.Set(err)
-		d.reportError(err)
+		d.reportEvalError(err)
 		return
 	}
+	// Journal BEFORE the result prints (ADR 0016 §3): a crash loses at
+	// most the in-flight form.
+	d.journalSuccess(ns, src)
 	d.v3.Set(d.v2.Deref())
 	d.v2.Set(d.v1.Deref())
 	d.v1.Set(res)
