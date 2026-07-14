@@ -6,10 +6,11 @@
 // analyze ↔ eval (design/03 §4, §9.2). Analysis errors carry source
 // position taken from the offending form's metadata (design/00 §4.5).
 //
-// M1 scope: literals, collection literals, symbol resolution
+// Scope: literals, collection literals, symbol resolution
 // (locals → vars), the specials quote / if / do / def / let* / fn* /
-// loop* / recur / var / set! / binding, plus macroexpansion (v2, §4)
-// and invoke. letfn*, try/throw and host interop are later phases.
+// loop* / recur / var / set! / binding / throw / try (catch/finally),
+// plus macroexpansion (v2, §4), Go host interop and invoke. letfn* is a
+// later phase.
 // (`binding` is a special here until it can move to core as a macro
 // over push/popThreadBindings; the semantics match.)
 package analyzer
@@ -299,6 +300,15 @@ func (a *Analyzer) specialParser(name string) (specialParserFn, bool) {
 		return a.parseBinding, true
 	case "fn*":
 		return a.parseFnStar, true
+	case "throw":
+		return a.parseThrow, true
+	case "try":
+		return a.parseTry, true
+	case "catch", "finally":
+		// catch/finally are specials only inside try (Compiler.java lists
+		// them with a nil parser); anywhere else they are a positioned
+		// error rather than an "unable to resolve symbol" invoke.
+		return a.parseCatchFinallyMisplaced, true
 	}
 	return nil, false
 }
@@ -621,6 +631,134 @@ func (a *Analyzer) parseBinding(seq lang.ISeq, env Env) (*ast.Node, error) {
 		return nil, err
 	}
 	return &ast.Node{Op: ast.OpDynBind, Form: seq, Sub: &ast.DynBindNode{Vars: vars, Vals: vals, Body: body}}, nil
+}
+
+// parseThrow handles (throw expr): exactly one arg, analyzed in
+// expression context (design/03 §2 Phase 4). The thrown value becomes a
+// Go panic at eval/emit time; JVM Clojure requires a Throwable, cljgo v0
+// accepts any value (eval.Throw wraps a non-error so Throwable catches it).
+func (a *Analyzer) parseThrow(seq lang.ISeq, env Env) (*ast.Node, error) {
+	args := seqToSlice(seq.Next())
+	if len(args) != 1 {
+		if len(args) < 1 {
+			return nil, a.errf(seq, "too few arguments to throw, throw expects a single Throwable instance")
+		}
+		return nil, a.errf(seq, "too many arguments to throw, throw expects a single Throwable instance")
+	}
+	ex, err := a.analyzeForm(args[0], env.withContext(CtxExpr))
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Node{Op: ast.OpThrow, Form: seq, Sub: &ast.ThrowNode{Exception: ex}}, nil
+}
+
+// parseCatchFinallyMisplaced errors on a catch/finally outside a try.
+func (a *Analyzer) parseCatchFinallyMisplaced(seq lang.ISeq, env Env) (*ast.Node, error) {
+	name := "catch/finally"
+	if sym, ok := seq.First().(*lang.Symbol); ok {
+		name = sym.Name()
+	}
+	return nil, a.errf(seq, "%s outside of try", name)
+}
+
+// parseTry handles (try body* catch-clause* finally-clause?) — body exprs
+// up to the first catch/finally, then only catch/finally clauses, at most
+// one finally, which must be last (design/03 §2 Phase 4). The body and all
+// clauses inherit a RecurFrame marked Blocked="try" so a recur targeting an
+// outer loop is "cannot recur across try" (a loop* nested inside gets its
+// own fresh, unblocked frame). Finally's value is discarded (analyzed in
+// statement context).
+func (a *Analyzer) parseTry(seq lang.ISeq, env Env) (*ast.Node, error) {
+	forms := seqToSlice(seq.Next())
+
+	bodyEnv := env
+	bodyEnv.IsTopLevel = false
+	if bodyEnv.RecurFrame != nil {
+		blocked := *bodyEnv.RecurFrame
+		blocked.Blocked = "try"
+		bodyEnv.RecurFrame = &blocked
+	}
+
+	var bodyForms []any
+	var catches []*ast.Node
+	var finallyNode *ast.Node
+	inClauses := false
+
+	for _, f := range forms {
+		op := clauseOp(f)
+		if op == "" {
+			if inClauses {
+				return nil, a.errf(seq, "only catch or finally clause can follow catch in try expression")
+			}
+			bodyForms = append(bodyForms, f)
+			continue
+		}
+		inClauses = true
+		if finallyNode != nil {
+			return nil, a.errf(seq, "finally clause must be last in try expression")
+		}
+		cseq := f.(lang.ISeq)
+		if op == "catch" {
+			cn, err := a.parseCatch(cseq, bodyEnv)
+			if err != nil {
+				return nil, err
+			}
+			catches = append(catches, cn)
+		} else {
+			fbody, err := a.analyzeBody(cseq, seqToSlice(cseq.Next()), bodyEnv.withContext(CtxStatement))
+			if err != nil {
+				return nil, err
+			}
+			finallyNode = fbody
+		}
+	}
+
+	body, err := a.analyzeBody(seq, bodyForms, bodyEnv)
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Node{Op: ast.OpTry, Form: seq, Sub: &ast.TryNode{Body: body, Catches: catches, Finally: finallyNode}}, nil
+}
+
+// parseCatch handles one (catch Class binding body*) clause. The binding
+// (a simple symbol) enters a fresh scope for the catch body.
+func (a *Analyzer) parseCatch(seq lang.ISeq, env Env) (*ast.Node, error) {
+	parts := seqToSlice(seq.Next())
+	if len(parts) < 2 {
+		return nil, a.errf(seq, "catch clause requires a class name and a binding: (catch Class e body*)")
+	}
+	classSym, ok := parts[0].(*lang.Symbol)
+	if !ok {
+		return nil, a.errf(seq, "catch clause requires a class name symbol, got: %s", lang.PrintString(parts[0]))
+	}
+	bindSym, err := a.simpleBindingSym(seq, parts[1])
+	if err != nil {
+		return nil, err
+	}
+	b := &ast.BindingNode{Name: bindSym, Kind: ast.BindCatch}
+	bnode := &ast.Node{Op: ast.OpBinding, Form: bindSym, Sub: b}
+	body, err := a.analyzeBody(seq, parts[2:], env.withLocal(b))
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Node{Op: ast.OpCatch, Form: seq, Sub: &ast.CatchNode{ClassName: classSym.FullName(), Binding: bnode, Body: body}}, nil
+}
+
+// clauseOp reports "catch" or "finally" when f is a seq whose operator is
+// that unqualified symbol, else "".
+func clauseOp(f any) string {
+	seq, ok := f.(lang.ISeq)
+	if !ok || lang.Seq(seq) == nil {
+		return ""
+	}
+	sym, ok := seq.First().(*lang.Symbol)
+	if !ok || sym.HasNamespace() {
+		return ""
+	}
+	if sym.Name() == "catch" || sym.Name() == "finally" {
+		return sym.Name()
+	}
+	return ""
 }
 
 // simpleBindingSym validates a binding name: a simple (non-namespaced,

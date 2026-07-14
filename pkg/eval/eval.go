@@ -399,7 +399,21 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 		// struct construction — lands in host.go.
 		return e.evalHost(n, s)
 
-	case ast.OpBinding, ast.OpFnMethod:
+	case ast.OpThrow:
+		// throw = panic the thrown value (design/03 §6). Throw normalizes a
+		// non-error value into a runtime exception (eval.Throw); the panic
+		// unwinds to the nearest OpTry recover or the top-level boundary.
+		sub := n.Sub.(*ast.ThrowNode)
+		v, err := e.Eval(sub.Exception, s)
+		if err != nil {
+			return nil, err
+		}
+		panic(Throw(v))
+
+	case ast.OpTry:
+		return e.evalTry(n, s)
+
+	case ast.OpBinding, ast.OpFnMethod, ast.OpCatch:
 		// Structural children of OpLet / OpFn — never evaluated directly.
 		panic(fmt.Sprintf("eval: op %v is not directly evaluable", n.Op))
 
