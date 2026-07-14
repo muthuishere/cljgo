@@ -19,14 +19,62 @@ tree-walk evaluator that is the REPL and the macro engine.
 
 ## Status
 
-Design phase complete; implementation starting. See `design/00-architecture.md`
-for the consolidated architecture, contracts, and the M0–M5 roadmap, and
-`design/07-spikes.md` for the de-risking spikes.
+Working REPL **and** native compiler. The same source runs interpreted at the
+prompt and AOT-compiles to a static Go binary — byte-identical output on both
+paths (a dual-harness conformance suite enforces this on every commit; a
+REPL↔binary divergence is a release blocker).
+
+| Milestone | State | What landed |
+|-----------|-------|-------------|
+| **M0** | ✅ | REPL: reader (full syntax-quote), `loop*`/`recur`, dynamic vars, namespaces |
+| **M1** | ✅ | Macroexpansion, `defmacro` at the prompt, embedded `core.clj`, `clojure.test` |
+| **M2** | ✅ | `cljgo build` → native binary, <10 ms startup, fixed-arity calling convention |
+| **M3-v0** | ✅ | **Zero-ceremony Go interop, both modes** — `require-go`, package fns/consts, `(T,error)`→`[v err]`, `!` unwrap-or-throw |
+| M3.1+ | ◦ | Member access (`.Method`/`.-Field`), third-party modules via `deps.edn`, channels/`go`, Result/Option, FFI |
+
+### Try it
+
+```clojure
+;; hello.clj
+(require-go '[strings])
+(require-go '[strconv])
+
+(println (strings/ToUpper "hello from go's stdlib"))
+(println "Atoi! ->" (strconv/Atoi! "42"))   ; unwraps, or throws
+(println "Atoi  ->" (strconv/Atoi "oops"))   ; => [0 <error>], errors-as-values
+```
 
 ```
-design/   architecture + component design docs (reader, data structures,
-          analyzer/eval, Go emitter, interop/concurrency, spikes)
-refs/     (gitignored) reference clones: glojure, cljs2go, let-go
+$ cljgo run hello.clj        # interpreted
+$ cljgo build hello.clj      # -> ./hello, a static native binary
+$ ./hello                    # byte-identical output
+```
+
+The Go ecosystem is the standard library: `(require-go '[net/http :as http])`
+and call it — no bindings, no wrappers, the Go toolchain is the classpath.
+
+## Development
+
+Authority chain: `docs/adr/` (decisions) › `design/00-architecture.md`
+(contracts + M0–M5 roadmap) › `design/01–07` (component internals) ›
+`openspec/` (active change proposals). Process for non-trivial work:
+ADR → OpenSpec propose/design → apply.
+
+Gates before every commit:
+
+```
+go build ./... && go vet ./... && gofmt -l pkg cmd conformance && go test ./...
+```
+
+```
+pkg/lang     runtime (persistent data structures, vendored from Glojure)
+pkg/reader   pkg/ast   pkg/analyzer   pkg/eval   pkg/repl   pkg/emit
+cmd/cljgo    CLI (repl · run · build · version)
+core/        core.clj — Clojure-in-Clojure
+conformance/ dual-harness tests (eval + compiled), oracle-cited vs JVM Clojure
+design/      architecture + component design docs
+docs/adr/    decision log        openspec/   spec-driven change proposals
+refs/        (gitignored) reference clones: glojure, cljs2go, let-go
 ```
 
 Toolchain: Go 1.26.
