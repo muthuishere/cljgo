@@ -9,19 +9,19 @@
 ;; where :test counts deftests run and pass+fail+error counts assertions
 ;; ("Ran N tests containing M assertions.").
 ;;
-;; DEVIATIONS from JVM clojure.test (documented, interim until the seams
-;; below land):
-;;   * try/catch does not exist in the evaluator yet (analyzer blocks
-;;     "try"), so the error boundary is the Go host seam
-;;     clojure.core/-guarded-call (recover→handler). It gives faithful
-;;     :error counting for assertions that throw and for uncaught
-;;     exceptions in a test body.
-;;   * (is (thrown? ...)) is DEFERRED: it needs to catch a *specific*
-;;     exception class, which needs host-class interop (v3). `is`
-;;     recognizes the form and routes it to a clearly-deferred :error
-;;     report rather than pretending to pass.
+;; Since try/catch/throw + ex-info/ex-message landed in the evaluator, every
+;; assertion is guarded by a REAL (try ... (catch Throwable ...)) — the same
+;; shape as JVM clojure.test's try-expr — so a throwing body reports :error
+;; and the run continues. (is (thrown? Class body)) and
+;; (is (thrown-with-msg? Class #"re" body)) are now supported via real
+;; try/catch; class matching follows the evaluator's CatchMatches (design/03
+;; §6): Throwable/Exception/RuntimeException match any thrown value,
+;; ExceptionInfo matches an ex-info. thrown-with-msg? matches the message
+;; with a real regex via the -re-find? host seam (cljgo has no re-find yet).
+;;
+;; DEVIATIONS from JVM clojure.test (documented, remaining slice, task 1.2):
 ;;   * use-fixtures / *test-out* / per-ns "Testing <ns>" banner are not
-;;     in this slice (task 1.2).
+;;     in this slice.
 
 ;; The loader (pkg/eval loadClojureTest) already binds *ns* to a fresh
 ;; clojure.test; these two forms make it explicit and refer clojure.core so
@@ -80,46 +80,77 @@
 
 ;; --- is / testing / deftest -----------------------------------------
 
-;; `is` supports (= a b), a plain (pred args...) call, a bare expression,
-;; and (thrown? ...) (deferred). Every branch runs under the -guarded-call
-;; error boundary so a throwing assertion reports :error and the run
-;; continues, matching clojure.test's per-assertion try/catch.
+;; `is` supports (= a b) / a plain (pred args...) call, a bare expression,
+;; (thrown? Class body...) and (thrown-with-msg? Class #"re" body...). Every
+;; branch is wrapped in a REAL (try ... (catch Throwable ...)) — matching JVM
+;; clojure.test's try-expr — so an assertion whose body throws unexpectedly
+;; reports :error and the run continues, rather than crashing the process.
+;;
+;; NOTE on class symbols in syntax-quote: cljgo's reader keeps try/catch/throw
+;; as bare specials, but a class symbol like Throwable is NOT special, so a
+;; syntax-quoted `Throwable` would be namespace-qualified (=> clojure.test/
+;; Throwable) and never match. The outer catch therefore forces the bare
+;; symbol with ~'Throwable; the thrown?/thrown-with-msg? class is spliced
+;; straight from the user's form (~klass), so it is already unqualified.
 (defmacro is
   ([form] (list 'clojure.test/is form nil))
   ([form msg]
    (cond
      (and (seq? form) (= (first form) 'thrown?))
-     ;; DEFERRED: needs host-class interop (v3) to check the thrown type.
-     `(do-report {:type :error
-                  :message "is with thrown? is not yet supported (host-class interop pending)"
-                  :expected '~form
-                  :actual nil})
+     (let [klass (second form)
+           body (nnext form)]
+       `(try
+          (try
+            ~@body
+            ;; body returned without throwing => the assertion fails.
+            (do-report {:type :fail :message ~msg :expected '~form :actual nil})
+            nil
+            (catch ~klass e#
+              (do-report {:type :pass :message ~msg :expected '~form :actual e#})
+              e#))
+          (catch ~'Throwable t#
+            (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
+
+     (and (seq? form) (= (first form) 'thrown-with-msg?))
+     (let [klass (second form)
+           re (nth form 2)
+           body (nthnext form 3)]
+       `(try
+          (try
+            ~@body
+            (do-report {:type :fail :message ~msg :expected '~form :actual nil})
+            nil
+            (catch ~klass e#
+              (if (clojure.core/-re-find? ~re (ex-message e#))
+                (do-report {:type :pass :message ~msg :expected '~form :actual e#})
+                (do-report {:type :fail :message ~msg :expected '~form :actual e#}))
+              e#))
+          (catch ~'Throwable t#
+            (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
 
      (seq? form)
-     `(clojure.core/-guarded-call
-        (fn []
-          (let [values# (clojure.core/list ~@(rest form))
-                result# (clojure.core/apply ~(first form) values#)]
-            (if result#
-              (do-report {:type :pass :message ~msg :expected '~form
-                          :actual (clojure.core/cons '~(first form) values#)})
-              ;; '~'not => the bare symbol `not`, so :actual prints as
-              ;; (not (= 1 2)) like JVM clojure.test, not clojure.core/not.
-              (do-report {:type :fail :message ~msg :expected '~form
-                          :actual (clojure.core/list '~'not (clojure.core/cons '~(first form) values#))}))
-            result#))
-        (fn [e#]
+     `(try
+        (let [values# (clojure.core/list ~@(rest form))
+              result# (clojure.core/apply ~(first form) values#)]
+          (if result#
+            (do-report {:type :pass :message ~msg :expected '~form
+                        :actual (clojure.core/cons '~(first form) values#)})
+            ;; '~'not => the bare symbol `not`, so :actual prints as
+            ;; (not (= 1 2)) like JVM clojure.test, not clojure.core/not.
+            (do-report {:type :fail :message ~msg :expected '~form
+                        :actual (clojure.core/list '~'not (clojure.core/cons '~(first form) values#))}))
+          result#)
+        (catch ~'Throwable e#
           (do-report {:type :error :message ~msg :expected '~form :actual e#})))
 
      :else
-     `(clojure.core/-guarded-call
-        (fn []
-          (let [value# ~form]
-            (if value#
-              (do-report {:type :pass :message ~msg :expected '~form :actual value#})
-              (do-report {:type :fail :message ~msg :expected '~form :actual value#}))
-            value#))
-        (fn [e#]
+     `(try
+        (let [value# ~form]
+          (if value#
+            (do-report {:type :pass :message ~msg :expected '~form :actual value#})
+            (do-report {:type :fail :message ~msg :expected '~form :actual value#}))
+          value#)
+        (catch ~'Throwable e#
           (do-report {:type :error :message ~msg :expected '~form :actual e#}))))))
 
 ;; `binding` is a cljgo special form (not in the reader's syntax-quote
@@ -129,6 +160,47 @@
 (defmacro testing [string & body]
   `(~'binding [*testing-contexts* (cons ~string *testing-contexts*)]
      ~@body))
+
+;; --- are: table-driven assertions -----------------------------------
+
+;; -take/-drop/-interleave-pairs are the tiny seq helpers `are` needs at
+;; macroexpand time (cljgo core has no take/drop/interleave yet). Private to
+;; clojure.test.
+(defn ^:private -take [n coll]
+  (loop [n n c (seq coll) acc []]
+    (if (and (> n 0) c)
+      (recur (dec n) (next c) (conj acc (first c)))
+      (seq acc))))
+
+(defn ^:private -drop [n coll]
+  (loop [n n c (seq coll)]
+    (if (and (> n 0) c)
+      (recur (dec n) (next c))
+      c)))
+
+;; interleave the argv symbols with one row of values => a flat binding seq
+;; (x v0 y v1) for a (let [x v0 y v1] ...) form.
+(defn ^:private -interleave-pairs [syms vals]
+  (loop [ss (seq syms) vs (seq vals) acc []]
+    (if (and ss vs)
+      (recur (next ss) (next vs) (conj (conj acc (first ss)) (first vs)))
+      acc)))
+
+;; (are [argv] expr v0 v1 ...) expands to a (do (is expr) ...) with each row
+;; of `(count argv)` values bound to argv via let. Binding (rather than JVM's
+;; textual substitution) is equivalent for ordinary templates and needs no
+;; code walker. Each `is` still carries its own error boundary.
+(defmacro are [argv expr & args]
+  (let [n (count argv)]
+    (cons 'do
+          (loop [as (seq args) forms []]
+            (if as
+              (let [row (-take n as)
+                    bindvec (clojure.core/apply clojure.core/vector
+                                                (-interleave-pairs argv row))]
+                (recur (-drop n as)
+                       (conj forms (list 'let bindvec (list 'clojure.test/is expr)))))
+              forms)))))
 
 ;; deftest interns a test var: its value is a thunk that runs the test,
 ;; and its :test metadata holds the actual body thunk (as JVM clojure.test
@@ -146,9 +218,9 @@
     (when t
       (binding [*testing-vars* (cons v *testing-vars*)]
         (inc-report-counter :test)
-        (clojure.core/-guarded-call
-          t
-          (fn [e]
+        (try
+          (t)
+          (catch Throwable e
             (do-report {:type :error
                         :message "Uncaught exception, not in assertion."
                         :expected nil
