@@ -681,6 +681,9 @@ func (e *Evaluator) internBuiltins() {
 	def("go", goMacro).SetMacro()
 	def("thread", goMacro).SetMacro()
 
+	// M4+ concurrency: alts!/timeout/dropping+sliding buffers (chan_builtins.go).
+	e.internChanExtras(def)
+
 	// *1 *2 *3 *e are proper dynamic vars in core (design/03 §7b); the
 	// REPL driver binds them per session and set!s them after each eval.
 	for _, name := range []string{"*1", "*2", "*3", "*e"} {
