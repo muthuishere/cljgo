@@ -970,3 +970,22 @@
 (defn doall [coll]
   (dorun coll)
   coll)
+
+;; --- defmulti / defmethod : multimethods (the value-dispatch polymorphism
+;; mechanism; the type-dispatch one is defprotocol) ------------------------
+;; The runtime MultiFn value + registry live in pkg/eval/multimethod_builtins.go
+;; (mirrors protocols.go); these macros are the surface over the private
+;; -defmulti/-defmethod builtins. A MultiFn implements IFn, so the var a
+;; defmulti binds is directly callable.
+;;
+;; (defmulti area :shape)             ; dispatch fn can be a keyword/fn/etc.
+;; (defmethod area :circle [s] ...)   ; register an impl for a dispatch value
+;; (defmethod area :default [s] ...)  ; :default is the fallback
+;; oracle (Clojure 1.12.5): see conformance/tests/multimethod-*.clj
+(defmacro defmulti [mm-name dispatch-fn]
+  (list 'def mm-name
+        (list '-defmulti (name mm-name) dispatch-fn)))
+
+(defmacro defmethod [mm-name dispatch-val params & body]
+  (list '-defmethod mm-name dispatch-val
+        (list* 'fn params body)))
