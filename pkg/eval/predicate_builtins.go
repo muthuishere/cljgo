@@ -2,6 +2,7 @@ package eval
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -46,7 +47,9 @@ func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *
 		return isRealFn(oneArg("fn?", args))
 	})
 
-	// seqable?: (seq x) is legal — nil, strings, and anything Seqable/ISeq.
+	// seqable?: (seq x) is legal — nil, strings, anything Seqable/ISeq, and
+	// a raw Go slice/array (a cljgo array, ADR 0024 — (seq (object-array 3))
+	// already works via lang.Seq's reflect fallback, so seqable? must agree).
 	def("seqable?", func(args ...any) any {
 		x := oneArg("seqable?", args)
 		if x == nil {
@@ -54,6 +57,10 @@ func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *
 		}
 		switch x.(type) {
 		case string, lang.Seqable, lang.ISeq:
+			return true
+		}
+		switch reflect.ValueOf(x).Kind() {
+		case reflect.Slice, reflect.Array:
 			return true
 		}
 		return false

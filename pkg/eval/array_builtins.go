@@ -1,0 +1,210 @@
+package eval
+
+import (
+	"fmt"
+	"reflect"
+
+	"github.com/muthuishere/cljgo/pkg/lang"
+)
+
+// internArrayBuiltins interns the array constructors + accessors of ADR
+// 0022 Batch 4 (cheap breadth): to-array/object-array/int-array/long-array/
+// float-array/double-array/boolean-array/char-array/into-array, plus
+// aget/aset/alength/aclone. Wired into internBuiltins by ONE line
+// (e.internArrayBuiltins(def)), per the merge-friendly discipline.
+//
+// ADR 0024: a cljgo "array" is a plain native Go slice ([]any for
+// object/to-array, []int64 for int/long-array, []float32/[]float64 for
+// float/double-array, []bool for boolean-array, []lang.Char for
+// char-array). No new interop glue is needed to make these useful — Seq,
+// Nth, Get, ToString/Print, and Go-interop argument coercion
+// (coerceGoValue, pkg/lang/apply.go) already special-case
+// reflect.Slice/reflect.Array generically, so a cljgo array participates
+// in seq/count/get and marshals across the Go interop boundary exactly
+// like any other Go slice. aget/aset/alength/aclone require their
+// argument to actually BE a reflect.Slice/reflect.Array (matching the
+// oracle: `(aget [1 2 3] 0)` throws on real Clojure 1.12.5 too, since
+// aget only expands onto real array classes, never persistent vectors).
+func (e *Evaluator) internArrayBuiltins(def func(string, func(...any) any) *lang.Var) {
+	// to-array: (to-array coll) => []any. lang.ToSlice already handles
+	// nil, vectors, maps, sets, strings, ISeqs (incl. lazy/range), and the
+	// reflect.Slice/Array fallback (so `(to-array (to-array [1 2]))` also
+	// works, matching the oracle: to-array on an array is a no-op copy).
+	def("to-array", func(args ...any) any {
+		return lang.ToSlice(oneArg("to-array", args))
+	})
+
+	// object-array: (object-array n) => n nils; (object-array coll) =>
+	// []any of coll's elements. Unlike the typed ctors below, real Clojure
+	// has NO (object-array n init) 2-arg form (verified: ArityException).
+	def("object-array", func(args ...any) any {
+		x := oneArg("object-array", args)
+		if n, ok := lang.AsInt(x); ok {
+			return make([]any, n)
+		}
+		return lang.ToSlice(x)
+	})
+
+	// int-array / long-array: cljgo's numeric tower has one fixnum
+	// representation (int64 — design/08 §5 Batch 2), so both ctors
+	// produce the same Go type ([]int64). Documented divergence from the
+	// JVM (ADR 0024): there is no narrower `int` value to make a
+	// genuinely distinct int-array.
+	intArrayCtor := func(op string) func(args ...any) any {
+		return func(args ...any) any {
+			return typedArray(op, args, lang.LongCast, int64(0))
+		}
+	}
+	def("int-array", intArrayCtor("int-array"))
+	def("long-array", intArrayCtor("long-array"))
+
+	def("float-array", func(args ...any) any {
+		return typedArray("float-array", args, lang.FloatCast, float32(0))
+	})
+	def("double-array", func(args ...any) any {
+		return typedArray("double-array", args, lang.AsFloat64, float64(0))
+	})
+	def("boolean-array", func(args ...any) any {
+		return typedArray("boolean-array", args, lang.BooleanCast, false)
+	})
+	def("char-array", func(args ...any) any {
+		return typedArray("char-array", args, lang.CharCast, lang.Char(0))
+	})
+
+	// into-array: cheap, type-inferring approximation of the JVM's
+	// RT.into-array (which picks the array's component class from the
+	// first element's class, defaulting to Object[] when empty). No
+	// 2-arg (explicit type) form — cljgo has no Class value to hint with.
+	def("into-array", func(args ...any) any {
+		return intoArray(oneArg("into-array", args))
+	})
+
+	// alength: (alength arr) => its length. Arrays only (oracle: throws on
+	// a persistent vector).
+	def("alength", func(args ...any) any {
+		return int64(arrayReflectValue("alength", oneArg("alength", args)).Len())
+	})
+
+	// aget: (aget arr idx) => element at idx.
+	def("aget", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: aget", len(args)))
+		}
+		v := arrayReflectValue("aget", args[0])
+		idx, ok := lang.AsInt(args[1])
+		if !ok {
+			panic(fmt.Errorf("aget: index must be an integer, got: %s", lang.PrintString(args[1])))
+		}
+		if idx < 0 || idx >= v.Len() {
+			panic(fmt.Errorf("aget: index %d out of bounds for length %d", idx, v.Len()))
+		}
+		return v.Index(idx).Interface()
+	})
+
+	// aset: (aset arr idx val) => val, mutating arr in place (a real Go
+	// slice header over the same backing array — ADR 0024).
+	def("aset", func(args ...any) any {
+		if len(args) != 3 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: aset", len(args)))
+		}
+		v := arrayReflectValue("aset", args[0])
+		idx, ok := lang.AsInt(args[1])
+		if !ok {
+			panic(fmt.Errorf("aset: index must be an integer, got: %s", lang.PrintString(args[1])))
+		}
+		if idx < 0 || idx >= v.Len() {
+			panic(fmt.Errorf("aset: index %d out of bounds for length %d", idx, v.Len()))
+		}
+		lang.SliceSet(args[0], idx, args[2])
+		return args[2]
+	})
+
+	// aclone: (aclone arr) => a shallow copy (independent backing array).
+	def("aclone", func(args ...any) any {
+		v := arrayReflectValue("aclone", oneArg("aclone", args))
+		cp := reflect.MakeSlice(reflect.SliceOf(v.Type().Elem()), v.Len(), v.Len())
+		reflect.Copy(cp, v)
+		return cp.Interface()
+	})
+}
+
+// typedArray builds a typed cljgo array from one of the three ctor shapes
+// Clojure supports for a typed array (int-array/float-array/etc, all but
+// object-array): (ctor n) => n zero-valued elements; (ctor coll) => coll's
+// elements coerced via `coerce`; (ctor n init) => n copies of init
+// (coerced). T is the array's Go element type; zero is its zero value.
+func typedArray[T any](op string, args []any, coerce func(any) T, zero T) []T {
+	switch len(args) {
+	case 1:
+		if n, ok := lang.AsInt(args[0]); ok {
+			return make([]T, n)
+		}
+		src := lang.ToSlice(args[0])
+		out := make([]T, len(src))
+		for i, x := range src {
+			out[i] = coerce(x)
+		}
+		return out
+	case 2:
+		n, ok := lang.AsInt(args[0])
+		if !ok {
+			panic(fmt.Errorf("%s: size must be an integer, got: %s", op, lang.PrintString(args[0])))
+		}
+		init := coerce(args[1])
+		out := make([]T, n)
+		for i := range out {
+			out[i] = init
+		}
+		return out
+	default:
+		panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), op))
+	}
+}
+
+// intoArray infers an element type from coll's first element (a cheap
+// approximation of RT.into-array's per-element-class inference — ADR
+// 0024), falling back to []any for an empty coll or a mixed/unrecognized
+// element type.
+func intoArray(coll any) any {
+	src := lang.ToSlice(coll)
+	if len(src) == 0 {
+		return []any{}
+	}
+	switch src[0].(type) {
+	case int64:
+		return typedArray("into-array", []any{coll}, lang.LongCast, int64(0))
+	case float64:
+		return typedArray("into-array", []any{coll}, lang.AsFloat64, float64(0))
+	case bool:
+		return typedArray("into-array", []any{coll}, lang.BooleanCast, false)
+	case lang.Char:
+		return typedArray("into-array", []any{coll}, lang.CharCast, lang.Char(0))
+	case string:
+		out := make([]string, len(src))
+		for i, x := range src {
+			s, ok := x.(string)
+			if !ok {
+				return append([]any{}, src...)
+			}
+			out[i] = s
+		}
+		return out
+	default:
+		return append([]any{}, src...)
+	}
+}
+
+// arrayReflectValue asserts x is a real Go slice/array (a cljgo array,
+// ADR 0024) and returns its reflect.Value — aget/aset/alength/aclone all
+// reject persistent vectors and other collections, matching the oracle
+// (real Clojure's aget/aset/alength/aclone only accept actual arrays).
+func arrayReflectValue(op string, x any) reflect.Value {
+	if x == nil {
+		panic(fmt.Errorf("%s: not an array: nil", op))
+	}
+	v := reflect.ValueOf(x)
+	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {
+		panic(fmt.Errorf("%s: not an array: %s", op, lang.PrintString(x)))
+	}
+	return v
+}
