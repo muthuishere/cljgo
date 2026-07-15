@@ -1,0 +1,12 @@
+;; build.cljgo — third-party Go via go-require (ADR 0021 B2). This REPLACES
+;; deps.edn: the build synthesizes the generated go.mod's requires, runs
+;; `go get`, and the emitter links the real module. No bindings, no go.mod
+;; by hand.
+;;   cljgo build       → install the `wsclient` binary
+;;   cljgo build run   → build and run it
+(defn build [b]
+  (let [app (exe b {:name "wsclient"
+                    :main "src/main.cljg"})]
+    (go-require app "github.com/gorilla/websocket" "v1.5.3")
+    (install b app)
+    (run b app)))

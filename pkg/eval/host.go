@@ -25,6 +25,9 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 		r := n.Sub.(*ast.HostRefNode)
 		rv, ok := lookupHostMember(r.Pkg, r.Member)
 		if !ok {
+			if isThirdPartyGoPath(r.Pkg) {
+				return nil, nil // AOT-only member (ADR 0021 B2): compile-time no-op
+			}
 			return nil, fmt.Errorf("unable to resolve Go member: %s.%s", r.Pkg, r.Member)
 		}
 		if rv.Kind() == reflect.Func {
@@ -45,12 +48,6 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 	case ast.OpHostCall:
 		c := n.Sub.(*ast.HostCallNode)
 		rv, ok := lookupHostMember(c.Pkg, c.Member)
-		if !ok {
-			return nil, fmt.Errorf("unable to resolve Go member: %s.%s", c.Pkg, c.Member)
-		}
-		if rv.Kind() != reflect.Func {
-			return nil, fmt.Errorf("Go member is not callable: %s.%s", c.Pkg, c.Member)
-		}
 		argVals := make([]any, len(c.Args))
 		for i, an := range c.Args {
 			v, err := e.Eval(an, s)
@@ -58,6 +55,18 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 				return nil, err
 			}
 			argVals[i] = v
+		}
+		if !ok {
+			if isThirdPartyGoPath(c.Pkg) {
+				// AOT-only member (ADR 0021 B2): args are evaluated for their
+				// side effects, but the unlinked call is a compile-time no-op —
+				// the emitted binary makes the real, non-reflective call.
+				return nil, nil
+			}
+			return nil, fmt.Errorf("unable to resolve Go member: %s.%s", c.Pkg, c.Member)
+		}
+		if rv.Kind() != reflect.Func {
+			return nil, fmt.Errorf("Go member is not callable: %s.%s", c.Pkg, c.Member)
 		}
 		// callHostFn panics on coercion failure or a thrown (`!`) error —
 		// recovered into an error at the IFn boundary / top level, matching
@@ -143,10 +152,31 @@ func (e *Evaluator) resolveHost(sym *lang.Symbol) (pkg, member string, ok bool) 
 	if !found {
 		return "", "", false
 	}
-	if _, inReg := lookupHostMember(path, sym.Name()); !inReg {
-		return "", "", false
+	if _, inReg := lookupHostMember(path, sym.Name()); inReg {
+		return path, sym.Name(), true
 	}
-	return path, sym.Name(), true
+	// Third-party modules (a domain-dotted import path, declared via a
+	// build.cljgo `go-require`, ADR 0021 B2) are NOT in the reflect seed
+	// registry. Resolve any member as host anyway: the AOT emitter validates
+	// and links it from go/packages type facts (zero hand-written bindings),
+	// and the interpreter's compile-time pass no-ops the unlinked call
+	// (evalHost). A trailing `!` yields to the analyzer's bang-retry.
+	if isThirdPartyGoPath(path) && !strings.HasSuffix(sym.Name(), "!") {
+		return path, sym.Name(), true
+	}
+	return "", "", false
+}
+
+// isThirdPartyGoPath reports whether an import path is a third-party module
+// (its first `/`-segment is a domain, i.e. contains a dot) rather than a Go
+// stdlib package (strings, net/url, …). Third-party members resolve through
+// go/packages type facts, not the reflect seed registry.
+func isThirdPartyGoPath(path string) bool {
+	first := path
+	if i := strings.IndexByte(path, '/'); i >= 0 {
+		first = path[:i]
+	}
+	return strings.Contains(first, ".")
 }
 
 // registerRequireGo backs the `require-go` builtin: it records an
