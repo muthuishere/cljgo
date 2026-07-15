@@ -413,7 +413,7 @@ hello from cljgo
       <ul class="clean">
         <li><b>build.cljgo</b> — the build is a program, not a data file. <code>(defn build [b] …)</code> at the project root defines an artifact/step DAG; <code>cljgo build</code> / <code>build run</code> / <code>test</code> mirror <code>zig build</code>. Replaces deps.edn for the AOT product (ADR 0021).</li>
         <li><b>comptime</b> — Zig-style compile-time value execution alongside Clojure macros. Macros transform <em>syntax</em>; <code>comptime</code> computes <em>values</em> embedded as literals. In the REPL, compile-time == eval-time (ADR 0009).</li>
-        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick, with a coverage ratchet in CI. Baseline ~43% of tested <code>clojure.core</code> vars (measured 2026-07-15), climbing per batch (ADR 0022).</li>
+        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick, with a coverage ratchet in CI. Measured baseline: <b>34/242 suite files passing (14.0%)</b>, 51.2% of tested <code>clojure.core</code> vars resolved (2026-07-15) — climbing per batch (ADR 0022).</li>
         <li><b>Cross-compilation</b> — cljgo emits plain Go, so pure-Go + purego programs build for any OS/arch with no target toolchain. <code>--target os/arch</code> or a matrix per artifact.</li>
       </ul>
     </div>
