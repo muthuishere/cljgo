@@ -1,0 +1,134 @@
+;; predicates.cljg — cljgo's Batch 1 "cheap breadth" clojure.core fns that
+;; compose over the Go builtins (ADR 0022, design/08 §5). The host-inspecting
+;; predicates, coercions, and seq/coll primitives are interned in Go
+;; (pkg/eval/predicate_builtins.go); these are the pure Clojure one-liners that
+;; ride on top of them — the qualified/simple ident family, the number-range
+;; predicates, the small seq accessors, and not=.
+;;
+;; Loaded into clojure.core immediately after core.clj (loadPredicates), so its
+;; publics are referred into user like the rest of core, and every core fn it
+;; uses (name, namespace, drop, take, reverse, nthrest, =, not, …) is already up.
+
+(in-ns 'clojure.core)
+
+;; ---- ident / symbol / keyword shape predicates -----------------------------
+;; ident? (a symbol or keyword) already lives in Go; simple-/qualified- split
+;; on whether a namespace part is present.
+
+(defn simple-ident?
+  "Return true if x is an ident with no namespace."
+  [x] (and (ident? x) (nil? (namespace x))))
+
+(defn qualified-ident?
+  "Return true if x is an ident with a namespace."
+  [x] (and (ident? x) (namespace x) true))
+
+(defn simple-symbol?
+  "Return true if x is a symbol without a namespace."
+  [x] (and (symbol? x) (nil? (namespace x))))
+
+(defn qualified-symbol?
+  "Return true if x is a symbol with a namespace."
+  [x] (and (symbol? x) (namespace x) true))
+
+(defn simple-keyword?
+  "Return true if x is a keyword without a namespace."
+  [x] (and (keyword? x) (nil? (namespace x))))
+
+(defn qualified-keyword?
+  "Return true if x is a keyword with a namespace."
+  [x] (and (keyword? x) (namespace x) true))
+
+;; ---- integer-range predicates ----------------------------------------------
+
+(defn pos-int?
+  "Return true if x is a positive fixed-precision integer."
+  [x] (and (int? x) (pos? x)))
+
+(defn neg-int?
+  "Return true if x is a negative fixed-precision integer."
+  [x] (and (int? x) (neg? x)))
+
+(defn nat-int?
+  "Return true if x is a non-negative fixed-precision integer."
+  [x] (and (int? x) (not (neg? x))))
+
+;; ---- small seq accessors ---------------------------------------------------
+
+(defn ffirst
+  "Same as (first (first x))."
+  [x] (first (first x)))
+
+(defn nfirst
+  "Same as (next (first x))."
+  [x] (next (first x)))
+
+(defn fnext
+  "Same as (first (next x))."
+  [x] (first (next x)))
+
+(defn last
+  "Return the last item in coll, in linear time."
+  [coll]
+  (if-let [n (next coll)]
+    (recur n)
+    (first coll)))
+
+(defn butlast
+  "Return a seq of all but the last item in coll, in linear time."
+  [coll]
+  (loop [ret [] s (seq coll)]
+    (if (next s)
+      (recur (conj ret (first s)) (next s))
+      (seq ret))))
+
+(defn drop-last
+  "Return a lazy sequence of all but the last n (default 1) items in coll."
+  ([coll] (drop-last 1 coll))
+  ([n coll] (map (fn [x _] x) coll (drop n coll))))
+
+(defn take-last
+  "Return a seq of the last n items in coll. Depending on the type of coll
+  may be no better than linear time."
+  [n coll]
+  (loop [s (seq coll) lead (seq (drop n coll))]
+    (if lead
+      (recur (next s) (next lead))
+      s)))
+
+;; ---- lazy concat (fixes an M1 eager-concat hang) ---------------------------
+;; The Go builtin `concat` (builtins.go) is EAGER — it fully realizes its
+;; arguments, so (take 5 (concat (range))) diverges on an infinite range. That
+;; latent bug stayed hidden while concat's suite file (concat.cljc) errored
+;; early on the (then-missing) `realized?`; implementing realized? in Batch 1
+;; exposes it. Redefine concat with clojure.core's own lazy definition (built
+;; on lazy-seq/cons, both up by now) so infinite args are handled correctly.
+;; Syntax-quote only emits (seq (concat …)) FORMS consumed generically, so the
+;; switch from an eager List to a LazySeq result is transparent to macros.
+(defn concat
+  "Return a lazy seq of the concatenation of the elements in the supplied colls."
+  ([] (lazy-seq nil))
+  ([x] (lazy-seq x))
+  ([x y]
+   (lazy-seq
+    (let [s (seq x)]
+      (if s
+        (cons (first s) (concat (rest s) y))
+        y))))
+  ([x y & zs]
+   (let [cat (fn cat [xys zs]
+               (lazy-seq
+                (let [xys (seq xys)]
+                  (if xys
+                    (cons (first xys) (cat (rest xys) zs))
+                    (when zs
+                      (cat (first zs) (next zs)))))))]
+     (cat (concat x y) zs))))
+
+;; ---- not= ------------------------------------------------------------------
+
+(defn not=
+  "Same as (not (= obj1 obj2))."
+  ([x] false)
+  ([x y] (not (= x y)))
+  ([x y & more] (not (apply = x y more))))

@@ -496,6 +496,11 @@ func (e *Evaluator) internBuiltins() {
 	// clojure-test-suite harness surface (ADR 0022, var_builtins.go).
 	e.internVarBuiltins(def)
 
+	// --- Batch 1 cheap-breadth predicates + coercions + seq/coll host prims
+	// (ADR 0022, design/08 §5, predicate_builtins.go). The compositional
+	// fns that ride on these live in core/predicates.cljg (loadPredicates).
+	e.internPredicateBuiltins(def)
+
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
 	// Constructors, predicates and combinators over the pkg/lang tagged

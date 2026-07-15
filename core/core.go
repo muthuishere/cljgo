@@ -49,6 +49,17 @@ var ProtocolsSource string
 //go:embed build.cljg
 var BuildSource string
 
+// PredicatesSource is the contents of predicates.cljg — the Batch 1
+// "cheap breadth" clojure.core fns that compose over the Go predicate/
+// coercion builtins (ADR 0022, design/08 §5): the simple/qualified ident
+// family, pos-int?/neg-int?/nat-int?, ffirst/nfirst/fnext/last/butlast/
+// drop-last/take-last, and not=. pkg/eval loads it into clojure.core right
+// after core.clj (loadPredicates), so its publics are referred into user
+// like the rest of core. The loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed predicates.cljg
+var PredicatesSource string
+
 // PortabilitySource is the contents of clojure_test_portability.cljg — the
 // cljgo shim for the jank clojure-test-suite's clojure.core-test.portability
 // namespace (when-var-exists + big-int?/lazy-seq?, ADR 0022). pkg/eval loads

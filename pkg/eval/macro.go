@@ -266,6 +266,37 @@ func (e *Evaluator) loadClojureString() {
 	}
 }
 
+// loadPredicates reads and evaluates the embedded core/predicates.cljg into
+// clojure.core — the Batch 1 "cheap breadth" fns that compose over the Go
+// predicate/coercion builtins (ADR 0022, design/08 §5). It runs immediately
+// after loadCore (predicates are foundational): defn/destructuring and the
+// seq library are up, and the Go builtins (int?/pos?/name/namespace/…) it
+// leans on are interned before core.clj even loads. Its publics are referred
+// into user like the rest of core.
+func (e *Evaluator) loadPredicates() {
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, lang.NSCore,
+		lang.VarFile, "predicates.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.PredicatesSource),
+		reader.WithFilename("predicates.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading predicates.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating predicates.cljg: %w", err))
+		}
+	}
+}
+
 // loadProtocols reads and evaluates the embedded core/protocols.cljg into
 // clojure.core — the defprotocol / deftype / defrecord / extend-type /
 // extend-protocol macros (design/00 §6 M5). It runs after loadCore (so
