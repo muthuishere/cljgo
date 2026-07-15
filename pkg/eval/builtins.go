@@ -500,6 +500,9 @@ func (e *Evaluator) internBuiltins() {
 	// pop!): Batch 3 (ADR 0022, transient_builtins.go). State lives in
 	// pkg/lang transient types, so eval + emitted Go share it identically.
 	e.internTransientBuiltins(def)
+	// --- numeric tower (bigint/bigdec/ratios, promotion, bit-*, parse-*,
+	// rand-*, ==): design/08 §5 Batch 2 (numeric_builtins.go).
+	e.internNumericBuiltins(def)
 
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//

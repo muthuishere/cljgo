@@ -30,6 +30,17 @@ func NewBigDecimal(s string) (*BigDecimal, error) {
 	return &BigDecimal{val: bf}, nil
 }
 
+// MustBigDecimal parses a BigDecimal string or panics. It backs the
+// emitter's constant literal reconstruction (pkg/emit constExpr) over a
+// value cljgo itself printed, so failure is a compiler bug.
+func MustBigDecimal(s string) *BigDecimal {
+	bd, err := NewBigDecimal(s)
+	if err != nil {
+		panic(err)
+	}
+	return bd
+}
+
 // NewBigDecimalFromBigFloat
 func NewBigDecimalFromBigFloat(x *big.Float) *BigDecimal {
 	xCopy := new(big.Float)

@@ -1,0 +1,20 @@
+;; numeric.cljg — Clojure-level numeric-tower fns that ride on the
+;; pkg/eval/numeric_builtins.go host primitives (design/08 §5 Batch 2,
+;; ADR 0022). Loaded into clojure.core after core.clj (loadNumeric), so
+;; these are referred into user like the rest of core. The tower's
+;; primitive coercions/arithmetic/bit-ops/parse-*/rand-* are Go builtins;
+;; only the fns naturally expressed over them in Clojure live here.
+;;
+;; Boot input is programmer-owned; keep it small (ADR 0019 boot budget).
+
+(in-ns 'clojure.core)
+
+;; random-sample: keep each item of coll with probability prob (a value
+;; in [0,1]). The 1-arity transducer form is omitted until transducers
+;; land (Batch 4-adjacent); the collection form is the one the suite and
+;; ordinary code exercise.
+;; oracle: (count (random-sample 1.0 (range 100))) => 100
+;; oracle: (random-sample 0.0 (range 100)) => ()
+(defn random-sample
+  ([prob coll]
+   (filter (fn [_] (< (rand) prob)) coll)))

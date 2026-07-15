@@ -234,6 +234,37 @@ func (e *Evaluator) loadCore() {
 	}
 }
 
+// loadNumeric reads and evaluates the embedded core/numeric.cljg into
+// clojure.core — the Clojure-level numeric-tower fns (random-sample, …)
+// that ride on the Batch 2 host primitives (numeric_builtins.go, design/08
+// §5). It runs after loadCore so defn/filter/rand and the seq library are
+// available; numeric.cljg's own (in-ns 'clojure.core) makes its body
+// resolve unqualified core names, and its publics are referred into user
+// like the rest of core.
+func (e *Evaluator) loadNumeric() {
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, lang.NSCore,
+		lang.VarFile, "numeric.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.NumericSource),
+		reader.WithFilename("numeric.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading numeric.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating numeric.cljg: %w", err))
+		}
+	}
+}
+
 // loadClojureString reads and evaluates the embedded core/string.cljg into
 // the clojure.string namespace. It runs after loadCore so clojure.core (and
 // the regex core fns + private -str-* host prims) are fully up. *ns* is

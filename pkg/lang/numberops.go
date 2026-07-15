@@ -157,6 +157,36 @@ func NumbersEqual(x, y any) bool {
 		Ops(x).Combine(Ops(y)).Equiv(x, y)
 }
 
+// MultiplyP is (*' x y): a promoting multiply. int64 overflow promotes
+// to BigInt (the tower's MultiplyP path) instead of throwing.
+func MultiplyP(x, y any) any {
+	return Ops(x).Combine(Ops(y)).MultiplyP(x, y)
+}
+
+// NumEquiv is Clojure's `==` over two numbers: cross-category numeric
+// equality. Unlike `=` (NumbersEqual, which additionally requires the
+// same numeric category), == coerces across the tower, so (== 1 1.0)
+// and (== 1/2 0.5) are true while (= 1 1.0) is false.
+func NumEquiv(x, y any) bool {
+	return Ops(x).Combine(Ops(y)).Equiv(x, y)
+}
+
+// UncheckedAdd/UncheckedSubtract/UncheckedMultiply/UncheckedNegate wrap
+// the tower's unchecked ops: no overflow check, int64 wraps in two's
+// complement (Clojure's unchecked-* on longs).
+func UncheckedAdd(x, y any) any {
+	return Ops(x).Combine(Ops(y)).UncheckedAdd(x, y)
+}
+func UncheckedSubtract(x, y any) any {
+	return Ops(x).Combine(Ops(y)).UncheckedSub(x, y)
+}
+func UncheckedMultiply(x, y any) any {
+	return Ops(x).Combine(Ops(y)).UncheckedMultiply(x, y)
+}
+func UncheckedNegate(x any) any {
+	return Ops(x).UncheckedNegate(x)
+}
+
 // //////////////////////////////////////////////////////////////////////////////
 // int64Ops
 // //////////////////////////////////////////////////////////////////////////////

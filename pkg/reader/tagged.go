@@ -10,6 +10,7 @@ package reader
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -24,6 +25,17 @@ func (u UUID) String() string { return `#uuid "` + u.s + `"` }
 
 // Value returns the canonical (lowercase) UUID string.
 func (u UUID) Value() string { return u.s }
+
+// NewUUID builds a UUID value from a canonical 8-4-4-4-12 string,
+// lowercasing it, and reports whether the string was well-formed. It
+// lets pkg/eval's parse-uuid / random-uuid produce the SAME value type
+// a #uuid literal reads to (Batch 2, numeric tower).
+func NewUUID(s string) (UUID, bool) {
+	if !uuidRe.MatchString(s) {
+		return UUID{}, false
+	}
+	return UUID{s: strings.ToLower(s)}, true
+}
 
 // Inst is the value of an #inst "..." literal. v0 preserves the literal
 // timestamp text verbatim (cljgo has no Date type yet); it prints back

@@ -28,6 +28,18 @@ func NewRatioGoBigInt(num, den *big.Int) *Ratio {
 	}
 }
 
+// MustRatio parses a "num/den" ratio string or panics. It backs the
+// emitter's constant literal reconstruction (pkg/emit constExpr) over a
+// value cljgo itself printed (Ratio.String is big.Rat's RatString), so
+// failure is a compiler bug.
+func MustRatio(s string) *Ratio {
+	rat, ok := new(big.Rat).SetString(s)
+	if !ok {
+		panic("invalid ratio: " + s)
+	}
+	return &Ratio{val: rat}
+}
+
 func (r *Ratio) Numerator() *big.Int {
 	return new(big.Int).Set(r.val.Num())
 }
