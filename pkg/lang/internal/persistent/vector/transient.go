@@ -149,6 +149,7 @@ func (t *Transient) pushTail(height uint, n, tail node) node {
 
 // persistent returns a persistent vector from the transient vector.
 func (t *Transient) Persistent() *vector {
+	t.ensureEditable()
 	t.persistent.Store(true)
 	return &vector{
 		count:  int(t.count),

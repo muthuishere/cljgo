@@ -323,24 +323,36 @@ func (m *Map) ReduceInit(f IFn, init any) any {
 }
 
 func (m *Map) AsTransient() ITransientCollection {
-	// TODO: implement transients
-	return &TransientMap{IPersistentMap: m}
+	return &TransientMap{m: m}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Transient
+//
+// TransientMap is the single-threaded, mutable façade over a persistent
+// map (array-map or, once it promotes past the threshold, a hash-map).
+// Batch 3 (ADR 0022): it holds the current map in a field and each
+// mutating op replaces that field with the persistent op's result,
+// returning the SAME *TransientMap handle — so a rebind after every
+// assoc!/dissoc!/conj! is faithful and required. The underlying persistent
+// path-copies (the vendored PHM has no in-place HAMT edit), so this shares
+// less structure than Clojure's transient map, but the observable
+// semantics — ownership, invalidation, and value — match exactly.
+// persistent! flips `persisted`; any op after that throws, as in Clojure.
 
 type TransientMap struct {
-	IPersistentMap
+	m         IPersistentMap
 	persisted bool
 }
 
 var (
-	_ IPersistentMap = (*TransientMap)(nil)
-	_ IMeta          = (*TransientMap)(nil)
-	_ IFn            = (*TransientMap)(nil)
-	_ IReduce        = (*TransientMap)(nil)
-	_ IReduceInit    = (*TransientMap)(nil)
+	_ ITransientMap         = (*TransientMap)(nil)
+	_ ITransientAssociative = (*TransientMap)(nil)
+	_ ITransientCollection  = (*TransientMap)(nil)
+	_ IMeta                 = (*TransientMap)(nil)
+	_ IFn                   = (*TransientMap)(nil)
+	_ IReduce               = (*TransientMap)(nil)
+	_ IReduceInit           = (*TransientMap)(nil)
 )
 
 func (m *TransientMap) ensureEditable() {
@@ -349,48 +361,55 @@ func (m *TransientMap) ensureEditable() {
 	}
 }
 
+func (m *TransientMap) Count() int      { return m.m.Count() }
+func (m *TransientMap) xxx_counted()    {}
+func (m *TransientMap) ValAt(k any) any { return m.m.ValAt(k) }
+func (m *TransientMap) ValAtDefault(k, d any) any {
+	return m.m.ValAtDefault(k, d)
+}
+
 func (m *TransientMap) Meta() IPersistentMap {
-	return m.IPersistentMap.(IMeta).Meta()
+	return m.m.(IMeta).Meta()
 }
 
 func (m *TransientMap) ApplyTo(args ISeq) any {
-	return m.IPersistentMap.(IFn).ApplyTo(args)
+	return m.m.(IFn).ApplyTo(args)
 }
 
 func (m *TransientMap) Invoke(args ...any) any {
-	return m.IPersistentMap.(IFn).Invoke(args...)
+	return m.m.(IFn).Invoke(args...)
 }
 
 func (m *TransientMap) Reduce(f IFn) any {
-	return m.IPersistentMap.(IReduce).Reduce(f)
+	return m.m.(IReduce).Reduce(f)
 }
 
 func (m *TransientMap) ReduceInit(f IFn, init any) any {
-	return m.IPersistentMap.(IReduceInit).ReduceInit(f, init)
+	return m.m.(IReduceInit).ReduceInit(f, init)
 }
 
 func (m *TransientMap) Conj(v any) Conjer {
 	m.ensureEditable()
-	m.IPersistentMap = m.IPersistentMap.Cons(v).(IPersistentMap)
+	m.m = m.m.Cons(v).(IPersistentMap)
 	return m
 }
 
-func (m *TransientMap) Assoc(k, v any) Associative {
+func (m *TransientMap) Assoc(k, v any) ITransientAssociative {
 	m.ensureEditable()
-	m.IPersistentMap = m.IPersistentMap.Assoc(k, v).(IPersistentMap)
+	m.m = m.m.Assoc(k, v).(IPersistentMap)
 	return m
 }
 
-func (m *TransientMap) Without(key any) IPersistentMap {
+func (m *TransientMap) Without(key any) ITransientMap {
 	m.ensureEditable()
-	m.IPersistentMap = m.IPersistentMap.Without(key).(IPersistentMap)
+	m.m = m.m.Without(key)
 	return m
 }
 
 func (m *TransientMap) Persistent() IPersistentCollection {
 	m.ensureEditable()
 	m.persisted = true
-	return m.IPersistentMap
+	return m.m
 }
 
 ////////////////////////////////////////////////////////////////////////////////
