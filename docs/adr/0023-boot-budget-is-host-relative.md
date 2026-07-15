@@ -51,12 +51,20 @@ the property a wall-clock budget lacks. If boot regression tracking ever needs t
 be *quantitative* on CI, the answer is benchmark-vs-baseline comparison on a
 pinned runner, not a tighter absolute number.
 
-**Open question, deliberately not resolved here:** `ubuntu-latest` booting in
-3.55s is a **20× gap** over local, where `macos-latest` is only 2×. That is far
-outside plausible single-core variance and is *unexplained*. It may be GC
-behavior under a 2-core contended runner on an allocation-heavy tree-walk boot,
-or it may be a real Linux-specific pathology in the boot path. This ADR
-deliberately does not paper over it: the 5s CI budget keeps the gate meaningful
-today, and the anomaly is tracked as its own investigation. If it turns out to
-be a real defect, the fix belongs in the boot path and this ceiling should drop
-back toward the local number.
+**Open question, deliberately not resolved here:** `ubuntu-latest` boots ~20×
+slower than local, where `macos-latest` is only 2×. That is far outside plausible
+single-core variance and is *unexplained*.
+
+It is also **reproducible, not runner noise**: two independent runs, on separate
+workflows, measured 3.55s and 3.00s. A contended-runner fluke would not land
+twice in the same narrow band. That weakens the "the runner was busy"
+explanation and strengthens the possibility of a real Linux-specific pathology
+in the boot path — plausibly GC behavior on an allocation-heavy tree-walk boot
+under a low-core-count Linux runner.
+
+This ADR deliberately does not paper over it: the 5s CI budget keeps the gate
+meaningful today, and the anomaly is tracked as its own investigation. If it
+turns out to be a real defect, the fix belongs in the boot path and this ceiling
+should drop back toward the local number. Next step: `BenchmarkBoot -benchmem`
+on an ubuntu runner vs locally — if allocations/op match while wall-time diverges
+20×, it is the host; if allocations diverge, it is ours.
