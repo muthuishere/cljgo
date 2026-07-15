@@ -33,6 +33,11 @@ jobs:
       # Don't ship a release that fails its own gates.
       - name: go test
         run: go test ./...
+        env:
+          # Same host-relative boot budget as ci.yml (ADR 0023) — this runs on
+          # the same shared runners, where the 250ms default is a property of
+          # the owner's machine, not of the code.
+          CLJGO_BOOT_BUDGET: 5s
 
       - uses: goreleaser/goreleaser-action@v6
         with:
