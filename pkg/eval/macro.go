@@ -297,6 +297,39 @@ func (e *Evaluator) loadProtocols() {
 	}
 }
 
+// loadBuild reads and evaluates the embedded core/build.cljg into the
+// cljgo.build namespace — the interpreted Zig-style build runtime (ADR 0021,
+// design/08 §1). It runs after loadCore so clojure.core is fully up. *ns* is
+// bound to a freshly-created cljgo.build for the load; build.cljg's own
+// (in-ns ...) / (refer 'clojure.core) forms make its body resolve unqualified
+// core names. This "embedded-ns registration" makes cljgo.build requireable —
+// `cljgo build` refers it into the build namespace before evaluating a
+// project's build.cljgo. It does NOT refer cljgo.build into user.
+func (e *Evaluator) loadBuild() {
+	ns := lang.FindOrCreateNamespace(lang.NewSymbol("cljgo.build"))
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, ns,
+		lang.VarFile, "build.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.BuildSource),
+		reader.WithFilename("build.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading build.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating build.cljg: %w", err))
+		}
+	}
+}
+
 // loadClojureTest reads and evaluates the embedded core/test.cljg into the
 // clojure.test namespace (the interpreted clojure.test slice, ADR 0012).
 // It runs after loadCore so clojure.core is fully up. *ns* is bound to a

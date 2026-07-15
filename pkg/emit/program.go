@@ -28,6 +28,13 @@ type Options struct {
 	// the runtime to. Empty → FindRuntimeDir(). Publishing a real module
 	// version retires this (ADR 0013's change).
 	RuntimeDir string
+	// HostFactsDir overrides the module directory go/packages loads host
+	// type facts from (design/05 §2). Empty → RuntimeDir (the default: only
+	// stdlib + the runtime's own deps resolve). build.cljgo's `go-require`
+	// (ADR 0021 B2) points this at the generated module dir — once its
+	// synthesized go.mod requires + `go get` the third-party modules, the
+	// emitter resolves their signatures with zero hand-written bindings.
+	HostFactsDir string
 	// PrintLastValue makes main() print pr-str of the last top-level
 	// form's value — the conformance dual-harness contract (ADR 0007).
 	PrintLastValue bool
@@ -66,7 +73,13 @@ func EmitMain(forms []*ast.Node, opts Options) (formatted []byte, raw []byte, er
 	// pays no go/packages cost. The load runs in this compiler process;
 	// the emitted binary calls the resolved functions directly.
 	if hostPaths := collectHostPaths(forms); len(hostPaths) > 0 {
-		dir := opts.RuntimeDir
+		// HostFactsDir wins when set (build.cljgo go-require, ADR 0021 B2:
+		// the generated module dir resolves third-party imports); otherwise
+		// the runtime tree (stdlib + runtime deps only).
+		dir := opts.HostFactsDir
+		if dir == "" {
+			dir = opts.RuntimeDir
+		}
 		if dir == "" {
 			if dir, err = FindRuntimeDir(); err != nil {
 				return nil, nil, err
@@ -197,24 +210,46 @@ func WriteModule(dir string, forms []*ast.Node, opts Options) error {
 		return err
 	}
 
+	return SynthGoMod(dir, opts.ModuleName, opts.RuntimeDir, nil)
+}
+
+// GoModRequire is a pinned third-party module requirement for the generated
+// go.mod — the build-graph translation of a build.cljgo `go-require`
+// (ADR 0021 B2).
+type GoModRequire struct {
+	Path    string
+	Version string
+}
+
+// SynthGoMod writes the generated module's go.mod: the runtime `require` +
+// local `replace` (FindRuntimeDir when runtimeDir is empty), plus any pinned
+// third-party requires from the build graph. Written only if absent —
+// user-owned once created (design/04 §2). moduleName defaults to
+// "cljgo.gen/main".
+func SynthGoMod(dir, moduleName, runtimeDir string, requires []GoModRequire) error {
 	modPath := filepath.Join(dir, "go.mod")
 	if _, err := os.Stat(modPath); err == nil {
 		return nil // user-owned: never overwrite
 	}
-	runtimeDir := opts.RuntimeDir
 	if runtimeDir == "" {
-		runtimeDir, err = FindRuntimeDir()
-		if err != nil {
+		var err error
+		if runtimeDir, err = FindRuntimeDir(); err != nil {
 			return err
 		}
 	}
-	moduleName := opts.ModuleName
 	if moduleName == "" {
 		moduleName = "cljgo.gen/main"
 	}
-	gomod := fmt.Sprintf("module %s\n\ngo 1.26\n\nrequire %s v0.0.0\n\nreplace %s => %s\n",
-		moduleName, runtimeModule, runtimeModule, runtimeDir)
-	return os.WriteFile(modPath, []byte(gomod), 0o644)
+	var b strings.Builder
+	fmt.Fprintf(&b, "module %s\n\ngo 1.26\n\n", moduleName)
+	b.WriteString("require (\n")
+	fmt.Fprintf(&b, "%s v0.0.0\n", runtimeModule)
+	for _, r := range requires {
+		fmt.Fprintf(&b, "%s %s\n", r.Path, r.Version)
+	}
+	b.WriteString(")\n\n")
+	fmt.Fprintf(&b, "replace %s => %s\n", runtimeModule, runtimeDir)
+	return os.WriteFile(modPath, []byte(b.String()), 0o644)
 }
 
 // GoBuild runs `go build` on a generated module directory, producing

@@ -1,0 +1,9 @@
+;; build.cljgo — the Zig-style project build description (ADR 0021, B1).
+;; `cljgo build`      → install the `hello` binary next to this file.
+;; `cljgo build run`  → build and run it.
+;; Produces the same working binary as `cljgo build examples/hello/core.clj`.
+(defn build [b]
+  (let [app (exe b {:name "hello"
+                    :main "src/hello.cljg"})]
+    (install b app)
+    (run b app)))

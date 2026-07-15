@@ -1,0 +1,83 @@
+;; build.cljg — cljgo's Zig-style build runtime (ADR 0021, design/08 §1).
+;; Loaded at startup into the cljgo.build namespace by pkg/eval (loadBuild),
+;; AFTER clojure.core is up. The .cljg extension follows ADR 0017.
+;;
+;; `build.cljgo` at a project root defines (defn build [b] ...); `cljgo build`
+;; (no file arg) evaluates it with a fresh builder and reads back the DAG.
+;; The builder `b` is an atom holding a plain-data build plan:
+;;
+;;   {:artifacts   [ {:name "app" :main "src/core.cljg" :kind "exe"} ... ]
+;;    :go-requires [ {:path "github.com/…" :version "v1.5.3"} ... ]
+;;    :steps       [ {:type "install" :name "app"} {:type "run" :name "app"} ]
+;;    :default     "install"}
+;;
+;; pkg/build derefs the atom once and reads it as ordinary persistent data —
+;; no host object crosses the boundary. Artifact/step accumulation is pure
+;; swap!; the API mirrors zig's std.Build (exe / install / run / addRunArtifact),
+;; cljgo-idiomatic.
+
+;; The loader binds *ns* to a fresh cljgo.build; refer clojure.core so
+;; unqualified core names resolve in the fns below.
+(clojure.core/in-ns 'cljgo.build)
+(clojure.core/refer 'clojure.core)
+
+(defn make-builder
+  "Returns a fresh builder: an atom over an empty build plan."
+  []
+  (atom {:artifacts [] :go-requires [] :steps [] :default nil}))
+
+(defn exe
+  "Declares an executable artifact from spec {:name … :main \"path.cljg\" …}
+  and returns an artifact handle {:builder b :name …} the step/require fns
+  take. :target/:optimize are carried through untouched (minimal for B1)."
+  [b spec]
+  (let [art (assoc spec :kind "exe")]
+    (swap! b (fn [m] (assoc m :artifacts (conj (get m :artifacts) art))))
+    {:builder b :name (get spec :name)}))
+
+(defn go-require
+  "Records a pinned third-party Go module requirement (ADR 0021 — this
+  REPLACES deps.edn). art is an artifact handle from exe; the pin is
+  accumulated module-wide (the emitted go.mod is one module)."
+  [art path version]
+  (let [b (get art :builder)]
+    (swap! b (fn [m]
+               (assoc m :go-requires
+                      (conj (get m :go-requires)
+                            {:path path :version version}))))
+    art))
+
+(defn install
+  "Adds an install step for an artifact and makes it the default step
+  (the target of a bare `cljgo build`). Mirrors zig's b.installArtifact."
+  [b art]
+  (swap! b (fn [m]
+             (let [m (assoc m :steps
+                            (conj (get m :steps)
+                                  {:type "install" :name (get art :name)}))]
+               (if (get m :default) m (assoc m :default "install")))))
+  art)
+
+(defn run
+  "Adds a run step for an artifact (the `cljgo build run` target). Mirrors
+  zig's b.addRunArtifact + a top-level `run` step."
+  [b art]
+  (swap! b (fn [m]
+             (assoc m :steps
+                    (conj (get m :steps)
+                          {:type "run" :name (get art :name)}))))
+  art)
+
+;; --- minimal-for-B1 stubs (fleshed out in later milestones) -----------------
+
+(defn option
+  "Build option (Zig -D). B1 stub: returns (get opts :default) — no CLI
+  -D wiring yet (B3)."
+  [b name typ opts]
+  (get opts :default))
+
+(defn host-target
+  "The host os/arch. B1 stub: an empty tuple means \"host default\" to the
+  emitter (cross-compile matrix is B5)."
+  [b]
+  {:os "" :arch ""})
