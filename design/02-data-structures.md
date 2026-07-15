@@ -6,8 +6,8 @@ that imports this package — call it `pkg/lang` (import alias `lang`).
 
 References studied:
 - Clojure JVM: `/Users/muthuishere/Downloads/clojure-master/src/jvm/clojure/lang/` (PersistentVector.java, PersistentHashMap.java, Keyword.java, LazySeq.java, Var.java, Atom.java)
-- Glojure: `/Users/muthuishere/muthu/gitworkspace/clojure-ws/refs/glojure/pkg/lang/` (~15.8k lines, EPL-1.0)
-- let-go: `/Users/muthuishere/muthu/gitworkspace/clojure-ws/refs/let-go/pkg/vm/` (MIT)
+- Glojure: `refs/glojure/pkg/lang/` (~15.8k lines, EPL-1.0)
+- let-go: `refs/let-go/pkg/vm/` (MIT)
 
 ---
 
