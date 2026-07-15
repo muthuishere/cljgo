@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -32,8 +33,9 @@ import (
 // design. S6's 7.8× modeled arithmetic as raw Go ops, i.e. it already
 // assumed those rungs for the arithmetic; the honest v0 number is ~35×.
 //
-// The hard limit below (60×) is a regression guard against the naive
-// emission, not the budget; tightening it to ~10× tracks the ladder.
+// The hard limit below (60× locally, CLJGO_PERF_RATIO_MAX elsewhere — ADR
+// 0024) is a regression guard against the naive emission, not the budget;
+// tightening it to ~10× tracks the ladder.
 func TestFactorialPerfBudget(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping perf measurement in -short mode")
@@ -129,10 +131,39 @@ func main() {
 	if rawNet <= 0 {
 		t.Skipf("raw baseline too fast to measure (work %v, idle %v)", rawWork, rawIdle)
 	}
+	maxRatio := perfRatioMax(t)
 	ratio := float64(cljNet) / float64(rawNet)
-	t.Logf("fact(15) x %d: emitted %v (startup %v), raw Go %v (startup %v) — ratio %.1fx (budget ~10x; see doc comment)",
-		iters, cljNet, cljIdle, rawNet, rawIdle, ratio)
-	if ratio > 60 {
+	t.Logf("fact(15) x %d: emitted %v (startup %v), raw Go %v (startup %v) — ratio %.1fx (max %.0fx; see doc comment)",
+		iters, cljNet, cljIdle, rawNet, rawIdle, ratio, maxRatio)
+	if ratio > maxRatio {
 		t.Fatalf("emitted factorial is %.1fx handwritten Go — regression past the v0 floor (~35x measured; naive emission was ~168x)", ratio)
 	}
+}
+
+// defaultPerfRatioMax is the local ceiling: ~35x is measured on the owner's
+// machine, so 60x leaves real headroom before the gate fires.
+const defaultPerfRatioMax = 60
+
+// perfRatioMax is the emitted-vs-handwritten-Go ceiling, overridable via
+// CLJGO_PERF_RATIO_MAX.
+//
+// Host-relative for the same reason as the boot budget (ADR 0024). Although a
+// ratio cancels raw host speed in principle, this one divides two independently
+// measured net times, so on a contended shared runner both jitter and the
+// quotient swings: a macos runner measured 63.2x where local measures ~35x,
+// then passed on rerun — flaky, not broken. CI sets 120: still far under the
+// ~168x naive-emission regression this gate exists to catch, so it keeps
+// biting.
+func perfRatioMax(t *testing.T) float64 {
+	t.Helper()
+	s := os.Getenv("CLJGO_PERF_RATIO_MAX")
+	if s == "" {
+		return defaultPerfRatioMax
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		// Don't silently fall back: a typo'd ceiling must not look like a pass.
+		t.Fatalf("CLJGO_PERF_RATIO_MAX=%q is not a number: %v", s, err)
+	}
+	return v
 }

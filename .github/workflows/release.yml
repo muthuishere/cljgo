@@ -34,10 +34,16 @@ jobs:
       - name: go test
         run: go test ./...
         env:
-          # Same host-relative boot budget as ci.yml (ADR 0023) — this runs on
+          # Same host-relative boot budget as ci.yml (ADR 0024) — this runs on
           # the same shared runners, where the 250ms default is a property of
           # the owner's machine, not of the code.
           CLJGO_BOOT_BUDGET: 5s
+          # Same reasoning for the emitted-vs-raw-Go ratio (ADR 0024): it
+          # divides two independently measured net times, so a contended
+          # runner swings the quotient (63.2x observed vs ~35x local, passing
+          # on rerun). 120 stays far under the ~168x naive-emission regression
+          # the gate exists to catch.
+          CLJGO_PERF_RATIO_MAX: "120"
 
       - uses: goreleaser/goreleaser-action@v6
         with:
