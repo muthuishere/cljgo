@@ -9,7 +9,7 @@ import (
 // internVolatileBuiltins interns volatile!/vswap!/vreset!/volatile? (ADR
 // 0022 Batch 4). *lang.Volatile is vendored, unmodified, from Glojure
 // (pkg/lang/volatile.go) — a bare mutable box with Deref/Reset, no CAS
-// loop and no watches, matching the actual JVM contract (ADR 0024):
+// loop and no watches, matching the actual JVM contract (ADR 0025):
 // clojure.lang.Volatile is a plain, non-thread-safe mutable field; the
 // name refers to Java memory-visibility semantics, not compare-and-swap.
 // `deref`/`@` already work on it generically via lang.IDeref. Wired into

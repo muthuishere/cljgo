@@ -48,7 +48,7 @@ func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *
 	})
 
 	// seqable?: (seq x) is legal — nil, strings, anything Seqable/ISeq, and
-	// a raw Go slice/array (a cljgo array, ADR 0024 — (seq (object-array 3))
+	// a raw Go slice/array (a cljgo array, ADR 0025 — (seq (object-array 3))
 	// already works via lang.Seq's reflect fallback, so seqable? must agree).
 	def("seqable?", func(args ...any) any {
 		x := oneArg("seqable?", args)

@@ -1,4 +1,4 @@
-;; Batch 4 volatile! (ADR 0022, ADR 0024). *lang.Volatile is a bare mutable
+;; Batch 4 volatile! (ADR 0022, ADR 0025). *lang.Volatile is a bare mutable
 ;; box (Deref/Reset), deliberately not compare-and-set — vswap!/vreset!
 ;; are plain read-compute-write, matching the JVM's clojure.lang.Volatile.
 ;; Oracle (clojure 1.12.5): (volatile? (volatile! 1)) => true;

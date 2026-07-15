@@ -1,4 +1,4 @@
-;; Batch 4 arrays (ADR 0022, ADR 0024, design/08 §5). A cljgo array is a
+;; Batch 4 arrays (ADR 0022, ADR 0025, design/08 §5). A cljgo array is a
 ;; native Go slice; aset mutates in place, aclone makes an independent copy.
 ;; Oracle (clojure 1.12.5): (seq (int-array 3)) => (0 0 0); (seq
 ;; (object-array 3)) => (nil nil nil); (vec (to-array [1 2 3])) => [1 2 3];

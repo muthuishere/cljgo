@@ -1,4 +1,4 @@
-# ADR 0024 — cljgo arrays are native Go slices
+# ADR 0025 — cljgo arrays are native Go slices
 
 Date: 2026-07-16 · Status: accepted · Relates to: ADR 0010, ADR 0022, design/05 §1
 

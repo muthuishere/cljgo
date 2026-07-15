@@ -13,7 +13,7 @@ import (
 // aget/aset/alength/aclone. Wired into internBuiltins by ONE line
 // (e.internArrayBuiltins(def)), per the merge-friendly discipline.
 //
-// ADR 0024: a cljgo "array" is a plain native Go slice ([]any for
+// ADR 0025: a cljgo "array" is a plain native Go slice ([]any for
 // object/to-array, []int64 for int/long-array, []float32/[]float64 for
 // float/double-array, []bool for boolean-array, []lang.Char for
 // char-array). No new interop glue is needed to make these useful — Seq,
@@ -48,7 +48,7 @@ func (e *Evaluator) internArrayBuiltins(def func(string, func(...any) any) *lang
 	// int-array / long-array: cljgo's numeric tower has one fixnum
 	// representation (int64 — design/08 §5 Batch 2), so both ctors
 	// produce the same Go type ([]int64). Documented divergence from the
-	// JVM (ADR 0024): there is no narrower `int` value to make a
+	// JVM (ADR 0025): there is no narrower `int` value to make a
 	// genuinely distinct int-array.
 	intArrayCtor := func(op string) func(args ...any) any {
 		return func(args ...any) any {
@@ -102,7 +102,7 @@ func (e *Evaluator) internArrayBuiltins(def func(string, func(...any) any) *lang
 	})
 
 	// aset: (aset arr idx val) => val, mutating arr in place (a real Go
-	// slice header over the same backing array — ADR 0024).
+	// slice header over the same backing array — ADR 0025).
 	def("aset", func(args ...any) any {
 		if len(args) != 3 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: aset", len(args)))
@@ -163,7 +163,7 @@ func typedArray[T any](op string, args []any, coerce func(any) T, zero T) []T {
 
 // intoArray infers an element type from coll's first element (a cheap
 // approximation of RT.into-array's per-element-class inference — ADR
-// 0024), falling back to []any for an empty coll or a mixed/unrecognized
+// 0025), falling back to []any for an empty coll or a mixed/unrecognized
 // element type.
 func intoArray(coll any) any {
 	src := lang.ToSlice(coll)
@@ -195,7 +195,7 @@ func intoArray(coll any) any {
 }
 
 // arrayReflectValue asserts x is a real Go slice/array (a cljgo array,
-// ADR 0024) and returns its reflect.Value — aget/aset/alength/aclone all
+// ADR 0025) and returns its reflect.Value — aget/aset/alength/aclone all
 // reject persistent vectors and other collections, matching the oracle
 // (real Clojure's aget/aset/alength/aclone only accept actual arrays).
 func arrayReflectValue(op string, x any) reflect.Value {
