@@ -496,6 +496,11 @@ func (e *Evaluator) internBuiltins() {
 	// clojure-test-suite harness surface (ADR 0022, var_builtins.go).
 	e.internVarBuiltins(def)
 
+	// --- transients (transient/persistent!/conj!/assoc!/dissoc!/disj!/
+	// pop!): Batch 3 (ADR 0022, transient_builtins.go). State lives in
+	// pkg/lang transient types, so eval + emitted Go share it identically.
+	e.internTransientBuiltins(def)
+
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
 	// Constructors, predicates and combinators over the pkg/lang tagged
