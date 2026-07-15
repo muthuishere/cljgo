@@ -4,7 +4,7 @@
 
 - **Upstream**: [Glojure](https://github.com/glojurelang/glojure)
   `pkg/lang` plus the four `internal/` packages it needs (`murmur3`,
-  `seq`, `persistent/vector` — the elvish port with its own BSD
+  `seq`, `persistent/vector` — the elvish port with its own EPL-1.0
   LICENSE — and `goid`), vendored from the local checkout
   `refs/glojure` @ commit `c74bc07d2a8c8b39da04d6af84dd764cb984ea9d`
   (tag `v0.6.8`, 2026-07-10).
@@ -18,8 +18,9 @@
   stdlib. Zero external dependencies.
 - **License**: EPL-1.0, preserved as `LICENSE-glojure.md` (upstream has
   a repo-level license, no per-file headers). `internal/persistent/
-  vector` keeps its upstream `LICENSE` (elvish port). Design doc 02 §4
-  records the hard-fork decision (option 3).
+  vector` keeps its upstream `LICENSE` (elvish port — also EPL-1.0).
+  Design doc 02 §4 records the hard-fork decision (option 3). This tree
+  stays EPL-1.0; the rest of cljgo is MIT — see the root `NOTICE`.
 
 ## Changed at promotion (M0 stage A, 2026-07-11)
 

@@ -1,0 +1,67 @@
+cljgo
+Copyright (c) 2026 Muthukumaran Navaneethakrishnan
+
+This product contains code under two licenses. Which one applies depends
+on the directory.
+
+================================================================================
+1. cljgo's own code — MIT
+================================================================================
+
+Everything EXCEPT pkg/lang/ is original cljgo work, licensed MIT (see
+LICENSE):
+
+    pkg/reader/     the Clojure reader
+    pkg/ast/        AST
+    pkg/analyzer/   analyzer
+    pkg/eval/       tree-walk evaluator (the REPL + macro engine)
+    pkg/emit/       the Go source emitter
+    pkg/repl/       REPL driver
+    pkg/build/      build pipeline
+    pkg/diag/       structured diagnostics
+    cmd/cljgo/      CLI
+    core/           core.clj — Clojure-in-Clojure
+    conformance/    conformance suite
+    design/, docs/, openspec/
+
+================================================================================
+2. Vendored runtime — Eclipse Public License 1.0
+================================================================================
+
+pkg/lang/ and its internal/ subpackages are a hard fork of Glojure's
+runtime (persistent data structures, seqs, symbols, keywords, vars).
+This code is licensed under the Eclipse Public License 1.0 and REMAINS
+so — the MIT grant above does not extend to it.
+
+    Upstream:  Glojure — https://github.com/glojurelang/glojure
+    Version:   v0.6.8, commit c74bc07d2a8c8b39da04d6af84dd764cb984ea9d
+    Vendored:  2026-07-10
+    License:   EPL-1.0 — full text at pkg/lang/LICENSE-glojure.md
+
+Within that tree, pkg/lang/internal/persistent/vector is a port of the
+persistent vector from the Elvish shell project, carrying its own
+EPL-1.0 license text:
+
+    Upstream:  Elvish — https://github.com/elves/elvish
+    License:   EPL-1.0 — full text at pkg/lang/internal/persistent/vector/LICENSE
+
+The EPL is a file-scoped copyleft: modifications to these files stay
+EPL-1.0, but combining them with separately-licensed code in a larger
+work (as cljgo does) is expressly permitted by the license.
+
+cljgo's modifications to the vendored tree — the Equiv/Equals split, the
+printer-fidelity work, the interpreter-glue removal, dependency
+modernization — are documented in pkg/lang/PROVENANCE.md and remain
+under EPL-1.0.
+
+================================================================================
+3. Reference material — not distributed
+================================================================================
+
+refs/ (gitignored, never committed) holds read-only reference clones used
+as study material only: Glojure, cljs2go, let-go. No code from cljs2go or
+let-go is present in this repository.
+
+Clojure itself (https://github.com/clojure/clojure, EPL-1.0) is the
+semantic specification cljgo targets. Its behavior is the oracle the
+conformance suite is verified against. No Clojure source is vendored here.

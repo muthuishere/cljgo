@@ -24,6 +24,10 @@ prompt and AOT-compiles to a static Go binary — byte-identical output on both
 paths (a dual-harness conformance suite enforces this on every commit; a
 REPL↔binary divergence is a release blocker).
 
+Against the [jank clojure-test-suite](https://github.com/jank-lang/clojure-test-suite):
+**102/242 files passing (42.1%)**, 46.8% of non-skipped, with 218/242 vars
+resolved (90.1%). Run `cljgo suite` to reproduce. Early, moving fast.
+
 | Milestone | State | What landed |
 |-----------|-------|-------------|
 | **M0** | ✅ | REPL: reader (full syntax-quote), `loop*`/`recur`, dynamic vars, namespaces |
@@ -82,3 +86,39 @@ refs/        (gitignored) reference clones: glojure, cljs2go, let-go
 ```
 
 Toolchain: Go 1.26.
+
+## Credits
+
+cljgo stands on work by people who solved the hard parts first.
+
+- **[Clojure](https://github.com/clojure/clojure)** — Rich Hickey and
+  contributors. The language, and cljgo's specification: every semantic
+  behavior in `conformance/` is verified against real JVM Clojure as the
+  oracle, and the Java source (`LispReader.java`, `Compiler.java`,
+  `PersistentVector.java`, `PersistentHashMap.java`) is the reference the
+  reader, analyzer and data structures were built from.
+- **[Glojure](https://github.com/glojurelang/glojure)** — the runtime under
+  `pkg/lang` is a hard fork of Glojure's persistent data structures, seqs,
+  symbols, keywords and vars (v0.6.8). Roughly 17k lines that would have
+  taken months to write from scratch. It stays EPL-1.0; our surgery on it is
+  logged in `pkg/lang/PROVENANCE.md`.
+- **[Elvish](https://github.com/elves/elvish)** — the persistent vector in
+  `pkg/lang/internal/persistent/vector` is a port from the Elvish shell.
+- **[cljs2go](https://github.com/hraberg/cljs2go)** — Håkan Råberg's 2015
+  Clojure→Go experiment. Read as reference for the emitter's per-op emission
+  strategy and AFn machinery; proof the reader→analyzer→emitter split works
+  with Go as a target. No code taken.
+- **[let-go](https://github.com/nooga/let-go)** — reference for treating Go
+  channels and goroutines as first-class Clojure concurrency rather than
+  reimplementing core.async's CPS transform. No code taken.
+- **[ClojureScript](https://github.com/clojure/clojurescript)** — the model
+  this project follows: a compiler that emits host source, with the AST "op"
+  vocabulary cljgo's analyzer keeps.
+
+## License
+
+- **cljgo's own code** — MIT (see [LICENSE](LICENSE)).
+- **`pkg/lang/`** — Eclipse Public License 1.0, as vendored from Glojure. The
+  MIT grant does not extend to it.
+
+[NOTICE](NOTICE) has the full breakdown of which license covers what.
