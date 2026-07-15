@@ -201,14 +201,18 @@ func isSourceFile(arg string) bool {
 
 // defaultBinaryName derives the output name: the parent directory for a
 // core.clj (examples/hello/core.clj → hello), else the file's base name.
+//
+// The name WE choose carries emit.ExeSuffix, so `cljgo build hello.clj` on
+// Windows produces hello.exe rather than a file the OS refuses to run. An
+// explicit -o is honored verbatim — same rule as `go build -o`.
 func defaultBinaryName(src string) string {
 	base := strings.TrimSuffix(filepath.Base(src), ".clj")
 	if base == "core" {
 		if dir := filepath.Base(filepath.Dir(src)); dir != "." && dir != string(filepath.Separator) {
-			return dir
+			return dir + emit.ExeSuffix
 		}
 	}
-	return base
+	return base + emit.ExeSuffix
 }
 
 func isTerminal(f *os.File) bool {

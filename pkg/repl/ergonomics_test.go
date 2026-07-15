@@ -3,9 +3,24 @@ package repl
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
+
+// setHome points os.UserHomeDir() at dir for the duration of the test.
+//
+// UserHomeDir reads $HOME on unix but %USERPROFILE% on Windows, so setting
+// HOME alone silently does nothing there — the test would then read the
+// runner's REAL home and fail looking for a journal that was never written
+// to the temp dir. Set both.
+func setHome(t *testing.T, dir string) {
+	t.Helper()
+	t.Setenv("HOME", dir)
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", dir)
+	}
+}
 
 // runInteractive runs a driver with the ADR 0018 interactive affordances
 // enabled via the injected seam (no real tty), Prompts off so assertions
@@ -105,7 +120,7 @@ func TestDidYouMean(t *testing.T) {
 
 func TestJournalWritesSuccessfulForms(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 	t.Setenv("CLJGO_SESSION", "1")
 
 	d, _, _ := newSession("(+ 1 2)\n(nope)\n")
@@ -134,7 +149,7 @@ func TestJournalWritesSuccessfulForms(t *testing.T) {
 
 func TestResumeRoundTrip(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setHome(t, home)
 	t.Setenv("CLJGO_SESSION", "1")
 
 	// Session A defines a var and journals it.

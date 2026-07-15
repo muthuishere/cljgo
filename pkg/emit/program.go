@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -252,8 +253,25 @@ func SynthGoMod(dir, moduleName, runtimeDir string, requires []GoModRequire) err
 	return os.WriteFile(modPath, []byte(b.String()), 0o644)
 }
 
+// ExeSuffix is ".exe" on Windows and "" everywhere else — the extension an
+// executable must carry to be runnable on the host.
+//
+// `go build -o <name>` writes exactly <name>, adding nothing; Go only appends
+// ".exe" when it picks the name itself. cljgo follows the same rule: an
+// explicit -o is honored verbatim (the user's choice), while any name WE
+// choose gets this suffix. Without it, `cljgo build hello.clj` on Windows
+// produces a file the OS refuses to exec.
+var ExeSuffix = func() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
+}()
+
 // GoBuild runs `go build` on a generated module directory, producing
 // outPath (made absolute so the child working directory doesn't matter).
+// outPath is used verbatim — callers that choose the name themselves are
+// responsible for appending ExeSuffix, mirroring `go build -o`.
 // Build errors surface with the compiler's output attached.
 func GoBuild(dir, outPath string) error {
 	abs, err := filepath.Abs(outPath)
