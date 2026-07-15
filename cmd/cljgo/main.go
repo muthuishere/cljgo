@@ -3,7 +3,7 @@
 //	cljgo repl              start a terminal REPL on stdin/stdout
 //	cljgo run <file.clj>    read + evaluate a file
 //	cljgo build <file.clj>  AOT-compile a file to a native binary (M2)
-//	cljgo version           print the version string
+//	cljgo version           print the version string (also --version/-version)
 //
 // repl/run front the pkg/repl driver — one Read→Analyze→Eval path, per
 // design/03 §7d; build fronts pkg/emit, which consumes the same
@@ -21,9 +21,21 @@ import (
 	"github.com/muthuishere/cljgo/pkg/build"
 	"github.com/muthuishere/cljgo/pkg/emit"
 	"github.com/muthuishere/cljgo/pkg/repl"
+	"github.com/muthuishere/cljgo/pkg/version"
 )
 
-const version = "cljgo 0.0.1-m2"
+// banner is the REPL greeting and `cljgo version` body:
+//
+//	cljgo 0.1.0 (Go 1.26.3, Clojure 1.12.5)
+//
+// All three numbers matter to a bug reporter: ours, the host's, the
+// language's. pkg/version owns them so this can never drift from
+// (cljgo-version) at the prompt.
+func banner() string { return "cljgo " + version.Full() }
+
+// versionLine mirrors the Clojure CLI's phrasing, verified against the real
+// `clojure --version` ("Clojure CLI version 1.12.5.1645").
+func versionLine() string { return "cljgo CLI version " + version.Full() }
 
 func main() {
 	os.Exit(run(os.Args[1:]))
@@ -51,8 +63,15 @@ func run(args []string) int {
 		return runCheck(args[1:], os.Stdout, os.Stderr)
 	case "explain":
 		return runExplain(args[1:], os.Stdout, os.Stderr)
+	// Clojure's CLI splits these two by STREAM, not content: `clojure
+	// --version` prints to stdout, `clojure -version` prints to stderr
+	// (verified against the real 1.12.5 CLI). Mirrored here so muscle memory
+	// and scripts carry over. `cljgo version` is our own subcommand form.
 	case "version", "--version", "-v":
-		fmt.Println(version)
+		fmt.Fprintln(os.Stdout, versionLine())
+		return 0
+	case "-version":
+		fmt.Fprintln(os.Stderr, versionLine())
 		return 0
 	case "help", "--help", "-h":
 		usage(os.Stdout)
@@ -69,7 +88,7 @@ func runREPL() int {
 	d.Prompts = isTerminal(os.Stdin)
 	d.Interactive = d.Prompts
 	if d.Prompts {
-		fmt.Println(version)
+		fmt.Println(banner())
 	}
 	if err := d.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -207,6 +226,8 @@ usage:
   cljgo suite [--dir <path>]       run the jank clojure-test-suite, print a scoreboard (ADR 0022)
   cljgo check <file.clj> [--json]  analyze a file, report diagnostics (ADR 0015)
   cljgo explain <code> [--json]    show an error code's explain page
-  cljgo version                    print the version
-`, version)
+  cljgo version                    print the version to stdout
+  cljgo --version                  print the version to stdout
+  cljgo -version                   print the version to stderr
+`, banner())
 }

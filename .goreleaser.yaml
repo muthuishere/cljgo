@@ -1,0 +1,94 @@
+# GoReleaser builds the cross-platform binaries attached to each GitHub
+# release. Triggered by .github/workflows/release.yml on a v* tag.
+#
+# Try locally without publishing:  goreleaser release --snapshot --clean
+version: 2
+
+project_name: cljgo
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: cljgo
+    main: ./cmd/cljgo
+    binary: cljgo
+
+    # CGO off for release binaries: these must be static and must
+    # cross-compile from one Linux runner. This constrains only the cljgo
+    # BINARY — a user's own `cljgo build` project can still be
+    # CGO_ENABLED=1, since that invokes their local Go toolchain (README
+    # priority 5: cgo builds are first-class).
+    env:
+      - CGO_ENABLED=0
+
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+    # The version is stamped in, so `cljgo --version` on a release binary
+    # reports its git tag rather than the in-development default baked into
+    # pkg/version. .Version is the tag minus the leading "v".
+    ldflags:
+      - -s -w -X github.com/muthuishere/cljgo/pkg/version.Version={{ .Version }}
+
+    # Reproducible builds: no build path or timestamp variance.
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+
+archives:
+  - id: cljgo
+    ids: [cljgo]
+    # cljgo_0.1.0_darwin_arm64.tar.gz — platform obvious at a glance.
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    # Ship the licenses with the binary: pkg/lang is EPL-1.0 and its terms
+    # travel with any distribution of it (see NOTICE).
+    files:
+      - README.md
+      - LICENSE
+      - NOTICE
+      - pkg/lang/LICENSE-glojure.md
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
+
+release:
+  draft: false
+  prerelease: auto # a tag like v0.1.0-rc1 marks itself prerelease
+  name_template: "cljgo {{ .Version }}"
+  footer: |
+    ## Install
+
+    ```bash
+    go install github.com/muthuishere/cljgo/cmd/cljgo@{{ .Tag }}
+    ```
+
+    Or download a binary above and put it on your `PATH`. No Go toolchain is
+    needed to *run* cljgo — only to `cljgo build`, where the Go compiler is
+    the backend.
+
+    ---
+
+    cljgo's own code is MIT. The vendored runtime under `pkg/lang/` is
+    EPL-1.0, from [Glojure](https://github.com/glojurelang/glojure) — see
+    [NOTICE](https://github.com/muthuishere/cljgo/blob/main/NOTICE).

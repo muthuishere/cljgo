@@ -8,6 +8,9 @@ gen/
 *.test
 *.out
 
+# goreleaser build output
+dist/
+
 # editor/os
 .DS_Store
 .idea/

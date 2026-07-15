@@ -1,0 +1,42 @@
+# Cut a GitHub release from a v* tag: cross-platform binaries via GoReleaser.
+#
+#   git tag -a v0.1.0 -m "cljgo 0.1.0" && git push origin v0.1.0
+#
+# The tag must be plain SemVer (v0.1.0) — that is also what `go install
+# github.com/muthuishere/cljgo/cmd/cljgo@v0.1.0` resolves against, so the
+# module path and the release stay in lockstep.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # create the release, upload the archives
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # GoReleaser builds the changelog from commit history; a shallow
+          # clone would silently produce an empty one.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Don't ship a release that fails its own gates.
+      - name: go test
+        run: go test ./...
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
