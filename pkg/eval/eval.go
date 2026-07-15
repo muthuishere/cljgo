@@ -49,6 +49,7 @@ func New() *Evaluator {
 	e.installDefmacro()
 	e.loadCore()
 	e.loadNumeric()
+	e.loadPredicates()
 	e.loadProtocols()
 	e.loadClojureString()
 	e.loadClojureTest()

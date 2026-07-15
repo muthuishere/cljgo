@@ -503,6 +503,10 @@ func (e *Evaluator) internBuiltins() {
 	// --- numeric tower (bigint/bigdec/ratios, promotion, bit-*, parse-*,
 	// rand-*, ==): design/08 §5 Batch 2 (numeric_builtins.go).
 	e.internNumericBuiltins(def)
+	// --- Batch 1 cheap-breadth predicates + coercions + seq/coll host prims
+	// (ADR 0022, design/08 §5, predicate_builtins.go). The compositional
+	// fns that ride on these live in core/predicates.cljg (loadPredicates).
+	e.internPredicateBuiltins(def)
 
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
