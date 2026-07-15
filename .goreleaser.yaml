@@ -83,9 +83,14 @@ release:
     go install github.com/muthuishere/cljgo/cmd/cljgo@{{ .Tag }}
     ```
 
-    Or download a binary above and put it on your `PATH`. No Go toolchain is
-    needed to *run* cljgo — only to `cljgo build`, where the Go compiler is
-    the backend.
+    Or download a binary above and put it on your `PATH`.
+
+    `cljgo repl`, `cljgo run` and Go interop work from the binary alone, with
+    no Go toolchain installed. **`cljgo build` additionally needs the Go
+    toolchain and a checkout of this repo** — the generated module `replace`s
+    the runtime to a local source tree, so set `CLJGO_SRC` to your clone or run
+    inside it. Known v0 limitation (ADR 0013); publishing the runtime as a real
+    Go module retires it.
 
     ---
 
