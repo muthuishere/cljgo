@@ -48,3 +48,13 @@ var ProtocolsSource string
 //
 //go:embed build.cljg
 var BuildSource string
+
+// PortabilitySource is the contents of clojure_test_portability.cljg — the
+// cljgo shim for the jank clojure-test-suite's clojure.core-test.portability
+// namespace (when-var-exists + big-int?/lazy-seq?, ADR 0022). pkg/eval loads
+// it into that namespace after clojure.core + clojure.test are up
+// (loadClojureTestPortability), so a suite file's (require …portability…)
+// finds it already interned. The loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed clojure_test_portability.cljg
+var PortabilitySource string

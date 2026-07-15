@@ -492,6 +492,10 @@ func (e *Evaluator) internBuiltins() {
 	// --- regex core fns + clojure.string host prims (core/string.cljg) ---
 	e.internStringBuiltins(def, defPrivate)
 
+	// --- var reflection (resolve/find-var/ns-resolve/var?/eval): the
+	// clojure-test-suite harness surface (ADR 0022, var_builtins.go).
+	e.internVarBuiltins(def)
+
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
 	// Constructors, predicates and combinators over the pkg/lang tagged

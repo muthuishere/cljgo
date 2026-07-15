@@ -111,6 +111,26 @@
           (catch ~'Throwable t#
             (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
 
+     ;; portability p/thrown?: the jank clojure-test-suite writes exception
+     ;; assertions as (is (p/thrown? body...)) — a NAMESPACE-qualified thrown?
+     ;; (the clojure.core-test.portability hook, ADR 0022) with NO class arg,
+     ;; asserting the body throws *something*. Match any namespaced symbol whose
+     ;; name is "thrown?" (bare thrown? above always carries a class), and expand
+     ;; to a catch-Throwable any-throw check.
+     (and (seq? form) (symbol? (first form))
+          (= "thrown?" (name (first form))) (namespace (first form)))
+     (let [body (rest form)]
+       `(try
+          (try
+            ~@body
+            (do-report {:type :fail :message ~msg :expected '~form :actual nil})
+            nil
+            (catch ~'Throwable e#
+              (do-report {:type :pass :message ~msg :expected '~form :actual e#})
+              e#))
+          (catch ~'Throwable t#
+            (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
+
      (and (seq? form) (= (first form) 'thrown-with-msg?))
      (let [klass (second form)
            re (nth form 2)

@@ -166,16 +166,54 @@ it stays pure-Go (or uses purego FFI, which is pure-Go by design, ADR 0011).
   is the *exposed* FFI and cgo is wrapped-in-a-Go-package: cross-compile
   ergonomics. Pure-Go + purego = "build for whatever OS they want", trivially.
 
-## 5. Suite remediation — the ordered backlog (baseline **~43%**, ADR 0022)
+## 5. Suite remediation — the ordered backlog (baseline **14.0%**, ADR 0022)
 
-Measured 2026-07-15: cljgo resolves ~101/235 tested `clojure.core` vars.
+**Measured 2026-07-15 (Batch 0 landed, `cljgo suite`).** Of **242** test files
+(`test/**/*.cljc` in core_test + edn_test + string_test, minus the two helpers
+`portability`/`number_range`):
+
+| outcome  | files | note |
+|----------|-------|------|
+| **pass** | **34** | tests ran, 0 fail/error |
+| fail     | 8     | ran with ≥1 failing assertion |
+| error    | 82    | reader/analyze error (usu. references another unimplemented var outside a gate) or a throwing assertion |
+| skipped  | 118   | var under test unimplemented → `when-var-exists` elided the body |
+
+- **North-star % (ADR 0022 ratchet = files fully passing / total): 34/242 =
+  14.0%.**
+- **Vars cljgo resolves (non-skipped files): 124/242 = 51.2%** (the looser
+  "how much surface exists" number; supersedes the earlier ~101/235 / ~43%
+  *estimate*).
+- Reproduce: `cljgo suite --dir ../clojure-test-suite [--json f --edn f]`
+  (suite path via `--dir` or `$CLJGO_SUITE_DIR`, default `../clojure-test-suite`;
+  never vendored). Runs interpreted (ADR 0022 §4).
+- The gap between 51.2% resolved and 14.0% passing is the real backlog: the 82
+  "error" files mostly have the var-under-test implemented but exercise **other**
+  unimplemented core fns in their bodies (e.g. `sorted-set`, `realized?`,
+  `any?`), so Batch 1's breadth work unlocks them transitively.
+
 Batches below are ordered by (unlock-count ÷ effort); each is an
 ADR→OpenSpec→apply unit that turns a set of suite files green and adds a cljgo
 conformance test, gated by the T2 ratchet.
 
-- **Batch 0 — harness (do first).** `resolve`/`find-var`/`ns-resolve`/`eval`
-  (the shim needs them), `when-var-exists`, the `.cljc` runner + scoreboard,
-  baseline %. No new language semantics beyond var reflection.
+- **Batch 0 — harness (DONE, 2026-07-15).** `resolve`/`find-var`/`ns-resolve`/
+  `var?`/`eval` (`pkg/eval/var_builtins.go`), a `ns` macro (`core/core.clj`) +
+  the `clojure.core-test.portability` shim (`core/clojure_test_portability.cljg`:
+  `when-var-exists` + `big-int?`/`lazy-seq?`), the `p/thrown?` hook in the `is`
+  macro (`core/test.cljg`), reader-conditional tag-suppression for unselected
+  branches (`pkg/reader`, see below), and the `cljgo suite` runner + EDN/JSON
+  scoreboard (`cmd/cljgo/suite.go`). No new language semantics beyond var
+  reflection.
+
+  **Reader finding (deliverable 4):** the Phase-2 reader already takes `:default`
+  and cleanly elides `:cljs`/`:clj`/`:jank` branches in both `:require` and body
+  forms — verified. The one gap: an unselected branch containing an unknown
+  **tagged literal** (jank's `#cpp`, 7 files incl. `number_range`) errored,
+  because cljgo read the whole conditional body eagerly with normal tag
+  resolution. Fixed small: a `tagSuppress` flag reads unknown tags in a
+  conditional body as `nil` (Clojure's suppress-read of unselected branches).
+  Bigint (`1N`), ratio (`3/2`), `##Inf`/`##NaN`, hex/float literals all already
+  read correctly.
 - **Batch 1 — cheap breadth (biggest count/effort).** Predicates
   (`any?` `coll?` `ifn?` `fn?` `seqable?` `counted?` `associative?`
   `reversible?` `sorted?` `set?` `list?` `uuid?` `var?` `nan?` `pos-int?`

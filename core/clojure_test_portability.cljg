@@ -1,0 +1,41 @@
+;; clojure_test_portability.cljg — cljgo's shim for the jank
+;; clojure-test-suite's clojure.core-test.portability namespace (ADR 0022,
+;; design/08 Batch 0). Loaded at boot by pkg/eval (loadClojureTestPortability),
+;; AFTER clojure.core + clojure.test are up, so a suite file's
+;;   (:require [clojure.core-test.portability #?(... :default :refer)
+;;             [when-var-exists] :as p])
+;; finds the namespace already interned — cljgo's require loads only embedded
+;; namespaces, so the shim MUST be pre-loaded here rather than read from the
+;; suite tree. The .cljg extension follows ADR 0017.
+;;
+;; We provide OUR OWN portability rather than loading the suite's
+;; test/clojure/core_test/portability.cljc: that file's :default branch defines
+;; a clojure.test/assert-expr multimethod, which cljgo's clojure.test slice
+;; (core/test.cljg) does not have. Instead cljgo routes (is (p/thrown? body))
+;; through the `is` macro's namespaced-thrown? branch (any-throw, no class arg).
+
+(clojure.core/in-ns 'clojure.core-test.portability)
+(clojure.core/refer 'clojure.core)
+
+;; when-var-exists: expand to (do body...) iff var-sym resolves in the current
+;; namespace at macroexpand time (i.e. cljgo implements that clojure.core var),
+;; else to nothing. This is the suite's per-var portability gate — a var cljgo
+;; has not implemented simply elides its test file's body (it is skipped, not
+;; failed). The check runs in the requiring file's namespace, which refers
+;; clojure.core, so an unqualified var-sym resolves against core.
+(defmacro when-var-exists [var-sym & body]
+  (if (clojure.core/resolve var-sym)
+    (clojure.core/cons 'do body)
+    nil))
+
+;; big-int?: the suite calls (p/big-int? n) to ask whether n is an arbitrary-
+;; precision integer (distinct from a fixed-width int). cljgo has no distinct
+;; bigint in its numeric tower yet (design/08 Batch 2), so this is
+;; conservatively false — the numeric-tower suite files fail honestly until
+;; Batch 2 lands, rather than the shim failing to load.
+(defn big-int? [n] false)
+
+;; lazy-seq?: (p/lazy-seq? x) asks whether x is a lazy sequence. cljgo's lazy
+;; seqs are ISeqs, so seq? is the closest portable approximation available at
+;; this layer.
+(defn lazy-seq? [x] (clojure.core/seq? x))

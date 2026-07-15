@@ -50,6 +50,11 @@ type Reader struct {
 	fnArgs map[int]*lang.Symbol
 	// sqDepth tracks syntax-quote nesting for the depth limit.
 	sqDepth int
+	// tagSuppress > 0 while reading the body of a reader conditional: an
+	// unknown tagged literal (e.g. jank's #cpp, in a branch cljgo elides)
+	// reads as nil instead of erroring, matching Clojure's suppress-read of
+	// unselected branches. See readConditional / readTaggedLiteral.
+	tagSuppress int
 }
 
 // Option configures a Reader.
@@ -445,6 +450,13 @@ func (r *Reader) readTaggedLiteral(start Position) (any, error) {
 	// Extension point: a program-registered *data-readers* function.
 	if fn, ok := dataReaderFor(sym); ok {
 		return fn.Invoke(val), nil
+	}
+	// Inside an unselected reader-conditional branch (e.g. jank's #cpp), an
+	// unknown tag is suppress-read as nil rather than an error — the branch is
+	// elided, so the value is discarded anyway (matches Clojure's suppressing
+	// read of unselected branches). Only the value is consumed above.
+	if r.tagSuppress > 0 {
+		return nil, nil
 	}
 	return nil, r.errAt(start, "No reader function for tag #%s", sym.FullName())
 }
