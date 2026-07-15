@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -14,6 +15,17 @@ import (
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/repl"
 )
+
+// exeSuffix is ".exe" on Windows, "" elsewhere. `go build -o <name>` writes
+// exactly <name>, so without the suffix the harness produces a file Windows
+// refuses to exec ("executable file not found in %PATH%") — the emitted
+// program is fine, only the harness's naming is wrong.
+var exeSuffix = func() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
+}()
 
 // TestConformanceCompiled is the M2 half of the dual harness (ADR 0007,
 // design/03 §7d): every tests/*.clj also compiles through pkg/emit and
@@ -115,7 +127,7 @@ func compiledOutput(t *testing.T, path string) string {
 	if err := emit.WriteModule(dir, forms, emit.Options{PrintLastValue: true}); err != nil {
 		t.Fatalf("write module: %v", err)
 	}
-	bin := filepath.Join(dir, "prog")
+	bin := filepath.Join(dir, "prog"+exeSuffix)
 	if err := emit.GoBuild(dir, bin); err != nil {
 		t.Fatalf("go build: %v", err)
 	}

@@ -4,12 +4,23 @@ import (
 	"io"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
+
+// exeSuffix is ".exe" on Windows, "" elsewhere. `go build -o <name>` writes
+// exactly <name>, so without the suffix the harness produces a file Windows
+// refuses to exec.
+var exeSuffix = func() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
+}()
 
 func TestMunge(t *testing.T) {
 	cases := map[string]string{
@@ -63,7 +74,7 @@ func compileAndRun(t *testing.T, src string) string {
 	if err := WriteModule(dir, forms, Options{PrintLastValue: true}); err != nil {
 		t.Fatalf("write module: %v", err)
 	}
-	bin := filepath.Join(dir, "prog")
+	bin := filepath.Join(dir, "prog"+exeSuffix)
 	if err := GoBuild(dir, bin); err != nil {
 		t.Fatalf("go build: %v", err)
 	}
