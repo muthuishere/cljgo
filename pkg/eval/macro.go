@@ -329,3 +329,36 @@ func (e *Evaluator) loadClojureTest() {
 		}
 	}
 }
+
+// loadClojureTestPortability reads and evaluates the embedded
+// core/clojure_test_portability.cljg into the clojure.core-test.portability
+// namespace — the cljgo shim for the jank clojure-test-suite (ADR 0022,
+// Batch 0). It runs after loadClojureTest so clojure.core and clojure.test are
+// both up; the file's own (in-ns …portability) / (refer 'clojure.core) forms
+// make its body resolve unqualified core names. Pre-loading it makes the suite's
+// (require '[clojure.core-test.portability …]) succeed (require locates only
+// embedded namespaces).
+func (e *Evaluator) loadClojureTestPortability() {
+	ns := lang.FindOrCreateNamespace(lang.NewSymbol("clojure.core-test.portability"))
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, ns,
+		lang.VarFile, "clojure_test_portability.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.PortabilitySource),
+		reader.WithFilename("clojure_test_portability.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading clojure_test_portability.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating clojure_test_portability.cljg: %w", err))
+		}
+	}
+}

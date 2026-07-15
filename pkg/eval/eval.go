@@ -51,6 +51,7 @@ func New() *Evaluator {
 	e.loadProtocols()
 	e.loadClojureString()
 	e.loadClojureTest()
+	e.loadClojureTestPortability()
 	user := lang.FindOrCreateNamespace(lang.NewSymbol("user"))
 	referAll(user, lang.NSCore)
 	lang.VarCurrentNS.BindRoot(user)

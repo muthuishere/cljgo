@@ -989,3 +989,26 @@
 (defmacro defmethod [mm-name dispatch-val params & body]
   (list '-defmethod mm-name dispatch-val
         (list* 'fn params body)))
+
+;; --- ns : namespace declaration (minimal; jank clojure-test-suite harness,
+;; ADR 0022) --------------------------------------------------------------
+;; Expands to: switch to the namespace (in-ns), refer clojure.core, then one
+;; require per :require libspec. Reader conditionals in libspecs are already
+;; resolved by the reader before this macro sees the clauses (a #?(:clj …)
+;; clause the reader elides never reaches here). Clauses other than :require
+;; (:import / :use / :refer-clojure / :gen-class …) are currently ignored —
+;; the suite gates its only :import behind #?(:clj …), which cljgo elides.
+;; oracle (Clojure 1.12.5): (ns foo (:require [clojure.string :as s]))
+;;   makes s/upper-case resolve in foo.
+(defmacro ns [nsname & clauses]
+  (let [requires (mapcat
+                  (fn [clause]
+                    (when (and (seq? clause) (= :require (first clause)))
+                      (map (fn [spec]
+                             (list 'clojure.core/require (list 'quote spec)))
+                           (rest clause))))
+                  clauses)]
+    (cons 'do
+          (cons (list 'clojure.core/in-ns (list 'quote nsname))
+                (cons (list 'clojure.core/refer (list 'quote 'clojure.core))
+                      requires)))))

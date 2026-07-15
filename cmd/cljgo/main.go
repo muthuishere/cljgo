@@ -44,6 +44,8 @@ func run(args []string) int {
 		return runFile(args[1])
 	case "build":
 		return runBuild(args[1:])
+	case "suite":
+		return runSuite(args[1:])
 	case "check":
 		return runCheck(args[1:], os.Stdout, os.Stderr)
 	case "explain":
@@ -159,6 +161,7 @@ usage:
   cljgo repl                       start a REPL
   cljgo run <file.clj>             evaluate a file
   cljgo build [-o out] <file.clj>  compile a file to a native binary
+  cljgo suite [--dir <path>]       run the jank clojure-test-suite, print a scoreboard (ADR 0022)
   cljgo check <file.clj> [--json]  analyze a file, report diagnostics (ADR 0015)
   cljgo explain <code> [--json]    show an error code's explain page
   cljgo version                    print the version

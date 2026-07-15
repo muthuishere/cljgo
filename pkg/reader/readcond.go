@@ -75,8 +75,13 @@ func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again
 	}
 
 	// Read the entire body first (matching Clojure, which errors on
-	// malformed forms even in unselected branches).
+	// malformed forms even in unselected branches). Unknown TAGGED literals
+	// in the body — e.g. jank's #cpp in a branch cljgo will elide — are
+	// suppress-read as nil rather than erroring (Clojure reads unselected
+	// branches in a tag-suppressing mode); tagSuppress gates readTaggedLiteral.
+	r.tagSuppress++
 	forms, err := r.readDelimited("reader conditional", ')', start)
+	r.tagSuppress--
 	if err != nil {
 		return nil, false, err
 	}

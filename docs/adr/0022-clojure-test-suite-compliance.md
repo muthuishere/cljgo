@@ -48,3 +48,24 @@ already has clojure.test (`is`/`are`/`thrown?`, ADR 0012), a Phase-2 reader
 - Non-goal: passing tests for host-specific vars cljgo will never have
   (JVM-array internals, `bean`, etc.) — `when-var-exists` legitimately skips
   those; the denominator is "vars cljgo claims", tracked explicitly.
+
+## Batch 0 landed — measured baseline (2026-07-15)
+The harness is real: `cljgo suite [--dir …]` loads every `test/**/*.cljc`,
+runs `clojure.test`, and writes an EDN+JSON scoreboard. Delivered:
+`resolve`/`find-var`/`ns-resolve`/`var?`/`eval` var reflection
+(`pkg/eval/var_builtins.go`), a minimal `ns` macro, the cljgo
+`clojure.core-test.portability` shim (`when-var-exists` + `big-int?`/`lazy-seq?`,
+pre-loaded at boot), the `p/thrown?` hook in `clojure.test/is`, and
+reader-conditional tag-suppression so unknown foreign tags (`#cpp`) in elided
+branches no longer error.
+
+**Baseline over 242 test files (interpreted):** 34 pass, 8 fail, 82 error,
+118 skipped.
+- **North-star ratchet metric — files fully passing / total: 34/242 = 14.0%.**
+- Vars cljgo resolves (non-skipped): 124/242 = 51.2%.
+
+The reader was verified (decision 2 / consequence above): it takes `:default`
+and elides `:cljs`/`:clj`/`:jank` in both `:require` and body forms. Most of the
+82 errors are files whose var-under-test IS implemented but whose bodies call
+other unimplemented core fns — Batch 1 breadth unlocks them. The CI ratchet (T2)
+should pin passing-file count ≥ 34.
