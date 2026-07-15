@@ -511,6 +511,11 @@ func (e *Evaluator) internBuiltins() {
 	// we target) + (cljgo-version)/*cljgo-version* (ours, incl. the host Go
 	// toolchain) — version_builtins.go, pkg/version is the source of truth.
 	e.internVersionBuiltins(def)
+	// --- NaN?/array-map/sorted-map/sorted-map-by/subseq/rsubseq: the
+	// biggest cheap-breadth blockers left in the clojure-test-suite
+	// (ADR 0022, design/08 §5, sorted_builtins.go). sorted-set/-by already
+	// existed in predicate_builtins.go.
+	e.internSortedBuiltins(def)
 
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
