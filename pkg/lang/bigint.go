@@ -40,6 +40,18 @@ func NewBigIntWithBase(s string, base int) (*BigInt, error) {
 	return &BigInt{val: bi}, nil
 }
 
+// MustBigInt parses a decimal BigInt string or panics. It backs the
+// emitter's constant literal reconstruction (pkg/emit constExpr), where
+// the input is always a value cljgo itself printed, so a parse failure is
+// a compiler bug, not user error.
+func MustBigInt(s string) *BigInt {
+	bi, err := NewBigInt(s)
+	if err != nil {
+		panic(err)
+	}
+	return bi
+}
+
 // NewBigIntFromInt64 creates a new BigInt from an int64.
 func NewBigIntFromInt64(x int64) *BigInt {
 	return &BigInt{val: big.NewInt(x)}

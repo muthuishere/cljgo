@@ -221,6 +221,15 @@ func (g *generator) constExpr(v any) string {
 		return fmt.Sprintf("float64(%s)", strconv.FormatFloat(x, 'g', -1, 64))
 	case string:
 		return strconv.Quote(x)
+	case *lang.BigInt:
+		// Numeric-tower literals (1N, 3/2, 1.5M) reconstruct from the exact
+		// string cljgo printed, so the compiled constant equals the one the
+		// reader built (dual-mode, ADR 0002 / design/08 §5 Batch 2).
+		return fmt.Sprintf("lang.MustBigInt(%s)", strconv.Quote(x.String()))
+	case *lang.Ratio:
+		return fmt.Sprintf("lang.MustRatio(%s)", strconv.Quote(x.String()))
+	case *lang.BigDecimal:
+		return fmt.Sprintf("lang.MustBigDecimal(%s)", strconv.Quote(x.String()))
 	case lang.Char:
 		return fmt.Sprintf("lang.Char(%s)", strconv.QuoteRune(rune(x)))
 	case lang.Keyword:

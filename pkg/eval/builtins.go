@@ -496,6 +496,10 @@ func (e *Evaluator) internBuiltins() {
 	// clojure-test-suite harness surface (ADR 0022, var_builtins.go).
 	e.internVarBuiltins(def)
 
+	// --- numeric tower (bigint/bigdec/ratios, promotion, bit-*, parse-*,
+	// rand-*, ==): design/08 §5 Batch 2 (numeric_builtins.go).
+	e.internNumericBuiltins(def)
+
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
 	// Constructors, predicates and combinators over the pkg/lang tagged

@@ -58,3 +58,13 @@ var BuildSource string
 //
 //go:embed clojure_test_portability.cljg
 var PortabilitySource string
+
+// NumericSource is the contents of numeric.cljg — the Clojure-level
+// numeric-tower fns (random-sample, …) that ride on the Batch 2 host
+// primitives (pkg/eval/numeric_builtins.go, design/08 §5). pkg/eval loads
+// it into clojure.core after core.clj is up (loadNumeric), so its publics
+// are referred into user like the rest of core. The loader accepts the
+// .cljg extension per ADR 0017.
+//
+//go:embed numeric.cljg
+var NumericSource string
