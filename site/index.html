@@ -1,247 +1,455 @@
+<!doctype html>
 <!--
-  cljgo landing page — static, self-contained, no external assets.
-  Content verified against README.md, cmd/cljgo/main.go, go.mod,
-  design/00-architecture.md, design/08-build-comptime-compat.md and
-  examples/. See site/README.md for how it deploys.
+  cljgo landing page — static, self-contained (one Google Fonts link).
+  Design system: deemwar (Inter + JetBrains Mono, charcoal dark-default,
+  single-accent, tight headings) — re-skinned for cljgo with a distinct
+  Clojure-green x Go-cyan accent. Content verified against README.md,
+  cmd/cljgo/main.go, go.mod, design/00, design/08 and examples/.
+  See site/README.md for how it deploys.
 -->
-<title>cljgo — Clojure hosted on Go</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>cljgo — Clojure, hosted on Go</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="cljgo: a Clojure implementation hosted on Go. A compiler that AOT-emits plain Go source, plus a tree-walk REPL — one shared analyzer, byte-identical output on both paths.">
+<meta name="description" content="cljgo: a Clojure implementation hosted on Go. A compiler that AOT-emits plain Go source, plus a tree-walk REPL — one shared analyzer, byte-identical output on both paths, and zero-binding access to the entire Go ecosystem.">
+<meta name="color-scheme" content="dark light">
+<meta property="og:title" content="cljgo — Clojure, hosted on Go">
+<meta property="og:description" content="A compiler that AOT-emits plain Go, plus a tree-walk REPL. One analyzer, two backends, byte-identical output — and zero-binding Go interop.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #fbfaf7;
-    --bg-soft: #f2efe8;
-    --card: #ffffff;
-    --fg: #1c1c22;
-    --fg-soft: #4a4a55;
-    --border: #e3ded3;
-    --clj: #5881d8;   /* Clojure blue */
-    --clj-2: #91b4f2;
-    --go: #00add8;    /* Go cyan */
-    --paren: #63864e; /* parens green */
-    --accent: #5881d8;
-    --code-bg: #f4f2ec;
-    --code-fg: #26262e;
-    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0f1117;
-      --bg-soft: #151822;
-      --card: #171a24;
-      --fg: #e9e9ef;
-      --fg-soft: #a6a8b6;
-      --border: #262a38;
-      --clj: #91b4f2;
-      --clj-2: #5881d8;
-      --go: #35c9ea;
-      --paren: #9ecb7f;
-      --accent: #91b4f2;
-      --code-bg: #10131b;
-      --code-fg: #d7dae6;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.4);
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #0f1117; --bg-soft: #151822; --card: #171a24; --fg: #e9e9ef;
-    --fg-soft: #a6a8b6; --border: #262a38; --clj: #91b4f2; --clj-2: #5881d8;
-    --go: #35c9ea; --paren: #9ecb7f; --accent: #91b4f2; --code-bg: #10131b;
-    --code-fg: #d7dae6; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.4);
+    /* ── Dark (default): charcoal, Go-cyan + Clojure-green accents ── */
+    --bg:        #121212;
+    --bg-2:      #16171a;
+    --card:      #17181c;
+    --card-2:    #1c1e23;
+    --nav:       rgba(18,18,18,.72);
+    --fg:        #f2f3f5;
+    --fg-soft:   #a6a9b2;
+    --fg-dim:    #71747d;
+    --hair:      #2a2c31;
+    --hair-2:    #34373e;
+    --cyan:      #22c3d6;   /* Go-cyan — primary accent */
+    --cyan-txt:  #57d7e6;
+    --green:     #5fc13b;   /* Clojure parens-green — secondary accent */
+    --green-txt: #86d86a;
+    --accent:    var(--cyan);
+    --accent-txt:var(--cyan-txt);
+    --code-bg:   #0e0f12;
+    --code-fg:   #dfe2ea;
+    --sel:       color-mix(in srgb, var(--cyan) 30%, transparent);
+    --shadow:    0 1px 0 rgba(255,255,255,.02), 0 18px 44px -18px rgba(0,0,0,.7);
+    --shadow-lg: 0 40px 90px -40px rgba(0,0,0,.8);
+    --glow: radial-gradient(60% 55% at 50% 0%, color-mix(in srgb, var(--cyan) 16%, transparent), transparent 70%),
+            radial-gradient(45% 45% at 80% 10%, color-mix(in srgb, var(--green) 12%, transparent), transparent 70%);
   }
   :root[data-theme="light"] {
-    --bg: #fbfaf7; --bg-soft: #f2efe8; --card: #ffffff; --fg: #1c1c22;
-    --fg-soft: #4a4a55; --border: #e3ded3; --clj: #5881d8; --clj-2: #91b4f2;
-    --go: #00add8; --paren: #63864e; --accent: #5881d8; --code-bg: #f4f2ec;
-    --code-fg: #26262e; --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+    --bg:        #f6f7f9;
+    --bg-2:      #ffffff;
+    --card:      #ffffff;
+    --card-2:    #f3f5f7;
+    --nav:       rgba(246,247,249,.78);
+    --fg:        #14161b;
+    --fg-soft:   #4c5059;
+    --fg-dim:    #7c808a;
+    --hair:      #e3e6ea;
+    --hair-2:    #d5d9df;
+    --cyan:      #0b93a4;
+    --cyan-txt:  #077a89;
+    --green:     #3f9e25;
+    --green-txt: #337f1e;
+    --accent:    var(--cyan);
+    --accent-txt:var(--cyan-txt);
+    --code-bg:   #0e0f12;
+    --code-fg:   #dfe2ea;
+    --sel:       color-mix(in srgb, var(--cyan) 22%, transparent);
+    --shadow:    0 1px 2px rgba(16,20,28,.04), 0 16px 40px -20px rgba(16,20,28,.18);
+    --shadow-lg: 0 40px 80px -40px rgba(16,20,28,.28);
+    --glow: radial-gradient(60% 55% at 50% 0%, color-mix(in srgb, var(--cyan) 12%, transparent), transparent 70%),
+            radial-gradient(45% 45% at 80% 10%, color-mix(in srgb, var(--green) 10%, transparent), transparent 70%);
   }
 
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  ::selection { background: var(--sel); }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
     background: var(--bg);
     color: var(--fg);
-    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  code, pre, .mono {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+  a { color: var(--accent-txt); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  h1, h2, h3 { letter-spacing: -.025em; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .eyebrow { font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--accent-txt); }
 
-  /* Nav */
+  /* ── Nav ── */
   header.nav {
-    position: sticky; top: 0; z-index: 10;
-    backdrop-filter: saturate(160%) blur(10px);
-    background: color-mix(in srgb, var(--bg) 82%, transparent);
-    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(150%) blur(14px); -webkit-backdrop-filter: saturate(150%) blur(14px);
+    background: var(--nav); border-bottom: 1px solid var(--hair);
   }
-  .nav-inner { display: flex; align-items: center; gap: 20px; height: 58px; }
-  .brand { font-weight: 700; font-size: 18px; letter-spacing: -.02em; display: flex; align-items: center; gap: 8px; }
-  .brand .p { color: var(--paren); }
-  .nav-links { margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
-  .nav-links a { color: var(--fg-soft); font-size: 14.5px; }
-  .nav-links a:hover { color: var(--fg); text-decoration: none; }
+  .nav-inner { display: flex; align-items: center; gap: 22px; height: 62px; }
+  .brand { font-weight: 800; font-size: 19px; letter-spacing: -.03em; display: flex; align-items: center; gap: 1px; }
+  .brand .par { color: var(--green); }
+  .brand .dot { color: var(--cyan); }
+  .nav-links { margin-left: auto; display: flex; gap: 22px; align-items: center; }
+  .nav-links a.lnk { color: var(--fg-soft); font-size: 14.5px; font-weight: 500; }
+  .nav-links a.lnk:hover { color: var(--fg); text-decoration: none; }
+  @media (max-width: 720px) { .nav-links a.lnk { display: none; } }
   .btn {
-    display: inline-block; padding: 9px 16px; border-radius: 8px;
-    background: var(--accent); color: #fff !important; font-weight: 600; font-size: 14.5px;
-    border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 8px; padding: 9px 17px; border-radius: 9px;
+    font-weight: 600; font-size: 14.5px; border: 1px solid transparent; cursor: pointer; white-space: nowrap;
+    transition: transform .12s ease, filter .12s ease, background .12s ease, border-color .12s ease;
   }
-  .btn:hover { text-decoration: none; filter: brightness(1.05); }
-  .btn.ghost { background: transparent; color: var(--fg) !important; border-color: var(--border); }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); }
+  .btn-primary { background: linear-gradient(180deg, var(--cyan), color-mix(in srgb, var(--cyan) 78%, #000)); color: #04262b !important; box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--cyan) 80%, transparent); }
+  :root[data-theme="light"] .btn-primary { color: #ffffff !important; }
+  .btn-ghost { background: color-mix(in srgb, var(--fg) 5%, transparent); color: var(--fg) !important; border-color: var(--hair-2); }
+  .btn-ghost:hover { border-color: var(--accent); }
+  .icon-btn {
+    display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 9px;
+    background: color-mix(in srgb, var(--fg) 5%, transparent); border: 1px solid var(--hair-2);
+    color: var(--fg-soft); cursor: pointer; transition: color .12s, border-color .12s;
+  }
+  .icon-btn:hover { color: var(--fg); border-color: var(--accent); }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .theme-moon { display: none; } .theme-sun { display: block; }
+  :root[data-theme="light"] .theme-moon { display: block; } :root[data-theme="light"] .theme-sun { display: none; }
 
-  /* Hero */
-  .hero { padding: 76px 0 56px; text-align: center; }
-  .badge {
-    display: inline-block; font-size: 13px; font-weight: 600; letter-spacing: .02em;
-    color: var(--fg-soft); background: var(--bg-soft); border: 1px solid var(--border);
-    padding: 5px 12px; border-radius: 999px; margin-bottom: 22px;
+  /* ── Hero ── */
+  .hero { position: relative; padding: 96px 0 64px; text-align: center; }
+  .hero::before { content: ""; position: absolute; inset: -80px 0 auto 0; height: 620px; background: var(--glow); pointer-events: none; z-index: 0; }
+  .hero .wrap { position: relative; z-index: 1; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600;
+    color: var(--fg-soft); background: color-mix(in srgb, var(--fg) 5%, transparent);
+    border: 1px solid var(--hair-2); padding: 6px 14px; border-radius: 999px; margin-bottom: 26px;
   }
-  .hero h1 {
-    font-size: clamp(34px, 6vw, 56px); line-height: 1.05; letter-spacing: -.03em;
-    margin: 0 0 18px;
-  }
-  .hero h1 .g1 { color: var(--clj); }
-  .hero h1 .g2 { color: var(--go); }
-  .hero p.lead { font-size: clamp(17px, 2.4vw, 21px); color: var(--fg-soft); max-width: 720px; margin: 0 auto 30px; }
-  .hero .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .pill .live { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
+  .hero h1 { font-size: clamp(40px, 7vw, 74px); line-height: 1.02; font-weight: 800; margin: 0 0 22px; }
+  .hero h1 .clj { background: linear-gradient(120deg, var(--green-txt), var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero h1 .go  { background: linear-gradient(120deg, var(--cyan-txt), var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p.lead { font-size: clamp(17px, 2.3vw, 21px); color: var(--fg-soft); max-width: 730px; margin: 0 auto 34px; }
+  .hero p.lead b { color: var(--fg); font-weight: 600; }
+  .cta { display: flex; gap: 13px; justify-content: center; flex-wrap: wrap; }
 
-  section { padding: 46px 0; border-top: 1px solid var(--border); }
-  section h2 { font-size: clamp(24px, 3.6vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
-  section .sub { color: var(--fg-soft); margin: 0 0 28px; max-width: 720px; }
-  h3 { font-size: 18px; margin: 0 0 6px; letter-spacing: -.01em; }
-
-  /* Priority grid */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-  .card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 20px; box-shadow: var(--shadow);
+  /* ── Terminal window ── */
+  .window {
+    margin: 46px auto 0; max-width: 780px; text-align: left; border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--hair-2); background: var(--code-bg); box-shadow: var(--shadow-lg); position: relative; z-index: 1;
   }
-  .card .num {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 28px; height: 28px; border-radius: 8px; font-weight: 700; font-size: 14px;
-    background: var(--bg-soft); color: var(--accent); margin-bottom: 12px; border: 1px solid var(--border);
-  }
-  .card p { color: var(--fg-soft); margin: 6px 0 0; font-size: 14.5px; }
-
-  /* Code blocks */
+  .win-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #17181c; border-bottom: 1px solid #26282e; }
+  .win-bar .dot3 { width: 12px; height: 12px; border-radius: 50%; }
+  .win-bar .r { background: #ff5f57; } .win-bar .y { background: #febc2e; } .win-bar .g { background: #28c840; }
+  .win-bar .title { margin-left: 8px; font-size: 12.5px; color: #8b8e96; font-family: 'JetBrains Mono', monospace; }
   pre {
-    background: var(--code-bg); color: var(--code-fg); border: 1px solid var(--border);
-    border-radius: 10px; padding: 16px 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.55;
-    margin: 0;
+    background: var(--code-bg); color: var(--code-fg); margin: 0; padding: 20px 22px;
+    overflow-x: auto; font-size: 13.5px; line-height: 1.7; font-weight: 500;
   }
-  pre .c { color: var(--fg-soft); font-style: italic; }   /* comment */
-  pre .k { color: var(--clj); font-weight: 600; }          /* keyword/form */
-  pre .s { color: var(--paren); }                          /* string */
-  pre .go { color: var(--go); }                            /* go / interop */
-  pre .p { color: var(--fg-soft); }                        /* prompt/parens */
-  .stack { display: grid; gap: 16px; }
+  pre .c  { color: #6b7280; font-style: italic; }
+  pre .k  { color: var(--green-txt); }
+  pre .s  { color: #e0b464; }
+  pre .go { color: var(--cyan-txt); }
+  pre .p  { color: #6b7280; }
+  pre .n  { color: #d98adf; }
+
+  /* ── Sections ── */
+  section { padding: 72px 0; position: relative; }
+  section + section { border-top: 1px solid var(--hair); }
+  .sec-head { max-width: 720px; margin: 0 0 40px; }
+  .sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+  section h2 { font-size: clamp(27px, 3.8vw, 38px); font-weight: 800; margin: 12px 0 12px; }
+  .sec-head p { color: var(--fg-soft); font-size: 17px; margin: 0; }
+  h3 { font-size: 17.5px; font-weight: 700; margin: 0 0 7px; }
+
+  /* ── Stat strip ── */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--hair); border: 1px solid var(--hair); border-radius: 14px; overflow: hidden; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: var(--card); padding: 22px 20px; }
+  .stat .v { font-size: 26px; font-weight: 800; letter-spacing: -.03em; color: var(--fg); }
+  .stat .v .u { color: var(--accent-txt); }
+  .stat .l { font-size: 13px; color: var(--fg-soft); margin-top: 3px; }
+
+  /* ── Cards grid ── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--hair); border-radius: 14px; padding: 24px;
+    box-shadow: var(--shadow); transition: transform .15s ease, border-color .15s ease;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--hair-2); }
+  .card .ic { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 11px; margin-bottom: 15px;
+    background: color-mix(in srgb, var(--accent) 13%, transparent); color: var(--accent-txt); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  .card .ic svg { width: 21px; height: 21px; }
+  .card.alt .ic { background: color-mix(in srgb, var(--green) 13%, transparent); color: var(--green-txt); border-color: color-mix(in srgb, var(--green) 30%, transparent); }
+  .card p { color: var(--fg-soft); margin: 6px 0 0; font-size: 14.5px; }
+  .card code { color: var(--fg); background: color-mix(in srgb, var(--fg) 8%, transparent); padding: 1px 5px; border-radius: 5px; font-size: 12.5px; }
+
+  /* ── Split / stack code layouts ── */
+  .stack { display: grid; gap: 20px; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
-  .label { font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-soft); margin: 0 0 8px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--fg-dim); margin: 0 0 9px; }
+  .codecard { border: 1px solid var(--hair-2); border-radius: 12px; overflow: hidden; background: var(--code-bg); box-shadow: var(--shadow); position: relative; }
+  .copy { position: absolute; top: 10px; right: 10px; z-index: 2; font-size: 11.5px; font-weight: 600; color: var(--fg-soft);
+    background: color-mix(in srgb, #fff 8%, transparent); border: 1px solid #34373e; border-radius: 7px; padding: 4px 9px; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .copy:hover { color: #fff; border-color: var(--cyan); }
 
-  /* Architecture */
-  .flow { display: grid; grid-template-columns: 1fr; gap: 14px; }
-  .flow .node {
-    background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px;
-    box-shadow: var(--shadow);
-  }
-  .flow .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  @media (max-width: 640px) { .flow .split { grid-template-columns: 1fr; } }
-  .flow .node .t { font-weight: 700; margin-bottom: 4px; }
-  .flow .node .d { color: var(--fg-soft); font-size: 14px; }
-  .flow .arrow { text-align: center; color: var(--fg-soft); font-size: 20px; line-height: 1; }
-  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--bg-soft); border: 1px solid var(--border); color: var(--fg-soft); }
+  /* ── Architecture flow ── */
+  .flow { display: grid; gap: 14px; }
+  .node { background: var(--card); border: 1px solid var(--hair); border-radius: 14px; padding: 20px 22px; box-shadow: var(--shadow); }
+  .node.hl { border-color: color-mix(in srgb, var(--accent) 40%, var(--hair)); }
+  .node .t { font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .node .d { color: var(--fg-soft); font-size: 14.5px; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .split { grid-template-columns: 1fr; } }
+  .arrow { text-align: center; color: var(--fg-dim); font-size: 18px; line-height: 1; }
+  .tag { font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--fg) 6%, transparent); border: 1px solid var(--hair-2); color: var(--fg-soft); font-family: 'JetBrains Mono', monospace; }
+  .tag.cyan { color: var(--cyan-txt); border-color: color-mix(in srgb, var(--cyan) 35%, transparent); }
+  .tag.green { color: var(--green-txt); border-color: color-mix(in srgb, var(--green) 35%, transparent); }
 
-  /* Status table */
+  /* ── Compat / progress ── */
+  .compat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; }
+  @media (max-width: 820px) { .compat { grid-template-columns: 1fr; } }
+  .bar { height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--fg) 9%, transparent); overflow: hidden; margin: 14px 0 8px; }
+  .bar > i { display: block; height: 100%; width: 23.6%; border-radius: 999px; background: linear-gradient(90deg, var(--green), var(--cyan)); }
+  .bignum { font-size: 60px; font-weight: 800; letter-spacing: -.04em; line-height: 1; background: linear-gradient(120deg, var(--green-txt), var(--cyan-txt)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* ── Status table ── */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--hair); border-radius: 14px; }
   table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
-  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
-  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--fg-soft); background: var(--bg-soft); }
+  th, td { text-align: left; padding: 13px 16px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--fg-dim); background: var(--card-2); font-weight: 700; }
   tr:last-child td { border-bottom: none; }
-  .done { color: var(--paren); font-weight: 700; }
-  .next { color: var(--fg-soft); font-weight: 700; }
-  td.m { white-space: nowrap; font-weight: 600; }
+  tbody tr:hover td { background: color-mix(in srgb, var(--fg) 2.5%, transparent); }
+  td.m { white-space: nowrap; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  .done { color: var(--green-txt); font-weight: 700; }
+  .next { color: var(--fg-dim); font-weight: 700; }
+  td code, .compat code, section p code, li code { color: var(--fg); background: color-mix(in srgb, var(--fg) 8%, transparent); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
 
-  ul.clean { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-  ul.clean li { padding-left: 22px; position: relative; color: var(--fg-soft); }
-  ul.clean li::before { content: "›"; position: absolute; left: 4px; color: var(--accent); font-weight: 700; }
-  ul.clean li b { color: var(--fg); font-weight: 600; }
+  ul.clean { list-style: none; padding: 0; margin: 0; display: grid; gap: 13px; }
+  ul.clean li { padding-left: 26px; position: relative; color: var(--fg-soft); }
+  ul.clean li::before { content: ""; position: absolute; left: 4px; top: 9px; width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, var(--green), var(--cyan)); }
+  ul.clean li b { color: var(--fg); font-weight: 700; }
 
-  footer { border-top: 1px solid var(--border); padding: 34px 0 50px; color: var(--fg-soft); font-size: 14px; }
-  footer .cols { display: flex; gap: 40px; flex-wrap: wrap; }
-  footer a { color: var(--fg-soft); }
+  .note { font-size: 13.5px; color: var(--fg-soft); background: var(--card-2); border: 1px solid var(--hair); border-left: 3px solid var(--accent); border-radius: 10px; padding: 14px 18px; margin-top: 16px; }
+  .note code { color: var(--fg); }
+
+  footer { border-top: 1px solid var(--hair); padding: 54px 0 64px; color: var(--fg-soft); font-size: 14px; background: var(--bg-2); }
+  footer .cols { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 40px; }
+  @media (max-width: 640px) { footer .cols { grid-template-columns: 1fr 1fr; } }
+  footer a { color: var(--fg-soft); display: block; padding: 3px 0; }
   footer a:hover { color: var(--fg); }
-  .note { font-size: 13px; color: var(--fg-soft); background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-top: 16px; }
+  footer .label { margin-bottom: 8px; }
 </style>
+</head>
+<body>
 
 <header class="nav">
   <div class="wrap nav-inner">
-    <div class="brand"><span class="p">(</span>cljgo<span class="p">)</span></div>
+    <div class="brand"><span class="par">(</span>cljgo<span class="par">)</span></div>
     <nav class="nav-links">
-      <a href="#why">Why</a>
-      <a href="#quickstart">Quickstart</a>
-      <a href="#interop">Interop</a>
-      <a href="#architecture">Architecture</a>
-      <a href="#status">Status</a>
-      <a href="https://github.com/muthuishere/cljgo" class="btn">GitHub</a>
+      <a class="lnk" href="#why">Why</a>
+      <a class="lnk" href="#interop">Interop</a>
+      <a class="lnk" href="#architecture">Architecture</a>
+      <a class="lnk" href="#quickstart">Quickstart</a>
+      <a class="lnk" href="#status">Status</a>
+      <button class="icon-btn" id="theme" aria-label="Toggle theme" title="Toggle theme">
+        <svg class="theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <a href="https://github.com/muthuishere/cljgo" class="btn btn-ghost">GitHub</a>
     </nav>
   </div>
 </header>
 
 <main>
-  <section class="hero" style="border-top:none">
+  <section class="hero">
     <div class="wrap">
-      <span class="badge">Clojure hosted on Go · module github.com/muthuishere/cljgo · Go 1.26</span>
-      <h1><span class="g1">Clojure</span>, hosted on <span class="g2">Go</span>.</h1>
+      <span class="pill"><span class="live"></span> Clojure ⟶ plain Go · one analyzer, two backends</span>
+      <h1><span class="clj">Clojure</span>,<br>hosted on <span class="go">Go</span>.</h1>
       <p class="lead">
         A compiler written in Go that AOT-emits <b>plain Go source</b> — the ClojureScript
-        model, with Go as the JavaScript — plus a tree-walk evaluator that <em>is</em> the
-        REPL and the macro engine. One shared analyzer feeds both, and the same source runs
-        interpreted at the prompt and compiles to a static native binary with byte-identical output.
+        model, with Go as the JavaScript — plus a tree-walk evaluator that <b>is</b> the REPL
+        and the macro engine. The same code runs interpreted at the prompt and compiles to a
+        static native binary, with <b>byte-identical output</b> on both paths.
       </p>
       <div class="cta">
-        <a href="#quickstart" class="btn">Get started</a>
-        <a href="https://github.com/muthuishere/cljgo" class="btn ghost">View source</a>
+        <a href="#quickstart" class="btn btn-primary">Get started →</a>
+        <a href="https://github.com/muthuishere/cljgo" class="btn btn-ghost">View source</a>
+      </div>
+
+      <div class="window">
+        <div class="win-bar"><span class="dot3 r"></span><span class="dot3 y"></span><span class="dot3 g"></span><span class="title">cljgo repl</span></div>
+        <pre><span class="p">$</span> cljgo repl
+<span class="go">cljgo 0.0.1-m2</span>
+<span class="p">user=&gt;</span> (<span class="k">require-go</span> '[strings])
+<span class="p">user=&gt;</span> (<span class="go">strings/ToUpper</span> <span class="s">"clojure on go"</span>)   <span class="c">;; a real Go call, zero bindings</span>
+<span class="s">"CLOJURE ON GO"</span>
+<span class="p">user=&gt;</span> (<span class="k">defn</span> fact [n] (<span class="k">if</span> (&lt; n 2) 1 (* n (fact (- n 1)))))
+<span class="p">user=&gt;</span> (fact 20)
+<span class="n">2432902008176640000</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="stats">
+    <div class="wrap">
+      <div class="stats">
+        <div class="stat"><div class="v">Zero<span class="u">·</span></div><div class="l">hand-written bindings for any Go module</div></div>
+        <div class="stat"><div class="v">2<span class="u">→1</span></div><div class="l">backends, one shared analyzer &amp; AST</div></div>
+        <div class="stat"><div class="v">23.6<span class="u">%</span></div><div class="l">clojure-test-suite passing, climbing</div></div>
+        <div class="stat"><div class="v">any<span class="u"> OS</span></div><div class="l">cross-compiles, no target toolchain</div></div>
       </div>
     </div>
   </section>
 
   <section id="why">
     <div class="wrap">
-      <h2>Why cljgo</h2>
-      <p class="sub">Five priorities, in order — the design mandate, not a wishlist.</p>
+      <div class="sec-head">
+        <span class="eyebrow">The mandate</span>
+        <h2>Five priorities, in order</h2>
+        <p>Not a wishlist — the design contract. Everything in cljgo is judged against these, Clojure-first.</p>
+      </div>
       <div class="grid">
         <div class="card">
-          <span class="num">1</span>
-          <h3>Universal interop</h3>
-          <p>Any Go module is importable and callable with <b>zero hand-written bindings</b> — the Go ecosystem is the standard library. C reaches in via cgo modules and purego FFI.</p>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg></span>
+          <h3>1 · Universal interop</h3>
+          <p>Any Go module is importable and callable with <b>zero hand-written bindings</b> — the Go ecosystem <em>is</em> the standard library. C reaches in via cgo modules and purego FFI.</p>
         </div>
         <div class="card">
-          <span class="num">2</span>
-          <h3>REPL-driven development</h3>
-          <p>The tree-walk evaluator is a real Clojure REPL: live re-<code>def</code>, <code>defmacro</code> at the prompt, namespaces, nREPL for CIDER/Calva.</p>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span>
+          <h3>2 · REPL-driven</h3>
+          <p>The tree-walk evaluator is a real Clojure REPL: live re-<code>def</code>, <code>defmacro</code> at the prompt, namespaces, <code>eval</code>, <code>resolve</code>.</p>
         </div>
         <div class="card">
-          <span class="num">3</span>
-          <h3>Faithful Clojure</h3>
-          <p>Persistent data structures with real structural sharing, macros as plain fns, seq abstraction, vars as the indirection layer.</p>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20" opacity=".4"/><circle cx="12" cy="12" r="9"/></svg></span>
+          <h3>3 · Faithful Clojure</h3>
+          <p>Persistent data structures with real structural sharing, transients, a numeric tower, macros as plain fns, seqs, and vars as the indirection layer.</p>
         </div>
         <div class="card">
-          <span class="num">4</span>
-          <h3>Performance in both modes</h3>
-          <p>Fast tree-walk <em>and</em> a compiled performance ladder — a feature, not an option. Benchmarked in CI; perf regressions are treated like conformance failures.</p>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+          <h3>4 · Fast in both modes</h3>
+          <p>Fast tree-walk <em>and</em> a compiled performance ladder — a feature, not an option. Benchmarked in CI; a perf regression is treated like a conformance failure.</p>
         </div>
-        <div class="card">
-          <span class="num">5</span>
-          <h3>cgo is first-class</h3>
-          <p><code>CGO_ENABLED=1</code> projects are supported, not tolerated — cgo-based Go modules (sqlite drivers, sensors, GUI/audio) work like any other import.</p>
+        <div class="card alt">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h.01M7 12h.01M7 16h.01M11 8h6M11 12h6M11 16h4"/></svg></span>
+          <h3>5 · cgo is first-class</h3>
+          <p><code>CGO_ENABLED=1</code> projects are supported, not tolerated — cgo-based Go modules (sqlite drivers, sensors, GUI/audio) import like anything else.</p>
         </div>
-        <div class="card" style="display:flex;flex-direction:column;justify-content:center">
+        <div class="card alt">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
           <h3>Dual-mode is the gate</h3>
-          <p>Interpreted result == compiled result. A dual-harness conformance suite enforces it on every commit; a REPL↔binary divergence is a release blocker.</p>
+          <p>Interpreted result <b>==</b> compiled result. A dual-harness conformance suite enforces it on every commit; a REPL↔binary divergence is a release blocker.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="interop">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">Priority #1</span>
+        <h2>Zero-binding Go interop</h2>
+        <p><code>require-go</code> pulls in any Go package and calls it directly — no wrappers, no generated stubs. The Go toolchain is the classpath. This runs identically interpreted and compiled.</p>
+      </div>
+      <div class="codecard">
+        <button class="copy" data-copy>Copy</button>
+        <div class="win-bar"><span class="dot3 r"></span><span class="dot3 y"></span><span class="dot3 g"></span><span class="title">examples/interop/core.clj</span></div>
+        <pre>(<span class="go">require-go</span> '[strings])
+(<span class="go">require-go</span> '[strconv])
+(<span class="go">require-go</span> '[math])
+
+<span class="c">;; single-return package fns + int64→int arg coercion</span>
+(<span class="k">println</span> <span class="s">"ToUpper:"</span> (<span class="go">strings/ToUpper</span> <span class="s">"hello"</span>))
+(<span class="k">println</span> <span class="s">"Repeat:"</span>  (<span class="go">strings/Repeat</span> <span class="s">"ab"</span> 3))
+
+<span class="c">;; a const in value position</span>
+(<span class="k">println</span> <span class="s">"Pi:"</span> <span class="go">math/Pi</span>)
+
+<span class="c">;; (T, error) call → [v err] vector; happy-path err slot is nil</span>
+(<span class="k">println</span> <span class="s">"Atoi:"</span> (<span class="go">strconv/Atoi</span> <span class="s">"123"</span>))
+
+<span class="c">;; the ! suffix unwraps-or-throws — returns the widened value</span>
+(<span class="k">println</span> <span class="s">"Atoi!:"</span> (<span class="go">strconv/Atoi!</span> <span class="s">"456"</span>))</pre>
+      </div>
+      <div class="two" style="margin-top:18px">
+        <div class="card">
+          <h3>Errors as values</h3>
+          <p><code>(T, error)</code> Go calls shape to a <code>[v err]</code> vector — branch on the error slot, Clojure-style. The <code>!</code> suffix unwraps or throws.</p>
+        </div>
+        <div class="card alt">
+          <h3>Members, ctors &amp; real goroutines</h3>
+          <p><code>(.Method r …)</code>, <code>(.-Field r)</code>, <code>(pkg/T. {…})</code> constructors, plus <code>(chan)</code> / <code>(&gt;! c v)</code> / <code>(&lt;! c)</code> / <code>(go …)</code> over <b>real goroutines</b> — no CPS rewrite.</p>
+        </div>
+      </div>
+      <div class="note">
+        <b>Third-party modules too.</b> <code>build.cljgo</code> declares <code>(go-require app "github.com/gorilla/websocket" "v1.5.3")</code> — cljgo synthesizes the <code>go.mod</code>, resolves signatures from <code>go/packages</code> type facts, and the emitted binary makes the real call. A websocket client, zero hand-written bindings (ADR 0021).
+      </div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <div class="wrap">
+      <div class="sec-head center">
+        <span class="eyebrow">Why the two never drift</span>
+        <h2>One analyzer, two backends</h2>
+        <p>The unforgivable failure mode is the REPL diverging from the compiled binary. cljgo makes that structurally hard: one reader, one analyzer, one AST — feeding both a tree-walk evaluator and a Go-source emitter.</p>
+      </div>
+      <div class="flow">
+        <div class="node hl">
+          <div class="t">Reader → Analyzer → AST <span class="tag">shared</span></div>
+          <div class="d">Full syntax-quote reader, macroexpansion, one analyzer producing a single AST. Everything below consumes exactly this — ADR 0002.</div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="split">
+          <div class="node">
+            <div class="t">Tree-walk evaluator <span class="tag green">pkg/eval</span></div>
+            <div class="d">IS the REPL and the macro engine. Pre-resolved locals, non-allocating fast paths, live re-<code>def</code> and <code>defmacro</code> at the prompt.</div>
+          </div>
+          <div class="node">
+            <div class="t">Go-source emitter <span class="tag cyan">pkg/emit</span></div>
+            <div class="d">AOT-emits plain Go from <code>go/packages</code> type facts — direct, non-reflective calls. The Go toolchain then produces a static native binary.</div>
+          </div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="node hl" style="text-align:center">
+          <div class="t" style="justify-content:center">Dual-harness conformance <span class="tag">the gate</span></div>
+          <div class="d">Every semantic test runs through <b>both</b> paths, oracle-cited against JVM Clojure. Interpreted result == compiled result, or the build fails — ADR 0007.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="compat">
+    <div class="wrap">
+      <div class="compat">
+        <div>
+          <span class="eyebrow">External yardstick</span>
+          <h2 style="margin-top:12px">Compatibility you can measure</h2>
+          <p style="color:var(--fg-soft);font-size:17px">
+            cljgo is scored against the jank <b style="color:var(--fg)">clojure-test-suite</b> — 242 real
+            <code>clojure.core</code> files — as a single ratcheting number in CI. Not a self-graded checklist.
+            The numeric tower and transients batches just landed; breadth is next.
+          </p>
+          <ul class="clean" style="margin-top:20px">
+            <li><b>Coverage ratchet</b> — the passing count may only rise; a drop fails the build (ADR 0022).</li>
+            <li><b>65.7%</b> of tested <code>clojure.core</code> vars already resolve.</li>
+            <li>Runs interpreted; cljgo's <b>own</b> dual-mode conformance stays fully green alongside it.</li>
+          </ul>
+        </div>
+        <div style="text-align:center">
+          <div class="bignum">23.6%</div>
+          <div class="bar"><i></i></div>
+          <div style="color:var(--fg-soft);font-size:14px"><b style="color:var(--fg)">57 / 242</b> suite files fully passing</div>
         </div>
       </div>
     </div>
@@ -249,38 +457,35 @@
 
   <section id="quickstart">
     <div class="wrap">
-      <h2>Quickstart</h2>
-      <p class="sub">Build from source is the known-good path — it needs a Go 1.26 toolchain (and a C toolchain with <code>CGO_ENABLED=1</code> for cgo interop features).</p>
+      <div class="sec-head">
+        <span class="eyebrow">Get started</span>
+        <h2>Quickstart</h2>
+        <p>Build from source is the known-good path — it needs a Go 1.26 toolchain (and a C toolchain with <code>CGO_ENABLED=1</code> for cgo interop features).</p>
+      </div>
 
       <div class="stack">
         <div>
           <p class="label">1 · Build the CLI from source</p>
-          <pre><span class="c"># requires Go 1.26+</span>
+          <div class="codecard">
+            <button class="copy" data-copy>Copy</button>
+            <pre><span class="c"># requires Go 1.26+</span>
 git clone https://github.com/muthuishere/cljgo
 <span class="k">cd</span> cljgo
-go build <span class="go">-o</span> cljgo ./cmd/cljgo   <span class="c"># -> ./cljgo</span></pre>
+go build <span class="go">-o</span> cljgo ./cmd/cljgo   <span class="c"># → ./cljgo</span></pre>
+          </div>
           <div class="note">
-            <code>go install github.com/muthuishere/cljgo/cmd/cljgo@latest</code> installs the
-            <code>cljgo</code> binary too. Note that <code>cljgo build</code> currently needs the cljgo
-            source tree available for its generated <code>go.mod</code> replace directive (via
-            <code>-runtime</code> or <code>$CLJGO_SRC</code>), so the clone-and-build path is the safe default.
+            <code>go install github.com/muthuishere/cljgo/cmd/cljgo@latest</code> installs the binary too.
+            Note that <code>cljgo build</code> currently needs the cljgo source tree available for its
+            generated <code>go.mod</code> replace directive (via <code>-runtime</code> or <code>$CLJGO_SRC</code>),
+            so clone-and-build is the safe default.
           </div>
         </div>
 
-        <div>
-          <p class="label">2 · Start the REPL</p>
-          <pre><span class="p">$</span> ./cljgo repl
-cljgo 0.0.1-m2
-<span class="p">user=&gt;</span> (<span class="k">defn</span> greet [who] (<span class="k">str</span> <span class="s">"hello, "</span> who))
-<span class="p">user=&gt;</span> (greet <span class="s">"cljgo"</span>)
-<span class="s">"hello, cljgo"</span></pre>
-        </div>
-
-        <div>
-          <p class="label">3 · Write a file, run it, then compile it</p>
-          <div class="two">
-            <div>
-              <p class="label">hello.clj</p>
+        <div class="two">
+          <div>
+            <p class="label">2 · hello.clj</p>
+            <div class="codecard">
+              <button class="copy" data-copy>Copy</button>
               <pre><span class="c">;; hello.clj</span>
 (<span class="k">defn</span> fact [n]
   (<span class="k">if</span> (&lt; n 2)
@@ -290,13 +495,16 @@ cljgo 0.0.1-m2
 (<span class="k">println</span> <span class="s">"hello from cljgo"</span>)
 (<span class="k">println</span> <span class="s">"(fact 10) ="</span> (fact 10))</pre>
             </div>
-            <div>
-              <p class="label">interpret, then build a native binary</p>
-              <pre><span class="p">$</span> ./cljgo run hello.clj
+          </div>
+          <div>
+            <p class="label">3 · interpret, then compile</p>
+            <div class="codecard">
+              <button class="copy" data-copy>Copy</button>
+              <pre><span class="p">$</span> cljgo run hello.clj
 hello from cljgo
 (fact 10) = 3628800
 
-<span class="p">$</span> ./cljgo build hello.clj   <span class="c"># -> ./hello</span>
+<span class="p">$</span> cljgo build hello.clj   <span class="c"># → ./hello</span>
 <span class="p">$</span> ./hello
 hello from cljgo
 (fact 10) = 3628800          <span class="c"># byte-identical</span></pre>
@@ -306,82 +514,15 @@ hello from cljgo
 
         <div>
           <p class="label">CLI surface</p>
-          <pre><span class="k">cljgo repl</span>                       <span class="c"># start a REPL</span>
+          <div class="codecard">
+            <pre><span class="k">cljgo repl</span>                       <span class="c"># start a REPL</span>
 <span class="k">cljgo run</span> &lt;file.clj&gt;             <span class="c"># evaluate a file (interpreted)</span>
 <span class="k">cljgo build</span> [-o out] &lt;file.clj&gt;  <span class="c"># compile a file to a native binary</span>
+<span class="k">cljgo build</span>                     <span class="c"># project mode: run ./build.cljgo (ADR 0021)</span>
 <span class="k">cljgo check</span> &lt;file.clj&gt; [--json]  <span class="c"># analyze, report diagnostics (ADR 0015)</span>
 <span class="k">cljgo explain</span> &lt;code&gt; [--json]    <span class="c"># show an error code's explain page</span>
 <span class="k">cljgo version</span>                    <span class="c"># print the version string</span></pre>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="interop">
-    <div class="wrap">
-      <h2>Zero-binding Go interop</h2>
-      <p class="sub">
-        <code>require-go</code> pulls in any Go package and calls it directly — no wrappers, no
-        generated stubs. The Go toolchain is the classpath. This snippet is from
-        <code>examples/interop/core.clj</code> and runs identically interpreted and compiled.
-      </p>
-      <pre>(<span class="go">require-go</span> '[strings])
-(<span class="go">require-go</span> '[strconv])
-(<span class="go">require-go</span> '[math])
-
-<span class="c">;; single-return package fns + int64-&gt;int arg coercion</span>
-(<span class="k">println</span> <span class="s">"ToUpper:"</span> (<span class="go">strings/ToUpper</span> <span class="s">"hello"</span>))
-(<span class="k">println</span> <span class="s">"Repeat:"</span>  (<span class="go">strings/Repeat</span> <span class="s">"ab"</span> 3))
-
-<span class="c">;; a const in value position</span>
-(<span class="k">println</span> <span class="s">"Pi:"</span> <span class="go">math/Pi</span>)
-
-<span class="c">;; (T, error) call -&gt; [v err] vector; happy-path err slot is nil</span>
-(<span class="k">println</span> <span class="s">"Atoi ok:"</span> (<span class="go">strconv/Atoi</span> <span class="s">"123"</span>))
-
-<span class="c">;; the ! suffix unwraps-or-throws; here it returns the widened int64</span>
-(<span class="k">println</span> <span class="s">"Atoi! ok:"</span> (<span class="go">strconv/Atoi!</span> <span class="s">"456"</span>))</pre>
-      <div class="two" style="margin-top:16px">
-        <div class="card">
-          <h3>Errors as values</h3>
-          <p><code>(T, error)</code> Go calls shape to a <code>[v err]</code> vector — branch on the error slot, Clojure-style. The <code>!</code> suffix unwraps or throws.</p>
-        </div>
-        <div class="card">
-          <h3>Members &amp; concurrency</h3>
-          <p><code>(.Method r …)</code>, <code>(.-Field r)</code>, <code>(pkg/T. {…})</code> constructors, plus <code>(chan)</code> / <code>(&gt;! c v)</code> / <code>(&lt;! c)</code> / <code>(go …)</code> over <b>real goroutines</b> — no CPS rewrite.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="architecture">
-    <div class="wrap">
-      <h2>One analyzer, two backends</h2>
-      <p class="sub">
-        The unforgivable failure mode is the REPL diverging from the compiled binary. cljgo
-        makes that structurally hard: one reader, one analyzer, one AST — feeding both a
-        tree-walk evaluator and a Go-source emitter.
-      </p>
-      <div class="flow">
-        <div class="node">
-          <div class="t">Reader → Analyzer → AST <span class="tag">shared</span></div>
-          <div class="d">Full syntax-quote reader, macroexpansion, one analyzer producing a single AST. Everything below consumes this — ADR 0002.</div>
-        </div>
-        <div class="arrow">↓</div>
-        <div class="split">
-          <div class="node">
-            <div class="t">Tree-walk evaluator <span class="tag">pkg/eval</span></div>
-            <div class="d">IS the REPL and the macro engine. Pre-resolved locals, non-allocating fast paths. Live re-<code>def</code>, <code>defmacro</code> at the prompt.</div>
           </div>
-          <div class="node">
-            <div class="t">Go-source emitter <span class="tag">pkg/emit</span></div>
-            <div class="d">AOT-emits plain Go from <code>go/packages</code> type facts — direct, non-reflective calls. Then the Go toolchain produces a static native binary.</div>
-          </div>
-        </div>
-        <div class="arrow">↓</div>
-        <div class="node" style="text-align:center">
-          <div class="t">Dual-harness conformance</div>
-          <div class="d">Every semantic test runs through <b>both</b> paths, oracle-cited against JVM Clojure. Interpreted result == compiled result, or the build fails — ADR 0007.</div>
         </div>
       </div>
     </div>
@@ -389,32 +530,33 @@ hello from cljgo
 
   <section id="status">
     <div class="wrap">
-      <h2>Status</h2>
-      <p class="sub">Working REPL <b>and</b> native compiler. Milestones landed to date (from the repo README):</p>
+      <div class="sec-head">
+        <span class="eyebrow">Where it stands</span>
+        <h2>Status &amp; roadmap</h2>
+        <p>A working REPL <b>and</b> a native compiler. Milestones landed to date:</p>
+      </div>
       <div class="table-scroll">
         <table>
           <thead><tr><th>Milestone</th><th>State</th><th>What landed</th></tr></thead>
           <tbody>
-            <tr><td class="m">M0</td><td class="done">✅</td><td>REPL: reader (full syntax-quote), <code>loop*</code>/<code>recur</code>, dynamic vars, namespaces</td></tr>
-            <tr><td class="m">M1</td><td class="done">✅</td><td>Macroexpansion, <code>defmacro</code> at the prompt, embedded <code>core.clj</code>, <code>clojure.test</code></td></tr>
+            <tr><td class="m">M0–M1</td><td class="done">✅</td><td>REPL: full syntax-quote reader, <code>loop*</code>/<code>recur</code>, dynamic vars, namespaces, macroexpansion, <code>defmacro</code> at the prompt, embedded <code>core.clj</code>, <code>clojure.test</code></td></tr>
             <tr><td class="m">M2</td><td class="done">✅</td><td><code>cljgo build</code> → native binary, &lt;10 ms startup, fixed-arity calling convention</td></tr>
-            <tr><td class="m">M3-v0</td><td class="done">✅</td><td>Zero-ceremony Go interop, both modes — <code>require-go</code>, package fns/consts, <code>(T,error)</code>→<code>[v err]</code>, <code>!</code> unwrap-or-throw</td></tr>
-            <tr><td class="m">M3.1/3.2</td><td class="done">✅</td><td>Members: <code>(.Method r …)</code>, <code>(.-Field r)</code>, <code>(set! (.-Field r) v)</code>, ctors <code>(pkg/T. {…})</code>, <code>(go/new T)</code></td></tr>
-            <tr><td class="m">M4-v0</td><td class="done">✅</td><td>Concurrency: <code>(chan)</code>, <code>(&gt;! c v)</code>/<code>(&lt;! c)</code>, <code>(close! c)</code>, <code>(go …)</code> over real goroutines</td></tr>
-            <tr><td class="m">Result/Option</td><td class="done">✅</td><td><code>ok</code>/<code>err</code>/<code>just</code>/<code>none</code> + <code>unwrap</code>/<code>and-then</code>/<code>map-ok</code> + <code>let?</code> (ADR 0014)</td></tr>
-            <tr><td class="m">Diagnostics</td><td class="done">✅</td><td><code>cljgo check --json</code> structured records, <code>cljgo explain &lt;code&gt;</code> (ADR 0015)</td></tr>
-            <tr><td class="m">Next</td><td class="next">◦</td><td>Third-party modules, <code>alts!</code>/<code>timeout</code>/<code>select</code>, C FFI (purego), generics, self-hosted <code>core.clj</code></td></tr>
+            <tr><td class="m">M3</td><td class="done">✅</td><td>Zero-ceremony Go interop, both modes — <code>require-go</code>, package fns/consts, members <code>(.Method r …)</code>/<code>(.-Field r)</code>, ctors, <code>(T,error)</code>→<code>[v err]</code>, <code>!</code> unwrap</td></tr>
+            <tr><td class="m">M4</td><td class="done">✅</td><td>Concurrency: <code>(chan)</code>, <code>(&gt;! c v)</code>/<code>(&lt;! c)</code>, <code>(close! c)</code>, <code>(go …)</code> over real goroutines</td></tr>
+            <tr><td class="m">build.cljgo</td><td class="done">✅</td><td>Zig-style build graph — <code>exe</code>/<code>install</code>/<code>run</code> + <code>go-require</code> third-party Go (gorilla/websocket, zero bindings) — ADR 0021</td></tr>
+            <tr><td class="m">core batches</td><td class="done">✅</td><td>Numeric tower (bigint/bigdec/ratios/promotion/bit-*), transients, suite harness &amp; baseline — ADR 0022</td></tr>
+            <tr><td class="m">Next</td><td class="next">◦</td><td>Batch-1 breadth, <code>alts!</code>/<code>timeout</code>/<code>select</code>, C FFI (purego), comptime, transducers, self-hosted <code>core.clj</code></td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3 style="margin-top:32px">Roadmap — the Zig model</h3>
-      <p class="sub" style="margin-bottom:14px">The strategic direction (design/08): cljgo's "batteries" are Zig's, not Leiningen's/deps.edn's.</p>
+      <h3 style="margin:36px 0 6px">The Zig model</h3>
+      <p style="color:var(--fg-soft);margin:0 0 18px">cljgo's "batteries" are Zig's, not Leiningen's / deps.edn's (design/08).</p>
       <ul class="clean">
-        <li><b>build.cljgo</b> — the build is a program, not a data file. <code>(defn build [b] …)</code> at the project root defines an artifact/step DAG; <code>cljgo build</code> / <code>build run</code> / <code>test</code> mirror <code>zig build</code>. Replaces deps.edn for the AOT product (ADR 0021).</li>
+        <li><b>build.cljgo</b> — the build is a program, not a data file. <code>(defn build [b] …)</code> defines an artifact/step DAG; <code>cljgo build</code> / <code>build run</code> / <code>test</code> mirror <code>zig build</code>. Replaces deps.edn for the AOT product (ADR 0021).</li>
         <li><b>comptime</b> — Zig-style compile-time value execution alongside Clojure macros. Macros transform <em>syntax</em>; <code>comptime</code> computes <em>values</em> embedded as literals. In the REPL, compile-time == eval-time (ADR 0009).</li>
-        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick, with a coverage ratchet in CI. Measured baseline: <b>34/242 suite files passing (14.0%)</b>, 51.2% of tested <code>clojure.core</code> vars resolved (2026-07-15) — climbing per batch (ADR 0022).</li>
-        <li><b>Cross-compilation</b> — cljgo emits plain Go, so pure-Go + purego programs build for any OS/arch with no target toolchain. <code>--target os/arch</code> or a matrix per artifact.</li>
+        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick with a CI coverage ratchet. Measured baseline <b>57/242 (23.6%)</b>, climbing per batch (ADR 0022).</li>
+        <li><b>Cross-compilation</b> — cljgo emits plain Go, so pure-Go + purego programs build for any OS/arch with no target toolchain. <code>--target os/arch</code>, or a matrix per artifact.</li>
       </ul>
     </div>
   </section>
@@ -423,30 +565,58 @@ hello from cljgo
 <footer>
   <div class="wrap cols">
     <div>
-      <div class="brand" style="margin-bottom:8px"><span class="p">(</span>cljgo<span class="p">)</span></div>
-      <div>Clojure hosted on Go.<br>Module <code>github.com/muthuishere/cljgo</code> · Go 1.26.</div>
+      <div class="brand" style="margin-bottom:10px"><span class="par">(</span>cljgo<span class="par">)</span></div>
+      <div>Clojure hosted on Go — a compiler that emits plain Go, plus a tree-walk REPL.<br><br><code>github.com/muthuishere/cljgo</code> · Go 1.26</div>
     </div>
     <div>
       <p class="label">Project</p>
-      <div><a href="https://github.com/muthuishere/cljgo">GitHub repository</a></div>
-      <div><a href="https://github.com/muthuishere/cljgo/blob/main/README.md">README</a></div>
-      <div><a href="#quickstart">Quickstart</a></div>
+      <a href="https://github.com/muthuishere/cljgo">GitHub repository</a>
+      <a href="https://github.com/muthuishere/cljgo/blob/main/README.md">README</a>
+      <a href="#quickstart">Quickstart</a>
+      <a href="#interop">Go interop</a>
     </div>
     <div>
       <p class="label">Design &amp; decisions</p>
-      <div><a href="https://github.com/muthuishere/cljgo/blob/main/design/00-architecture.md">Architecture (design/00)</a></div>
-      <div><a href="https://github.com/muthuishere/cljgo/blob/main/design/08-build-comptime-compat.md">Zig-model roadmap (design/08)</a></div>
-      <div><a href="https://github.com/muthuishere/cljgo/tree/main/docs/adr">ADR decision log</a></div>
+      <a href="https://github.com/muthuishere/cljgo/blob/main/design/00-architecture.md">Architecture (design/00)</a>
+      <a href="https://github.com/muthuishere/cljgo/blob/main/design/08-build-comptime-compat.md">Zig-model roadmap (design/08)</a>
+      <a href="https://github.com/muthuishere/cljgo/blob/main/design/09-competitive-gap-analysis.md">Gap analysis (design/09)</a>
+      <a href="https://github.com/muthuishere/cljgo/tree/main/docs/adr">ADR decision log</a>
     </div>
   </div>
 </footer>
 
 <script>
-  // Optional: respect a ?theme= override for previews. No tracking, no network.
+  // Theme: dark default; honor stored choice, else prefers-color-scheme. No network, no tracking.
   (function () {
+    var root = document.documentElement;
+    function apply(t) { root.setAttribute('data-theme', t); }
     try {
-      var t = new URLSearchParams(location.search).get('theme');
-      if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
-    } catch (e) {}
+      var stored = localStorage.getItem('cljgo-theme');
+      if (stored) apply(stored);
+      else if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) apply('light');
+      else apply('dark');
+      var q = new URLSearchParams(location.search).get('theme');
+      if (q === 'dark' || q === 'light') apply(q);
+    } catch (e) { apply('dark'); }
+    var btn = document.getElementById('theme');
+    if (btn) btn.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      apply(next);
+      try { localStorage.setItem('cljgo-theme', next); } catch (e) {}
+    });
   })();
+
+  // Copy buttons.
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var pre = b.parentElement.querySelector('pre');
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.innerText).then(function () {
+        var old = b.textContent; b.textContent = 'Copied ✓';
+        setTimeout(function () { b.textContent = old; }, 1400);
+      }).catch(function () {});
+    });
+  });
 </script>
+</body>
+</html>
