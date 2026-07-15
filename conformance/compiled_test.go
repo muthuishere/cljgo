@@ -115,7 +115,7 @@ func compiledOutput(t *testing.T, path string) string {
 	if err := emit.WriteModule(dir, forms, emit.Options{PrintLastValue: true}); err != nil {
 		t.Fatalf("write module: %v", err)
 	}
-	bin := filepath.Join(dir, "prog")
+	bin := filepath.Join(dir, "prog"+emit.ExeSuffix)
 	if err := emit.GoBuild(dir, bin); err != nil {
 		t.Fatalf("go build: %v", err)
 	}

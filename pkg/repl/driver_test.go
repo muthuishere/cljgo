@@ -3,6 +3,7 @@ package repl
 import (
 	"io"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -317,6 +318,17 @@ func TestInterruptAtEmptyPromptKeepsSessionAlive(t *testing.T) {
 }
 
 func TestSIGINTIsHandledInsideRun(t *testing.T) {
+	// Windows has no way to deliver os.Interrupt to yourself:
+	// os.Process.Signal is unimplemented there, so this test's mechanism
+	// cannot exist. The PRODUCT path is unaffected — signal.Notify(os.Interrupt)
+	// does receive real console Ctrl-C on Windows; only self-signalling from a
+	// test is impossible. Covered on unix, and
+	// TestInterruptDiscardsPendingContinuation exercises the same handler
+	// through Interrupt() on every platform.
+	if runtime.GOOS == "windows" {
+		t.Skip("cannot self-signal os.Interrupt on Windows (os.Process.Signal unimplemented)")
+	}
+
 	// Run installs its own SIGINT listener: a real signal must behave
 	// exactly like Interrupt() — discard pending input, keep running.
 	w, _, out, errOut, ran := startInteractive(t)

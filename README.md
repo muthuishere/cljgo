@@ -1,8 +1,37 @@
 # cljgo
 
+[![CI](https://github.com/muthuishere/cljgo/actions/workflows/ci.yml/badge.svg)](https://github.com/muthuishere/cljgo/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/muthuishere/cljgo?sort=semver&color=00a86b)](https://github.com/muthuishere/cljgo/releases/latest)
+[![Go Reference](https://pkg.go.dev/badge/github.com/muthuishere/cljgo.svg)](https://pkg.go.dev/github.com/muthuishere/cljgo)
+[![Go](https://img.shields.io/badge/go-1.26-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Clojure](https://img.shields.io/badge/clojure-1.12.5-5881d8?logo=clojure&logoColor=white)](https://clojure.org)
+[![clojure-test-suite](https://img.shields.io/badge/clojure--test--suite-102%2F242%20(42.1%25)-orange)](#status)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 Clojure hosted on Go: a compiler (written in Go) that AOT-emits plain Go
 source — the ClojureScript model with Go as the JavaScript — plus a
 tree-walk evaluator that is the REPL and the macro engine.
+
+## Install
+
+```bash
+go install github.com/muthuishere/cljgo/cmd/cljgo@latest
+```
+
+Or grab a prebuilt binary for your platform from
+[the latest release](https://github.com/muthuishere/cljgo/releases/latest)
+(macOS/Linux/Windows, amd64 + arm64) — no Go toolchain needed to *run* cljgo,
+only to `cljgo build` (the Go compiler is the backend).
+
+```
+$ cljgo --version
+cljgo CLI version 0.1.0 (Go 1.26.3, Clojure 1.12.5)
+
+$ cljgo repl
+cljgo 0.1.0 (Go 1.26.3, Clojure 1.12.5)
+user=> (clojure-version)
+"1.12.5"
+```
 
 ## Priorities
 
@@ -82,7 +111,6 @@ core/        core.clj — Clojure-in-Clojure
 conformance/ dual-harness tests (eval + compiled), oracle-cited vs JVM Clojure
 design/      architecture + component design docs
 docs/adr/    decision log        openspec/   spec-driven change proposals
-refs/        (gitignored) reference clones: glojure, cljs2go, let-go
 ```
 
 Toolchain: Go 1.26.

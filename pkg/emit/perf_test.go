@@ -84,7 +84,7 @@ func main() {
 		if err := WriteModule(dir, forms, Options{PrintLastValue: true}); err != nil {
 			t.Fatalf("write %s: %v", name, err)
 		}
-		bin := filepath.Join(dir, name)
+		bin := filepath.Join(dir, name+ExeSuffix)
 		if err := GoBuild(dir, bin); err != nil {
 			t.Fatalf("build %s: %v", name, err)
 		}
@@ -98,7 +98,7 @@ func main() {
 		if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module perfraw\n\ngo 1.26\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		bin := filepath.Join(dir, name)
+		bin := filepath.Join(dir, name+ExeSuffix)
 		if err := GoBuild(dir, bin); err != nil {
 			t.Fatalf("build %s: %v", name, err)
 		}

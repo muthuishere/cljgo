@@ -55,13 +55,16 @@ modernization — are documented in pkg/lang/PROVENANCE.md and remain
 under EPL-1.0.
 
 ================================================================================
-3. Reference material — not distributed
+3. Studied, but not vendored
 ================================================================================
 
-refs/ (gitignored, never committed) holds read-only reference clones used
-as study material only: Glojure, cljs2go, let-go. No code from cljs2go or
-let-go is present in this repository.
-
 Clojure itself (https://github.com/clojure/clojure, EPL-1.0) is the
-semantic specification cljgo targets. Its behavior is the oracle the
-conformance suite is verified against. No Clojure source is vendored here.
+semantic specification cljgo targets: its behavior is the oracle the
+conformance suite is verified against, and its Java source is the
+reference the reader, analyzer and data structures were built from. No
+Clojure source is vendored here.
+
+cljs2go (https://github.com/hraberg/cljs2go) and let-go
+(https://github.com/nooga/let-go) were read as reference while designing
+the emitter and the concurrency model. No code from either is present in
+this repository.

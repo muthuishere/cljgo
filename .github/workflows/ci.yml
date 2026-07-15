@@ -1,0 +1,71 @@
+# The gates from CLAUDE.md, enforced on every push and PR:
+#
+#   go build ./... && go vet ./... && gofmt -l pkg cmd conformance && go test ./...
+#
+# All green, no exceptions. Kept as separate steps so a red badge points at
+# which gate failed without opening the log.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: gates (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # cljgo shells out to the Go toolchain to build, and emits Go that
+        # must compile everywhere we ship a binary — so the suite runs on all
+        # three, not just Linux. A REPL-vs-binary divergence is a release
+        # blocker (CLAUDE.md), and it would most likely show up as a
+        # platform difference.
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: go build
+        run: go build ./...
+
+      - name: go vet
+        run: go vet ./...
+
+      # gofmt exits 0 even when it has complaints — it just lists files. Fail
+      # explicitly on any output. Only on Linux: gofmt is platform-identical,
+      # and CRLF checkout on Windows makes it noisy for no signal.
+      - name: gofmt
+        if: runner.os == 'Linux'
+        run: |
+          unformatted=$(gofmt -l pkg cmd conformance)
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt: these files need formatting:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go test
+        run: go test ./...
+        env:
+          # The boot budget is host-relative (ADR 0023). ADR 0019's 250ms was
+          # calibrated on the owner's machine; the same code boots in 181ms
+          # there, 349ms on a macos runner and 3.55s on an ubuntu one. 5s
+          # absorbs that runner variance while staying ~20x under any real
+          # pathology (an O(n²) blowup is seconds-to-minutes, not a constant
+          # factor), so the gate still does the job ADR 0019 gave it.
+          CLJGO_BOOT_BUDGET: 5s

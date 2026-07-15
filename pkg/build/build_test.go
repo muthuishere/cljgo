@@ -67,7 +67,7 @@ func TestBuildHelloBinary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadPlan: %v", err)
 	}
-	bin := filepath.Join(t.TempDir(), "hello")
+	bin := filepath.Join(t.TempDir(), "hello"+emit.ExeSuffix)
 	if _, err := plan.buildArtifact(plan.Artifacts[0], bin, emit.Options{}, false); err != nil {
 		t.Fatalf("buildArtifact: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestBuildWebsocketBinary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadPlan: %v", err)
 	}
-	bin := filepath.Join(t.TempDir(), "wsclient")
+	bin := filepath.Join(t.TempDir(), "wsclient"+emit.ExeSuffix)
 	if _, err := plan.buildArtifact(plan.Artifacts[0], bin, emit.Options{}, false); err != nil {
 		// Distinguish an offline fetch failure (skip) from a real regression.
 		if isNetworkErr(err) {

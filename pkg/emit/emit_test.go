@@ -63,7 +63,7 @@ func compileAndRun(t *testing.T, src string) string {
 	if err := WriteModule(dir, forms, Options{PrintLastValue: true}); err != nil {
 		t.Fatalf("write module: %v", err)
 	}
-	bin := filepath.Join(dir, "prog")
+	bin := filepath.Join(dir, "prog"+ExeSuffix)
 	if err := GoBuild(dir, bin); err != nil {
 		t.Fatalf("go build: %v", err)
 	}

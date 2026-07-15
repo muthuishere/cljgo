@@ -507,6 +507,10 @@ func (e *Evaluator) internBuiltins() {
 	// (ADR 0022, design/08 §5, predicate_builtins.go). The compositional
 	// fns that ride on these live in core/predicates.cljg (loadPredicates).
 	e.internPredicateBuiltins(def)
+	// --- version: (clojure-version)/*clojure-version* (the language level
+	// we target) + (cljgo-version)/*cljgo-version* (ours, incl. the host Go
+	// toolchain) — version_builtins.go, pkg/version is the source of truth.
+	e.internVersionBuiltins(def)
 
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
