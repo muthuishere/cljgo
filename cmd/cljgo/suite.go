@@ -48,6 +48,10 @@ type fileResult struct {
 	Fail   int64  `json:"fail"`
 	Error  int64  `json:"error"`
 	Load   int    `json:"load_errors"`
+	// LoadMsgs are the load errors' messages — what -v prints and what makes
+	// the scoreboard actionable: a load error is almost always a missing
+	// clojure.core var, and its name is the next thing to implement.
+	LoadMsgs []string `json:"load_messages,omitempty"`
 }
 
 func runSuite(args []string) int {
@@ -142,6 +146,12 @@ func runSuite(args []string) int {
 	if *verbose {
 		for _, r := range results {
 			fmt.Fprintf(os.Stdout, "%-8s %s\n", r.Status, r.File)
+			// A load error is almost always a missing clojure.core var, and its
+			// name is the next thing to implement — so print it. Without this
+			// the scoreboard says a file is broken but not why.
+			for _, m := range r.LoadMsgs {
+				fmt.Fprintf(os.Stdout, "           ↳ %s\n", m)
+			}
 		}
 		fmt.Fprintln(os.Stdout)
 	}
@@ -176,9 +186,9 @@ func runSuite(args []string) int {
 // runOneFile loads path into the shared evaluator and runs clojure.test for
 // exactly that file's namespace, classifying the outcome.
 func runOneFile(e *eval.Evaluator, rel, path string) fileResult {
-	nsName, loadErrs := loadFile(e, path)
+	nsName, loadErrs, loadMsgs := loadFile(e, path)
 
-	res := fileResult{File: rel, Load: loadErrs}
+	res := fileResult{File: rel, Load: loadErrs, LoadMsgs: loadMsgs}
 	summary, err := runTests(e, nsName)
 	if err != nil {
 		// run-all-tests itself blew up — treat as a load/error file.
@@ -207,10 +217,10 @@ func runOneFile(e *eval.Evaluator, rel, path string) fileResult {
 // file load; per-form errors are counted and swallowed (the REPL evaluates
 // each form independently), returning the number of forms that errored. A
 // missing file returns 0 (best-effort helpers).
-func loadFile(e *eval.Evaluator, path string) (nsName string, loadErrs int) {
+func loadFile(e *eval.Evaluator, path string) (nsName string, loadErrs int, msgs []string) {
 	f, err := os.Open(path)
 	if err != nil {
-		return "", 0
+		return "", 0, nil
 	}
 	defer f.Close()
 
@@ -226,15 +236,16 @@ func loadFile(e *eval.Evaluator, path string) (nsName string, loadErrs int) {
 		if errors.Is(err, reader.ErrEOF) {
 			// The file's (ns …) form moved *ns* to the test namespace; capture
 			// it before the deferred pop reverts the thread binding.
-			return e.CurrentNS().Name().Name(), loadErrs
+			return e.CurrentNS().Name().Name(), loadErrs, msgs
 		}
 		if err != nil {
 			// A reader error consumes the rest of the file (we can't resync),
 			// so count it and stop.
-			return e.CurrentNS().Name().Name(), loadErrs + 1
+			return e.CurrentNS().Name().Name(), loadErrs + 1, append(msgs, err.Error())
 		}
 		if _, err := e.EvalForm(form); err != nil {
 			loadErrs++
+			msgs = append(msgs, err.Error())
 		}
 	}
 }

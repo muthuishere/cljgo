@@ -62,10 +62,16 @@ jobs:
       - name: go test
         run: go test ./...
         env:
-          # The boot budget is host-relative (ADR 0023). ADR 0019's 250ms was
+          # The boot budget is host-relative (ADR 0024). ADR 0019's 250ms was
           # calibrated on the owner's machine; the same code boots in 181ms
           # there, 349ms on a macos runner and 3.55s on an ubuntu one. 5s
           # absorbs that runner variance while staying ~20x under any real
           # pathology (an O(n²) blowup is seconds-to-minutes, not a constant
           # factor), so the gate still does the job ADR 0019 gave it.
           CLJGO_BOOT_BUDGET: 5s
+          # Same reasoning for the emitted-vs-raw-Go ratio (ADR 0024): it
+          # divides two independently measured net times, so a contended
+          # runner swings the quotient (63.2x observed vs ~35x local, passing
+          # on rerun). 120 stays far under the ~168x naive-emission regression
+          # the gate exists to catch.
+          CLJGO_PERF_RATIO_MAX: "120"

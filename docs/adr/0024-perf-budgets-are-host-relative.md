@@ -1,4 +1,4 @@
-# ADR 0023 — The boot budget is host-relative, not absolute
+# ADR 0024 — Perf budgets are host-relative, not absolute
 Date: 2026-07-15 · Status: accepted · Refines: ADR 0019
 
 ## Context
@@ -31,9 +31,12 @@ This collides with two standing commitments:
 
 ## Decision
 
-Keep the gate on CI (the mandate holds), but make the ceiling **host-relative**:
-the budget is read from `CLJGO_BOOT_BUDGET` (any `time.ParseDuration` string),
-defaulting to ADR 0019's **250ms** when unset.
+Keep the gates on CI (the mandate holds), but make their ceilings
+**host-relative**: each reads an env override and keeps its locally-calibrated
+default when unset.
+
+**Boot budget** — `CLJGO_BOOT_BUDGET` (any `time.ParseDuration` string),
+defaulting to ADR 0019's **250ms**.
 
 - **Local / dev machines**: unchanged — 250ms, tight, the real regression alarm.
 - **CI**: `CLJGO_BOOT_BUDGET=5s`. Chosen as ~1.4× the worst observed runner

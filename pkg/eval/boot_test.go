@@ -10,13 +10,13 @@ import (
 )
 
 // defaultBootBudget is ADR 0019's ceiling, calibrated on the owner's
-// machine. CLJGO_BOOT_BUDGET overrides it per host (ADR 0023).
+// machine. CLJGO_BOOT_BUDGET overrides it per host (ADR 0024).
 const defaultBootBudget = 250 * time.Millisecond
 
 // bootBudget is the wall-clock ceiling for TestBootUnderBudget: the ADR 0019
 // default, overridable via CLJGO_BOOT_BUDGET (any time.ParseDuration string).
 //
-// The budget is host-relative by design (ADR 0023). The same code boots in
+// The budget is host-relative by design (ADR 0024). The same code boots in
 // 181ms locally, 349ms on a macos runner and 3.55s on an ubuntu one — so an
 // absolute number would test the runner, not cljgo. CI sets 5s: loose enough
 // to absorb runner variance, still ~20x under any real pathology.
@@ -37,7 +37,7 @@ func bootBudget(t *testing.T) time.Duration {
 // TestBootUnderBudget times the full boot of design/00 §6 (M1): Go
 // builtins → bootstrap defmacro → embedded core.clj loaded into
 // clojure.core → user refers core's publics. Budget is 250ms (ADR 0019),
-// host-relative via CLJGO_BOOT_BUDGET (ADR 0023): every core.clj def is
+// host-relative via CLJGO_BOOT_BUDGET (ADR 0024): every core.clj def is
 // macroexpanded through the tree-walk evaluator, so interpreter-boot cost
 // grows ~linearly with the size of clojure.core (the seq/coll library and
 // future core growth). The point is catching a *pathological* regression
@@ -52,7 +52,7 @@ func TestBootUnderBudget(t *testing.T) {
 	elapsed := time.Since(start)
 	t.Logf("boot (builtins + defmacro + core.clj): %v (budget %v)", elapsed, budget)
 	if elapsed > budget {
-		t.Fatalf("boot took %v, budget %v (design/00 §6 M1, ADR 0019/0023)", elapsed, budget)
+		t.Fatalf("boot took %v, budget %v (design/00 §6 M1, ADR 0019/0024)", elapsed, budget)
 	}
 
 	// Boot must leave the macros live: core.clj's macros are interned in
