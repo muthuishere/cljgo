@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/muthuishere/cljgo/pkg/emit"
 )
 
 // TestM0ExitDemo verifies the M0 exit demo (design/00 §6) end to end
@@ -17,7 +19,7 @@ func TestM0ExitDemo(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping binary build in -short mode")
 	}
-	bin := filepath.Join(t.TempDir(), "cljgo")
+	bin := filepath.Join(t.TempDir(), "cljgo"+emit.ExeSuffix)
 	build := exec.Command("go", "build", "-o", bin, "github.com/muthuishere/cljgo/cmd/cljgo")
 	build.Dir = ".." // module root
 	if out, err := build.CombinedOutput(); err != nil {
@@ -68,7 +70,7 @@ func TestM0RunFile(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping binary build in -short mode")
 	}
-	bin := filepath.Join(t.TempDir(), "cljgo")
+	bin := filepath.Join(t.TempDir(), "cljgo"+emit.ExeSuffix)
 	build := exec.Command("go", "build", "-o", bin, "github.com/muthuishere/cljgo/cmd/cljgo")
 	build.Dir = ".."
 	if out, err := build.CombinedOutput(); err != nil {
