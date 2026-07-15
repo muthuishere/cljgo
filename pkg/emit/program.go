@@ -225,7 +225,10 @@ func GoBuild(dir, outPath string) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("go", "build", "-o", abs, ".")
+	// Strip DWARF + symbol table and trim absolute paths from the release
+	// artifact: ~30% smaller with no behavior change (design/08 §binary-size,
+	// ADR 0023). Debug builds that want symbols pass their own flags.
+	cmd := exec.Command("go", "build", "-trimpath", "-ldflags=-s -w", "-o", abs, ".")
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("go build: %w\n%s", err, out)

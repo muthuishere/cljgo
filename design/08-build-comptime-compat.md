@@ -140,3 +140,67 @@ directs everything — **do it first**. Track 1 B1–B2 (build.cljgo + third-par
 Go) delivers the priority-#1 payoff and is independent of track 3. Track 2 C1
 (comptime value-embed) is independent. B/C converge at B5/C3. The gap-closing
 (T3) runs continuously against the ratchet regardless of B/C progress.
+
+---
+
+## 4. Cross-compilation — build for any OS/arch (ADR 0021)
+
+Go cross-compiles for free (`GOOS`/`GOARCH`), and cljgo emits plain Go, so a
+cljgo program builds for any target with **no target toolchain** — as long as
+it stays pure-Go (or uses purego FFI, which is pure-Go by design, ADR 0011).
+
+- **Single-file path:** `cljgo build --target linux/arm64 app.clj` → sets
+  `GOOS=linux GOARCH=arm64` on the `go build`. `--target` takes `os/arch` (or a
+  list to build a matrix); `cljgo targets` lists the supported tuples (`go tool
+  dist list`).
+- **build.cljgo:** `:target` on an artifact — `(exe b {:name "app" :target
+  {:os "windows" :arch "amd64"}})`; a matrix step
+  `(cross b app [:linux/amd64 :linux/arm64 :darwin/arm64 :windows/amd64])`
+  fans out one artifact per tuple into `zig build`-style install paths
+  (`out/<os>-<arch>/app`).
+- **The cgo caveat (documented honestly):** a `c-link` (cgo) artifact
+  cross-compiling needs a target C cross-toolchain (`CC=<target>-gcc`,
+  `CGO_ENABLED=1`) — cljgo surfaces this as a clear error naming the missing CC,
+  not a mystery. **purego FFI has no such limit** — it `dlopen`s at runtime, so
+  a purego program cross-compiles anywhere. This is the ADR 0011 reason purego
+  is the *exposed* FFI and cgo is wrapped-in-a-Go-package: cross-compile
+  ergonomics. Pure-Go + purego = "build for whatever OS they want", trivially.
+
+## 5. Suite remediation — the ordered backlog (baseline **~43%**, ADR 0022)
+
+Measured 2026-07-15: cljgo resolves ~101/235 tested `clojure.core` vars.
+Batches below are ordered by (unlock-count ÷ effort); each is an
+ADR→OpenSpec→apply unit that turns a set of suite files green and adds a cljgo
+conformance test, gated by the T2 ratchet.
+
+- **Batch 0 — harness (do first).** `resolve`/`find-var`/`ns-resolve`/`eval`
+  (the shim needs them), `when-var-exists`, the `.cljc` runner + scoreboard,
+  baseline %. No new language semantics beyond var reflection.
+- **Batch 1 — cheap breadth (biggest count/effort).** Predicates
+  (`any?` `coll?` `ifn?` `fn?` `seqable?` `counted?` `associative?`
+  `reversible?` `sorted?` `set?` `list?` `uuid?` `var?` `nan?` `pos-int?`
+  `neg-int?` `number?` `rational?` `ratio?` `decimal?` `double?` `float?`
+  `int?` `integer?` `boolean?` `char?` `*-ident?` `*-keyword?` `*-symbol?`),
+  coercions (`int` `long` `double` `float` `boolean` `char` `byte` `short`
+  `num`), simple seq/coll (`butlast` `last` `peek` `pop` `subvec` `rseq`
+  `find` `key` `val` `set` `disj` `empty` `drop-last` `take-last` `ffirst`
+  `nfirst` `fnext` `not=` `compare` `identical?`). Mostly one-liners.
+- **Batch 2 — numeric tower.** `bigint`/`bigdec` (math/big is already linked),
+  ratios + `numerator`/`denominator`/`rationalize`/`rational?`, integer
+  overflow→promotion, full `bit-*` + `unsigned-bit-shift-right`, `quot`/`rem`/
+  `mod` edges, `parse-long`/`parse-double`/`parse-boolean`/`parse-uuid`,
+  `rand`/`rand-int`/`rand-nth`/`random-sample`/`random-uuid`. (cljgo's thinnest
+  area vs let-go; the suite hammers it.)
+- **Batch 3 — transients.** `transient`/`persistent!`/`assoc!`/`conj!`/`disj!`/
+  `dissoc!`/`pop!` — needs the PHM/PV transient support that Glojure's vendored
+  `pkg/lang` lacks (a known gap since M0).
+- **Batch 4 — watches + hierarchy.** `add-watch`/`remove-watch`, `derive`/
+  `underive`/`isa?`/`ancestors`/`descendants`/`parents`/`make-hierarchy` — and
+  this upgrades multimethods (ADR, Wave 4) from flat `=` to `isa?` dispatch.
+- **Batch 5 — printing/meta/misc.** `format`/`with-out-str`/`print-str`/
+  `println-str`/`prn-str` + exact `pr-str` fidelity, `with-meta`/`vary-meta`/
+  metadata, `bound-fn`/`when-first`/`realized?`/`intern`/`comment`/`taps`.
+
+Metric: report a single climbing % per batch. Non-goal: host-array internals
+(`aclone`, `bean`) — `when-var-exists` skips them; the denominator is "vars
+cljgo claims".
