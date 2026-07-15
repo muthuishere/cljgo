@@ -38,3 +38,13 @@ var TestSource string
 //
 //go:embed protocols.cljg
 var ProtocolsSource string
+
+// BuildSource is the contents of build.cljg — the interpreted Zig-style
+// build runtime (ADR 0021 / design/08 §1). pkg/eval loads it into the
+// cljgo.build namespace after clojure.core is up (loadBuild). `cljgo build`
+// (no file arg) evaluates a project's build.cljgo against this library and
+// reads back the build plan. The loader accepts the .cljg extension per
+// ADR 0017.
+//
+//go:embed build.cljg
+var BuildSource string

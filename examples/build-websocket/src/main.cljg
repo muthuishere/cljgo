@@ -1,0 +1,17 @@
+;; A third-party Go module (github.com/gorilla/websocket) linked with ZERO
+;; hand-written bindings and zero hand-written go.mod (ADR 0021 B2). The
+;; module is declared in ../build.cljgo via (go-require …); this file just
+;; aliases it with require-go and references its exported members. The
+;; emitter resolves the calls directly from go/packages type facts (spike
+;; S2) against the synthesized module — the same interop path as stdlib.
+(require-go '["github.com/gorilla/websocket" :as ws])
+
+;; A const in value position (OpHostRef) — proves the module resolved and
+;; linked. websocket.CloseNormalClosure is 1000 (RFC 6455).
+(println "gorilla/websocket close-normal code:" ws/CloseNormalClosure)
+
+;; A real package fn call resolved from go/packages type facts, no binding
+;; written: FormatCloseMessage(closeCode int, text string) []byte builds a
+;; close-control frame. This exercises the linked call path in the binary.
+(def frame (ws/FormatCloseMessage ws/CloseNormalClosure "bye"))
+(println "FormatCloseMessage returned a" (if frame "non-nil" "nil") "close frame")

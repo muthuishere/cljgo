@@ -1,0 +1,9 @@
+;; Entry point for the build-hello example (ADR 0021 B1). Built via
+;; ../build.cljgo — `cljgo build` in the parent dir emits + go-builds this.
+(defn fact [n]
+  (if (< n 2)
+    1
+    (* n (fact (- n 1)))))
+
+(println "hello from a build.cljgo binary")
+(println "(fact 10) =" (fact 10))

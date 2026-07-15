@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/muthuishere/cljgo/pkg/build"
 	"github.com/muthuishere/cljgo/pkg/emit"
 	"github.com/muthuishere/cljgo/pkg/repl"
 )
@@ -90,30 +91,47 @@ func runFile(path string) int {
 	return 0
 }
 
-// runBuild is `cljgo build <file.clj> [-o out] [-gen dir] [-runtime dir]`
-// (flags accepted before or after the file). The generated module is a
-// temp dir removed after a successful build unless -gen keeps it
-// somewhere visible.
+// runBuild fronts two modes (ADR 0021):
+//   - single-file fast path: `cljgo build <file.clj> [-o out] [-gen dir]
+//     [-runtime dir]` (ADR 0001), unchanged.
+//   - project path: `cljgo build [step]` with NO source file loads
+//     ./build.cljgo, evaluates its (build b) fn, and runs the requested
+//     step (default: install). `cljgo build run` mirrors `zig build run`.
+//
+// The two are told apart by the positional arg: a `.clj`/`.cljg` file →
+// single-file; a bare word (or nothing) → project mode.
 func runBuild(args []string) int {
 	fs := flag.NewFlagSet("build", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	out := fs.String("o", "", "output binary path (default: derived from the source file)")
-	gen := fs.String("gen", "", "directory for the generated Go module (default: a temp dir, removed on success)")
+	gen := fs.String("gen", "", "directory for the generated Go module (single-file: keep it here; project: any value keeps the temp dirs)")
 	runtimeDir := fs.String("runtime", "", "cljgo source tree for the generated go.mod replace (default: $CLJGO_SRC or auto-detect)")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: cljgo build [-o out] [-gen dir] [-runtime dir] <file.clj>")
+		fmt.Fprintln(os.Stderr, "usage: cljgo build [-o out] [-gen dir] [-runtime dir] [<file.clj> | <step>]")
 		fs.PrintDefaults()
 	}
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
 	rest := fs.Args()
-	if len(rest) >= 1 && len(rest) > 1 { // flags after the file: re-parse the tail
+	if len(rest) >= 1 && len(rest) > 1 { // flags after the positional: re-parse the tail
 		if err := fs.Parse(rest[1:]); err != nil {
 			return 2
 		}
 		rest = rest[:1]
 	}
+
+	// Project mode: no positional, or a positional that is not a source file
+	// (a step name like `run`). Anything ending .clj/.cljg is the single-file
+	// fast path.
+	if len(rest) == 0 || !isSourceFile(rest[0]) {
+		step := ""
+		if len(rest) == 1 {
+			step = rest[0]
+		}
+		return runProjectBuild(step, *runtimeDir, *gen != "")
+	}
+
 	if len(rest) != 1 {
 		fs.Usage()
 		return 2
@@ -133,6 +151,31 @@ func runBuild(args []string) int {
 		os.RemoveAll(genDir)
 	}
 	return 0
+}
+
+// runProjectBuild loads ./build.cljgo, evaluates its build fn, and runs the
+// requested step (empty → default). keepGen preserves the generated modules.
+func runProjectBuild(step, runtimeDir string, keepGen bool) int {
+	if _, err := os.Stat(build.BuildFileName); err != nil {
+		fmt.Fprintf(os.Stderr, "cljgo build: no %s in the current directory\n", build.BuildFileName)
+		return 1
+	}
+	plan, err := build.LoadPlan(build.BuildFileName)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		return 1
+	}
+	if err := plan.Run(step, emit.Options{RuntimeDir: runtimeDir}, keepGen); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		return 1
+	}
+	return 0
+}
+
+// isSourceFile reports whether arg names a cljgo source file (the
+// single-file build path) rather than a build step name.
+func isSourceFile(arg string) bool {
+	return strings.HasSuffix(arg, ".clj") || strings.HasSuffix(arg, ".cljg")
 }
 
 // defaultBinaryName derives the output name: the parent directory for a
