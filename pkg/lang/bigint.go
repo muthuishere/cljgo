@@ -76,7 +76,7 @@ func (n *BigInt) ToBigInteger() *big.Int {
 }
 
 func (n *BigInt) ToBigDecimal() *BigDecimal {
-	return NewBigDecimalFromBigFloat(new(big.Float).SetInt(n.val))
+	return NewBigDecimalFromBigInt(n.val)
 }
 
 func (n *BigInt) String() string {

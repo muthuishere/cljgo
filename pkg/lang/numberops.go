@@ -520,15 +520,15 @@ func (o ratioOps) Abs(x any) any {
 ////////////////////////////////////////////////////////////////////////////////
 
 func (o bigDecimalOps) IsPos(x any) bool {
-	return AsBigDecimal(x).val.Sign() > 0
+	return AsBigDecimal(x).Sign() > 0
 }
 
 func (o bigDecimalOps) IsNeg(x any) bool {
-	return AsBigDecimal(x).val.Sign() < 0
+	return AsBigDecimal(x).Sign() < 0
 }
 
 func (o bigDecimalOps) IsZero(x any) bool {
-	return AsBigDecimal(x).val.Sign() == 0
+	return AsBigDecimal(x).Sign() == 0
 }
 
 func (o bigDecimalOps) Add(x, y any) any {
@@ -829,8 +829,7 @@ func AsInt64(x any) int64 {
 	case *BigInt:
 		return x.val.Int64()
 	case *BigDecimal:
-		i, _ := x.val.Int(nil)
-		return i.Int64()
+		return x.ToBigInteger().Int64()
 	default:
 		v := reflect.ValueOf(x)
 		switch v.Kind() {
@@ -937,46 +936,45 @@ func AsRatio(x any) *Ratio {
 	}
 }
 
+// AsBigDecimal converts a tower number to BigDecimal like the JVM
+// (ADR 0032): integral types become a scale-0 unscaled value directly
+// (exact for |x| > 2^53, which the old float64 route corrupted);
+// doubles follow BigDecimal.valueOf(double) semantics and throw
+// "Infinite or NaN" on non-finite input; ratios divide exactly.
 func AsBigDecimal(x any) *BigDecimal {
 	switch x := x.(type) {
 	case int:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromInt64(int64(x))
 	case uint:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromBigInt(new(big.Int).SetUint64(uint64(x)))
 	case int8:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromInt64(int64(x))
 	case int16:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromInt64(int64(x))
 	case int32:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromInt64(int64(x))
 	case int64:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromInt64(x)
 	case uint8:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromInt64(int64(x))
 	case uint16:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromInt64(int64(x))
 	case uint32:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromInt64(int64(x))
 	case uint64:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromBigInt(new(big.Int).SetUint64(x))
 	case float32:
 		return NewBigDecimalFromFloat64(float64(x))
 	case float64:
-		return NewBigDecimalFromFloat64(float64(x))
+		return NewBigDecimalFromFloat64(x)
 	case *BigDecimal:
 		return x
 	case *BigInt:
-		f := new(big.Float)
-		f.SetInt(x.val)
-		return NewBigDecimalFromBigFloat(f)
+		return NewBigDecimalFromBigInt(x.val)
 	case *big.Int:
-		f := new(big.Float)
-		f.SetInt(x)
-		return NewBigDecimalFromBigFloat(f)
+		return NewBigDecimalFromBigInt(x)
 	case *Ratio:
-		f := new(big.Float)
-		f.SetRat(x.val)
-		return NewBigDecimalFromBigFloat(f)
+		return NewBigDecimalFromRatio(x)
 	default:
 		panic(fmt.Errorf("cannot convert %T to BigDecimal", x))
 	}
