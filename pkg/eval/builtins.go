@@ -363,6 +363,7 @@ func (e *Evaluator) internBuiltins() {
 	// reduced, <=/>=/quot/rem/max/min and the numeric/value predicates)
 	// that core.clj's map/filter/reduce/take/… are built on.
 	e.internCollBuiltins(def)
+	e.internHotpathBuiltins(def)
 
 	// Polymorphism substrate (defprotocol/deftype/defrecord/extend-*):
 	// dispatch table + instance/registry builtins the core/protocols.cljg
