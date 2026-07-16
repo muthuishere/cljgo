@@ -8,9 +8,12 @@ demonstrated the risky claims against the real runtime (live var
 handlers on a running server, routes-as-data on stdlib ServeMux,
 EDN+env config, goroutine workers with a persistence seam) and three
 adversarial DHH-persona review rounds fixed the positions: a tier-0
-generator carries the conventions, the beginner surface is `!` forms
-+ one error funnel, one blessed way per pillar, Ring contract, no ORM,
-Oban model on Postgres, live vars uniformly (http AND jobs). The
+generator carries the conventions (its output IS the golden page),
+the beginner surface is `!` forms + a documented error table,
+default-on security middleware, casts on day one, no I/O at namespace
+load, one blessed way per pillar, Ring contract, no ORM, Oban model
+on Postgres (:memory backend per ADR 0040), live vars uniformly
+(http AND jobs), keel.ai as an independently versioned satellite. The
 golden-path app in spikes/s20-app-framework/VERDICT.md is the
 acceptance test: it must run interpreted AND compile to a static
 binary, unmodified.
