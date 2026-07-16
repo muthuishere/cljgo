@@ -14,6 +14,18 @@ func New(elems ...interface{}) Vector {
 	return trans.Persistent()
 }
 
+// Owning returns a Vector that takes ownership of the given slice: when it
+// fits in a single tail node the slice IS the vector's storage (no copy), so
+// later in-place mutation of the slice is visible through the Vector. This
+// mirrors JVM Clojure's LazilyPersistentVector.createOwning, which (vec array)
+// uses for small arrays. Larger slices are copied via New.
+func Owning(elems []interface{}) Vector {
+	if len(elems) <= tailMaxLen {
+		return &vector{count: len(elems), tail: elems}
+	}
+	return New(elems...)
+}
+
 type Transient struct {
 	count  int
 	height uint

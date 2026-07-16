@@ -799,13 +799,16 @@ func TestPositions(t *testing.T) {
 }
 
 func TestPositionsMultiline(t *testing.T) {
+	// Vector/map/set literals carry NO position metadata (ADR 0038; JVM
+	// oracle 1.12.5: file-loaded (meta [1 2]) => nil — only lists get
+	// reader positions, and user ^ metadata must stay unpolluted).
 	form := mustRead(t, "[1\n  foo]")
-	_, line, col, endLine, endCol := posMeta(t, form)
-	if line != int64(1) || col != int64(1) || endLine != int64(2) || endCol != int64(7) {
-		t.Errorf("vector pos => %v:%v-%v:%v, want 1:1-2:7", line, col, endLine, endCol)
+	if m := form.(lang.IObj).Meta(); m != nil {
+		t.Errorf("vector meta => %v, want nil", m)
 	}
+	// Symbols inside still carry positions (cljgo check diagnostics).
 	sym := lang.MustNth(form, 1)
-	_, line, col, endLine, endCol = posMeta(t, sym)
+	_, line, col, endLine, endCol := posMeta(t, sym)
 	if line != int64(2) || col != int64(3) || endLine != int64(2) || endCol != int64(6) {
 		t.Errorf("foo pos => %v:%v-%v:%v, want 2:3-2:6", line, col, endLine, endCol)
 	}

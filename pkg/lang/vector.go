@@ -51,6 +51,15 @@ func NewVector(values ...any) *Vector {
 	}
 }
 
+// NewVectorOwning builds a vector that takes ownership of vals: for small
+// slices (one tail node) the slice is used directly as the vector's storage,
+// so in-place mutation of the slice is visible through the vector — the JVM
+// (vec array) aliasing semantics (LazilyPersistentVector.createOwning),
+// oracle-verified against Clojure 1.12.5. Callers must transfer ownership.
+func NewVectorOwning(vals []any) *Vector {
+	return &Vector{vec: vector.Owning(vals)}
+}
+
 var (
 	_ APersistentVector = (*Vector)(nil)
 	_ IPersistentVector = (*Vector)(nil)

@@ -81,6 +81,15 @@ func ToSlice(x any) []any {
 		return res
 	}
 
+	// Handle any other Seqable collection (e.g. *SortedSet, *SortedMap).
+	if s, ok := x.(Seqable); ok {
+		var res []any
+		for seq := s.Seq(); seq != nil; seq = seq.Next() {
+			res = append(res, seq.First())
+		}
+		return res
+	}
+
 	// Handle reflection-based slice/array
 	xVal := reflect.ValueOf(x)
 	if xVal.Kind() == reflect.Slice || xVal.Kind() == reflect.Array {

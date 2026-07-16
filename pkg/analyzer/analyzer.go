@@ -932,6 +932,20 @@ func (a *Analyzer) parseInvoke(seq lang.ISeq, env Env) (*ast.Node, error) {
 	// zero-valued struct under the reserved `go/` pseudo-namespace.
 	if op, ok := seq.First().(*lang.Symbol); ok && a.ResolveHostType != nil {
 		if isCtorName(op) {
+			// Precedence principle: a Clojure-defined type wins over Go
+			// interop. deftype/defrecord define a positional ctor `->T`,
+			// so `(T. a b)` reads as `(->T a b)` whenever `->T` resolves;
+			// the Go struct-literal ctor is the fallback.
+			if a.ResolveVar != nil {
+				var ctorNS any
+				if op.HasNamespace() {
+					ctorNS = op.Namespace()
+				}
+				ctorSym := lang.InternSymbol(ctorNS, "->"+strings.TrimSuffix(op.Name(), "."))
+				if _, err := a.ResolveVar(ctorSym); err == nil {
+					return a.parseInvoke(lang.NewCons(ctorSym, seq.Next()), env)
+				}
+			}
 			return a.parseHostNew(op, seq, exprEnv)
 		}
 		if op.HasNamespace() && op.Namespace() == "go" && op.Name() == "new" {

@@ -252,9 +252,12 @@ capturing Load-locals. Doc 04 §6's "per-`Load` locals" is superseded
 
 ### 4.5 Reader metadata flow
 
-The reader attaches `:file :line :column :end-line :end-column` to every
-IObj form (keys defined in pkg/lang, doc 01 §3); primitives inherit the
-enclosing form's position downstream. The analyzer carries the original form
+The reader attaches `:file :line :column :end-line :end-column` to list
+(seq) forms and symbols (keys defined in pkg/lang, doc 01 §3; narrowed
+from "every IObj form" by ADR 0038 — JVM Clojure annotates lists only, and
+the suite observes that vector/map/set literals read metadata-clean;
+symbols keep positions as a deliberate diagnostics-serving deviation).
+Everything else inherits the enclosing form's position downstream. The analyzer carries the original form
 on `Node.Form` — position rides on its metadata — and analysis errors report
 from it; the emitter uses it for provenance comments and for mapping
 `go build` errors back to source forms. One metadata convention, three
