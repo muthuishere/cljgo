@@ -130,6 +130,21 @@ representation) or G (message wording)).
   bigint-from-double,int-cast-32bit,abs,even-odd-guard}.clj`
   (dual-harness, expectations byte-verified against the 1.12.5 CLI).
 
+## `IsNil` typed-nil fix (batch/fail-files, ADR 0022, 2026-07-16, `truthiness.go`)
+
+`IsNil` only special-cased `reflect.Ptr`, so a boxed nil value of any
+other nillable Go kind (`Func`, `Chan`, `Map`, `Slice`, `Interface`,
+`UnsafePointer`) hit Go's classic typed-nil trap: the `any` wrapping a
+nil `func() interface{}` is `!= nil` at the interface level (it carries
+a type), so `v == nil` was false and the Ptr-only check never fired —
+`IsNil` unconditionally returned `false`. `LazySeq.IsRealized` calls
+`IsNil(s.fn)` (`s.fn` is exactly a `func() interface{}`), so
+`(realized? some-lazy-seq)` was permanently `false` even after the seq
+had been forced (`Delay`/`future`/etc. dodge this because their
+`IsRealized` checks a plain pointer or bool field, not `IsNil` on a
+func). Fixed by switching on every nillable `reflect.Kind`. Acceptance:
+`conformance/tests/lazy-seq-realized-after-force.clj` (dual-harness).
+
 ## goid fast path (ADR 0034, 2026-07-16, `internal/goid/`)
 
 Evidence: spike S18 (spikes/s18-ubuntu-boot-anomaly/VERDICT.md) — the
@@ -165,3 +180,4 @@ every analyzer/eval step).
   concurrent goroutines under `-race`, per-goroutine ID stability and
   uniqueness; full suite + `-race` on lang/repl/nrepl/eval (binding
   conveyance + nREPL session isolation) green.
+||||||| de19981
