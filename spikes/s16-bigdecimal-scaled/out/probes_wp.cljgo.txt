@@ -1,0 +1,2 @@
+error: compiler error at spikes/s16-bigdecimal-scaled/probes_wp.clj:15:36: unable to resolve symbol: with-precision in this context
+exit status 1
