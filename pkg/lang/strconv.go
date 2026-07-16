@@ -147,6 +147,20 @@ func ToString(v interface{}) string {
 	return fmt.Sprintf("#object[%T]", v)
 }
 
+// printLength reads *print-length* (VarPrintLength): (0, false) when nil /
+// unbound (unlimited, clojure.core's default), else (N, true). cljgo
+// addition to the vendored printer — see PROVENANCE.md.
+func printLength() (int, bool) {
+	v := VarPrintLength.Deref()
+	if v == nil {
+		return 0, false
+	}
+	if n, ok := AsNumber(v); ok {
+		return int(AsInt64(n)), true
+	}
+	return 0, false
+}
+
 // RTPrintString corresponds to Clojure's RT.printString.
 func PrintString(v interface{}) string {
 	sb := strings.Builder{}
@@ -184,9 +198,21 @@ func Print(x interface{}, w io.Writer) {
 		// Print the seq of the collection, not the collection itself:
 		// an empty list's Seq() is nil, so it prints () rather than
 		// (nil) (oracle 1.12.5: (pr-str '()) => "()").
+		// *print-length* (printLength, cljgo addition — PROVENANCE.md)
+		// bounds the element count exactly like clojure.core: at most N
+		// elements then "..." (oracle 1.12.5: (binding [*print-length* 3]
+		// (pr-str (range 10))) => "(0 1 2 ...)"). Without the bound an
+		// infinite lazy seq would print forever.
+		limit, limited := printLength()
 		io.WriteString(w, "(")
+		n := 0
 		for seq := seq.Seq(); seq != nil; seq = seq.Next() {
+			if limited && n >= limit {
+				io.WriteString(w, "...")
+				break
+			}
 			Print(seq.First(), w)
+			n++
 			if seq.Next() != nil {
 				io.WriteString(w, " ")
 			}
@@ -203,20 +229,36 @@ func Print(x interface{}, w io.Writer) {
 		// generic IPersistentMap branch (a record IS an IPersistentMap).
 		printRecord(r, w)
 	} else if m, ok := x.(IPersistentMap); ok {
+		// *print-length* bounds entries (oracle 1.12.5:
+		// (binding [*print-length* 1] (pr-str {:a 1 :b 2})) => "{:a 1, ...}").
+		limit, limited := printLength()
 		io.WriteString(w, "{")
+		n := 0
 		for seq := m.Seq(); seq != nil; seq = seq.Next() {
+			if limited && n >= limit {
+				io.WriteString(w, "...")
+				break
+			}
 			e := seq.First().(IMapEntry)
 			Print(e.Key(), w)
 			io.WriteString(w, " ")
 			Print(e.Val(), w)
+			n++
 			if seq.Next() != nil {
 				io.WriteString(w, ", ")
 			}
 		}
 		io.WriteString(w, "}")
 	} else if v, ok := x.(IPersistentVector); ok {
+		// *print-length* bounds elements (oracle 1.12.5:
+		// (binding [*print-length* 3] (pr-str [1 2 3 4 5])) => "[1 2 3 ...]").
+		limit, limited := printLength()
 		io.WriteString(w, "[")
 		for i := 0; i < v.Count(); i++ {
+			if limited && i >= limit {
+				io.WriteString(w, "...")
+				break
+			}
 			Print(MustNth(v, i), w)
 			if i < v.Count()-1 {
 				io.WriteString(w, " ")
@@ -224,9 +266,18 @@ func Print(x interface{}, w io.Writer) {
 		}
 		io.WriteString(w, "]")
 	} else if s, ok := x.(IPersistentSet); ok {
+		// *print-length* bounds elements (oracle 1.12.5:
+		// (binding [*print-length* 1] (pr-str #{1 2 3})) => "#{1 ...}").
+		limit, limited := printLength()
 		io.WriteString(w, "#{")
+		n := 0
 		for seq := s.Seq(); seq != nil; seq = seq.Next() {
+			if limited && n >= limit {
+				io.WriteString(w, "...")
+				break
+			}
 			Print(seq.First(), w)
+			n++
 			if seq.Next() != nil {
 				io.WriteString(w, " ")
 			}

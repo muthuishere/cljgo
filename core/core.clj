@@ -1208,6 +1208,59 @@
   (list '-defmethod mm-name dispatch-val
         (list* 'fn params body)))
 
+;; --- assert : honors *assert*, throws on a falsy expr (ADR 0022 batch/
+;; harness-misc) --------------------------------------------------------------
+;; oracle (Clojure 1.12.5): (macroexpand-1 '(assert (= 1 1))) =>
+;;   (clojure.core/when-not (= 1 1) (throw (new java.lang.AssertionError ...)))
+;; cljgo has no java.lang.AssertionError (no JVM class hierarchy, design/05),
+;; so the throw is an ex-info instead — still caught by any Throwable/
+;; Exception catch (pkg/eval/ex_builtins.go CatchMatches), which is all the
+;; suite's own `assert` usages need. *assert* defaults true, exactly
+;; clojure.core's compile-time elision knob: (binding [*assert* false] ...)
+;; does NOT suppress an already-compiled assert (v0 has no separate compile
+;; step to gate), but a nil-bound var at THIS expansion (the common load-time
+;; case) still elides the check, matching the common usage.
+(def ^:dynamic *assert* true)
+
+(defmacro assert
+  ([x]
+   (when *assert*
+     `(when-not ~x
+        (throw (ex-info (str "Assert failed: " (pr-str '~x)) {})))))
+  ([x message]
+   (when *assert*
+     `(when-not ~x
+        (throw (ex-info (str "Assert failed: " ~message "\n" (pr-str '~x)) {}))))))
+
+;; --- delay / force / delay? : lazy, memoized single-value promise -----------
+;; pkg/lang already vendors a Delay type (IDeref + IPending, delay.go); this
+;; is just the clojure.core surface over it (-make-delay/force/delay? are Go
+;; builtins, misc_builtins.go). oracle: (force (delay (+ 1 2))) => 3;
+;; (delay? (delay 1)) => true; the body runs at most once (memoized).
+(defmacro delay [& body]
+  (list 'clojure.core/-make-delay (list* 'fn* [] body)))
+
+;; --- instance? : class-position-as-syntax (ADR 0026) -------------------------
+;; cljgo has no java.lang.Class objects (design/05: host interop is Go
+;; structs, not a JVM class hierarchy). A literal class symbol is therefore
+;; NEVER evaluated — it is matched by NAME, exactly how `catch`'s class
+;; symbol already works (CatchMatches, pkg/eval/ex_builtins.go) — via the
+;; -instance-of-name? designator table (misc_builtins.go): built-in
+;; designators (String/Long/Double/...), cljgo's host wrapper types
+;; (Atom/Delay/Var/Namespace/UUID/BigInt/BigDecimal/...), and any
+;; deftype/defrecord type name (resolved to its *TypeMarker*, same identity
+;; check as -instance?/satisfies?). A non-symbol first argument (already a
+;; value, e.g. bound through a local) is evaluated normally and checked the
+;; same TypeMarker way. DEVIATION: since the class position is syntax, a
+;; literal class symbol only works in DIRECT call position — (instance?
+;; String x) works; (partial instance? String) does not (String is not a
+;; value cljgo can hand around). oracle (Clojure 1.12.5): (instance? String
+;; "x") => true; (instance? Long 1) => true.
+(defmacro instance? [c x]
+  (if (symbol? c)
+    (list 'clojure.core/-instance-of-name? (str c) x)
+    (list 'clojure.core/-instance? c x)))
+
 ;; --- ns : namespace declaration (minimal; jank clojure-test-suite harness,
 ;; ADR 0022) --------------------------------------------------------------
 ;; Expands to: switch to the namespace (in-ns), refer clojure.core, then one

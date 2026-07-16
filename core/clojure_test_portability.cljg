@@ -39,3 +39,9 @@
 ;; seqs are ISeqs, so seq? is the closest portable approximation available at
 ;; this layer.
 (defn lazy-seq? [x] (clojure.core/seq? x))
+
+;; sleep: the suite's OWN test/clojure/core_test/portability.cljc defines
+;; sleep as a #?(:clj (Thread/sleep ms) ...) host call; our shim replaces
+;; that whole namespace (see file banner), so we provide it too — backed by
+;; the -sleep-ms Go seam (ADR 0022 batch/harness-misc, misc_builtins.go).
+(defn sleep [ms] (clojure.core/-sleep-ms ms))

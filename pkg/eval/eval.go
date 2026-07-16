@@ -53,6 +53,8 @@ func New() *Evaluator {
 	e.loadTransducers()
 	e.loadProtocols()
 	e.loadClojureString()
+	e.loadClojureSet()
+	e.loadClojureEdn()
 	e.loadClojureTest()
 	e.loadBuild()
 	e.loadClojureTestPortability()

@@ -1,0 +1,139 @@
+;; set.cljg — cljgo's clojure.set (ADR 0022 batch/harness-misc). Loaded at
+;; startup into the clojure.set namespace by pkg/eval (loadClojureSet), after
+;; clojure.core is up. The .cljg extension follows ADR 0017. A straight port
+;; of clojure.core/src/clj/clojure/set.clj (Rich Hickey, EPL 1.0) onto cljgo's
+;; existing core.clj primitives (reduce/into/disj/merge/select-keys/max-key/
+;; reduce-kv/transient family) — no new host builtins needed, this namespace
+;; is pure Clojure. Behavior oracle-verified against JVM Clojure 1.12.5
+;; (`clojure` CLI) for every fn below.
+;;
+;; This landed to unblock ONE suite file (clojure/core_test/nnext.cljc, which
+;; only needs subset?), but the rest of clojure.set is equally cheap once the
+;; namespace exists, so the whole (small) API is ported rather than a single
+;; function.
+
+(clojure.core/in-ns 'clojure.set)
+(clojure.core/refer 'clojure.core)
+
+(defn ^:private -bubble-max-key
+  "Move a maximal element of coll according to fn k (which returns a
+  number) to the front of coll."
+  [k coll]
+  (let [mx (apply max-key k coll)]
+    (cons mx (remove #(identical? mx %) coll))))
+
+;; oracle: (union) => #{}; (union #{1 2} #{2 3}) => #{1 2 3}
+(defn union
+  ([] #{})
+  ([s1] s1)
+  ([s1 s2]
+   (if (< (count s1) (count s2))
+     (reduce conj s2 s1)
+     (reduce conj s1 s2)))
+  ([s1 s2 & sets]
+   (let [bubbled-sets (-bubble-max-key count (conj sets s2 s1))]
+     (reduce into (first bubbled-sets) (rest bubbled-sets)))))
+
+;; oracle: (intersection #{1 2 3} #{2 3 4}) => #{2 3}
+(defn intersection
+  ([s1] s1)
+  ([s1 s2]
+   (if (< (count s2) (count s1))
+     (intersection s2 s1)
+     (reduce (fn [result item]
+               (if (contains? s2 item)
+                 result
+                 (disj result item)))
+             s1 s1)))
+  ([s1 s2 & sets]
+   (let [bubbled-sets (-bubble-max-key #(- (count %)) (conj sets s2 s1))]
+     (reduce intersection (first bubbled-sets) (rest bubbled-sets)))))
+
+;; oracle: (difference #{1 2 3} #{2}) => #{1 3}
+(defn difference
+  ([s1] s1)
+  ([s1 s2]
+   (if (< (count s1) (count s2))
+     (reduce (fn [result item]
+               (if (contains? s2 item)
+                 (disj result item)
+                 result))
+             s1 s1)
+     (reduce disj s1 s2)))
+  ([s1 s2 & sets]
+   (reduce difference s1 (conj sets s2))))
+
+;; oracle: (select even? #{1 2 3 4}) => #{2 4}
+(defn select [pred xset]
+  (reduce (fn [s k] (if (pred k) s (disj s k))) xset xset))
+
+;; oracle: (project #{{:a 1 :b 2}} [:a]) => #{{:a 1}}
+(defn project [xrel ks]
+  (with-meta (set (map #(select-keys % ks) xrel)) (meta xrel)))
+
+;; oracle: (rename-keys {:a 1 :b 2} {:a :aa}) => {:b 2, :aa 1}
+(defn rename-keys [m kmap]
+  (reduce
+   (fn [acc [old newk]]
+     (if (contains? m old)
+       (assoc acc newk (get m old))
+       acc))
+   (apply dissoc m (keys kmap)) kmap))
+
+;; oracle: (rename #{{:a 1 :b 2}} {:a :aa}) => #{{:aa 1 :b 2}}
+(defn rename [xrel kmap]
+  (with-meta (set (map #(rename-keys % kmap) xrel)) (meta xrel)))
+
+;; oracle: (index #{{:a 1 :b 2}} [:a]) => {{:a 1} #{{:a 1 :b 2}}}
+(defn index [xrel ks]
+  (reduce
+   (fn [m x]
+     (let [ik (select-keys x ks)]
+       (assoc m ik (conj (get m ik #{}) x))))
+   {} xrel))
+
+;; oracle: (map-invert {:a 1 :b 2}) => {1 :a, 2 :b}
+(defn map-invert [m]
+  (persistent!
+   (reduce-kv (fn [acc k v] (assoc! acc v k))
+              (transient {})
+              m)))
+
+;; oracle: natural join of two rels on their common keys; with a keymap,
+;; joins on the mapped keys instead.
+(defn join
+  ([xrel yrel]
+   (if (and (seq xrel) (seq yrel))
+     (let [ks (intersection (set (keys (first xrel))) (set (keys (first yrel))))
+           [r s] (if (<= (count xrel) (count yrel))
+                   [xrel yrel]
+                   [yrel xrel])
+           idx (index r ks)]
+       (reduce (fn [ret x]
+                 (let [found (idx (select-keys x ks))]
+                   (if found
+                     (reduce #(conj %1 (merge %2 x)) ret found)
+                     ret)))
+               #{} s))
+     #{}))
+  ([xrel yrel km]
+   (let [[r s k] (if (<= (count xrel) (count yrel))
+                   [xrel yrel (map-invert km)]
+                   [yrel xrel km])
+         idx (index r (vals k))]
+     (reduce (fn [ret x]
+               (let [found (idx (rename-keys (select-keys x (keys k)) k))]
+                 (if found
+                   (reduce #(conj %1 (merge %2 x)) ret found)
+                   ret)))
+             #{} s))))
+
+;; oracle: (subset? #{1 2} #{1 2 3}) => true
+(defn subset? [set1 set2]
+  (and (<= (count set1) (count set2))
+       (every? #(contains? set2 %) set1)))
+
+;; oracle: (superset? #{1 2 3} #{1 2}) => true
+(defn superset? [set1 set2]
+  (and (>= (count set1) (count set2))
+       (every? #(contains? set1 %) set2)))

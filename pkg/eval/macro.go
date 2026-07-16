@@ -425,6 +425,63 @@ func (e *Evaluator) loadBuild() {
 	}
 }
 
+// loadClojureSet reads and evaluates the embedded core/set.cljg into the
+// clojure.set namespace (ADR 0022 batch/harness-misc) — the same
+// embedded-ns registration pattern as loadClojureString, so
+// (require '[clojure.set :refer [subset?]]) finds it already interned.
+func (e *Evaluator) loadClojureSet() {
+	ns := lang.FindOrCreateNamespace(lang.NewSymbol("clojure.set"))
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, ns,
+		lang.VarFile, "set.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.SetSource),
+		reader.WithFilename("set.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading set.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating set.cljg: %w", err))
+		}
+	}
+}
+
+// loadClojureEdn reads and evaluates the embedded core/edn.cljg into the
+// clojure.edn namespace (ADR 0022 batch/harness-misc) — same embedded-ns
+// registration pattern as loadClojureSet.
+func (e *Evaluator) loadClojureEdn() {
+	ns := lang.FindOrCreateNamespace(lang.NewSymbol("clojure.edn"))
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, ns,
+		lang.VarFile, "edn.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.EdnSource),
+		reader.WithFilename("edn.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading edn.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating edn.cljg: %w", err))
+		}
+	}
+}
+
 // loadClojureTest reads and evaluates the embedded core/test.cljg into the
 // clojure.test namespace (the interpreted clojure.test slice, ADR 0012).
 // It runs after loadCore so clojure.core is fully up. *ns* is bound to a
