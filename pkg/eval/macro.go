@@ -82,6 +82,17 @@ func (e *Evaluator) macroexpand1(form any, locals map[string]*ast.BindingNode) (
 		return nil
 	}()
 	if err != nil {
+		// An arity error from the macro fn itself counts &form/&env; hide
+		// the two hidden args, as Compiler.macroexpand1 does (it rethrows
+		// ArityException(e.actual - 2, e.name) when e.name is the macro's
+		// own name). Verified vs clojure 1.12.5: (defmacro mm [a b] 1)
+		// (mm 1) => "Wrong number of args (1) passed to: user/mm".
+		var ae *arityError
+		if errors.As(err, &ae) {
+			if f, isEval := v.Deref().(*evalFn); isEval && f.name() == ae.name {
+				err = &arityError{actual: ae.actual - 2, name: ae.name}
+			}
+		}
 		return nil, fmt.Errorf("macroexpanding %s: %w", op.Name(), err)
 	}
 	return expanded, nil
