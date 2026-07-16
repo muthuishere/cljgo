@@ -106,3 +106,13 @@ var EdnSource string
 //
 //go:embed transducers.cljg
 var TransducersSource string
+
+// HierarchiesSource is the contents of hierarchies.cljg — the global
+// hierarchy family (make-hierarchy/derive/underive/ancestors/descendants/
+// parents/isa?, ADR 0022 Track E, design/08 §5 batch E). pkg/eval loads it
+// into clojure.core after loadNumeric (loadHierarchies), so these are
+// referred into user like the rest of core. The loader accepts the .cljg
+// extension per ADR 0017.
+//
+//go:embed hierarchies.cljg
+var HierarchiesSource string
