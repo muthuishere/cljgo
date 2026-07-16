@@ -215,6 +215,21 @@ func (s *TransientSet) Conj(v any) Conjer {
 	return s
 }
 
+// Cons and AsTransient shadow the *Set methods promoted through the
+// embedded field: a transient must reject the immutable `conj`/`transient`
+// ops (Clojure only supports conj!/assoc!/... on a transient, and
+// `(transient tcoll)` on an already-transient collection throws). Without
+// these, Go's method promotion would silently let TransientSet satisfy
+// Conser/IEditableCollection via the embedded *Set. Oracle: (conj (transient
+// #{1}) 2) throws; (transient (transient #{1})) throws.
+func (s *TransientSet) Cons(any) Conser {
+	panic(NewIllegalArgumentError("conj not supported on transient set; use conj!"))
+}
+
+func (s *TransientSet) AsTransient() ITransientCollection {
+	panic(NewIllegalArgumentError("transient not supported on transient set"))
+}
+
 func (s *TransientSet) Disjoin(v any) ITransientSet {
 	s.ensureEditable()
 	s.Set = s.Set.Disjoin(v).(*Set)
@@ -237,6 +252,13 @@ type SortedSet struct {
 }
 
 type PersistentTreeSet = SortedSet
+
+// AsTransient shadows the embedded Set's method: real Clojure's
+// PersistentTreeSet does not implement IEditableCollection — sorted sets
+// have no transient form. Oracle: (transient (sorted-set 1 2)) throws.
+func (s *SortedSet) AsTransient() ITransientCollection {
+	panic(NewIllegalArgumentError("Don't know how to create transient of a sorted set"))
+}
 
 func (s *SortedSet) sortedElements() []any {
 	elems := make([]any, 0, s.Count())

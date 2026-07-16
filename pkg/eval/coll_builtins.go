@@ -58,7 +58,18 @@ func (e *Evaluator) internCollBuiltins(def func(string, func(...any) any) *lang.
 		case 1:
 			return lang.NewRepeat(args[0])
 		case 2:
-			return lang.NewRepeatN(lang.AsInt64(args[0]), args[1])
+			// (repeat n x): n coerces the way a Java numeric cast would —
+			// including a bare bool (true=1, false=0). Oracle: (repeat
+			// false :a) => (); (repeat true :a) => (:a).
+			n := args[0]
+			if b, ok := n.(bool); ok {
+				if b {
+					n = int64(1)
+				} else {
+					n = int64(0)
+				}
+			}
+			return lang.NewRepeatN(lang.AsInt64(n), args[1])
 		default:
 			panic(fmt.Errorf("wrong number of args (%d) passed to: repeat", len(args)))
 		}

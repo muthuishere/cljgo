@@ -130,6 +130,24 @@ representation) or G (message wording)).
   bigint-from-double,int-cast-32bit,abs,even-odd-guard}.clj`
   (dual-harness, expectations byte-verified against the 1.12.5 CLI).
 
+## Transient/sorted-set method-promotion leaks (batch/error-files, 2026-07-16, `set.go`)
+
+Ground truth: real Clojure 1.12.5 CLI, `conformance/tests/transient.cljc`
+suite file (jank clojure-test-suite).
+
+`TransientSet` embeds `*Set` and `SortedSet` embeds `Set`; Go promotes the
+embedded type's methods onto the wrapper, which silently let both wrapper
+types satisfy interfaces real Clojure's equivalents do NOT: `TransientSet`
+promoted `Set.Cons` (so `conj` — the non-`!` op — worked on a transient) and
+`Set.AsTransient` (so `(transient (transient x))` succeeded instead of
+throwing); `SortedSet` likewise promoted `Set.AsTransient` (so
+`(transient (sorted-set ...))` succeeded — real `PersistentTreeSet` has no
+transient form at all). Added explicit `Cons`/`AsTransient` overrides on
+`TransientSet` and an `AsTransient` override on `SortedSet` that panic,
+shadowing the promoted methods (oracle: all three throw on real Clojure).
+- Acceptance: `conformance/tests/contains-on-string-and-transient.clj`
+  covers the read-only interface (`contains?`) still working on transients;
+  the throwing cases are exercised directly by the suite file above.
 ## `IsNil` typed-nil fix (batch/fail-files, ADR 0022, 2026-07-16, `truthiness.go`)
 
 `IsNil` only special-cased `reflect.Ptr`, so a boxed nil value of any
