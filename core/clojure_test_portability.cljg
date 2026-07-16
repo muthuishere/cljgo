@@ -29,11 +29,14 @@
     nil))
 
 ;; big-int?: the suite calls (p/big-int? n) to ask whether n is an arbitrary-
-;; precision integer (distinct from a fixed-width int). cljgo has no distinct
-;; bigint in its numeric tower yet (design/08 Batch 2), so this is
-;; conservatively false — the numeric-tower suite files fail honestly until
-;; Batch 2 lands, rather than the shim failing to load.
-(defn big-int? [n] false)
+;; precision integer (distinct from a fixed-width int). cljgo boxes bigints
+;; as *lang.BigInt, distinct from int64 through arithmetic/quot/rem/mod
+;; (conformance/tests/bigint-distinct.clj, oracle-verified vs 1.12.5), so we
+;; use the suite's own :default definition from its portability.cljc:
+;; integer-category but not fixed-width.
+(defn big-int? [n]
+  (clojure.core/and (clojure.core/integer? n)
+                    (clojure.core/not (clojure.core/int? n))))
 
 ;; lazy-seq?: (p/lazy-seq? x) asks whether x is a lazy sequence. cljgo's lazy
 ;; seqs are ISeqs, so seq? is the closest portable approximation available at
