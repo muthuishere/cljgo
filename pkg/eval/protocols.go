@@ -244,13 +244,18 @@ func (e *Evaluator) internProtocolBuiltins(def func(string, func(...any) any) *l
 	})
 
 	// (-instance? type-marker value) -> bool: value's type IS the marked
-	// type (deftype/defrecord identity).
+	// type (deftype/defrecord identity). A ClassRef in hand (ADR 0036 —
+	// the class name resolved to a value, e.g. via (def c String)) matches
+	// through the same designator-name table the instance? macro's
+	// literal-symbol fast path uses.
 	defPrivate("-instance?", func(args ...any) any {
-		m, ok := args[0].(*TypeMarker)
-		if !ok {
-			return false
+		switch m := args[0].(type) {
+		case *TypeMarker:
+			return dispatchKey(args[1]) == m.name
+		case *ClassRef:
+			return classNameMatchesValue(m.name, args[1])
 		}
-		return dispatchKey(args[1]) == m.name
+		return false
 	})
 
 	// (-new-type type-name field-names-vector & vals) -> a deftype instance.
