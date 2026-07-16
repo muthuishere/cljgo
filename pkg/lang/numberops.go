@@ -946,6 +946,13 @@ func Max(x, y any) any {
 
 		switch y := y.(type) {
 		case float64:
+			// math.Max special-cases ±Inf ahead of NaN, so
+			// math.Max(-Inf, NaN) == -Inf, not NaN as IEEE-754/Clojure
+			// requires (CLI check: (max ##-Inf ##NaN) => NaN). Guard
+			// NaN explicitly before delegating.
+			if math.IsNaN(y) {
+				return y
+			}
 			return math.Max(x, y)
 		case float32:
 			if math.IsNaN(float64(y)) {
@@ -1040,6 +1047,13 @@ func Min(x, y any) any {
 
 		switch y := y.(type) {
 		case float64:
+			// See the matching guard in Max: math.Min special-cases
+			// ±Inf ahead of NaN, so math.Min(-Inf, NaN) == -Inf, not
+			// NaN as IEEE-754/Clojure requires (CLI check:
+			// (min ##-Inf ##NaN) => NaN).
+			if math.IsNaN(y) {
+				return y
+			}
 			return math.Min(x, y)
 		case float32:
 			if math.IsNaN(float64(y)) {

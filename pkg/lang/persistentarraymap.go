@@ -220,7 +220,12 @@ func (m *Map) Without(k any) IPersistentMap {
 			newKeyVals = append(newKeyVals, m.keyVals[i], m.keyVals[i+1])
 		}
 	}
-	return NewMap(newKeyVals...)
+	// Build a fresh Map directly rather than routing through NewMap, which
+	// returns the shared emptyMap singleton for a zero-length key/val slice.
+	// Clojure's dissoc-to-empty never yields the canonical EMPTY singleton
+	// (only the literal `{}` / no-arg `(hash-map)` do), so identical? must
+	// see a distinct instance here.
+	return &Map{keyVals: newKeyVals, meta: m.meta}
 }
 
 func (m *Map) Count() int {

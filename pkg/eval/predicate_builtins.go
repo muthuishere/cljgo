@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
+	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
 // internPredicateBuiltins registers the "cheap breadth" clojure.core surface
@@ -108,11 +109,11 @@ func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *
 		return ok
 	})
 
-	// uuid?: cljgo has no UUID value type, so this is always false. Batch 2
-	// adds parse-uuid/random-uuid; until a UUID type exists nothing is one.
+	// uuid?: true for the reader.UUID value type (#uuid literals,
+	// parse-uuid, random-uuid all produce one — see pkg/reader/tagged.go).
 	def("uuid?", func(args ...any) any {
-		oneArg("uuid?", args)
-		return false
+		_, ok := oneArg("uuid?", args).(reader.UUID)
+		return ok
 	})
 
 	// ---- number predicates --------------------------------------------------
@@ -122,11 +123,14 @@ func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *
 		return lang.IsNumber(oneArg("number?", args))
 	})
 
-	// int?/integer?: a fixed-precision integer (int*, uint*, BigInt) — NOT a
-	// float, ratio, or bigdecimal. (int? 1) => true; (int? 1.0) => false.
+	// int?: a fixed-precision integer (int*, uint*) — NOT a BigInt, float,
+	// ratio, or bigdecimal. (int? 1) => true; (int? 1N) => false (CLI check:
+	// (int? 1N) => false, (integer? 1N) => true).
 	def("int?", func(args ...any) any {
-		return lang.IsInteger(oneArg("int?", args))
+		return lang.IsFixedInteger(oneArg("int?", args))
 	})
+	// integer?: a fixed-precision integer OR a BigInt — NOT a float, ratio,
+	// or bigdecimal. (integer? 1N) => true.
 	def("integer?", func(args ...any) any {
 		return lang.IsInteger(oneArg("integer?", args))
 	})
