@@ -1,0 +1,69 @@
+diff --git a/core/core.clj b/core/core.clj
+index 2a14b85..1a40e34 100644
+--- a/core/core.clj
++++ b/core/core.clj
+@@ -538,18 +538,8 @@
+   ([pred] (filter (fn [x] (not (pred x)))))
+   ([pred coll] (filter (fn [x] (not (pred x))) coll)))
+ 
+-;; oracle: (reduce + 0 (range 1 11)) => 55; (reduce + (range 1 11)) => 55.
+-;; Honors the `reduced` short-circuit box.
+-(defn reduce
+-  ([f coll]
+-   (let [s (seq coll)]
+-     (if s (reduce f (first s) (rest s)) (f))))
+-  ([f val coll]
+-   (loop [acc val s (seq coll)]
+-     (if s
+-       (let [ret (f acc (first s))]
+-         (if (reduced? ret) (deref ret) (recur ret (next s))))
+-       acc))))
++;; reduce is a native Go builtin (pkg/eval/coll_builtins.go) — the hot
++;; seq-walking fold runs in Go, both modes. Oracle cases live at the builtin.
+ 
+ ;; oracle: (reduce-kv (fn [a k v] (+ a v)) 0 {:a 1 :b 2 :c 3}) => 6
+ (defn reduce-kv [f init coll]
+diff --git a/pkg/eval/coll_builtins.go b/pkg/eval/coll_builtins.go
+index 66d5da8..322679c 100644
+--- a/pkg/eval/coll_builtins.go
++++ b/pkg/eval/coll_builtins.go
+@@ -176,6 +176,39 @@ func (e *Evaluator) internCollBuiltins(def func(string, func(...any) any) *lang.
+ 	def("reduced", func(args ...any) any { return lang.NewReduced(oneArg("reduced", args)) })
+ 	def("reduced?", func(args ...any) any { return lang.IsReduced(oneArg("reduced?", args)) })
+ 
++	// reduce : the seq-walking fold, native like the other hot builtins.
++	// 2-arity seeds from the first element and calls (f) on an empty coll;
++	// both arities honor the `reduced` short-circuit box.
++	// oracle: (reduce + 0 (range 1 11)) => 55; (reduce + (range 1 11)) => 55.
++	def("reduce", func(args ...any) any {
++		var f, acc any
++		var s lang.ISeq
++		switch len(args) {
++		case 2:
++			f = args[0]
++			s = lang.Seq(args[1])
++			if lang.IsNil(s) {
++				return lang.Apply(f, nil)
++			}
++			acc = s.First()
++			s = s.Next()
++		case 3:
++			f = args[0]
++			acc = args[1]
++			s = lang.Seq(args[2])
++		default:
++			panic(fmt.Errorf("wrong number of args (%d) passed to: reduce", len(args)))
++		}
++		for !lang.IsNil(s) {
++			acc = lang.Apply2(f, acc, s.First())
++			if r, ok := acc.(*lang.Reduced); ok {
++				return r.Deref()
++			}
++			s = s.Next()
++		}
++		return acc
++	})
++
+ 	// <= / >= : chained comparisons over the numeric tower.
+ 	def("<=", chainCompare("<=", func(x, y any) bool {
+ 		return lang.Ops(x).Combine(lang.Ops(y)).LTE(x, y)
