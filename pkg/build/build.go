@@ -213,9 +213,15 @@ func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, ke
 	// On any error below genDir is returned un-removed for debugging (as the
 	// single-file path keeps -gen); a clean build removes it unless keepGen.
 
-	// Third-party Go modules (ADR 0021 B2): synthesize go.mod with the pins,
-	// `go get` them so go/packages can resolve their type facts, and point
-	// the emitter's host-fact load at this module.
+	// ADR 0033: host facts always resolve against the generated module,
+	// never FindRuntimeDir()'s repo walk-up — stdlib resolves fine with no
+	// go.mod yet (spike S17), so this is set unconditionally, not just
+	// when go-require is in play.
+	opts.HostFactsDir = genDir
+
+	// Third-party Go modules (ADR 0021 B2): synthesize go.mod with the pins
+	// and `go get` them so go/packages can resolve their type facts before
+	// WriteModule's fact load runs.
 	if len(p.GoRequires) > 0 {
 		reqs := make([]emit.GoModRequire, len(p.GoRequires))
 		for i, r := range p.GoRequires {
@@ -227,7 +233,6 @@ func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, ke
 		if err := goGet(genDir, p.GoRequires); err != nil {
 			return genDir, err
 		}
-		opts.HostFactsDir = genDir
 	}
 
 	// WriteModule emits main.go and writes go.mod only if absent — the

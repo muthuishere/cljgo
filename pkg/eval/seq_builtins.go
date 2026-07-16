@@ -25,9 +25,22 @@ func (e *Evaluator) internSeqBuiltins(def func(string, func(...any) any) *lang.V
 		if len(args) != 2 && len(args) != 3 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: nth", len(args)))
 		}
+		// n is a primitive int in Clojure's nth(Object, int[, Object])
+		// signature, so a non-integer n throws even when coll is nil (the
+		// unboxing happens before nthFrom's null check) — oracle: (nth nil
+		// nil) throws. But once n IS an integer, a nil coll is nil at ANY
+		// index (nthFrom checks coll==null first, ignoring n's value) —
+		// with a not-found arg it yields that default instead. Oracle:
+		// (nth nil 10) => nil; (nth nil -5) => nil; (nth nil 10 :nf) => :nf.
 		idx, ok := lang.AsInt(args[1])
 		if !ok {
 			panic(fmt.Errorf("nth: index must be an integer, got: %s", lang.PrintString(args[1])))
+		}
+		if args[0] == nil {
+			if len(args) == 3 {
+				return args[2]
+			}
+			return nil
 		}
 		v, found := lang.Nth(args[0], idx)
 		if found {
@@ -44,11 +57,18 @@ func (e *Evaluator) internSeqBuiltins(def func(string, func(...any) any) *lang.V
 		if len(args) != 2 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: nthnext", len(args)))
 		}
+		// Mirrors (loop [s (seq coll) n n] (if (and s (pos? n)) (recur (next
+		// s) (dec n)) s)): n is only ever inspected once s is truthy, so a
+		// nil/empty coll never needs n to be an integer. Oracle: (nthnext
+		// nil nil) => nil.
+		s := lang.Seq(args[0])
+		if s == nil {
+			return nil
+		}
 		idx, ok := lang.AsInt(args[1])
 		if !ok {
 			panic(fmt.Errorf("nthnext: index must be an integer, got: %s", lang.PrintString(args[1])))
 		}
-		s := lang.Seq(args[0])
 		for i := 0; i < idx && s != nil; i++ {
 			s = s.Next()
 		}
@@ -122,6 +142,28 @@ func (e *Evaluator) internSeqBuiltins(def func(string, func(...any) any) *lang.V
 			return c.ContainsKey(args[1])
 		case lang.IPersistentSet:
 			return c.Contains(args[1])
+		case lang.ITransientSet:
+			return c.Contains(args[1])
+		case lang.ITransientAssociative:
+			// Transients have no ContainsKey; probe via ValAtDefault with a
+			// unique sentinel the same way get-in does. Oracle: (contains?
+			// (transient {:x 1}) :x) => true; (contains? (transient [0 1])
+			// 5) => false (out of bounds).
+			sentinel := &struct{}{}
+			return c.ValAtDefault(args[1], sentinel) != any(sentinel)
+		case string:
+			// contains? on a string/array checks index bounds, not value
+			// membership. Oracle: (contains? "abc" 2) => true; (contains?
+			// "abc" 3) => false (out of bounds, not an error) — but a
+			// non-integer key still throws (real Clojure: key isn't a
+			// Number to cast, ClassCastException), e.g. (contains? "abc"
+			// "a") throws.
+			idx, ok := lang.AsInt(args[1])
+			if !ok {
+				panic(fmt.Errorf("contains? not supported on: %s (key must be an integer, got: %s)",
+					lang.PrintString(args[0]), lang.PrintString(args[1])))
+			}
+			return idx >= 0 && idx < len([]rune(c))
 		default:
 			panic(fmt.Errorf("contains? not supported on: %s", lang.PrintString(args[0])))
 		}
@@ -160,7 +202,7 @@ func (e *Evaluator) internSeqBuiltins(def func(string, func(...any) any) *lang.V
 	def("namespace", func(args ...any) any {
 		switch x := oneArg("namespace", args).(type) {
 		case *lang.Symbol:
-			if x.HasNamespace() && x.Namespace() != "" {
+			if x.HasNamespace() {
 				return x.Namespace()
 			}
 			return nil
@@ -180,6 +222,10 @@ func (e *Evaluator) internSeqBuiltins(def func(string, func(...any) any) *lang.V
 				return lang.NewSymbol(x)
 			case *lang.Symbol:
 				return x
+			case lang.Keyword:
+				return x.Sym()
+			case *lang.Var:
+				return x.ToSymbol()
 			default:
 				panic(fmt.Errorf("symbol: cannot make a symbol from: %s", lang.PrintString(args[0])))
 			}
@@ -199,6 +245,8 @@ func (e *Evaluator) internSeqBuiltins(def func(string, func(...any) any) *lang.V
 		switch len(args) {
 		case 1:
 			switch x := args[0].(type) {
+			case nil:
+				return nil
 			case string:
 				return lang.NewKeyword(x)
 			case *lang.Symbol:

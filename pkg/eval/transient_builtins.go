@@ -69,15 +69,13 @@ func (e *Evaluator) internTransientBuiltins(def func(name string, fn func(args .
 		}
 	})
 
-	// assoc!: (assoc! coll k v) / (assoc! coll k v & kvs). kvs must be
-	// even; an odd trailing key throws, as in Clojure.
+	// assoc!: (assoc! coll k v) / (assoc! coll k v & kvs). Unlike assoc,
+	// assoc! tolerates an odd number (> 1) of trailing args — a dangling
+	// key with no value is assoc'd with nil. Oracle: (apply assoc! (transient
+	// [1]) [0 1 1]) => [1 nil] (index 1 assoc'd with nil).
 	def("assoc!", func(args ...any) any {
 		if len(args) < 3 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: assoc!", len(args)))
-		}
-		if len(args)%2 != 1 {
-			panic(lang.NewIllegalArgumentError(
-				fmt.Sprintf("No value supplied for key: %v", args[len(args)-1])))
 		}
 		ta, ok := args[0].(lang.ITransientAssociative)
 		if !ok {
@@ -85,8 +83,12 @@ func (e *Evaluator) internTransientBuiltins(def func(name string, fn func(args .
 				fmt.Sprintf("assoc! expects a transient associative, got %T", args[0])))
 		}
 		var cur lang.ITransientAssociative = ta
-		for i := 1; i < len(args); i += 2 {
+		i := 1
+		for ; i+1 < len(args); i += 2 {
 			cur = cur.Assoc(args[i], args[i+1])
+		}
+		if i < len(args) {
+			cur = cur.Assoc(args[i], nil)
 		}
 		return cur
 	})

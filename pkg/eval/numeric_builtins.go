@@ -360,6 +360,12 @@ func (e *Evaluator) internNumericBuiltins(def func(name string, fn func(args ...
 	})
 	def("rand-nth", func(args ...any) any {
 		coll := oneArg("rand-nth", args)
+		// (nth nil idx) is always nil (never out-of-bounds), so a nil coll
+		// never hits the empty-collection error either. Oracle: (rand-nth
+		// nil) => nil.
+		if coll == nil {
+			return nil
+		}
 		n := lang.Count(coll)
 		if n == 0 {
 			panic(lang.NewIllegalArgumentError("rand-nth of empty collection"))

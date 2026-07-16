@@ -130,6 +130,24 @@ representation) or G (message wording)).
   bigint-from-double,int-cast-32bit,abs,even-odd-guard}.clj`
   (dual-harness, expectations byte-verified against the 1.12.5 CLI).
 
+## Transient/sorted-set method-promotion leaks (batch/error-files, 2026-07-16, `set.go`)
+
+Ground truth: real Clojure 1.12.5 CLI, `conformance/tests/transient.cljc`
+suite file (jank clojure-test-suite).
+
+`TransientSet` embeds `*Set` and `SortedSet` embeds `Set`; Go promotes the
+embedded type's methods onto the wrapper, which silently let both wrapper
+types satisfy interfaces real Clojure's equivalents do NOT: `TransientSet`
+promoted `Set.Cons` (so `conj` — the non-`!` op — worked on a transient) and
+`Set.AsTransient` (so `(transient (transient x))` succeeded instead of
+throwing); `SortedSet` likewise promoted `Set.AsTransient` (so
+`(transient (sorted-set ...))` succeeded — real `PersistentTreeSet` has no
+transient form at all). Added explicit `Cons`/`AsTransient` overrides on
+`TransientSet` and an `AsTransient` override on `SortedSet` that panic,
+shadowing the promoted methods (oracle: all three throw on real Clojure).
+- Acceptance: `conformance/tests/contains-on-string-and-transient.clj`
+  covers the read-only interface (`contains?`) still working on transients;
+  the throwing cases are exercised directly by the suite file above.
 ## `IsNil` typed-nil fix (batch/fail-files, ADR 0022, 2026-07-16, `truthiness.go`)
 
 `IsNil` only special-cased `reflect.Ptr`, so a boxed nil value of any
@@ -202,3 +220,39 @@ mantissa-truncated long literals).
   row aborts on the pre-existing missing `hash` builtin, and the
   hash-set row covers hasheq). `with-precision` (S16 items 13–14)
   remains the ADR 0032 follow-on change.
+## goid fast path (ADR 0034, 2026-07-16, `internal/goid/`)
+
+Evidence: spike S18 (spikes/s18-ubuntu-boot-anomaly/VERDICT.md) — the
+vendored `goid.Get()` allocated a 32-byte buffer, captured a full
+`runtime.Stack()` trace, and text-parsed "goroutine N" out of it on
+EVERY dynamic-var deref (`Var.getDynamicBinding`), measuring 72.85% of
+`BenchmarkBoot` CPU (`CurrentNS()` derefs the dynamic `*ns*` on nearly
+every analyzer/eval step).
+
+- Upstream's single-file stack-parse became the shared `getSlow()`
+  fallback (`goid.go`, unchanged logic). New fast path
+  (`goid_fast.go` + `getg_{amd64,arm64}.s`, written fresh — zero
+  external deps stands, technique per petermattis/goid): a NOSPLIT
+  assembly `getg()` returns the current `*g` (dedicated `g` register on
+  arm64, `(TLS)` slot on amd64) and Go code reads the `goid uint64`
+  field at an offset the compiler derives from `gPrefix`, a
+  field-for-field mirror of `runtime.g`'s leading fields transcribed
+  from Go 1.26's runtime2.go (verified against go1.26.3 source).
+- Compile-time selection: fast path gated
+  `(amd64 || arm64) && go1.26 && !go1.27`; everything else builds
+  `goid_fallback.go` (`Get = getSlow`). Defense in depth: `init()`
+  cross-checks the fast read against the stack-parse oracle once at
+  package load and panics on mismatch — a wrong offset can never
+  silently mis-key dynamic bindings.
+- Measured (Apple M5 Pro, go1.26.3, darwin/arm64, count=5):
+  `BenchmarkGoidGet` 1231ns/32B/1alloc → **0.46ns/0B/0allocs**
+  (~2600×); `BenchmarkBoot` 211.0ms/472.4k allocs →
+  **23.7ms/463.7k allocs** (**8.9× faster boot**). Post-fix CPU profile
+  shows `getDynamicBinding`/`CurrentNS` gone from the top-25 cumulative
+  list entirely (was 72.85%). ADR 0034's second lever (CurrentNS
+  caching) is therefore NOT taken — no longer measurable.
+- Acceptance: `goid_test.go` — fast-vs-oracle equality on 300
+  concurrent goroutines under `-race`, per-goroutine ID stability and
+  uniqueness; full suite + `-race` on lang/repl/nrepl/eval (binding
+  conveyance + nREPL session isolation) green.
+||||||| de19981

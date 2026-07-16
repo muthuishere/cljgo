@@ -3,6 +3,7 @@ package eval
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -213,6 +214,35 @@ func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any
 			panic(err)
 		}
 		return form
+	})
+
+	// --- type --------------------------------------------------------------
+	//
+	// cljgo has no java.lang.Class objects (design/05), so `type` cannot
+	// return a real Class the way JVM Clojure's does. What the suite
+	// actually needs (num.cljc, transient.cljc) is a value that's stable
+	// and comparable via `=`: (= (type n) (type (num n))) checks that a
+	// no-op numeric coercion doesn't change representation, and
+	// (= (type coll) (type persisted)) checks a transient round-trips to
+	// the same collection shape. reflect.Type satisfies exactly that: it's
+	// a comparable Go interface value (== is true iff same concrete type),
+	// which Equiv's `a == b` fast path already handles — no Equalser
+	// needed. Real Clojure's :type metadata override (deftype/defrecord's
+	// ::type key) is NOT implemented; this is a v0 stand-in, not a full
+	// `type`/`class` substrate (that's its own future ADR).
+	def("type", func(args ...any) any {
+		x := oneArg("type", args)
+		if x == nil {
+			return nil
+		}
+		if m, ok := x.(lang.IMeta); ok {
+			if meta := m.Meta(); meta != nil {
+				if t := meta.ValAt(lang.KWType); t != nil {
+					return t
+				}
+			}
+		}
+		return reflect.TypeOf(x)
 	})
 
 	// --- sleep --------------------------------------------------------------
