@@ -55,6 +55,13 @@ func Boot() {
 	origEQ = get("=")
 }
 
+// RegisterLib registers a namespace's Load() in the lib-provider
+// registry (ADR 0042 §2). Emitted dependency packages call it from
+// init() — a plain map write, safe before Boot() — so the replayed
+// (require …) form triggers the dependency load at exactly its source
+// position, once (Load is guarded).
+func RegisterLib(name string, load func()) { eval.RegisterLibProvider(name, load) }
+
 // The helpers keep their hot bodies small (slow tails split out) so the
 // Go inliner can fuse the int64 fast path into emitted call sites.
 

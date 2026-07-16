@@ -77,10 +77,33 @@ func parseDirectives(src string) directives {
 	return d
 }
 
+// namespaceSnapshot / removeNewNamespaces bracket one harness run: the
+// namespace registry is process-global, and a run may load file-backed
+// namespaces (require, ADR 0042) whose survival would let the NEXT run
+// skip loading them — cross-talk between harnesses, not semantics.
+func namespaceSnapshot() map[string]bool {
+	snap := map[string]bool{}
+	for s := lang.AllNamespaces(); s != nil; s = s.Next() {
+		snap[s.First().(*lang.Namespace).Name().String()] = true
+	}
+	return snap
+}
+
+func removeNewNamespaces(snap map[string]bool) {
+	for s := lang.AllNamespaces(); s != nil; s = s.Next() {
+		name := s.First().(*lang.Namespace).Name()
+		if !snap[name.String()] {
+			lang.RemoveNamespace(name)
+		}
+	}
+}
+
 // evalFile runs one file through the eval harness in a fresh `user`
 // namespace (namespaces are process-global, so it is removed first —
 // files must not depend on each other).
 func evalFile(path string) (any, error) {
+	snap := namespaceSnapshot()
+	defer removeNewNamespaces(snap)
 	lang.RemoveNamespace(lang.NewSymbol("user"))
 	d := repl.New(nil, io.Discard, io.Discard)
 	f, err := os.Open(path)

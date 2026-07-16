@@ -201,7 +201,7 @@ func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, ke
 	if !filepath.IsAbs(mainPath) {
 		mainPath = filepath.Join(p.ProjectDir, mainPath)
 	}
-	forms, err := emit.CompileFile(mainPath)
+	prog, err := emit.CompileProgram(mainPath)
 	if err != nil {
 		return "", err
 	}
@@ -235,9 +235,10 @@ func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, ke
 		}
 	}
 
-	// WriteModule emits main.go and writes go.mod only if absent — the
-	// synthesized one above is preserved.
-	if err := emit.WriteModule(genDir, forms, opts); err != nil {
+	// WriteProgram emits main.go (plus one package per file-backed
+	// required namespace — ADR 0042) and writes go.mod only if absent —
+	// the synthesized one above is preserved.
+	if err := emit.WriteProgram(genDir, prog, opts); err != nil {
 		return genDir, err
 	}
 

@@ -479,7 +479,7 @@ func (e *Evaluator) internBuiltins() {
 	// the named public vars into the current ns. Unknown options are no-ops.
 	def("require", func(args ...any) any {
 		for _, a := range args {
-			requireSpec(a, nil)
+			requireSpec(e, a, nil)
 		}
 		return nil
 	})
@@ -1232,9 +1232,9 @@ func collectTestVars(ns *lang.Namespace, acc []any) []any {
 // requireSpec processes one require spec: a bare namespace symbol, a libspec
 // vector `[lib & opts]`, or a prefix list `(prefix sub ...)`. `prefix` (may
 // be nil) is the dotted prefix accumulated from an enclosing prefix list.
-func requireSpec(spec any, prefix *lang.Symbol) {
+func requireSpec(e *Evaluator, spec any, prefix *lang.Symbol) {
 	if sym, ok := spec.(*lang.Symbol); ok {
-		loadLib(combinePrefix(prefix, sym), nil)
+		loadLib(e, combinePrefix(prefix, sym), nil)
 		return
 	}
 	seq := lang.Seq(spec)
@@ -1253,12 +1253,12 @@ func requireSpec(spec any, prefix *lang.Symbol) {
 		if _, isKw := rest.First().(lang.Keyword); !isKw {
 			full := combinePrefix(prefix, head)
 			for x := rest; x != nil; x = x.Next() {
-				requireSpec(x.First(), full)
+				requireSpec(e, x.First(), full)
 			}
 			return
 		}
 	}
-	loadLib(combinePrefix(prefix, head), rest)
+	loadLib(e, combinePrefix(prefix, head), rest)
 }
 
 // combinePrefix joins a prefix-list prefix with a leaf symbol into a dotted
@@ -1270,13 +1270,34 @@ func combinePrefix(prefix, sym *lang.Symbol) *lang.Symbol {
 	return lang.NewSymbol(prefix.Name() + "." + sym.Name())
 }
 
-// loadLib asserts the (embedded) namespace exists, then applies the libspec
-// options: :as adds an alias to the current ns; :refer interns the named
-// public vars (or all publics for :refer :all) into the current ns.
-func loadLib(libSym *lang.Symbol, opts lang.ISeq) {
+// loadLib ensures the namespace exists — already present (embedded or
+// previously loaded), else via a registered lib provider (an emitted
+// package's Load(), ADR 0042 §2), else by loading its source file
+// resolved relative to the requiring file (ADR 0042 §4) — then applies
+// the libspec options: :as adds an alias to the current ns; :refer
+// interns the named public vars (or all publics for :refer :all) into
+// the current ns.
+func loadLib(e *Evaluator, libSym *lang.Symbol, opts lang.ISeq) {
+	// A registered provider is authoritative and consulted FIRST: in an
+	// emitted binary the namespace may already exist as a hollow shell
+	// (another package's hoisted lang.InternVarName created it at Go
+	// init), so mere existence does not mean loaded. Providers guard
+	// with a loaded bool, so re-requires are no-ops.
+	if provider := lookupLibProvider(libSym.FullName()); provider != nil {
+		provider()
+	}
+	// A lib whose file is still mid-load is a cycle even though its
+	// namespace already exists — the file's (in-ns …) ran before its
+	// requires (JVM parity: Clojure tracks pending load paths, not
+	// namespace existence, and throws "Cyclic load dependency").
+	checkCyclicLoad(libSym.FullName())
 	target := lang.FindNamespace(libSym)
 	if target == nil {
-		panic(fmt.Errorf("could not locate namespace %s (filesystem loading not yet supported; only embedded namespaces are available)", libSym.FullName()))
+		loadLibFile(e, libSym)
+		target = lang.FindNamespace(libSym)
+		if target == nil {
+			panic(fmt.Errorf("namespace %s not found after loading its source", libSym.FullName()))
+		}
 	}
 	for s := opts; s != nil; s = s.Next() {
 		kw, ok := s.First().(lang.Keyword)
