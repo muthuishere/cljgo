@@ -79,6 +79,8 @@ func TestConformanceCompiled(t *testing.T) {
 // side effects (eval.Out) and appending pr-str of the last value.
 func evalOutput(t *testing.T, path string) string {
 	t.Helper()
+	snap := namespaceSnapshot()
+	defer removeNewNamespaces(snap)
 	lang.RemoveNamespace(lang.NewSymbol("user"))
 	var buf bytes.Buffer
 	oldOut := eval.Out
@@ -103,16 +105,18 @@ func evalOutput(t *testing.T, path string) string {
 // module, runs the binary, and returns its stdout.
 func compiledOutput(t *testing.T, path string) string {
 	t.Helper()
+	snap := namespaceSnapshot()
+	defer removeNewNamespaces(snap)
 	lang.RemoveNamespace(lang.NewSymbol("user"))
 	oldOut := eval.Out
 	eval.Out = io.Discard
-	forms, err := emit.CompileFile(path)
+	prog, err := emit.CompileProgram(path)
 	eval.Out = oldOut
 	if err != nil {
 		t.Fatalf("compile: %v", err)
 	}
 	dir := t.TempDir()
-	if err := emit.WriteModule(dir, forms, emit.Options{PrintLastValue: true}); err != nil {
+	if err := emit.WriteProgram(dir, prog, emit.Options{PrintLastValue: true}); err != nil {
 		t.Fatalf("write module: %v", err)
 	}
 	bin := filepath.Join(dir, "prog"+emit.ExeSuffix)

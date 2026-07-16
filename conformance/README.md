@@ -23,6 +23,12 @@ conventionally trailing:
 Anything else starting with `;;` is an ordinary comment. Keep one
 behavior per file; the filename names the behavior.
 
+Multi-namespace tests (ADR 0042): a test file may `require` namespaces
+whose sources live in a subdirectory of `tests/` (e.g. `tests/conf/` for
+ns `conf.*`) — subdirectories are outside the harness glob, so those
+files load only via require, in both harnesses. Oracle such tests with
+`clojure -Sdeps '{:paths ["."]}' -M <file>` from `tests/`.
+
 ## Running
 
 ```

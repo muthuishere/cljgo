@@ -30,11 +30,22 @@ func CompileFile(path string) ([]*ast.Node, error) {
 	return CompileReader(f, path)
 }
 
-// CompileReader is CompileFile over an io.Reader.
+// CompileReader is CompileFile over an io.Reader. It is the SINGLE-FILE
+// path: a require that would load another source file refuses with an
+// error naming CompileProgram (ADR 0042 §5) — silently evaluating the
+// dep without capturing its forms would emit a binary missing it.
 func CompileReader(r io.Reader, filename string) ([]*ast.Node, error) {
 	ev := eval.New()
-	// The load frame, as repl.Driver.EvalReader: *ns* and *file* are
-	// thread-bound so an in-ns inside the file is undone afterwards.
+	ev.LibLoader = func(_ *eval.Evaluator, lib *lang.Symbol, path string) {
+		panic(fmt.Errorf("namespace %s resolves to source file %s — single-file compilation cannot emit it (multi-namespace programs compile via CompileProgram / `cljgo build`)", lib.FullName(), path))
+	}
+	return compileStream(ev, r, filename)
+}
+
+// compileStream reads and compiles one source stream through ev under a
+// pushed load frame, as repl.Driver.EvalReader: *ns* and *file* are
+// thread-bound so an in-ns inside the file is undone afterwards.
+func compileStream(ev *eval.Evaluator, r io.Reader, filename string) ([]*ast.Node, error) {
 	lang.PushThreadBindings(lang.NewMap(
 		lang.VarCurrentNS, ev.CurrentNS(),
 		lang.VarFile, filename,
@@ -111,11 +122,12 @@ func evalNode(ev *eval.Evaluator, n *ast.Node) (err error) {
 	return err
 }
 
-// Build is the whole `cljgo build` pipeline: compile srcPath, write the
-// generated module into genDir (a temp dir when empty), `go build` it
-// to outPath. Returns the generated module dir actually used.
+// Build is the whole `cljgo build` pipeline: compile srcPath (plus any
+// file-backed namespaces it requires — ADR 0042), write the generated
+// module into genDir (a temp dir when empty), `go build` it to outPath.
+// Returns the generated module dir actually used.
 func Build(srcPath, outPath, genDir string, opts Options) (string, error) {
-	forms, err := CompileFile(srcPath)
+	prog, err := CompileProgram(srcPath)
 	if err != nil {
 		return "", err
 	}
@@ -136,7 +148,7 @@ func Build(srcPath, outPath, genDir string, opts Options) (string, error) {
 	// no go.mod yet (spike S17), and this is the only path a downloaded
 	// release binary has for Go-interop fact loading.
 	opts.HostFactsDir = genDir
-	if err := WriteModule(genDir, forms, opts); err != nil {
+	if err := WriteProgram(genDir, prog, opts); err != nil {
 		return genDir, err
 	}
 	return genDir, GoBuild(genDir, outPath)

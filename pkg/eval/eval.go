@@ -29,6 +29,14 @@ type Evaluator struct {
 	// (ADR 0010, design/05 §1). Populated by the `require-go` builtin,
 	// read by resolveHost (the analyzer's ResolveHost hook).
 	hostAliases map[string]map[string]string
+
+	// LibLoader loads a required namespace's resolved source file
+	// (ADR 0042 §4/§5). nil means the interpreter default (read +
+	// EvalForm under a pushed *ns*/*file* frame). pkg/emit's module
+	// compiler substitutes a loader that also captures the analyzed
+	// forms for emission; the single-file AOT path substitutes one
+	// that refuses.
+	LibLoader func(e *Evaluator, lib *lang.Symbol, path string)
 }
 
 // New returns an evaluator with the boot sequence of design/00 §6 (M1)
