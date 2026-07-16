@@ -131,15 +131,21 @@ func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any
 
 	// --- clojure.edn substrate ----------------------------------------------
 	//
-	// -edn-read-string backs clojure.edn/read-string (core/edn.cljg): read
-	// ONE form from a string with cljgo's own reader. Not evaluated — read
-	// only. An empty/whitespace-only string reads as nil (oracle: JVM
-	// (clojure.edn/read-string "") => nil); a syntactically invalid string
+	// -edn-read-string backs clojure.edn/read-string's 1-arg arity
+	// (core/edn.cljg): read ONE form from a string with cljgo's reader in
+	// EDN-STRICT mode (reader.WithEDNStrict — clojure-test-suite
+	// edn_test/read_string.cljc, ADR 0022 batch/harness-misc). Not
+	// evaluated — read only. An empty/whitespace-only string reads as nil
+	// (oracle: JVM (clojure.edn/read-string "") => nil, equivalent to the
+	// 2-arg form's default {:eof nil}); a syntactically invalid string
 	// throws, as JVM edn does. DEVIATION (documented in core/edn.cljg):
-	// this is the full cljgo reader, not a restricted EDN-only reader, so
-	// reader macros EDN forbids (#(…) fn literals, `quasiquote`) do not
-	// throw here. The suite's own #=(…) eval-reader probe still throws —
-	// cljgo's reader has no #= at all.
+	// this is cljgo's own reader with edn's rules layered on top, not a
+	// wholly separate restricted-EDN reader, so reader macros EDN forbids
+	// (#(…) fn literals, `quasiquote`) do not throw here. The suite's own
+	// #=(…) eval-reader probe still throws — cljgo's reader has no #= at
+	// all. `.getTime` on a #inst value (the suite's epoch-millis helper)
+	// works via a narrow special-case in host.go's CallGoMethod, not
+	// ordinary Go-reflection interop — see pkg/reader/tagged.go's Inst doc.
 	defPrivate("-edn-read-string", func(args ...any) any {
 		s, ok := oneArg("-edn-read-string", args).(string)
 		if !ok {
@@ -148,10 +154,79 @@ func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any
 			}
 			panic(fmt.Errorf("edn/read-string expects a string, got: %s", lang.PrintString(args[0])))
 		}
-		form, err := reader.ReadString(s, reader.WithResolver(e.ReaderResolver()))
+		form, err := reader.ReadString(s, reader.WithResolver(e.ReaderResolver()), reader.WithEDNStrict())
 		if err != nil {
 			if errors.Is(err, reader.ErrEOF) {
 				return nil
+			}
+			panic(err)
+		}
+		return form
+	})
+
+	// -edn-read-string-opts backs clojure.edn/read-string's 2-arg arity:
+	// (read-string opts s) with :eof / :default / :readers (oracle 1.12.5:
+	// (edn/read-string {:eof :END} "") => :END; (edn/read-string {} " ")
+	// throws — no :eof means a bare EOF is an error, not nil, matching the
+	// JVM's `(read-string {:eof :eofthrow} s)` default under the hood;
+	// (edn/read-string {:default (fn [_tag v] [:unknown v])} "#foo 42") =>
+	// [:unknown 42]; (edn/read-string {:readers {'uuid (constantly
+	// :override)}} "#uuid \"...\"") => :override, overriding even a
+	// built-in tag). Same edn-strict reader rules as the 1-arg form.
+	kwEOF := lang.NewKeyword("eof")
+	kwDefault := lang.NewKeyword("default")
+	kwReaders := lang.NewKeyword("readers")
+	defPrivate("-edn-read-string-opts", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: edn/read-string", len(args)))
+		}
+		optsArg, sArg := args[0], args[1]
+		s, ok := sArg.(string)
+		if !ok {
+			if sArg == nil {
+				panic(fmt.Errorf("edn/read-string: nil input"))
+			}
+			panic(fmt.Errorf("edn/read-string expects a string, got: %s", lang.PrintString(sArg)))
+		}
+		var opts lang.IPersistentMap
+		if optsArg != nil {
+			m, ok := optsArg.(lang.IPersistentMap)
+			if !ok {
+				panic(fmt.Errorf("edn/read-string: opts must be a map, got: %s", lang.PrintString(optsArg)))
+			}
+			opts = m
+		}
+
+		readerOpts := []reader.Option{reader.WithResolver(e.ReaderResolver()), reader.WithEDNStrict()}
+		if opts != nil {
+			if fn, ok := lang.Get(opts, kwDefault).(lang.IFn); ok {
+				readerOpts = append(readerOpts, reader.WithDefaultReader(fn))
+			}
+			if rm, ok := lang.Get(opts, kwReaders).(lang.IPersistentMap); ok {
+				tagReaders := make(map[string]lang.IFn)
+				for seq := lang.Seq(rm); seq != nil; seq = seq.Next() {
+					entry := seq.First().(lang.IMapEntry)
+					tagSym, ok := entry.Key().(*lang.Symbol)
+					if !ok {
+						panic(fmt.Errorf("edn/read-string: :readers keys must be symbols, got: %s", lang.PrintString(entry.Key())))
+					}
+					fn, ok := entry.Val().(lang.IFn)
+					if !ok {
+						panic(fmt.Errorf("edn/read-string: :readers values must be functions, got: %s", lang.PrintString(entry.Val())))
+					}
+					tagReaders[tagSym.FullName()] = fn
+				}
+				readerOpts = append(readerOpts, reader.WithTagReaders(tagReaders))
+			}
+		}
+
+		form, err := reader.ReadString(s, readerOpts...)
+		if err != nil {
+			if errors.Is(err, reader.ErrEOF) {
+				if opts != nil && opts.ContainsKey(kwEOF) {
+					return lang.Get(opts, kwEOF)
+				}
+				panic(fmt.Errorf("edn/read-string: EOF while reading"))
 			}
 			panic(err)
 		}

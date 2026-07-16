@@ -143,9 +143,9 @@ func TestReaderConditionalErrors(t *testing.T) {
 func TestUUIDLiteral(t *testing.T) {
 	// CLI: (pr-str #uuid "550E8400-...") => #uuid "550e8400-..." (lowercased).
 	v := mustRead(t, `#uuid "550E8400-E29B-41D4-A716-446655440000"`)
-	u, ok := v.(UUID)
+	u, ok := v.(*UUID)
 	if !ok {
-		t.Fatalf("#uuid => %T, want reader.UUID", v)
+		t.Fatalf("#uuid => %T, want *reader.UUID", v)
 	}
 	if u.Value() != "550e8400-e29b-41d4-a716-446655440000" {
 		t.Errorf("uuid value %q", u.Value())

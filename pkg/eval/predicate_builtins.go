@@ -110,10 +110,10 @@ func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *
 		return ok
 	})
 
-	// uuid?: true for the reader.UUID value type (#uuid literals,
+	// uuid?: true for the reader.UUID pointer type (#uuid literals,
 	// parse-uuid, random-uuid all produce one — see pkg/reader/tagged.go).
 	def("uuid?", func(args ...any) any {
-		_, ok := oneArg("uuid?", args).(reader.UUID)
+		_, ok := oneArg("uuid?", args).(*reader.UUID)
 		return ok
 	})
 

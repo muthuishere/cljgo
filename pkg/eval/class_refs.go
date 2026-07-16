@@ -250,7 +250,7 @@ func classNameMatchesValue(name string, v any) bool {
 		_, ok := v.(*lang.BigDecimal)
 		return ok
 	case "UUID", "Guid":
-		_, ok := v.(reader.UUID)
+		_, ok := v.(*reader.UUID)
 		return ok
 	case "PersistentVector":
 		_, ok := v.(lang.IPersistentVector)

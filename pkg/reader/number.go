@@ -85,6 +85,17 @@ func matchNumber(s string) (any, error) {
 		}
 		f, err := strconv.ParseFloat(s, 64)
 		if err != nil {
+			// Go still returns the correctly-signed value on ErrRange
+			// (magnitude too large/small for float64): an exponent that
+			// overflows saturates to +-Inf, one that underflows to 0 —
+			// exactly Java's Double.parseDouble, which never throws for
+			// this (oracle 1.12.5: (read-string "1e400") => ##Inf;
+			// (read-string "-1e400") => ##-Inf; (read-string "1e-400") =>
+			// 0.0). Any OTHER ParseFloat error is a genuine bad token.
+			var numErr *strconv.NumError
+			if errors.As(err, &numErr) && errors.Is(numErr.Err, strconv.ErrRange) {
+				return f, nil
+			}
 			return nil, nil
 		}
 		return f, nil
