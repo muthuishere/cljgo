@@ -22,8 +22,22 @@ import (
 // module tags must be valid SemVer for `go install …@latest` to resolve —
 // the host and language levels are reported alongside it, not baked into it.
 //
-// Set via -ldflags on release builds; the default is the in-development value.
-var Version = "0.1.0"
+// Set via -ldflags on release builds; the in-source default carries the
+// "-dev" qualifier so a source-built binary is distinguishable from a
+// release binary (ADR 0028 — SynthGoMod trusts IsRelease() to decide
+// whether the generated go.mod may pin the published module at Version).
+var Version = "0.1.0-dev"
+
+// IsRelease reports whether this binary is a release build: Version is a
+// plain "major.minor.patch" SemVer tag with no prerelease qualifier. Only
+// release ldflags stamp such a value (the in-source default carries "-dev";
+// goreleaser snapshot builds carry a qualifier too), so a true result means
+// "v"+Version is a published module tag the generated go.mod may require
+// (ADR 0028).
+func IsRelease() bool {
+	in := Parse(Version)
+	return in.Qualifier == "" && in.String() == Version
+}
 
 // ClojureVersion is the Clojure language level cljgo targets — the version
 // of real JVM Clojure the conformance suite is verified against (the

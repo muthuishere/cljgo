@@ -14,6 +14,7 @@ import (
 
 	"github.com/muthuishere/cljgo/pkg/ast"
 	"github.com/muthuishere/cljgo/pkg/lang"
+	"github.com/muthuishere/cljgo/pkg/version"
 )
 
 // runtimeModule is the module emitted code links against — the ONE
@@ -26,8 +27,9 @@ type Options struct {
 	// ModuleName is the generated module's path. Default "cljgo.gen/main".
 	ModuleName string
 	// RuntimeDir is the cljgo source tree the generated go.mod `replace`s
-	// the runtime to. Empty → FindRuntimeDir(). Publishing a real module
-	// version retires this (ADR 0013's change).
+	// the runtime to (the -runtime flag). Empty → SynthGoMod's ADR 0028
+	// resolution: $CLJGO_SRC, else release binaries pin the published
+	// module at their own version, else walk-up repo detection.
 	RuntimeDir string
 	// HostFactsDir overrides the module directory go/packages loads host
 	// type facts from (design/05 §2). Empty → RuntimeDir (the default: only
@@ -194,8 +196,7 @@ func provenance(n *ast.Node) string {
 
 // WriteModule emits the program and writes a self-contained generated
 // Go module: main.go plus go.mod (created once, never overwritten —
-// design/04 §2; the module requires the cljgo runtime via a local
-// `replace`).
+// design/04 §2; the runtime resolves per SynthGoMod's ADR 0028 rules).
 func WriteModule(dir string, forms []*ast.Node, opts Options) error {
 	formatted, raw, err := EmitMain(forms, opts)
 	if err != nil {
@@ -222,11 +223,18 @@ type GoModRequire struct {
 	Version string
 }
 
-// SynthGoMod writes the generated module's go.mod: the runtime `require` +
-// local `replace` (FindRuntimeDir when runtimeDir is empty), plus any pinned
+// SynthGoMod writes the generated module's go.mod, plus any pinned
 // third-party requires from the build graph. Written only if absent —
 // user-owned once created (design/04 §2). moduleName defaults to
 // "cljgo.gen/main".
+//
+// The runtime resolves by precedence (ADR 0028): explicit runtimeDir
+// (the -runtime flag) > $CLJGO_SRC > release-pin > walk-up repo detection.
+// A release binary (version.IsRelease()) with no override writes a bare
+// `require github.com/muthuishere/cljgo v<Version>` — no replace — pinning
+// the exact published module it was built from, so a downloaded binary +
+// the Go toolchain is the whole `cljgo build` story. Everything else keeps
+// the local `replace` (dev binaries in-repo, conformance harness, overrides).
 func SynthGoMod(dir, moduleName, runtimeDir string, requires []GoModRequire) error {
 	modPath := filepath.Join(dir, "go.mod")
 	if _, err := os.Stat(modPath); err == nil {
@@ -234,22 +242,38 @@ func SynthGoMod(dir, moduleName, runtimeDir string, requires []GoModRequire) err
 	}
 	if runtimeDir == "" {
 		var err error
-		if runtimeDir, err = FindRuntimeDir(); err != nil {
-			return err
+		switch {
+		case os.Getenv("CLJGO_SRC") != "":
+			// FindRuntimeDir honors CLJGO_SRC first — and validates it.
+			if runtimeDir, err = FindRuntimeDir(); err != nil {
+				return err
+			}
+		case version.IsRelease():
+			// Release-pin: no replace; runtimeDir stays empty.
+		default:
+			if runtimeDir, err = FindRuntimeDir(); err != nil {
+				return fmt.Errorf("this is a dev cljgo binary (version %s), so the generated go.mod needs a local runtime tree: %w", version.Version, err)
+			}
 		}
 	}
 	if moduleName == "" {
 		moduleName = "cljgo.gen/main"
 	}
+	runtimeVersion := "v0.0.0" // placeholder; the replace below wins
+	if runtimeDir == "" {
+		runtimeVersion = "v" + version.Version
+	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "module %s\n\ngo 1.26\n\n", moduleName)
 	b.WriteString("require (\n")
-	fmt.Fprintf(&b, "%s v0.0.0\n", runtimeModule)
+	fmt.Fprintf(&b, "%s %s\n", runtimeModule, runtimeVersion)
 	for _, r := range requires {
 		fmt.Fprintf(&b, "%s %s\n", r.Path, r.Version)
 	}
-	b.WriteString(")\n\n")
-	fmt.Fprintf(&b, "replace %s => %s\n", runtimeModule, runtimeDir)
+	b.WriteString(")\n")
+	if runtimeDir != "" {
+		fmt.Fprintf(&b, "\nreplace %s => %s\n", runtimeModule, runtimeDir)
+	}
 	return os.WriteFile(modPath, []byte(b.String()), 0o644)
 }
 
@@ -273,7 +297,15 @@ var ExeSuffix = func() string {
 // outPath is used verbatim — callers that choose the name themselves are
 // responsible for appending ExeSuffix, mirroring `go build -o`.
 // Build errors surface with the compiler's output attached.
+//
+// A release-pinned module (bare require, no replace — ADR 0028) first gets
+// `go mod tidy` to record its go.sum entries; replace-based dev modules
+// skip that step entirely (offline, and the conformance perf budgets stay
+// unaffected).
 func GoBuild(dir, outPath string) error {
+	if err := ensureGoSum(dir); err != nil {
+		return err
+	}
 	abs, err := filepath.Abs(outPath)
 	if err != nil {
 		return err
@@ -289,10 +321,33 @@ func GoBuild(dir, outPath string) error {
 	return nil
 }
 
+// ensureGoSum runs `go mod tidy` in a generated module whose go.mod requires
+// the runtime by version with no replace (the ADR 0028 release-pin shape) and
+// which has no go.sum yet — a bare require can't `go build` without go.sum
+// entries. This is the network step for release binaries; an unpublished pin
+// fails here with Go's own clear `unknown revision` diagnostic. Modules with
+// a replace never reach tidy, so the dev path stays offline.
+func ensureGoSum(dir string) error {
+	if _, err := os.Stat(filepath.Join(dir, "go.sum")); err == nil {
+		return nil
+	}
+	mod, err := os.ReadFile(filepath.Join(dir, "go.mod"))
+	if err != nil || strings.Contains(string(mod), "\nreplace ") {
+		return nil // no module here, or replace-based: go build decides
+	}
+	cmd := exec.Command("go", "mod", "tidy")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("go mod tidy: %w\n%s", err, out)
+	}
+	return nil
+}
+
 // FindRuntimeDir locates the cljgo module source tree for the generated
 // go.mod's replace directive: $CLJGO_SRC, then walking up from the
-// working directory, then from the executable. v0 pragmatism — a
-// published runtime module retires this (ADR 0013).
+// working directory, then from the executable. Since ADR 0028 this is the
+// dev/override path only — release binaries pin the published module and
+// never call it from SynthGoMod.
 func FindRuntimeDir() (string, error) {
 	if env := os.Getenv("CLJGO_SRC"); env != "" {
 		if isRuntimeDir(env) {
