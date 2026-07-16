@@ -28,10 +28,25 @@ same machine:
 | `reduce` — work in **`clojure.core`** | 701.5 ms | 700.0 ms | **1.00×** |
 
 `cljgo build` compiles the user's forms and does **nothing** for `clojure.core`.
-On let-go's own benchmark suite (7 files, unmodified) the consequence splits
-cleanly: we win `tak` (0.74×) and `fib` (0.82×) — fastest in the field bar the
-JVM, and 12.5× faster than **gloat**, the only other Clojure→Go AOT — and lose
-every benchmark routed through `clojure.core`, `reduce` by **16.54×**.
+On let-go's own benchmark suite (7 files, unmodified), every runtime installed
+and measured on one machine, the consequence splits cleanly:
+
+| Benchmark | cljgo | let-go | babashka | joker | clojure JVM |
+|---|---|---|---|---|---|
+| `tak` | 921.9 ms | 1.26 s | 1.14 s | 12.40 s | **492.0 ms** |
+| `fib` | 961.6 ms | 1.15 s | 1.17 s | 13.16 s | **442.9 ms** |
+| `transducers` | 171.8 ms | 27.9 ms | **15.7 ms** | — | 355.2 ms |
+| `reduce` | 719.3 ms | 45.6 ms | **22.6 ms** | 1.48 s | 308.6 ms |
+
+We win `tak`/`fib` — fastest here bar the JVM, ahead of a bytecode VM and a
+GraalVM native image — and lose every `clojure.core`-routed benchmark, `reduce`
+by 15.8× to let-go and **31.8× to babashka**.
+
+**joker is the control.** It is the other Go tree-walk interpreter. On `fib` we
+are 13.7× *ahead* of it (we are a compiler); on `reduce` we are 2.1× ahead of
+it and 15.8× behind let-go (we are an interpreter). Same binary, same run. A
+third-party implementation confirms the §1 A/B and rules out "`pkg/lang` is
+just slow" — if it were, `fib` would be slow too.
 
 **S20.** Quantified the prize on `reduce`'s real shape rather than
 extrapolating from `fib` (which rides `rt.Add2`/`Sub2` intrinsics, ADR 0004):

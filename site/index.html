@@ -483,37 +483,45 @@
         <span class="eyebrow">let-go's own suite, unmodified</span>
         <h2>The whole field</h2>
         <p>We ran <a href="https://github.com/nooga/let-go">let-go</a>'s benchmark suite with let-go's published
-           methodology. All 7 files run on cljgo with no edits. cljgo and let-go measured here on an M5 Pro;
-           the rest is let-go's published M1 Pro data — so every column is <b>normalized to let-go = 1.00×</b>,
-           the same way their table reports it. Calibrated, not assumed: re-running let-go here reproduced its
-           published numbers at a consistent 1.39–1.85× (median 1.72×). <b>Lower is faster.</b></p>
+           methodology. All 7 files run on cljgo with no edits. Every runtime here was <b>installed and measured
+           on the same machine</b> (Apple M5 Pro) — no normalization, no quoted numbers. Wall-clock mean of 10 runs,
+           startup included. Best per row in bold.</p>
       </div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Benchmark</th><th>cljgo</th><th>let-go</th><th>babashka</th><th>joker</th><th>go-joker</th><th>gloat</th><th>fennel</th><th>JVM</th></tr></thead>
+          <thead><tr><th>Benchmark</th><th>cljgo</th><th>let-go</th><th>babashka</th><th>joker</th><th>clojure JVM</th></tr></thead>
           <tbody>
-            <tr><td><code>tak</code></td><td><b>0.74×</b></td><td>1.00×</td><td>0.9×</td><td>—</td><td>0.8×</td><td>10.3×</td><td>5.1×</td><td>0.3×</td></tr>
-            <tr><td><code>fib</code></td><td><b>0.82×</b></td><td>1.00×</td><td>0.9×</td><td>9.5×</td><td>0.7×</td><td>12.7×</td><td>0.9×</td><td>0.3×</td></tr>
-            <tr><td><code>loop-recur</code></td><td>1.80×</td><td>1.00×</td><td>1.0×</td><td>10.5×</td><td>0.2×</td><td>15.5×</td><td>2.6×</td><td>6.9×</td></tr>
-            <tr><td><code>persistent-map</code></td><td>3.09×</td><td>1.00×</td><td>0.9×</td><td>2.5×</td><td>1.0×</td><td>1.6×</td><td>180×</td><td>24.9×</td></tr>
-            <tr><td><code>map-filter</code></td><td>5.98×</td><td>1.00×</td><td>2.4×</td><td>1.6×</td><td>1.8×</td><td>8.8×</td><td>141×</td><td>49.6×</td></tr>
-            <tr><td><code>transducers</code></td><td>6.56×</td><td>1.00×</td><td>0.6×</td><td>—</td><td>0.4×</td><td>4.3×</td><td>36.4×</td><td>8.3×</td></tr>
-            <tr><td><code>reduce</code></td><td>16.54×</td><td>1.00×</td><td>0.5×</td><td>37.0×</td><td>0.2×</td><td>5.4×</td><td>121×</td><td>5.5×</td></tr>
-            <tr><td>startup</td><td>6.08×</td><td>1.00×</td><td>2.2×</td><td>1.4×</td><td>1.5×</td><td>1.8×</td><td>5.2×</td><td>43.9×</td></tr>
-            <tr><td>runtime size</td><td><b>8.5 MB</b></td><td>12 MB</td><td>68 MB</td><td>26 MB</td><td>32 MB</td><td>26 MB</td><td>324 KB</td><td>304 MB</td></tr>
+            <tr><td>startup</td><td>28.0 ms</td><td><b>4.9 ms</b></td><td>10.5 ms</td><td>8.0 ms</td><td>295.7 ms</td></tr>
+            <tr><td><code>tak</code></td><td>921.9 ms</td><td>1.26 s</td><td>1.14 s</td><td>12.40 s</td><td><b>492.0 ms</b></td></tr>
+            <tr><td><code>fib</code></td><td>961.6 ms</td><td>1.15 s</td><td>1.17 s</td><td>13.16 s</td><td><b>442.9 ms</b></td></tr>
+            <tr><td><code>loop-recur</code></td><td>68.8 ms</td><td><b>37.1 ms</b></td><td>39.2 ms</td><td>453.3 ms</td><td>413.9 ms</td></tr>
+            <tr><td><code>persistent-map</code></td><td>44.8 ms</td><td>14.7 ms</td><td><b>14.2 ms</b></td><td>32.8 ms</td><td>412.4 ms</td></tr>
+            <tr><td><code>map-filter</code></td><td>32.5 ms</td><td><b>5.1 ms</b></td><td>12.4 ms</td><td>9.6 ms</td><td>348.6 ms</td></tr>
+            <tr><td><code>transducers</code></td><td>171.8 ms</td><td>27.9 ms</td><td><b>15.7 ms</b></td><td>—</td><td>355.2 ms</td></tr>
+            <tr><td><code>reduce</code></td><td>719.3 ms</td><td>45.6 ms</td><td><b>22.6 ms</b></td><td>1.48 s</td><td>308.6 ms</td></tr>
+            <tr><td>runtime size</td><td><b>8.5 MB</b></td><td>12.8 MB</td><td>71.2 MB</td><td>28.8 MB</td><td>398.4 MB</td></tr>
           </tbody>
         </table>
       </div>
       <div class="note">
-        <b>The good.</b> On <code>tak</code> and <code>fib</code> cljgo is the fastest thing in the field except the JVM.
-        Against <b>gloat</b> — the only other Clojure→Go AOT compiler — it isn't close: <b>12.5× faster</b> on
-        <code>fib</code>, 13.9× on <code>tak</code>, 8.6× on <code>loop-recur</code>. The "emit plain Go" bet works.
-        cljgo also ships the smallest real runtime here; only Fennel's Lua VM is smaller, and it isn't Clojure.
+        cljgo @HEAD · let-go v1.11.1 · babashka v1.12.218 · joker v1.9.0 · Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1.
+        joker has no <code>transducers</code>. Not measured: <b>gloat</b> (its module exposes no installable package
+        path) and <b>go-joker</b> (needs a source clone + codegen) — let-go's published M1 data puts gloat at 12.7×
+        let-go on <code>fib</code>, 5.4× on <code>reduce</code>.
+      </div>
+      <div class="note">
+        <b>The good.</b> On <code>tak</code> and <code>fib</code> cljgo is the fastest thing here except the JVM —
+        ahead of a bytecode VM (let-go) and a GraalVM native image (babashka), and <b>13.7× ahead of joker</b>, the
+        other Go tree-walker. cljgo also ships the smallest runtime in the field, at 8.5 MB. The "emit plain Go" bet works.
       </div>
       <div class="note">
         <b>The bad, and the one cause.</b> We win exactly the two benchmarks where the <em>benchmark's own code</em>
         does the arithmetic. Everything leaning on <code>clojure.core</code> — reduce, lazy seqs, transducers,
-        persistent maps — we lose, <code>reduce</code> by 16.5×. Why: <code>cljgo build</code> compiles your forms
+        persistent maps — we lose: <code>reduce</code> by 15.8× to let-go and <b>31.8× to babashka</b>.
+        The <code>reduce</code> row is the tell: cljgo (719 ms) sits next to <b>joker (1.48 s)</b>, the other tree-walk
+        interpreter — not next to let-go (45.6 ms) — while on <code>fib</code> we're 13.7× <em>ahead</em> of joker.
+        cljgo behaves like an AOT compiler on user code and like an interpreter on <code>clojure.core</code> code,
+        because that is exactly what it is. Why: <code>cljgo build</code> compiles your forms
         and nothing else. Every <code>clojure.core</code> fn an emitted binary calls is still a <b>tree-walk
         interpreted closure</b>, built by evaluating <code>core.clj</code> at boot. Measured:
         <code>fib</code> is <b>9.7× faster</b> compiled than interpreted (work in user code), while

@@ -136,37 +136,46 @@ Run on **let-go's own benchmark suite**, unmodified, with let-go's published
 methodology (hyperfine, 3 warmup / 10 runs). All 7 files compile and run on
 cljgo with no edits.
 
-cljgo and let-go were both measured here on an M5 Pro. The rest of the field is
-let-go's published M1 Pro data, so **every column is normalized to
-let-go = 1.00×**, which is how let-go's own table reports it and which cancels
-the hardware gap. That normalization is calibrated, not assumed: re-running
-let-go here reproduced its published numbers at a consistent 1.39–1.85×
-(median 1.72×) across all seven. **Lower is faster.**
+Every runtime below was **installed and measured on the same machine** (Apple
+M5 Pro, go1.26.3) — no normalization, no quoted numbers, wall-clock mean of 10
+runs. Totals include each runtime's startup. Best per row in bold.
 
-| Benchmark | cljgo | let-go | babashka | joker | go-joker | gloat | fennel | JVM |
-|---|---|---|---|---|---|---|---|---|
-| `tak` | **0.74×** | 1.00× | 0.9× | — | 0.8× | 10.3× | 5.1× | 0.3× |
-| `fib` | **0.82×** | 1.00× | 0.9× | 9.5× | 0.7× | 12.7× | 0.9× | 0.3× |
-| `loop-recur` | 1.80× | 1.00× | 1.0× | 10.5× | 0.2× | 15.5× | 2.6× | 6.9× |
-| `persistent-map` | 3.09× | 1.00× | 0.9× | 2.5× | 1.0× | 1.6× | 180× | 24.9× |
-| `map-filter` | 5.98× | 1.00× | 2.4× | 1.6× | 1.8× | 8.8× | 141× | 49.6× |
-| `transducers` | 6.56× | 1.00× | 0.6× | — | 0.4× | 4.3× | 36.4× | 8.3× |
-| `reduce` | **16.54×** | 1.00× | 0.5× | 37.0× | 0.2× | 5.4× | 121× | 5.5× |
-| startup | 6.08× | 1.00× | 2.2× | 1.4× | 1.5× | 1.8× | 5.2× | 43.9× |
-| runtime size | **8.5 MB** | 12 MB | 68 MB | 26 MB | 32 MB | 26 MB | 324 KB | 304 MB |
+| Benchmark | cljgo | let-go | babashka | joker | clojure JVM |
+|---|---|---|---|---|---|
+| startup | 28.0 ms | **4.9 ms** | 10.5 ms | 8.0 ms | 295.7 ms |
+| `tak` | 921.9 ms | 1.26 s | 1.14 s | 12.40 s | **492.0 ms** |
+| `fib` | 961.6 ms | 1.15 s | 1.17 s | 13.16 s | **442.9 ms** |
+| `loop-recur` | 68.8 ms | **37.1 ms** | 39.2 ms | 453.3 ms | 413.9 ms |
+| `persistent-map` | 44.8 ms | 14.7 ms | **14.2 ms** | 32.8 ms | 412.4 ms |
+| `map-filter` | 32.5 ms | **5.1 ms** | 12.4 ms | 9.6 ms | 348.6 ms |
+| `transducers` | 171.8 ms | 27.9 ms | **15.7 ms** | — | 355.2 ms |
+| `reduce` | 719.3 ms | 45.6 ms | **22.6 ms** | 1.48 s | 308.6 ms |
+| runtime size | **8.5 MB** | 12.8 MB | 71.2 MB | 28.8 MB | 398.4 MB |
+
+Versions: cljgo @HEAD, let-go v1.11.1, babashka v1.12.218, joker v1.9.0,
+Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1. `joker` has no `transducers`.
+Not measured: **gloat** (its module exposes no installable package path) and
+**go-joker** (needs a source clone + codegen) — let-go's published M1 Pro data
+puts gloat at 12.7× let-go on `fib` and 5.4× on `reduce`.
 
 Two honest reads of that table.
 
-**The good.** On `tak` and `fib` cljgo is the fastest thing in the field except
-the JVM — and against **gloat**, the only other Clojure→Go AOT compiler, it is
-not close: 12.5× faster on `fib`, 13.9× on `tak`, 8.6× on `loop-recur`. The
-"emit plain Go" bet works. cljgo also ships the smallest real runtime here
-(8.5 MB; only Fennel's Lua VM is smaller, and it isn't Clojure).
+**The good.** On `tak` and `fib` cljgo is the fastest thing here except the
+JVM — ahead of both a bytecode VM (let-go) and a GraalVM native image
+(babashka), and **13.7× ahead of joker**, the other Go tree-walker. cljgo also
+ships the smallest runtime in the field at 8.5 MB. The "emit plain Go" bet
+works.
 
 **The bad.** We win exactly the two benchmarks where the *benchmark's own code*
-does the arithmetic. Every benchmark that leans on `clojure.core` — reduce,
-lazy seqs, transducers, persistent maps — we lose, and `reduce` we lose by
-16.5× to let-go and 3.1× to gloat.
+does the arithmetic. Everything that leans on `clojure.core` — reduce, lazy
+seqs, transducers, persistent maps — we lose: `reduce` by 15.8× to let-go and
+**31.8× to babashka**.
+
+The `reduce` row is the tell. cljgo (719 ms) sits next to **joker (1.48 s)**,
+the other tree-walk interpreter — not next to let-go (45.6 ms). On `fib` we are
+13.7× *ahead* of joker. **cljgo behaves like an AOT compiler on user code and
+like a tree-walk interpreter on `clojure.core` code, because that is exactly
+what it is.**
 
 There is one cause, and it is the same `core.clj`-at-runtime coupling above:
 

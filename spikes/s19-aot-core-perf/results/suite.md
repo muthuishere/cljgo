@@ -1,29 +1,19 @@
-# S19 results — let-go benchmark suite, cljgo vs let-go
+# S19 results — let-go's benchmark suite, whole field, one machine
 
 Apple M5 Pro, go1.26.3. hyperfine 3 warmup / 10 runs. Totals include startup.
-Raw hyperfine JSON per benchmark in this directory.
+Every runtime installed and measured here — no normalization. Regenerate with `report.py`.
 
-| benchmark | cljgo | let-go | normalized (let-go=1.00x) |
-|---|---|---|---|
-| `tak` | 922.8 ms | 1243.4 ms | **0.74x** |
-| `fib` | 954.1 ms | 1159.2 ms | **0.82x** |
-| `loop-recur` | 67.0 ms | 37.2 ms | **1.80x** |
-| `persistent-map` | 43.1 ms | 14.0 ms | **3.09x** |
-| `map-filter` | 31.0 ms | 5.2 ms | **5.98x** |
-| `transducers` | 165.9 ms | 25.3 ms | **6.56x** |
-| `reduce` | 680.4 ms | 41.1 ms | **16.54x** |
+| Benchmark | cljgo | let-go | babashka | joker | clojure-jvm |
+|---|---|---|---|---|---|
+| `startup` | 28.0 ms | **4.9 ms** | 10.5 ms | 8.0 ms | 295.7 ms |
+| `tak` | 921.9 ms | 1.26 s | 1.14 s | 12.40 s | **492.0 ms** |
+| `fib` | 961.6 ms | 1.15 s | 1.17 s | 13.16 s | **442.9 ms** |
+| `loop-recur` | 68.8 ms | **37.1 ms** | 39.2 ms | 453.3 ms | 413.9 ms |
+| `persistent-map` | 44.8 ms | 14.7 ms | **14.2 ms** | 32.8 ms | 412.4 ms |
+| `map-filter` | 32.5 ms | **5.1 ms** | 12.4 ms | 9.6 ms | 348.6 ms |
+| `transducers` | 171.8 ms | 27.9 ms | **15.7 ms** | — | 355.2 ms |
+| `reduce` | 719.3 ms | 45.6 ms | **22.6 ms** | 1.48 s | 308.6 ms |
 
-## Calibration: let-go published (M1 Pro) vs measured here (M5 Pro)
-
-Normalizing to let-go=1.00x is only valid if let-go reproduces consistently.
-It does — a tight 1.39-1.85x band, median 1.72x:
-
-| benchmark | published M1 | measured M5 | ratio |
-|---|---|---|---|
-| `fib` | 2128.0 ms | 1159.2 ms | 1.84x |
-| `tak` | 2140.0 ms | 1243.4 ms | 1.72x |
-| `loop-recur` | 65.3 ms | 37.2 ms | 1.76x |
-| `map-filter` | 7.2 ms | 5.2 ms | 1.39x |
-| `persistent-map` | 20.2 ms | 14.0 ms | 1.45x |
-| `reduce` | 66.9 ms | 41.1 ms | 1.63x |
-| `transducers` | 46.9 ms | 25.3 ms | 1.85x |
+Versions: cljgo @HEAD, let-go v1.11.1, babashka v1.12.218, joker v1.9.0,
+Clojure CLI 1.12.5.1645 / OpenJDK 26.0.1. joker has no transducers.
+gloat + go-joker not installable (no package path / needs codegen).

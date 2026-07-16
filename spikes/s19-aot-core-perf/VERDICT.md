@@ -38,31 +38,49 @@ a tree-walker, which is the entire `reduce` result.
 
 ## 3. The competitive consequence — let-go's own suite, unmodified
 
-All 7 files run on cljgo with no edits. Normalized to let-go = 1.00×
-(their table's convention; cancels M1-Pro-vs-M5-Pro — calibration in
-`results/suite.md`, a tight 1.39–1.85× band, median 1.72×). Lower is faster.
+All 7 files run on cljgo with no edits. Every runtime **installed and measured
+on this machine** — no normalization, no quoted figures. Wall-clock mean of 10
+runs, startup included. Raw JSON in `results/full-*.json`.
 
-| Benchmark | cljgo | let-go | babashka | joker | go-joker | gloat | fennel | JVM |
-|---|---|---|---|---|---|---|---|---|
-| `tak` | **0.74×** | 1.00× | 0.9× | — | 0.8× | 10.3× | 5.1× | 0.3× |
-| `fib` | **0.82×** | 1.00× | 0.9× | 9.5× | 0.7× | 12.7× | 0.9× | 0.3× |
-| `loop-recur` | 1.80× | 1.00× | 1.0× | 10.5× | 0.2× | 15.5× | 2.6× | 6.9× |
-| `persistent-map` | 3.09× | 1.00× | 0.9× | 2.5× | 1.0× | 1.6× | 180× | 24.9× |
-| `map-filter` | 5.98× | 1.00× | 2.4× | 1.6× | 1.8× | 8.8× | 141× | 49.6× |
-| `transducers` | 6.56× | 1.00× | 0.6× | — | 0.4× | 4.3× | 36.4× | 8.3× |
-| `reduce` | 16.54× | 1.00× | 0.5× | 37.0× | 0.2× | 5.4× | 121× | 5.5× |
-| startup | 6.08× | 1.00× | 2.2× | 1.4× | 1.5× | 1.8× | 5.2× | 43.9× |
+| Benchmark | cljgo | let-go | babashka | joker | clojure JVM |
+|---|---|---|---|---|---|
+| startup | 28.0 ms | **4.9 ms** | 10.5 ms | 8.0 ms | 295.7 ms |
+| `tak` | 921.9 ms | 1.26 s | 1.14 s | 12.40 s | **492.0 ms** |
+| `fib` | 961.6 ms | 1.15 s | 1.17 s | 13.16 s | **442.9 ms** |
+| `loop-recur` | 68.8 ms | **37.1 ms** | 39.2 ms | 453.3 ms | 413.9 ms |
+| `persistent-map` | 44.8 ms | 14.7 ms | **14.2 ms** | 32.8 ms | 412.4 ms |
+| `map-filter` | 32.5 ms | **5.1 ms** | 12.4 ms | 9.6 ms | 348.6 ms |
+| `transducers` | 171.8 ms | 27.9 ms | **15.7 ms** | — | 355.2 ms |
+| `reduce` | 719.3 ms | 45.6 ms | **22.6 ms** | 1.48 s | 308.6 ms |
+| runtime size | **8.5 MB** | 12.8 MB | 71.2 MB | 28.8 MB | 398.4 MB |
+
+cljgo @HEAD · let-go v1.11.1 · babashka v1.12.218 · joker v1.9.0 · Clojure CLI
+1.12.5.1645 on OpenJDK 26.0.1. joker has no `transducers`. **gloat** and
+**go-joker** could not be installed (gloat's module exposes no importable
+package path; go-joker needs a source clone + codegen) — let-go's published M1
+data puts gloat at 12.7× let-go on `fib` and 5.4× on `reduce`, i.e. losing the
+compiled path and winning the core path, the mirror of us.
 
 The table splits exactly along the §1 line. **We win the two benchmarks whose
-own code does the arithmetic** (`tak`, `fib` — fastest in the field bar the
-JVM). **We lose every benchmark that routes through `clojure.core`.**
+own code does the arithmetic** (`tak`, `fib` — fastest here bar the JVM, ahead
+of both a bytecode VM and a GraalVM native image). **We lose every benchmark
+that routes through `clojure.core`** — `reduce` by 15.8× to let-go and 31.8× to
+babashka.
 
-Against **gloat**, the only other Clojure→Go AOT compiler, the same split
-appears in our favour where it counts: 12.5× faster on `fib`, 13.9× on `tak`,
-8.6× on `loop-recur` — but gloat beats us 3.1× on `reduce` and 1.5× on
-`transducers`, i.e. exactly where our core is interpreted and theirs is not.
-That is independent corroboration that the emitter is sound and the boot model
-is the defect.
+**joker is the control, and it is decisive.** joker is the other Go *tree-walk
+interpreter*:
+
+| | cljgo | joker (Go tree-walk) | let-go (Go bytecode VM) |
+|---|---|---|---|
+| `fib` — user code | **961.6 ms** | 13.16 s — 13.7× behind us | 1.15 s |
+| `reduce` — `clojure.core` | 719.3 ms | 1.48 s — 2.1× behind us | **45.6 ms** |
+
+On user code we are 13.7× faster than a tree-walker: we are a compiler. On
+`reduce` we are in the *tree-walker's* league, 15.8× off the bytecode VM:
+there we are an interpreter. Same binary, same run. That is §1's A/B confirmed
+by a third-party implementation rather than by our own instrumentation, and it
+rules out the alternative explanation that `pkg/lang`'s data structures are
+simply slow — if they were, `fib` would be slow too.
 
 ## 4. Boot attribution (secondary, confirms ADR 0019/0023)
 
