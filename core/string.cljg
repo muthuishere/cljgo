@@ -147,3 +147,16 @@
 
 ;; reverse is defined near the top (before the clojure.core refer) — see the
 ;; comment there for why.
+
+;; --- escaping ---------------------------------------------------------
+
+(defn escape
+  "Return a new string, using cmap to escape each character ch
+  from s as follows:
+
+  If (cmap ch) is nil, append ch to the new string.
+  If (cmap ch) is non-nil, append (str (cmap ch)) instead."
+  [s cmap]
+  (if (string? s)
+    (apply str (map (fn [ch] (if-let [r (cmap ch)] (str r) ch)) s))
+    (throw (ex-info (str "clojure.string/escape: not a string: " (pr-str s)) {}))))

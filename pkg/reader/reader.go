@@ -55,6 +55,34 @@ type Reader struct {
 	// reads as nil instead of erroring, matching Clojure's suppress-read of
 	// unselected branches. See readConditional / readTaggedLiteral.
 	tagSuppress int
+
+	// ednStrict enables clojure.edn's tighter reader rules (WithEDNStrict):
+	// real JVM clojure.edn is a RESTRICTED reader, stricter than
+	// clojure.core's LispReader in a few specific spots (oracle-verified,
+	// clojure-test-suite edn_test/read_string.cljc): `#!` is not a
+	// registered comment macro there (throws "No dispatch macro for: !"
+	// instead of consuming a shebang line), and `::kw` auto-resolution
+	// throws "Invalid token" (edn has no notion of a current namespace).
+	// cljgo additionally rejects 3+-part (two-slash) symbols/keywords in
+	// this mode as a DEVIATION from real JVM edn (which is lenient there);
+	// the suite's own :default branch expects the stricter behavior. Only
+	// clojure.edn/read-string sets this; clojure.core's reader (REPL, file
+	// loads, syntax-quote, ...) is completely unaffected.
+	ednStrict bool
+
+	// tagReaders backs clojure.edn/read-string's `:readers` option
+	// (map[tag-full-name]lang.IFn): consulted BEFORE the built-in
+	// #uuid/#inst/#cljgo/... tags, so a caller-supplied reader can override
+	// them (oracle: (edn/read-string {:readers {'uuid (constantly
+	// :override)}} "#uuid \"...\"") => :override). nil outside the opts
+	// arity.
+	tagReaders map[string]lang.IFn
+	// defaultReader backs clojure.edn/read-string's `:default` option: an
+	// (fn [tag value]) invoked for a tag with no built-in handler, no
+	// *data-readers* entry, and no :readers override. nil outside the opts
+	// arity (or when :default wasn't supplied), in which case an unhandled
+	// tag is a reader error as usual.
+	defaultReader lang.IFn
 }
 
 // Option configures a Reader.
@@ -70,6 +98,25 @@ func WithFilename(file string) Option {
 // (::) keywords and syntax-quote symbol resolution.
 func WithResolver(res Resolver) Option {
 	return func(r *Reader) { r.resolver = res }
+}
+
+// WithEDNStrict enables clojure.edn's restricted-reader rules (see the
+// Reader.ednStrict field doc). Used only by clojure.edn/read-string.
+func WithEDNStrict() Option {
+	return func(r *Reader) { r.ednStrict = true }
+}
+
+// WithTagReaders installs a tag -> reader-fn table backing
+// clojure.edn/read-string's `:readers` option, keyed by the tag symbol's
+// full name (e.g. "my/foo", or "uuid"/"inst" to override a built-in tag).
+func WithTagReaders(readers map[string]lang.IFn) Option {
+	return func(r *Reader) { r.tagReaders = readers }
+}
+
+// WithDefaultReader installs the fallback (fn [tag value]) backing
+// clojure.edn/read-string's `:default` option.
+func WithDefaultReader(fn lang.IFn) Option {
+	return func(r *Reader) { r.defaultReader = fn }
 }
 
 // New creates a Reader over rs.
@@ -148,11 +195,15 @@ func (r *Reader) skipWhitespace() {
 	}
 }
 
-// skipLine consumes runes through the next newline (or EOF).
+// skipLine consumes runes through the next line terminator (or EOF). Both
+// \n and \r end a `;` comment (oracle 1.12.5: (read-string ";foo\r3\n5")
+// => 3 — a bare \r terminates the comment same as \n; cljgo previously
+// only stopped at \n, so a \r-only line ending swallowed the next form
+// too).
 func (r *Reader) skipLine() {
 	for {
 		c, err := r.s.Read()
-		if err != nil || c == '\n' {
+		if err != nil || c == '\n' || c == '\r' {
 			return
 		}
 	}
@@ -357,7 +408,15 @@ func (r *Reader) readDispatch(start Position, spliceOK bool) (form any, again bo
 		}
 		return nil, true, nil
 	case '!':
-		// #! line comment (shebang).
+		// #! line comment (shebang) — a cljgo core-reader extension for
+		// script files (CLI check: (read-string "#!shebang\n42") => 42).
+		// clojure.edn's restricted reader has no such macro at all (oracle:
+		// (clojure.edn/read-string "#!shebang") throws "No dispatch macro
+		// for: !"), so ednStrict rejects it outright instead of comment-
+		// skipping.
+		if r.ednStrict {
+			return nil, false, r.errAt(start, "No dispatch macro for: !")
+		}
 		r.skipLine()
 		return nil, true, nil
 	case '<':
@@ -433,6 +492,15 @@ func (r *Reader) readTaggedLiteral(start Position) (any, error) {
 		}
 		return nil, err
 	}
+	// clojure.edn/read-string's `:readers` option (WithTagReaders) takes
+	// priority over EVERYTHING below, including the built-in #uuid/#inst
+	// tags (oracle: (edn/read-string {:readers {'uuid (constantly
+	// :override)}} "#uuid \"...\"") => :override, not a real UUID).
+	if r.tagReaders != nil {
+		if fn, ok := r.tagReaders[sym.FullName()]; ok {
+			return fn.Invoke(val), nil
+		}
+	}
 	switch sym.FullName() {
 	case "cljgo/ok":
 		return lang.NewOk(val), nil
@@ -449,20 +517,33 @@ func (r *Reader) readTaggedLiteral(start Position) (any, error) {
 		if !ok {
 			return nil, r.errAt(start, "UUID literal expects a string, not %s", lang.PrintString(val))
 		}
-		if !uuidRe.MatchString(s) {
+		u, ok := NewUUID(s)
+		if !ok {
 			return nil, r.errAt(start, "Invalid UUID string: %s", s)
 		}
-		return UUID{s: strings.ToLower(s)}, nil
+		return u, nil
 	case "inst":
 		s, ok := val.(string)
 		if !ok {
 			return nil, r.errAt(start, "Instant literal expects a string, not %s", lang.PrintString(val))
 		}
-		return Inst{s: s}, nil
+		inst, err := NewInst(s)
+		if err != nil {
+			return nil, r.errAt(start, "%v", err)
+		}
+		return inst, nil
 	}
 	// Extension point: a program-registered *data-readers* function.
 	if fn, ok := dataReaderFor(sym); ok {
 		return fn.Invoke(val), nil
+	}
+	// clojure.edn/read-string's `:default` option: an (fn [tag value])
+	// invoked for a tag with no built-in handler and no *data-readers*
+	// entry (oracle: (edn/read-string {:default (fn [_tag v] [:unknown
+	// v])} "#foo 42") => [:unknown 42]; a KNOWN tag like #uuid still uses
+	// its built-in reader above, :default is only the last resort).
+	if r.defaultReader != nil {
+		return r.defaultReader.Invoke(sym, val), nil
 	}
 	// Inside an unselected reader-conditional branch (e.g. jank's #cpp), an
 	// unknown tag is suppress-read as nil rather than an error — the branch is
@@ -664,6 +745,30 @@ func (r *Reader) matchSymbol(start Position, tok string) (any, error) {
 	if strings.HasSuffix(ns, ":/") || strings.HasSuffix(name, ":") ||
 		strings.Contains(tok[1:], "::") {
 		return invalid()
+	}
+
+	if r.ednStrict {
+		// clojure.edn has no current-namespace context, so ::foo/::alias/foo
+		// auto-resolution is simply an invalid token (oracle: real JVM
+		// clojure.edn/read-string "::foo" throws "Invalid token: ::foo" —
+		// the SAME error clojure.core's reader would give with no injected
+		// Resolver, so this only tightens edn to that no-resolver case).
+		if strings.HasPrefix(tok, "::") {
+			return invalid()
+		}
+		// 3+-part (two-or-more-slash) symbols/keywords, e.g. foo/bar/baz:
+		// real JVM edn is actually lenient here too (DEVIATION — see the
+		// ednStrict field doc), but the clojure-test-suite's :default
+		// dialect branch expects rejection, so cljgo is stricter than the
+		// JVM oracle by design for this one corner. `ns` (m[1]) already
+		// carries its trailing '/'; an EXTRA '/' inside it (once that
+		// trailing one is stripped) means the namespace part itself had a
+		// slash, i.e. 3+ parts. A bare trailing-slash NAME like "foo//"
+		// (ns "foo/", name "/") is legitimately 2 parts and must not trip
+		// this — checking `ns`, not the raw token, keeps that case valid.
+		if nsBody := strings.TrimSuffix(ns, "/"); strings.Contains(nsBody, "/") {
+			return invalid()
+		}
 	}
 
 	if strings.HasPrefix(tok, "::") {

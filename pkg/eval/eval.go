@@ -116,6 +116,12 @@ func (e *Evaluator) resolveVar(sym *lang.Symbol) (*lang.Var, error) {
 	if v := classRefVar(sym); v != nil {
 		return v, nil
 	}
+	// Also last-resort (ADR 0039): a dotted symbol spelling the GENERATED
+	// class name of one of OUR defprotocol/defrecord/deftype vars
+	// (my.name_space.TheName, namespace munged - → _) resolves to that var.
+	if v := typeClassVar(sym); v != nil {
+		return v, nil
+	}
 	return nil, fmt.Errorf("unable to resolve symbol: %s in this context", sym.Name())
 }
 
