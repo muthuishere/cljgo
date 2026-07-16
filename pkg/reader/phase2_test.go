@@ -126,6 +126,15 @@ func TestReaderConditionalErrors(t *testing.T) {
 	if err := mustErr(t, "[#?@(:cljgo 5)]"); !strings.Contains(err.Error(), "Spliced form list in read-cond-splicing") {
 		t.Errorf("bad splice value: %v", err)
 	}
+	// CLI: (read-string {:read-cond :allow :features #{:cljgo}}
+	// "{:a 1 :b #?(:cljr X :lpy Y)}") => "Map literal must contain an even
+	// number of forms" — an unmatched conditional in map-VALUE position
+	// elides just the value, leaving the map odd. This is exactly why the
+	// suite's reduce.cljc interop map cannot read under #{:cljgo :default}
+	// (its values gate on :cljr/:lpy/:phel/:cljs/:clj with no :default).
+	if err := mustErr(t, "{:a 1 :b #?(:clj X :lpy Y)}"); !strings.Contains(err.Error(), "Map literal must contain an even number of forms") {
+		t.Errorf("elided map value: %v", err)
+	}
 }
 
 // ---------------------------------------------------------------------------
