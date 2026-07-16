@@ -48,6 +48,32 @@ modes, zero suite regressions).
 Suite: **234/242 (96.7%), zero failing files** — identical to the pre-change
 baseline. Full `go test ./...` green. Both modes improve identically.
 
+## The honest two-sided set (their strengths AND ours, one machine)
+
+Beyond let-go's suite, workloads chosen for what each side is good at —
+identical programs where both dialects allow (let-go's channels live in its
+`async` ns; same workload, own idiom), outputs verified equal:
+
+| workload | cljgo | let-go | compute (−30 ms / −5.6 ms boot) |
+|---|---|---|---|
+| goroutines+chan, 100k msgs | 44.6 ms | 33.5 ms | **14.8 vs 27.9 — cljgo wins** |
+| build+read 100k persistent maps | 56.6 ms | 41.0 ms | **26.8 vs 35.4 — cljgo wins** |
+| `frequencies` 1e6 (their turf) | 1220.6 ms | 229.1 ms | 5.3× behind — transients |
+| 100k Go stdlib calls (`strconv`/`strings` via `require-go`) | 59.0 ms | **N/A** | let-go cannot import Go modules; its interop requires hand-written `Def` bindings in Go |
+
+Real goroutine/channel throughput and persistent-map traffic — the priorities
+1 and 4 workloads — now beat the bytecode VM on compute; the interop row has
+no competitor entry at all. `frequencies` stays honest on the table until
+transients land.
+
+**Bug found by writing the interop row in the advertised style** (filed, not
+fixed here): `(require-go '[math])` + `(math/Floor 2.7)` runs interpreted but
+**fails AOT** ("no such namespace: math"), on this branch AND on old main —
+a live REPL↔binary divergence, the design/00 unforgivable failure mode, for
+any float-returning `math` fn. `strings`/`strconv` are unaffected. Needs its
+own fix + a conformance file; the dual-harness suite never caught it because
+no conformance test uses `math`.
+
 ## What still loses, and the two named levers
 
 1. **Boot (30 ms) now dominates every small-benchmark total** (let-go starts
