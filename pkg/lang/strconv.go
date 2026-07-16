@@ -290,7 +290,9 @@ func Print(x interface{}, w io.Writer) {
 			io.WriteString(w, CharLiteralFromRune(rune(c)))
 		}
 	} else if v, ok := x.(*BigDecimal); ok && readably {
-		io.WriteString(w, v.StripTrailingZeros())
+		// Java toString: scale-preserving, plain-vs-E per the javadoc
+		// algorithm (ADR 0032) — 1.10M prints 1.10M, never 1.1M.
+		io.WriteString(w, v.String())
 		io.WriteString(w, "M")
 	} else if v, ok := x.(*BigInt); ok && readably {
 		io.WriteString(w, v.String())

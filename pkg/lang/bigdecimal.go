@@ -2,37 +2,100 @@ package lang
 
 import (
 	"fmt"
+	"math"
 	"math/big"
+	"strconv"
 	"strings"
 )
 
-// BigDec is an arbitrary-precision floating point number. It wraps
-// and has the same semantics as big.Float. big.Float is not used
-// directly because it is mutable, and the core BigDecimal should not
-// be.
+// BigDecimal is an immutable arbitrary-precision signed decimal:
+// value = unscaled × 10^(-scale). This is java.math.BigDecimal's exact
+// model (unscaled BigInteger + 32-bit scale), so every javadoc rule —
+// arithmetic preferred scales, exact-or-throw division, the
+// plain-vs-scientific toString boundary — ports 1:1 and stays checkable
+// against the JVM oracle.
 //
-// TODO: swap out with a *decimal* representation. The go standard
-// library big.Float is a binary floating point representation,
-// which means that some decimal fractions cannot be represented
-// exactly. This can lead to unexpected results when doing
-// arithmetic with decimal fractions. A decimal representation
-// would avoid this problem.
+// cljgo ADR 0032 surgery: the original Glojure type wrapped *big.Float
+// (binary mantissa — lost scale, represented Inf/NaN, silently
+// truncated long literals). Replaced wholesale with the scaled-decimal
+// model proven by spike S16 (spikes/s16-bigdecimal-scaled/VERDICT.md,
+// 159/159 vs real Clojure 1.12.5). See pkg/lang/PROVENANCE.md.
 type BigDecimal struct {
-	val *big.Float
+	unscaled *big.Int
+	scale    int32
 }
 
-// NewBigDecimal creates a new BigDecimal from a string.
-func NewBigDecimal(s string) (*BigDecimal, error) {
-	bf, ok := new(big.Float).SetString(s)
-	if !ok {
-		return nil, fmt.Errorf("invalid big decimal: %s", s)
+var bigDecTen = big.NewInt(10)
+
+func bigDecPow10(n int64) *big.Int {
+	return new(big.Int).Exp(bigDecTen, big.NewInt(n), nil)
+}
+
+func clampBigDecScale(s int64) int32 {
+	if s < math.MinInt32 || s > math.MaxInt32 {
+		panic(NewArithmeticError("Scale out of range."))
 	}
-	return &BigDecimal{val: bf}, nil
+	return int32(s)
+}
+
+// NewBigDecimal parses a string per the java.math.BigDecimal(String)
+// grammar: [sign] digits [. digits] [(e|E) [sign] digits], or
+// [sign] . digits [exp]. Scale and E-notation are preserved exactly.
+func NewBigDecimal(s string) (*BigDecimal, error) {
+	orig := s
+	if s == "" {
+		return nil, fmt.Errorf("empty String")
+	}
+	neg := false
+	switch s[0] {
+	case '+':
+		s = s[1:]
+	case '-':
+		neg = true
+		s = s[1:]
+	}
+	mant := s
+	var exp int64
+	if i := strings.IndexAny(s, "eE"); i >= 0 {
+		mant = s[:i]
+		e, err := strconv.ParseInt(s[i+1:], 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid exponent in %q", orig)
+		}
+		exp = e
+	}
+	intPart, fracPart := mant, ""
+	if i := strings.IndexByte(mant, '.'); i >= 0 {
+		intPart, fracPart = mant[:i], mant[i+1:]
+	}
+	if intPart == "" && fracPart == "" {
+		return nil, fmt.Errorf("no digits in %q", orig)
+	}
+	digits := intPart + fracPart
+	for _, c := range digits {
+		if c < '0' || c > '9' {
+			return nil, fmt.Errorf("Character %c is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.", c)
+		}
+	}
+	u, ok := new(big.Int).SetString(digits, 10)
+	if !ok {
+		return nil, fmt.Errorf("invalid number %q", orig)
+	}
+	if neg {
+		u.Neg(u)
+	}
+	scale := int64(len(fracPart)) - exp
+	if scale < math.MinInt32 || scale > math.MaxInt32 {
+		return nil, fmt.Errorf("Scale out of range.")
+	}
+	return &BigDecimal{unscaled: u, scale: int32(scale)}, nil
 }
 
 // MustBigDecimal parses a BigDecimal string or panics. It backs the
 // emitter's constant literal reconstruction (pkg/emit constExpr) over a
-// value cljgo itself printed, so failure is a compiler bug.
+// value cljgo itself printed, so failure is a compiler bug. Java's
+// toString round-trips scale by design, so REPL and AOT constants stay
+// identical.
 func MustBigDecimal(s string) *BigDecimal {
 	bd, err := NewBigDecimal(s)
 	if err != nil {
@@ -41,123 +104,311 @@ func MustBigDecimal(s string) *BigDecimal {
 	return bd
 }
 
-// NewBigDecimalFromBigFloat
-func NewBigDecimalFromBigFloat(x *big.Float) *BigDecimal {
-	xCopy := new(big.Float)
-	xCopy.Set(x)
-	return &BigDecimal{val: xCopy}
-}
-
-// NewBigDecimalFromFloat64 creates a new BigDecimal from a float64.
+// NewBigDecimalFromFloat64 follows BigDecimal.valueOf(double) =
+// parse(Double.toString(d)): the shortest decimal representation, with
+// Java's trailing ".0" for integral values. Non-finite doubles throw
+// "Infinite or NaN" exactly like the JVM ctor.
 func NewBigDecimalFromFloat64(x float64) *BigDecimal {
-	return &BigDecimal{val: new(big.Float).SetFloat64(x)}
+	if math.IsInf(x, 0) || math.IsNaN(x) {
+		panic(NewIllegalArgumentError("Infinite or NaN"))
+	}
+	s := strconv.FormatFloat(x, 'g', -1, 64)
+	if !strings.ContainsAny(s, ".eE") {
+		s += ".0" // Java Double.toString always has a fraction
+	}
+	return MustBigDecimal(s)
 }
 
+// NewBigDecimalFromInt64 gives scale 0 — like BigDecimal.valueOf(long).
 func NewBigDecimalFromInt64(x int64) *BigDecimal {
-	return &BigDecimal{val: new(big.Float).SetInt64(x)}
+	return &BigDecimal{unscaled: big.NewInt(x), scale: 0}
 }
 
+// NewBigDecimalFromBigInt gives scale 0 — like new BigDecimal(BigInteger).
 func NewBigDecimalFromBigInt(x *big.Int) *BigDecimal {
-	return &BigDecimal{val: new(big.Float).SetInt(x)}
+	return &BigDecimal{unscaled: new(big.Int).Set(x), scale: 0}
 }
 
+// NewBigDecimalFromRatio implements Clojure's Ratio→BigDecimal
+// (Ratio.decimalValue with MathContext.UNLIMITED): numerator divided by
+// denominator exactly; panics on a non-terminating expansion.
 func NewBigDecimalFromRatio(x *Ratio) *BigDecimal {
-	return &BigDecimal{val: new(big.Float).SetRat(x.val)}
+	num := NewBigDecimalFromBigInt(x.val.Num())
+	den := NewBigDecimalFromBigInt(x.val.Denom())
+	return num.Divide(den)
 }
 
+// Sign reports the sign of the value: -1, 0, or +1.
+func (n *BigDecimal) Sign() int { return n.unscaled.Sign() }
+
+// Scale returns the scale (fraction digits; negative = trailing zeros).
+func (n *BigDecimal) Scale() int32 { return n.scale }
+
+// precision = number of digits in the unscaled value (Java: 1 for zero).
+func (n *BigDecimal) precision() int {
+	if n.unscaled.Sign() == 0 {
+		return 1
+	}
+	return len(new(big.Int).Abs(n.unscaled).String())
+}
+
+// adjExp is the adjusted exponent = precision - scale - 1 (the exponent
+// of the leading digit).
+func (n *BigDecimal) adjExp() int64 {
+	return int64(n.precision()) - int64(n.scale) - 1
+}
+
+// bigDecAlign returns both unscaled values brought to the common (max)
+// scale.
+func bigDecAlign(x, y *BigDecimal) (ux, uy *big.Int, scale int32) {
+	if x.scale == y.scale {
+		return x.unscaled, y.unscaled, x.scale
+	}
+	if x.scale > y.scale {
+		return x.unscaled, new(big.Int).Mul(y.unscaled, bigDecPow10(int64(x.scale)-int64(y.scale))), x.scale
+	}
+	return new(big.Int).Mul(x.unscaled, bigDecPow10(int64(y.scale)-int64(x.scale))), y.unscaled, y.scale
+}
+
+// ToBigInteger truncates toward zero (Java toBigInteger).
 func (n *BigDecimal) ToBigInteger() *big.Int {
-	res, _ := n.val.Int(nil)
-	return res
+	switch {
+	case n.scale == 0:
+		return new(big.Int).Set(n.unscaled)
+	case n.scale > 0:
+		return new(big.Int).Quo(n.unscaled, bigDecPow10(int64(n.scale)))
+	default:
+		return new(big.Int).Mul(n.unscaled, bigDecPow10(-int64(n.scale)))
+	}
 }
 
-func (n *BigDecimal) ToBigFloat() *big.Float {
-	res := new(big.Float)
-	res.Set(n.val)
-	return res
+// Float64 is Java doubleValue.
+func (n *BigDecimal) Float64() float64 {
+	f, _ := strconv.ParseFloat(n.String(), 64)
+	return f
 }
 
+// Rat returns the exact rational value (backs rationalize).
+func (n *BigDecimal) Rat() *big.Rat {
+	if n.scale >= 0 {
+		return new(big.Rat).SetFrac(n.unscaled, bigDecPow10(int64(n.scale)))
+	}
+	return new(big.Rat).SetFrac(new(big.Int).Mul(n.unscaled, bigDecPow10(-int64(n.scale))), big.NewInt(1))
+}
+
+// String ports the java.math.BigDecimal.toString javadoc algorithm:
+//
+//	If scale >= 0 and adjusted exponent >= -6: plain notation
+//	  (insert a decimal point scale digits from the right, zero-padding;
+//	   scale 0 = the digits themselves).
+//	Otherwise: scientific notation — one digit, '.', remaining digits,
+//	  'E', explicitly signed adjusted exponent.
 func (n *BigDecimal) String() string {
-	s := n.val.Text('f', -1)
-	// Ensure decimal point is present (e.g. "0" → "0.0")
-	if !strings.Contains(s, ".") {
-		s += ".0"
+	u := n.unscaled
+	neg := u.Sign() < 0
+	digits := new(big.Int).Abs(u).String()
+	adj := n.adjExp()
+	var body string
+	if n.scale >= 0 && adj >= -6 {
+		s := int(n.scale)
+		switch {
+		case s == 0:
+			body = digits
+		case len(digits) > s:
+			body = digits[:len(digits)-s] + "." + digits[len(digits)-s:]
+		default:
+			body = "0." + strings.Repeat("0", s-len(digits)) + digits
+		}
+	} else {
+		if len(digits) == 1 {
+			body = digits
+		} else {
+			body = digits[:1] + "." + digits[1:]
+		}
+		if adj >= 0 {
+			body += "E+" + strconv.FormatInt(adj, 10)
+		} else {
+			body += "E" + strconv.FormatInt(adj, 10)
+		}
 	}
-	return s
+	if neg {
+		return "-" + body
+	}
+	return body
 }
 
-// StripTrailingZeros returns a string representation with trailing
-// fractional zeros removed (e.g. "1.0" → "1", "1.50" → "1.5").
-func (n *BigDecimal) StripTrailingZeros() string {
-	s := n.val.Text('f', -1)
-	if strings.Contains(s, ".") {
-		s = strings.TrimRight(s, "0")
-		s = strings.TrimRight(s, ".")
+// StripTrailingZeros returns the numerically-equal value with trailing
+// fractional zeros moved into the scale (Java stripTrailingZeros). It
+// backs hasheq: Clojure `=` on BigDecimals is compareTo-based, so
+// =-equal values must hash identically.
+func (n *BigDecimal) StripTrailingZeros() *BigDecimal {
+	if n.unscaled.Sign() == 0 {
+		return &BigDecimal{unscaled: big.NewInt(0), scale: 0}
 	}
-	return s
+	u := new(big.Int).Set(n.unscaled)
+	s := n.scale
+	q, r := new(big.Int), new(big.Int)
+	for {
+		q.QuoRem(u, bigDecTen, r)
+		if r.Sign() != 0 {
+			break
+		}
+		u.Set(q)
+		s--
+	}
+	return &BigDecimal{unscaled: u, scale: s}
 }
 
+// Hash hashes the scale-normalized value so that (= a b) implies
+// (= (hash a) (hash b)) — oracle: (= (hash 1.0M) (hash 1.00M)) is true.
 func (n *BigDecimal) Hash() uint32 {
-	if n.val.Sign() == 0 {
+	if n.unscaled.Sign() == 0 {
 		return 0
 	}
-	return hashByteSlice([]byte(n.val.String())) // cljgo S4: was pcastools hash.String
+	norm := n.StripTrailingZeros()
+	s := norm.unscaled.String() + "/" + strconv.FormatInt(int64(norm.scale), 10)
+	return hashByteSlice([]byte(s))
 }
 
+// Equals is Clojure equiv for two BigDecimals: compareTo-based, i.e.
+// scale-insensitive ((= 1.0M 1.00M) is TRUE per the 1.12.5 oracle);
+// false for any non-BigDecimal (cross-category = is false).
 func (n *BigDecimal) Equals(v interface{}) bool {
 	other, ok := v.(*BigDecimal)
 	if !ok {
 		return false
 	}
-	return n.val.Cmp(other.val) == 0
+	return n.Cmp(other) == 0
 }
 
 func (n *BigDecimal) AddInt(x int) *BigDecimal {
-	return &BigDecimal{val: new(big.Float).Add(n.val, big.NewFloat(float64(x)))}
+	return n.Add(NewBigDecimalFromInt64(int64(x)))
 }
 
+// Add: scale = max(x.scale, y.scale) (Java BigDecimal.add).
 func (n *BigDecimal) Add(other *BigDecimal) *BigDecimal {
-	return &BigDecimal{val: new(big.Float).Add(n.val, other.val)}
+	ux, uy, s := bigDecAlign(n, other)
+	return &BigDecimal{unscaled: new(big.Int).Add(ux, uy), scale: s}
 }
 
 func (n *BigDecimal) AddP(other *BigDecimal) *BigDecimal {
 	return n.Add(other)
 }
 
+// Sub: scale = max(x.scale, y.scale).
 func (n *BigDecimal) Sub(other *BigDecimal) *BigDecimal {
-	return &BigDecimal{val: new(big.Float).Sub(n.val, other.val)}
+	ux, uy, s := bigDecAlign(n, other)
+	return &BigDecimal{unscaled: new(big.Int).Sub(ux, uy), scale: s}
 }
 
 func (n *BigDecimal) SubP(other *BigDecimal) *BigDecimal {
 	return n.Sub(other)
 }
 
+// Multiply: scale = x.scale + y.scale.
 func (n *BigDecimal) Multiply(other *BigDecimal) *BigDecimal {
-	return &BigDecimal{val: new(big.Float).Mul(n.val, other.val)}
+	return &BigDecimal{
+		unscaled: new(big.Int).Mul(n.unscaled, other.unscaled),
+		scale:    clampBigDecScale(int64(n.scale) + int64(other.scale)),
+	}
 }
 
+// Divide is Java divide(BigDecimal): the exact quotient at preferred
+// scale x.scale - y.scale (zero-padded when the exact result is
+// shorter); panics with ArithmeticException when the exact quotient has
+// a non-terminating decimal expansion (denominator not 2^a·5^b) or the
+// divisor is zero — a BigDecimal can never be Inf.
 func (n *BigDecimal) Divide(other *BigDecimal) *BigDecimal {
-	// Todo: div
-	return &BigDecimal{val: new(big.Float).Quo(n.val, other.val)}
+	if other.unscaled.Sign() == 0 {
+		panic(NewArithmeticError("Divide by zero"))
+	}
+	if n.unscaled.Sign() == 0 {
+		pref := clampBigDecScale(int64(n.scale) - int64(other.scale))
+		return &BigDecimal{unscaled: big.NewInt(0), scale: pref}
+	}
+	// exact quotient as reduced fraction num/den (of the unscaled values)
+	num := new(big.Int).Set(n.unscaled)
+	den := new(big.Int).Set(other.unscaled)
+	g := new(big.Int).GCD(nil, nil, new(big.Int).Abs(num), new(big.Int).Abs(den))
+	num.Quo(num, g)
+	den.Quo(den, g)
+	if den.Sign() < 0 {
+		num.Neg(num)
+		den.Neg(den)
+	}
+	// terminating iff den = 2^a * 5^b; the needed extra fractional digits
+	// = max(a, b) (multiply num by (10^max)/den, exact).
+	a, b := int64(0), int64(0)
+	dd := new(big.Int).Set(den)
+	two, five := big.NewInt(2), big.NewInt(5)
+	for {
+		q, rem := new(big.Int).QuoRem(dd, two, new(big.Int))
+		if rem.Sign() != 0 {
+			break
+		}
+		dd.Set(q)
+		a++
+	}
+	for {
+		q, rem := new(big.Int).QuoRem(dd, five, new(big.Int))
+		if rem.Sign() != 0 {
+			break
+		}
+		dd.Set(q)
+		b++
+	}
+	if dd.Cmp(big.NewInt(1)) != 0 {
+		panic(NewArithmeticError("Non-terminating decimal expansion; no exact representable decimal result."))
+	}
+	k := a
+	if b > k {
+		k = b
+	}
+	// exact: x.u/y.u = num/den = (num * 10^k / den) * 10^-k, so
+	// value = uMin × 10^-(k + x.scale - y.scale)
+	uMin := new(big.Int).Mul(num, bigDecPow10(k))
+	uMin.Quo(uMin, den)
+	sMin := k + int64(n.scale) - int64(other.scale)
+	pref := int64(n.scale) - int64(other.scale)
+	// pad to the preferred scale when the exact result is shorter
+	if sMin < pref {
+		uMin.Mul(uMin, bigDecPow10(pref-sMin))
+		sMin = pref
+	}
+	return &BigDecimal{unscaled: uMin, scale: clampBigDecScale(sMin)}
 }
 
+// Quotient is Java divideToIntegralValue (Clojure quot): the integer
+// part of the quotient, preferred scale x.scale - y.scale, padded with
+// trailing zeros when representable — (quot 10.0M 3) is 3.0M but
+// (quot 10.0M 3.0M) is 3M.
 func (n *BigDecimal) Quotient(other *BigDecimal) *BigDecimal {
-	// Truncate toward zero (integer quotient)
-	quo := new(big.Float).Quo(n.val, other.val)
-	intQuo, _ := quo.Int(nil)
-	return &BigDecimal{val: new(big.Float).SetInt(intQuo)}
+	if other.unscaled.Sign() == 0 {
+		panic(NewArithmeticError("Divide by zero"))
+	}
+	ux, uy, _ := bigDecAlign(n, other)
+	i := new(big.Int).Quo(ux, uy) // truncates toward zero
+	pref := int64(n.scale) - int64(other.scale)
+	if pref > 0 {
+		return &BigDecimal{unscaled: i.Mul(i, bigDecPow10(pref)), scale: clampBigDecScale(pref)}
+	}
+	// negative preferred scale: representable only if i has the trailing
+	// zeros; not exercised by Clojure-reachable paths — keep scale 0
+	// (exact value; recorded limit in S16 VERDICT).
+	return &BigDecimal{unscaled: i, scale: 0}
 }
 
+// Remainder is Java remainder (Clojure rem):
+// x - (x divideToIntegralValue y)*y. Clojure mod builds on it in core.
 func (n *BigDecimal) Remainder(other *BigDecimal) *BigDecimal {
-	quotient := new(big.Float).Quo(n.val, other.val)
-	intQuotient, _ := quotient.Int(nil)
-	intQuotientFloat := new(big.Float).SetInt(intQuotient)
-	product := new(big.Float).Mul(intQuotientFloat, other.val)
-	remainder := new(big.Float).Sub(n.val, product)
-	return &BigDecimal{val: remainder}
+	q := n.Quotient(other)
+	return n.Sub(q.Multiply(other))
 }
 
+// Cmp compares values numerically, ignoring scale (Java compareTo).
 func (n *BigDecimal) Cmp(other *BigDecimal) int {
-	return n.val.Cmp(other.val)
+	ux, uy, _ := bigDecAlign(n, other)
+	return ux.Cmp(uy)
 }
 
 func (n *BigDecimal) LT(other *BigDecimal) bool {
@@ -177,12 +428,12 @@ func (n *BigDecimal) GTE(other *BigDecimal) bool {
 }
 
 func (n *BigDecimal) Negate() *BigDecimal {
-	return &BigDecimal{val: new(big.Float).Neg(n.val)}
+	return &BigDecimal{unscaled: new(big.Int).Neg(n.unscaled), scale: n.scale}
 }
 
 func (n *BigDecimal) Abs() *BigDecimal {
-	if n.val.Sign() < 0 {
-		return &BigDecimal{val: new(big.Float).Abs(n.val)}
+	if n.unscaled.Sign() < 0 {
+		return n.Negate()
 	}
 	return n
 }

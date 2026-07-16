@@ -163,6 +163,63 @@ had been forced (`Delay`/`future`/etc. dodge this because their
 func). Fixed by switching on every nillable `reflect.Kind`. Acceptance:
 `conformance/tests/lazy-seq-realized-after-force.clj` (dual-harness).
 
+## BigDecimal representation swap (ADR 0032, 2026-07-16, `bigdecimal.go` rewritten)
+
+Ground truth: real Clojure 1.12.5 CLI via spike S16
+(spikes/s16-bigdecimal-scaled/VERDICT.md — 159-row oracle corpus; the
+old representation diverged on 72/132 comparable rows and silently
+mantissa-truncated long literals).
+
+- `bigdecimal.go` rewritten wholesale: the upstream Glojure type wrapped
+  an immutable `*big.Float` (binary mantissa). Replaced with Java
+  BigDecimal's exact model — unscaled `*big.Int` + `int32` scale —
+  ported from the S16 prototype (`spikes/s16-bigdecimal-scaled/proto/
+  decimal.go`, measured 159/159 vs the oracle). Includes: the
+  BigDecimal(String) ctor grammar (scale/E-notation preserved; long
+  literals exact), valueOf(double) semantics (shortest decimal string;
+  Inf/NaN throw `Infinite or NaN`), valueOf(long)/BigInteger scale-0
+  ctors, Ratio.decimalValue via exact divide, add/sub scale = max, mul
+  scale = sum, exact divide with preferred scale sx−sy throwing
+  `Non-terminating decimal expansion` / `Divide by zero`,
+  divideToIntegralValue + remainder preferred-scale rules (oracle:
+  `(quot 10.0M 3)` => `3.0M`, `(quot 10.0M 3.0M)` => `3M`), the javadoc
+  toString plain-vs-E algorithm (plain iff scale >= 0 and adjusted
+  exponent >= -6), and stripTrailingZeros. Exported surface kept
+  (`NewBigDecimal`, `MustBigDecimal`, `NewBigDecimalFrom*`,
+  `ToBigInteger`, `Cmp`, arithmetic methods); the big.Float-shaped
+  members `NewBigDecimalFromBigFloat`/`ToBigFloat` were removed (last
+  callers retargeted below).
+- `Hash` hashes the stripTrailingZeros-normalized value so `=`-equal
+  BigDecimals hash alike (oracle finding: `(= 1.0M 1.00M)` is TRUE —
+  Clojure `=` on two BigDecimals is compareTo-based; `equal.go` needed
+  no change, `Equals` was already Cmp-based and cross-category-false).
+- `numberops.go`: `bigDecimalOps` IsPos/IsNeg/IsZero via the new
+  `Sign()`; Divide/Quotient/Remainder now exact-or-throw (oracle:
+  `(/ 1M 3M)` and `(/ 1M 3)` THREW, were `0.33333333333333333334M`;
+  `(/ 1M 0M)` THREW, was `+InfM`). `AsBigDecimal` sends integral types
+  to scale-0 unscaled values directly (was float64-routed — precision
+  loss beyond 2^53), doubles through valueOf semantics (oracle:
+  `(bigdec ##Inf)` THREW, was `+InfM`; `(bigdec 1.5e300)` =>
+  `1.5E+300M`, was a 301-digit plain integer), BigInt/big.Int exact,
+  Ratio via exact divide. `AsInt64` BigDecimal arm truncates via
+  `ToBigInteger`. Combine matrix untouched (oracle: `(+ 1.0 1.0M)` =>
+  `2.0`, double still wins).
+- `numbers.go`: `Rationalize` BigDecimal arm uses the exact
+  `Rat()` (was a big.Float 'f' rendering); `AsFloat64` via the new
+  `Float64()`.
+- `bigint.go` `ToBigDecimal` builds the scale-0 value directly.
+- `strconv.go` print-readably emits Java `String()` + `"M"` (was
+  StripTrailingZeros — the `1.10M` => `1.1M` bug site); `str` was
+  already `String()`, which now follows the javadoc algorithm.
+- Acceptance: `conformance/tests/bigdec-{literal-scale,coercion,
+  coercion-errors,arith-scale,division,equality-hash,printing,tower}.clj`
+  (dual-harness, every row byte-verified against the live 1.12.5 CLI at
+  freeze time) + `bigdecimal_test.go` toString round-trip guard (the
+  emitter reconstructs constants from `String()`). S16 probes re-run:
+  132/133 rows match (5 THREW-vs-THREW wording-only diffs; the `hash`
+  row aborts on the pre-existing missing `hash` builtin, and the
+  hash-set row covers hasheq). `with-precision` (S16 items 13–14)
+  remains the ADR 0032 follow-on change.
 ## goid fast path (ADR 0034, 2026-07-16, `internal/goid/`)
 
 Evidence: spike S18 (spikes/s18-ubuntu-boot-anomaly/VERDICT.md) — the

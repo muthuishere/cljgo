@@ -126,11 +126,9 @@ func (nm *NumberMethods) Rationalize(x any) any {
 		}
 		return &Ratio{val: rat}
 	case *BigDecimal:
-		// Format to string to get the intended decimal value,
-		// avoiding exact binary representation artifacts.
-		s := x.val.Text('f', -1)
-		rat := new(big.Rat)
-		rat.SetString(s)
+		// The scaled-decimal representation is exact by construction
+		// (ADR 0032): unscaled/10^scale is the intended decimal value.
+		rat := x.Rat()
 		if rat.IsInt() {
 			return NewBigIntFromGoBigInt(new(big.Int).Set(rat.Num()))
 		}
@@ -688,8 +686,7 @@ func AsFloat64(x any) float64 {
 		// TODO: newer go versions have Int.Float64()
 		return float64(x.Int64())
 	case *BigDecimal:
-		f, _ := x.val.Float64()
-		return f
+		return x.Float64()
 	default:
 		v := reflect.ValueOf(x)
 		switch v.Kind() {
