@@ -1,0 +1,273 @@
+
+=== probes ===
+DIVERGE  quot 10.0M 3
+   oracle: 3.0M
+   cljgo : 3M
+DIVERGE  quot 3 10.0M
+   oracle: 0E+1M
+   cljgo : 0M
+DIVERGE  quot 10 0
+   oracle: THREW:/ by zero
+   cljgo : THREW:runtime error: integer divide by zero
+DIVERGE  quot 10N 0
+   oracle: THREW:Divide by zero
+   cljgo : THREW:division by zero
+DIVERGE  quot 10.0 0
+   oracle: THREW:Divide by zero
+   cljgo : THREW:divide by zero
+DIVERGE  quot 10.0 0.0
+   oracle: THREW:Divide by zero
+   cljgo : THREW:divide by zero
+DIVERGE  quot ##Inf 1
+   oracle: THREW:Infinite or NaN
+   cljgo : 9223372036854775807M
+DIVERGE  quot ##-Inf 1
+   oracle: THREW:Infinite or NaN
+   cljgo : -9223372036854775808M
+DIVERGE  quot ##NaN 1
+   oracle: THREW:Infinite or NaN
+   cljgo : 0M
+DIVERGE  quot 1 ##NaN
+   oracle: THREW:Infinite or NaN
+   cljgo : 0M
+DIVERGE  mod 10.0M 3
+   oracle: 1.0M
+   cljgo : 1M
+DIVERGE  mod 10.0M 3.0M
+   oracle: 1.0M
+   cljgo : 1M
+DIVERGE  mod 10 0
+   oracle: THREW:Divide by zero
+   cljgo : THREW:runtime error: integer divide by zero
+DIVERGE  mod 10.0 0
+   oracle: THREW:Divide by zero
+   cljgo : ##NaN
+DIVERGE  mod 1 ##Inf
+   oracle: ##NaN
+   cljgo : 1.0
+DIVERGE  mod 1 ##-Inf
+   oracle: ##NaN
+   cljgo : ##-Inf
+DIVERGE  mod ##Inf 1
+   oracle: THREW:Infinite or NaN
+   cljgo : ##NaN
+DIVERGE  mod ##-Inf 1
+   oracle: THREW:Infinite or NaN
+   cljgo : ##NaN
+DIVERGE  mod ##NaN 1
+   oracle: THREW:Infinite or NaN
+   cljgo : ##NaN
+DIVERGE  mod 1 ##NaN
+   oracle: THREW:Infinite or NaN
+   cljgo : ##NaN
+DIVERGE  rem 10.0M 3
+   oracle: 1.0M
+   cljgo : 1M
+DIVERGE  rem 10.0M 3.0M
+   oracle: 1.0M
+   cljgo : 1M
+DIVERGE  rem 10 0
+   oracle: THREW:/ by zero
+   cljgo : THREW:runtime error: integer divide by zero
+DIVERGE  rem 10.0 0
+   oracle: THREW:Divide by zero
+   cljgo : ##NaN
+DIVERGE  rem 1 ##Inf
+   oracle: ##NaN
+   cljgo : 1.0
+DIVERGE  rem 1 ##-Inf
+   oracle: ##NaN
+   cljgo : 1.0
+DIVERGE  rem ##Inf 1
+   oracle: THREW:Infinite or NaN
+   cljgo : ##NaN
+DIVERGE  rem ##-Inf 1
+   oracle: THREW:Infinite or NaN
+   cljgo : ##NaN
+DIVERGE  rem ##NaN 1
+   oracle: THREW:Infinite or NaN
+   cljgo : ##NaN
+DIVERGE  rem 1 ##NaN
+   oracle: THREW:Infinite or NaN
+   cljgo : ##NaN
+DIVERGE  + MAX 1
+   oracle: THREW:long overflow
+   cljgo : THREW:integer overflow
+DIVERGE  + MIN -1
+   oracle: THREW:long overflow
+   cljgo : THREW:integer overflow
+DIVERGE  + 1 nil
+   oracle: THREW:Cannot invoke "Object.getClass()" because "x" is null
+   cljgo : THREW:cannot convert <nil> to Ops
+DIVERGE  - MIN 1
+   oracle: THREW:long overflow
+   cljgo : THREW:integer overflow
+DIVERGE  - MAX -1
+   oracle: THREW:long overflow
+   cljgo : THREW:integer overflow
+DIVERGE  - 1 nil
+   oracle: THREW:Cannot invoke "Object.getClass()" because "x" is null
+   cljgo : THREW:cannot convert <nil> to Ops
+DIVERGE  - ()
+   oracle: THREW:Wrong number of args (0) passed to: clojure.core/-
+   cljgo : THREW:wrong number of args (0) passed to: -
+DIVERGE  * MAX 2
+   oracle: THREW:long overflow
+   cljgo : THREW:integer overflow
+DIVERGE  * MIN -1
+   oracle: THREW:long overflow
+   cljgo : THREW:integer overflow
+DIVERGE  * 1 nil
+   oracle: THREW:Cannot invoke "Object.getClass()" because "x" is null
+   cljgo : THREW:cannot convert <nil> to Ops
+DIVERGE  / 1 0
+   oracle: THREW:Divide by zero
+   cljgo : THREW:division by zero
+DIVERGE  inc MAX
+   oracle: THREW:long overflow
+   cljgo : THREW:integer overflow
+DIVERGE  dec MIN
+   oracle: THREW:long overflow
+   cljgo : THREW:integer overflow
+DIVERGE  even? nil
+   oracle: THREW:Argument must be an integer: 
+   cljgo : THREW:cannot convert <nil> to Ops
+DIVERGE  even? ##Inf
+   oracle: THREW:Argument must be an integer: Infinity
+   cljgo : false
+DIVERGE  even? ##-Inf
+   oracle: THREW:Argument must be an integer: -Infinity
+   cljgo : false
+DIVERGE  even? ##NaN
+   oracle: THREW:Argument must be an integer: NaN
+   cljgo : false
+DIVERGE  even? 1.5
+   oracle: THREW:Argument must be an integer: 1.5
+   cljgo : false
+DIVERGE  even? 0.2M
+   oracle: THREW:Argument must be an integer: 0.2
+   cljgo : false
+DIVERGE  even? 1/2
+   oracle: THREW:Argument must be an integer: 1/2
+   cljgo : false
+DIVERGE  odd? nil
+   oracle: THREW:Argument must be an integer: 
+   cljgo : THREW:cannot convert <nil> to Ops
+DIVERGE  odd? ##Inf
+   oracle: THREW:Argument must be an integer: Infinity
+   cljgo : true
+DIVERGE  odd? ##NaN
+   oracle: THREW:Argument must be an integer: NaN
+   cljgo : true
+DIVERGE  odd? 1.5
+   oracle: THREW:Argument must be an integer: 1.5
+   cljgo : true
+DIVERGE  odd? 1/2
+   oracle: THREW:Argument must be an integer: 1/2
+   cljgo : true
+DIVERGE  odd? 0.2M
+   oracle: THREW:Argument must be an integer: 0.2
+   cljgo : true
+DIVERGE  int overflow-lo
+   oracle: THREW:Value out of range for int: -2.147483648000001E9
+   cljgo : -2147483648
+DIVERGE  int overflow-lo2
+   oracle: THREW:integer overflow
+   cljgo : -2147483649
+DIVERGE  int overflow-hi
+   oracle: THREW:integer overflow
+   cljgo : 2147483648
+DIVERGE  int overflow-hi2
+   oracle: THREW:Value out of range for int: 2.147483647000001E9
+   cljgo : 2147483647
+DIVERGE  int "0"
+   oracle: THREW:class java.lang.String cannot be cast to class java.lang.Character (java.lang.String and java.lang.Character are in module java.base of loader 'bootstrap')
+   cljgo : THREW:cannot convert string to int64
+DIVERGE  int :0
+   oracle: THREW:class clojure.lang.Keyword cannot be cast to class java.lang.Character (clojure.lang.Keyword is in unnamed module of loader 'app'; java.lang.Character is in module java.base of loader 'bootstrap')
+   cljgo : THREW:cannot convert lang.Keyword to int64
+DIVERGE  int [0]
+   oracle: THREW:class clojure.lang.PersistentVector cannot be cast to class java.lang.Character (clojure.lang.PersistentVector is in unnamed module of loader 'app'; java.lang.Character is in module java.base of loader 'bootstrap')
+   cljgo : THREW:cannot convert *lang.Vector to int64
+DIVERGE  int nil
+   oracle: THREW:Cannot invoke "java.lang.Character.charValue()" because "x" is null
+   cljgo : THREW:cannot convert <nil> to int64
+DIVERGE  long nil
+   oracle: THREW:Cannot invoke "java.lang.Number.doubleValue()" because "x" is null
+   cljgo : THREW:cannot convert <nil> to int64
+DIVERGE  bigint MAX-double
+   oracle: 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000N
+   cljgo : 9223372036854775807N
+DIVERGE  bigdec 1.0
+   oracle: 1.0M
+   cljgo : 1M
+DIVERGE  bigdec "1e10"
+   oracle: 1E+10M
+   cljgo : 10000000000M
+DIVERGE  bigdec "1e-10"
+   oracle: 1E-10M
+   cljgo : 0.0000000001M
+DIVERGE  bigdec 1.0M
+   oracle: 1.0M
+   cljgo : 1M
+DIVERGE  bigdec -0.0
+   oracle: 0.0M
+   cljgo : -0M
+DIVERGE  bigdec ##Inf
+   oracle: THREW:Infinite or NaN
+   cljgo : +InfM
+DIVERGE  bigdec ##-Inf
+   oracle: THREW:Infinite or NaN
+   cljgo : -InfM
+DIVERGE  bigdec ##NaN
+   oracle: THREW:Infinite or NaN
+   cljgo : THREW:Float.SetFloat64(NaN)
+DIVERGE  bigdec nil
+   oracle: THREW:Cannot invoke "String.toCharArray()" because "val" is null
+   cljgo : THREW:bigdec: cannot convert nil
+DIVERGE  bigdec "abc"
+   oracle: THREW:Character a is neither a decimal digit number, decimal point, nor "e" notation exponential mark.
+   cljgo : THREW:bigdec: invalid number: abc
+DIVERGE  bigdec true
+   oracle: THREW:No matching ctor found for class java.math.BigDecimal
+   cljgo : THREW:cannot convert bool to BigDecimal
+DIVERGE  bigdec :a
+   oracle: THREW:No matching ctor found for class java.math.BigDecimal
+   cljgo : THREW:cannot convert lang.Keyword to BigDecimal
+DIVERGE  == 1 nil
+   oracle: THREW:Cannot invoke "Object.getClass()" because "x" is null
+   cljgo : THREW:== not supported on nil
+
+=== probes_abs ===
+DIVERGE  abs -1
+   oracle: 1
+   cljgo : <MISSING-or-aborted-before-this-line>
+DIVERGE  abs -1.0
+   oracle: 1.0
+   cljgo : <MISSING-or-aborted-before-this-line>
+DIVERGE  abs -0.0
+   oracle: 0.0
+   cljgo : <MISSING-or-aborted-before-this-line>
+DIVERGE  abs ##-Inf
+   oracle: ##Inf
+   cljgo : <MISSING-or-aborted-before-this-line>
+DIVERGE  abs -123.456M
+   oracle: 123.456M
+   cljgo : <MISSING-or-aborted-before-this-line>
+DIVERGE  abs -123N
+   oracle: 123N
+   cljgo : <MISSING-or-aborted-before-this-line>
+DIVERGE  abs MIN
+   oracle: -9223372036854775808
+   cljgo : <MISSING-or-aborted-before-this-line>
+DIVERGE  abs -1/5
+   oracle: 1/5
+   cljgo : <MISSING-or-aborted-before-this-line>
+DIVERGE  abs ##NaN
+   oracle: ##NaN
+   cljgo : <MISSING-or-aborted-before-this-line>
+DIVERGE  abs nil
+   oracle: THREW:Cannot invoke "Object.getClass()" because "x" is null
+   cljgo : <MISSING-or-aborted-before-this-line>
+
+89/266 probes diverge
