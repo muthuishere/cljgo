@@ -140,6 +140,27 @@ func (e *Evaluator) EvalForm(form any) (any, error) {
 }
 
 // asTopLevelDo returns the body seq of a (do ...) form, or nil.
+// withFormMeta carries reader metadata (e.g. `^:foo {}`) from the analyzed
+// literal form onto the freshly-constructed runtime collection: vector/map/
+// set literals are rebuilt from their evaluated items (design/03 §6), so
+// without this the reader's WithMeta call on the original form (reader.go
+// readMeta) would otherwise be silently discarded.
+func withFormMeta(form any, v any) any {
+	im, ok := form.(lang.IMeta)
+	if !ok {
+		return v
+	}
+	m := im.Meta()
+	if m == nil {
+		return v
+	}
+	iobj, ok := v.(lang.IObj)
+	if !ok {
+		return v
+	}
+	return iobj.WithMeta(m)
+}
+
 func asTopLevelDo(form any) lang.ISeq {
 	seq, ok := form.(lang.ISeq)
 	if !ok || lang.Seq(seq) == nil {
@@ -187,7 +208,7 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 			}
 			items = append(items, v)
 		}
-		return lang.NewVector(items...), nil
+		return withFormMeta(n.Form, lang.NewVector(items...)), nil
 
 	case ast.OpMap:
 		sub := n.Sub.(*ast.MapNode)
@@ -203,7 +224,7 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 			}
 			kvs = append(kvs, k, v)
 		}
-		return lang.NewMap(kvs...), nil
+		return withFormMeta(n.Form, lang.NewMap(kvs...)), nil
 
 	case ast.OpSet:
 		sub := n.Sub.(*ast.SetNode)
@@ -215,7 +236,7 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 			}
 			items = append(items, v)
 		}
-		return lang.NewSet(items...), nil
+		return withFormMeta(n.Form, lang.NewSet(items...)), nil
 
 	case ast.OpVar:
 		// Deref per use — never inlined (design/00 §4.2: REPL re-def

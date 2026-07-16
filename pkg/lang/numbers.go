@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
-	"unicode/utf8"
 )
 
 var (
@@ -748,6 +747,18 @@ func IsInteger(v any) bool {
 	return ok
 }
 
+// IsFixedInteger reports whether v is a fixed-precision integer (Clojure's
+// `int?`): int/uint of any width, but NOT an arbitrary-precision BigInt
+// (that's `integer?`'s job, which also accepts BigInt).
+func IsFixedInteger(v any) bool {
+	switch v.(type) {
+	case int, int64, int32, int16, int8, uint, uint64, uint32, uint16, uint8:
+		return true
+	default:
+		return false
+	}
+}
+
 // Inc increments a number value by one. If the value is not a number,
 // it returns an error.
 func Inc(v any) any {
@@ -889,7 +900,7 @@ func CharCast(x any) Char {
 		return c
 	}
 	n := AsInt64(x)
-	if n < 0 || n > utf8.MaxRune {
+	if n < 0 || n > 0xFFFF {
 		panic(NewIllegalArgumentError(fmt.Sprintf("value out of range for char: %v", x)))
 	}
 	return Char(n)

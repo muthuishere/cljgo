@@ -187,6 +187,20 @@ func (g *generator) discard(rv string) {
 
 // ---- constants ------------------------------------------------------------
 
+// formMeta extracts reader metadata (e.g. `^:foo {}`) off an analyzed
+// literal form, or nil if there is none. Mirrors pkg/eval's withFormMeta:
+// vector/map/set literals rebuild a fresh runtime collection from their
+// evaluated items, so without re-attaching this the reader's WithMeta call
+// (reader.go readMeta) would be silently dropped by the compiled binary —
+// exactly the REPL/binary divergence ADR 0002/0007 forbids.
+func formMeta(form any) lang.IPersistentMap {
+	im, ok := form.(lang.IMeta)
+	if !ok {
+		return nil
+	}
+	return im.Meta()
+}
+
 // constExpr renders a compile-time constant (OpConst / OpQuote payload)
 // as a Go expression. Keywords and symbols hoist to package-level
 // interns (design/00 §4.4); collections construct inline via the pure
@@ -488,6 +502,9 @@ func (g *generator) gen(n *ast.Node) string {
 		}
 		t := g.temp()
 		g.wf("%s := lang.NewVector(%s)\n", t, strings.Join(rvs, ", "))
+		if m := formMeta(n.Form); m != nil {
+			g.wf("%s = %s.WithMeta(%s).(*lang.Vector)\n", t, t, g.constExpr(m))
+		}
 		return t
 
 	case ast.OpMap:
@@ -498,6 +515,9 @@ func (g *generator) gen(n *ast.Node) string {
 		}
 		t := g.temp()
 		g.wf("%s := lang.NewMap(%s)\n", t, strings.Join(kvs, ", "))
+		if m := formMeta(n.Form); m != nil {
+			g.wf("%s = %s.(lang.IObj).WithMeta(%s).(lang.IPersistentMap)\n", t, t, g.constExpr(m))
+		}
 		return t
 
 	case ast.OpSet:
@@ -508,6 +528,9 @@ func (g *generator) gen(n *ast.Node) string {
 		}
 		t := g.temp()
 		g.wf("%s := lang.NewSet(%s)\n", t, strings.Join(rvs, ", "))
+		if m := formMeta(n.Form); m != nil {
+			g.wf("%s = %s.WithMeta(%s).(*lang.Set)\n", t, t, g.constExpr(m))
+		}
 		return t
 
 	case ast.OpDo:

@@ -187,7 +187,7 @@ func (e *Evaluator) internBuiltins() {
 		return lang.NewVector(args...)
 	})
 	def("hash-map", func(args ...any) any {
-		return lang.NewMap(args...)
+		return lang.NewPersistentArrayMapAsIfByAssoc(args)
 	})
 	def("hash-set", func(args ...any) any {
 		return lang.NewSet(args...)

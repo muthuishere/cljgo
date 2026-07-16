@@ -109,17 +109,7 @@ func (k Keyword) Invoke(args ...interface{}) interface{} {
 		defaultVal = args[1]
 	}
 
-	assoc, ok := args[0].(Associative)
-	if !ok {
-		return defaultVal
-	}
-
-	entry := assoc.EntryAt(k)
-	if entry == nil {
-		return defaultVal
-	}
-
-	return entry.Val()
+	return GetDefault(args[0], k, defaultVal)
 }
 
 func (k Keyword) ApplyTo(args ISeq) interface{} {

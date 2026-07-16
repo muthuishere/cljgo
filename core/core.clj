@@ -378,7 +378,12 @@
      `(let [temp# ~tst]
         (if temp# (let [~form temp#] ~then) ~else)))))
 
+;; oracle: (macroexpand '(when-let [x (range 5) y (range 5)])) throws
+;; IllegalArgumentException ("when-let requires exactly 1 binding form") —
+;; real Clojure's when-let accepts exactly one binding pair, same as if-let.
 (defmacro when-let [bindings & body]
+  (when-not (= 2 (count bindings))
+    (throw (ex-info "when-let requires exactly 1 binding form" {:bindings bindings})))
   (let [form (first bindings) tst (second bindings)]
     `(let [temp# ~tst]
        (if temp# (let [~form temp#] ~@body) nil))))
