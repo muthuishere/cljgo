@@ -528,6 +528,7 @@ func (e *Evaluator) internBuiltins() {
 	// add-watch/remove-watch, Thread/sleep seam (ADR 0022 batch/harness-misc,
 	// misc_builtins.go).
 	e.internMiscBuiltins(def, defPrivate)
+	e.internFormatBuiltins(def)
 
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
