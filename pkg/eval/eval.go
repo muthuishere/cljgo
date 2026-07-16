@@ -50,6 +50,7 @@ func New() *Evaluator {
 	e.loadCore()
 	e.loadNumeric()
 	e.loadPredicates()
+	e.loadTransducers()
 	e.loadProtocols()
 	e.loadClojureString()
 	e.loadClojureSet()

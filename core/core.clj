@@ -385,8 +385,25 @@
 
 ;; --- Core higher-order fns ------------------------------------------------
 
+;; -all-seqs : (seq c) for every c in cs as a seq, or nil if any is empty —
+;; the termination test for map's 4+-arity (stops at the shortest coll).
+(defn -all-seqs [cs]
+  (loop [cs (seq cs) acc []]
+    (if cs
+      (let [s (seq (first cs))]
+        (when s (recur (next cs) (conj acc s))))
+      (seq acc))))
+
 ;; oracle: (map inc [1 2 3]) => (2 3 4); (map + [1 2 3] [10 20 30]) => (11 22 33)
+;; oracle: (map + [1 2] [10 20] [100 200]) => (111 222)
+;; oracle: (into [] (map inc) [1 2 3]) => [2 3 4]  -- 1-arity is the transducer form (ADR 0022 Batch 4)
 (defn map
+  ([f]
+   (fn [rf]
+     (fn
+       ([] (rf))
+       ([result] (rf result))
+       ([result input] (rf result (f input))))))
   ([f coll]
    (lazy-seq
     (when-let [s (seq coll)]
@@ -396,20 +413,37 @@
     (let [s1 (seq c1) s2 (seq c2)]
       (when (and s1 s2)
         (cons (f (first s1) (first s2))
-              (map f (rest s1) (rest s2))))))))
+              (map f (rest s1) (rest s2)))))))
+  ([f c1 c2 c3 & colls]
+   (let [step (fn step [cs]
+                (lazy-seq
+                 (when-let [ss (-all-seqs cs)]
+                   (cons (apply f (map first ss))
+                         (step (map rest ss))))))]
+     (step (list* c1 c2 c3 colls)))))
 
 ;; oracle: (filter even? (range 10)) => (0 2 4 6 8)
-(defn filter [pred coll]
-  (lazy-seq
-   (when-let [s (seq coll)]
-     (let [x (first s)]
-       (if (pred x)
-         (cons x (filter pred (rest s)))
-         (filter pred (rest s)))))))
+;; oracle: (into [] (filter even?) (range 10)) => [0 2 4 6 8]
+(defn filter
+  ([pred]
+   (fn [rf]
+     (fn
+       ([] (rf))
+       ([result] (rf result))
+       ([result input] (if (pred input) (rf result input) result)))))
+  ([pred coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (let [x (first s)]
+        (if (pred x)
+          (cons x (filter pred (rest s)))
+          (filter pred (rest s))))))))
 
 ;; oracle: (remove even? (range 10)) => (1 3 5 7 9)
-(defn remove [pred coll]
-  (filter (fn [x] (not (pred x))) coll))
+;; oracle: (into [] (remove even?) (range 10)) => [1 3 5 7 9]
+(defn remove
+  ([pred] (filter (fn [x] (not (pred x)))))
+  ([pred coll] (filter (fn [x] (not (pred x))) coll)))
 
 ;; oracle: (reduce + 0 (range 1 11)) => 55; (reduce + (range 1 11)) => 55.
 ;; Honors the `reduced` short-circuit box.
@@ -428,18 +462,129 @@
 (defn reduce-kv [f init coll]
   (reduce (fn [acc k] (f acc k (get coll k))) init (keys coll)))
 
+;; unreduced/ensure-reduced : the reduced-box helpers transducers need
+;; (design/08 §5 Batch 4). `reduced`/`reduced?` are host builtins already.
+;; oracle: (unreduced (reduced 5)) => 5; (unreduced 5) => 5
+(defn unreduced [x] (if (reduced? x) (deref x) x))
+
+;; oracle: (reduced? (ensure-reduced 5)) => true; (reduced? (ensure-reduced (reduced 5))) => true
+(defn ensure-reduced [x] (if (reduced? x) x (reduced x)))
+
 ;; oracle: (keep #(when (even? %) %) (range 6)) => (0 2 4)
-(defn keep [f coll]
+;; oracle: (into [] (keep #(when (even? %) %)) (range 6)) => [0 2 4]
+(defn keep
+  ([f]
+   (fn [rf]
+     (fn
+       ([] (rf))
+       ([result] (rf result))
+       ([result input]
+        (let [v (f input)]
+          (if (nil? v) result (rf result v)))))))
+  ([f coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (let [x (f (first s))]
+        (if (nil? x)
+          (keep f (rest s))
+          (cons x (keep f (rest s)))))))))
+
+;; oracle: (map-indexed vector [:a :b :c]) => ([0 :a] [1 :b] [2 :c])
+;; oracle: (into [] (map-indexed vector) [:a :b :c]) => [[0 :a] [1 :b] [2 :c]]
+(defn -map-indexed-step [f i coll]
   (lazy-seq
    (when-let [s (seq coll)]
-     (let [x (f (first s))]
+     (cons (f i (first s)) (-map-indexed-step f (inc i) (rest s))))))
+
+(defn map-indexed
+  ([f]
+   (fn [rf]
+     (let [iv (atom -1)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input] (rf result (f (swap! iv inc) input)))))))
+  ([f coll] (-map-indexed-step f 0 coll)))
+
+;; oracle: (keep-indexed (fn [i x] (when (even? i) x)) [:a :b :c :d]) => (:a :c)
+;; oracle: (into [] (keep-indexed (fn [i x] (when (even? i) x))) [:a :b :c :d]) => [:a :c]
+(defn -keep-indexed-step [f i coll]
+  (lazy-seq
+   (when-let [s (seq coll)]
+     (let [x (f i (first s))]
        (if (nil? x)
-         (keep f (rest s))
-         (cons x (keep f (rest s))))))))
+         (-keep-indexed-step f (inc i) (rest s))
+         (cons x (-keep-indexed-step f (inc i) (rest s))))))))
+
+(defn keep-indexed
+  ([f]
+   (fn [rf]
+     (let [iv (atom -1)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (let [i (swap! iv inc)
+                v (f i input)]
+            (if (nil? v) result (rf result v))))))))
+  ([f coll] (-keep-indexed-step f 0 coll)))
+
+;; identity/comp are hoisted here (ahead of their "Function combinators"
+;; section further down) because `cat`/`mapcat`'s transducer forms need
+;; `comp` at analysis time; the rest of the combinators (partial, complement,
+;; fnil, juxt) don't depend on this and stay in their original section.
+;; oracle: (identity 7) => 7
+(defn identity [x] x)
+
+;; oracle: ((comp inc inc) 5) => 7
+(defn comp
+  ([] identity)
+  ([f] f)
+  ([f g] (fn [& args] (f (apply g args))))
+  ([f g & fs] (reduce comp (list* f g fs))))
+
+;; -preserving-reduced : wraps rf so a `reduced` returned by an INNER reduce
+;; (cat's per-input reduce) re-wraps as `reduced` again, so the OUTER reduce
+;; also stops instead of unwrapping once and continuing (design/08 §5 Batch 4).
+;; oracle: (reduced? ((-preserving-reduced (fn [_ _] (reduced :x))) nil 1)) => true
+(defn -preserving-reduced [rf]
+  (fn [result input]
+    (let [ret (rf result input)]
+      (if (reduced? ret) (reduced ret) ret))))
+
+;; cat : a transducer (not a fn of args — a value) that concatenates each
+;; input (itself a collection) into the reduction, e.g. (into [] cat [[1 2] [3]]).
+;; oracle: (into [] cat [[1 2] [3 4]]) => [1 2 3 4]
+(def cat
+  (fn [rf]
+    (let [rrf (-preserving-reduced rf)]
+      (fn
+        ([] (rf))
+        ([result] (rf result))
+        ([result input] (reduce rrf result input))))))
+
+;; -concat-seqs : lazily concatenate a (possibly infinite) seq OF seqs.
+;; JVM mapcat spells this (apply concat xs) — lazy there because apply
+;; realizes only concat's fixed arity; cljgo's apply forces the whole
+;; last-arg seq (ToSlice), which would hang on infinite input, so the
+;; lazy flatten is explicit.
+(defn -concat-seqs [colls]
+  (lazy-seq
+   (when-let [s (seq colls)]
+     (concat (first s) (-concat-seqs (rest s))))))
 
 ;; oracle: (mapcat (fn [x] [x x]) [1 2 3]) => (1 1 2 2 3 3)
-(defn mapcat [f & colls]
-  (apply concat (apply map f colls)))
+;; oracle: (into [] (mapcat (fn [x] [x x])) [1 2 3]) => [1 1 2 2 3 3]
+;; oracle: (take 5 (mapcat (fn [x] (repeat 2 x)) (range))) => (0 0 1 1 2)
+(defn mapcat
+  ([f] (comp (map f) cat))
+  ([f & colls]
+   (let [xs (apply map f colls)]
+     ;; JVM mapcat is eager in its first few elements (apply realizes
+     ;; concat's fixed arity at call time) — e.g. (mapcat identity 5)
+     ;; throws immediately. seq once here to match.
+     (seq xs)
+     (-concat-seqs xs))))
 
 ;; oracle: (mapv inc [1 2 3]) => [2 3 4]
 (defn mapv
@@ -457,38 +602,97 @@
 ;; --- Take / drop ----------------------------------------------------------
 
 ;; oracle: (take 3 (range)) => (0 1 2); (take 3 (range 10)) => (0 1 2)
-(defn take [n coll]
-  (lazy-seq
-   (when (pos? n)
-     (when-let [s (seq coll)]
-       (cons (first s) (take (dec n) (rest s)))))))
+;; oracle: (into [] (take 3) (range)) => [0 1 2]
+(defn take
+  ([n]
+   (fn [rf]
+     (let [nv (atom n)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (let [n @nv
+                nn (swap! nv dec)
+                result (if (pos? n) (rf result input) result)]
+            (if (not (pos? nn)) (ensure-reduced result) result)))))))
+  ([n coll]
+   (lazy-seq
+    (when (pos? n)
+      (when-let [s (seq coll)]
+        (cons (first s) (take (dec n) (rest s))))))))
 
 ;; oracle: (drop 2 [1 2 3 4]) => (3 4)
-(defn drop [n coll]
-  (loop [n n s (seq coll)]
-    (if (and (pos? n) s)
-      (recur (dec n) (next s))
-      s)))
+;; oracle: (into [] (drop 2) [1 2 3 4 5]) => [3 4 5]
+(defn drop
+  ([n]
+   (fn [rf]
+     (let [nv (atom n)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (let [n @nv]
+            (swap! nv dec)
+            (if (pos? n) result (rf result input))))))))
+  ([n coll]
+   (loop [n n s (seq coll)]
+     (if (and (pos? n) s)
+       (recur (dec n) (next s))
+       s))))
 
 ;; oracle: (take-while #(< % 3) (range 10)) => (0 1 2)
-(defn take-while [pred coll]
-  (lazy-seq
-   (when-let [s (seq coll)]
-     (when (pred (first s))
-       (cons (first s) (take-while pred (rest s)))))))
+;; oracle: (into [] (take-while even?) [2 4 6 1 8]) => [2 4 6]
+(defn take-while
+  ([pred]
+   (fn [rf]
+     (fn
+       ([] (rf))
+       ([result] (rf result))
+       ([result input] (if (pred input) (rf result input) (reduced result))))))
+  ([pred coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (when (pred (first s))
+        (cons (first s) (take-while pred (rest s))))))))
 
 ;; oracle: (drop-while #(< % 3) (range 10)) => (3 4 5 6 7 8 9)
-(defn drop-while [pred coll]
-  (loop [s (seq coll)]
-    (if (and s (pred (first s)))
-      (recur (next s))
-      s)))
+;; oracle: (into [] (drop-while even?) [2 4 6 1 8]) => [1 8]
+(defn drop-while
+  ([pred]
+   (fn [rf]
+     (let [dv (atom true)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (if (and @dv (pred input))
+            result
+            (do (reset! dv false) (rf result input))))))))
+  ([pred coll]
+   (loop [s (seq coll)]
+     (if (and s (pred (first s)))
+       (recur (next s))
+       s))))
 
 ;; oracle: (take-nth 2 (range 10)) => (0 2 4 6 8)
-(defn take-nth [n coll]
-  (lazy-seq
-   (when-let [s (seq coll)]
-     (cons (first s) (take-nth n (drop n s))))))
+;; oracle: (into [] (take-nth 2) (range 10)) => [0 2 4 6 8]; negative n acts
+;; like positive in the transducer; n=0 throws (divide by zero), as JVM.
+(defn take-nth
+  ([n]
+   (fn [rf]
+     (let [iv (atom -1)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (let [i (swap! iv inc)]
+            (if (zero? (rem i n))
+              (rf result input)
+              result)))))))
+  ([n coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (cons (first s) (take-nth n (drop n s)))))))
 
 ;; oracle: (partition 2 (range 6)) => ((0 1) (2 3) (4 5))
 (defn partition [n coll]
@@ -519,9 +723,8 @@
 
 ;; --- Collection ops -------------------------------------------------------
 
-;; oracle: (into [] (range 3)) => [0 1 2]; (into {} [[:a 1] [:b 2]]) => {:a 1, :b 2}
-(defn into [to from]
-  (reduce conj to from))
+;; into (2-arity, plus the 3-arity xform form) is defined in transducers.cljg
+;; (loaded after this file), since the xform arity needs `transduce`.
 
 ;; oracle: (reverse [1 2 3]) => (3 2 1)
 (defn reverse [coll]
@@ -542,6 +745,7 @@
          (cons f (flatten (rest s))))))))
 
 ;; oracle: (distinct [1 1 2 3 3 3 4]) => (1 2 3 4)
+;; oracle: (into [] (distinct) [1 1 2 3 3 2]) => [1 2 3]
 (defn -distinct-step [xs seen]
   (lazy-seq
    (loop [xs xs seen seen]
@@ -551,11 +755,34 @@
            (recur (rest s) seen)
            (cons f (-distinct-step (rest s) (conj seen f)))))))))
 
-(defn distinct [coll] (-distinct-step coll #{}))
+(defn distinct
+  ([]
+   (fn [rf]
+     (let [seen (atom #{})]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (if (contains? @seen input)
+            result
+            (do (swap! seen conj input) (rf result input))))))))
+  ([coll] (-distinct-step coll #{})))
 
 ;; oracle: (interpose 0 [1 2 3]) => (1 0 2 0 3)
-(defn interpose [sep coll]
-  (drop 1 (mapcat (fn [x] (list sep x)) coll)))
+;; oracle: (into [] (interpose 0) [1 2 3]) => [1 0 2 0 3]
+(defn interpose
+  ([sep]
+   (fn [rf]
+     (let [started (atom false)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (if @started
+            (let [sepr (rf result sep)]
+              (if (reduced? sepr) sepr (rf sepr input)))
+            (do (reset! started true) (rf result input))))))))
+  ([sep coll] (drop 1 (mapcat (fn [x] (list sep x)) coll))))
 
 ;; oracle: (interleave [1 2 3] [:a :b :c]) => (1 :a 2 :b 3 :c)
 (defn interleave [c1 c2]
@@ -658,19 +885,10 @@
       (+ m div))))
 
 ;; --- Function combinators -------------------------------------------------
-
-;; oracle: (identity 7) => 7
-(defn identity [x] x)
+;; (identity/comp are hoisted earlier — see the note above `-preserving-reduced`.)
 
 ;; oracle: ((constantly 42) 1 2 3) => 42
 (defn constantly [x] (fn [& _] x))
-
-;; oracle: ((comp inc inc) 5) => 7
-(defn comp
-  ([] identity)
-  ([f] f)
-  ([f g] (fn [& args] (f (apply g args))))
-  ([f g & fs] (reduce comp (list* f g fs))))
 
 ;; oracle: ((partial + 10) 5) => 15
 (defn partial

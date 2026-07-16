@@ -14,17 +14,31 @@
 ;; helpers (-str-*) are NOT referred, so they are called fully qualified.
 (clojure.core/in-ns 'clojure.string)
 
-;; reverse is the one public name here that also exists in clojure.core.
-;; JVM clojure.string uses (:refer-clojure :exclude [reverse replace]); cljgo's
-;; refer has no :exclude, so instead we INTERN clojure.string/reverse FIRST
-;; (qualified defn, before the wholesale refer). The later (refer 'clojure.core)
-;; then sees clojure.string already owns an interned `reverse` and skips it —
-;; no "being replaced" warning. (replace is not yet in cljgo's clojure.core,
-;; so it needs no such guard today.)
+;; reverse/replace/replace-first are public names here that also exist in
+;; clojure.core (replace/replace-first landed with the Batch 4 transducers
+;; work, ADR 0022 — see core/transducers.cljg). JVM clojure.string uses
+;; (:refer-clojure :exclude [reverse replace replace-first]); cljgo's refer
+;; has no :exclude, so instead we INTERN all three qualified FIRST, before
+;; the wholesale refer. The later (refer 'clojure.core) then sees
+;; clojure.string already owns them and skips them — no "being replaced"
+;; warning.
 (clojure.core/defn reverse
   "Returns s with its characters reversed."
   [s]
   (clojure.core/-str-reverse s))
+
+(clojure.core/defn replace
+  "Replaces all instance of match with replacement in s. match/replacement
+  can be:  string / string,  char / char,  pattern / string (with $1 group
+  refs)."
+  [s match replacement]
+  (clojure.core/-str-replace s match replacement))
+
+(clojure.core/defn replace-first
+  "Replaces the first instance of match with replacement in s. Same match/
+  replacement combinations as replace."
+  [s match replacement]
+  (clojure.core/-str-replace-first s match replacement))
 
 (clojure.core/refer 'clojure.core)
 
@@ -52,20 +66,8 @@
   [s]
   (split s #"\r?\n"))
 
-;; --- replacing ------------------------------------------------------
-
-(defn replace
-  "Replaces all instance of match with replacement in s. match/replacement
-  can be:  string / string,  char / char,  pattern / string (with $1 group
-  refs)."
-  [s match replacement]
-  (clojure.core/-str-replace s match replacement))
-
-(defn replace-first
-  "Replaces the first instance of match with replacement in s. Same match/
-  replacement combinations as replace."
-  [s match replacement]
-  (clojure.core/-str-replace-first s match replacement))
+;; replace/replace-first are defined above (before the wholesale refer) —
+;; see the comment by clojure.string/reverse.
 
 ;; --- trimming -------------------------------------------------------
 

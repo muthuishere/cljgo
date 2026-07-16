@@ -1,0 +1,199 @@
+;; transducers.cljg — transduce/eduction/sequence + the transducer-only fns
+;; that don't fit naturally as an extra arity on an existing core.clj fn
+;; (design/08 §5 Batch 4, ADR 0022). Loaded into clojure.core after core.clj
+;; (loadTransducers), so these are referred into user like the rest of core.
+;;
+;; Most of the 1-arity transducer forms (map/filter/remove/take/take-while/
+;; drop/drop-while/keep/mapcat/distinct/interpose) live as extra arities on
+;; their existing core.clj defns instead — see core.clj (the precedence
+;; principle: adding an arity must not touch the existing ones). `cat`,
+;; `comp`, `identity`, `unreduced`, `ensure-reduced` are hoisted into core.clj
+;; itself for the same reason (mapcat's/take's 1-arity transducer forms need
+;; them at analysis time, and core.clj loads before this file).
+;;
+;; volatile! is NOT used here (being implemented concurrently on another
+;; branch, batch/arrays-volatile) — every stateful transducer below closes
+;; over a plain `atom` instead, exactly as the JVM's `volatile!` fields are
+;; single-use-per-invocation local state.
+;;
+;; Boot input is programmer-owned; keep it small (ADR 0019 boot budget).
+
+(in-ns 'clojure.core)
+
+;; --- transduce --------------------------------------------------------
+
+;; oracle: (transduce (map inc) + [1 2 3]) => 9
+;; oracle: (transduce (comp (map inc) (take 3)) conj (range 10)) => [1 2 3]
+(defn transduce
+  ([xform f coll] (transduce xform f (f) coll))
+  ([xform f init coll]
+   (let [xf (xform f)
+         ret (reduce xf init coll)]
+     (xf (unreduced ret)))))
+
+;; oracle: ((completing +) 1 2) => 3
+;; oracle: ((completing + (fn [x] (* x 10))) 3) => 30
+(defn completing
+  ([f] (completing f identity))
+  ([f cf]
+   (fn
+     ([] (f))
+     ([result] (cf result))
+     ([result input] (f result input)))))
+
+;; --- sequence (lazy pull over a transducer) ----------------------------
+
+;; -sequence-lazy pulls one source element at a time into the collecting
+;; rf, which pushes its outputs onto `buf` (a vector used as a FIFO); once
+;; the source is exhausted (or the xform signals `reduced`) the stateful
+;; xform's completion arity is called once, to flush any buffered tail
+;; (e.g. partition-by's last run), then the lazy-seq drains `buf`.
+(defn -sequence-lazy [rf s-atom buf done]
+  (lazy-seq
+   (loop []
+     (cond
+       (seq @buf)
+       (let [x (first @buf)]
+         (swap! buf subvec 1)
+         (cons x (-sequence-lazy rf s-atom buf done)))
+
+       @done
+       nil
+
+       :else
+       (let [ss (seq @s-atom)]
+         (if ss
+           (let [ret (rf nil (first ss))]
+             (if (reduced? ret)
+               (do (reset! done true) (rf nil) (recur))
+               (do (reset! s-atom (next ss)) (recur))))
+           (do (reset! done true) (rf nil) (recur))))))))
+
+;; oracle: (sequence (take 2) (range 9)) => (0 1)
+;; oracle: (sequence (comp (map inc) (take 3)) (range)) => (1 2 3)
+;; oracle: (sequence [1 2 3]) => (1 2 3); (sequence nil) => ()
+(defn sequence
+  ([coll] (if (seq? coll) coll (or (seq coll) ())))
+  ([xform coll]
+   (let [buf (atom [])
+         collect (fn
+                   ([] nil)
+                   ([result] result)
+                   ([result input] (swap! buf conj input) result))
+         rf (xform collect)]
+     (or (seq (-sequence-lazy rf (atom coll) buf (atom false))) ()))))
+
+;; --- into (extended with the xform arity) ------------------------------
+
+;; oracle: (into [] (range 3)) => [0 1 2]; (into {} [[:a 1] [:b 2]]) => {:a 1, :b 2}
+;; oracle: (into [] (comp (map inc) (filter even?)) [1 2 3]) => [2 4]
+(defn into
+  ([to from] (reduce conj to from))
+  ([to xform from] (transduce xform conj to from)))
+
+;; --- eduction -----------------------------------------------------------
+
+;; oracle: (into [] (eduction (map inc) [1 2 3])) => [2 3 4]
+;; oracle: (seq (eduction (map inc) (filter even?) [1 2 3 4 5])) => (2 4 6)
+(defn eduction [& xforms]
+  (sequence (apply comp (butlast xforms)) (last xforms)))
+
+;; --- partition-by --------------------------------------------------------
+
+;; oracle: (partition-by even? [1 1 2 2 3 3]) => ((1 1) (2 2) (3 3))
+;; oracle: (into [] (partition-by even?) [1 1 2 2 3 3]) => [[1 1] [2 2] [3 3]]
+(defn partition-by
+  ([f]
+   (fn [rf]
+     (let [a (atom [])
+           pv (atom nil)
+           started (atom false)]
+       (fn
+         ([] (rf))
+         ([result]
+          (let [result (if (empty? @a)
+                         result
+                         (let [v @a]
+                           (reset! a [])
+                           (unreduced (rf result v))))]
+            (rf result)))
+         ([result input]
+          (let [val (f input)]
+            (cond
+              (not @started)
+              (do (reset! started true) (reset! pv val) (swap! a conj input) result)
+
+              (= val @pv)
+              (do (swap! a conj input) result)
+
+              :else
+              (let [v @a]
+                (reset! a [])
+                (reset! pv val)
+                (let [ret (rf result v)]
+                  (when-not (reduced? ret) (swap! a conj input))
+                  ret)))))))))
+  ([f coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (let [fst (first s)
+            fv (f fst)
+            run (cons fst (take-while (fn [x] (= (f x) fv)) (rest s)))]
+        (cons run (partition-by f (drop (count run) s))))))))
+
+;; --- dedupe ---------------------------------------------------------------
+
+;; oracle: (dedupe [1 1 2 2 1 1]) => (1 2 1)
+;; oracle: (into [] (dedupe) [1 1 2 2 1 1]) => [1 2 1]
+(defn dedupe
+  ([]
+   (fn [rf]
+     (let [pv (atom nil)
+           started (atom false)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (let [prior @pv
+                first? (not @started)]
+            (reset! started true)
+            (reset! pv input)
+            (if (and (not first?) (= prior input))
+              result
+              (rf result input))))))))
+  ([coll] (sequence (dedupe) coll)))
+
+;; --- halt-when --------------------------------------------------------
+
+;; oracle: (transduce (halt-when odd?) conj [2 4 5 6]) => 5
+;; oracle: (into [] (halt-when odd?) [2 4 5 6]) => 5
+(defn halt-when
+  ([pred] (halt-when pred nil))
+  ([pred retf]
+   (fn [rf]
+     (fn
+       ([] (rf))
+       ([result]
+        (if (and (map? result) (contains? result :cljgo.transducers/halt))
+          (get result :cljgo.transducers/halt)
+          (rf result)))
+       ([result input]
+        (if (pred input)
+          (reduced {:cljgo.transducers/halt (if retf (retf (unreduced result) input) input)})
+          (rf result input)))))))
+
+;; --- replace ------------------------------------------------------------
+
+;; oracle: (replace {0 :a 2 :c} [0 1 2]) => [:a 1 :c]
+;; oracle: (replace {:a 1} (list :a :b :a)) => (1 :b 1)
+(defn replace
+  ([smap]
+   (map (fn [x] (if-let [e (find smap x)] (val e) x))))
+  ([smap coll]
+   (if (vector? coll)
+     (reduce (fn [v i]
+               (if-let [e (find smap (nth v i))]
+                 (assoc v i (val e))
+                 v))
+             coll (range (count coll)))
+     (map (fn [x] (if-let [e (find smap x)] (val e) x)) coll))))
