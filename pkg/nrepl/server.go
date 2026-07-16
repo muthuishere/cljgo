@@ -52,14 +52,25 @@ type Server struct {
 }
 
 // session is one nREPL session: a goroutine holding the binding frame,
-// fed closures over reqs. out is the *out* writer bound in the frame.
+// fed requests over reqs. out is the *out* writer bound in the frame.
 type session struct {
 	id   string
 	rs   *repl.Session
 	out  *sessionOut
-	reqs chan func()
+	reqs chan request
 	quit chan struct{}
 	busy atomic.Bool
+}
+
+// request is one unit of session work. run executes on the session
+// goroutine and RETURNS its final (done-status) reply instead of sending
+// it: the session loop clears busy BEFORE sending, so any client that
+// has read "done" is guaranteed a subsequent interrupt sees the session
+// idle — the ordering editors rely on. Intermediate messages (values,
+// out chunks, err/ex) are still sent from inside run.
+type request struct {
+	c   *conn
+	run func() map[string]any
 }
 
 // NewServer boots a fresh evaluator and returns a server fronting it.
@@ -166,7 +177,7 @@ func (s *Server) newSession() *session {
 	sess := &session{
 		id:   newID(),
 		rs:   repl.NewSession(s.ev),
-		reqs: make(chan func(), 16),
+		reqs: make(chan request, 16),
 		quit: make(chan struct{}),
 	}
 	sess.out = &sessionOut{sessID: sess.id}
@@ -183,10 +194,17 @@ func (s *Server) newSession() *session {
 		defer lang.PopThreadBindings()
 		for {
 			select {
-			case f := <-sess.reqs:
+			case r := <-sess.reqs:
 				sess.busy.Store(true)
-				f()
+				final := r.run()
+				// Clear busy BEFORE the final done-status reply goes on the
+				// wire: a client that has read "done" must be guaranteed a
+				// subsequent interrupt sees session-idle (the eval→interrupt
+				// ordering editors rely on; caught by CI on a slow runner).
 				sess.busy.Store(false)
+				if final != nil {
+					r.c.send(final)
+				}
 			case <-sess.quit:
 				return
 			}
@@ -278,7 +296,9 @@ func (s *Server) dispatch(c *conn, msg map[string]any) {
 		}
 	case "eval":
 		sess := s.sessionFor(msg)
-		sess.reqs <- func() { s.doEval(c, sess, msg, str(msg, "code"), "NO_SOURCE_FILE", true) }
+		sess.reqs <- request{c, func() map[string]any {
+			return s.doEval(c, sess, msg, str(msg, "code"), "NO_SOURCE_FILE", true)
+		}}
 	case "load-file":
 		sess := s.sessionFor(msg)
 		file := str(msg, "file")
@@ -286,13 +306,15 @@ func (s *Server) dispatch(c *conn, msg map[string]any) {
 		if name == "" {
 			name = "NO_SOURCE_FILE"
 		}
-		sess.reqs <- func() { s.doEval(c, sess, msg, file, name, false) }
+		sess.reqs <- request{c, func() map[string]any {
+			return s.doEval(c, sess, msg, file, name, false)
+		}}
 	case "complete", "completions":
 		sess := s.sessionFor(msg)
-		sess.reqs <- func() { s.doComplete(c, sess, msg) }
+		sess.reqs <- request{c, func() map[string]any { return s.doComplete(sess, msg) }}
 	case "lookup", "info", "eldoc":
 		sess := s.sessionFor(msg)
-		sess.reqs <- func() { s.doLookup(c, sess, msg, op) }
+		sess.reqs <- request{c, func() map[string]any { return s.doLookup(sess, msg, op) }}
 	case "ns-list":
 		names := []string{}
 		for seq := lang.AllNamespaces(); seq != nil; seq = seq.Next() {
@@ -307,11 +329,13 @@ func (s *Server) dispatch(c *conn, msg map[string]any) {
 	}
 }
 
-// doEval runs on the session goroutine (under its binding frame).
-// perForm: eval sends one value message per top-level form (like nREPL);
-// load-file sends only the last. Printed output flows through the
-// session's *out* binding (sessionOut) — no global state.
-func (s *Server) doEval(c *conn, sess *session, msg map[string]any, code, filename string, perForm bool) {
+// doEval runs on the session goroutine (under its binding frame) and
+// returns the final done-status reply (sent by the session loop after
+// the busy flag clears). perForm: eval sends one value message per
+// top-level form (like nREPL); load-file sends only the last. Printed
+// output flows through the session's *out* binding (sessionOut) — no
+// global state.
+func (s *Server) doEval(c *conn, sess *session, msg map[string]any, code, filename string, perForm bool) map[string]any {
 	// Point this session's *out* stream at the requesting message so the
 	// out chunks echo its id. Left set after the eval: a future spawned by
 	// this eval keeps streaming here (bindings convey), as real nREPL does.
@@ -335,14 +359,12 @@ func (s *Server) doEval(c *conn, sess *session, msg map[string]any, code, filena
 			break
 		}
 		if err != nil {
-			s.sendEvalError(c, sess, msg, err)
-			return
+			return s.evalErrorReply(c, sess, msg, err)
 		}
 		res, err := s.evalOne(form)
 		if err != nil {
 			sess.rs.RecordError(err)
-			s.sendEvalError(c, sess, msg, err)
-			return
+			return s.evalErrorReply(c, sess, msg, err)
 		}
 		evaluated = true
 		last = res
@@ -354,7 +376,7 @@ func (s *Server) doEval(c *conn, sess *session, msg map[string]any, code, filena
 	if !perForm && evaluated {
 		c.send(resp(msg, sess.id, "value", printString(last), "ns", s.ev.CurrentNS().Name().Name()))
 	}
-	c.send(resp(msg, sess.id, "status", []string{"done"}))
+	return resp(msg, sess.id, "status", []string{"done"})
 }
 
 // evalOne guards the evaluator seam: EvalForm recovers evaluator panics
@@ -382,16 +404,19 @@ func printString(v any) (out string) {
 	return lang.PrintString(v)
 }
 
-func (s *Server) sendEvalError(c *conn, sess *session, msg map[string]any, err error) {
+// evalErrorReply sends the err/ex messages and returns the final done
+// reply for the session loop to send after clearing busy.
+func (s *Server) evalErrorReply(c *conn, sess *session, msg map[string]any, err error) map[string]any {
 	c.send(resp(msg, sess.id, "err", err.Error()+"\n"))
 	c.send(resp(msg, sess.id, "ex", fmt.Sprintf("%T", err), "status", []string{"eval-error"}))
-	c.send(resp(msg, sess.id, "status", []string{"done"}))
+	return resp(msg, sess.id, "status", []string{"done"})
 }
 
 // doComplete: prefix completion over the current namespace's mappings
 // (which include core refers) plus namespace names. Runs on the session
-// goroutine so "current namespace" is the session's.
-func (s *Server) doComplete(c *conn, sess *session, msg map[string]any) {
+// goroutine so "current namespace" is the session's; returns its single
+// (done-status) reply for the session loop to send.
+func (s *Server) doComplete(sess *session, msg map[string]any) map[string]any {
 	prefix := str(msg, "prefix", "symbol")
 	curNS := s.ev.CurrentNS()
 	if nsName := str(msg, "ns"); nsName != "" {
@@ -425,12 +450,13 @@ func (s *Server) doComplete(c *conn, sess *session, msg map[string]any) {
 	sort.Slice(cands, func(i, j int) bool {
 		return cands[i].(map[string]any)["candidate"].(string) < cands[j].(map[string]any)["candidate"].(string)
 	})
-	c.send(resp(msg, sess.id, "completions", cands, "status", []string{"done"}))
+	return resp(msg, sess.id, "completions", cands, "status", []string{"done"})
 }
 
 // doLookup answers lookup/info/eldoc from var metadata (:doc :arglists
 // :file :line — the analyzer already stamps position + docstrings).
-func (s *Server) doLookup(c *conn, sess *session, msg map[string]any, op string) {
+// Returns its single (done-status) reply for the session loop to send.
+func (s *Server) doLookup(sess *session, msg map[string]any, op string) map[string]any {
 	symName := str(msg, "sym", "symbol")
 	curNS := s.ev.CurrentNS()
 	if nsName := str(msg, "ns"); nsName != "" {
@@ -450,8 +476,7 @@ func (s *Server) doLookup(c *conn, sess *session, msg map[string]any, op string)
 		}
 	}
 	if v == nil {
-		c.send(resp(msg, sess.id, "status", []string{"done", "no-info"}))
-		return
+		return resp(msg, sess.id, "status", []string{"done", "no-info"})
 	}
 	meta := v.Meta()
 	metaStr := func(k string) string {
@@ -515,7 +540,7 @@ func (s *Server) doLookup(c *conn, sess *session, msg map[string]any, op string)
 		}
 		reply["info"] = info
 	}
-	c.send(reply)
+	return reply
 }
 
 func metaAsInt(m lang.IPersistentMap, k string) (int64, bool) {

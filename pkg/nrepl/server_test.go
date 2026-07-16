@@ -8,6 +8,7 @@ package nrepl
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"strings"
 	"testing"
@@ -282,6 +283,32 @@ func TestScriptedSession(t *testing.T) {
 	msgs = cl.collect()
 	if !hasStatus(msgs, "session-closed") {
 		t.Errorf("close: no session-closed status in %v", msgs)
+	}
+}
+
+// TestInterruptAfterDoneSeesIdle hammers the eval→interrupt transition:
+// once a client has READ an eval's "done" status, an interrupt MUST see
+// the session idle. The busy flag is cleared before the final done reply
+// goes on the wire, so this holds by construction — this test caught the
+// original ordering bug (clear-after-send) that only slow CI runners
+// exposed. No sleeps: each iteration syncs on the done read.
+func TestInterruptAfterDoneSeesIdle(t *testing.T) {
+	cl := dialServer(t)
+	cl.send(map[string]any{"op": "clone", "id": "c"})
+	session := firstString(cl.collect(), "new-session")
+	if session == "" {
+		t.Fatal("clone: no new-session")
+	}
+	for i := 0; i < 50; i++ {
+		cl.send(map[string]any{"op": "eval", "id": fmt.Sprintf("e%d", i),
+			"session": session, "code": "(+ 1 1)"})
+		cl.collect() // returns only once the done status was READ
+		cl.send(map[string]any{"op": "interrupt", "id": fmt.Sprintf("i%d", i),
+			"session": session})
+		msgs := cl.collect()
+		if !hasStatus(msgs, "session-idle") {
+			t.Fatalf("iteration %d: interrupt after done did not see idle: %v", i, msgs)
+		}
 	}
 }
 
