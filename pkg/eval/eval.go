@@ -109,6 +109,13 @@ func (e *Evaluator) resolveVar(sym *lang.Symbol) (*lang.Var, error) {
 			return v, nil
 		}
 	}
+	// Last resort (ADR 0036): well-known JVM class names (`String`,
+	// `Object`, `clojure.lang.PersistentHashSet`, …) resolve to interned
+	// opaque ClassRef values. Tried only after every normal lookup missed,
+	// so user definitions always win; fail-closed outside the fixed table.
+	if v := classRefVar(sym); v != nil {
+		return v, nil
+	}
 	return nil, fmt.Errorf("unable to resolve symbol: %s in this context", sym.Name())
 }
 
