@@ -1,0 +1,2 @@
+error: compiler error at spikes/s13-numeric-divergences/probes_abs.clj:10:31: unable to resolve symbol: abs in this context
+exit status 1
