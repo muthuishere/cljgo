@@ -1,0 +1,11 @@
+Total: 4.42s
+ROUTINE ======================== github.com/muthuishere/cljgo/pkg/lang/internal/goid.Get in /Users/muthuishere/muthu/gitworkspace/clojure-workspace/cljgo/.claude/worktrees/agent-a2af089ddc7d86675/pkg/lang/internal/goid/goid.go
+         0      3.22s (flat, cum) 72.85% of Total
+         .          .     11:func Get() int64 {
+         .          .     12:	buf := make([]byte, 32)
+         .      3.22s     13:	n := runtime.Stack(buf, false)
+         .          .     14:	buf = buf[:n]
+         .          .     15:	// goroutine 1 [running]: ...
+         .          .     16:	if !bytes.HasPrefix(buf, goroutinePrefix) {
+         .          .     17:		panic("unexpected goroutine stack format, missing prefix")
+         .          .     18:	}
