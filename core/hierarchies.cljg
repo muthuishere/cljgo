@@ -1,15 +1,16 @@
 ;; hierarchies.cljg — clojure.core's global-hierarchy family: make-hierarchy,
 ;; derive, underive, ancestors, descendants, parents, isa? (ADR 0022 Track E,
 ;; design/08 §5 batch E). A port of clojure.core's own hierarchy fns (Rich
-;; Hickey, EPL 1.0) onto cljgo's core.clj primitives, with the Java
-;; type-inheritance WALKS dropped: cljgo has no JVM class hierarchy
-;; (design/05), so isa?/parents/ancestors/descendants only ever see the
-;; derive-established relationship plus isa?'s vector component-wise case.
-;; Classes as TAGS are supported (ADR 0036): class? covers interned
-;; ClassRef values (String, Object, ...) and deftype/defrecord type
-;; markers; derive accepts them as tags (never as global parents), and
-;; descendants throws on them, both exactly as the JVM does — but no
-;; inheritance is fabricated: (parents String) is nil unless derived.
+;; Hickey, EPL 1.0) onto cljgo's core.clj primitives. Classes as TAGS are
+;; supported (ADR 0036): class? covers interned ClassRef values (String,
+;; Object, ...) and deftype/defrecord type markers; derive accepts them as
+;; tags (never as global parents), and descendants throws on them, both
+;; exactly as the JVM does. Since ADR 0039 the JVM's type-inheritance
+;; branch runs against the REAL ancestry cljgo can vouch for — a record/
+;; type's declared protocols + genuinely implemented interfaces + Object,
+;; and a flattened Object super for concrete well-known class refs (via
+;; the -type-bases/-type-supers builtins, pkg/eval/protocols.go) — while
+;; the rest of the JVM class graph stays un-fabricated per ADR 0036.
 ;; Loaded into clojure.core (NOT a separate namespace — these are real
 ;; clojure.core vars, like numeric.cljg/predicates.cljg) right after
 ;; loadNumeric, so global-hierarchy is a genuine Var alter-var-root can
@@ -32,17 +33,26 @@
 (def ^:private global-hierarchy (make-hierarchy))
 
 ;; oracle: (isa? :a :a) => true; (isa? [:a :b] [:a :b]) => true;
-;; (isa? [:a :b] [:a :c]) => false; two unrelated tags => false
+;; (isa? [:a :b] [:a :c]) => false; two unrelated tags => false;
+;; with (defprotocol P) (defrecord R [] P): (isa? R the-generated-P-class)
+;; => true, and after (derive the-P-class ::pp) (isa? R ::pp) => true
+;; (clojure 1.12.5, ADR 0039 evidence 2026-07-17)
 (defn isa?
   "Returns true if (= child parent), or child is directly or indirectly
   derived from parent via a relationship established with derive. h must
   be a hierarchy obtained from make-hierarchy; if not supplied defaults to
-  the global hierarchy. cljgo note: the JVM's class-inheritance branch is
-  omitted (no host class hierarchy, design/05)."
+  the global hierarchy. cljgo note (ADR 0039): a class child's REAL supers
+  (a record/type's declared protocols and implemented interfaces; Object
+  for concrete well-known classes) count, as the JVM's isAssignableFrom
+  branch does — but no JVM class graph is fabricated beyond that."
   ([child parent] (isa? global-hierarchy child parent))
   ([h child parent]
    (or (= child parent)
        (contains? ((:ancestors h) child) parent)
+       (and (class? child)
+            (let [ss (-type-supers child)]
+              (boolean (or (contains? ss parent)
+                           (some (fn [s] (contains? ((:ancestors h) s) parent)) ss)))))
        (and (vector? parent) (vector? child)
             (= (count parent) (count child))
             (loop [ret true i 0]
@@ -51,20 +61,41 @@
                 (recur (isa? h (child i) (parent i)) (inc i))))))))
 
 ;; oracle: (parents ::a) => nil; after (derive ::a ::b), (parents ::a) => #{::b}
+;; Class tags (ADR 0039, clojure 1.12.5 2026-07-17): (parents R) for
+;; (defrecord R [] P) contains the generated P class; (parents Object) => nil.
 (defn parents
-  "Returns the immediate parents of tag, via a relationship established
-  with derive. h must be a hierarchy obtained from make-hierarchy; if not
+  "Returns the immediate parents of tag, both via a relationship
+  established with derive and, for a class tag, its real direct supers
+  (ADR 0039). h must be a hierarchy obtained from make-hierarchy; if not
   supplied defaults to the global hierarchy."
   ([tag] (parents global-hierarchy tag))
-  ([h tag] (not-empty (get (:parents h) tag))))
+  ([h tag]
+   (not-empty
+    (let [tp (get (:parents h) tag)]
+      (if (class? tag)
+        (reduce conj (or (-type-bases tag) #{}) tp)
+        tp)))))
 
 ;; oracle: (ancestors ::a) => nil; after (derive ::a ::b), => #{::b}
+;; Class tags (ADR 0039, clojure 1.12.5 2026-07-17): (ancestors R) contains
+;; the generated P class AND clojure.lang.Associative; relationships derived
+;; from a SUPER also flow in — after (derive h P-class ::pp),
+;; (ancestors h R) contains ::pp (matches clojure.core's supers walk).
 (defn ancestors
-  "Returns the immediate and indirect parents of tag, via a relationship
-  established with derive. h must be a hierarchy obtained from
-  make-hierarchy; if not supplied defaults to the global hierarchy."
+  "Returns the immediate and indirect parents of tag, both via a
+  relationship established with derive and, for a class tag, its real
+  supers (ADR 0039). h must be a hierarchy obtained from make-hierarchy;
+  if not supplied defaults to the global hierarchy."
   ([tag] (ancestors global-hierarchy tag))
-  ([h tag] (not-empty (get (:ancestors h) tag))))
+  ([h tag]
+   (not-empty
+    (let [ta (get (:ancestors h) tag)]
+      (if (class? tag)
+        (let [superclasses (-type-supers tag)]
+          (reduce (fn [acc xs] (reduce conj acc xs))
+                  (or superclasses #{})
+                  (cons ta (map (fn [s] (get (:ancestors h) s)) superclasses))))
+        ta)))))
 
 ;; oracle: (descendants ::b) => nil; after (derive ::a ::b), => #{::a};
 ;; (descendants Object) and (descendants h Object) BOTH throw "Can't get

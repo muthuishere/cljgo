@@ -1,22 +1,27 @@
 ;; Class refs (ADR 0036): well-known JVM class names (String, Object,
 ;; java.lang.String, ...) resolve — only after normal var resolution
-;; fails — to interned, opaque ClassRef values with identity equality.
+;; fails — to interned ClassRef values with identity equality.
 ;; They are valid hierarchy TAGS (derive/isa?/underive), `class?` is true
 ;; for them (and for deftype/defrecord types), and `descendants` throws
-;; on classes exactly as the JVM does. NO inheritance is fabricated:
-;; (parents String) is nil unless something was explicitly derived.
+;; on classes exactly as the JVM does. Since ADR 0039 a CONCRETE class
+;; ref carries the one flattened super cljgo can vouch for — Object
+;; (every value is an Object, exactly instance?'s claim) — while Object
+;; itself and interface refs have none; NO further JVM hierarchy
+;; (Number, Throwable chains, ...) is fabricated.
 ;;
 ;; harness: eval — class refs resolve at the interpreter's symbol-
 ;; resolution level (ADR 0036); AOT emission of bare class-name symbols
 ;; is deferred (the suite runs interpreted, ADR 0022 decision 4).
 ;; oracle: skip — deliberate documented divergence: on the JVM
-;; (parents String) reports type-inheritance ancestry (Object, Comparable,
-;; ...) which cljgo will not fake. Every class-semantics fact below WAS
-;; oracle-verified per-form against clojure 1.12.5 (ADR 0036 evidence,
-;; 2026-07-16): derive-class-tag ok, class-as-global-parent throws,
-;; (descendants Object) / (descendants h Object) / (descendants SomeRecord)
-;; all throw "Can't get descendants of classes", (parents Object) => nil,
-;; (class? String) => true.
+;; (parents String) reports full type-inheritance ancestry (Object,
+;; Comparable, CharSequence, ...); cljgo reports exactly #{Object}
+;; (ADR 0039). Every class-semantics fact below WAS oracle-verified
+;; per-form against clojure 1.12.5 (ADR 0036 evidence 2026-07-16 +
+;; ADR 0039 evidence 2026-07-17): derive-class-tag ok,
+;; class-as-global-parent throws, (descendants Object) /
+;; (descendants h Object) / (descendants SomeRecord) all throw "Can't
+;; get descendants of classes", (parents Object) => nil,
+;; (class? String) => true, Object ∈ (parents String).
 (defrecord CrRec [])
 [(pr-str String)
  (class? String)
@@ -24,9 +29,10 @@
  (class? 42)
  (= String java.lang.String)
  (do (derive String ::cr-object) (isa? String ::cr-object))
- (= #{::cr-object} (parents String))
+ (= #{::cr-object Object} (parents String))
  (do (underive String ::cr-object) (parents String))
  (parents Object)
+ (parents clojure.lang.Associative)
  (try (derive ::cr-tag String) :nothrow (catch Exception e :threw))
  (try (descendants Object) :nothrow (catch Exception e (ex-message e)))
  (try (descendants (make-hierarchy) Object) :nothrow (catch Exception e :threw))
@@ -41,4 +47,4 @@
      :descendants {::cr-object #{String}}})
  (instance? (identity String) "x")
  (instance? (identity Object) nil)]
-;; expect: ["java.lang.String" true true false true true true nil nil :threw "Can't get descendants of classes" :threw :threw true true true false]
+;; expect: ["java.lang.String" true true false true true true #{java.lang.Object} nil nil :threw "Can't get descendants of classes" :threw :threw true true true false]
