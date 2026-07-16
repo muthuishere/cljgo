@@ -806,14 +806,32 @@
     (when-let [s (seq coll)]
       (cons (first s) (take-nth n (drop n s)))))))
 
+;; oracle: (every? even? [2 4 6]) => true
+(defn every? [pred coll]
+  (loop [s (seq coll)]
+    (if s
+      (if (pred (first s)) (recur (next s)) false)
+      true)))
+
 ;; oracle: (partition 2 (range 6)) => ((0 1) (2 3) (4 5))
-(defn partition [n coll]
-  (lazy-seq
-   (let [s (seq coll)]
-     (when s
-       (let [p (take n s)]
-         (when (= n (count p))
-           (cons p (partition n (drop n s)))))))))
+;; oracle: (partition 3 1 [:a :a :a] nil) => (())  -- wait: pad exhausted mid-way
+;;         yields one short partition; (partition 4 4 [:a] (range 10)) pads
+;;         the final partial group from `pad`.
+(defn partition
+  ([n coll] (partition n n coll))
+  ([n step coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (let [p (take n s)]
+        (when (= n (count p))
+          (cons p (partition n step (nthrest s step))))))))
+  ([n step pad coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (let [p (take n s)]
+        (if (= n (count p))
+          (cons p (partition n step pad (nthrest s step)))
+          (list (take n (concat p pad)))))))))
 
 ;; oracle: (partition-all 2 (range 5)) => ((0 1) (2 3) (4))
 (defn partition-all [n coll]
@@ -897,13 +915,24 @@
   ([sep coll] (drop 1 (mapcat (fn [x] (list sep x)) coll))))
 
 ;; oracle: (interleave [1 2 3] [:a :b :c]) => (1 :a 2 :b 3 :c)
-(defn interleave [c1 c2]
-  (lazy-seq
-   (let [s1 (seq c1) s2 (seq c2)]
-     (when (and s1 s2)
-       (cons (first s1)
-             (cons (first s2)
-                   (interleave (rest s1) (rest s2))))))))
+;; oracle: (apply interleave [[1 2 3 4 5] ["a" "b" "c"] "12"]) => (1 \a1 2 \b2)
+;;         -- stops at the shortest of any number of colls; (interleave) => ();
+;;         (interleave c1) => (seq c1).
+(defn interleave
+  ([] ())
+  ([c1] (lazy-seq c1))
+  ([c1 c2]
+   (lazy-seq
+    (let [s1 (seq c1) s2 (seq c2)]
+      (when (and s1 s2)
+        (cons (first s1)
+              (cons (first s2)
+                    (interleave (rest s1) (rest s2))))))))
+  ([c1 c2 & colls]
+   (lazy-seq
+    (let [ss (map seq (conj colls c2 c1))]
+      (when (every? identity ss)
+        (concat (map first ss) (apply interleave (map rest ss))))))))
 
 ;; oracle: (frequencies [1 1 2 3 3 3]) => {1 2, 2 1, 3 3}
 (defn frequencies [coll]
@@ -924,11 +953,40 @@
       m)))
 
 ;; oracle: (merge {:a 1} {:b 2} {:a 3}) => {:a 3, :b 2}
+;; oracle: (merge :foo) => :foo -- a single non-map arg passes through
+;; unchanged (merge never even inspects it; real Clojure's reduce1 with no
+;; explicit init just returns the sole element).
+;; oracle: (merge :foo) => :foo -- a single non-map arg (0 or 1 total args)
+;; passes through unchanged; real Clojure's reduce1 with no explicit init
+;; just returns the sole element without ever inspecting it.
+;;
+;; NOTE: the 2+-arg case deliberately uses 3-arg `reduce` with an explicit
+;; nil init (like the original body), NOT 2-arg `reduce` over `maps` (no
+;; init, first element as seed) — a real pkg/lang bug surfaced going that
+;; route: reduce's no-init path over a variadic `& maps` rest-arg seq
+;; corrupted unrelated later reads of a persistent set built earlier in the
+;; same evaluator session (see pkg/lang/PROVENANCE.md). The single/zero-arg
+;; case is special-cased ahead of the reduce so it never needs the no-init
+;; form at all.
+;; NOTE: deliberately NOT `(reduce f (first maps) (next maps))` — using the
+;; first element verbatim as the reduce seed (what real Clojure's reduce1
+;; does with no explicit init) reproduces a real pkg/lang bug: conj-ing
+;; onto a map/set element fetched out of an existing persistent collection
+;; (exactly what clojure.set/join's (merge %2 x) does, %2 being a set
+;; member) can mutate that element in place instead of copying, corrupting
+;; the ORIGINAL collection's later reads (see pkg/lang/PROVENANCE.md). Always
+;; seeding from a fresh `{}` (never a value that might be aliased elsewhere)
+;; sidesteps the hazard, at the cost of the suite's own "undefined, not
+;; tested closely" non-map-arg corner (e.g. (merge '(1 2 3) 1), which this
+;; version now throws on rather than returning (1 1 2 3) like real Clojure).
 (defn merge [& maps]
-  (reduce (fn [a b]
-            (if (nil? b) a
-                (reduce (fn [m k] (assoc m k (get b k))) (if (nil? a) {} a) (keys b))))
-          nil maps))
+  (if (nil? (next maps))
+    ;; 0 or 1 arg: real Clojure's reduce1 has no explicit init, so with a
+    ;; single element it's returned untouched — never even passed through
+    ;; the reducing fn's `(or _ {})`/conj. Oracle: (merge :foo) => :foo.
+    (first maps)
+    (when-not (every? nil? maps)
+      (reduce (fn [a b] (conj (or a {}) b)) nil maps))))
 
 ;; oracle: (merge-with + {:a 1 :b 2} {:a 10}) => {:a 11, :b 2}
 (defn merge-with [f & maps]
@@ -948,15 +1006,20 @@
 
 ;; oracle: (get-in {:a {:b 5}} [:a :b]) => 5; (get-in m ks nf) with a missing
 ;; key returns nf.
+;; The 3-arity uses `get` with a fresh sentinel (not `contains?`): a
+;; non-associative intermediate value (e.g. a keyword mid-path) must yield
+;; not-found rather than throw (contains? on a non-collection errors).
 (defn get-in
   ([m ks] (reduce get m ks))
   ([m ks not-found]
-   (loop [m m ks (seq ks)]
-     (if ks
-       (if (contains? m (first ks))
-         (recur (get m (first ks)) (next ks))
-         not-found)
-       m))))
+   (let [sentinel (atom nil)]
+     (loop [m m ks (seq ks)]
+       (if ks
+         (let [v (get m (first ks) sentinel)]
+           (if (identical? sentinel v)
+             not-found
+             (recur v (next ks))))
+         m)))))
 
 ;; oracle: (assoc-in {:a {:b 1}} [:a :c] 9) => {:a {:b 1, :c 9}}
 (defn assoc-in [m [k & ks] v]
@@ -1023,7 +1086,10 @@
 ;; oracle: ((fnil inc 0) nil) => 1
 (defn fnil
   ([f a] (fn [x & args] (apply f (if (nil? x) a x) args)))
-  ([f a b] (fn [x y & args] (apply f (if (nil? x) a x) (if (nil? y) b y) args))))
+  ([f a b] (fn [x y & args] (apply f (if (nil? x) a x) (if (nil? y) b y) args)))
+  ([f a b c]
+   (fn [x y z & args]
+     (apply f (if (nil? x) a x) (if (nil? y) b y) (if (nil? z) c z) args))))
 
 ;; oracle: ((juxt inc dec) 5) => [6 4]
 (defn juxt
@@ -1060,13 +1126,6 @@
         false))))
 
 ;; --- Predicates / reducers ------------------------------------------------
-
-;; oracle: (every? even? [2 4 6]) => true
-(defn every? [pred coll]
-  (loop [s (seq coll)]
-    (if s
-      (if (pred (first s)) (recur (next s)) false)
-      true)))
 
 (defn not-every? [pred coll] (not (every? pred coll)))
 

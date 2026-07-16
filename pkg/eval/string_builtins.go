@@ -163,13 +163,13 @@ func (e *Evaluator) internStringBuiltins(
 	// --- clojure.string host primitives (private) -------------------
 
 	defPrivate("-str-upper-case", func(args ...any) any {
-		return strings.ToUpper(strArg("upper-case", oneArg("upper-case", args)))
+		return strings.ToUpper(csString("upper-case", oneArg("upper-case", args)))
 	})
 	defPrivate("-str-lower-case", func(args ...any) any {
-		return strings.ToLower(strArg("lower-case", oneArg("lower-case", args)))
+		return strings.ToLower(csString("lower-case", oneArg("lower-case", args)))
 	})
 	defPrivate("-str-capitalize", func(args ...any) any {
-		s := strArg("capitalize", oneArg("capitalize", args))
+		s := csString("capitalize", oneArg("capitalize", args))
 		if s == "" {
 			return s
 		}
@@ -211,14 +211,20 @@ func (e *Evaluator) internStringBuiltins(
 		}
 		return true
 	})
+	// starts-with?/ends-with?/includes?: `s` (position 1) is toString-
+	// coerced like capitalize/upper-case/lower-case (works on any non-nil
+	// value — a keyword's toString keeps its leading `:`), but `substr`
+	// (position 2) must be a literal java.lang.String: passing a keyword/
+	// symbol there is a ClassCastException in real Clojure, not a coercion.
+	// Oracle: (starts-with? 'ab "a") => true; (starts-with? "ab" :a) throws.
 	defPrivate("-str-starts-with?", func(args ...any) any {
-		return strings.HasPrefix(strArg("starts-with?", args[0]), coerceStr("starts-with?", args[1]))
+		return strings.HasPrefix(csString("starts-with?", args[0]), csRequireString("starts-with?", args[1]))
 	})
 	defPrivate("-str-ends-with?", func(args ...any) any {
-		return strings.HasSuffix(strArg("ends-with?", args[0]), coerceStr("ends-with?", args[1]))
+		return strings.HasSuffix(csString("ends-with?", args[0]), csRequireString("ends-with?", args[1]))
 	})
 	defPrivate("-str-includes?", func(args ...any) any {
-		return strings.Contains(strArg("includes?", args[0]), coerceStr("includes?", args[1]))
+		return strings.Contains(csString("includes?", args[0]), csRequireString("includes?", args[1]))
 	})
 	// -str-index-of / -str-last-index-of: (… s needle) or (… s needle from).
 	// needle is a string or char. Return the byte index or nil.
@@ -289,6 +295,38 @@ func strArg(op string, a any) string {
 	s, ok := a.(string)
 	if !ok {
 		panic(fmt.Errorf("%s expects a string, got: %s", op, lang.PrintString(a)))
+	}
+	return s
+}
+
+// csString mirrors calling `.toString()` on a CharSequence-hinted param the
+// way clojure.string's capitalize/upper-case/lower-case/starts-with?/
+// ends-with?/includes? do: nil throws (a real NPE, "Cannot invoke
+// Object.toString()..."), anything else renders via its own toString —
+// which for a keyword/symbol is NOT the same as `str` (str "" for nil; a
+// keyword's toString keeps the leading `:`). Oracle: (str/capitalize
+// :asDf/aSdf) => ":asdf/asdf"; (str/capitalize nil) throws.
+func csString(op string, a any) string {
+	if a == nil {
+		panic(fmt.Errorf("%s: Cannot invoke \"Object.toString()\" because the argument is null", op))
+	}
+	if s, ok := a.(string); ok {
+		return s
+	}
+	return lang.ToString(a)
+}
+
+// csRequireString mirrors an interop call whose argument position is typed
+// java.lang.String (not just CharSequence) — e.g. String.startsWith(String):
+// only an actual string is accepted; nil throws NPE, anything else throws a
+// ClassCastException. Oracle: (str/starts-with? "ab" :a) throws.
+func csRequireString(op string, a any) string {
+	if a == nil {
+		panic(fmt.Errorf("%s: Cannot invoke \"String.length()\" because the argument is null", op))
+	}
+	s, ok := a.(string)
+	if !ok {
+		panic(fmt.Errorf("%s: class %T cannot be cast to class java.lang.String", op, a))
 	}
 	return s
 }

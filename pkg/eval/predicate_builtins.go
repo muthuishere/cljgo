@@ -2,6 +2,7 @@ package eval
 
 import (
 	"fmt"
+	"math/big"
 	"reflect"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -222,10 +223,12 @@ func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *
 	def("boolean", func(args ...any) any {
 		return lang.BooleanCast(oneArg("boolean", args))
 	})
-	// num: coerce to a Number (identity for numbers; error otherwise).
+	// num: coerce to a Number — a checked cast, `(Number) x` in the real
+	// implementation, so nil casts trivially (a null reference is
+	// assignable to any type). Oracle: (num nil) => nil.
 	def("num", func(args ...any) any {
 		x := oneArg("num", args)
-		if lang.IsNumber(x) {
+		if x == nil || lang.IsNumber(x) {
 			return x
 		}
 		panic(fmt.Errorf("num: not a number: %s", lang.PrintString(x)))
@@ -249,8 +252,10 @@ func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *
 	// pop: stack without its top — vector drops last, list/seq drops first.
 	def("pop", func(args ...any) any {
 		x := oneArg("pop", args)
+		// Oracle: (pop nil) => nil (RT/pop returns coll unchanged when nil,
+		// it does not throw).
 		if x == nil {
-			panic(lang.NewIllegalStateError("Can't pop empty list"))
+			return nil
 		}
 		s, ok := x.(lang.IPersistentStack)
 		if !ok {
@@ -268,13 +273,13 @@ func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *
 		if !ok {
 			panic(fmt.Errorf("subvec: not a vector: %s", lang.PrintString(args[0])))
 		}
-		start, ok := lang.AsInt(args[1])
+		start, ok := subvecIndex(args[1])
 		if !ok {
 			panic(fmt.Errorf("subvec: start must be an integer, got: %s", lang.PrintString(args[1])))
 		}
 		end := v.Count()
 		if len(args) == 3 {
-			e, ok := lang.AsInt(args[2])
+			e, ok := subvecIndex(args[2])
 			if !ok {
 				panic(fmt.Errorf("subvec: end must be an integer, got: %s", lang.PrintString(args[2])))
 			}
@@ -434,4 +439,23 @@ func goIdentical(a, b any) (res bool) {
 		}
 	}()
 	return a == b
+}
+
+// subvecIndex coerces a subvec start/end argument to an int the way Java's
+// RT.intCast does: truncation toward zero, not just integral values. Oracle:
+// (subvec [0 1 2] 1/2 4/3) => [0] (1/2 truncates to 0, 4/3 truncates to 1).
+func subvecIndex(a any) (int, bool) {
+	if n, ok := lang.AsInt(a); ok {
+		return n, true
+	}
+	switch v := a.(type) {
+	case *lang.Ratio:
+		q := new(big.Int).Quo(v.Numerator(), v.Denominator()) // truncates toward zero
+		return int(q.Int64()), true
+	case float64:
+		return int(v), true
+	case float32:
+		return int(v), true
+	}
+	return 0, false
 }
