@@ -126,7 +126,7 @@ func runBuild(args []string) int {
 	fs.SetOutput(os.Stderr)
 	out := fs.String("o", "", "output binary path (default: derived from the source file)")
 	gen := fs.String("gen", "", "directory for the generated Go module (single-file: keep it here; project: any value keeps the temp dirs)")
-	runtimeDir := fs.String("runtime", "", "cljgo source tree for the generated go.mod replace (default: $CLJGO_SRC or auto-detect)")
+	runtimeDir := fs.String("runtime", "", "cljgo source tree for the generated go.mod replace (default: $CLJGO_SRC; release binaries pin the published module, dev binaries auto-detect the repo)")
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "usage: cljgo build [-o out] [-gen dir] [-runtime dir] [<file.clj> | <step>]")
 		fs.PrintDefaults()
