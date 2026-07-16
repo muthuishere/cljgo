@@ -1,0 +1,54 @@
+goos: darwin
+goarch: arm64
+pkg: cljgo.dev/spikes/s19-core-async
+cpu: Apple M5 Pro
+BenchmarkRendezvous_Raw-18                 	21457635	       102.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRendezvous_Raw-18                 	22952449	       100.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRendezvous_Raw-18                 	22803816	       100.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRendezvous_GoBacked-18            	22319092	       109.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRendezvous_GoBacked-18            	21876734	       108.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRendezvous_GoBacked-18            	21898476	       108.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRendezvous_AsyncChan-18           	 8096397	       278.8 ns/op	     352 B/op	       8 allocs/op
+BenchmarkRendezvous_AsyncChan-18           	 8767798	       276.2 ns/op	     352 B/op	       8 allocs/op
+BenchmarkRendezvous_AsyncChan-18           	 8878231	       267.8 ns/op	     352 B/op	       8 allocs/op
+BenchmarkThroughput100_Raw-18              	90812488	        25.94 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_Raw-18              	91481281	        25.88 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_Raw-18              	90535716	        26.72 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_GoBacked-18         	79831467	        30.23 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_GoBacked-18         	79520119	        29.48 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_GoBacked-18         	80867756	        30.15 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_GoBackedXform-18    	71517435	        33.49 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_GoBackedXform-18    	64887442	        33.56 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_GoBackedXform-18    	70956933	        33.92 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_AsyncChan-18        	18109836	       140.5 ns/op	     336 B/op	       8 allocs/op
+BenchmarkThroughput100_AsyncChan-18        	16591567	       144.4 ns/op	     336 B/op	       8 allocs/op
+BenchmarkThroughput100_AsyncChan-18        	15252386	       159.4 ns/op	     336 B/op	       8 allocs/op
+BenchmarkAlts2_Reflect-18                  	22561170	       103.2 ns/op	     208 B/op	       3 allocs/op
+BenchmarkAlts2_Reflect-18                  	23958879	       101.5 ns/op	     208 B/op	       3 allocs/op
+BenchmarkAlts2_Reflect-18                  	23234893	       101.0 ns/op	     208 B/op	       3 allocs/op
+BenchmarkAlts2_Handler-18                  	18073916	       132.0 ns/op	     404 B/op	      10 allocs/op
+BenchmarkAlts2_Handler-18                  	17672695	       132.7 ns/op	     404 B/op	      10 allocs/op
+BenchmarkAlts2_Handler-18                  	18384687	       134.1 ns/op	     404 B/op	      10 allocs/op
+BenchmarkAlts8_Reflect-18                  	 6039678	       399.1 ns/op	    1216 B/op	      13 allocs/op
+BenchmarkAlts8_Reflect-18                  	 6001725	       398.0 ns/op	    1216 B/op	      13 allocs/op
+BenchmarkAlts8_Reflect-18                  	 5970182	       399.1 ns/op	    1216 B/op	      13 allocs/op
+BenchmarkAlts8_Handler-18                  	 9465362	       258.8 ns/op	     622 B/op	      17 allocs/op
+BenchmarkAlts8_Handler-18                  	 8893983	       282.0 ns/op	     622 B/op	      17 allocs/op
+BenchmarkAlts8_Handler-18                  	 9027813	       280.3 ns/op	     622 B/op	      17 allocs/op
+BenchmarkAlts2_StaticSelect-18             	72693218	        32.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAlts2_StaticSelect-18             	76905205	        31.60 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAlts2_StaticSelect-18             	74987696	        31.63 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	cljgo.dev/spikes/s19-core-async	91.401s
+goos: darwin
+goarch: arm64
+pkg: cljgo.dev/spikes/s19-core-async
+cpu: Apple M5 Pro
+BenchmarkRendezvous_GoBacked2-18       	17242833	       138.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRendezvous_GoBacked2-18       	17551144	       137.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRendezvous_GoBacked2-18       	17688140	       137.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkThroughput100_GoBacked2-18    	75958882	        31.12 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_GoBacked2-18    	74645724	        30.85 ns/op	       8 B/op	       0 allocs/op
+BenchmarkThroughput100_GoBacked2-18    	77501961	        31.00 ns/op	       8 B/op	       0 allocs/op
+PASS
+ok  	cljgo.dev/spikes/s19-core-async	15.210s

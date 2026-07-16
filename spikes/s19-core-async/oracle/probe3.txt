@@ -1,0 +1,4 @@
+parked-put-survives-close => [:v true]
+timeout-put-still-parked-after-close => :still-parked-800ms-after-close
+alts-priority-and-default => :dflt
+xform-no-exh-value-after => 1/2
