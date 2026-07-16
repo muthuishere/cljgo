@@ -76,9 +76,13 @@ func EmitMain(forms []*ast.Node, opts Options) (formatted []byte, raw []byte, er
 	// pays no go/packages cost. The load runs in this compiler process;
 	// the emitted binary calls the resolved functions directly.
 	if hostPaths := collectHostPaths(forms); len(hostPaths) > 0 {
-		// HostFactsDir wins when set (build.cljgo go-require, ADR 0021 B2:
-		// the generated module dir resolves third-party imports); otherwise
-		// the runtime tree (stdlib + runtime deps only).
+		// HostFactsDir is expected to be the generated module dir always
+		// (ADR 0033): both Build (compile.go) and buildArtifact (build.go)
+		// set it unconditionally, stdlib-only or not — go/packages resolves
+		// stdlib fine with no go.mod yet. RuntimeDir/FindRuntimeDir() below
+		// are reached only by callers that don't (an explicit -runtime/
+		// CLJGO_SRC override, or the in-repo conformance harness calling
+		// WriteModule directly).
 		dir := opts.HostFactsDir
 		if dir == "" {
 			dir = opts.RuntimeDir

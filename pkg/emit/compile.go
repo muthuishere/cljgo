@@ -124,7 +124,18 @@ func Build(srcPath, outPath, genDir string, opts Options) (string, error) {
 		if err != nil {
 			return "", err
 		}
+	} else if err := os.MkdirAll(genDir, 0o755); err != nil {
+		// A user-supplied -gen dir may not exist yet; WriteModule's own
+		// MkdirAll only runs after EmitMain's host-fact load (below), so a
+		// missing dir must be created here first — go/packages.Load needs
+		// a directory that exists (it doesn't need a go.mod, per S17).
+		return "", err
 	}
+	// ADR 0033: host facts always resolve against the generated module,
+	// never FindRuntimeDir()'s repo walk-up — stdlib resolves fine with
+	// no go.mod yet (spike S17), and this is the only path a downloaded
+	// release binary has for Go-interop fact loading.
+	opts.HostFactsDir = genDir
 	if err := WriteModule(genDir, forms, opts); err != nil {
 		return genDir, err
 	}
