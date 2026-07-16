@@ -153,10 +153,17 @@ func formatDirectB(d formatDirective, arg any) (string, error) {
 // representation, a different goal entirely, so there is no delegation
 // path here.
 func formatDirectG(d formatDirective, arg any) (string, error) {
-	fv, ok := arg.(float64)
-	if !ok {
+	switch v := arg.(type) {
+	case float64:
+		return formatDirectGFloat(d, v)
+	case *lang.BigDecimal:
+		return formatBigDecimalG(d, v)
+	default:
 		return "", errIllegalConversion(d.conv, formatArgKindName(arg))
 	}
+}
+
+func formatDirectGFloat(d formatDirective, fv float64) (string, error) {
 	prec := 6
 	if d.hasPrec {
 		prec = d.precision
@@ -190,4 +197,92 @@ func formatParseExponent(sci string) int {
 	}
 	n, _ := strconv.Atoi(sci[i+1:])
 	return n
+}
+
+// --- BigDecimal %f/%e/%g (ADR 0030 spike S14 VERDICT.md deferred tail /
+// ADR 0032 item 14): Java formats a BigDecimal EXACTLY at its own scale —
+// never round-tripped through a double — so e.g. (format "%.20f" 0.1M)
+// renders the literal decimal, not a binary approximation. -------------
+
+// formatSignedExp renders Java's always-signed, minimum-2-digit exponent
+// ("e+04", "e-07", "e+123").
+func formatSignedExp(exp int64) string {
+	sign := "+"
+	if exp < 0 {
+		sign = "-"
+		exp = -exp
+	}
+	digits := strconv.FormatInt(exp, 10)
+	if len(digits) < 2 {
+		digits = "0" + digits
+	}
+	return sign + digits
+}
+
+// formatBigDecimalF is %f on a BigDecimal: java.util.Formatter rounds to
+// `precision` fraction digits via BigDecimal.setScale(precision,
+// HALF_UP), then always renders PLAIN (never scientific), zero-padded.
+func formatBigDecimalF(d formatDirective, v *lang.BigDecimal) (string, error) {
+	prec := 6
+	if d.hasPrec {
+		prec = d.precision
+	}
+	rounded, err := v.SetScale(int32(prec), lang.RoundHalfUp)
+	if err != nil {
+		return "", err
+	}
+	neg := rounded.Sign() < 0
+	s := rounded.Abs().PlainString()
+	if d.hasFlag(',') {
+		s = formatGroupDecimal(s)
+	}
+	return formatPadNumeric(formatApplySign(s, neg, d), d)
+}
+
+// formatBigDecimalE is %e on a BigDecimal: forced scientific notation,
+// `precision` fraction digits in the mantissa (default 6), HALF_UP.
+func formatBigDecimalE(d formatDirective, v *lang.BigDecimal) (string, error) {
+	prec := 6
+	if d.hasPrec {
+		prec = d.precision
+	}
+	mantissa, exp, neg, err := v.Sci(prec)
+	if err != nil {
+		return "", err
+	}
+	s := formatApplyCase(mantissa+"e"+formatSignedExp(exp), d.conv)
+	return formatPadNumeric(formatApplySign(s, neg, d), d)
+}
+
+// formatBigDecimalG is %g on a BigDecimal: Java's round-then-choose-
+// notation algorithm (formatDirectGFloat's double sibling), computed
+// exactly at the value's own scale.
+func formatBigDecimalG(d formatDirective, v *lang.BigDecimal) (string, error) {
+	prec := 6
+	if d.hasPrec {
+		prec = d.precision
+	}
+	if prec == 0 {
+		prec = 1
+	}
+	mantissa, exp, neg, err := v.Sci(prec - 1)
+	if err != nil {
+		return "", err
+	}
+	var s string
+	if exp >= -4 && exp < int64(prec) {
+		decPlaces := prec - 1 - int(exp)
+		if decPlaces < 0 {
+			decPlaces = 0
+		}
+		rounded, err := v.Abs().SetScale(int32(decPlaces), lang.RoundHalfUp)
+		if err != nil {
+			return "", err
+		}
+		s = rounded.PlainString()
+	} else {
+		s = mantissa + "e" + formatSignedExp(exp)
+	}
+	s = formatApplyCase(s, d.conv)
+	return formatPadNumeric(formatApplySign(s, neg, d), d)
 }

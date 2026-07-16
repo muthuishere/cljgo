@@ -400,34 +400,40 @@ func formatTranslateC(d formatDirective, arg any) (string, error) {
 }
 
 func formatTranslateF(d formatDirective, arg any) (string, error) {
-	fv, ok := arg.(float64)
-	if !ok {
+	switch v := arg.(type) {
+	case float64:
+		if !d.hasFlag(',') && !d.hasFlag('(') {
+			return fmt.Sprintf(formatBuildVerb(d, "f"), v), nil
+		}
+		neg := v < 0
+		mag := v
+		if neg {
+			mag = -v
+		}
+		prec := 6
+		if d.hasPrec {
+			prec = d.precision
+		}
+		s := fmt.Sprintf("%.*f", prec, mag)
+		if d.hasFlag(',') {
+			s = formatGroupDecimal(s)
+		}
+		return formatPadNumeric(formatApplySign(s, neg, d), d)
+	case *lang.BigDecimal:
+		return formatBigDecimalF(d, v)
+	default:
 		return "", errIllegalConversion(d.conv, formatArgKindName(arg))
 	}
-	if !d.hasFlag(',') && !d.hasFlag('(') {
-		return fmt.Sprintf(formatBuildVerb(d, "f"), fv), nil
-	}
-	neg := fv < 0
-	mag := fv
-	if neg {
-		mag = -fv
-	}
-	prec := 6
-	if d.hasPrec {
-		prec = d.precision
-	}
-	s := fmt.Sprintf("%.*f", prec, mag)
-	if d.hasFlag(',') {
-		s = formatGroupDecimal(s)
-	}
-	return formatPadNumeric(formatApplySign(s, neg, d), d)
 }
 
 func formatTranslateE(d formatDirective, arg any) (string, error) {
-	fv, ok := arg.(float64)
-	if !ok {
+	switch v := arg.(type) {
+	case float64:
+		s := fmt.Sprintf(formatBuildVerb(d, "e"), v)
+		return formatApplyCase(s, d.conv), nil
+	case *lang.BigDecimal:
+		return formatBigDecimalE(d, v)
+	default:
 		return "", errIllegalConversion(d.conv, formatArgKindName(arg))
 	}
-	s := fmt.Sprintf(formatBuildVerb(d, "e"), fv)
-	return formatApplyCase(s, d.conv), nil
 }

@@ -531,8 +531,33 @@ func (o bigDecimalOps) IsZero(x any) bool {
 	return AsBigDecimal(x).Sign() == 0
 }
 
+// currentMathContext returns the *math-context* binding, or nil if unbound
+// (unlimited precision — today's default arithmetic). ADR 0032 follow-on:
+// real Clojure's BigDecimalOps.add/subtract/multiply/divide all consult
+// Numbers.math_context the same way (Numbers.java), so +/-/*// round their
+// EXACT result to the bound precision when one is in effect.
+func currentMathContext() (*MathContext, bool) {
+	mc, ok := VarMathContext.Deref().(*MathContext)
+	return mc, ok
+}
+
+// bigDecRoundMC rounds an exact arithmetic result to the current
+// *math-context*, if any is bound; a bare no-context result is returned
+// unchanged (matches Java's MathContext.UNLIMITED = no rounding).
+func bigDecRoundMC(v *BigDecimal) any {
+	mc, ok := currentMathContext()
+	if !ok {
+		return v
+	}
+	rounded, err := v.Round(mc.Precision, mc.Mode)
+	if err != nil {
+		panic(err)
+	}
+	return rounded
+}
+
 func (o bigDecimalOps) Add(x, y any) any {
-	return AsBigDecimal(x).Add(AsBigDecimal(y))
+	return bigDecRoundMC(AsBigDecimal(x).Add(AsBigDecimal(y)))
 }
 func (o bigDecimalOps) AddP(x, y any) any {
 	return o.Add(x, y)
@@ -544,13 +569,13 @@ func (o bigDecimalOps) UncheckedDec(x any) any {
 	return AsBigDecimal(x).Sub(AsBigDecimal(1))
 }
 func (o bigDecimalOps) Sub(x, y any) any {
-	return AsBigDecimal(x).Sub(AsBigDecimal(y))
+	return bigDecRoundMC(AsBigDecimal(x).Sub(AsBigDecimal(y)))
 }
 func (o bigDecimalOps) UncheckedSub(x, y any) any {
 	return o.Sub(x, y)
 }
 func (o bigDecimalOps) Multiply(x, y any) any {
-	return AsBigDecimal(x).Multiply(AsBigDecimal(y))
+	return bigDecRoundMC(AsBigDecimal(x).Multiply(AsBigDecimal(y)))
 }
 func (o bigDecimalOps) MultiplyP(x, y any) any {
 	return o.Multiply(x, y)
@@ -559,6 +584,13 @@ func (o bigDecimalOps) UncheckedMultiply(x, y any) any {
 	return o.Multiply(x, y)
 }
 func (o bigDecimalOps) Divide(x, y any) any {
+	if mc, ok := currentMathContext(); ok {
+		v, err := AsBigDecimal(x).DivideMC(AsBigDecimal(y), mc.Precision, mc.Mode)
+		if err != nil {
+			panic(err)
+		}
+		return v
+	}
 	return AsBigDecimal(x).Divide(AsBigDecimal(y))
 }
 func (o bigDecimalOps) Quotient(x, y any) any {

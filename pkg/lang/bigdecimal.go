@@ -237,6 +237,31 @@ func (n *BigDecimal) String() string {
 	return body
 }
 
+// PlainString forces plain (never scientific) notation at a non-negative
+// scale — java.math.BigDecimal.toPlainString, minus the negative-scale
+// case (format's callers always SetScale to precision >= 0 first). Backs
+// format %f, which shows the full plain magnitude even for huge/tiny
+// values where String() would switch to E-notation.
+func (n *BigDecimal) PlainString() string {
+	u := n.unscaled
+	neg := u.Sign() < 0
+	digits := new(big.Int).Abs(u).String()
+	s := int(n.scale)
+	var body string
+	switch {
+	case s <= 0:
+		body = digits + strings.Repeat("0", -s)
+	case len(digits) > s:
+		body = digits[:len(digits)-s] + "." + digits[len(digits)-s:]
+	default:
+		body = "0." + strings.Repeat("0", s-len(digits)) + digits
+	}
+	if neg {
+		return "-" + body
+	}
+	return body
+}
+
 // StripTrailingZeros returns the numerically-equal value with trailing
 // fractional zeros moved into the scale (Java stripTrailingZeros). It
 // backs hasheq: Clojure `=` on BigDecimals is compareTo-based, so
@@ -436,4 +461,255 @@ func (n *BigDecimal) Abs() *BigDecimal {
 		return n.Negate()
 	}
 	return n
+}
+
+// ------------------------------------------------------- with-precision ---
+//
+// ADR 0032 follow-on (S16 items 13-14, spikes/s16-bigdecimal-scaled/
+// proto/decimal.go RoundingMode/Round/DivideMC, ported unchanged): a
+// MathContext (precision + RoundingMode) drives `with-precision` /
+// *math-context*. Precision here is SIGNIFICANT DIGITS (java.math.
+// MathContext), distinct from `scale` (fraction digits) used by SetScale.
+
+// RoundingMode mirrors java.math.RoundingMode.
+type RoundingMode int
+
+const (
+	RoundUp RoundingMode = iota
+	RoundDown
+	RoundCeiling
+	RoundFloor
+	RoundHalfUp
+	RoundHalfDown
+	RoundHalfEven
+	RoundUnnecessary
+)
+
+// roundingModeNames maps the bare-symbol names `with-precision` accepts
+// (:rounding UP, CEILING, ...) to RoundingMode, matching
+// java.math.RoundingMode.valueOf.
+var roundingModeNames = map[string]RoundingMode{
+	"UP":          RoundUp,
+	"DOWN":        RoundDown,
+	"CEILING":     RoundCeiling,
+	"FLOOR":       RoundFloor,
+	"HALF_UP":     RoundHalfUp,
+	"HALF_DOWN":   RoundHalfDown,
+	"HALF_EVEN":   RoundHalfEven,
+	"UNNECESSARY": RoundUnnecessary,
+}
+
+// ParseRoundingMode looks up a RoundingMode by its Java enum name; error
+// mirrors java.lang.IllegalArgumentException: valueOf on an unknown name.
+func ParseRoundingMode(name string) (RoundingMode, error) {
+	if m, ok := roundingModeNames[name]; ok {
+		return m, nil
+	}
+	return 0, fmt.Errorf("No enum constant java.math.RoundingMode.%s", name)
+}
+
+// MathContext is java.math.MathContext: precision (0 = unlimited) +
+// RoundingMode. *math-context* holds one of these (or nil = unbound =
+// unlimited precision, today's default arithmetic).
+type MathContext struct {
+	Precision int
+	Mode      RoundingMode
+}
+
+// NewMathContext builds a MathContext from `with-precision`'s (precision,
+// rounding-mode-name) pair.
+func NewMathContext(precision int, roundingName string) (*MathContext, error) {
+	mode, err := ParseRoundingMode(roundingName)
+	if err != nil {
+		return nil, err
+	}
+	return &MathContext{Precision: precision, Mode: mode}, nil
+}
+
+// divRound divides |num|/|den| (den != 0) to an exact quotient + remainder,
+// then rounds the quotient per mode using the TRUE remainder (no guard
+// digits) — Java's BigDecimal rounding decision. `neg` is the true sign of
+// the mathematical result (num/den before taking absolute values).
+func divRound(num, den *big.Int, mode RoundingMode, neg bool) (*big.Int, error) {
+	q, r := new(big.Int).QuoRem(new(big.Int).Abs(num), new(big.Int).Abs(den), new(big.Int))
+	if r.Sign() == 0 {
+		return q, nil
+	}
+	inc := false
+	switch mode {
+	case RoundUp:
+		inc = true
+	case RoundDown:
+		inc = false
+	case RoundCeiling:
+		inc = !neg
+	case RoundFloor:
+		inc = neg
+	case RoundHalfUp, RoundHalfDown, RoundHalfEven:
+		cmp := new(big.Int).Lsh(r, 1).Cmp(new(big.Int).Abs(den)) // 2r vs den
+		switch {
+		case cmp > 0:
+			inc = true
+		case cmp < 0:
+			inc = false
+		default: // exactly half
+			switch mode {
+			case RoundHalfUp:
+				inc = true
+			case RoundHalfDown:
+				inc = false
+			case RoundHalfEven:
+				inc = q.Bit(0) == 1
+			}
+		}
+	case RoundUnnecessary:
+		return nil, NewArithmeticError("Rounding necessary")
+	}
+	if inc {
+		q.Add(q, big.NewInt(1))
+	}
+	return q, nil
+}
+
+// Precision is the number of digits in the unscaled value (Java: 1 for
+// zero) — exported alias of the package-private precision() used by
+// MathContext rounding (Round/DivideMC) and format %e/%g.
+func (n *BigDecimal) Precision() int { return n.precision() }
+
+// Round applies a MathContext (precision, mode) — Java BigDecimal.
+// plus(MathContext)/round: if the value has more significant digits than
+// precision, discard the excess and round; precision <= 0 means unlimited
+// (a no-op).
+func (n *BigDecimal) Round(precision int, mode RoundingMode) (*BigDecimal, error) {
+	if precision <= 0 {
+		return n, nil
+	}
+	drop := n.precision() - precision
+	if drop <= 0 || n.unscaled.Sign() == 0 {
+		return n, nil
+	}
+	neg := n.unscaled.Sign() < 0
+	q, err := divRound(n.unscaled, bigDecPow10(int64(drop)), mode, neg)
+	if err != nil {
+		return nil, err
+	}
+	s := int64(n.scale) - int64(drop)
+	// rounding may add a digit (99 -> 10 x 10): renormalize
+	if len(q.String()) > precision {
+		q.Quo(q, bigDecTen)
+		s--
+	}
+	if neg {
+		q.Neg(q)
+	}
+	return &BigDecimal{unscaled: q, scale: clampBigDecScale(s)}, nil
+}
+
+// DivideMC is Java divide(divisor, MathContext): the quotient rounded to
+// `precision` significant digits (never throws non-terminating; that's
+// only for the no-MathContext exact Divide). precision <= 0 falls back to
+// the exact Divide (still throws on non-termination, like MathContext.
+// UNLIMITED).
+func (n *BigDecimal) DivideMC(other *BigDecimal, precision int, mode RoundingMode) (*BigDecimal, error) {
+	if other.unscaled.Sign() == 0 {
+		return nil, NewArithmeticError("Divide by zero")
+	}
+	if precision <= 0 {
+		return n.Divide(other), nil
+	}
+	if n.unscaled.Sign() == 0 {
+		return &BigDecimal{unscaled: big.NewInt(0), scale: clampBigDecScale(int64(n.scale) - int64(other.scale))}, nil
+	}
+	nAbs := new(big.Int).Abs(n.unscaled)
+	dAbs := new(big.Int).Abs(other.unscaled)
+	neg := (n.unscaled.Sign() < 0) != (other.unscaled.Sign() < 0)
+	// adjusted exponent of q = x/y: start from digit counts, correct by one
+	// exact magnitude comparison.
+	e := n.adjExp() - other.adjExp()
+	shift := int64(len(dAbs.String())) - int64(len(nAbs.String()))
+	nCmp := new(big.Int).Set(nAbs)
+	dCmp := new(big.Int).Set(dAbs)
+	if shift >= 0 {
+		nCmp.Mul(nCmp, bigDecPow10(shift))
+	} else {
+		dCmp.Mul(dCmp, bigDecPow10(-shift))
+	}
+	if nCmp.Cmp(dCmp) < 0 {
+		e-- // leading digit of the quotient is one place lower
+	}
+	s := int64(precision) - 1 - e // result scale
+	exp := s + int64(other.scale) - int64(n.scale)
+	num := new(big.Int).Set(nAbs)
+	den := new(big.Int).Set(dAbs)
+	if exp >= 0 {
+		num.Mul(num, bigDecPow10(exp))
+	} else {
+		den.Mul(den, bigDecPow10(-exp))
+	}
+	q, err := divRound(num, den, mode, neg)
+	if err != nil {
+		return nil, err
+	}
+	if len(q.String()) > precision { // carry added a digit
+		q.Quo(q, bigDecTen)
+		s--
+	}
+	if neg {
+		q.Neg(q)
+	}
+	return &BigDecimal{unscaled: q, scale: clampBigDecScale(s)}, nil
+}
+
+// Sci renders the value in forced scientific notation with exactly
+// `fracDigits` digits after the decimal point (fracDigits+1 total
+// significant digits), HALF_UP-rounded. Backs format %e/%g (S14/S16
+// follow-on, ADR 0032 item 14): the mantissa (sign-less digit string with
+// its decimal point already placed) + the adjusted exponent + whether the
+// original value was negative.
+func (n *BigDecimal) Sci(fracDigits int) (mantissa string, exp int64, neg bool, err error) {
+	rounded, err := n.Round(fracDigits+1, RoundHalfUp)
+	if err != nil {
+		return "", 0, false, err
+	}
+	neg = rounded.unscaled.Sign() < 0
+	digits := new(big.Int).Abs(rounded.unscaled).String()
+	// Zero-pad on the right up to fracDigits+1 digits: only needed when
+	// rounded is exactly zero (precision() is always 1 for zero,
+	// regardless of fracDigits).
+	if len(digits) < fracDigits+1 {
+		digits += strings.Repeat("0", fracDigits+1-len(digits))
+	}
+	if fracDigits == 0 {
+		mantissa = digits
+	} else {
+		mantissa = digits[:1] + "." + digits[1:]
+	}
+	exp = rounded.adjExp()
+	return mantissa, exp, neg, nil
+}
+
+// SetScale rounds/pads to an exact fraction-digit SCALE (java.math.
+// BigDecimal.setScale(int, RoundingMode)) — distinct from Round's
+// significant-digit precision. Used by format %f (always plain notation
+// at a caller-chosen fraction-digit count, independent of *math-context*).
+func (n *BigDecimal) SetScale(newScale int32, mode RoundingMode) (*BigDecimal, error) {
+	if newScale == n.scale {
+		return n, nil
+	}
+	if newScale > n.scale {
+		return &BigDecimal{
+			unscaled: new(big.Int).Mul(n.unscaled, bigDecPow10(int64(newScale)-int64(n.scale))),
+			scale:    newScale,
+		}, nil
+	}
+	drop := int64(n.scale) - int64(newScale)
+	neg := n.unscaled.Sign() < 0
+	q, err := divRound(n.unscaled, bigDecPow10(drop), mode, neg)
+	if err != nil {
+		return nil, err
+	}
+	if neg {
+		q.Neg(q)
+	}
+	return &BigDecimal{unscaled: q, scale: newScale}, nil
 }

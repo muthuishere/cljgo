@@ -72,6 +72,12 @@ var (
 	VarCompileFiles = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
 	VarFile         = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
 	VarDataReaders  = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
+	// VarMathContext backs *math-context* (ADR 0032 follow-on): root nil =
+	// unbound = unlimited-precision BigDecimal arithmetic (today's default:
+	// exact add/sub/mul, divide throws on non-termination). `with-precision`
+	// binds it to a *MathContext (pkg/lang/bigdecimal.go); the decimal Ops
+	// (numberops.go bigDecimalOps) consult it on every +/-/*//.
+	VarMathContext = InternVarReplaceRoot(NSCore, NewSymbol("*math-context*"), nil).SetDynamic()
 
 	// TODO: use variant of InternVar that doesn't replace root.
 	VarPrintInitialized = InternVarName(NSCore.Name(), NewSymbol("print-initialized"))

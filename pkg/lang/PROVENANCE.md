@@ -220,6 +220,66 @@ mantissa-truncated long literals).
   row aborts on the pre-existing missing `hash` builtin, and the
   hash-set row covers hasheq). `with-precision` (S16 items 13–14)
   remains the ADR 0032 follow-on change.
+
+## with-precision / *math-context* + format %f/%e/%g on BigDecimal (ADR 0032 follow-on, 2026-07-16)
+
+Ground truth: spike S16's `probes_wp.clj`/`probes_wp.oracle.txt` (26 rows,
+re-verified against the live `clojure` 1.12.5 CLI at freeze) + fresh oracle
+probes for format on BigDecimal (this change's conformance tests).
+
+- `bigdecimal.go`: ported the S16 prototype's `RoundingMode` enum,
+  `divRound`, `Round` (MathContext precision-digit rounding), `DivideMC`
+  (divide under a MathContext, never throws non-terminating) from
+  `spikes/s16-bigdecimal-scaled/proto/decimal.go` (renamed `Dec`→
+  `BigDecimal`, `pow10`→`bigDecPow10`, etc — same algorithms, no logic
+  changes). Added `MathContext` (precision+mode), `ParseRoundingMode`/
+  `NewMathContext`, an exported `Precision()` alias, and two format-only
+  helpers not in the prototype: `SetScale` (setScale(scale, mode) —
+  distinct from `Round`'s significant-digit precision; `%f` always
+  rounds to a caller-chosen fraction-digit count, never a *math-context*
+  significant-digit count) and `Sci`/`PlainString` (forced scientific /
+  forced plain rendering at an exact rounded scale, backing `%e`/`%g` and
+  `%f` respectively — Java's `Formatter` never round-trips a BigDecimal
+  through a double, unlike `String()`'s javadoc plain-vs-E threshold).
+- `var.go`: `VarMathContext` (`*math-context*`, root nil = unbound =
+  unlimited precision, exactly today's pre-existing arithmetic) — same
+  pattern as `VarPrintLength`/`VarOut`.
+- `numberops.go` `bigDecimalOps`: `Add`/`Sub`/`Multiply` round their exact
+  result through the bound `*math-context*` (if any) via a new
+  `bigDecRoundMC` helper; `Divide` uses `DivideMC` when a context is
+  bound (else the pre-existing exact-or-throw `Divide`) — matches real
+  Clojure's `Numbers.java` `BigDecimalOps`, which threads
+  `Numbers.math_context` through the same four ops (not
+  Quotient/Remainder/Negate — the oracle's probe corpus doesn't exercise
+  MathContext there and Java's own ops don't take one).
+- `core/core.clj`: `with-precision` macro (placed just after `*assert*`,
+  before `delay`) — binds `*math-context*` via `(-math-context precision
+  rounding-name)`, the rounding-mode SYMBOL captured bare from macro args
+  and resolved to its name string at macro-expansion time (`name` runs
+  in the macro's own body, not the expansion — no
+  `java.math.RoundingMode` class-access trick needed, unlike real
+  Clojure's version). `binding` forced bare via `~'binding`, same reason
+  as `with-out-str` (comment above it explains the syntax-quote
+  qualification trap).
+- `pkg/eval/numeric_builtins.go`: `-math-context` private builtin (precision
+  Long + rounding-mode-name string → `*lang.MathContext`, `IllegalArgumentException`-shaped on an unknown mode name) behind the macro.
+- `pkg/eval/format_builtins.go` + `format_render.go`: `%f`/`%e`/`%g` gained
+  a `*lang.BigDecimal` arg-kind branch (`formatBigDecimalF/E/G`) alongside
+  the existing `float64` one — same translate-then-delegate shape as ADR
+  0030/S14, computed from the BigDecimal's own unscaled digits (never a
+  `Float64()` round-trip). `%g`'s fixed-vs-scientific notation choice
+  mirrors `formatDirectGFloat`'s algorithm (renamed from `formatDirectG`,
+  which is now the arg-kind dispatcher).
+- Acceptance: `conformance/tests/with-precision-{rounding,arith,
+  unnecessary-throws}.clj` (all 26 `probes_wp.clj` rows, dual-harness) +
+  `conformance/tests/format-bigdecimal-{f,eg}.clj` (fresh oracle probes,
+  `clojure` 1.12.5 CLI, verified 2026-07-16). Known pre-existing gap, NOT
+  touched by this change: `(format "%.20f" 0.1)` (a plain `double`, not
+  `0.1M`) diverges from the oracle in cljgo today (extends the double's
+  exact binary expansion past its shortest round-trip, where Java's
+  `Formatter` pads zeros) — out of scope; BigDecimal's own `%.20f` is
+  exact by construction since it never touches a double.
+
 ## goid fast path (ADR 0034, 2026-07-16, `internal/goid/`)
 
 Evidence: spike S18 (spikes/s18-ubuntu-boot-anomaly/VERDICT.md) — the
