@@ -43,7 +43,9 @@ All green, no exceptions. `refs/` is fenced with a stub go.mod — leave it.
 - `pkg/lang` is vendored from Glojure — keep EPL headers on vendored files,
   log meaningful surgery in `pkg/lang/PROVENANCE.md` / `TODO.md`.
 - Never add `Co-authored-by:` to commits.
-- `refs/` and `spikes/` are read-only history — new work never goes there.
+- `refs/` is read-only history. CLOSED spikes (those with a VERDICT.md) are
+  frozen; NEW spikes follow the ADR 0027 lifecycle (spike → close → ADR →
+  spec → apply).
 - Verify Clojure behavior against the real `clojure` CLI, not memory.
 
 ## Layout
