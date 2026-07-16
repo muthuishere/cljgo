@@ -1,0 +1,186 @@
+2,5c2,5
+< lit 1.0M => 1.0M
+< lit 1.00M => 1.00M
+< lit 1.10M => 1.10M
+< lit -1.10M => -1.10M
+---
+> lit 1.0M => 1M
+> lit 1.00M => 1M
+> lit 1.10M => 1.1M
+> lit -1.10M => -1.1M
+7,8c7,8
+< lit 0.000M => 0.000M
+< lit -0.0M => 0.0M
+---
+> lit 0.000M => 0M
+> lit -0.0M => -0M
+10,12c10,12
+< lit 1E+2M => 1E+2M
+< lit 1e2M => 1E+2M
+< lit 1.23E3M => 1.23E+3M
+---
+> lit 1E+2M => 100M
+> lit 1e2M => 100M
+> lit 1.23E3M => 1230M
+14,15c14,15
+< lit 1E10M => 1E+10M
+< lit 1E-10M => 1E-10M
+---
+> lit 1E10M => 10000000000M
+> lit 1E-10M => 0.0000000001M
+17,18c17,18
+< lit 0.0000001M => 1E-7M
+< lit 123456789012345678901234567890.12M => 123456789012345678901234567890.12M
+---
+> lit 0.0000001M => 0.0000001M
+> lit 123456789012345678901234567890.12M => 123456789012345678900000000000M
+24,27c24,27
+< bigdec 1.0 => 1.0M
+< bigdec 0.0 => 0.0M
+< bigdec -1.0 => -1.0M
+< bigdec -0.0 => 0.0M
+---
+> bigdec 1.0 => 1M
+> bigdec 0.0 => 0M
+> bigdec -1.0 => -1M
+> bigdec -0.0 => -0M
+29,30c29,30
+< bigdec 1.5e300 => 1.5E+300M
+< bigdec 1.0M => 1.0M
+---
+> bigdec 1.5e300 => 1500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000M
+> bigdec 1.0M => 1M
+39,47c39,47
+< bigdec str 1.10 => 1.10M
+< bigdec str 1e10 => 1E+10M
+< bigdec str 1E10 => 1E+10M
+< bigdec str +1e10 => 1E+10M
+< bigdec str -1e10 => -1E+10M
+< bigdec str 1e+10 => 1E+10M
+< bigdec str 1e-10 => 1E-10M
+< bigdec str +1e-10 => 1E-10M
+< bigdec str -1e-10 => -1E-10M
+---
+> bigdec str 1.10 => 1.1M
+> bigdec str 1e10 => 10000000000M
+> bigdec str 1E10 => 10000000000M
+> bigdec str +1e10 => 10000000000M
+> bigdec str -1e10 => -10000000000M
+> bigdec str 1e+10 => 10000000000M
+> bigdec str 1e-10 => 0.0000000001M
+> bigdec str +1e-10 => 0.0000000001M
+> bigdec str -1e-10 => -0.0000000001M
+49c49
+< bigdec str 123e2 => 1.23E+4M
+---
+> bigdec str 123e2 => 12300M
+51,58c51,58
+< bigdec Inf => THREW:Infinite or NaN
+< bigdec -Inf => THREW:Infinite or NaN
+< bigdec NaN => THREW:Infinite or NaN
+< bigdec nil => THREW:Cannot invoke "String.toCharArray()" because "val" is null
+< bigdec str abc => THREW:Character a is neither a decimal digit number, decimal point, nor "e" notation exponential mark.
+< bigdec str empty => THREW:
+< bigdec true => THREW:No matching ctor found for class java.math.BigDecimal
+< bigdec kw => THREW:No matching ctor found for class java.math.BigDecimal
+---
+> bigdec Inf => +InfM
+> bigdec -Inf => -InfM
+> bigdec NaN => THREW:Float.SetFloat64(NaN)
+> bigdec nil => THREW:bigdec: cannot convert nil
+> bigdec str abc => THREW:bigdec: invalid number: abc
+> bigdec str empty => THREW:bigdec: invalid number: 
+> bigdec true => THREW:cannot convert bool to BigDecimal
+> bigdec kw => THREW:cannot convert lang.Keyword to BigDecimal
+61c61
+< add 1.10M 2.2M => 3.30M
+---
+> add 1.10M 2.2M => 3.3000000000000000002M
+63c63
+< add 1.1M 2.2M => 3.3M
+---
+> add 1.1M 2.2M => 3.3000000000000000002M
+65,67c65,67
+< sub 5.00M 1.0M => 4.00M
+< sub 1.0M 1.0M => 0.0M
+< mul 1.10M 2.0M => 2.200M
+---
+> sub 5.00M 1.0M => 4M
+> sub 1.0M 1.0M => 0M
+> mul 1.10M 2.0M => 2.2M
+69,72c69,72
+< mul 1.10M 1M => 1.10M
+< mul 1E+2M 1E+3M => 1E+5M
+< mul' 1.10M 2.0M => 2.200M
+< add' 1.10M 2.2M => 3.30M
+---
+> mul 1.10M 1M => 1.1M
+> mul 1E+2M 1E+3M => 100000M
+> mul' 1.10M 2.0M => 2.2M
+> add' 1.10M 2.2M => 3.3000000000000000002M
+74,76c74,76
+< div 10.0M 2M => 5.0M
+< div 1M 3M => THREW:Non-terminating decimal expansion; no exact representable decimal result.
+< div 1M 3 => THREW:Non-terminating decimal expansion; no exact representable decimal result.
+---
+> div 10.0M 2M => 5M
+> div 1M 3M => 0.33333333333333333334M
+> div 1M 3 => 0.33333333333333333334M
+79,80c79,80
+< div 1M 0M => THREW:Divide by zero
+< quot 10.0M 3 => 3.0M
+---
+> div 1M 0M => +InfM
+> quot 10.0M 3 => 3M
+83,92c83,92
+< rem 10.0M 3 => 1.0M
+< rem 10.0M 3.0M => 1.0M
+< rem -10.0M 3 => -1.0M
+< mod 10.0M 3 => 1.0M
+< mod 10.0M 3.0M => 1.0M
+< mod -10.0M 3 => 2.0M
+< inc 1.0M => 2.0M
+< dec 1.00M => 0.00M
+< neg 2.0M => -2.0M
+< abs -1.50M => 1.50M
+---
+> rem 10.0M 3 => 1M
+> rem 10.0M 3.0M => 1M
+> rem -10.0M 3 => -1M
+> mod 10.0M 3 => 1M
+> mod 10.0M 3.0M => 1M
+> mod -10.0M 3 => 2M
+> inc 1.0M => 2M
+> dec 1.00M => 0M
+> neg 2.0M => -2M
+> abs -1.50M => 1.5M
+94c94
+< min 1.0M 2M => 1.0M
+---
+> min 1.0M 2M => 1M
+112,115c112,115
+< str 1.10M => "1.10"
+< pr-str 1.10M => "1.10M"
+< str bigdec 1e10 => "1E+10"
+< str 0.0000001M => "1E-7"
+---
+> str 1.10M => "1.1"
+> pr-str 1.10M => "1.1M"
+> str bigdec 1e10 => "10000000000.0"
+> str 0.0000001M => "0.0000001"
+117,120c117,120
+< pr-str vec => "[1.0M 1E+3M]"
+< add 1 1.0M => 2.0M
+< add 1N 1.0M => 2.0M
+< add 1/2 0.5M => 1.0M
+---
+> pr-str vec => "[1M 1000M]"
+> add 1 1.0M => 2M
+> add 1N 1.0M => 2M
+> add 1/2 0.5M => 1M
+124c124
+< mul 2 1.50M => 3.00M
+---
+> mul 2 1.50M => 3M
+133d132
+< hash= 1.0M 1.00M => true
