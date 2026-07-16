@@ -1,24 +1,44 @@
 package lang
 
+// agent.go — queue-backed agents + goroutine futures (ADR 0038 completed
+// the vendored Glojure stub: agents got a state cell and a serialized
+// action queue, futures got cooperative cancellation; surgery logged in
+// PROVENANCE.md).
+
 import (
+	"sync"
 	"time"
 )
 
 type (
+	// Agent is a value cell whose mutations (send/send-off actions) are
+	// serialized by one dedicated goroutine draining its queue — actions
+	// for one agent run in send order, never concurrently. send and
+	// send-off are the same operation: goroutines have no bounded-pool vs
+	// new-thread distinction (the go/thread collapse, design/05 §4).
 	Agent struct {
 		meta IPersistentMap
 
+		mtx     sync.Mutex
+		state   any
 		watches IPersistentMap
+
+		queue chan func()
 	}
 
 	future struct {
 		done chan struct{}
 		res  interface{}
+
+		// settle guards the ONE completion: normal body completion and
+		// future-cancel race for it; the loser is a no-op (ADR 0038).
+		settle    sync.Once
+		cancelled bool
 	}
 )
 
 var (
-	// _ ARef = (*Agent)(nil)
+	_ IRef = (*Agent)(nil)
 
 	_ IBlockingDeref = (*future)(nil)
 	_ IDeref         = (*future)(nil)
@@ -65,21 +85,100 @@ func (f *future) IsRealized() bool {
 	}
 }
 
+// settleWith completes the future with res exactly once; it reports
+// whether THIS call won the settle.
+func (f *future) settleWith(res interface{}) bool {
+	won := false
+	f.settle.Do(func() {
+		f.res = res
+		close(f.done)
+		won = true
+	})
+	return won
+}
+
+// Cancel backs future-cancel (ADR 0038; JVM oracle Clojure 1.12.5:
+// cancelling a completed future => false, a pending one => true, after
+// which realized?/future-cancelled? are true and deref throws
+// CancellationException). Cancellation is cooperative-only: the body
+// goroutine is NOT interrupted — it runs to completion and its result is
+// discarded by the already-settled sync.Once.
+func (f *future) Cancel() bool {
+	won := false
+	f.settle.Do(func() {
+		f.cancelled = true // before close(done): visible to post-realized readers
+		f.res = &futurePanic{NewIllegalStateError("future-cancel: the future was cancelled")}
+		close(f.done)
+		won = true
+	})
+	return won
+}
+
+// IsCancelled backs future-cancelled?.
+func (f *future) IsCancelled() bool {
+	return f.cancelled
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Agent
 
+// NewAgent builds an agent holding val and starts its queue-draining
+// goroutine (never shut down — ShutdownAgents remains a no-op).
+func NewAgent(val any) *Agent {
+	a := &Agent{state: val, watches: emptyMap, queue: make(chan func(), 32)}
+	go func() {
+		for act := range a.queue {
+			act()
+		}
+	}()
+	return a
+}
+
 func (a *Agent) Deref() any {
-	panic("not implemented")
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+	return a.state
+}
+
+// Send backs send/send-off: enqueue (apply f state args); the new value is
+// installed and watches fire when the action runs, in send order.
+func (a *Agent) Send(f IFn, args ISeq) *Agent {
+	a.queue <- func() {
+		a.mtx.Lock()
+		old := a.state
+		nw := f.ApplyTo(NewCons(old, args))
+		a.state = nw
+		a.mtx.Unlock()
+		a.notifyWatches(old, nw)
+	}
+	return a
+}
+
+// Await backs await: block until every action sent to this agent BEFORE
+// the call has run (a latch action through the same queue, like the JVM's
+// CountDownLatch send).
+func (a *Agent) Await() {
+	done := make(chan struct{})
+	a.queue <- func() { close(done) }
+	<-done
+}
+
+func (a *Agent) SetValidator(vf IFn) {
+	panic(NewIllegalStateError("agent validators are not implemented (ADR 0038)"))
+}
+
+func (a *Agent) Validator() IFn {
+	return nil
 }
 
 func (a *Agent) Watches() IPersistentMap {
 	return a.watches
 }
 
-// func (a *Agent) AddWatch(key interface{}, fn IFn) IRef {
-// 	a.watches = a.watches.Assoc(key, fn).(IPersistentMap)
-// 	return a
-// }
+func (a *Agent) AddWatch(key any, fn IFn) IRef {
+	a.watches = a.watches.Assoc(key, fn).(IPersistentMap)
+	return a
+}
 
 func (a *Agent) RemoveWatch(key interface{}) {
 	a.watches = a.watches.Without(key)
@@ -122,14 +221,17 @@ func AgentSubmit(fn IFn) IBlockingDeref {
 		done: make(chan struct{}),
 	}
 	go func() {
-		defer close(fut.done)
 		ResetThreadBindingFrame(frame)
-		defer func() {
-			if r := recover(); r != nil {
-				fut.res = &futurePanic{r}
-			}
+		var res interface{}
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					res = &futurePanic{r}
+				}
+			}()
+			res = fn.Invoke()
 		}()
-		fut.res = fn.Invoke()
+		fut.settleWith(res)
 	}()
 	return fut
 }

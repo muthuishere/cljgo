@@ -255,4 +255,26 @@ every analyzer/eval step).
   concurrent goroutines under `-race`, per-goroutine ID stability and
   uniqueness; full suite + `-race` on lang/repl/nrepl/eval (binding
   conveyance + nREPL session isolation) green.
-||||||| de19981
+
+## STM-lite, agents, future-cancel, vec aliasing (batch/deep-leftovers, ADR 0038, 2026-07-16)
+
+- `ref.go` REWRITTEN from the Glojure stub (lock-free transaction-count
+  sketch, unused elsewhere): `Ref` is a mutex cell with watches +
+  validator; one global transaction lock (`RunInTransaction` backing
+  dosync) with a dynamic-var in-transaction mark so nested dosync joins
+  and the mark conveys like any binding; `TxAlter`/`TxSet` throw
+  "No transaction running" outside a transaction (JVM oracle 1.12.5).
+- `agent.go` COMPLETED from the stub: `Agent` gained a state cell and a
+  serialized action queue drained by one goroutine (`NewAgent`/`Send`/
+  `Await`); `future` gained cooperative cancellation (`Cancel`/
+  `IsCancelled` via `sync.Once` settle — body completion and cancel race
+  for the single completion).
+- `slices.go`: `ToSlice` falls through to any `Seqable` (sorted-set/map
+  previously panicked "Unable to convert").
+- `vector.go` + `internal/persistent/vector/transient.go`: `Owning`
+  constructor — a slice that fits one tail node BECOMES the vector's
+  storage (no copy), giving JVM `(vec array)` aliasing semantics
+  (LazilyPersistentVector.createOwning; suite vec.cljc, oracle-cited in
+  conformance/tests/vec-array-aliasing.clj).
+- Also removed a stray merge-conflict marker line that had been
+  committed at the end of this file.

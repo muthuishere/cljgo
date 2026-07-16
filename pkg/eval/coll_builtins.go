@@ -111,13 +111,17 @@ func (e *Evaluator) internCollBuiltins(def func(string, func(...any) any) *lang.
 		return m
 	})
 
-	// vec : (vec coll) — a vector of coll's elements.
+	// vec : (vec coll) — a vector of coll's elements. A small Go []any (a
+	// to-array result) becomes the vector's storage WITHOUT copying, so
+	// in-place array mutation is visible through the vector — the JVM's
+	// (vec array) aliasing semantics, oracle-verified on Clojure 1.12.5:
+	// (let [a (to-array [1 2 3]) v (vec a)] (aset a 0 -1) v) => [-1 2 3].
 	def("vec", func(args ...any) any {
 		coll := oneArg("vec", args)
 		if coll == nil {
 			return lang.NewVector()
 		}
-		return lang.NewVector(lang.ToSlice(coll)...)
+		return lang.NewVectorOwning(lang.ToSlice(coll))
 	})
 
 	// vals : (vals map) — a seq of the map's values, or nil when empty.

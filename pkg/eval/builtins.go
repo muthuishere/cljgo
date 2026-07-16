@@ -913,6 +913,116 @@ func (e *Evaluator) internBuiltins() {
 		return lang.AgentSubmit(fn)
 	})
 
+	// future-cancel / future-cancelled? / future-done? (ADR 0038): Cancel
+	// settles a pending future (deref then throws; realized? turns true)
+	// and returns whether THIS call cancelled it — false on an
+	// already-completed future. Oracle (JVM 1.12.5): completed => false;
+	// running => true, then realized?/future-cancelled? both true and
+	// deref throws CancellationException. Cancellation is cooperative:
+	// the body goroutine is not interrupted.
+	def("future-cancel", func(args ...any) any {
+		f, ok := oneArg("future-cancel", args).(interface{ Cancel() bool })
+		if !ok {
+			panic(fmt.Errorf("future-cancel: not a future: %s", lang.PrintString(args[0])))
+		}
+		return f.Cancel()
+	})
+	def("future-cancelled?", func(args ...any) any {
+		f, ok := oneArg("future-cancelled?", args).(interface{ IsCancelled() bool })
+		if !ok {
+			panic(fmt.Errorf("future-cancelled?: not a future: %s", lang.PrintString(args[0])))
+		}
+		return f.IsCancelled()
+	})
+	def("future-done?", func(args ...any) any {
+		f, ok := oneArg("future-done?", args).(lang.IPending)
+		if !ok {
+			panic(fmt.Errorf("future-done?: not a future: %s", lang.PrintString(args[0])))
+		}
+		return f.IsRealized()
+	})
+
+	// STM-lite refs (ADR 0038): ref is a mutex cell with watches; dosync
+	// (core.clj macro over -tx-run) serializes on one global transaction
+	// lock; alter/ref-set/commute demand a running transaction — outside
+	// one they throw "No transaction running" (JVM oracle 1.12.5).
+	def("ref", func(args ...any) any {
+		return lang.NewRef(oneArg("ref", args))
+	})
+	def("ref-set", func(args ...any) any {
+		refArg, val := twoArgs("ref-set", args)
+		r, ok := refArg.(*lang.Ref)
+		if !ok {
+			panic(fmt.Errorf("ref-set: not a ref: %s", lang.PrintString(refArg)))
+		}
+		return r.TxSet(val)
+	})
+	refAlter := func(op string) func(args ...any) any {
+		return func(args ...any) any {
+			if len(args) < 2 {
+				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), op))
+			}
+			r, ok := args[0].(*lang.Ref)
+			if !ok {
+				panic(fmt.Errorf("%s: not a ref: %s", op, lang.PrintString(args[0])))
+			}
+			f, ok := args[1].(lang.IFn)
+			if !ok {
+				panic(fmt.Errorf("%s: not a function: %s", op, lang.PrintString(args[1])))
+			}
+			return r.TxAlter(f, lang.NewList(args[2:]...).Seq())
+		}
+	}
+	def("alter", refAlter("alter"))
+	// commute is alter in STM-lite: with one global transaction lock there
+	// is no concurrent commit to reorder against (deviation, ADR 0038).
+	def("commute", refAlter("commute"))
+	defPrivate("-tx-run", func(args ...any) any {
+		f, ok := oneArg("-tx-run", args).(lang.IFn)
+		if !ok {
+			panic(fmt.Errorf("-tx-run: not a function: %s", lang.PrintString(args[0])))
+		}
+		return lang.RunInTransaction(f)
+	})
+
+	// Agents (ADR 0038): a value cell + a serialized action queue drained
+	// by one goroutine. send/send-off are the same operation (the
+	// go/thread collapse, design/05 §4); await drains via a latch action.
+	def("agent", func(args ...any) any {
+		return lang.NewAgent(oneArg("agent", args))
+	})
+	agentSend := func(op string) func(args ...any) any {
+		return func(args ...any) any {
+			if len(args) < 2 {
+				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), op))
+			}
+			a, ok := args[0].(*lang.Agent)
+			if !ok {
+				panic(fmt.Errorf("%s: not an agent: %s", op, lang.PrintString(args[0])))
+			}
+			f, ok := args[1].(lang.IFn)
+			if !ok {
+				panic(fmt.Errorf("%s: not a function: %s", op, lang.PrintString(args[1])))
+			}
+			return a.Send(f, lang.NewList(args[2:]...).Seq())
+		}
+	}
+	def("send", agentSend("send"))
+	def("send-off", agentSend("send-off"))
+	def("await", func(args ...any) any {
+		if len(args) == 0 {
+			panic(fmt.Errorf("wrong number of args (0) passed to: await"))
+		}
+		for _, arg := range args {
+			a, ok := arg.(*lang.Agent)
+			if !ok {
+				panic(fmt.Errorf("await: not an agent: %s", lang.PrintString(arg)))
+			}
+			a.Await()
+		}
+		return nil
+	})
+
 	// promise / deliver: a single-value cell (design/08 batch E, ADR 0022;
 	// lang.Promise) — deref blocks until delivered; delivering twice is a
 	// no-op (returns nil) rather than an error.

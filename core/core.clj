@@ -438,6 +438,13 @@
 (defmacro future [& body]
   (list 'clojure.core/future-call (list* 'fn* [] body)))
 
+;; dosync: run body in an STM-lite transaction (ADR 0038) — one global
+;; transaction lock, in-transaction mark bound for the body so
+;; alter/ref-set/commute accept; nested dosync joins the outer transaction.
+;; oracle: (dosync (alter (ref 1) + 5)) => 6 (Clojure 1.12.5)
+(defmacro dosync [& body]
+  (list 'clojure.core/-tx-run (list* 'fn* [] body)))
+
 ;; bound-fn* / bound-fn: wrap f (or a fn literal) so that when INVOKED —
 ;; possibly on another goroutine (future, go, thread) — it re-establishes
 ;; the dynamic-var bindings captured at WRAP time, not whatever happens to
@@ -1195,17 +1202,45 @@
            nil)))))
 
 ;; oracle: (doseq [x coll] ...) runs the body per element, returns nil.
-;; Multiple binding pairs nest; modifiers (:when/:let/:while) are not yet
-;; supported (v0). TODO: modifiers.
+;; Multiple binding pairs nest; :let / :when / :while modifiers are
+;; supported (JVM 1.12.5 oracle: :while stops the governing seq binding's
+;; loop; :when skips the body but keeps iterating; :let binds locals —
+;; order-sensitive, and modifiers scope to the nearest preceding binding).
+
+;; -doseq-mods splits the leading keyword-modifier pairs off a bindings
+;; tail: (:let [y 1] :when p z zs) => [[[:let [y 1]] [:when p]] (z zs)].
+(defn ^:private -doseq-mods [more]
+  (loop [ms [] r more]
+    (if (and (seq r) (keyword? (first r)))
+      (recur (conj ms [(first r) (second r)]) (nnext r))
+      [ms r])))
+
 (defmacro doseq [bindings & body]
   (if (empty? bindings)
     `(do ~@body nil)
-    (let [x (first bindings) coll (second bindings) more (nnext bindings)]
+    (let [x (first bindings)
+          coll (second bindings)
+          split (-doseq-mods (nnext bindings))
+          mods (nth split 0)
+          more (nth split 1)
+          ;; The loop body folds the modifiers (innermost last) around the
+          ;; continuation: it evaluates the rest of the doseq and yields
+          ;; true to keep looping, false to stop (:while).
+          folded (reduce (fn [acc kv]
+                           (let [k (nth kv 0) v (nth kv 1)]
+                             (cond
+                               (= k :let) `(let ~v ~acc)
+                               (= k :when) `(if ~v ~acc true)
+                               (= k :while) `(if ~v ~acc false)
+                               :else (throw (ex-info (str "Invalid doseq modifier: " k) {})))))
+                         `(do (doseq [~@more] ~@body) true)
+                         (reverse mods))]
       `(loop [s# (seq ~coll)]
          (if s#
-           (do (let [~x (first s#)]
-                 (doseq [~@more] ~@body))
-               (recur (next s#)))
+           (let [~x (first s#)]
+             (if ~folded
+               (recur (next s#))
+               nil))
            nil)))))
 
 ;; for — simplified list comprehension (v0): one or more [binding coll] pairs,

@@ -169,12 +169,25 @@ func (r *Reader) peekIsDigit() bool {
 	return isDigit(c)
 }
 
-// annotate attaches position metadata to IObj forms
-// (design/00-architecture.md §4.5): :file :line :column :end-line
-// :end-column, where the end position is exclusive (the position just
-// past the form). Non-IObj values (numbers, strings, keywords, ...)
-// pass through; the analyzer inherits the enclosing form's position.
+// annotate attaches position metadata to LIST (seq) forms and SYMBOLS
+// (design/00-architecture.md §4.5, narrowed by ADR 0038): :file :line
+// :column :end-line :end-column, where the end position is exclusive
+// (the position just past the form). Vector/map/set literals and
+// non-IObj scalars pass through clean, matching JVM Clojure, where
+// data-structure literals carry no reader position metadata (oracle
+// 1.12.5: file-loaded (meta '(1 2)) => {:line 1 :column 9}, (meta [1 2])
+// / (meta {:a 1}) / (meta #{1}) => nil) — user ^ metadata must not be
+// polluted with position keys (group_by.cljc). Symbols keep positions
+// as a DELIBERATE deviation (JVM symbols read meta-free): they are what
+// `cljgo check` diagnostics point at (A2001's exact column), and no
+// conformance behavior observes symbol metadata.
 func (r *Reader) annotate(form any, start Position) any {
+	switch form.(type) {
+	case lang.ISeq, *lang.Symbol:
+		// annotated below
+	default:
+		return form
+	}
 	iobj, ok := form.(lang.IObj)
 	if !ok {
 		return form
