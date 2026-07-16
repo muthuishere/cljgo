@@ -10,11 +10,12 @@
 (in-ns 'clojure.core)
 
 ;; random-sample: keep each item of coll with probability prob (a value
-;; in [0,1]). The 1-arity transducer form is omitted until transducers
-;; land (Batch 4-adjacent); the collection form is the one the suite and
-;; ordinary code exercise.
+;; in [0,1]). The 1-arity is the transducer form (design/08 §5 Batch 4,
+;; ADR 0022), riding on filter's own 1-arity (core.clj).
 ;; oracle: (count (random-sample 1.0 (range 100))) => 100
 ;; oracle: (random-sample 0.0 (range 100)) => ()
+;; oracle: (into [] (random-sample 1.0) [1 2 3]) => [1 2 3]
 (defn random-sample
+  ([prob] (filter (fn [_] (< (rand) prob))))
   ([prob coll]
    (filter (fn [_] (< (rand) prob)) coll)))

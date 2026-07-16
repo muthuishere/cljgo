@@ -265,6 +265,39 @@ func (e *Evaluator) loadNumeric() {
 	}
 }
 
+// loadTransducers reads and evaluates the embedded core/transducers.cljg
+// into clojure.core — transduce/eduction/sequence/completing/partition-by/
+// dedupe/halt-when/replace + the `into` xform arity (design/08 §5 Batch 4,
+// ADR 0022). It runs after loadCore/loadNumeric/loadPredicates (map/filter/
+// take/…'s 1-arity xform forms, `cat`/`comp`/`unreduced`/`ensure-reduced`
+// all live in core.clj itself hoisted where needed; `butlast` — used by
+// eduction — lives in predicates.cljg) so transducers.cljg's own references
+// resolve; its own (in-ns 'clojure.core) makes its body resolve unqualified
+// core names, and its publics are referred into user like the rest of core.
+func (e *Evaluator) loadTransducers() {
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, lang.NSCore,
+		lang.VarFile, "transducers.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.TransducersSource),
+		reader.WithFilename("transducers.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading transducers.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating transducers.cljg: %w", err))
+		}
+	}
+}
+
 // loadClojureString reads and evaluates the embedded core/string.cljg into
 // the clojure.string namespace. It runs after loadCore so clojure.core (and
 // the regex core fns + private -str-* host prims) are fully up. *ns* is

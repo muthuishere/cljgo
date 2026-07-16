@@ -79,3 +79,13 @@ var PortabilitySource string
 //
 //go:embed numeric.cljg
 var NumericSource string
+
+// TransducersSource is the contents of transducers.cljg — transduce/
+// eduction/sequence/completing/partition-by/dedupe/halt-when/replace, plus
+// the `into` xform arity (design/08 §5 Batch 4, ADR 0022). pkg/eval loads it
+// into clojure.core after core.clj (loadTransducers), so its publics are
+// referred into user like the rest of core. The loader accepts the .cljg
+// extension per ADR 0017.
+//
+//go:embed transducers.cljg
+var TransducersSource string
