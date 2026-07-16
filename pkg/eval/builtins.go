@@ -1023,6 +1023,34 @@ func (e *Evaluator) internBuiltins() {
 		return nil
 	})
 
+	// agent-error / restart-agent (ADR 0038 follow-on, oracle-verified
+	// against clojure 1.12.5, 2026-07-17): a failing send (action OR
+	// watch) leaves the agent :failed — agent-error returns the stored
+	// throwable (nil while :ready); restart-agent installs a new state
+	// and clears it, throwing if the agent wasn't failed. cljgo models
+	// only the JVM's default :fail error-mode (no error-handler/
+	// error-mode support — unreached by the suite, a documented gap).
+	def("agent-error", func(args ...any) any {
+		a, ok := oneArg("agent-error", args).(*lang.Agent)
+		if !ok {
+			panic(fmt.Errorf("agent-error: not an agent: %s", lang.PrintString(args[0])))
+		}
+		if err := a.AgentError(); err != nil {
+			return err
+		}
+		return nil
+	})
+	def("restart-agent", func(args ...any) any {
+		if len(args) < 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: restart-agent", len(args)))
+		}
+		a, ok := args[0].(*lang.Agent)
+		if !ok {
+			panic(fmt.Errorf("restart-agent: not an agent: %s", lang.PrintString(args[0])))
+		}
+		return a.Restart(args[1])
+	})
+
 	// promise / deliver: a single-value cell (design/08 batch E, ADR 0022;
 	// lang.Promise) — deref blocks until delivered; delivering twice is a
 	// no-op (returns nil) rather than an error.

@@ -23,6 +23,15 @@ type (
 		state   any
 		watches IPersistentMap
 
+		// err is the stored throwable once an action (or one of its watch
+		// notifications) has panicked — nil while the agent is :ready.
+		// Oracle-verified (clojure 1.12.5, 2026-07-17): the JVM's default
+		// :fail error-mode. cljgo only ever models :fail — no
+		// error-handler/error-mode knobs (set-error-handler!/
+		// set-error-mode!), since no suite file exercises them; a
+		// documented gap, not an oversight.
+		err error
+
 		queue chan func()
 	}
 
@@ -141,26 +150,128 @@ func (a *Agent) Deref() any {
 }
 
 // Send backs send/send-off: enqueue (apply f state args); the new value is
-// installed and watches fire when the action runs, in send order.
+// installed and watches fire when the action runs, in send order. A
+// FAILED agent rejects the send synchronously (oracle: clojure 1.12.5,
+// 2026-07-17 — "Agent is failed, needs restart"), matching the JVM's
+// default :fail error-mode.
 func (a *Agent) Send(f IFn, args ISeq) *Agent {
-	a.queue <- func() {
-		a.mtx.Lock()
-		old := a.state
-		nw := f.ApplyTo(NewCons(old, args))
-		a.state = nw
-		a.mtx.Unlock()
-		a.notifyWatches(old, nw)
+	a.mtx.Lock()
+	failed := a.err != nil
+	a.mtx.Unlock()
+	if failed {
+		panic(NewIllegalStateError("Agent is failed, needs restart"))
 	}
+	a.queue <- func() { a.runAction(f, args) }
 	return a
+}
+
+// runAction runs one queued action. If it panics, the OLD state is kept
+// (the action never installed a new one) and the panic is stored as the
+// agent's error. Otherwise the new state installs first, then watches
+// fire; a panicking watch ALSO fails the agent, but the state stays
+// installed (oracle: clojure 1.12.5, 2026-07-17 — the state write and the
+// watch notification are two separate steps on the JVM too). An action
+// queued before a prior one failed is dropped rather than run — the JVM
+// holds pending actions for a restart-agent with :clear-actions false to
+// resume, which cljgo does not model (documented gap; unreached by the
+// suite).
+func (a *Agent) runAction(f IFn, args ISeq) {
+	a.mtx.Lock()
+	if a.err != nil {
+		a.mtx.Unlock()
+		return
+	}
+	old := a.state
+	a.mtx.Unlock()
+
+	var nw any
+	failed := false
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				a.mtx.Lock()
+				a.err = asAgentError(r)
+				a.mtx.Unlock()
+				failed = true
+			}
+		}()
+		nw = f.ApplyTo(NewCons(old, args))
+	}()
+	if failed {
+		return
+	}
+
+	a.mtx.Lock()
+	a.state = nw
+	a.mtx.Unlock()
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				a.mtx.Lock()
+				a.err = asAgentError(r)
+				a.mtx.Unlock()
+			}
+		}()
+		a.notifyWatches(old, nw)
+	}()
+}
+
+// asAgentError normalizes a recovered panic into the throwable stored as
+// the agent's error (agent-error). cljgo panics already carry an `error`
+// (eval.Throw wraps any thrown non-error Clojure value before panicking),
+// so this is a defensive fallback for a stray non-error panic.
+func asAgentError(r any) error {
+	if err, ok := r.(error); ok {
+		return err
+	}
+	return NewError(ToString(r))
 }
 
 // Await backs await: block until every action sent to this agent BEFORE
 // the call has run (a latch action through the same queue, like the JVM's
-// CountDownLatch send).
+// CountDownLatch send). A FAILED agent rejects await, same as Send
+// (oracle-verified) — checked both before enqueueing the latch (already
+// failed) and after it fires (one of the actions ahead of the latch
+// failed while this call was waiting).
 func (a *Agent) Await() {
+	a.mtx.Lock()
+	failed := a.err != nil
+	a.mtx.Unlock()
+	if failed {
+		panic(NewIllegalStateError("Agent is failed, needs restart"))
+	}
 	done := make(chan struct{})
 	a.queue <- func() { close(done) }
 	<-done
+
+	a.mtx.Lock()
+	failed = a.err != nil
+	a.mtx.Unlock()
+	if failed {
+		panic(NewIllegalStateError("Agent is failed, needs restart"))
+	}
+}
+
+// AgentError backs agent-error: the stored throwable, or nil while ready.
+func (a *Agent) AgentError() error {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+	return a.err
+}
+
+// Restart backs restart-agent: install newState and clear the error,
+// returning newState. Throws on a non-failed agent (oracle: clojure
+// 1.12.5, 2026-07-17 — "Agent does not need a restart").
+func (a *Agent) Restart(newState any) any {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+	if a.err == nil {
+		panic(NewIllegalStateError("Agent does not need a restart"))
+	}
+	a.state = newState
+	a.err = nil
+	return newState
 }
 
 func (a *Agent) SetValidator(vf IFn) {

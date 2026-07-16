@@ -71,12 +71,25 @@ func (e *Evaluator) internArrayBuiltins(def func(string, func(...any) any) *lang
 		return typedArray("char-array", args, lang.CharCast, lang.Char(0))
 	})
 
-	// into-array: cheap, type-inferring approximation of the JVM's
-	// RT.into-array (which picks the array's component class from the
-	// first element's class, defaulting to Object[] when empty). No
-	// 2-arg (explicit type) form — cljgo has no Class value to hint with.
+	// into-array: 1-arg is a cheap, type-inferring approximation of the
+	// JVM's RT.into-array (which picks the array's component class from
+	// the first element's class, defaulting to Object[] when empty).
+	// 2-arg (ADR 0036 follow-on, cljgo-test-suite reduce.cljc): the first
+	// arg is an explicit type hint — a ClassRef, interned by ADR 0036's
+	// well-known-class table (`Long`, `Integer`, `Double`, `Float`,
+	// `Boolean`, `Object`, …), never a real Class. Maps to the matching
+	// Go slice kind (ADR 0025); a ClassRef outside that small mapping —
+	// or any non-ClassRef value — is a clear, fail-closed error rather
+	// than a silent guess.
 	def("into-array", func(args ...any) any {
-		return intoArray(oneArg("into-array", args))
+		switch len(args) {
+		case 1:
+			return intoArray(args[0])
+		case 2:
+			return intoArrayTyped(args[0], args[1])
+		default:
+			panic(fmt.Errorf("wrong number of args (%d) passed to: into-array", len(args)))
+		}
 	})
 
 	// alength: (alength arr) => its length. Arrays only (oracle: throws on
@@ -191,6 +204,34 @@ func intoArray(coll any) any {
 		return out
 	default:
 		return append([]any{}, src...)
+	}
+}
+
+// intoArrayTyped backs 2-arg into-array: typeHint must be a ClassRef (ADR
+// 0036) naming one of the well-known primitive-wrapper/Object classes;
+// the coll's elements are coerced to the matching Go slice kind (ADR
+// 0025), mirroring the 1-arity typed ctors (int-array/long-array/etc)
+// rather than guessing from the first element.
+func intoArrayTyped(typeHint, coll any) any {
+	cr, ok := typeHint.(*ClassRef)
+	if !ok {
+		panic(fmt.Errorf("into-array: not a class: %s", lang.PrintString(typeHint)))
+	}
+	switch cr.Name() {
+	case "java.lang.Object":
+		return lang.ToSlice(coll)
+	case "java.lang.Long", "java.lang.Integer", "java.lang.Short", "java.lang.Byte":
+		return typedArray("into-array", []any{coll}, lang.LongCast, int64(0))
+	case "java.lang.Float":
+		return typedArray("into-array", []any{coll}, lang.FloatCast, float32(0))
+	case "java.lang.Double":
+		return typedArray("into-array", []any{coll}, lang.AsFloat64, float64(0))
+	case "java.lang.Boolean":
+		return typedArray("into-array", []any{coll}, lang.BooleanCast, false)
+	case "java.lang.Character":
+		return typedArray("into-array", []any{coll}, lang.CharCast, lang.Char(0))
+	default:
+		panic(fmt.Errorf("into-array: unsupported type: %s", cr.Name()))
 	}
 }
 
