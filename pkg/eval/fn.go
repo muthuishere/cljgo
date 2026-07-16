@@ -20,6 +20,19 @@ type evalFn struct {
 
 var _ lang.IFn = (*evalFn)(nil)
 
+// arityError is an evalFn arity mismatch — Clojure's ArityException.
+// Typed (not a bare fmt.Errorf) so macroexpand1 can recognize it and
+// hide the two hidden macro args (&form/&env), as Compiler.macroexpand1
+// does when it rethrows ArityException(e.actual - 2, e.name).
+type arityError struct {
+	actual int
+	name   string
+}
+
+func (e *arityError) Error() string {
+	return fmt.Sprintf("wrong number of args (%d) passed to: %s", e.actual, e.name)
+}
+
 // Invoke picks the method (exact fixed arity wins, else the variadic
 // method if enough args), binds self-name and params on a scope pushed on
 // the CAPTURED env (not the caller's — lexical scoping), and evaluates the
@@ -31,7 +44,7 @@ var _ lang.IFn = (*evalFn)(nil)
 func (f *evalFn) Invoke(args ...any) any {
 	m := f.pickMethod(len(args))
 	if m == nil {
-		panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), f.name()))
+		panic(&arityError{actual: len(args), name: f.name()})
 	}
 
 	// One value per param: fixed args, then the packed rest for variadics.
