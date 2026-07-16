@@ -28,6 +28,9 @@ var (
 
 func (f *future) Deref() interface{} {
 	<-f.done
+	if p, ok := f.res.(*futurePanic); ok {
+		panic(p.recovered)
+	}
 	return f.res
 }
 
@@ -103,13 +106,35 @@ func ShutdownAgents() {
 	// TODO
 }
 
+// AgentSubmit runs fn in a new goroutine and returns a future satisfying
+// deref (blocking) and realized? (IPending) — the `future` builtin's
+// substrate (design/08 batch E, ADR 0022). It CONVEYS the calling
+// goroutine's dynamic-var bindings into the spawned one via
+// CloneThreadBindingFrame/ResetThreadBindingFrame, matching real
+// Clojure's future (and bound-fn's own use of the same primitive):
+// (binding [*x* :v] @(future *x*)) sees :v even though the goroutine
+// running the body is a different one. A panic in fn is recovered and
+// re-raised on Deref, exactly like a real ExecutionException would be
+// unwrapped and rethrown by @fut.
 func AgentSubmit(fn IFn) IBlockingDeref {
+	frame := CloneThreadBindingFrame()
 	fut := &future{
 		done: make(chan struct{}),
 	}
 	go func() {
+		defer close(fut.done)
+		ResetThreadBindingFrame(frame)
+		defer func() {
+			if r := recover(); r != nil {
+				fut.res = &futurePanic{r}
+			}
+		}()
 		fut.res = fn.Invoke()
-		close(fut.done)
 	}()
 	return fut
 }
+
+// futurePanic wraps a recovered panic so Deref can re-raise it in the
+// DEREFING goroutine instead of silently returning the panic value as
+// data (matching @future rethrowing the worker's exception).
+type futurePanic struct{ recovered any }

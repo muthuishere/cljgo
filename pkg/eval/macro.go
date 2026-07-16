@@ -265,6 +265,38 @@ func (e *Evaluator) loadNumeric() {
 	}
 }
 
+// loadHierarchies reads and evaluates the embedded core/hierarchies.cljg
+// into clojure.core — make-hierarchy/derive/underive/ancestors/descendants/
+// parents/isa? (ADR 0022 Track E, design/08 §5 batch E), riding on
+// alter-var-root (var_builtins.go) to mutate the global-hierarchy Var. It
+// runs after loadNumeric (needs nothing numeric-specific, but keeps the
+// same "after core.clj" slot as the other batch-E .cljg loads); its own
+// (in-ns 'clojure.core) makes its body resolve unqualified core names, and
+// its publics are referred into user like the rest of core.
+func (e *Evaluator) loadHierarchies() {
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, lang.NSCore,
+		lang.VarFile, "hierarchies.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.HierarchiesSource),
+		reader.WithFilename("hierarchies.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading hierarchies.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating hierarchies.cljg: %w", err))
+		}
+	}
+}
+
 // loadTransducers reads and evaluates the embedded core/transducers.cljg
 // into clojure.core — transduce/eduction/sequence/completing/partition-by/
 // dedupe/halt-when/replace + the `into` xform arity (design/08 §5 Batch 4,

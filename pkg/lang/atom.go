@@ -1,6 +1,10 @@
 package lang
 
-import "sync/atomic"
+import (
+	"fmt"
+	"sync"
+	"sync/atomic"
+)
 
 type (
 	Atom struct {
@@ -8,6 +12,13 @@ type (
 		watches IPersistentMap
 
 		meta IPersistentMap
+
+		// validator + its mutex: SetValidator/Validator and every mutation
+		// (Reset/CompareAndSet/Swap) take validatorMtx so a concurrent
+		// set-validator! can't race a swap! reading a half-updated fn
+		// (ADR 0022 batch E — atom validator arity, design/08 §5).
+		validatorMtx sync.RWMutex
+		validator    IFn
 	}
 )
 
@@ -31,12 +42,51 @@ func NewAtomWithMeta(val any, meta IPersistentMap) *Atom {
 	return a
 }
 
+// NewAtomWithValidator is like NewAtom but also installs a validator,
+// checked against the initial value exactly like SetValidator does
+// (Clojure: (atom v :validator vf) throws immediately if vf rejects v).
+func NewAtomWithValidator(val any, vf IFn) *Atom {
+	a := NewAtom(val)
+	a.SetValidator(vf)
+	return a
+}
+
 func (a *Atom) Deref() interface{} {
 	return a.state.Load().(Box).val
 }
 
-func (a *Atom) SetValidator(vf IFn) { panic("not implemented") }
-func (a *Atom) Validator() IFn      { panic("not implemented") }
+// validate runs the current validator (if any) against val, panicking
+// with Clojure's "Invalid reference state" message on rejection — either
+// the validator returning falsey or itself throwing.
+func (a *Atom) validate(val any) {
+	a.validatorMtx.RLock()
+	vf := a.validator
+	a.validatorMtx.RUnlock()
+	if vf == nil {
+		return
+	}
+	if !BooleanCast(vf.Invoke(val)) {
+		panic(fmt.Errorf("Invalid reference state"))
+	}
+}
+
+func (a *Atom) SetValidator(vf IFn) {
+	a.validatorMtx.Lock()
+	defer a.validatorMtx.Unlock()
+	if vf != nil {
+		if !BooleanCast(vf.Invoke(a.Deref())) {
+			panic(fmt.Errorf("Invalid reference state"))
+		}
+	}
+	a.validator = vf
+}
+
+func (a *Atom) Validator() IFn {
+	a.validatorMtx.RLock()
+	defer a.validatorMtx.RUnlock()
+	return a.validator
+}
+
 func (a *Atom) Watches() IPersistentMap {
 	return a.watches
 }
@@ -76,7 +126,7 @@ func (a *Atom) Swap(f IFn, args ISeq) interface{} {
 }
 
 func (a *Atom) CompareAndSet(oldv, newv interface{}) bool {
-	// TODO: validate
+	a.validate(newv)
 	swapped := a.state.CompareAndSwap(Box{val: oldv}, Box{val: newv})
 	if swapped {
 		a.notifyWatches(oldv, newv)
@@ -85,8 +135,8 @@ func (a *Atom) CompareAndSet(oldv, newv interface{}) bool {
 }
 
 func (a *Atom) Reset(newVal interface{}) interface{} {
+	a.validate(newVal)
 	old := a.state.Load().(Box)
-	// TODO: validate
 
 	a.state.Store(Box{newVal})
 	a.notifyWatches(old.val, newVal)
@@ -98,4 +148,10 @@ func (a *Atom) Meta() IPersistentMap {
 		return nil
 	}
 	return a.meta
+}
+
+// SetMeta installs meta wholesale (used by the `atom` builtin's :meta
+// option, ADR 0022 batch E) — unlike Var's SetMeta, no merge/ns-tagging.
+func (a *Atom) SetMeta(meta IPersistentMap) {
+	a.meta = meta
 }

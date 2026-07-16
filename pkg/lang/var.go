@@ -429,14 +429,33 @@ func CloneThreadBindingFrame() any {
 	if bindings == nil {
 		return nil
 	}
-	// deref the pointer to copy the struct
-	derefBindings := *bindings
-	return &derefBindings
+	// DEEP-copy the .bindings slice, not just the *glStorage struct: a
+	// shallow `derefBindings := *bindings` shares the underlying array,
+	// so a later PushThreadBindings on THIS (the calling) goroutine can
+	// append in place (when spare capacity exists) and silently mutate
+	// the frame a future/bound-fn already handed to another goroutine —
+	// an intermittent cross-goroutine data race (design/08 batch E: hit
+	// as clojure-test-suite binding.cljc's future-preserves-bindings
+	// cases flaked under `go test -race`-style timing). A fresh slice of
+	// exact length has its own backing array, so no append can alias it.
+	cp := make([]varBindings, len(bindings.bindings))
+	copy(cp, bindings.bindings)
+	return &glStorage{bindings: cp}
 }
 
 func ResetThreadBindingFrame(frame any) {
 	gid := getGoroutineID()
 	glsBindingsMtx.Lock()
 	defer glsBindingsMtx.Unlock()
+	if frame == nil {
+		// The goroutine CloneThreadBindingFrame captured from had no
+		// bindings at all (e.g. future/bound-fn called with nothing
+		// dynamically bound yet) — mirror that as "no storage" rather
+		// than panicking on the nil->*glStorage assertion (design/08
+		// batch E: AgentSubmit's binding conveyance hits this on the
+		// very first future/bound-fn call in a process).
+		delete(glsBindings, gid)
+		return
+	}
 	glsBindings[gid] = frame.(*glStorage)
 }

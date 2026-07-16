@@ -388,6 +388,94 @@
     `(let [temp# ~tst]
        (if temp# (let [~form temp#] ~@body) nil))))
 
+;; comment: ignores its body entirely, always expanding to nil — a real
+;; clojure.core MACRO (not a special form; (special-symbol? 'comment) is
+;; false on the JVM), previously simply missing from cljgo (design/08
+;; batch E, ADR 0022). Since the body is never analyzed as code, it can
+;; hold anything, including forms cljgo can't parse.
+;; oracle: (comment (this is not valid clojure +++)) => nil
+(defmacro comment [& body] nil)
+
+;; when-first: bindings is [x coll] — calls (seq coll) exactly ONCE, binds
+;; x to its first element, and runs body (implicit do); nil if coll is
+;; empty (design/08 batch E, ADR 0022). A direct port of clojure.core's own
+;; when-first onto when-let.
+;; oracle: (when-first [x [0 1 2]] x) => 0; (when-first [x []] x) => nil;
+;; (when-first [x nil] x) => nil; body has an implicit do.
+(defmacro when-first [bindings & body]
+  (when-not (vector? bindings)
+    (throw (ex-info "when-first requires a vector for its binding" {:bindings bindings})))
+  (when-not (= 2 (count bindings))
+    (throw (ex-info "when-first requires exactly 2 forms in binding vector" {:bindings bindings})))
+  (let [[x xs] bindings]
+    `(when-let [xs# (seq ~xs)]
+       (let [~x (first xs#)]
+         ~@body))))
+
+;; with-out-str: runs body with *out* bound to a fresh in-memory writer
+;; (-string-writer / -string-writer-str, builtins.go) and returns
+;; everything printed as a string (design/08 batch E, ADR 0022). An empty
+;; body captures "". `binding` is forced bare with ~'binding: it is a
+;; cljgo special form (not in the reader's syntax-quote special list,
+;; which only knows the standard Clojure specials, per test.cljg's
+;; `testing` macro) — syntax-quote would otherwise qualify it to
+;; clojure.core/binding, which now resolves (the resolve-vs-special-form
+;; fix, builtins.go) to a placeholder macro Var that panics if actually
+;; invoked, instead of taking the special-form path.
+;; oracle: (with-out-str (print "a") (print "b")) => "ab";
+;; (with-out-str) => ""
+(defmacro with-out-str
+  [& body]
+  `(let [s# (-string-writer)]
+     (~'binding [*out* s#]
+       ~@body)
+     (-string-writer-str s#)))
+
+;; future: runs body in a new goroutine, conveying the calling goroutine's
+;; dynamic-var bindings (future-call/lang.AgentSubmit, design/08 batch E,
+;; ADR 0022); @/deref blocks for the result, realized? reports completion.
+;; oracle: @(future (+ 1 2)) => 3
+(defmacro future [& body]
+  (list 'clojure.core/future-call (list* 'fn* [] body)))
+
+;; bound-fn* / bound-fn: wrap f (or a fn literal) so that when INVOKED —
+;; possibly on another goroutine (future, go, thread) — it re-establishes
+;; the dynamic-var bindings captured at WRAP time, not whatever happens to
+;; be bound on the calling goroutine (design/08 batch E, ADR 0022). A
+;; direct port of clojure.core's own bound-fn*/bound-fn onto
+;; get/push/pop-thread-bindings (var_builtins.go).
+;; oracle: (binding [*x* :v] (let [f (bound-fn [] *x*)] (binding [*x* :other] (f)))) => :v
+(defn bound-fn*
+  [f]
+  (let [bindings (get-thread-bindings)]
+    (fn [& args]
+      (push-thread-bindings bindings)
+      (try
+        (apply f args)
+        (finally (pop-thread-bindings))))))
+
+(defmacro bound-fn [& fntail]
+  `(bound-fn* (fn ~@fntail)))
+
+;; --- print-str family : format to a string instead of *out* --------------
+;; print/println/pr/prn are Go builtins (builtins.go) that write through
+;; *out*; these *-str fns capture the same output via with-out-str instead
+;; of printing it — the real clojure.core definitions, unchanged (design/08
+;; batch E, ADR 0022).
+;; oracle: (print-str "a" 1) => "a 1"; (println-str "a" 1) => "a 1\n";
+;; (prn-str "a" 1) => "\"a\" 1\n"; (print-str) => ""
+(defn print-str
+  [& xs]
+  (with-out-str (clojure.core/apply print xs)))
+
+(defn println-str
+  [& xs]
+  (with-out-str (clojure.core/apply println xs)))
+
+(defn prn-str
+  [& xs]
+  (with-out-str (clojure.core/apply prn xs)))
+
 ;; --- Core higher-order fns ------------------------------------------------
 
 ;; -all-seqs : (seq c) for every c in cs as a seq, or nil if any is empty —
@@ -644,6 +732,25 @@
      (if (and (pos? n) s)
        (recur (dec n) (next s))
        s))))
+
+;; nthrest: like drop, but returns coll itself (not (seq coll)) for n <= 0,
+;; and () rather than nil once the seq is exhausted — the () vs nil
+;; distinction real Clojure's `=` respects ((= () nil) is false). A
+;; straight port of clojure.core/nthrest, minus the IDrop fast path
+;; (design/08 batch E, ADR 0022; cljgo has no IDrop-implementing colls yet).
+;; oracle: (nthrest (range 0 10) 3) => (3 4 5 6 7 8 9);
+;; (nthrest [0 1 2 3 4 5] 3) => [3 4 5]; (nthrest (range 0 10) 10) => ();
+;; (nthrest (range 3) -1) => (0 1 2) (n < 1 => coll unchanged);
+;; (nthrest nil 0) => nil; (nthrest nil 100) => ()
+(defn nthrest
+  [coll n]
+  (if (pos? n)
+    (or (loop [n n xs coll]
+          (if-let [xs (and (pos? n) (seq xs))]
+            (recur (dec n) (rest xs))
+            (seq xs)))
+        ())
+    coll))
 
 ;; oracle: (take-while #(< % 3) (range 10)) => (0 1 2)
 ;; oracle: (into [] (take-while even?) [2 4 6 1 8]) => [2 4 6]

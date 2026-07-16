@@ -5,13 +5,50 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
-// Out is where println writes. Package-level and swappable for tests; the
+// Out is where println/print/pr/prn write when *out* has no thread
+// binding pointing elsewhere (the root value of *out*, lang.VarOut, is
+// os.Stdout — this package var exists only so tests can swap the default
+// without touching a Var). Package-level and swappable for tests; the
 // REPL driver may point it elsewhere.
 var Out io.Writer = os.Stdout
+
+// outWriter resolves *out* to an io.Writer for the print family
+// (design/08 batch E): a thread binding installed by `binding` (e.g.
+// with-out-str's string-writer) wins; otherwise falls back to the
+// package-level Out (so existing tests that swap Out keep working even
+// though *out*'s root is os.Stdout, not Out).
+func outWriter() io.Writer {
+	if v := lang.VarOut.Deref(); v != os.Stdout {
+		if w, ok := v.(io.Writer); ok {
+			return w
+		}
+	}
+	return Out
+}
+
+// stringWriter is the in-memory io.Writer with-out-str binds *out* to
+// (design/08 batch E) — the substrate the private -string-writer /
+// -string-writer-str builtins expose to core.clj's with-out-str macro.
+type stringWriter struct {
+	buf strings.Builder
+}
+
+func (w *stringWriter) Write(p []byte) (int, error) { return w.buf.Write(p) }
+func (w *stringWriter) String() string              { return "#object[StringWriter]" }
+
+// taps is the tap>/add-tap/remove-tap registry (design/08 batch E,
+// ADR 0022): a process-wide slice of registered fns, guarded by
+// tapsMtx. Package-level because tap fns are global (clojure.core's own
+// tapset is a single top-level atom, not per-evaluator).
+var (
+	tapsMtx sync.RWMutex
+	taps    []lang.IFn
+)
 
 // nativeFn wraps a Go function as a lang.IFn (the pre-interned builtins of
 // design/03 §8 v0). Errors panic, per the IFn-boundary convention.
@@ -128,8 +165,54 @@ func (e *Evaluator) internBuiltins() {
 		for i, a := range args {
 			parts[i] = lang.ToString(a)
 		}
-		fmt.Fprintln(Out, strings.Join(parts, " "))
+		fmt.Fprintln(outWriter(), strings.Join(parts, " "))
 		return nil
+	})
+
+	// print / prn / pr: the rest of the print family (design/08 batch E).
+	// print/println are the "human readable" pair (lang.ToString — no
+	// quotes on strings/chars); pr/prn are the "machine readable" pair
+	// (lang.PrintString, same formatting pr-str already uses). All four
+	// write through *out* (outWriter), not stdout directly, so
+	// with-out-str's (binding [*out* a-string-writer] ...) actually
+	// captures them.
+	def("print", func(args ...any) any {
+		parts := make([]string, len(args))
+		for i, a := range args {
+			parts[i] = lang.ToString(a)
+		}
+		fmt.Fprint(outWriter(), strings.Join(parts, " "))
+		return nil
+	})
+	def("pr", func(args ...any) any {
+		parts := make([]string, len(args))
+		for i, a := range args {
+			parts[i] = lang.PrintString(a)
+		}
+		fmt.Fprint(outWriter(), strings.Join(parts, " "))
+		return nil
+	})
+	def("prn", func(args ...any) any {
+		parts := make([]string, len(args))
+		for i, a := range args {
+			parts[i] = lang.PrintString(a)
+		}
+		fmt.Fprintln(outWriter(), strings.Join(parts, " "))
+		return nil
+	})
+
+	// -string-writer / -string-writer-str: the private substrate
+	// with-out-str's macro rides on (core.clj) — an in-memory io.Writer
+	// *out* can be bound to, and a way to read back what was written.
+	def("-string-writer", func(args ...any) any {
+		return &stringWriter{}
+	})
+	def("-string-writer-str", func(args ...any) any {
+		w, ok := oneArg("-string-writer-str", args).(*stringWriter)
+		if !ok {
+			panic(fmt.Errorf("-string-writer-str: not a string-writer: %s", lang.PrintString(args[0])))
+		}
+		return w.buf.String()
 	})
 
 	// --- v2 seq/coll primitives (macro fuel: syntax-quote expands to
@@ -293,8 +376,39 @@ func (e *Evaluator) internBuiltins() {
 
 	// atom / swap! / reset! / deref: the minimal mutable-cell set
 	// (clojure.core). test.cljg holds its report counters in an atom.
+	// atom: (atom x) / (atom x & {:validator vf :meta m}), the trailing
+	// options Clojure's ARef-backed constructors take (ADR 0022 batch E).
+	// A :validator that rejects the initial value throws immediately,
+	// same as (set-validator! the-atom vf) would.
 	def("atom", func(args ...any) any {
-		return lang.NewAtom(oneArg("atom", args))
+		if len(args) == 0 {
+			panic(fmt.Errorf("wrong number of args (0) passed to: atom"))
+		}
+		if len(args)%2 != 1 {
+			panic(fmt.Errorf("atom: options must be key/value pairs"))
+		}
+		a := lang.NewAtom(args[0])
+		for i := 1; i < len(args); i += 2 {
+			switch args[i] {
+			case lang.InternKeywordString("validator"):
+				if args[i+1] != nil {
+					vf, ok := args[i+1].(lang.IFn)
+					if !ok {
+						panic(fmt.Errorf("atom: :validator is not a function: %s", lang.PrintString(args[i+1])))
+					}
+					a.SetValidator(vf)
+				}
+			case lang.InternKeywordString("meta"):
+				if args[i+1] != nil {
+					m, ok := args[i+1].(lang.IPersistentMap)
+					if !ok {
+						panic(fmt.Errorf("atom: :meta is not a map: %s", lang.PrintString(args[i+1])))
+					}
+					a.SetMeta(m)
+				}
+			}
+		}
+		return a
 	})
 	def("swap!", func(args ...any) any {
 		if len(args) < 2 {
@@ -785,6 +899,89 @@ func (e *Evaluator) internBuiltins() {
 	def("go", goMacro).SetMacro()
 	def("thread", goMacro).SetMacro()
 
+	// future-call: (future-call thunk) -> a real-goroutine future
+	// (lang.AgentSubmit) that CONVEYS the calling goroutine's dynamic-var
+	// bindings (design/08 batch E, ADR 0022 — the same substrate bound-fn*
+	// uses, pkg/lang/agent.go). `future` (core.clj) is the
+	// `(future-call (fn [] body...))` macro wrapper, matching real
+	// clojure.core.
+	def("future-call", func(args ...any) any {
+		fn, ok := oneArg("future-call", args).(lang.IFn)
+		if !ok {
+			panic(fmt.Errorf("future-call: not a function: %s", lang.PrintString(args[0])))
+		}
+		return lang.AgentSubmit(fn)
+	})
+
+	// promise / deliver: a single-value cell (design/08 batch E, ADR 0022;
+	// lang.Promise) — deref blocks until delivered; delivering twice is a
+	// no-op (returns nil) rather than an error.
+	def("promise", func(args ...any) any {
+		if len(args) != 0 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: promise", len(args)))
+		}
+		return lang.NewPromise()
+	})
+	def("deliver", func(args ...any) any {
+		p, val := twoArgs("deliver", args)
+		pr, ok := p.(*lang.Promise)
+		if !ok {
+			panic(fmt.Errorf("deliver: not a promise: %s", lang.PrintString(p)))
+		}
+		if pr.Deliver(val) {
+			return pr
+		}
+		return nil
+	})
+
+	// add-tap / remove-tap / tap>: the tap>-fan-out surface (design/08
+	// batch E, ADR 0022). v0 is SYNCHRONOUS (real Clojure schedules tap
+	// fns on an agent send-off pool; cljgo dispatches inline, before tap>
+	// returns) — functionally equivalent for callers that just want every
+	// tapped value to reach every registered fn once, in tap> order, and
+	// simpler than standing up an agent-executor substrate for one
+	// feature. tap> always returns true, matching the real fn's contract
+	// (JVM: true unless the executor is shut down, which cljgo has none of).
+	def("add-tap", func(args ...any) any {
+		fn, ok := oneArg("add-tap", args).(lang.IFn)
+		if !ok {
+			panic(fmt.Errorf("add-tap: not a function: %s", lang.PrintString(args[0])))
+		}
+		tapsMtx.Lock()
+		taps = append(taps, fn)
+		tapsMtx.Unlock()
+		return nil
+	})
+	def("remove-tap", func(args ...any) any {
+		fn, ok := oneArg("remove-tap", args).(lang.IFn)
+		if !ok {
+			panic(fmt.Errorf("remove-tap: not a function: %s", lang.PrintString(args[0])))
+		}
+		tapsMtx.Lock()
+		for i, t := range taps {
+			// lang.Identical, not ==: an emitted (AOT-compiled) fn value
+			// may be backed by a bare Go func type, which `==` panics on
+			// comparing (design/08 batch E — hit by the compiled harness).
+			if lang.Identical(t, fn) {
+				taps = append(taps[:i], taps[i+1:]...)
+				break
+			}
+		}
+		tapsMtx.Unlock()
+		return nil
+	})
+	def("tap>", func(args ...any) any {
+		x := oneArg("tap>", args)
+		tapsMtx.RLock()
+		snapshot := make([]lang.IFn, len(taps))
+		copy(snapshot, taps)
+		tapsMtx.RUnlock()
+		for _, fn := range snapshot {
+			fn.Invoke(x)
+		}
+		return true
+	})
+
 	// M4+ concurrency: alts!/timeout/dropping+sliding buffers (chan_builtins.go).
 	e.internChanExtras(def)
 
@@ -793,6 +990,27 @@ func (e *Evaluator) internBuiltins() {
 	for _, name := range []string{"*1", "*2", "*3", "*e"} {
 		lang.InternVarReplaceRoot(lang.NSCore, lang.NewSymbol(name), nil).SetDynamic()
 	}
+
+	// `binding` resolve-vs-special-form fix (ADR 0022 batch E, ratified
+	// 2026-07-16): cljgo's analyzer treats `binding` as a special form
+	// (pkg/analyzer/analyzer.go specialParser, for implementation
+	// convenience — it needs push/pop-thread-bindings machinery a plain
+	// macro can't express without exposing that machinery as public
+	// builtins). Real Clojure disagrees: `binding` is an ordinary
+	// clojure.core MACRO, not a special form — (special-symbol? 'binding)
+	// is false on the JVM, and (resolve 'binding) returns the Var. Without
+	// a Var here, resolve returned nil for a name every user program can
+	// call, breaking anything that reflects on `binding` (the suite's
+	// when-var-exists gate included). The analyzer dispatches on the RAW
+	// symbol text (specialParser, called before any var lookup), so this
+	// placeholder is resolve/var?-visible only — it changes no evaluation
+	// behavior; `(binding ...)` still takes the special-form path.
+	// special-symbol? (var_builtins.go) deliberately excludes "binding"
+	// from jvmSpecialSymbols so the two stay consistent with the oracle.
+	bindingVar := def("binding", func(args ...any) any {
+		panic(fmt.Errorf("binding: cannot call as a function (special form)"))
+	})
+	bindingVar.SetMacro()
 }
 
 // oneArg asserts a 1-arg builtin's arity and returns the argument.

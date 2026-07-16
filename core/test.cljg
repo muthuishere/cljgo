@@ -224,28 +224,49 @@
       (recur (dec n) (next c))
       c)))
 
-;; interleave the argv symbols with one row of values => a flat binding seq
-;; (x v0 y v1) for a (let [x v0 y v1] ...) form.
-(defn ^:private -interleave-pairs [syms vals]
-  (loop [ss (seq syms) vs (seq vals) acc []]
+;; pair the argv symbols with one row of values => a {sym val} map, for
+;; -template-subst below.
+(defn ^:private -bindings-map [syms vals]
+  (loop [ss (seq syms) vs (seq vals) acc {}]
     (if (and ss vs)
-      (recur (next ss) (next vs) (conj (conj acc (first ss)) (first vs)))
+      (recur (next ss) (next vs) (assoc acc (first ss) (first vs)))
       acc)))
 
-;; (are [argv] expr v0 v1 ...) expands to a (do (is expr) ...) with each row
-;; of `(count argv)` values bound to argv via let. Binding (rather than JVM's
-;; textual substitution) is equivalent for ordinary templates and needs no
-;; code walker. Each `is` still carries its own error boundary.
+;; -template-subst: a minimal postwalk-replace (cljgo has no clojure.walk
+;; yet) — recursively substitutes any subform `=` to a key of `bindings`
+;; with its value, otherwise walks in. This must be TEXTUAL substitution
+;; on the unevaluated form, not a runtime let-binding: `are`'s templates
+;; routinely quote the arg (`(special-symbol? 'arg)`), and args are
+;; sometimes bare symbols that name nothing evaluable (`&`, `case*`, a
+;; special-form name) — a let would try to evaluate them and blow up
+;; (clojure-test-suite special_symbol_qmark.cljc). Substituting into the
+;; quote first means the final `(quote &)` is only ever read as data, the
+;; same as real clojure.test's `do-template` (org.clojure/clojure
+;; clojure/template.clj, Rich Hickey, EPL 1.0).
+(defn ^:private -template-subst [bindings form]
+  (cond
+    (contains? bindings form) (get bindings form)
+    (seq? form) (map (fn [x] (-template-subst bindings x)) form)
+    (vector? form) (mapv (fn [x] (-template-subst bindings x)) form)
+    (map? form) (into {} (map (fn [e] [(-template-subst bindings (key e))
+                                        (-template-subst bindings (val e))])
+                               form))
+    (set? form) (into #{} (map (fn [x] (-template-subst bindings x)) form))
+    :else form))
+
+;; (are [argv] expr v0 v1 ...) expands to a (do (is expr-with-argv-textually-
+;; substituted) ...), one `is` per row of `(count argv)` values — real
+;; clojure.test's do-template semantics (see -template-subst above), not a
+;; let-binding. Each `is` still carries its own error boundary.
 (defmacro are [argv expr & args]
   (let [n (count argv)]
     (cons 'do
           (loop [as (seq args) forms []]
             (if as
               (let [row (-take n as)
-                    bindvec (clojure.core/apply clojure.core/vector
-                                                (-interleave-pairs argv row))]
+                    bindings (-bindings-map argv row)]
                 (recur (-drop n as)
-                       (conj forms (list 'let bindvec (list 'clojure.test/is expr)))))
+                       (conj forms (list 'clojure.test/is (-template-subst bindings expr)))))
               forms)))))
 
 ;; deftest interns a test var: its value is a thunk that runs the test,

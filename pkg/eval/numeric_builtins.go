@@ -379,6 +379,51 @@ func (e *Evaluator) internNumericBuiltins(def func(name string, fn func(args ...
 		u, _ := reader.NewUUID(randomUUIDString())
 		return u
 	})
+
+	// abs: absolute value over the whole numeric tower (design/08 batch E).
+	// lang.Ops(x).Abs already implements every category faithfully,
+	// INCLUDING the JVM's Long/MIN_VALUE 2's-complement oddity (int64Ops.Abs
+	// returns x unchanged, matching clojure-test-suite abs.cljc's
+	// `r/min-int r/min-int` case) and NaN (float64Ops.Abs => math.Abs(NaN)
+	// => NaN). Throws on a non-number, matching the JVM ClassCastException.
+	// Oracle (clojure 1.12): (abs -1) => 1; (abs ##NaN) NaN? => true;
+	// (abs nil) throws.
+	def("abs", func(args ...any) any {
+		x := oneArg("abs", args)
+		if !lang.IsNumber(x) {
+			panic(fmt.Errorf("abs: not a number: %s", lang.PrintString(x)))
+		}
+		return lang.Ops(x).Abs(x)
+	})
+
+	// shuffle: (shuffle coll) -> a NEW shuffled vector (Fisher-Yates over
+	// math/rand/v2, matching rand/rand-int/rand-nth's unseeded source
+	// above). Accepts vectors, sets, and seqs/lists (design/08 batch E);
+	// throws on anything else (nil, numbers, strings, maps), matching the
+	// JVM's `new ArrayList(coll)` requiring a java.util.Collection. Oracle
+	// (clojure 1.12, clojure-test-suite shuffle.cljc): (shuffle nil),
+	// (shuffle "abc"), (shuffle {}), (shuffle 1) all throw; (shuffle [1 2 3])
+	// and (shuffle #{1 2 3}) return a vector of the same count.
+	def("shuffle", func(args ...any) any {
+		coll := oneArg("shuffle", args)
+		var items []any
+		switch v := coll.(type) {
+		case lang.IPersistentVector:
+			items = lang.ToSlice(v)
+		case *lang.Set:
+			items = lang.ToSlice(v)
+		case lang.ISeq:
+			items = lang.ToSlice(v)
+		default:
+			panic(fmt.Errorf("shuffle: not a collection: %s", lang.PrintString(coll)))
+		}
+		shuffled := make([]any, len(items))
+		copy(shuffled, items)
+		mathrand.Shuffle(len(shuffled), func(i, j int) {
+			shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+		})
+		return lang.NewVector(shuffled...)
+	})
 }
 
 // twoArgs asserts a 2-arg builtin's arity and returns both arguments.

@@ -143,6 +143,9 @@ func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any
 		case "ISeq":
 			_, ok := v.(lang.ISeq)
 			return ok
+		case "IPending":
+			_, ok := v.(lang.IPending)
+			return ok
 		case "IFn":
 			_, ok := v.(lang.IFn)
 			return ok
