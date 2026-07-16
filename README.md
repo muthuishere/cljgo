@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/muthuishere/cljgo.svg)](https://pkg.go.dev/github.com/muthuishere/cljgo)
 [![Go](https://img.shields.io/badge/go-1.26-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Clojure](https://img.shields.io/badge/clojure-1.12.5-5881d8?logo=clojure&logoColor=white)](https://clojure.org)
-[![clojure-test-suite](https://img.shields.io/badge/clojure--test--suite-102%2F242%20(42.1%25)-orange)](#status)
+[![clojure-test-suite](https://img.shields.io/badge/clojure--test--suite-162%2F242%20(66.9%25)-green)](#status)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 Clojure hosted on Go: a compiler (written in Go) that AOT-emits plain Go
@@ -65,8 +65,8 @@ paths (a dual-harness conformance suite enforces this on every commit; a
 REPL↔binary divergence is a release blocker).
 
 Against the [jank clojure-test-suite](https://github.com/jank-lang/clojure-test-suite):
-**102/242 files passing (42.1%)**, 46.8% of non-skipped, with 218/242 vars
-resolved (90.1%). Run `cljgo suite` to reproduce. Early, moving fast.
+**162/242 files passing (66.9%)**, 74.0% of non-skipped, with 219/242 vars
+resolved (90.5%). Run `cljgo suite` to reproduce. Early, moving fast.
 
 | Milestone | State | What landed |
 |-----------|-------|-------------|
