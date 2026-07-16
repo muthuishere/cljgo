@@ -931,31 +931,33 @@ func UncheckedShortCast(x any) int16 {
 	return int16(AsInt64(x))
 }
 
-func _is64Bit() bool {
-	maxU32 := uint(math.MaxUint32)
-	return ((maxU32 << 1) >> 1) == maxU32
-}
-
+// intCastLong bounds a long against JAVA's int — always 32 bits, never
+// Go's platform int (ADR 0029 cluster F). Message/type per the oracle
+// (1.12.5): boxed and literal longs, BigInts, BigDecimals and Ratios in
+// long range all throw ArithmeticException "integer overflow"
+// (Math.toIntExact) — e.g. (int 2147483648), (int (bigint 3000000000)).
 func intCastLong(x int64) int {
-	if _is64Bit() {
-		return int(x)
-	}
-	if x < math.MinInt || x > math.MaxInt {
-		panic(NewIllegalArgumentError(fmt.Sprintf("value out of range for int: %v", x)))
+	if x < math.MinInt32 || x > math.MaxInt32 {
+		panic(NewArithmeticError("integer overflow"))
 	}
 	return int(x)
 }
 
+// IntCast is RT.intCast: 32-bit range semantics regardless of the Go
+// platform int width (ADR 0029 cluster F, oracle 1.12.5). Doubles out of
+// range throw IllegalArgumentException "Value out of range for int:
+// <Double.toString>" (RT.intCast(double)); a BigInt beyond long range
+// throws "Value out of range for long: <n>" (RT.longCast fails first).
 func IntCast(x any) int {
 	switch x := x.(type) {
 	case *BigInt:
 		if !x.IsInt64() {
-			panic(NewIllegalArgumentError(fmt.Sprintf("value out of range for int: %v", x)))
+			panic(NewIllegalArgumentError(fmt.Sprintf("Value out of range for long: %v", x)))
 		}
 		return intCastLong(x.Int64())
 	case *big.Int:
 		if !x.IsInt64() {
-			panic(NewIllegalArgumentError(fmt.Sprintf("value out of range for int: %v", x)))
+			panic(NewIllegalArgumentError(fmt.Sprintf("Value out of range for long: %v", x)))
 		}
 		return intCastLong(x.Int64())
 	case *Ratio:
@@ -963,22 +965,17 @@ func IntCast(x any) int {
 	case *BigDecimal:
 		return IntCast(x.ToBigInteger())
 	case float64:
-		if x < math.MinInt || x > math.MaxInt {
-			panic(NewIllegalArgumentError(fmt.Sprintf("value out of range for int: %v", x)))
+		if x < math.MinInt32 || x > math.MaxInt32 {
+			panic(NewIllegalArgumentError("Value out of range for int: " + formatFloat(x)))
 		}
 		return int(x)
 	case float32:
-		if x < math.MinInt || x > math.MaxInt {
-			panic(NewIllegalArgumentError(fmt.Sprintf("value out of range for int: %v", x)))
+		if x < math.MinInt32 || x > math.MaxInt32 {
+			panic(NewIllegalArgumentError("Value out of range for int: " + formatFloat(float64(x))))
 		}
 		return int(x)
 	}
-	v := AsInt64(x)
-	if v < math.MinInt || v > math.MaxInt {
-		// only relevant for 32-bit platforms
-		panic(NewIllegalArgumentError(fmt.Sprintf("value out of range for int: %v", x)))
-	}
-	return int(v)
+	return intCastLong(AsInt64(x))
 }
 
 func UncheckedIntCast(x any) int {

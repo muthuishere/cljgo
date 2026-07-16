@@ -91,3 +91,41 @@ faithfully:
   100 for the run (cmd/cljgo/suite.go).
 - Acceptance: `conformance/tests/print-length.clj` (dual-harness,
   oracle-verified).
+
+## Numeric tower fidelity (ADR 0029, 2026-07-16, `numberops.go` + `numbers.go`)
+
+Ground truth: real Clojure 1.12.5 CLI (spike S13,
+spikes/s13-numeric-divergences/VERDICT.md — 99/276 probes diverged;
+42 remain after this surgery, all deferred cluster C (BigDecimal
+representation) or G (message wording)).
+
+- `numberops.go` `float64Ops.Quotient`/`Remainder` rewritten to the JVM
+  `Numbers.quotient/remainder(double,double)` shape (cluster A). Upstream
+  checked only a zero divisor in Quotient and Remainder was a bare
+  `math.Mod`: a 0.0 divisor now throws `Divide by zero`
+  (oracle: `(rem 10.0 0)` => THREW, was `##NaN`); a quotient outside int64
+  range that is Inf/NaN throws `Infinite or NaN` (oracle: `(quot ##Inf 1)`,
+  `(mod 5 ##NaN)` => THREW, were garbage BigDecimals / NaN); a finite huge
+  quotient returns a double via big-integer truncation (oracle:
+  `(quot 1e300 1.0)` => `1.0E300`, was a BigDecimal); Remainder computes
+  `x - trunc(x/y)*y` in double arithmetic so `(rem 1 ##-Inf)` => `##NaN`
+  exactly as the JVM (0*Inf = NaN), was `1.0` from math.Mod.
+- `numberops.go` `AsBigInt(float64/float32)` no longer saturates through
+  `int64(x)` (cluster B): new `bigIntFromFloat64` follows
+  `BigDecimal.valueOf(double)` — the shortest round-trip decimal
+  representation truncated toward zero (oracle:
+  `(bigint 1.7976931348623157e308)` => the 309-digit integer, was
+  int64-max; `(bigint 4.611686018427388E18)` => `4611686018427388000N`,
+  the DECIMAL reading, not the exact binary `...7904`); Inf/NaN throw
+  `Infinite or NaN`.
+- `numbers.go` `IntCast`/`intCastLong` bound against Java's 32-bit int,
+  not Go's platform int (cluster F): integral values outside int32 throw
+  `integer overflow` (oracle: `(int 2147483648)`,
+  `(int (bigint 3000000000))` => THREW, were silently returned); doubles
+  outside int32 throw `Value out of range for int: <Double.toString>`
+  (via `formatFloat`); a BigInt beyond int64 throws
+  `Value out of range for long: <n>` (longCast fails first on the JVM).
+  The unused `_is64Bit` helper was removed with it.
+- Acceptance: `conformance/tests/numeric-{quot-rem-float-guards,
+  bigint-from-double,int-cast-32bit,abs,even-odd-guard}.clj`
+  (dual-harness, expectations byte-verified against the 1.12.5 CLI).

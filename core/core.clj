@@ -879,7 +879,13 @@
 ;; --- Numeric predicates & mod (tower primitives are host builtins) --------
 
 ;; oracle: (even? 4) => true; (odd? 3) => true
-(defn even? [n] (zero? (rem n 2)))
+;; Non-integers throw exactly as JVM clojure.core (ADR 0029 cluster D) —
+;; oracle 1.12.5: (even? 1.5) => THREW "Argument must be an integer: 1.5";
+;; ##Inf strs as "Infinity", nil as "" (so the message ends with the space).
+(defn even? [n]
+  (if (integer? n)
+    (zero? (rem n 2))
+    (-illegal-argument (str "Argument must be an integer: " n))))
 (defn odd? [n] (not (even? n)))
 
 ;; oracle: (mod 7 3) => 1; (mod -7 3) => 2
