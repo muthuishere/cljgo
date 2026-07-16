@@ -1,0 +1,27 @@
+nil-put->!! => (:throws "java.lang.IllegalArgumentException" "Can't put nil on channel")
+nil-put-put! => (:throws "java.lang.IllegalArgumentException" "Can't put nil on channel")
+closed-read => nil
+closed-read-drains-buffer => [1 2 nil]
+closed-put->!! => false
+closed-put-put! => false
+double-close => nil
+nil-chan-blocks-forever => :nil-chan-returned
+chan-zero => (:throws "java.lang.AssertionError" "Assert failed: fixed buffers must have size > 0\n(pos? n)")
+take-outside-go => (:throws "java.lang.AssertionError" "Assert failed: <! used not in (go ...) block\nnil")
+put-outside-go => (:throws "java.lang.AssertionError" "Assert failed: >! used not in (go ...) block\nnil")
+timeout-identical-same-tick => true
+timeout-identical-after-gap => false
+timeout-closes => nil
+alts-default => :none
+alts-default-port => true
+alts-priority-first-wins => :a
+alts-write-op => [true #object[clojure.core.async.impl.channels.ManyToManyChannel 0x59bf79f3 "clojure.core.async.impl.channels.ManyToManyChannel@59bf79f3"]]
+xform-map => 2
+xform-filter-drops => 3
+xform-mapcat-expansion => [1 1 1]
+xform-reduced-closes => [1 2 nil false]
+xform-unbuffered-chan-throws => (:throws "java.lang.AssertionError" "Assert failed: buffer must be supplied when transducer is\nbuf-or-n")
+xform-ex-handler => 
+;; NOTE: pass 1 ends here — the original xform-ex-handler probe deadlocked
+;; (probe bug: second >!! into a full 1-buffer before any take). Corrected
+;; probes continue in transcript2.txt (probes2.clj).

@@ -1,0 +1,30 @@
+Downloading: org/clojure/core.async/1.6.681/core.async-1.6.681.pom from central
+Downloading: org/clojure/pom.contrib/1.1.0/pom.contrib-1.1.0.pom from central
+Downloading: org/clojure/tools.analyzer.jvm/1.2.3/tools.analyzer.jvm-1.2.3.pom from central
+Downloading: org/clojure/core.memoize/1.0.253/core.memoize-1.0.253.pom from central
+Downloading: org/clojure/tools.analyzer/1.1.1/tools.analyzer-1.1.1.pom from central
+Downloading: org/ow2/asm/asm/9.2/asm-9.2.pom from central
+Downloading: org/clojure/tools.reader/1.3.6/tools.reader-1.3.6.pom from central
+Downloading: org/ow2/ow2/1.5/ow2-1.5.pom from central
+Downloading: org/clojure/core.cache/1.0.225/core.cache-1.0.225.pom from central
+Downloading: org/clojure/data.priority-map/1.1.0/data.priority-map-1.1.0.pom from central
+Downloading: org/clojure/core.async/1.6.681/core.async-1.6.681.jar from central
+Downloading: org/ow2/asm/asm/9.2/asm-9.2.jar from central
+Downloading: org/clojure/core.cache/1.0.225/core.cache-1.0.225.jar from central
+Downloading: org/clojure/tools.analyzer.jvm/1.2.3/tools.analyzer.jvm-1.2.3.jar from central
+Downloading: org/clojure/tools.reader/1.3.6/tools.reader-1.3.6.jar from central
+Downloading: org/clojure/core.memoize/1.0.253/core.memoize-1.0.253.jar from central
+Downloading: org/clojure/data.priority-map/1.1.0/data.priority-map-1.1.0.jar from central
+Downloading: org/clojure/tools.analyzer/1.1.1/tools.analyzer-1.1.1.jar from central
+Exception in thread "async-thread-macro-1" java.lang.IllegalArgumentException: No implementation of method: :take! of protocol: #'clojure.core.async.impl.protocols/ReadPort found for class: nil
+	at clojure.core$_cache_protocol_fn.invokeStatic(core_deftype.clj:585)
+	at clojure.core$_cache_protocol_fn.invoke(core_deftype.clj:577)
+	at clojure.core.async.impl.protocols$eval165$fn__166$G__156__173.invoke(protocols.clj:15)
+	at clojure.core.async$fn__6833.invokeStatic(async.clj:135)
+	at clojure.core.async$fn__6833.invoke(async.clj:127)
+	at user$eval9411$fn__9412$fn__9416.invoke(probes.clj:27)
+	at clojure.core.async$thread_call$fn__6964.invoke(async.clj:486)
+	at clojure.lang.AFn.run(AFn.java:22)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1516)
