@@ -457,6 +457,36 @@ func (e *Evaluator) loadBuild() {
 	}
 }
 
+// loadClojureRepl reads and evaluates the embedded core/repl.cljg into
+// the clojure.repl namespace (ADR 0031: `doc` + `print-doc`) — the same
+// embedded-ns registration pattern as loadClojureString, so
+// (require 'clojure.repl) finds it already interned. pkg/eval's New then
+// refers `doc` into user, as JVM clojure.main's repl-requires does.
+func (e *Evaluator) loadClojureRepl() {
+	ns := lang.FindOrCreateNamespace(lang.NewSymbol("clojure.repl"))
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, ns,
+		lang.VarFile, "repl.cljg",
+	))
+	defer lang.PopThreadBindings()
+
+	r := reader.New(strings.NewReader(core.ReplSource),
+		reader.WithFilename("repl.cljg"),
+		reader.WithResolver(e.ReaderResolver()))
+	for {
+		form, err := r.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return
+		}
+		if err != nil {
+			panic(fmt.Errorf("boot: reading repl.cljg: %w", err))
+		}
+		if _, err := e.EvalForm(form); err != nil {
+			panic(fmt.Errorf("boot: evaluating repl.cljg: %w", err))
+		}
+	}
+}
+
 // loadClojureSet reads and evaluates the embedded core/set.cljg into the
 // clojure.set namespace (ADR 0022 batch/harness-misc) — the same
 // embedded-ns registration pattern as loadClojureString, so

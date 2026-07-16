@@ -59,8 +59,17 @@ func New() *Evaluator {
 	e.loadClojureTest()
 	e.loadBuild()
 	e.loadClojureTestPortability()
+	e.loadClojureRepl()
 	user := lang.FindOrCreateNamespace(lang.NewSymbol("user"))
 	referAll(user, lang.NSCore)
+	// Refer doc into user, as JVM clojure.main's repl-requires does
+	// (ADR 0031): (doc x) works at any user prompt, terminal or nREPL.
+	if nsRepl := lang.FindNamespace(lang.NewSymbol("clojure.repl")); nsRepl != nil {
+		symDoc := lang.NewSymbol("doc")
+		if v := nsRepl.FindInternedVar(symDoc); v != nil {
+			user.Refer(symDoc, v)
+		}
+	}
 	lang.VarCurrentNS.BindRoot(user)
 	return e
 }

@@ -1,0 +1,52 @@
+;; repl.cljg — cljgo's clojure.repl namespace (ADR 0031 ride-along: the
+;; `doc` gap spike S15's real-client test surfaced). Loaded at startup
+;; into the clojure.repl namespace by pkg/eval (loadClojureRepl), AFTER
+;; clojure.core is up. The .cljg extension follows ADR 0017.
+;;
+;; Namespace fidelity: on the JVM, `doc` lives in clojure.repl and
+;; clojure.main's repl-requires refers it into `user`; cljgo mirrors both
+;; (pkg/eval New refers doc into user at boot). DEVIATIONS from JVM
+;; clojure.repl, stated: print-doc is public here (JVM's is private —
+;; cljgo has no defn- yet); special-form and namespace doc lookup are
+;; not implemented (an unresolvable name prints nothing and yields nil,
+;; which is also JVM behavior for an unknown symbol); core.clj's own
+;; defns carry no docstrings/arglists yet (defn's attr-map DEVIATION,
+;; core/core.clj), so (doc map) prints only the separator + qualified
+;; name until core grows them.
+
+;; The loader binds *ns* to a fresh clojure.repl; these make it explicit
+;; and refer clojure.core so unqualified core names resolve.
+(clojure.core/in-ns 'clojure.repl)
+(clojure.core/refer 'clojure.core)
+
+;; Output shape oracle-verified against JVM Clojure 1.12.5
+;; clojure.repl/doc (see conformance/tests/doc-macro.clj):
+;;   -------------------------
+;;   ns/name
+;;   ([args] ...)        ; only when :arglists metadata exists
+;;   Macro               ; only for macros
+;;     docstring         ; two-space lead, only when :doc exists
+;; A var prints as "#'ns/name" (subs .. 2 drops the #'), matching the
+;; qualified-name line the JVM builds from (:ns m) / (:name m).
+(defn print-doc
+  "Prints the documentation block for var v to *out* (the JVM shape;
+  public here because cljgo has no private defs yet)."
+  [v]
+  (let [m (meta v)]
+    (println "-------------------------")
+    (println (subs (str v) 2))
+    (when (:arglists m)
+      (println (:arglists m)))
+    (when (:macro m)
+      (println "Macro"))
+    (when (:doc m)
+      (println " " (:doc m)))))
+
+;; oracle: (with-out-str (clojure.repl/doc map)) prints the block above;
+;; (clojure.repl/doc nosuchsym) prints nothing and returns nil.
+(defmacro doc
+  "Prints documentation for a var, given its name. Prints nothing when
+  the name does not resolve."
+  [name]
+  (when (resolve name)
+    (list 'clojure.repl/print-doc (list 'var name))))

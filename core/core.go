@@ -80,6 +80,15 @@ var PortabilitySource string
 //go:embed numeric.cljg
 var NumericSource string
 
+// ReplSource is the contents of repl.cljg — the clojure.repl namespace
+// (ADR 0031: `doc` + `print-doc`). pkg/eval loads it into the
+// clojure.repl namespace after clojure.core is up (loadClojureRepl) and
+// refers `doc` into user at boot, as JVM clojure.main's repl-requires
+// does. The loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed repl.cljg
+var ReplSource string
+
 // SetSource is the contents of set.cljg — the clojure.set namespace, a pure
 // port of clojure.set onto core.clj primitives (ADR 0022 batch/harness-misc).
 // pkg/eval loads it into the clojure.set namespace after clojure.core is up
