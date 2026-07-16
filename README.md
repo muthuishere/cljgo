@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/muthuishere/cljgo.svg)](https://pkg.go.dev/github.com/muthuishere/cljgo)
 [![Go](https://img.shields.io/badge/go-1.26-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Clojure](https://img.shields.io/badge/clojure-1.12.5-5881d8?logo=clojure&logoColor=white)](https://clojure.org)
-[![clojure-test-suite](https://img.shields.io/badge/clojure--test--suite-217%2F242%20(89.7%25)-brightgreen)](#status)
+[![clojure-test-suite](https://img.shields.io/badge/clojure--test--suite-234%2F242%20(96.7%25)-brightgreen)](#status)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **[muthuishere.github.io/cljgo](https://muthuishere.github.io/cljgo/)** — docs, examples, and the live status board.
@@ -71,8 +71,9 @@ paths (a dual-harness conformance suite enforces this on every commit; a
 REPL↔binary divergence is a release blocker).
 
 Against the [jank clojure-test-suite](https://github.com/jank-lang/clojure-test-suite):
-**217/242 files passing (89.7%)**, 90.4% of non-skipped, with 240/242 vars
-resolved (99.2%). Run `cljgo suite` to reproduce. Early, moving fast.
+**234/242 files passing (96.7%)**, 97.1% of non-skipped, with 241/242 vars
+resolved (99.6%). Zero failing files — the remainder are dialect-gated or
+encode JVM-only semantics (ADR 0036). Run `cljgo suite` to reproduce. Early, moving fast.
 
 | Milestone | State | What landed |
 |-----------|-------|-------------|
@@ -86,7 +87,8 @@ resolved (99.2%). Run `cljgo suite` to reproduce. Early, moving fast.
 | **Diagnostics** | ✅ | `cljgo check --json` structured records, `cljgo explain <code>` (ADR 0015) |
 | **nREPL** | ✅ | `cljgo nrepl` — babashka's 13-op surface, per-session `*ns*`/`*1`/`*out*` streaming, `.nrepl-port`, `doc` (ADR 0031) |
 | **nREPL** | ✅ | `cljgo nrepl` — Calva/CIDER connect; 13-op surface, sessions on goroutine-keyed bindings (ADR 0031) |
-| Next | ◦ | `with-precision`, C FFI (purego), `alts!`/`timeout`, generics, AOT `core.clj` (binary size), persistent-collection aliasing fix |
+| **State** | ✅ | refs/`dosync` (STM-lite), agents, `future-cancel`, watches, `with-precision` (ADR 0038/0032) |
+| Next | ◦ | C FFI (purego), `alts!`/`timeout`, generics, AOT `core.clj` (binary size), edn-strictness |
 
 ### Try it
 
