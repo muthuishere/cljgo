@@ -1,0 +1,21 @@
+;; edn.cljg — cljgo's clojure.edn (ADR 0022 batch/harness-misc). Loaded at
+;; startup into the clojure.edn namespace by pkg/eval (loadClojureEdn), after
+;; clojure.core is up. The .cljg extension follows ADR 0017.
+;;
+;; read-string fronts cljgo's OWN reader (the -edn-read-string Go seam,
+;; pkg/eval/misc_builtins.go) — read only, never evaluated. oracle (JVM
+;; Clojure 1.12.5): (clojure.edn/read-string "{:a 1}") => {:a 1};
+;; (clojure.edn/read-string "") => nil; invalid input throws.
+;;
+;; DEVIATION: JVM clojure.edn is a RESTRICTED reader (no #=, no #(…) fn
+;; literals, no records/eval). cljgo's seam is the full cljgo reader, so
+;; forms EDN forbids but cljgo's reader accepts (e.g. #(inc %)) read
+;; successfully instead of throwing. #=(…) still throws — cljgo's reader has
+;; no eval-reader macro at all. The opts arity ({:readers … :default … :eof
+;; …}) is not implemented in this slice.
+
+(clojure.core/in-ns 'clojure.edn)
+(clojure.core/refer 'clojure.core)
+
+(defn read-string [s]
+  (clojure.core/-edn-read-string s))

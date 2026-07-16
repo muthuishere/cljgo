@@ -524,6 +524,10 @@ func (e *Evaluator) internBuiltins() {
 	// (ADR 0022, design/08 §5, sorted_builtins.go). sorted-set/-by already
 	// existed in predicate_builtins.go.
 	e.internSortedBuiltins(def)
+	// --- misc harness vars: delay/force/delay?, instance? substrate,
+	// add-watch/remove-watch, Thread/sleep seam (ADR 0022 batch/harness-misc,
+	// misc_builtins.go).
+	e.internMiscBuiltins(def, defPrivate)
 
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//

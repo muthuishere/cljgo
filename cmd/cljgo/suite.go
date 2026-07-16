@@ -112,6 +112,13 @@ func runSuite(args []string) int {
 	eval.Out = io.Discard
 	defer func() { eval.Out = savedOut }()
 
+	// Bind *print-length* for the whole run: a failing assertion whose
+	// actual value is an INFINITE lazy seq (e.g. lazy_seq.cljc's
+	// lazy-infinite-range) would otherwise hang do-report's pr-str forever.
+	// Same knob a human binds at a REPL before printing unbounded seqs.
+	lang.PushThreadBindings(lang.NewMap(lang.VarPrintLength, int64(100)))
+	defer lang.PopThreadBindings()
+
 	// One shared evaluator: cljgo's namespace registry is process-global, so a
 	// fresh evaluator per file would NOT isolate tests (run-all-tests would see
 	// every file's deftests). Instead we load number-range once, load each file,

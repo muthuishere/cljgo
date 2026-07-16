@@ -19,8 +19,15 @@
 ;; ExceptionInfo matches an ex-info. thrown-with-msg? matches the message
 ;; with a real regex via the -re-find? host seam (cljgo has no re-find yet).
 ;;
+;; use-fixtures (:each / :once) landed (ADR 0022 batch/harness-misc): a
+;; per-namespace fixture function stored in ns metadata under
+;; ::each-fixtures / ::once-fixtures (real clojure.test's add-ns-meta shape),
+;; composed via join-fixtures/compose-fixtures and applied by test-vars —
+;; oracle: clojure.test source (use-fixtures/join-fixtures/compose-fixtures/
+;; default-fixture/test-vars), verified with the `clojure` CLI.
+;;
 ;; DEVIATIONS from JVM clojure.test (documented, remaining slice, task 1.2):
-;;   * use-fixtures / *test-out* / per-ns "Testing <ns>" banner are not
+;;   * *test-out* / per-ns "Testing <ns>" banner / test-ns-hook are not
 ;;     in this slice.
 
 ;; The loader (pkg/eval loadClojureTest) already binds *ns* to a fresh
@@ -79,6 +86,25 @@
       :else nil)))
 
 ;; --- is / testing / deftest -----------------------------------------
+
+;; -function?: mirrors clojure.test's private `function?` — true when x is a
+;; function value, or a symbol that resolves to a Var holding a function AND
+;; is not a macro. `is` uses this to decide whether a seq form is a predicate
+;; CALL (= a b), to be applied to its evaluated args and reported with the
+;; matched values, or an arbitrary expression (let, and, or, any other macro
+;; or special form) to be evaluated as-is. A true special form (let*, if,
+;; do, ...) has no Var at all — resolve returns nil — and a macro's Var
+;; carries :macro true, so BOTH fall through to the bare-expression case,
+;; exactly like real clojure.test (oracle: clojure.test/function?, verified
+;; with the `clojure` CLI). Without this gate, (is (let [x ...] ...)) would
+;; wrongly try to (apply let (list bindings body)), evaluating the bindings
+;; vector as plain data outside any let scope and failing to resolve its
+;; binding names.
+(defn ^:private -function? [x]
+  (if (symbol? x)
+    (let [v (resolve x)]
+      (and v (clojure.core/fn? (clojure.core/deref v)) (not (:macro (meta v)))))
+    (clojure.core/fn? x)))
 
 ;; `is` supports (= a b) / a plain (pred args...) call, a bare expression,
 ;; (thrown? Class body...) and (thrown-with-msg? Class #"re" body...). Every
@@ -148,7 +174,7 @@
           (catch ~'Throwable t#
             (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
 
-     (seq? form)
+     (and (seq? form) (-function? (first form)))
      `(try
         (let [values# (clojure.core/list ~@(rest form))
               result# (clojure.core/apply ~(first form) values#)]
@@ -231,6 +257,35 @@
      (clojure.core/alter-meta! (var ~name) clojure.core/assoc :test (fn [] ~@body))
      (var ~name)))
 
+;; --- fixtures ---------------------------------------------------------
+
+;; default-fixture: the empty fixture — just calls its argument.
+(defn ^:private default-fixture [f] (f))
+
+;; compose-fixtures: combine two fixture functions so f1 wraps f2.
+(defn compose-fixtures [f1 f2]
+  (fn [g] (f1 (fn [] (f2 g)))))
+
+;; join-fixtures: compose a collection of fixtures, in order; always a valid
+;; fixture function even for an empty collection.
+(defn join-fixtures [fixtures]
+  (reduce compose-fixtures default-fixture fixtures))
+
+;; add-ns-meta: stash coll under key in the CURRENT namespace's metadata —
+;; use-fixtures' storage mechanism (real clojure.test add-ns-meta).
+(defn ^:private add-ns-meta [key coll]
+  (clojure.core/alter-meta! *ns* clojure.core/assoc key coll))
+
+;; use-fixtures: (use-fixtures :each f1 f2 ...) wraps every test individually;
+;; (use-fixtures :once f1 f2 ...) wraps the whole namespace run once. cljgo
+;; implements this as a plain function (not a multimethod — no defmulti/
+;; defmethod dependency needed for two fixed dispatch values).
+(defn use-fixtures [fixture-type & fixtures]
+  (cond
+    (= fixture-type :each) (add-ns-meta ::each-fixtures fixtures)
+    (= fixture-type :once) (add-ns-meta ::once-fixtures fixtures)
+    :else (throw (ex-info "First argument to use-fixtures must be :each or :once" {}))))
+
 ;; --- running --------------------------------------------------------
 
 (defn test-var [v]
@@ -252,12 +307,21 @@
            (+ (:pass m) (:fail m) (:error m)) "assertions.")
   (println (:fail m) "failures," (:error m) "errors."))
 
+;; test-vars: groups vars by their namespace and runs test-var on them with
+;; that namespace's :once/:each fixtures applied (real clojure.test shape).
+(defn test-vars [vars]
+  (doseq [[ns vs] (group-by (fn [v] (:ns (meta v))) vars)]
+    (let [once-fixture-fn (join-fixtures (::once-fixtures (meta ns)))
+          each-fixture-fn (join-fixtures (::each-fixtures (meta ns)))]
+      (once-fixture-fn
+       (fn []
+         (doseq [v vs]
+           (when (:test (meta v))
+             (each-fixture-fn (fn [] (test-var v))))))))))
+
 (defn run-test-vars [vars]
   (binding [*report-counters* (atom initial-report-counters)]
-    (loop [vs vars]
-      (when (seq vs)
-        (test-var (first vs))
-        (recur (next vs))))
+    (test-vars vars)
     (let [summary (assoc (deref *report-counters*) :type :summary)]
       (report-summary summary)
       summary)))

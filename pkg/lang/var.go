@@ -59,12 +59,19 @@ var (
 	VarUncheckedMath    = InternVarReplaceRoot(NSCore, NewSymbol("*unchecked-math*"), false).SetDynamic()
 	VarAgent            = InternVarReplaceRoot(NSCore, NewSymbol("*agent*"), nil).SetDynamic()
 	VarPrintReadably    = InternVarReplaceRoot(NSCore, NewSymbol("*print-readably*"), true).SetDynamic()
-	VarOut              = InternVarReplaceRoot(NSCore, NewSymbol("*out*"), os.Stdout).SetDynamic()
-	VarIn               = InternVarReplaceRoot(NSCore, NewSymbol("*in*"), os.Stdin).SetDynamic()
-	VarAssert           = InternVarReplaceRoot(NSCore, NewSymbol("*assert*"), false).SetDynamic()
-	VarCompileFiles     = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
-	VarFile             = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
-	VarDataReaders      = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
+	// VarPrintLength backs *print-length* (root nil = unlimited, exactly
+	// clojure.core): when bound to an int, Print emits at most that many
+	// elements of a seq/vector/map/set followed by "...". cljgo addition to
+	// the vendored printer (PROVENANCE.md): without it, printing an
+	// infinite lazy seq (e.g. a failing clojure.test assertion whose actual
+	// value is unbounded) never terminates.
+	VarPrintLength  = InternVarReplaceRoot(NSCore, NewSymbol("*print-length*"), nil).SetDynamic()
+	VarOut          = InternVarReplaceRoot(NSCore, NewSymbol("*out*"), os.Stdout).SetDynamic()
+	VarIn           = InternVarReplaceRoot(NSCore, NewSymbol("*in*"), os.Stdin).SetDynamic()
+	VarAssert       = InternVarReplaceRoot(NSCore, NewSymbol("*assert*"), false).SetDynamic()
+	VarCompileFiles = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
+	VarFile         = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
+	VarDataReaders  = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
 
 	// TODO: use variant of InternVar that doesn't replace root.
 	VarPrintInitialized = InternVarName(NSCore.Name(), NewSymbol("print-initialized"))

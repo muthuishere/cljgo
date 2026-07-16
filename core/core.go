@@ -79,3 +79,20 @@ var PortabilitySource string
 //
 //go:embed numeric.cljg
 var NumericSource string
+
+// SetSource is the contents of set.cljg — the clojure.set namespace, a pure
+// port of clojure.set onto core.clj primitives (ADR 0022 batch/harness-misc).
+// pkg/eval loads it into the clojure.set namespace after clojure.core is up
+// (loadClojureSet). The loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed set.cljg
+var SetSource string
+
+// EdnSource is the contents of edn.cljg — the clojure.edn namespace
+// (read-string over the -edn-read-string reader seam, ADR 0022
+// batch/harness-misc). pkg/eval loads it into the clojure.edn namespace
+// after clojure.core is up (loadClojureEdn). The loader accepts the .cljg
+// extension per ADR 0017.
+//
+//go:embed edn.cljg
+var EdnSource string

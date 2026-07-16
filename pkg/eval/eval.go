@@ -52,6 +52,8 @@ func New() *Evaluator {
 	e.loadPredicates()
 	e.loadProtocols()
 	e.loadClojureString()
+	e.loadClojureSet()
+	e.loadClojureEdn()
 	e.loadClojureTest()
 	e.loadBuild()
 	e.loadClojureTestPortability()

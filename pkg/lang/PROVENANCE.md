@@ -77,3 +77,17 @@ faithfully:
   `Record.Equiv` enforces the record→map direction).
 - Acceptance: `conformance/tests/{protocol,deftype,defrecord,extend}-*.clj`,
   dual-harness, byte-matched vs Clojure CLI 1.12.5.
+
+## *print-length* (batch/harness-misc, 2026-07-16, ADR 0022)
+
+- `var.go`: new `VarPrintLength` dynamic var backing `*print-length*`
+  (root nil = unlimited, exactly clojure.core).
+- `strconv.go` `Print`: the ISeq / IPersistentMap / IPersistentVector /
+  IPersistentSet branches honor it — at most N elements then `...`
+  (oracle 1.12.5: `(binding [*print-length* 3] (pr-str (range 10)))` =>
+  `"(0 1 2 ...)"`). Motivation: without a bound, printing an infinite lazy
+  seq never terminates — a failing clojure.test assertion over
+  lazy-infinite-range hung the whole suite run. `cljgo suite` binds it to
+  100 for the run (cmd/cljgo/suite.go).
+- Acceptance: `conformance/tests/print-length.clj` (dual-harness,
+  oracle-verified).
