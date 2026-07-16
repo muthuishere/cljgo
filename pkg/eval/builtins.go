@@ -507,6 +507,14 @@ func (e *Evaluator) internBuiltins() {
 	// (ADR 0022, design/08 §5, predicate_builtins.go). The compositional
 	// fns that ride on these live in core/predicates.cljg (loadPredicates).
 	e.internPredicateBuiltins(def)
+	// --- arrays (to-array/int-array/object-array/aget/aset/alength/aclone/
+	// into-array/…): Batch 4 (ADR 0022, ADR 0025, array_builtins.go). A
+	// cljgo array is a native Go slice (ADR 0025).
+	e.internArrayBuiltins(def)
+	// --- volatile!/vswap!/vreset!/volatile?: Batch 4 (ADR 0022,
+	// volatile_builtins.go). *lang.Volatile is vendored from Glojure.
+	e.internVolatileBuiltins(def)
+
 	// --- version: (clojure-version)/*clojure-version* (the language level
 	// we target) + (cljgo-version)/*cljgo-version* (ours, incl. the host Go
 	// toolchain) — version_builtins.go, pkg/version is the source of truth.
