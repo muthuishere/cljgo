@@ -1,10 +1,15 @@
 ;; hierarchies.cljg — clojure.core's global-hierarchy family: make-hierarchy,
 ;; derive, underive, ancestors, descendants, parents, isa? (ADR 0022 Track E,
 ;; design/08 §5 batch E). A port of clojure.core's own hierarchy fns (Rich
-;; Hickey, EPL 1.0) onto cljgo's core.clj primitives, with the class?/Java
-;; type-inheritance branches DROPPED: cljgo has no JVM class hierarchy
+;; Hickey, EPL 1.0) onto cljgo's core.clj primitives, with the Java
+;; type-inheritance WALKS dropped: cljgo has no JVM class hierarchy
 ;; (design/05), so isa?/parents/ancestors/descendants only ever see the
 ;; derive-established relationship plus isa?'s vector component-wise case.
+;; Classes as TAGS are supported (ADR 0036): class? covers interned
+;; ClassRef values (String, Object, ...) and deftype/defrecord type
+;; markers; derive accepts them as tags (never as global parents), and
+;; descendants throws on them, both exactly as the JVM does — but no
+;; inheritance is fabricated: (parents String) is nil unless derived.
 ;; Loaded into clojure.core (NOT a separate namespace — these are real
 ;; clojure.core vars, like numeric.cljg/predicates.cljg) right after
 ;; loadNumeric, so global-hierarchy is a genuine Var alter-var-root can
@@ -61,30 +66,45 @@
   ([tag] (ancestors global-hierarchy tag))
   ([h tag] (not-empty (get (:ancestors h) tag))))
 
-;; oracle: (descendants ::b) => nil; after (derive ::a ::b), => #{::a}
+;; oracle: (descendants ::b) => nil; after (derive ::a ::b), => #{::a};
+;; (descendants Object) and (descendants h Object) BOTH throw "Can't get
+;; descendants of classes" (clojure 1.12.5), and so does a defrecord's
+;; class — cljgo mirrors this for ClassRefs and type markers (ADR 0036),
+;; via ex-info rather than UnsupportedOperationException.
 (defn descendants
   "Returns the immediate and indirect children of tag, via a relationship
   established with derive. h must be a hierarchy obtained from
   make-hierarchy; if not supplied defaults to, and modifies, the global
   hierarchy. Note: cljgo has no class inheritance to walk (design/05)."
   ([tag] (descendants global-hierarchy tag))
-  ([h tag] (not-empty (get (:descendants h) tag))))
+  ([h tag] (if (class? tag)
+             (throw (ex-info "Can't get descendants of classes" {}))
+             (not-empty (get (:descendants h) tag)))))
 
 ;; oracle: (derive :a :b) throws "Assert failed: (namespace parent)";
 ;; (derive ::a ::b) then (isa? ::a ::b) => true; re-deriving an existing
-;; ancestor is a no-op; a cyclic derivation throws.
+;; ancestor is a no-op; a cyclic derivation throws. Classes (ADR 0036):
+;; (derive String ::object) succeeds — the JVM's tag assert is
+;; (or (class? tag) (and (instance? Named tag) (namespace tag))) — while
+;; (derive ::tag String) throws (parent must be Named; the JVM CCEs on
+;; (namespace parent), cljgo fails the same assert). The 3-arg form
+;; asserts tag (or class? Named) and parent Named, allowing
+;; non-namespaced keywords: (derive (make-hierarchy) :rect :shape) works.
 (defn derive
   "Establishes a parent/child relationship between parent and tag. Parent
-  and tag must both be namespace-qualified keywords or symbols. h must be
-  a hierarchy obtained from make-hierarchy; if not supplied defaults to,
+  must be a namespace-qualified keyword or symbol; tag may also be a
+  class (ADR 0036: a ClassRef or deftype/defrecord type). h must be a
+  hierarchy obtained from make-hierarchy; if not supplied defaults to,
   and modifies, the global hierarchy."
   ([tag parent]
    (assert (namespace parent))
-   (assert (namespace tag))
+   (assert (or (class? tag) (and (or (keyword? tag) (symbol? tag)) (namespace tag))))
    (alter-var-root #'global-hierarchy derive tag parent)
    nil)
   ([h tag parent]
    (assert (not (= tag parent)))
+   (assert (or (class? tag) (keyword? tag) (symbol? tag)))
+   (assert (or (keyword? parent) (symbol? parent)))
    (let [tp (:parents h)
          td (:descendants h)
          ta (:ancestors h)

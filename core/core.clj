@@ -975,40 +975,27 @@
       m)))
 
 ;; oracle: (merge {:a 1} {:b 2} {:a 3}) => {:a 3, :b 2}
-;; oracle: (merge :foo) => :foo -- a single non-map arg passes through
-;; unchanged (merge never even inspects it; real Clojure's reduce1 with no
-;; explicit init just returns the sole element).
 ;; oracle: (merge :foo) => :foo -- a single non-map arg (0 or 1 total args)
 ;; passes through unchanged; real Clojure's reduce1 with no explicit init
 ;; just returns the sole element without ever inspecting it.
+;; oracle: (merge '(1 2 3) 1) => (1 1 2 3) -- the no-init reduce seeds from
+;; the first element verbatim, so a non-map first arg just gets conj'd onto.
 ;;
-;; NOTE: the 2+-arg case deliberately uses 3-arg `reduce` with an explicit
-;; nil init (like the original body), NOT 2-arg `reduce` over `maps` (no
-;; init, first element as seed) — a real pkg/lang bug surfaced going that
-;; route: reduce's no-init path over a variadic `& maps` rest-arg seq
-;; corrupted unrelated later reads of a persistent set built earlier in the
-;; same evaluator session (see pkg/lang/PROVENANCE.md). The single/zero-arg
-;; case is special-cased ahead of the reduce so it never needs the no-init
-;; form at all.
-;; NOTE: deliberately NOT `(reduce f (first maps) (next maps))` — using the
-;; first element verbatim as the reduce seed (what real Clojure's reduce1
-;; does with no explicit init) reproduces a real pkg/lang bug: conj-ing
-;; onto a map/set element fetched out of an existing persistent collection
-;; (exactly what clojure.set/join's (merge %2 x) does, %2 being a set
-;; member) can mutate that element in place instead of copying, corrupting
-;; the ORIGINAL collection's later reads (see pkg/lang/PROVENANCE.md). Always
-;; seeding from a fresh `{}` (never a value that might be aliased elsewhere)
-;; sidesteps the hazard, at the cost of the suite's own "undefined, not
-;; tested closely" non-map-arg corner (e.g. (merge '(1 2 3) 1), which this
-;; version now throws on rather than returning (1 1 2 3) like real Clojure).
+;; Shape matches real Clojure's `(reduce1 #(conj (or %1 {}) %2) maps)` —
+;; 2-arg reduce over the rest args, first element as the seed. An earlier
+;; version deliberately dodged this form and always seeded from a fresh {}:
+;; conj onto a map fetched out of an existing set (exactly what
+;; clojure.set/join does) produced a result carrying the source's stale
+;; cached hash, corrupting hash-addressed lookups of any collection the
+;; result was stored in. The root cause (Map.clone keeping the cached
+;; hash/hasheq across a content-changing Assoc) is fixed in
+;; pkg/lang/persistentarraymap.go — see PROVENANCE.md "Stale hash cache on
+;; array-map assoc" — so the faithful form is safe again.
+;; (`every?` instead of reduce1's `(some identity ...)` guard: `some` is
+;; defined later in this file; the two are equivalent for a nil check.)
 (defn merge [& maps]
-  (if (nil? (next maps))
-    ;; 0 or 1 arg: real Clojure's reduce1 has no explicit init, so with a
-    ;; single element it's returned untouched — never even passed through
-    ;; the reducing fn's `(or _ {})`/conj. Oracle: (merge :foo) => :foo.
-    (first maps)
-    (when-not (every? nil? maps)
-      (reduce (fn [a b] (conj (or a {}) b)) nil maps))))
+  (when-not (every? nil? maps)
+    (reduce (fn [a b] (conj (or a {}) b)) maps)))
 
 ;; oracle: (merge-with + {:a 1 :b 2} {:a 10}) => {:a 11, :b 2}
 (defn merge-with [f & maps]

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -76,83 +75,20 @@ func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any
 				return dispatchKey(v) == m.name
 			}
 		}
+		return classNameMatchesValue(name, v)
+	})
 
-		simple := name
-		if i := strings.LastIndex(name, "."); i >= 0 {
-			simple = name[i+1:]
+	// class? (ADR 0036): true for the two things cljgo treats as classes —
+	// interned ClassRef values and deftype/defrecord TypeMarkers. JVM
+	// analogy: (instance? java.lang.Class x); record/type names are
+	// classes there too. Used by the hierarchy fns (hierarchies.cljg):
+	// derive accepts classes as tags, descendants throws on them.
+	def("class?", func(args ...any) any {
+		switch oneArg("class?", args).(type) {
+		case *ClassRef, *TypeMarker:
+			return true
 		}
-		switch simple {
-		case "Object":
-			return v != nil
-		case "String":
-			_, ok := v.(string)
-			return ok
-		case "Long", "Integer", "Short", "Byte":
-			switch v.(type) {
-			case int64, int, int32, int16, int8:
-				return true
-			}
-			return false
-		case "Double", "Float":
-			switch v.(type) {
-			case float64, float32:
-				return true
-			}
-			return false
-		case "Character":
-			_, ok := v.(lang.Char)
-			return ok
-		case "Boolean":
-			_, ok := v.(bool)
-			return ok
-		case "Keyword":
-			_, ok := v.(lang.Keyword)
-			return ok
-		case "Symbol":
-			_, ok := v.(*lang.Symbol)
-			return ok
-		case "Atom":
-			_, ok := v.(*lang.Atom)
-			return ok
-		case "Delay":
-			_, ok := v.(*lang.Delay)
-			return ok
-		case "Var":
-			_, ok := v.(*lang.Var)
-			return ok
-		case "Namespace":
-			_, ok := v.(*lang.Namespace)
-			return ok
-		case "BigInt":
-			_, ok := v.(*lang.BigInt)
-			return ok
-		case "BigDecimal", "BigDec":
-			_, ok := v.(*lang.BigDecimal)
-			return ok
-		case "UUID", "Guid":
-			_, ok := v.(reader.UUID)
-			return ok
-		case "PersistentVector":
-			_, ok := v.(lang.IPersistentVector)
-			return ok
-		case "PersistentArrayMap", "PersistentHashMap":
-			_, ok := v.(lang.IPersistentMap)
-			return ok
-		case "PersistentHashSet":
-			_, ok := v.(lang.IPersistentSet)
-			return ok
-		case "ISeq":
-			_, ok := v.(lang.ISeq)
-			return ok
-		case "IPending":
-			_, ok := v.(lang.IPending)
-			return ok
-		case "IFn":
-			_, ok := v.(lang.IFn)
-			return ok
-		default:
-			return dispatchKey(v) == simple
-		}
+		return false
 	})
 
 	// --- add-watch / remove-watch ------------------------------------------

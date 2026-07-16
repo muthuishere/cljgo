@@ -185,8 +185,18 @@ func (m *Map) EntryAt(k any) IMapEntry {
 	return nil
 }
 
+// clone returns a copy of the map for a content-CHANGING operation
+// (Assoc). The cached hash/hasheq MUST be reset: the copy's contents are
+// about to diverge from m's, and carrying m's cached hash over corrupts
+// every hash-addressed structure the result is later stored in (a set
+// member or map key filed under the wrong hash is invisible to `=`
+// lookups). This is safe only to skip for content-PRESERVING copies
+// (WithMeta), which deliberately keep the caches. (cljgo fix, 2026-07-16;
+// see PROVENANCE.md "Stale hash cache on array-map assoc".)
 func (m *Map) clone() *Map {
 	cpy := *m
+	cpy.hash = 0
+	cpy.hasheq = 0
 	cpy.keyVals = make([]any, len(m.keyVals))
 	copy(cpy.keyVals, m.keyVals)
 	return &cpy

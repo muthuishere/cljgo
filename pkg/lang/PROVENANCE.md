@@ -256,6 +256,41 @@ every analyzer/eval step).
   uniqueness; full suite + `-race` on lang/repl/nrepl/eval (binding
   conveyance + nREPL session isolation) green.
 
+## Stale hash cache on array-map assoc (fix/persistent-aliasing, 2026-07-16, `persistentarraymap.go`)
+
+Ground truth: real Clojure 1.12.5 CLI; reproduced via `clojure.set/join`.
+
+PR #30 flagged (in its commit message and inline at `core.clj`'s `merge`)
+a defect where conj-ing onto a map fetched out of an existing persistent
+set appeared to corrupt collection reads, and dodged it by never seeding
+`merge`'s reduce from a caller-supplied map. Root cause found and FIXED
+here — it was never an in-place mutation of shared storage (a systematic
+audit of `Map`/`PersistentHashMap` node ops/`Set`/`SortedMap`/
+`PersistentStructMap`/`Vector` + the internal persistent vector found
+every persistent path copy-on-write correct). The real defect:
+`Map.clone()` — the copy step under both branches of `Map.Assoc` — copied
+the cached `hash`/`hasheq` fields along with the struct, so the assoc
+result (different contents!) carried the ORIGINAL map's cached hash.
+The trigger condition is the source map's hash already being cached,
+which is precisely what set membership / map-key use does — hence "a map
+fetched out of a collection". Any hash-addressed structure the result was
+then stored in (`clojure.set/join` conjes the merged map into its result
+set) filed it under the stale hash, making it invisible to `=`/`get`/
+`contains?` probes with a structurally equal fresh map — indistinguishable
+from corruption at the REPL since printing looked right. Fixed by
+resetting `hash`/`hasheq` to 0 (the uncached sentinel) in `clone()`;
+content-preserving copies (`WithMeta`) rightly keep their caches, and
+transients are untouched. The `merge` dodge in `core.clj` is removed —
+it's back to real Clojure's `reduce1 #(conj (or %1 {}) %2)` shape, which
+also regains the non-map-first-arg corner ((merge '(1 2 3) 1) => (1 1 2 3),
+oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
+- Acceptance: `persistentarraymap_hash_test.go` (both Assoc branches +
+  the fetch-conj-restore set pattern), `conformance/tests/
+  conj-aliasing-hash.clj` (join equality + fetch-then-conj aliasing
+  patterns on sets/maps/vectors, all 12 elements oracle-verified),
+  `conformance/tests/merge-passthrough-and-nil-args.clj` extended with
+  the regained corner; full suite + `-race` on lang/eval green.
+
 ## STM-lite, agents, future-cancel, vec aliasing (batch/deep-leftovers, ADR 0038, 2026-07-16)
 
 - `ref.go` REWRITTEN from the Glojure stub (lock-free transaction-count
@@ -276,5 +311,3 @@ every analyzer/eval step).
   storage (no copy), giving JVM `(vec array)` aliasing semantics
   (LazilyPersistentVector.createOwning; suite vec.cljc, oracle-cited in
   conformance/tests/vec-array-aliasing.clj).
-- Also removed a stray merge-conflict marker line that had been
-  committed at the end of this file.
