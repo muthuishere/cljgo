@@ -10,6 +10,7 @@ import (
 
 	"github.com/muthuishere/cljgo/pkg/ast"
 	"github.com/muthuishere/cljgo/pkg/lang"
+	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
 // evalHost evaluates Go interop nodes (OpHostRef / OpHostCall) in the
@@ -343,6 +344,18 @@ var errType = reflect.TypeOf((*error)(nil)).Elem()
 func CallGoMethod(recv any, method string, throw bool, args []any) any {
 	if recv == nil {
 		panic(fmt.Errorf("cannot call method .%s on nil", method))
+	}
+	// A narrow, explicit bridge for ONE cljgo-owned type: #inst values
+	// (reader.Inst) stand in for java.util.Date, whose lowercase
+	// `.getTime` the clojure-test-suite's epoch-millis helper calls
+	// (edn_test/read_string.cljc, :default branch). Go reflection can
+	// never resolve a lowercase method name (unexported methods aren't
+	// visible via reflect.Value.MethodByName, regardless of package), and
+	// design/05-interop-concurrency.md deliberately does NOT auto-
+	// capitalize FieldOrMethod for general Go interop — so this does not
+	// generalize to arbitrary receivers, only to cljgo's own Inst.
+	if inst, ok := recv.(reader.Inst); ok && method == "getTime" && len(args) == 0 {
+		return inst.EpochMillis()
 	}
 	rv := reflect.ValueOf(recv)
 	mv := rv.MethodByName(method)

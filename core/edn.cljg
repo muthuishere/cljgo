@@ -2,20 +2,44 @@
 ;; startup into the clojure.edn namespace by pkg/eval (loadClojureEdn), after
 ;; clojure.core is up. The .cljg extension follows ADR 0017.
 ;;
-;; read-string fronts cljgo's OWN reader (the -edn-read-string Go seam,
-;; pkg/eval/misc_builtins.go) — read only, never evaluated. oracle (JVM
-;; Clojure 1.12.5): (clojure.edn/read-string "{:a 1}") => {:a 1};
-;; (clojure.edn/read-string "") => nil; invalid input throws.
+;; read-string fronts cljgo's OWN reader (the -edn-read-string /
+;; -edn-read-string-opts Go seams, pkg/eval/misc_builtins.go) — read only,
+;; never evaluated. oracle (JVM Clojure 1.12.5): (clojure.edn/read-string
+;; "{:a 1}") => {:a 1}; (clojure.edn/read-string "") => nil; invalid input
+;; throws.
 ;;
-;; DEVIATION: JVM clojure.edn is a RESTRICTED reader (no #=, no #(…) fn
-;; literals, no records/eval). cljgo's seam is the full cljgo reader, so
-;; forms EDN forbids but cljgo's reader accepts (e.g. #(inc %)) read
-;; successfully instead of throwing. #=(…) still throws — cljgo's reader has
-;; no eval-reader macro at all. The opts arity ({:readers … :default … :eof
-;; …}) is not implemented in this slice.
+;; Both arities run the reader in EDN-STRICT mode (reader.WithEDNStrict,
+;; pkg/reader/reader.go): `#!` shebang and `::kw` auto-resolution are
+;; rejected (matching real JVM clojure.edn — it has no shebang comment macro
+;; and no current-namespace context), and cljgo additionally rejects 3+-part
+;; symbols/keywords (foo/bar/baz) as a DEVIATION where real JVM edn is
+;; actually lenient (clojure-test-suite edn_test/read_string.cljc's
+;; :default dialect branch expects the stricter behavior).
+;;
+;; DEVIATION: this is still cljgo's OWN reader with edn's rules layered on,
+;; not JVM clojure.edn's wholly separate restricted-reader implementation,
+;; so a few forms EDN forbids but cljgo's reader accepts (e.g. #(inc %) fn
+;; literals) read successfully instead of throwing. #=(…) still throws —
+;; cljgo's reader has no eval-reader macro at all.
+;;
+;; The suite's epoch-millis helper (.getTime on a #inst value) works, but
+;; NOT through cljgo's ordinary Go-interop dot-call: Go reflection can
+;; never see an unexported `getTime` method (design/05-interop-
+;; concurrency.md deliberately does not auto-capitalize method names for
+;; real Go interop), so host.go's CallGoMethod special-cases this ONE
+;; cljgo-owned type explicitly rather than generalizing interop.
 
 (clojure.core/in-ns 'clojure.edn)
 (clojure.core/refer 'clojure.core)
 
-(defn read-string [s]
-  (clojure.core/-edn-read-string s))
+(defn read-string
+  "Reads one object from the string s. Returns nil when s has nothing but
+  whitespace/comments. Optionally takes a map of options:
+
+  :eof - value to return on end-of-stream, default is to throw an exception
+  :readers - a map of tag symbols to data-reader functions to be
+    considered before default-data-readers, and *data-readers*
+  :default - a function of two args, that will, if present and no reader
+    is found for a tag, be called with the tag and the value."
+  ([s] (clojure.core/-edn-read-string s))
+  ([opts s] (clojure.core/-edn-read-string-opts opts s)))
