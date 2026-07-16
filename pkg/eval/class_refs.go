@@ -36,8 +36,13 @@ func (c *ClassRef) Name() string { return c.name }
 // to the canonical fully qualified name. Fail-closed: names outside this
 // table do not resolve. The vocabulary is ADR 0026's designator table
 // (instance?'s name matching) plus Object/Exception/Throwable/Number.
-var classRefNames = func() map[string]string {
+// classRefIsInterface marks which canonical names denote INTERFACES —
+// only concrete classes get the flattened Object super (ADR 0039): on
+// the JVM every concrete class has Object among its ancestors, while an
+// interface never does.
+var classRefNames, classRefIsInterface = func() (map[string]string, map[string]bool) {
 	m := map[string]string{}
+	iface := map[string]bool{}
 	// add registers both the simple and the fully qualified spelling —
 	// java.lang etc. are auto-imported on the JVM, so `String` is idiomatic.
 	add := func(prefix string, simples ...string) {
@@ -56,11 +61,17 @@ var classRefNames = func() map[string]string {
 			m[canonical] = canonical
 		}
 	}
+	markIface := func(prefix string, simples ...string) {
+		for _, s := range simples {
+			iface[prefix+"."+s] = true
+		}
+	}
 	add("java.lang",
 		"Object", "String", "Long", "Integer", "Short", "Byte",
 		"Double", "Float", "Boolean", "Character", "Number", "Class",
 		"Exception", "Throwable", "RuntimeException", "Comparable",
 		"CharSequence")
+	markIface("java.lang", "Comparable", "CharSequence")
 	add("java.math", "BigInteger", "BigDecimal")
 	addQualified("java.util", "UUID")
 	addQualified("clojure.lang",
@@ -75,8 +86,28 @@ var classRefNames = func() map[string]string {
 		"PersistentTreeMap", "PersistentTreeSet", "LazySeq", "Cons",
 		"Range", "LongRange", "Repeat", "ExceptionInfo",
 		"ArityException", "Volatile")
-	return m
+	markIface("clojure.lang",
+		"Named", "IFn", "ISeq", "IPending", "IDeref", "IObj", "IMeta",
+		"IRecord", "IType", "Sequential", "Associative", "Counted",
+		"Indexed", "Seqable", "Reversible", "Sorted",
+		"IPersistentCollection", "IPersistentList", "IPersistentMap",
+		"IPersistentSet", "IPersistentVector")
+	return m, iface
 }()
+
+// classRefSupers is the real, flattened ancestry cljgo can vouch for on a
+// well-known class ref (ADR 0039): instances of every concrete class ARE
+// Objects (exactly the claim classNameMatchesValue already makes for
+// instance?), so Object is reported as its sole base/super; Object itself
+// and interface names report none. No intermediate JVM superclasses
+// (Number, Throwable chains, APersistentSet, ...) are encoded — that
+// graph stays un-fabricated per ADR 0036.
+func classRefSupers(c *ClassRef) []any {
+	if c.name == "java.lang.Object" || classRefIsInterface[c.name] {
+		return nil
+	}
+	return []any{lookupClassRef("java.lang.Object")}
+}
 
 var (
 	classRefMu       sync.Mutex
@@ -115,6 +146,48 @@ func classRefVar(sym *lang.Symbol) *lang.Var {
 	}
 	ns := lang.FindOrCreateNamespace(nsClassesSym)
 	return lang.InternVar(ns, lang.NewSymbol(sym.Name()), c, false)
+}
+
+// typeClassVar resolves a qualified GENERATED class name for one of OUR
+// types (ADR 0039): on the JVM, (defprotocol P) / (defrecord R ...) /
+// (deftype T ...) in namespace my.name-space generate classes named
+// my.name_space.P (namespace dashes munged to underscores), and suite
+// code references them as plain dotted symbols. cljgo resolves such a
+// symbol — only after every normal lookup AND the class-ref table missed
+// — to the very var the defprotocol/defrecord/deftype interned, whose
+// value (*Protocol / *TypeMarker) is the same value the ancestry
+// machinery uses. Fail-closed: the dotted prefix must name a LOADED
+// namespace (as written, or demunged _→-) and the var must exist there;
+// a var bound to anything other than a protocol or type marker does not
+// resolve. An interned-but-unbound var is accepted because resolution
+// runs at analysis time: a def earlier in the same top-level form is
+// interned but not yet evaluated.
+func typeClassVar(sym *lang.Symbol) *lang.Var {
+	name := sym.Name()
+	i := strings.LastIndex(name, ".")
+	if i <= 0 || i == len(name)-1 {
+		return nil
+	}
+	nsPart, simple := name[:i], name[i+1:]
+	ns := lang.FindNamespace(lang.NewSymbol(nsPart))
+	if ns == nil {
+		ns = lang.FindNamespace(lang.NewSymbol(strings.ReplaceAll(nsPart, "_", "-")))
+	}
+	if ns == nil {
+		return nil
+	}
+	v := ns.FindInternedVar(lang.NewSymbol(simple))
+	if v == nil {
+		return nil
+	}
+	if !v.IsBound() {
+		return v
+	}
+	switch v.Get().(type) {
+	case *Protocol, *TypeMarker:
+		return v
+	}
+	return nil
 }
 
 // classNameMatchesValue is ADR 0026's designator-name matching: does the

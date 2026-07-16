@@ -35,6 +35,13 @@
 (defn ^:private -method-specs [specs]
   (filter seq? specs))
 
+;; -decl-protocols collects the DECLARED protocol symbols of a deftype/
+;; defrecord body — every type slot, including protocols listed with no
+;; method forms (which -group-impls drops). They feed the type's real
+;; ancestry and its satisfies? registration (ADR 0039).
+(defn ^:private -decl-protocols [specs]
+  (vec (distinct (filter symbol? specs))))
+
 ;; -field-lets builds the let-binding vector that makes a deftype/defrecord's
 ;; declared fields visible as locals inside a method body — excluding any
 ;; field shadowed by an explicit method parameter (Clojure: params win). The
@@ -97,7 +104,8 @@
                              (-typed-fn fields (second pair))))
                      (-group-impls specs))]
     (list* (quote do)
-           (list (quote def) tname (list (quote -type-marker) qn))
+           (list (quote def) tname
+                 (list (quote -type-marker) qn "type" (-decl-protocols specs)))
            (list (quote def) ctor
                  (list* (quote fn) fields
                         (list (list* (quote -new-type) qn fstrs fields))))
@@ -121,7 +129,8 @@
                              (-typed-fn fields (second pair))))
                      (-group-impls specs))]
     (list* (quote do)
-           (list (quote def) tname (list (quote -type-marker) qn))
+           (list (quote def) tname
+                 (list (quote -type-marker) qn "record" (-decl-protocols specs)))
            (list (quote def) ctor
                  (list* (quote fn) fields
                         (list (list* (quote -new-record) qn fstrs fields))))

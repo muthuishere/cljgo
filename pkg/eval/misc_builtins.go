@@ -83,6 +83,12 @@ func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any
 	// analogy: (instance? java.lang.Class x); record/type names are
 	// classes there too. Used by the hierarchy fns (hierarchies.cljg):
 	// derive accepts classes as tags, descendants throws on them.
+	// Deliberately NOT true for Protocol values (ADR 0039): cljgo's one
+	// protocol value plays both the JVM's protocol MAP and its generated
+	// interface, and the hierarchy fns follow the MAP reading —
+	// (descendants P) is nil, (derive P ::x) asserts — matching how the
+	// suite exercises protocols; the interface reading survives only
+	// inside a record/type's ancestry.
 	def("class?", func(args ...any) any {
 		switch oneArg("class?", args).(type) {
 		case *ClassRef, *TypeMarker:

@@ -70,14 +70,103 @@ func (p *Protocol) satisfies(typeKey string) bool {
 	return ok
 }
 
+// declare records that typeKey implements the protocol even when no
+// method impl follows — a deftype/defrecord that lists a METHOD-LESS
+// protocol still satisfies it (oracle: clojure 1.12.5, (defprotocol P)
+// (defrecord R [] P) (satisfies? P (->R)) => true; ADR 0039).
+func (p *Protocol) declare(typeKey string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if _, ok := p.impls[typeKey]; !ok {
+		p.impls[typeKey] = map[string]lang.IFn{}
+	}
+}
+
 // TypeMarker is the value bound to the type-name var a deftype/defrecord
 // creates (e.g. `Point`): a handle carrying the fully-qualified type name,
 // so `(extend-type Point ...)` and `(instance? Point x)` can recover the
 // dispatch key. Built-in types have no marker — their name symbol resolves
-// straight to a designator string.
-type TypeMarker struct{ name string }
+// straight to a designator string. Since ADR 0039 it also carries the
+// type's REAL ancestry inputs: its kind ("record"/"type") and the
+// protocol values DECLARED in the defining form (extend-type additions
+// deliberately excluded — on the JVM `extend` never alters the class).
+type TypeMarker struct {
+	name   string
+	kind   string // "record" | "type" | "" (unknown)
+	supers []any  // declared *Protocol values, declaration order
+}
 
 func (t *TypeMarker) String() string { return "#type[" + t.name + "]" }
+
+// interned interface ClassRefs shared by every record/type marker's
+// ancestry (ADR 0039). Each entry is real: the named Go interface is
+// genuinely implemented by pkg/lang's *Record (instance.go) — see the
+// compile-time assertions in protocols_ancestry_test.go — and each is a
+// member of the JVM record class's bases/ancestors (oracle 1.12.5).
+func classRefsOf(names ...string) []any {
+	out := make([]any, 0, len(names))
+	for _, n := range names {
+		out = append(out, lookupClassRef(n))
+	}
+	return out
+}
+
+// typeBases is the marker's DIRECT supers (JVM `bases`: superclass +
+// directly implemented interfaces), typeSupers the transitive set (JVM
+// `supers`). Oracle (clojure 1.12.5, 2026-07-17): for (defrecord R [] P),
+// (parents R) ∩ our table = #{P Object IPersistentMap IRecord IObj} and
+// (ancestors R) adds #{Associative Counted Seqable IMeta
+// IPersistentCollection}; for (deftype T [] P) both are #{P IType Object}.
+func (t *TypeMarker) typeBases() []any {
+	base := append([]any{}, t.supers...)
+	switch t.kind {
+	case "record":
+		return append(base, classRefsOf(
+			"java.lang.Object", "clojure.lang.IRecord",
+			"clojure.lang.IPersistentMap", "clojure.lang.IObj")...)
+	case "type":
+		return append(base, classRefsOf(
+			"clojure.lang.IType", "java.lang.Object")...)
+	}
+	return append(base, classRefsOf("java.lang.Object")...)
+}
+
+func (t *TypeMarker) typeSupers() []any {
+	s := t.typeBases()
+	if t.kind == "record" {
+		s = append(s, classRefsOf(
+			"clojure.lang.Associative", "clojure.lang.Counted",
+			"clojure.lang.Seqable", "clojure.lang.IMeta",
+			"clojure.lang.IPersistentCollection")...)
+	}
+	return s
+}
+
+// typeBasesOf / typeSupersOf answer "the real ancestry of this class
+// value" for the two class kinds cljgo has (ADR 0039): our type markers
+// (protocols + genuinely implemented interfaces + Object) and well-known
+// class refs (flattened Object for concretes, nothing for interfaces).
+// nil for anything else. hierarchies.cljg consumes these via the
+// -type-bases/-type-supers builtins.
+func typeBasesOf(v any) []any {
+	switch x := v.(type) {
+	case *TypeMarker:
+		return x.typeBases()
+	case *ClassRef:
+		return classRefSupers(x)
+	}
+	return nil
+}
+
+func typeSupersOf(v any) []any {
+	switch x := v.(type) {
+	case *TypeMarker:
+		return x.typeSupers()
+	case *ClassRef:
+		return classRefSupers(x)
+	}
+	return nil
+}
 
 // dispatchKey is "the type of v" as a protocol dispatch key. deftype /
 // defrecord instances use their fully-qualified type name; built-in Go
@@ -171,9 +260,45 @@ func (e *Evaluator) internProtocolBuiltins(def func(string, func(...any) any) *l
 		return &Protocol{name: name, methods: methods, impls: map[string]map[string]lang.IFn{}}
 	})
 
-	// (-type-marker qualified-name) -> the value bound to a type's name var.
+	// (-type-marker qualified-name kind declared-protocols-vector) -> the
+	// value bound to a type's name var. kind is "record"/"type"; the
+	// declared protocol values become the marker's real ancestry (ADR
+	// 0039) and each is told the type implements it — so a METHOD-LESS
+	// protocol in a deftype/defrecord still satisfies (JVM-faithful).
 	defPrivate("-type-marker", func(args ...any) any {
-		return &TypeMarker{name: lang.ToString(args[0])}
+		m := &TypeMarker{name: lang.ToString(args[0])}
+		if len(args) > 1 {
+			m.kind = lang.ToString(args[1])
+		}
+		if len(args) > 2 {
+			for _, pv := range seqSlice(args[2]) {
+				p, ok := pv.(*Protocol)
+				if !ok {
+					continue // e.g. a class name in the spec slot — not a protocol
+				}
+				m.supers = append(m.supers, p)
+				p.declare(m.name)
+			}
+		}
+		return m
+	})
+
+	// (-type-bases class) / (-type-supers class) -> a set of the class's
+	// real direct / transitive supers (ADR 0039), nil when it has none or
+	// the value is not a class. The hierarchy fns (hierarchies.cljg) union
+	// these with derive-established relationships, mirroring clojure.core's
+	// parents/ancestors bases/supers branches.
+	defPrivate("-type-bases", func(args ...any) any {
+		if s := typeBasesOf(args[0]); s != nil {
+			return lang.NewSet(s...)
+		}
+		return nil
+	})
+	defPrivate("-type-supers", func(args ...any) any {
+		if s := typeSupersOf(args[0]); s != nil {
+			return lang.NewSet(s...)
+		}
+		return nil
 	})
 
 	// (-qualified-name simple-name) -> "<current-ns>.<simple-name>", the
