@@ -90,9 +90,9 @@ func TestRegexLiteral(t *testing.T) {
 	// Raw pattern capture, no compilation at read time
 	// (design/01-reader.md §4).
 	v := mustRead(t, `#"a+b"`)
-	re, ok := v.(Regex)
+	re, ok := v.(*Regex)
 	if !ok {
-		t.Fatalf(`#"a+b" => %T, want reader.Regex`, v)
+		t.Fatalf(`#"a+b" => %T, want *reader.Regex`, v)
 	}
 	if re.Pattern != "a+b" {
 		t.Errorf("pattern %q, want a+b", re.Pattern)
@@ -100,14 +100,14 @@ func TestRegexLiteral(t *testing.T) {
 	// CLI check: (pr (read-string "#\"a\\\"b\"")) => #"a\"b" — the
 	// backslash escape is kept verbatim in the pattern source.
 	v = mustRead(t, `#"a\"b"`)
-	if p := v.(Regex).Pattern; p != `a\"b` {
+	if p := v.(*Regex).Pattern; p != `a\"b` {
 		t.Errorf("escaped pattern %q, want a\\\"b", p)
 	}
 	if got := lang.PrintString(v); got != `#"a\"b"` {
 		t.Errorf("regex prints %s, want #\"a\\\"b\"", got)
 	}
 	// A Java-only pattern (lookbehind) must still READ fine.
-	if p := mustRead(t, `#"(?<=x)y"`).(Regex).Pattern; p != "(?<=x)y" {
+	if p := mustRead(t, `#"(?<=x)y"`).(*Regex).Pattern; p != "(?<=x)y" {
 		t.Errorf("java-regex pattern %q", p)
 	}
 	// CLI check: "#\"ab" => "EOF while reading regex".

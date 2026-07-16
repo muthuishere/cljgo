@@ -25,7 +25,7 @@ func (e *Evaluator) registerTestBuiltins(defPrivate func(string, func(args ...an
 		if len(args) != 2 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: -re-find?", len(args)))
 		}
-		re, ok := args[0].(reader.Regex)
+		re, ok := args[0].(*reader.Regex)
 		if !ok {
 			panic(fmt.Errorf("-re-find? expects a regex pattern (#\"...\"), got: %s", lang.PrintString(args[0])))
 		}
