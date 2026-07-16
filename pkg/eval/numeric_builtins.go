@@ -103,6 +103,31 @@ func (e *Evaluator) internNumericBuiltins(def func(name string, fn func(args ...
 		}
 	})
 
+	// -math-context: private helper behind the `with-precision` macro
+	// (core.clj) — builds the *lang.MathContext bound to *math-context*
+	// (ADR 0032 follow-on, S16 probes_wp.clj). precision is a Long,
+	// rounding is the rounding-mode name as a string (the macro extracts
+	// it from a bare symbol like UP/HALF_EVEN at macro-expansion time via
+	// `name`, so no java.math.RoundingMode class access is needed here).
+	def("-math-context", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -math-context", len(args)))
+		}
+		precision, ok := args[0].(int64)
+		if !ok {
+			panic(lang.NewIllegalArgumentError("-math-context: precision must be an integer"))
+		}
+		rounding, ok := args[1].(string)
+		if !ok {
+			panic(lang.NewIllegalArgumentError("-math-context: rounding must be a string"))
+		}
+		mc, err := lang.NewMathContext(int(precision), rounding)
+		if err != nil {
+			panic(lang.NewIllegalArgumentError(err.Error()))
+		}
+		return mc
+	})
+
 	// --- Ratio accessors -------------------------------------------------
 	//
 	// numerator/denominator return a BigInteger (*big.Int), matching

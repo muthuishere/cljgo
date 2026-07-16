@@ -1462,6 +1462,38 @@
      `(when-not ~x
         (throw (ex-info (str "Assert failed: " ~message "\n" (pr-str '~x)) {}))))))
 
+;; --- with-precision : *math-context* for BigDecimal arithmetic --------------
+;; ADR 0032 follow-on (S16 items 13-14, spikes/s16-bigdecimal-scaled/
+;; probes_wp.clj — 26 oracle-verified rows, docs/adr/0032-...md). Binds
+;; *math-context* (pkg/lang/var.go) to a MathContext (precision + rounding
+;; mode) for the duration of body; the decimal +/-/*// (pkg/lang/numberops.go
+;; bigDecimalOps) round their exact result to it when bound.
+;;
+;; Usage: (with-precision 10 (/ 1M 3M))
+;; or:    (with-precision 10 :rounding HALF_UP (/ 1M 3M))
+;;
+;; Real Clojure's macro pattern-matches the bare, UNEVALUATED rounding-mode
+;; symbol (UP/DOWN/CEILING/FLOOR/HALF_UP/HALF_DOWN/HALF_EVEN/UNNECESSARY) at
+;; macroexpansion time to build a java.math.RoundingMode; cljgo has no such
+;; class, so `-math-context` (pkg/eval/numeric_builtins.go) takes the
+;; rounding-mode NAME as a plain string instead — `name` on the symbol
+;; already runs at macro-expansion time (this macro's own body), so no
+;; special quoting is needed. `binding` is forced bare via ~'binding for the
+;; same reason as with-out-str above (syntax-quote would otherwise qualify
+;; it to clojure.core/binding, a placeholder Var, instead of the special
+;; form).
+;; oracle: (with-precision 2 (/ 1M 3M)) => 0.33M;
+;; (with-precision 1 :rounding HALF_EVEN (* 2.5M 1M)) => 2M;
+;; (with-precision 1 :rounding UNNECESSARY (* 1.5M 1M)) THREW Rounding necessary
+(defmacro with-precision
+  [precision & exprs]
+  (let [[body rm] (if (= (first exprs) :rounding)
+                    [(nnext exprs) (second exprs)]
+                    [exprs "HALF_UP"])
+        rm-name (if (symbol? rm) (name rm) rm)]
+    `(~'binding [*math-context* (-math-context ~precision ~rm-name)]
+       ~@body)))
+
 ;; --- delay / force / delay? : lazy, memoized single-value promise -----------
 ;; pkg/lang already vendors a Delay type (IDeref + IPending, delay.go); this
 ;; is just the clojure.core surface over it (-make-delay/force/delay? are Go
