@@ -177,14 +177,9 @@ func (e *Evaluator) internNumericBuiltins(def func(name string, fn func(args ...
 		return lang.SubP(oneArg("dec'", args), int64(1))
 	})
 
-	// abs: the tower dispatcher (every Ops.Abs was already vendored — ADR
-	// 0029 cluster E was pure wiring). Oracle 1.12.5: (abs -1) => 1,
-	// (abs -1/5) => 1/5, (abs -123N) => 123N, (abs -123.456M) => 123.456M,
-	// (abs -0.0) => 0.0, (abs ##-Inf) => ##Inf, (abs ##NaN) => ##NaN, and
-	// (abs Long/MIN_VALUE) => Long/MIN_VALUE (2's-complement identity).
-	def("abs", func(args ...any) any {
-		return lang.Abs(oneArg("abs", args))
-	})
+	// abs lives below with the batch-E fns (ADR 0029 cluster E and batch E
+	// implemented it concurrently; the keep-both merge briefly registered it
+	// twice — one definition kept, oracle notes folded in there).
 
 	// --- Unchecked arithmetic (int64 wraps, no overflow check) -----------
 
@@ -386,8 +381,9 @@ func (e *Evaluator) internNumericBuiltins(def func(name string, fn func(args ...
 	// returns x unchanged, matching clojure-test-suite abs.cljc's
 	// `r/min-int r/min-int` case) and NaN (float64Ops.Abs => math.Abs(NaN)
 	// => NaN). Throws on a non-number, matching the JVM ClassCastException.
-	// Oracle (clojure 1.12): (abs -1) => 1; (abs ##NaN) NaN? => true;
-	// (abs nil) throws.
+	// Oracle (clojure 1.12): (abs -1) => 1; (abs -1/5) => 1/5; (abs -123N)
+	// => 123N; (abs -123.456M) => 123.456M; (abs -0.0) => 0.0; (abs ##-Inf)
+	// => ##Inf; (abs ##NaN) NaN? => true; (abs nil) throws.
 	def("abs", func(args ...any) any {
 		x := oneArg("abs", args)
 		if !lang.IsNumber(x) {
