@@ -36,11 +36,11 @@ type Driver struct {
 	// tests inject it directly (no real tty needed).
 	Interactive bool
 
-	ev             *eval.Evaluator
-	in             io.Reader
-	out            io.Writer // results and prompts
-	errOut         io.Writer // error reports
-	v1, v2, v3, ve *lang.Var
+	ev     *eval.Evaluator
+	in     io.Reader
+	out    io.Writer // results and prompts
+	errOut io.Writer // error reports
+	sess   *Session  // the shared session helper (ADR 0031)
 
 	// interrupted is set by Interrupt (SIGINT or a frontend op) and
 	// consumed by Run's loop: the pending unfinished input is discarded.
@@ -70,12 +70,7 @@ type Driver struct {
 // EvalReader/EvalString will be used (e.g. `cljgo run`).
 func New(in io.Reader, out, errOut io.Writer) *Driver {
 	ev := eval.New() // interns the core builtins incl. *1 *2 *3 *e
-	d := &Driver{ev: ev, in: in, out: out, errOut: errOut}
-	find := func(name string) *lang.Var {
-		return lang.NSCore.FindInternedVar(lang.NewSymbol(name))
-	}
-	d.v1, d.v2, d.v3, d.ve = find("*1"), find("*2"), find("*3"), find("*e")
-	return d
+	return &Driver{ev: ev, in: in, out: out, errOut: errOut, sess: NewSession(ev)}
 }
 
 // Evaluator exposes the session's evaluator (tests, future nREPL ops).
@@ -99,10 +94,7 @@ func (d *Driver) Run() error {
 	// The session frame (design/03 §7b): *ns* and the result/error vars
 	// are thread-bound for the session's goroutine; in-ns and the per-eval
 	// set!s below mutate the bindings, and everything reverts on exit.
-	lang.PushThreadBindings(lang.NewMap(
-		lang.VarCurrentNS, d.ev.CurrentNS(),
-		d.v1, nil, d.v2, nil, d.v3, nil, d.ve, nil,
-	))
+	lang.PushThreadBindings(d.sess.Bindings())
 	defer lang.PopThreadBindings()
 
 	// Session journaling (ADR 0016): decide once, per input, and flush at
@@ -298,23 +290,21 @@ func (d *Driver) evalAndPrint(form any, src string) {
 				err = fmt.Errorf("%v", r)
 			}
 			d.journalFailure(ns, src, err)
-			d.ve.Set(err)
+			d.sess.RecordError(err)
 			d.reportEvalError(err)
 		}
 	}()
 	res, err := d.ev.EvalForm(form)
 	if err != nil {
 		d.journalFailure(ns, src, err)
-		d.ve.Set(err)
+		d.sess.RecordError(err)
 		d.reportEvalError(err)
 		return
 	}
 	// Journal BEFORE the result prints (ADR 0016 §3): a crash loses at
 	// most the in-flight form.
 	d.journalSuccess(ns, src)
-	d.v3.Set(d.v2.Deref())
-	d.v2.Set(d.v1.Deref())
-	d.v1.Set(res)
+	d.sess.RecordResult(res)
 	s := lang.PrintString(res) // may panic — recovered above into *e
 	d.outMu.Lock()
 	fmt.Fprintln(d.out, s)

@@ -84,6 +84,7 @@ resolved (90.5%). Run `cljgo suite` to reproduce. Early, moving fast.
 | **M4-v0** | ✅ | Concurrency: `(chan)`/`(chan n)`, `(>! c v)`/`(<! c)`, `(close! c)`, `(go …)` over **real goroutines** — no CPS rewrite |
 | **Result/Option** | ✅ | `ok`/`err`/`just`/`none` + `unwrap`/`and-then`/`map-ok` + `let?`, `#cljgo/ok` literals (ADR 0014) |
 | **Diagnostics** | ✅ | `cljgo check --json` structured records, `cljgo explain <code>` (ADR 0015) |
+| **nREPL** | ✅ | `cljgo nrepl` — babashka's 13-op surface, per-session `*ns*`/`*1`/`*out*` streaming, `.nrepl-port`, `doc` (ADR 0031) |
 | Next | ◦ | Third-party modules via `deps.edn`, `alts!`/`timeout`/`select`, C FFI (purego), generics, self-hosted `core.clj` |
 
 ### Try it
@@ -107,6 +108,10 @@ $ ./hello                    # byte-identical output
 The Go ecosystem is the standard library: `(require-go '[net/http :as http])`
 and call it — no bindings, no wrappers, the Go toolchain is the classpath.
 
+Editor REPL: `cljgo nrepl`, then connect Calva ("Connect to a running
+REPL") or CIDER (`cider-connect-clj`) to the printed port — `.nrepl-port`
+makes it auto-discoverable.
+
 ## Development
 
 Authority chain: `docs/adr/` (decisions) › `design/00-architecture.md`
@@ -123,7 +128,7 @@ go build ./... && go vet ./... && gofmt -l pkg cmd conformance && go test ./...
 ```
 pkg/lang     runtime (persistent data structures, vendored from Glojure)
 pkg/reader   pkg/ast   pkg/analyzer   pkg/eval   pkg/repl   pkg/emit
-cmd/cljgo    CLI (repl · run · build · version)
+cmd/cljgo    CLI (repl · nrepl · run · build · version)
 core/        core.clj — Clojure-in-Clojure
 conformance/ dual-harness tests (eval + compiled), oracle-cited vs JVM Clojure
 design/      architecture + component design docs

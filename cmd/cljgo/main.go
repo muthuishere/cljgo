@@ -1,6 +1,7 @@
 // Command cljgo is the CLI entry point (design/00 §3):
 //
 //	cljgo repl              start a terminal REPL on stdin/stdout
+//	cljgo nrepl [--port N]  start an nREPL server for editors (ADR 0031)
 //	cljgo run <file.clj>    read + evaluate a file
 //	cljgo build <file.clj>  AOT-compile a file to a native binary (M2)
 //	cljgo version           print the version string (also --version/-version)
@@ -49,6 +50,8 @@ func run(args []string) int {
 	switch args[0] {
 	case "repl":
 		return runREPL()
+	case "nrepl":
+		return runNREPL(args[1:])
 	case "run":
 		if len(args) != 2 {
 			fmt.Fprintln(os.Stderr, "usage: cljgo run <file.clj>")
@@ -225,6 +228,7 @@ func usage(w io.Writer) {
 
 usage:
   cljgo repl                       start a REPL
+  cljgo nrepl [--port N]           start an nREPL server for editors (writes .nrepl-port; ADR 0031)
   cljgo run <file.clj>             evaluate a file
   cljgo build [-o out] <file.clj>  compile a file to a native binary
   cljgo suite [--dir <path>]       run the jank clojure-test-suite, print a scoreboard (ADR 0022)
