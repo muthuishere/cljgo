@@ -688,8 +688,13 @@
 (defn filterv [pred coll] (vec (filter pred coll)))
 
 ;; oracle: (run! println [1 2]) prints, returns nil.
+;; oracle: (let [calls (atom 0)] (run! (fn [_] (swap! calls inc) (reduced :done)) (range 2)) @calls) => 1
 (defn run! [proc coll]
-  (reduce (fn [_ x] (proc x) nil) nil coll)
+  ;; The reducing fn must return proc's result (not an unconditional nil):
+  ;; when proc returns a (reduced x), reduce needs to SEE that Reduced to
+  ;; short-circuit — discarding it here (as an earlier version did) hides
+  ;; early termination and makes run! always walk the whole collection.
+  (reduce (fn [_ x] (proc x)) nil coll)
   nil)
 
 ;; --- Take / drop ----------------------------------------------------------
@@ -728,10 +733,14 @@
             (swap! nv dec)
             (if (pos? n) result (rf result input))))))))
   ([n coll]
-   (loop [n n s (seq coll)]
-     (if (and (pos? n) s)
-       (recur (dec n) (next s))
-       s))))
+   ;; oracle: (= () (drop 5 nil)) => true — same lazy-seq-vs-bare-nil equiv
+   ;; gotcha as drop-while above: an eager nil return here would make
+   ;; (= () (drop n coll)) false whenever coll is exhausted.
+   (lazy-seq
+    (loop [n n s (seq coll)]
+      (if (and (pos? n) s)
+        (recur (dec n) (next s))
+        s)))))
 
 ;; nthrest: like drop, but returns coll itself (not (seq coll)) for n <= 0,
 ;; and () rather than nil once the seq is exhausted — the () vs nil
@@ -781,10 +790,16 @@
             result
             (do (reset! dv false) (rf result input))))))))
   ([pred coll]
-   (loop [s (seq coll)]
-     (if (and s (pred (first s)))
-       (recur (next s))
-       s))))
+   ;; oracle: (= () (drop-while nil? nil)) => true — real Clojure wraps this in
+   ;; lazy-seq, so the empty case returns a LazySeq that seqs to nil, which
+   ;; equiv's true against '() (Sequential-with-nil-seq, not bare nil: bare
+   ;; nil is NOT = '() — that's a classic gotcha). An eager nil return would
+   ;; make (= () (drop-while ...)) false on empty input.
+   (lazy-seq
+    (loop [s (seq coll)]
+      (if (and s (pred (first s)))
+        (recur (next s))
+        s)))))
 
 ;; oracle: (take-nth 2 (range 10)) => (0 2 4 6 8)
 ;; oracle: (into [] (take-nth 2) (range 10)) => [0 2 4 6 8]; negative n acts
@@ -1048,16 +1063,19 @@
         true))))
 
 ;; oracle: ((some-fn even? neg?) 3) => false
-(defn some-fn [& preds]
-  (fn [& args]
-    (loop [ps (seq preds)]
-      (if ps
-        (let [r (loop [as (seq args)]
-                  (if as
-                    (or ((first ps) (first as)) (recur (next as)))
-                    false))]
-          (if r r (recur (next ps))))
-        false))))
+;; oracle: (some-fn) => ArityException (real Clojure's some-fn has no 0-arg
+;; arity — [p] is the minimum); (some-fn even?) 2 => true
+(defn some-fn [p & preds]
+  (let [preds (cons p preds)]
+    (fn [& args]
+      (loop [ps (seq preds)]
+        (if ps
+          (let [r (loop [as (seq args)]
+                    (if as
+                      (or ((first ps) (first as)) (recur (next as)))
+                      false))]
+            (if r r (recur (next ps))))
+          false)))))
 
 ;; --- Predicates / reducers ------------------------------------------------
 
@@ -1087,11 +1105,24 @@
    (reduce (fn [a b] (if (> (k a) (k b)) a b)) (if (> (k x) (k y)) x y) more)))
 
 ;; oracle: (min-key count "a" "ccc" "bb") => "a"
+;; oracle: (min-key identity ##-Inf 1 ##NaN) => ##-Inf;
+;; (min-key identity ##-Inf ##NaN 1) => ##NaN — NOT the naive fold with `<`
+;; (which would land on ##NaN in the first case too): real Clojure's
+;; 3+-arity walks the rest with `<=`, not `<` (clojure.repl/source
+;; min-key), so once NaN's `<=` comparisons all fail, the loop KEEPS the
+;; running winner instead of falling through to the new element.
 (defn min-key
   ([k x] x)
   ([k x y] (if (< (k x) (k y)) x y))
   ([k x y & more]
-   (reduce (fn [a b] (if (< (k a) (k b)) a b)) (if (< (k x) (k y)) x y) more)))
+   (let [kx (k x) ky (k y)]
+     (loop [v (if (< kx ky) x y) kv (if (< kx ky) kx ky) more more]
+       (if more
+         (let [w (first more) kw (k w)]
+           (if (<= kw kv)
+             (recur w kw (next more))
+             (recur v kv (next more))))
+         v)))))
 
 ;; --- Iteration macros -----------------------------------------------------
 
