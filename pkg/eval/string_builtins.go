@@ -42,10 +42,10 @@ func (e *Evaluator) internStringBuiltins(
 	def("re-pattern", func(args ...any) any {
 		a := oneArg("re-pattern", args)
 		switch v := a.(type) {
-		case reader.Regex:
+		case *reader.Regex:
 			return v
 		case string:
-			return reader.Regex{Pattern: v}
+			return &reader.Regex{Pattern: v}
 		default:
 			panic(fmt.Errorf("re-pattern expects a string or pattern, got: %s", lang.PrintString(a)))
 		}
@@ -136,13 +136,18 @@ func (e *Evaluator) internStringBuiltins(
 	})
 
 	// subs: clojure.core/subs — (subs s start) / (subs s start end).
-	// Byte-offset substring (ASCII-equivalent to JVM's UTF-16 indices).
-	// Out-of-range panics like Java's String.substring.
+	// Index by RUNE, not byte: JVM's String.substring indexes by UTF-16 code
+	// unit, which for any BMP character (everything except astral/surrogate-
+	// pair codepoints) coincides with the rune count — but NOT the UTF-8
+	// byte count a bare `s[start:end]` byte-slice would use. A non-ASCII
+	// BMP char (e.g. U+058E, 2 UTF-8 bytes / 1 rune / 1 UTF-16 unit) made
+	// byte-slicing cut mid-character. Out-of-range panics like Java's
+	// String.substring. Oracle: (subs "ab֎de" 0 5) => "ab֎de".
 	def("subs", func(args ...any) any {
 		if len(args) != 2 && len(args) != 3 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: subs", len(args)))
 		}
-		s := strArg("subs", args[0])
+		s := []rune(strArg("subs", args[0]))
 		start, ok := lang.AsInt(args[1])
 		if !ok {
 			panic(fmt.Errorf("subs: start index must be an integer, got: %s", lang.PrintString(args[1])))
@@ -157,7 +162,7 @@ func (e *Evaluator) internStringBuiltins(
 		if start < 0 || end > len(s) || start > end {
 			panic(fmt.Errorf("String index out of range: %d", start))
 		}
-		return s[start:end]
+		return string(s[start:end])
 	})
 
 	// --- clojure.string host primitives (private) -------------------
@@ -177,13 +182,15 @@ func (e *Evaluator) internStringBuiltins(
 		return string(unicode.ToUpper(r[0])) + strings.ToLower(string(r[1:]))
 	})
 	defPrivate("-str-trim", func(args ...any) any {
-		return strings.TrimSpace(strArg("trim", oneArg("trim", args)))
+		s := strArg("trim", oneArg("trim", args))
+		s = strings.TrimLeftFunc(s, javaIsWhitespace)
+		return strings.TrimRightFunc(s, javaIsWhitespace)
 	})
 	defPrivate("-str-triml", func(args ...any) any {
-		return strings.TrimLeftFunc(strArg("triml", oneArg("triml", args)), unicode.IsSpace)
+		return strings.TrimLeftFunc(strArg("triml", oneArg("triml", args)), javaIsWhitespace)
 	})
 	defPrivate("-str-trimr", func(args ...any) any {
-		return strings.TrimRightFunc(strArg("trimr", oneArg("trimr", args)), unicode.IsSpace)
+		return strings.TrimRightFunc(strArg("trimr", oneArg("trimr", args)), javaIsWhitespace)
 	})
 	defPrivate("-str-trim-newline", func(args ...any) any {
 		return strings.TrimRight(strArg("trim-newline", oneArg("trim-newline", args)), "\n\r")
@@ -205,7 +212,7 @@ func (e *Evaluator) internStringBuiltins(
 			panic(fmt.Errorf("blank? expects a string, got: %s", lang.PrintString(a)))
 		}
 		for _, r := range s {
-			if !unicode.IsSpace(r) {
+			if !javaIsWhitespace(r) {
 				return false
 			}
 		}
@@ -281,13 +288,39 @@ func matchResult(m *lang.RegexpMatcher) any {
 // compiled RE2 regexp via the shared cache.
 func compilePattern(op string, a any) *regexp.Regexp {
 	switch v := a.(type) {
-	case reader.Regex:
+	case *reader.Regex:
 		return lang.CachedCompileRegexp(v.Pattern)
 	case string:
 		return lang.CachedCompileRegexp(v)
 	default:
 		panic(fmt.Errorf("%s expects a pattern (#\"...\"), got: %s", op, lang.PrintString(a)))
 	}
+}
+
+// javaIsWhitespace ports java.lang.Character.isWhitespace's definition,
+// which clojure.string/blank?, trim, triml, and trimr rely on (they're all
+// specified in terms of Character.isWhitespace on the JVM). It differs from
+// Go's unicode.IsSpace specifically on the non-breaking space family
+// (U+00A0 NBSP, U+2007 FIGURE SPACE, U+202F NARROW NBSP): those have the
+// Unicode White_Space property (so unicode.IsSpace says true) but Java's
+// isWhitespace excludes them because they render as non-breaking spaces on
+// the JVM. Otherwise: any Zs/Zl/Zp category rune, or one of the ASCII
+// tab/newline/vtab/formfeed/CR/file-group-record-unit-separator controls.
+// Oracle: (Character/isWhitespace (char 0x2007)) => false;
+// (clojure.string/blank? " ") => false (clojure/core_test/blank_qmark test file).
+func javaIsWhitespace(r rune) bool {
+	switch r {
+	case ' ', ' ', ' ':
+		return false
+	}
+	if unicode.Is(unicode.Zs, r) || unicode.Is(unicode.Zl, r) || unicode.Is(unicode.Zp, r) {
+		return true
+	}
+	switch r {
+	case '\t', '\n', '\v', '\f', '\r', 0x1C, 0x1D, 0x1E, 0x1F:
+		return true
+	}
+	return false
 }
 
 // strArg requires a string argument.
@@ -439,7 +472,7 @@ func replaceImpl(op string, args []any, first bool) any {
 	}
 	s := strArg(op, args[0])
 	switch match := args[1].(type) {
-	case reader.Regex:
+	case *reader.Regex:
 		re := lang.CachedCompileRegexp(match.Pattern)
 		repl := strArg(op, args[2])
 		if !first {

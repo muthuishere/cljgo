@@ -148,3 +148,17 @@ shadowing the promoted methods (oracle: all three throw on real Clojure).
 - Acceptance: `conformance/tests/contains-on-string-and-transient.clj`
   covers the read-only interface (`contains?`) still working on transients;
   the throwing cases are exercised directly by the suite file above.
+## `IsNil` typed-nil fix (batch/fail-files, ADR 0022, 2026-07-16, `truthiness.go`)
+
+`IsNil` only special-cased `reflect.Ptr`, so a boxed nil value of any
+other nillable Go kind (`Func`, `Chan`, `Map`, `Slice`, `Interface`,
+`UnsafePointer`) hit Go's classic typed-nil trap: the `any` wrapping a
+nil `func() interface{}` is `!= nil` at the interface level (it carries
+a type), so `v == nil` was false and the Ptr-only check never fired —
+`IsNil` unconditionally returned `false`. `LazySeq.IsRealized` calls
+`IsNil(s.fn)` (`s.fn` is exactly a `func() interface{}`), so
+`(realized? some-lazy-seq)` was permanently `false` even after the seq
+had been forced (`Delay`/`future`/etc. dodge this because their
+`IsRealized` checks a plain pointer or bool field, not `IsNil` on a
+func). Fixed by switching on every nillable `reflect.Kind`. Acceptance:
+`conformance/tests/lazy-seq-realized-after-force.clj` (dual-harness).

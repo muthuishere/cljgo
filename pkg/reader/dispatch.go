@@ -20,6 +20,15 @@ import (
 // runtime (e.g. via lang.CachedCompileRegexp). pkg/lang has no
 // dedicated regex value type (its printer special-cases
 // *regexp.Regexp only), so the raw-pattern type lives here.
+//
+// Always handled as *Regex (a pointer), never a bare Regex value.
+// Two separately-read #"same text" literals must NOT be `=` to each
+// other — real Clojure's Pattern has no .equals override, so it's
+// identity-only; only `(let [r ...] (= r r))` is true. A plain struct
+// value would compare `==` true field-by-field for any two literals
+// with the same pattern text (Go struct equality), which is wrong —
+// so identity is carried via the pointer, matching Pattern semantics.
+// Oracle: (= #"my regex" #"my regex") => false; (let [r #"x"] (= r r)) => true.
 type Regex struct {
 	Pattern string
 }
@@ -27,7 +36,7 @@ type Regex struct {
 // String prints like Clojure's pr on a Pattern: #"pattern" with the
 // pattern source verbatim. CLI check: (pr (read-string "#\"a\\\"b\""))
 // => #"a\"b" (the backslash-escape is preserved, not re-escaped).
-func (re Regex) String() string {
+func (re *Regex) String() string {
 	return `#"` + re.Pattern + `"`
 }
 
@@ -41,7 +50,7 @@ func (r *Reader) readRegex(start Position) (any, error) {
 			return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w regex", ErrIncomplete)}
 		}
 		if c == '"' {
-			return Regex{Pattern: b.String()}, nil
+			return &Regex{Pattern: b.String()}, nil
 		}
 		b.WriteRune(c)
 		if c == '\\' {
