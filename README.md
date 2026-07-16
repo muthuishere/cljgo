@@ -25,16 +25,20 @@ Or grab a prebuilt binary for your platform from
 (macOS/Linux/Windows, amd64 + arm64).
 
 `cljgo repl`, `cljgo run` and Go interop work from the binary alone, with no Go
-toolchain installed. **`cljgo build` additionally needs the Go toolchain and a
-checkout of this repo** — the generated module `replace`s the runtime to a local
-source tree, so point `CLJGO_SRC` at your clone or run inside it:
+toolchain installed. **`cljgo build` additionally needs the Go toolchain.**
+From v0.2.0, that is the whole story: a release binary pins the published
+runtime module in the generated go.mod
+(`require github.com/muthuishere/cljgo v<version>`, ADR 0028), and the first
+build fetches it from the Go module proxy once per machine (~1 MB, a few
+seconds).
+
+v0.1.0 binaries predate that and still need a checkout of this repo — their
+generated module `replace`s the runtime to a local source tree, so point
+`CLJGO_SRC` at your clone or run inside it:
 
 ```bash
 git clone https://github.com/muthuishere/cljgo && export CLJGO_SRC=$PWD/cljgo
 ```
-
-This is a known v0 limitation (ADR 0013): publishing the runtime as a real Go
-module retires it, and `cljgo build` then needs only the toolchain.
 
 ```
 $ cljgo --version
