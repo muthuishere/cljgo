@@ -184,8 +184,29 @@ a real Clojure program.
 
 So AOT-compiling `core.clj` is not a binary-size cleanup with a startup bonus,
 which is how ADR 0023 framed it. It is the **top performance lever in the
-tree**, and it is the same edge that owns startup, RSS and size. Tracked as
-spike S19/S20.
+tree**, and it is the same edge that owns startup, RSS and size.
+
+How much it buys is measured, not assumed (spike S20). Compiling `reduce`'s
+algorithm instead of interpreting it is **5.83×**; with no interpreted core in
+the hot loop at all, `reduce` goes from 674 ms to 96 ms — closing **~86%** of
+the gap:
+
+| cause of the 16.5× `reduce` gap | share | fix |
+|---|---|---|
+| `clojure.core` interpreted | ~86% | AOT-core |
+| `core.clj` boot | ~5% | same edge |
+| `pkg/lang` — boxing, `IFn` dispatch, seqs | ~4% | doc 04 §5 ladder |
+
+That still lands at ~2.26× of let-go, **not parity** — a 7× improvement that
+converts a catastrophic loss into a respectable one. Parity needs the
+performance ladder as well. And it is a milestone, not a patch: multi-namespace
+emission doesn't exist yet and is a hard prerequisite, and the linker win is
+all-or-nothing (a half-migrated core still links the interpreter and measures
+as zero).
+
+Spikes [S19](spikes/s19-aot-core-perf/VERDICT.md) and
+[S20](spikes/s20-aot-core-prize/VERDICT.md) have the full evidence; ADR 0037
+is reserved for the decision.
 
 Boot got 8.9× faster in v0.2.0 (211 ms → 23.7 ms) by replacing a
 stack-scraping goroutine-ID lookup that was burning 73% of boot CPU with a
