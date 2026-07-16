@@ -1,0 +1,8 @@
+  [main] THREW-DIFF  bigdec nil                   oracle="THREW:Cannot invoke \"String.toCharArray()\" because \"val\" is null" proto="THREW:cannot coerce nil to BigDecimal"
+  [main] THREW-DIFF  bigdec str empty             oracle="THREW:" proto="THREW:empty string"
+  [main] THREW-DIFF  bigdec true                  oracle="THREW:No matching ctor found for class java.math.BigDecimal" proto="THREW:cannot coerce Boolean to BigDecimal"
+  [main] THREW-DIFF  bigdec kw                    oracle="THREW:No matching ctor found for class java.math.BigDecimal" proto="THREW:cannot coerce Keyword to BigDecimal"
+
+main corpus: 133/133 match
+with-precision corpus: 26/26 match
+TOTAL: 159/159 (100.0%)

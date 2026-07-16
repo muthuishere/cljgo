@@ -1,0 +1,49 @@
+# SPIKE S18 (spikes/s18-ubuntu-boot-anomaly/): the diagnostic instrument for
+# ADR 0024's open question — why does ubuntu-latest boot ~20x slower than
+# local while macos-latest is only ~2x? workflow_dispatch ONLY: this never
+# runs on push/PR, it exists to be triggered on demand for a host-vs-host
+# benchmark comparison. Kept as a permanent diagnostic tool after the spike
+# closes (ADR 0027 exempts this file — everything else lives in the spike
+# dir).
+name: Boot benchmark (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    name: bench (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: BenchmarkBoot -benchmem (5 runs)
+        run: go test -bench=BenchmarkBoot -benchmem -count=5 -run '^$' ./pkg/eval/ | tee bench-output.txt
+
+      - name: TestBootUnderBudget -v
+        run: go test -run TestBootUnderBudget -v ./pkg/eval/ | tee -a bench-output.txt
+        env:
+          CLJGO_BOOT_BUDGET: 10s
+
+      - name: uname / nproc / meminfo (host fingerprint)
+        run: |
+          uname -a | tee -a bench-output.txt
+          (nproc || sysctl -n hw.ncpu) | tee -a bench-output.txt
+          go env GOMAXPROCS GOARCH GOOS | tee -a bench-output.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boot-bench-${{ matrix.os }}
+          path: bench-output.txt
