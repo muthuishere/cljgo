@@ -177,6 +177,15 @@ func (e *Evaluator) internNumericBuiltins(def func(name string, fn func(args ...
 		return lang.SubP(oneArg("dec'", args), int64(1))
 	})
 
+	// abs: the tower dispatcher (every Ops.Abs was already vendored — ADR
+	// 0029 cluster E was pure wiring). Oracle 1.12.5: (abs -1) => 1,
+	// (abs -1/5) => 1/5, (abs -123N) => 123N, (abs -123.456M) => 123.456M,
+	// (abs -0.0) => 0.0, (abs ##-Inf) => ##Inf, (abs ##NaN) => ##NaN, and
+	// (abs Long/MIN_VALUE) => Long/MIN_VALUE (2's-complement identity).
+	def("abs", func(args ...any) any {
+		return lang.Abs(oneArg("abs", args))
+	})
+
 	// --- Unchecked arithmetic (int64 wraps, no overflow check) -----------
 
 	def("unchecked-add", func(args ...any) any {

@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/big"
 	"reflect"
+	"strconv"
 )
 
 type Category int
@@ -641,20 +642,46 @@ func (o float64Ops) UncheckedMultiply(x, y any) any {
 func (o float64Ops) Divide(x, y any) any {
 	return AsFloat64(x) / AsFloat64(y)
 }
+
+// Quotient mirrors JVM clojure.lang.Numbers.quotient(double, double)
+// (oracle 1.12.5, ADR 0029 cluster A): 0.0 divisor throws "Divide by
+// zero"; a quotient outside int64 range that is Inf/NaN throws
+// "Infinite or NaN" (the JVM's `new BigDecimal(double)` ctor); a finite
+// huge quotient comes back as a double via big-integer truncation
+// ((quot 1e300 1.0) => 1.0E300, not a BigDecimal).
 func (o float64Ops) Quotient(x, y any) any {
 	xf := AsFloat64(x)
 	yf := AsFloat64(y)
-	if IsZero(yf) {
-		panic(NewArithmeticError("divide by zero"))
+	if yf == 0 {
+		panic(NewArithmeticError("Divide by zero"))
 	}
 	q := xf / yf
 	if q <= math.MaxInt64 && q >= math.MinInt64 {
 		return float64(int64(q))
 	}
-	return AsBigDecimal(AsBigInt(q))
+	bq := bigIntFromFloat64(q) // panics "Infinite or NaN" on Inf/NaN, as JVM
+	f, _ := new(big.Float).SetInt(bq.ToBigInteger()).Float64()
+	return f
 }
+
+// Remainder mirrors JVM clojure.lang.Numbers.remainder(double, double)
+// (oracle 1.12.5, ADR 0029 cluster A) — NOT math.Mod: 0.0 divisor and
+// Inf/NaN quotients throw exactly like Quotient, and the result is
+// x - trunc(x/y)*y in double arithmetic ((rem 1 ##Inf) => ##NaN because
+// 0*Inf is NaN, matching the JVM).
 func (o float64Ops) Remainder(x, y any) any {
-	return math.Mod(AsFloat64(x), AsFloat64(y))
+	xf := AsFloat64(x)
+	yf := AsFloat64(y)
+	if yf == 0 {
+		panic(NewArithmeticError("Divide by zero"))
+	}
+	q := xf / yf
+	if q <= math.MaxInt64 && q >= math.MinInt64 {
+		return xf - float64(int64(q))*yf
+	}
+	bq := bigIntFromFloat64(q) // panics "Infinite or NaN" on Inf/NaN, as JVM
+	f, _ := new(big.Float).SetInt(bq.ToBigInteger()).Float64()
+	return xf - f*yf
 }
 func (o float64Ops) LT(x, y any) bool {
 	return AsFloat64(x) < AsFloat64(y)
@@ -841,9 +868,9 @@ func AsBigInt(x any) *BigInt {
 	case uint64:
 		return NewBigIntFromInt64(int64(x))
 	case float32:
-		return NewBigIntFromInt64(int64(x))
+		return bigIntFromFloat64(float64(x))
 	case float64:
-		return NewBigIntFromInt64(int64(x))
+		return bigIntFromFloat64(x)
 	case *BigInt:
 		return x
 	case *big.Int:
@@ -851,6 +878,26 @@ func AsBigInt(x any) *BigInt {
 	default:
 		panic(fmt.Errorf("cannot convert %T to BigInt", x))
 	}
+}
+
+// bigIntFromFloat64 converts a double to a BigInt the way the JVM does
+// (oracle 1.12.5, ADR 0029 cluster B): clojure.core/bigint routes doubles
+// through BigDecimal.valueOf(double) — Double.toString's shortest
+// round-trip DECIMAL representation, truncated toward zero — so
+// (bigint 4.611686018427388E18) is 4611686018427388000N, not the exact
+// binary value 4611686018427387904N, and (bigint 1.7976931348623157e308)
+// is the full 309-digit integer, never a saturating int64 cast. Inf/NaN
+// throw "Infinite or NaN" (java.lang.NumberFormatException extends
+// IllegalArgumentException, hence the error type).
+func bigIntFromFloat64(x float64) *BigInt {
+	if math.IsInf(x, 0) || math.IsNaN(x) {
+		panic(NewIllegalArgumentError("Infinite or NaN"))
+	}
+	r, ok := new(big.Rat).SetString(strconv.FormatFloat(x, 'E', -1, 64))
+	if !ok {
+		panic(fmt.Errorf("cannot convert %v to BigInt", x))
+	}
+	return NewBigIntFromGoBigInt(new(big.Int).Quo(r.Num(), r.Denom()))
 }
 
 func AsRatio(x any) *Ratio {
