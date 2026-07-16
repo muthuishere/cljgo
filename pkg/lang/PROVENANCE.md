@@ -162,3 +162,40 @@ had been forced (`Delay`/`future`/etc. dodge this because their
 `IsRealized` checks a plain pointer or bool field, not `IsNil` on a
 func). Fixed by switching on every nillable `reflect.Kind`. Acceptance:
 `conformance/tests/lazy-seq-realized-after-force.clj` (dual-harness).
+
+## goid fast path (ADR 0034, 2026-07-16, `internal/goid/`)
+
+Evidence: spike S18 (spikes/s18-ubuntu-boot-anomaly/VERDICT.md) — the
+vendored `goid.Get()` allocated a 32-byte buffer, captured a full
+`runtime.Stack()` trace, and text-parsed "goroutine N" out of it on
+EVERY dynamic-var deref (`Var.getDynamicBinding`), measuring 72.85% of
+`BenchmarkBoot` CPU (`CurrentNS()` derefs the dynamic `*ns*` on nearly
+every analyzer/eval step).
+
+- Upstream's single-file stack-parse became the shared `getSlow()`
+  fallback (`goid.go`, unchanged logic). New fast path
+  (`goid_fast.go` + `getg_{amd64,arm64}.s`, written fresh — zero
+  external deps stands, technique per petermattis/goid): a NOSPLIT
+  assembly `getg()` returns the current `*g` (dedicated `g` register on
+  arm64, `(TLS)` slot on amd64) and Go code reads the `goid uint64`
+  field at an offset the compiler derives from `gPrefix`, a
+  field-for-field mirror of `runtime.g`'s leading fields transcribed
+  from Go 1.26's runtime2.go (verified against go1.26.3 source).
+- Compile-time selection: fast path gated
+  `(amd64 || arm64) && go1.26 && !go1.27`; everything else builds
+  `goid_fallback.go` (`Get = getSlow`). Defense in depth: `init()`
+  cross-checks the fast read against the stack-parse oracle once at
+  package load and panics on mismatch — a wrong offset can never
+  silently mis-key dynamic bindings.
+- Measured (Apple M5 Pro, go1.26.3, darwin/arm64, count=5):
+  `BenchmarkGoidGet` 1231ns/32B/1alloc → **0.46ns/0B/0allocs**
+  (~2600×); `BenchmarkBoot` 211.0ms/472.4k allocs →
+  **23.7ms/463.7k allocs** (**8.9× faster boot**). Post-fix CPU profile
+  shows `getDynamicBinding`/`CurrentNS` gone from the top-25 cumulative
+  list entirely (was 72.85%). ADR 0034's second lever (CurrentNS
+  caching) is therefore NOT taken — no longer measurable.
+- Acceptance: `goid_test.go` — fast-vs-oracle equality on 300
+  concurrent goroutines under `-race`, per-goroutine ID stability and
+  uniqueness; full suite + `-race` on lang/repl/nrepl/eval (binding
+  conveyance + nREPL session isolation) green.
+||||||| de19981
