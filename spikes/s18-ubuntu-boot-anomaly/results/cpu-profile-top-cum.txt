@@ -1,0 +1,33 @@
+File: eval.test
+Type: cpu
+Time: 2026-07-16 20:50:43 IST
+Duration: 4.34s, Total samples = 4.42s (101.85%)
+Showing nodes accounting for 0.01s, 0.23% of 4.42s total
+Dropped 109 nodes (cum <= 0.02s)
+Showing top 25 nodes out of 170
+      flat  flat%   sum%        cum   cum%
+         0     0%     0%      3.79s 85.75%  runtime.systemstack
+     0.01s  0.23%  0.23%      3.34s 75.57%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).analyzeForm
+         0     0%  0.23%      3.34s 75.57%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).analyzeSeq
+         0     0%  0.23%      3.23s 73.08%  github.com/muthuishere/cljgo/pkg/lang.(*Var).Deref
+         0     0%  0.23%      3.22s 72.85%  github.com/muthuishere/cljgo/pkg/lang.(*Var).getDynamicBinding
+         0     0%  0.23%      3.22s 72.85%  github.com/muthuishere/cljgo/pkg/lang.getGoroutineID (inline)
+         0     0%  0.23%      3.22s 72.85%  github.com/muthuishere/cljgo/pkg/lang/internal/goid.Get
+         0     0%  0.23%      3.22s 72.85%  runtime.Stack
+         0     0%  0.23%      3.22s 72.85%  runtime.Stack.func1
+         0     0%  0.23%      3.22s 72.85%  runtime.traceback (inline)
+         0     0%  0.23%      3.22s 72.85%  runtime.traceback1
+         0     0%  0.23%      3.21s 72.62%  github.com/muthuishere/cljgo/pkg/eval.(*Evaluator).CurrentNS (inline)
+         0     0%  0.23%      3.21s 72.62%  runtime.traceback1.func1
+         0     0%  0.23%      3.21s 72.62%  runtime.traceback2
+         0     0%  0.23%      2.83s 64.03%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).parseInvoke
+         0     0%  0.23%      2.60s 58.82%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).analyzeBody
+         0     0%  0.23%      2.57s 58.14%  github.com/muthuishere/cljgo/pkg/eval.(*Evaluator).resolveVar
+         0     0%  0.23%      2.23s 50.45%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).parseFnMethod
+         0     0%  0.23%      2.22s 50.23%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).parseFnStar
+         0     0%  0.23%      2.18s 49.32%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).parseDef
+         0     0%  0.23%      2.11s 47.74%  github.com/muthuishere/cljgo/pkg/eval.New
+         0     0%  0.23%      2.05s 46.38%  github.com/muthuishere/cljgo/pkg/eval.(*Evaluator).EvalForm
+         0     0%  0.23%      2.04s 46.15%  github.com/muthuishere/cljgo/pkg/eval_test.BenchmarkBoot
+         0     0%  0.23%      2.02s 45.70%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).Analyze (inline)
+         0     0%  0.23%      2.01s 45.48%  testing.(*B).runN

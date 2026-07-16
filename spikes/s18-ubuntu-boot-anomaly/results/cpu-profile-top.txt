@@ -1,0 +1,28 @@
+File: eval.test
+Type: cpu
+Time: 2026-07-16 20:50:43 IST
+Duration: 4.34s, Total samples = 4420ms (101.85%)
+Showing nodes accounting for 3550ms, 80.32% of 4420ms total
+Dropped 109 nodes (cum <= 22.10ms)
+Showing top 20 nodes out of 170
+      flat  flat%   sum%        cum   cum%
+     430ms  9.73%  9.73%      740ms 16.74%  runtime.recordForPanic
+     360ms  8.14% 17.87%      450ms 10.18%  runtime.step
+     260ms  5.88% 23.76%     1050ms 23.76%  runtime.gwrite
+     250ms  5.66% 29.41%      250ms  5.66%  runtime.memmove
+     240ms  5.43% 34.84%      850ms 19.23%  runtime.pcvalue
+     230ms  5.20% 40.05%      350ms  7.92%  runtime.lock2
+     230ms  5.20% 45.25%      460ms 10.41%  runtime.printlock
+     190ms  4.30% 49.55%      390ms  8.82%  runtime.printhexopts
+     190ms  4.30% 53.85%      190ms  4.30%  runtime.pthread_kill
+     180ms  4.07% 57.92%      180ms  4.07%  runtime.pthread_cond_wait
+     180ms  4.07% 61.99%      240ms  5.43%  runtime.unlock2
+     170ms  3.85% 65.84%      170ms  3.85%  runtime.madvise
+     110ms  2.49% 68.33%      110ms  2.49%  runtime.usleep
+     100ms  2.26% 70.59%     1510ms 34.16%  runtime.printArgs
+      90ms  2.04% 72.62%       90ms  2.04%  internal/bytealg.IndexByteString
+      90ms  2.04% 74.66%       90ms  2.04%  runtime.readvarint (inline)
+      80ms  1.81% 76.47%       80ms  1.81%  runtime.(*moduledata).textAddr
+      70ms  1.58% 78.05%      170ms  3.85%  runtime.mallocgcSmallScanNoHeader
+      50ms  1.13% 79.19%      870ms 19.68%  runtime.printstring
+      50ms  1.13% 80.32%      290ms  6.56%  runtime.printunlock (partial-inline)

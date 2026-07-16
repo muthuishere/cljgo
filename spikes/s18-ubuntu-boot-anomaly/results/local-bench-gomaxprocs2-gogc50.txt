@@ -1,0 +1,9 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/muthuishere/cljgo/pkg/eval
+cpu: Apple M5 Pro
+BenchmarkBoot-2   	       5	 218965883 ns/op	28441116 B/op	  472384 allocs/op
+BenchmarkBoot-2   	       5	 219612683 ns/op	28448638 B/op	  472409 allocs/op
+BenchmarkBoot-2   	       5	 218379133 ns/op	28434491 B/op	  472417 allocs/op
+PASS
+ok  	github.com/muthuishere/cljgo/pkg/eval	6.804s

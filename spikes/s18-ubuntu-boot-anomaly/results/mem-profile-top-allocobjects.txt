@@ -1,0 +1,27 @@
+File: eval.test
+Type: alloc_objects
+Time: 2026-07-16 20:50:48 IST
+Showing nodes accounting for 8618357, 84.13% of 10243491 total
+Dropped 98 nodes (cum <= 51217)
+Showing top 20 nodes out of 114
+      flat  flat%   sum%        cum   cum%
+   1842578 17.99% 17.99%    1842578 17.99%  github.com/muthuishere/cljgo/pkg/lang.(*Map).clone (inline)
+   1572864 15.35% 33.34%    5049817 49.30%  github.com/muthuishere/cljgo/pkg/reader.(*Reader).annotate
+    881397  8.60% 41.95%    2723975 26.59%  github.com/muthuishere/cljgo/pkg/lang.(*Map).Assoc
+    578904  5.65% 47.60%    1812282 17.69%  github.com/muthuishere/cljgo/pkg/eval.(*Evaluator).Eval
+    453299  4.43% 52.02%     524159  5.12%  github.com/muthuishere/cljgo/pkg/lang.NewMap
+    442372  4.32% 56.34%     442372  4.32%  github.com/muthuishere/cljgo/pkg/lang.NewList (inline)
+    371378  3.63% 59.97%     371378  3.63%  github.com/muthuishere/cljgo/pkg/eval.(*Scope).Push (inline)
+    344067  3.36% 63.33%     350218  3.42%  github.com/muthuishere/cljgo/pkg/lang.NewSymbol
+    290816  2.84% 66.17%    6188091 60.41%  github.com/muthuishere/cljgo/pkg/reader.(*Reader).readDelimited
+    240302  2.35% 68.51%     374369  3.65%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).analyzeSymbol
+    212997  2.08% 70.59%     212997  2.08%  github.com/muthuishere/cljgo/pkg/lang.(*Symbol).WithMeta
+    212993  2.08% 72.67%    1085323 10.60%  github.com/muthuishere/cljgo/pkg/analyzer.(*Analyzer).parseInvoke
+    200209  1.95% 74.62%     200209  1.95%  github.com/muthuishere/cljgo/pkg/eval.(*Scope).Define (inline)
+    196611  1.92% 76.54%     216984  2.12%  regexp.(*Regexp).backtrack
+    152922  1.49% 78.04%     363755  3.55%  regexp.(*Regexp).FindStringSubmatch
+    133120  1.30% 79.34%     133120  1.30%  unicode/utf8.AppendRune (inline)
+    131076  1.28% 80.62%     131076  1.28%  github.com/muthuishere/cljgo/pkg/lang.NewMapEntry (inline)
+    131072  1.28% 81.90%     131072  1.28%  github.com/muthuishere/cljgo/pkg/lang/internal/goid.Get
+    114691  1.12% 83.02%     121245  1.18%  github.com/muthuishere/cljgo/pkg/lang.newArrayNodeSeq
+    114689  1.12% 84.13%     114689  1.12%  github.com/muthuishere/cljgo/pkg/lang.(*BitmapIndexedNode).find
