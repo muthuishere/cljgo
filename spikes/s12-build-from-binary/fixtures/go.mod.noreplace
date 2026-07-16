@@ -1,0 +1,5 @@
+module cljgo.gen/main
+
+go 1.26
+
+require github.com/muthuishere/cljgo v0.1.0

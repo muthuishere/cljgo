@@ -1,0 +1,5 @@
+# scratch outputs of run.sh — never committed (ADR 0027 / CLAUDE.md)
+scratch/
+*.bin
+hello
+hello-*
