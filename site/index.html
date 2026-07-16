@@ -220,7 +220,7 @@
   .compat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; }
   @media (max-width: 820px) { .compat { grid-template-columns: 1fr; } }
   .bar { height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--fg) 9%, transparent); overflow: hidden; margin: 14px 0 8px; }
-  .bar > i { display: block; height: 100%; width: 66.9%; border-radius: 999px; background: linear-gradient(90deg, var(--green), var(--cyan)); }
+  .bar > i { display: block; height: 100%; width: 89.7%; border-radius: 999px; background: linear-gradient(90deg, var(--green), var(--cyan)); }
   .bignum { font-size: 60px; font-weight: 800; letter-spacing: -.04em; line-height: 1; background: linear-gradient(120deg, var(--green-txt), var(--cyan-txt)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
   /* ── Status table ── */
@@ -306,7 +306,7 @@
       <div class="stats">
         <div class="stat"><div class="v">Zero<span class="u">·</span></div><div class="l">hand-written bindings for any Go module</div></div>
         <div class="stat"><div class="v">2<span class="u">→1</span></div><div class="l">backends, one shared analyzer &amp; AST</div></div>
-        <div class="stat"><div class="v">66.9<span class="u">%</span></div><div class="l">clojure-test-suite passing, climbing</div></div>
+        <div class="stat"><div class="v">89.7<span class="u">%</span></div><div class="l">clojure-test-suite passing, climbing</div></div>
         <div class="stat"><div class="v">any<span class="u"> OS</span></div><div class="l">cross-compiles, no target toolchain</div></div>
       </div>
     </div>
@@ -447,7 +447,7 @@
           </ul>
         </div>
         <div style="text-align:center">
-          <div class="bignum">66.9%</div>
+          <div class="bignum">89.7%</div>
           <div class="bar"><i></i></div>
           <div style="color:var(--fg-soft);font-size:14px"><b style="color:var(--fg)">57 / 242</b> suite files fully passing</div>
         </div>
@@ -555,7 +555,7 @@ hello from cljgo
       <ul class="clean">
         <li><b>build.cljgo</b> — the build is a program, not a data file. <code>(defn build [b] …)</code> defines an artifact/step DAG; <code>cljgo build</code> / <code>build run</code> / <code>test</code> mirror <code>zig build</code>. Replaces deps.edn for the AOT product (ADR 0021).</li>
         <li><b>comptime</b> — Zig-style compile-time value execution alongside Clojure macros. Macros transform <em>syntax</em>; <code>comptime</code> computes <em>values</em> embedded as literals. In the REPL, compile-time == eval-time (ADR 0009).</li>
-        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick with a CI coverage ratchet. Measured <b>162/242 (66.9%)</b> — 74.0% of non-skipped — climbing per batch (ADR 0022).</li>
+        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick with a CI coverage ratchet. Measured <b>217/242 (89.7%)</b> — 90.4% of non-skipped — climbing per batch (ADR 0022).</li>
         <li><b>Cross-compilation</b> — cljgo emits plain Go, so pure-Go + purego programs build for any OS/arch with no target toolchain. <code>--target os/arch</code>, or a matrix per artifact.</li>
       </ul>
     </div>
