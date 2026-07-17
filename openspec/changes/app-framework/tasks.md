@@ -25,6 +25,23 @@
       needs keel.db + password hashing — every generated verb must
       have a same-tier implementation, and T1 has no db verbs.)*
 
+- [x] 0.3 Templates are REAL FILES, embedded, CI-run: the generated app
+      lives at `templates/web/` as runnable source (not Go string
+      literals — a literal is never compiled, never linted, never run,
+      and is unreviewable in a diff); `//go:embed all:web` keeps
+      `cljgo new` offline/zero-install/version-matched (a first-run
+      fetch is disqualifying in the first 15 minutes); the app name is a
+      real default (`newapp`) that the generator renames in contents and
+      path names — ONE substitution, so the template is runnable in
+      place; `--template <name|path>` takes a built-in name or a local
+      directory. `cmd/cljgo/keel_test.go` (generate → `cljgo test` →
+      boot → curl landing page + /health + nREPL re-def) is the
+      anti-rot gate; `cmd/cljgo/templates_test.go` the fast guards.
+      *(Applied 2026-07-17. FOLLOW-UP: `--template <git-url>` — refused
+      with an honest error today; wants a clone step (git binary or a
+      Go client) plus a test story, and half-doing it is worse than the
+      error.)*
+
 ## 1. T1 — server, html, routes, middleware, config
 
 - [x] 1.1 Seed-registry growth: net/http, io, os, time, context

@@ -1,0 +1,3 @@
+;; Optional — enforced because it exists: a violation aborts boot,
+;; naming the key and the layer. Delete this file to go schemaless.
+{[:port] {:type :int :required true :default 3000}}

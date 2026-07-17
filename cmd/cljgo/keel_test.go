@@ -8,6 +8,11 @@
 // generated test passes via `cljgo test`; and a handler re-def over
 // the nREPL WIRE changes the live response (the S15-style wire proof,
 // through the shipped adapter instead of a spike bridge).
+//
+// It is ALSO the proof that templates/web — the real files `cljgo new`
+// generates from — compiles and runs: every gate run generates it, runs
+// its test, boots it, and curls the page, so a template cannot rot
+// without turning this red. Fast guards: templates_test.go.
 package main
 
 import (
