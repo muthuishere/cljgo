@@ -29,6 +29,7 @@ import (
 	"sync/atomic"
 
 	"github.com/muthuishere/cljgo/pkg/eval"
+	"github.com/muthuishere/cljgo/pkg/keel"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
 	"github.com/muthuishere/cljgo/pkg/repl"
@@ -75,7 +76,9 @@ type request struct {
 
 // NewServer boots a fresh evaluator and returns a server fronting it.
 func NewServer() *Server {
-	return &Server{ev: eval.New(), sessions: map[string]*session{}}
+	ev := eval.New()
+	keel.Register(ev) // keel.* namespaces requireable, loaded lazily (ADR 0041)
+	return &Server{ev: ev, sessions: map[string]*session{}}
 }
 
 // Serve accepts nREPL connections until the listener closes.

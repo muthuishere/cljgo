@@ -1,0 +1,428 @@
+;; keel.http — Ring-contract handlers on stdlib net/http (ADR 0041 §4,
+;; openspec app-framework T1). Loaded lazily by pkg/keel's lib provider
+;; on the first (require 'keel.http); before this source evaluates, the
+;; provider interns the private Go host shims it leans on:
+;;
+;;   -serve -request -json-encode -json-decode -form-decode -hmac-sign
+;;   -rand-token -const-eq -b64-encode -b64-decode -now-millis -getenv
+;;   -result-payload
+;;
+;; Handlers are fns of request-map → response-map. Routes are DATA:
+;; [["GET /users/{id}" #'handler] ...] on Go 1.22+ ServeMux pattern
+;; strings — no router of our own. `#'var` handlers deref PER REQUEST
+;; (live REPL web dev); omitting :middleware applies (defaults) — the
+;; safe stack is what you didn't type.
+;; :exclude ok — keel.http/ok is the 200-response helper the golden page
+;; blesses ((http/ok ...)); clojure.core/ok (the Result constructor)
+;; stays reachable fully qualified. Excluding the refer keeps the
+;; precedence principle's letter (nothing in core is shadowed for USER
+;; code — http/ok is namespace-qualified by construction) and kills the
+;; replace warning at load.
+(clojure.core/in-ns 'keel.http)
+(clojure.core/refer 'clojure.core :exclude '[ok])
+(require '[clojure.string :as str])
+(require '[clojure.edn :as edn])
+
+;; --- dev mode ---------------------------------------------------------
+;; `cljgo dev` sets KEEL_DEV=1 in its own process; keel's loud-in-dev
+;; behaviors (plain-fn handler warnings, bare-Result explanations,
+;; error messages in funnel bodies) key off it.
+(defn ^:private dev? [] (= "1" (-getenv "KEEL_DEV")))
+
+;; --- the error funnel table (shipped, documented DATA) ----------------
+;; recover maps a thrown ex-info's :keel/error through this table;
+;; override per app via (recover {:error-map ...}).
+(def default-error-map
+  {:http/bad-param 400
+   :cast/invalid   422
+   :db/not-found   404
+   :db/constraint  409
+   :else           500})
+
+;; --- response helpers --------------------------------------------------
+(defn ok        [body] {:status 200 :body body})
+(defn created   [body] {:status 201 :body body})
+(defn no-content []    {:status 204 :body ""})
+(defn not-found [body] {:status 404 :body body})
+
+(defn json
+  "A JSON response regardless of negotiation: encodes data and sets the
+  content type."
+  ([data] (json 200 data))
+  ([status data]
+   {:status status
+    :headers {"content-type" "application/json"}
+    :body (-json-encode data)}))
+
+;; --- typed path params -------------------------------------------------
+(defn param!
+  "The blessed typed accessor for path params (spec: HTTP is the Ring
+  contract). (param! req :id :int) — :params bind as strings; failure
+  throws :http/bad-param, which the funnel maps to 400."
+  ([req k] (param! req k :string))
+  ([req k type]
+   (let [s (get (:params req) k)]
+     (when (nil? s)
+       (throw (ex-info (str "missing path param " k)
+                       {:keel/error :http/bad-param :param k})))
+     (cond
+       (= type :string) s
+       (= type :int)    (or (parse-long s)
+                            (throw (ex-info (str "path param " k " is not an int: " (pr-str s))
+                                            {:keel/error :http/bad-param :param k :value s})))
+       (= type :uuid)   (or (parse-uuid s)
+                            (throw (ex-info (str "path param " k " is not a uuid: " (pr-str s))
+                                            {:keel/error :http/bad-param :param k :value s})))
+       (= type :keyword) (keyword s)
+       :else (throw (ex-info (str "param!: unknown type " type)
+                             {:keel/error :http/bad-param :param k :type type}))))))
+
+;; --- the Result bridge --------------------------------------------------
+(defn render
+  "The VISIBLE bridge for Result values at the http boundary (ADR 0041
+  §5): (ok resp) → resp; (err e) → thrown through the funnel table (an
+  err payload map may carry :keel/error to pick its row; anything else
+  maps through :else). A non-Result value passes through unchanged."
+  [result]
+  (cond
+    (ok? result)  (-result-payload result)
+    (err? result) (let [e    (-result-payload result)
+                        data (if (map? e) e {:error e})]
+                    (throw (ex-info (str "render: " (pr-str e))
+                                    (if (:keel/error data)
+                                      data
+                                      (assoc data :keel/error :else)))))
+    :else result))
+
+;; --- static files & health ----------------------------------------------
+(defn dir
+  "Static file handler for a directory, served by Go's http.FileServer.
+  Mount under a trailing-slash pattern: [\"GET /static/\" (dir \"public\")]."
+  [path]
+  {:keel.http/dir path})
+
+(defn managed
+  "Mark a keel-produced plain-fn handler so dev mode does not warn
+  about it (the liveness warning is for USER handlers that forgot the
+  #'var; a keel helper's closure is deliberate)."
+  [f]
+  {:keel.http/handler f})
+
+(defn health
+  "A health handler. T1 edition: reports the process up; deps whose
+  values are zero-arg fns are pinged and reported (db pools arrive with
+  T2)."
+  [deps]
+  (managed
+   (fn [_req]
+     (let [checks (reduce (fn [m kv]
+                            (assoc m (key kv)
+                                   (if (fn? (val kv))
+                                     (try ((val kv)) true (catch Throwable _ false))
+                                     true)))
+                          {} (seq deps))]
+       (if (every? true? (vals checks))
+         (json {:ok true})
+         (json 503 {:ok false :checks checks}))))))
+
+;; --- sessions (signed cookies) -------------------------------------------
+(def ^:private session-cookie "keel-session")
+
+(def ^:private session-key
+  ;; Lazily resolved: APP_SESSION_KEY when set (the secrets-are-env
+  ;; doctrine), else a per-process random key (dev-grade: sessions
+  ;; don't survive a restart without a configured key).
+  (delay (or (-getenv "APP_SESSION_KEY") (-rand-token))))
+
+(defn ^:private encode-session [m]
+  (let [payload (-b64-encode (pr-str m))]
+    (str payload "." (-hmac-sign (deref session-key) payload))))
+
+(defn ^:private decode-session [s]
+  (when (string? s)
+    (let [i (str/last-index-of s ".")]
+      (when i
+        (let [payload (subs s 0 i)
+              sig     (subs s (inc i))]
+          (when (-const-eq sig (-hmac-sign (deref session-key) payload))
+            (let [m (try (edn/read-string (-b64-decode payload))
+                         (catch Throwable _ nil))]
+              (when (map? m) m))))))))
+
+(defn ^:private parse-cookies [req]
+  (reduce (fn [m kv]
+            (let [i (str/index-of kv "=")]
+              (if i
+                (assoc m (str/trim (subs kv 0 i)) (subs kv (inc i)))
+                m)))
+          {}
+          (str/split (or (get (:headers req) "cookie") "") #";")))
+
+(def sessions
+  "Default middleware: reads the signed session cookie into :session;
+  a response carrying :session writes it back (signed). Tampered or
+  unsigned cookies read as no session."
+  {:name :sessions
+   :wrap (fn [handler]
+           (fn [req]
+             (let [sess (decode-session (get (parse-cookies req) session-cookie))
+                   res  (handler (assoc req :session sess))]
+               (if (and (map? res) (contains? res :session))
+                 (-> res
+                     (update :headers (fn [h]
+                                        (assoc (or h {}) "set-cookie"
+                                               (str session-cookie "=" (encode-session (:session res))
+                                                    "; Path=/; HttpOnly; SameSite=Lax"))))
+                     (dissoc :session))
+                 res))))})
+
+;; --- CSRF ------------------------------------------------------------------
+(def ^:dynamic *csrf-token*
+  ;; Bound per request by the csrf middleware; keel.html/form mints it
+  ;; into forms. nil outside a request.
+  nil)
+
+(defn form-token
+  "The CSRF token for the current request (bound by the csrf
+  middleware). keel.html/form calls this; user code can too, for
+  hand-rolled forms or JS that sets the x-csrf-token header."
+  []
+  *csrf-token*)
+
+(defn ^:private mutating? [req]
+  (contains? #{:post :put :patch :delete} (:request-method req)))
+
+(defn ^:private csrf-ok? [req]
+  (let [expected (get (:session req) :keel.http/csrf-token)
+        given    (or (get (:form-params req) :__csrf)
+                     (get (:headers req) "x-csrf-token"))]
+    (and (string? expected) (string? given) (-const-eq expected given))))
+
+(def csrf
+  "Default middleware: gates SESSION-BEARING mutating requests on a
+  token minted into forms by keel.html/form (or sent as the
+  x-csrf-token header). Sessionless requests pass — the documented API
+  posture: a JSON curl with no cookie has nothing to forge. Sits inside
+  :sessions and :json (which parses form bodies)."
+  {:name :csrf
+   :wrap (fn [handler]
+           (fn [req]
+             (if (and (mutating? req) (:session req) (not (csrf-ok? req)))
+               {:status 403
+                :headers {"content-type" "text/plain; charset=utf-8"}
+                :body "invalid or missing CSRF token"}
+               (let [token (or (get (:session req) :keel.http/csrf-token) (-rand-token))
+                     res   (binding [*csrf-token* token]
+                             (handler (assoc-in req [:session :keel.http/csrf-token] token)))]
+                 ;; Persist the token whenever the response writes a
+                 ;; session (a fresh session started, or one continues) so
+                 ;; the NEXT request's form post verifies.
+                 (if (and (map? res) (contains? res :session) (some? (:session res)))
+                   (assoc-in res [:session :keel.http/csrf-token] token)
+                   res)))))})
+
+(defn start-session
+  "Attach a session map to a response — the explicit way a handler
+  begins (or updates) the browser session the CSRF gate protects."
+  [res sess]
+  (assoc res :session sess))
+
+;; --- JSON / form negotiation -------------------------------------------
+(defn ^:private content-type [req]
+  (let [ct (or (get (:headers req) "content-type") "")]
+    (str/trim (first (str/split ct #";")))))
+
+(def negotiate
+  "Default middleware (named :json in the stack — JSON negotiation plus
+  form decoding): a JSON request body parses into :json, a form body
+  into :form-params; a data (map/vector) response body encodes as JSON;
+  a string body defaults to text/html. A bare Result in the response is
+  a LOUD 500 — Results cross the http boundary only through (render …)."
+  {:name :json
+   :wrap (fn [handler]
+           (fn [req]
+             (let [ct  (content-type req)
+                   req (cond
+                         (= ct "application/json")
+                         (assoc req :json (try (-json-decode (:body req))
+                                               (catch Throwable _
+                                                 (throw (ex-info "malformed JSON body"
+                                                                 {:keel/error :http/bad-param})))))
+                         (= ct "application/x-www-form-urlencoded")
+                         (assoc req :form-params (-form-decode (:body req)))
+                         :else req)
+                   res (handler req)]
+               (when (or (result? res) (and (map? res) (result? (:body res))))
+                 (throw (ex-info (str "handler returned a bare Result — Result values cross "
+                                      "the http boundary only through (keel.http/render ...)")
+                                 {:keel/error :else})))
+               (cond
+                 (nil? res)
+                 (throw (ex-info "handler returned nil, not a response map" {:keel/error :else}))
+
+                 (and (map? res) (or (map? (:body res)) (vector? (:body res))))
+                 (-> res
+                     (assoc :body (-json-encode (:body res)))
+                     (update :headers (fn [h] (merge {"content-type" "application/json"} h))))
+
+                 (and (map? res) (string? (:body res)))
+                 (update res :headers
+                         (fn [h] (merge {"content-type" "text/html; charset=utf-8"} h)))
+
+                 :else res))))})
+
+;; --- recover (THE funnel) ------------------------------------------------
+(defn recover
+  "The error funnel: catches anything a handler throws and maps
+  (:keel/error (ex-data t)) through the table — 400 bad param, 422
+  invalid cast, 404 not found, 409 constraint, else 500. Bodies name
+  the error kind; messages appear in dev only. Override rows with
+  (recover {:error-map {...}})."
+  ([] (recover {}))
+  ([opts]
+   (let [table (merge default-error-map (:error-map opts))]
+     {:name :recover
+      :wrap (fn [handler]
+              (fn [req]
+                (try
+                  (handler req)
+                  (catch Throwable t
+                    (let [kind   (:keel/error (ex-data t))
+                          status (get table kind (get table :else 500))]
+                      {:status status
+                       :headers {"content-type" "application/json"}
+                       :body (-json-encode
+                              (merge {:error (subs (str (or kind :internal)) 1)}
+                                     (if (dev?) {:message (ex-message t)} {})))})))))})))
+
+;; --- access log --------------------------------------------------------------
+(def access-log
+  "Default middleware: one line per request — method, path, status, ms."
+  {:name :access-log
+   :wrap (fn [handler]
+           (fn [req]
+             (let [t0  (-now-millis)
+                   res (handler req)]
+               (println (str (str/upper-case (name (:request-method req))) " "
+                             (:uri req) " " (:status res) " "
+                             (- (-now-millis) t0) "ms"))
+               res)))})
+
+;; --- the default stack (inspectable DATA) ------------------------------------
+(defn defaults
+  "The default-on middleware stack — applied when :middleware is
+  omitted; a plain VECTOR of {:name kw :wrap (fn [handler] handler)}
+  entries, outermost first. conj onto it, remove by name with
+  (without stack :csrf); `cljgo routes` prints it."
+  []
+  [access-log (recover) sessions negotiate csrf])
+
+(defn without
+  "Remove a middleware entry from a stack by :name."
+  [stack nm]
+  (vec (remove (fn [e] (= nm (:name e))) stack)))
+
+(defn stack-names [stack] (mapv :name stack))
+
+(defn ^:private warn-custom-stack [stack]
+  (let [names (set (stack-names stack))]
+    (doseq [required [:recover :csrf]]
+      (when-not (contains? names required)
+        (println (str "keel.http WARNING: custom :middleware stack lacks " required
+                      " — the safe default stack includes it (see (keel.http/defaults))"))))))
+
+;; --- routes → mounted handlers -----------------------------------------------
+(defn ^:private wrap-stack [stack handler]
+  (reduce (fn [h entry] ((:wrap entry) h)) handler (reverse stack)))
+
+(defn ^:private base-handler
+  "The liveness line: a #'var route handler is DEREFED PER REQUEST, so a
+  re-def at the REPL changes the live server. Plain fns skip the deref;
+  dev mode warns about them at mount time (silent non-liveness)."
+  [pattern h]
+  (cond
+    (var? h) (fn [req] ((deref h) req))
+    (and (map? h) (:keel.http/handler h)) (:keel.http/handler h)
+    :else (do (when (dev?)
+                (println (str "keel.http WARNING: route " (pr-str pattern)
+                              " holds a plain fn, not a #'var — re-defs at the REPL will NOT update it")))
+              (fn [req] (h req)))))
+
+(defn ^:private mount
+  "Compile routes-as-data + a middleware stack into [pattern handler-fn]
+  pairs for the Go adapter ({:keel.http/dir ...} markers pass through)."
+  [routes stack]
+  (mapv (fn [route]
+          (let [pattern (nth route 0)
+                h       (nth route 1)]
+            (if (and (map? h) (contains? h :keel.http/dir))
+              [pattern h]
+              [pattern (wrap-stack stack (base-handler pattern h))])))
+        routes))
+
+(defn group
+  "Prefix a route group, optionally wrapping extra middleware around
+  each handler: (group \"/admin\" [require-admin] routes)."
+  ([prefix routes] (group prefix [] routes))
+  ([prefix mw routes]
+   (mapv (fn [route]
+           (let [pattern (nth route 0)
+                 h       (nth route 1)
+                 i       (str/index-of pattern " ")
+                 method  (subs pattern 0 i)
+                 path    (subs pattern (inc i))
+                 h'      (if (empty? mw)
+                           h
+                           (wrap-stack (vec mw) (base-handler pattern h)))]
+             [(str method " " prefix path) h']))
+         routes)))
+
+;; --- describe (cljgo routes) ------------------------------------------------
+(defn describe
+  "The `cljgo routes` body: the effective middleware stack and every
+  route with its handler."
+  [routes opts]
+  (let [custom (:middleware opts)
+        stack  (or custom (defaults))]
+    (str "middleware (" (if custom "custom" "defaults") ", outermost first):\n"
+         (apply str (map (fn [e] (str "  " (:name e) "\n")) stack))
+         "routes:\n"
+         (apply str (map (fn [route]
+                           (let [pattern (nth route 0)
+                                 h       (nth route 1)]
+                             (str "  " (format "%-24s" pattern) " "
+                                  (cond
+                                    (var? h) (pr-str h)
+                                    (and (map? h) (:keel.http/dir h))
+                                    (str "(http/dir " (pr-str (:keel.http/dir h)) ")")
+                                    (and (map? h) (:keel.http/handler h)) "(keel handler)"
+                                    :else "(plain fn — not live)")
+                                  "\n")))
+                         routes)))))
+
+;; --- serve --------------------------------------------------------------------
+(defn serve
+  "Start the server and (by default) BLOCK until SIGTERM/SIGINT, then
+  drain: in-flight requests finish (deadline), then each handle in
+  :drain is invoked. Omitting :middleware applies (defaults). Options:
+  :port (required), :middleware, :drain, :ping (zero-arg fns called
+  before accepting traffic), :block? (false → returns {:port :stop}
+  for tests; :stop is a zero-arg fn). Production timeouts are DEFAULT
+  ON in the Go adapter; the raw mux/server stay reachable there as the
+  escape hatch."
+  [routes opts]
+  (let [stack (or (:middleware opts) (defaults))]
+    (when (and (:middleware opts) (dev?))
+      (warn-custom-stack stack))
+    (doseq [ping (:ping opts)] (ping))
+    (-serve (mount routes stack) (dissoc opts :middleware :ping))))
+
+;; --- in-process test client ------------------------------------------------
+(defn request
+  "The in-process http test client (no socket): runs one request map
+  {:method \"GET\" :path \"/\" :headers {} :body \"...\"} through the
+  same mount + middleware path as serve and returns the response map."
+  ([routes req] (request routes req {}))
+  ([routes req opts]
+   (let [stack (or (:middleware opts) (defaults))]
+     (-request (mount routes stack) req))))

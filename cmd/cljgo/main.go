@@ -60,6 +60,16 @@ func run(args []string) int {
 		return runFile(args[1])
 	case "build":
 		return runBuild(args[1:])
+	case "new":
+		return runNew(args[1:])
+	case "dev":
+		return runDev(args[1:])
+	case "test":
+		return runTest(args[1:])
+	case "config":
+		return runConfig(args[1:])
+	case "routes":
+		return runRoutes(args[1:])
 	case "suite":
 		return runSuite(args[1:])
 	case "check":
@@ -231,6 +241,11 @@ usage:
   cljgo nrepl [--port N]           start an nREPL server for editors (writes .nrepl-port; ADR 0031)
   cljgo run <file.clj>             evaluate a file
   cljgo build [-o out] <file.clj>  compile a file to a native binary
+  cljgo new <name>                 generate a keel app (ADR 0041)
+  cljgo dev                        run the app: server + nREPL + dev warnings
+  cljgo test                       run the app's tests (test/ via clojure.test)
+  cljgo config                     print resolved config, winning layer per key
+  cljgo routes                     print routes + the effective middleware stack
   cljgo suite [--dir <path>]       run the jank clojure-test-suite, print a scoreboard (ADR 0022)
   cljgo check <file.clj> [--json]  analyze a file, report diagnostics (ADR 0015)
   cljgo explain <code> [--json]    show an error code's explain page
