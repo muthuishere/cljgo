@@ -1,6 +1,6 @@
 # Spike S24 verdict — one native builtin closes 89% of the `reduce` gap
 
-Closed 2026-07-17. Recommendation feeds **ADR 0039** (reserved): hot core fns
+Closed 2026-07-17. Recommendation feeds **ADR 0045**: hot core fns
 become native Go builtins — the pattern every fast Clojure-on-Go already uses,
 and the pattern cljgo itself already uses for 292 other fns.
 
@@ -76,7 +76,7 @@ next candidates for the same one-fn treatment).
   structural fix remains correct long-term; this removes the urgency that
   made it look like the only lever.
 
-## 5. What ADR 0039 must decide
+## 5. What ADR 0045 must decide
 
 1. **Ratify the pattern**: hot core fns are native builtins; the S22 field
    table is the evidence standard for "hot".
@@ -97,7 +97,7 @@ next candidates for the same one-fn treatment).
 
 One existing-pattern builtin took the worst row of the field table from
 14.5× behind let-go to 1.77×, in both modes, with zero suite regressions and
-JVM-oracle-identical semantics. Recommend ADR 0039 ratify incremental native
+JVM-oracle-identical semantics. Recommend ADR 0045 ratify incremental native
 hot-path builtins as the near-term performance strategy, with AOT-core
 (ADR 0037) unchanged as the structural goal.
 
@@ -106,7 +106,7 @@ hot-path builtins as the near-term performance strategy, with AOT-core
 - `README.md` — question + exit criterion, written before code.
 - `prototype.patch` — the 69-line diff (builtin + core.clj deletion),
   **reverted from the working tree after measurement** per ADR 0027;
-  production lands via ADR 0039 → OpenSpec.
+  production lands via ADR 0045 → OpenSpec.
 - `results/s21-reduce.json`, `results/s21-others.json` — raw hyperfine data.
 
 No `go.mod` — the prototype patched the worktree in place and was reverted;

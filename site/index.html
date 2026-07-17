@@ -220,7 +220,7 @@
   .compat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; }
   @media (max-width: 820px) { .compat { grid-template-columns: 1fr; } }
   .bar { height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--fg) 9%, transparent); overflow: hidden; margin: 14px 0 8px; }
-  .bar > i { display: block; height: 100%; width: 89.7%; border-radius: 999px; background: linear-gradient(90deg, var(--green), var(--cyan)); }
+  .bar > i { display: block; height: 100%; width: 98.3%; border-radius: 999px; background: linear-gradient(90deg, var(--green), var(--cyan)); }
   .bignum { font-size: 60px; font-weight: 800; letter-spacing: -.04em; line-height: 1; background: linear-gradient(120deg, var(--green-txt), var(--cyan-txt)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
   /* ── Status table ── */
@@ -307,7 +307,7 @@
       <div class="stats">
         <div class="stat"><div class="v">Zero<span class="u">·</span></div><div class="l">hand-written bindings for any Go module</div></div>
         <div class="stat"><div class="v">5.2<span class="u"> MB</span></div><div class="l">static hello-world binary, stripped</div></div>
-        <div class="stat"><div class="v">89.7<span class="u">%</span></div><div class="l">clojure-test-suite passing, climbing</div></div>
+        <div class="stat"><div class="v">98.3<span class="u">%</span></div><div class="l">clojure-test-suite passing, climbing</div></div>
         <div class="stat"><div class="v">any<span class="u"> OS</span></div><div class="l">cross-compiles, no target toolchain</div></div>
       </div>
     </div>
@@ -449,9 +449,16 @@
           </ul>
         </div>
         <div style="text-align:center">
-          <div class="bignum">89.7%</div>
+          <div class="bignum">98.3%</div>
           <div class="bar"><i></i></div>
-          <div style="color:var(--fg-soft);font-size:14px"><b style="color:var(--fg)">217 / 242</b> suite files fully passing</div>
+          <div style="color:var(--fg-soft);font-size:14px"><b style="color:var(--fg)">238 / 242</b> suite files fully passing</div>
+          <div style="color:var(--fg-soft);font-size:12px;margin-top:10px;line-height:1.5;max-width:34ch;margin-left:auto;margin-right:auto">
+            Upstream suite, unmodified. The 4 outstanding are dialect registration, not
+            semantics: their reader conditionals have no <code>:default</code>, so a runtime
+            the suite has never heard of misreads them. With <code>:cljgo</code> branches
+            added — the same mechanism <code>:cljr</code>/<code>:lpy</code>/<code>:phel</code>
+            use — it reads 242/242, but that is not upstreamed, so we publish 98.3%.
+          </div>
         </div>
       </div>
     </div>
@@ -469,13 +476,13 @@
         <table>
           <thead><tr><th>Metric</th><th>cljgo</th><th>Reproduce</th></tr></thead>
           <tbody>
-            <tr><td>Tool binary</td><td>8.5 MB stripped</td><td><code>go build -trimpath -ldflags="-s -w" ./cmd/cljgo</code></td></tr>
+            <tr><td>Tool binary</td><td>8.3 MB stripped</td><td><code>go build -trimpath -ldflags="-s -w" ./cmd/cljgo</code></td></tr>
             <tr><td>Compiled binary, hello</td><td>5.2 MB</td><td><code>cljgo build hello.clj</code></td></tr>
-            <tr><td>Compiled startup, hello</td><td>29.8 ms</td><td><code>hyperfine -N ./hello</code></td></tr>
-            <tr><td>Peak RSS, hello</td><td>24.1 MB</td><td><code>/usr/bin/time -l ./hello</code></td></tr>
-            <tr><td>Interpreter boot</td><td>23.7 ms · 29 MB · 472k allocs</td><td><code>go test -bench=BenchmarkBoot -benchmem -run '^$' ./pkg/eval/</code></td></tr>
+            <tr><td>Compiled startup, hello</td><td>28.9 ms</td><td><code>hyperfine -N ./hello</code></td></tr>
+            <tr><td>Peak RSS, hello</td><td>23.4 MB</td><td><code>/usr/bin/time -l ./hello</code></td></tr>
+            <tr><td>Interpreter boot</td><td>22.3 ms · 28.5 MB · 459k allocs</td><td><code>go test -bench=BenchmarkBoot -benchmem -run '^$' ./pkg/eval/</code></td></tr>
             <tr><td>Emitted vs handwritten Go</td><td>~35× (target ~10×)</td><td><code>go test -run TestFactorialPerfBudget ./pkg/emit/</code></td></tr>
-            <tr><td>clojure-test-suite</td><td>217 / 242 (89.7%)</td><td><code>cljgo suite</code></td></tr>
+            <tr><td>clojure-test-suite</td><td>238 / 242 (98.3%)</td><td><code>cljgo suite</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -491,15 +498,15 @@
         <table>
           <thead><tr><th>Benchmark</th><th>cljgo</th><th>let-go</th><th>babashka</th><th>joker</th><th>clojure JVM</th></tr></thead>
           <tbody>
-            <tr><td>startup</td><td>28.0 ms</td><td><b>4.9 ms</b></td><td>10.5 ms</td><td>8.0 ms</td><td>295.7 ms</td></tr>
-            <tr><td><code>tak</code></td><td>921.9 ms</td><td>1.26 s</td><td>1.14 s</td><td>12.40 s</td><td><b>492.0 ms</b></td></tr>
-            <tr><td><code>fib</code></td><td>961.6 ms</td><td>1.15 s</td><td>1.17 s</td><td>13.16 s</td><td><b>442.9 ms</b></td></tr>
-            <tr><td><code>loop-recur</code></td><td>68.8 ms</td><td><b>37.1 ms</b></td><td>39.2 ms</td><td>453.3 ms</td><td>413.9 ms</td></tr>
-            <tr><td><code>persistent-map</code></td><td>44.8 ms</td><td>14.7 ms</td><td><b>14.2 ms</b></td><td>32.8 ms</td><td>412.4 ms</td></tr>
-            <tr><td><code>map-filter</code></td><td>32.5 ms</td><td><b>5.1 ms</b></td><td>12.4 ms</td><td>9.6 ms</td><td>348.6 ms</td></tr>
-            <tr><td><code>transducers</code></td><td>171.8 ms</td><td>27.9 ms</td><td><b>15.7 ms</b></td><td>—</td><td>355.2 ms</td></tr>
-            <tr><td><code>reduce</code></td><td>719.3 ms</td><td>45.6 ms</td><td><b>22.6 ms</b></td><td>1.48 s</td><td>308.6 ms</td></tr>
-            <tr><td>runtime size</td><td><b>8.5 MB</b></td><td>12.8 MB</td><td>71.2 MB</td><td>28.8 MB</td><td>398.4 MB</td></tr>
+            <tr><td>startup</td><td>28.9 ms</td><td><b>4.7 ms</b></td><td>10.6 ms</td><td>7.2 ms</td><td>336.3 ms</td></tr>
+            <tr><td><code>tak</code></td><td>889.9 ms</td><td>1.23 s</td><td>1.13 s</td><td>12.33 s</td><td><b>447.8 ms</b></td></tr>
+            <tr><td><code>fib</code></td><td>982.3 ms</td><td>1.18 s</td><td>1.16 s</td><td>12.84 s</td><td><b>449.7 ms</b></td></tr>
+            <tr><td><code>loop-recur</code></td><td>67.9 ms</td><td><b>38.1 ms</b></td><td>38.2 ms</td><td>445.3 ms</td><td>399.1 ms</td></tr>
+            <tr><td><code>persistent-map</code></td><td>36.0 ms</td><td><b>13.1 ms</b></td><td>13.8 ms</td><td>30.4 ms</td><td>378.1 ms</td></tr>
+            <tr><td><code>map-filter</code></td><td>30.1 ms</td><td><b>6.3 ms</b></td><td>11.0 ms</td><td>9.9 ms</td><td>330.4 ms</td></tr>
+            <tr><td><code>transducers</code></td><td>64.2 ms</td><td>26.0 ms</td><td><b>13.3 ms</b></td><td>—</td><td>318.5 ms</td></tr>
+            <tr><td><code>reduce</code></td><td>82.3 ms</td><td>41.6 ms</td><td><b>21.4 ms</b></td><td>1.48 s</td><td>305.3 ms</td></tr>
+            <tr><td>runtime size</td><td><b>8.3 MB</b></td><td>12.2 MB</td><td>67.9 MB</td><td>27.4 MB</td><td>385.0 MB</td></tr>
           </tbody>
         </table>
       </div>
@@ -511,21 +518,22 @@
       </div>
       <div class="note">
         <b>The good.</b> On <code>tak</code> and <code>fib</code> cljgo is the fastest thing here except the JVM —
-        ahead of a bytecode VM (let-go) and a GraalVM native image (babashka), and <b>13.7× ahead of joker</b>, the
-        other Go tree-walker. cljgo also ships the smallest runtime in the field, at 8.5 MB. The "emit plain Go" bet works.
+        ahead of a bytecode VM (let-go) and a GraalVM native image (babashka), and <b>13.1× ahead of joker</b>, the
+        other Go tree-walker. cljgo also ships the smallest runtime in the field, at 8.3 MB. The "emit plain Go" bet works.
       </div>
       <div class="note">
         <b>The bad, and the one cause.</b> We win exactly the two benchmarks where the <em>benchmark's own code</em>
-        does the arithmetic. Everything leaning on <code>clojure.core</code> — reduce, lazy seqs, transducers,
-        persistent maps — we lose: <code>reduce</code> by 15.8× to let-go and <b>31.8× to babashka</b>.
-        The <code>reduce</code> row is the tell: cljgo (719 ms) sits next to <b>joker (1.48 s)</b>, the other tree-walk
-        interpreter — not next to let-go (45.6 ms) — while on <code>fib</code> we're 13.7× <em>ahead</em> of joker.
-        cljgo behaves like an AOT compiler on user code and like an interpreter on <code>clojure.core</code> code,
-        because that is exactly what it is. Why: <code>cljgo build</code> compiles your forms
-        and nothing else. Every <code>clojure.core</code> fn an emitted binary calls is still a <b>tree-walk
-        interpreted closure</b>, built by evaluating <code>core.clj</code> at boot. Measured:
-        <code>fib</code> is <b>9.7× faster</b> compiled than interpreted (work in user code), while
-        <code>reduce</code> is <b>1.00×</b> — compiling it changes nothing. AOT-compiling <code>core.clj</code>
+        does the arithmetic. Every row leaning on <code>clojure.core</code> still loses: <code>reduce</code> by
+        2.0× to let-go and <b>3.8× to babashka</b>, <code>map-filter</code> by 4.8×, <code>transducers</code> by 4.8×.
+        <b>ADR 0045</b> moved the five hottest fns (<code>reduce</code>/<code>map</code>/<code>filter</code>/<code>mapv</code>/<code>comp</code>)
+        into native Go, which took <code>reduce</code> from 719 ms to <b>82 ms</b> and <code>transducers</code> from
+        172 ms to <b>64 ms</b> — the worst gap fell from 15.8× to 2.0×, and on <code>reduce</code> we now sit <b>18× ahead</b>
+        of joker rather than beside it. But that treated five symptoms, not the cause: <code>cljgo build</code> compiles
+        your forms and nothing else, and the ~292 core fns that did <em>not</em> go native are still <b>tree-walk
+        interpreted closures</b>, built by evaluating <code>core.clj</code> at boot. Measured:
+        <code>fib</code> is <b>9.06× faster</b> compiled than interpreted (work in user code), while
+        <code>reduce</code> is <b>1.01×</b> — and that row now reads flat because it is native in <em>both</em> modes,
+        the opposite cause to before, still proving a "compiled" binary never emitted it. AOT-compiling <code>core.clj</code>
         is therefore not a size cleanup with a startup bonus, which is how ADR 0023 framed it: it is the
         <b>top performance lever in the tree</b>, and the same edge that owns startup, RSS and size.
       </div>
@@ -540,7 +548,7 @@
         Evidence: spikes S22 and S23; ADR 0037 reserved for the decision.
       </div>
       <div class="note">
-        <b>Startup is our weak number, and we know exactly why.</b> ~28 of those 29.8 ms are
+        <b>Startup is our weak number, and we know exactly why.</b> ~28 of those 28.9 ms are
         <code>core.clj</code> booting at runtime — an emitted binary today links the whole
         interpreter, because <code>main → rt.Boot → eval.New</code> loads core.clj on start
         (ADR 0023). An empty Go binary starts in 2.0 ms on the same machine. AOT-compiling
@@ -659,7 +667,7 @@ hello from cljgo
       <ul class="clean">
         <li><b>build.cljgo</b> — the build is a program, not a data file. <code>(defn build [b] …)</code> defines an artifact/step DAG; <code>cljgo build</code> / <code>build run</code> / <code>test</code> mirror <code>zig build</code>. Replaces deps.edn for the AOT product (ADR 0021).</li>
         <li><b>comptime</b> — Zig-style compile-time value execution alongside Clojure macros. Macros transform <em>syntax</em>; <code>comptime</code> computes <em>values</em> embedded as literals. In the REPL, compile-time == eval-time (ADR 0009).</li>
-        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick with a CI coverage ratchet. Measured <b>217/242 (89.7%)</b> — 90.4% of non-skipped — climbing per batch (ADR 0022).</li>
+        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick with a CI coverage ratchet. Measured <b>238/242 (98.3%)</b> — 242/242 vars resolved, 0 failures — climbing per batch (ADR 0022).</li>
         <li><b>Cross-compilation</b> — cljgo emits plain Go, so pure-Go + purego programs build for any OS/arch with no target toolchain. <code>--target os/arch</code>, or a matrix per artifact.</li>
       </ul>
     </div>

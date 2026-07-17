@@ -1,5 +1,21 @@
 # ADR 0037 — AOT-`core.clj` is a performance decision, and multi-namespace emission gates it
 Date: 2026-07-16 · Status: proposed
+
+> **Note added 2026-07-17 (not a rewrite — this ADR's numbers are as measured on
+> 2026-07-16 and stay that way).** ADR **0045** has since moved `reduce`, `map`,
+> `filter`, `mapv` and `comp` into native Go, so the specific rows quoted below
+> have moved: `reduce` 719.3 → 82.3 ms, `transducers` 171.8 → 64.2 ms, and the
+> worst-row gap to let-go is 2.0×, not 15.8×. The §1 A/B still reads ~1.0× on
+> `reduce`, but for the opposite reason — it is now native in **both** modes
+> rather than interpreted in both, so it still proves `cljgo build` does not
+> emit `clojure.core`.
+>
+> **This does not weaken the decision; it is the argument for it.** ADR 0045
+> hand-ported five fns and, in review, one of them shipped a real semantics
+> regression (`next` where Clojure uses `rest`, over-realizing lazy seqs by one
+> element). That is the cost of hand-maintaining `clojure.core` in Go, and it
+> does not scale to ~300 more. Emitting `core.clj` remains the fix. Current
+> published numbers live in the README, not here.
 Supersedes: **ADR 0023 decision #2** (framing only; #1 "strip by default" stands)
 Evidence: spikes **S22** (`spikes/s22-aot-core-perf/VERDICT.md`), **S23**
 (`spikes/s23-aot-core-prize/VERDICT.md`)

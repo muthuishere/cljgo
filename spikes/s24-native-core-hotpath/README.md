@@ -1,6 +1,6 @@
 # Spike S24 — Is "move hot core fns to Go builtins" the simple fix?
 
-Opened 2026-07-17. Feeds **ADR 0039** (reserved). Follows S22/S23.
+Opened 2026-07-17. Feeds **ADR 0045**. Follows S22/S23.
 
 ## Context
 
@@ -31,7 +31,7 @@ definition, then:
 
 1. **Perf**: `reduce.clj` (1e6) must drop from ~719 ms to **≤ 150 ms** total
    (≈ the S23 all-compiled floor of ~96 ms + margin). If it does → the
-   incremental-native path is validated; ADR 0039 decides the hot-fn list and
+   incremental-native path is validated; ADR 0045 decides the hot-fn list and
    its relation to AOT-core. If it lands > 300 ms → per-element cost lives in
    the seq machinery, not the fn body; native prims are NOT the lever and the
    S23 decomposition needs revisiting.
@@ -61,7 +61,7 @@ Prototype patch to `pkg/eval` + `core/core.clj` in this worktree, measured
 with the S22 harness (hyperfine, 3 warmup / 10 runs, M5 Pro, go1.26.3),
 then **reverted** — the diff is frozen as `prototype.patch` in this dir;
 spike code never merges (ADR 0027). Production landing goes through
-ADR 0039 → OpenSpec.
+ADR 0045 → OpenSpec.
 
 ## Results
 

@@ -94,17 +94,29 @@ PR, JVM-oracle-gated).
 ## P4 — Published numbers that disagree with each other right now
 
 1. **The ratchet's own artifact says 34/242** (`compat/.../scoreboard.json`:
-   34 pass, 118 skipped — 2026-07-15 Batch-0) while the README badge says
-   217/242 (and the `release/v0.3.0-prep` branch now says **234/242 =
-   96.7%**). Three numbers live in the tree at once; a wired ratchet would
-   pin ≥ 34 and be useless. **Regenerate the scoreboard in the same commit
-   as any headline change — or better, make CI regenerate it (fixes P3-3
-   simultaneously).**
+   34 pass, 118 skipped — 2026-07-15 Batch-0) while the README badge said
+   217/242, PR #40 proposed 234/242 (96.7%), and this branch shipped 89.7%.
+   Four numbers lived in the tree at once; a wired ratchet would pin ≥ 34 and
+   be useless. **Regenerate the scoreboard in the same commit as any headline
+   change — or better, make CI regenerate it (fixes P3-3 simultaneously).**
 2. **Var-resolution is published three ways**: 99.2% (README), 51.2%
    (design/08:184, ADR 0022:65), 65.7% (site, pre-branch). Same metric.
-3. **This branch's own headline (89.7%) is already stale** against
-   `release/v0.3.0-prep` (96.7%, zero failing files) — reconcile at merge;
-   the README/site suite numbers and badge on this branch must be bumped.
+3. **This branch's own headline (89.7%) was already stale** when written —
+   fixed at merge (2026-07-17): README/site/badge now publish **238/242
+   (98.3%)**, re-measured against the upstream suite @164a4b3, and PR #40's
+   competing 96.7% was closed rather than merged.
+
+   The pattern bit twice more on the way, both worth recording. **(a)** The
+   96.7%/234 figure was itself never reproducible — nobody re-ran it before
+   proposing to publish it. **(b)** A "242/242 = 100%" reading briefly reached
+   a PR body because the shared `clojure-test-suite` checkout was sitting on a
+   local `cljgo-dialect` branch that adds the missing `:cljgo` reader
+   conditionals. That number is real and defensible — but only with the
+   checkout named, and those branches are not upstreamed. **The suite checkout
+   is shared mutable state and another agent can move it under you: name the
+   commit you measured (`--dir`, and record the SHA) or the number means
+   nothing.** This is P4 with a moving denominator, and it is the sharpest
+   version of the pattern in this document.
 4. ADR 0023 status line still says "proposed" for a decision that ADR 0037
    superseded in framing — the AOT-core decision is spread across three ADRs,
    two unratified.
