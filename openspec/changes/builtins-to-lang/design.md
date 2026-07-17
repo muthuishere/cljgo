@@ -14,6 +14,7 @@ like `*reader.Regex`/`*reader.UUID`, + pkg/version) only.
 | var_builtins.go | pure EXCEPT `eval` (Evaluator.EvalForm) |
 | misc_builtins.go | pure once ResolveVar and the reader resolver are free functions (`-instance-of-name?`, `read-string`, EDN readers) |
 | protocols.go, class_refs.go | substrate + builtins, pure under the same ResolveVar move (`-type-key`, `-qualified-name`) |
+| hotpath_builtins.go (ADR 0045, landed mid-flight) | pure — `reduce`/`map`/`filter`/`mapv`/`comp` close over pkg/lang only; the `*Evaluator` receiver was never dereferenced |
 | ex_builtins.go | `registerExceptionBuiltins` pure; Throw/Recover/CatchMatches/evalTry stay in eval (not builtins; rt already imports eval until piece 3) |
 
 Key discovery: `Evaluator.resolveVar` and the `reader.Resolver` adapter

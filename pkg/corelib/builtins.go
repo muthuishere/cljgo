@@ -398,6 +398,11 @@ func RegisterAll() {
 	// reduced, <=/>=/quot/rem/max/min and the numeric/value predicates)
 	// that core.clj's map/filter/reduce/take/… are built on.
 	internCollBuiltins(def)
+	// Native hot-path core fns — reduce/map/filter/mapv/comp (ADR 0045,
+	// hotpath_builtins.go). Must intern BEFORE core.clj loads, exactly as
+	// when they lived in pkg/eval: the interpreter's loadCore runs after
+	// internBuiltins, and a surviving defn would shadow the native.
+	internHotpathBuiltins(def)
 
 	// Polymorphism substrate (defprotocol/deftype/defrecord/extend-*):
 	// dispatch table + instance/registry builtins the core/protocols.cljg

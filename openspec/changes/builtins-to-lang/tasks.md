@@ -31,7 +31,7 @@
 - [x] 4.1 `pkg/corelib/imports_test.go`: `go list -deps` contains no
   pkg/eval / pkg/analyzer / pkg/ast / pkg/emit.
 - [x] 4.2 Full gates green; conformance dual harness green; jank suite
-  == pre-change baseline (242/242 on this tree, 2026-07-17); emitted
+  == pre-change baseline (vanilla 238/242, 2026-07-17); emitted
   hello-world binary behavior unchanged (still links eval via rt.Boot
   — expected until piece 3).
 - [x] 4.3 Piece-3 follow-ups recorded in design.md §4.
@@ -42,8 +42,22 @@
   emitted binary now carries 652 pkg/corelib symbols and only 155
   pkg/eval symbols (was 381 per ADR 0023) — the remaining eval/analyzer
   link is exactly the `rt.Boot() → eval.New()` edge piece 3 cuts.
-- jank suite before == after: 242/242 files passing (this tree's
-  baseline, ahead of the committed Batch-0 scoreboard).
+- jank suite (VANILLA upstream clone, main @164a4b3 — no :cljgo dialect
+  patches): origin/main baseline 238/242 and this branch 238/242, with a
+  per-file status diff of ZERO across all 242 files (same 4 errors: abs,
+  add_watch, reduce, short — pre-existing upstream gaps, unrelated to
+  this change). An earlier 242/242 reading came from a locally PATCHED
+  suite branch (cljgo-dialect) and is not a publishable number.
 - `read-string` remains REPL-unresolvable BEFORE and AFTER (only the
   private `-edn-read-string` seam exists) — no regression, and the EDN
   readers moved cleanly onto corelib's stateless NSResolver.
+- ADR 0045 (PR #48, native reduce/map/filter/mapv/comp) landed mid-flight
+  and is a semantic conflict with this change: its five new natives were
+  added to pkg/eval — exactly the surface being moved. Audited against
+  the same pure-vs-coupled criteria: ZERO evaluator references (the
+  `(e *Evaluator)` receiver was vestigial; the bodies close over pkg/lang
+  only), so hotpath_builtins.go moved to pkg/corelib with the rest and
+  RegisterAll gained the one call line, in ADR 0045's original position
+  (immediately after internCollBuiltins, still before loadCore so no
+  core.clj defn can shadow a native). ADR 0045's laziness/transducer
+  conformance tests pass in BOTH harness modes after relocation.
