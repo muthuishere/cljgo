@@ -14,6 +14,7 @@ import (
 
 	"github.com/muthuishere/cljgo/pkg/analyzer"
 	"github.com/muthuishere/cljgo/pkg/ast"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
@@ -69,7 +70,7 @@ func New() *Evaluator {
 	e.loadClojureTestPortability()
 	e.loadClojureRepl()
 	user := lang.FindOrCreateNamespace(lang.NewSymbol("user"))
-	referAll(user, lang.NSCore)
+	corelib.ReferAll(user, lang.NSCore)
 	// Refer doc into user, as JVM clojure.main's repl-requires does
 	// (ADR 0031): (doc x) works at any user prompt, terminal or nREPL.
 	if nsRepl := lang.FindNamespace(lang.NewSymbol("clojure.repl")); nsRepl != nil {
@@ -96,41 +97,10 @@ func (e *Evaluator) CurrentNS() *lang.Namespace {
 }
 
 // resolveVar is the analyzer's var-resolution hook (design/03 §3a).
+// The body is corelib.ResolveVar since ADR 0043 — symbol resolution
+// reads only the global namespace world (*ns*), not evaluator state.
 func (e *Evaluator) resolveVar(sym *lang.Symbol) (*lang.Var, error) {
-	if sym.HasNamespace() {
-		nsSym := lang.NewSymbol(sym.Namespace())
-		ns := e.CurrentNS().LookupAlias(nsSym)
-		if ns == nil {
-			ns = lang.FindNamespace(nsSym)
-		}
-		if ns == nil {
-			return nil, fmt.Errorf("no such namespace: %s", sym.Namespace())
-		}
-		v := ns.FindInternedVar(lang.NewSymbol(sym.Name()))
-		if v == nil {
-			return nil, fmt.Errorf("no such var: %s", sym.FullName())
-		}
-		return v, nil
-	}
-	if m := e.CurrentNS().Mappings().ValAt(sym); m != nil {
-		if v, ok := m.(*lang.Var); ok {
-			return v, nil
-		}
-	}
-	// Last resort (ADR 0036): well-known JVM class names (`String`,
-	// `Object`, `clojure.lang.PersistentHashSet`, …) resolve to interned
-	// opaque ClassRef values. Tried only after every normal lookup missed,
-	// so user definitions always win; fail-closed outside the fixed table.
-	if v := classRefVar(sym); v != nil {
-		return v, nil
-	}
-	// Also last-resort (ADR 0039): a dotted symbol spelling the GENERATED
-	// class name of one of OUR defprotocol/defrecord/deftype vars
-	// (my.name_space.TheName, namespace munged - → _) resolves to that var.
-	if v := typeClassVar(sym); v != nil {
-		return v, nil
-	}
-	return nil, fmt.Errorf("unable to resolve symbol: %s in this context", sym.Name())
+	return corelib.ResolveVar(sym)
 }
 
 // internVar is the analyzer's def hook: intern (create-or-find) the Var in

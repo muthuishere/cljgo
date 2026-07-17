@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 // tower must own. Every name is a real clojure.core name — precedence-safe
 // additions, never renames (CLAUDE.md precedence principle). Kept in this
 // file so builtins.go gains exactly one call line inside internBuiltins.
-func (e *Evaluator) internCollBuiltins(def func(string, func(...any) any) *lang.Var) {
+func internCollBuiltins(def func(string, func(...any) any) *lang.Var) {
 	asFn := func(op string, x any) lang.IFn {
 		f, ok := x.(lang.IFn)
 		if !ok {

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/emit"
-	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/repl"
 )
@@ -76,16 +76,16 @@ func TestConformanceCompiled(t *testing.T) {
 }
 
 // evalOutput runs the file through the eval harness capturing printed
-// side effects (eval.Out) and appending pr-str of the last value.
+// side effects (corelib.Out) and appending pr-str of the last value.
 func evalOutput(t *testing.T, path string) string {
 	t.Helper()
 	snap := namespaceSnapshot()
 	defer removeNewNamespaces(snap)
 	lang.RemoveNamespace(lang.NewSymbol("user"))
 	var buf bytes.Buffer
-	oldOut := eval.Out
-	eval.Out = &buf
-	defer func() { eval.Out = oldOut }()
+	oldOut := corelib.Out
+	corelib.Out = &buf
+	defer func() { corelib.Out = oldOut }()
 
 	d := repl.New(nil, io.Discard, io.Discard)
 	f, err := os.Open(path)
@@ -108,10 +108,10 @@ func compiledOutput(t *testing.T, path string) string {
 	snap := namespaceSnapshot()
 	defer removeNewNamespaces(snap)
 	lang.RemoveNamespace(lang.NewSymbol("user"))
-	oldOut := eval.Out
-	eval.Out = io.Discard
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
 	prog, err := emit.CompileProgram(path)
-	eval.Out = oldOut
+	corelib.Out = oldOut
 	if err != nil {
 		t.Fatalf("compile: %v", err)
 	}

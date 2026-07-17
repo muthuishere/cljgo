@@ -23,7 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muthuishere/cljgo/pkg/eval"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/repl"
 )
@@ -99,9 +99,9 @@ func interpretFile(t *testing.T, path string) string {
 	defer removeNewNamespaces(snap)
 	lang.RemoveNamespace(lang.NewSymbol("user"))
 	var buf bytes.Buffer
-	oldOut := eval.Out
-	eval.Out = &buf
-	defer func() { eval.Out = oldOut }()
+	oldOut := corelib.Out
+	corelib.Out = &buf
+	defer func() { corelib.Out = oldOut }()
 
 	d := repl.New(nil, io.Discard, io.Discard)
 	f, err := os.Open(path)
@@ -130,10 +130,10 @@ func TestMultiNamespaceProgram(t *testing.T) {
 	snap := namespaceSnapshot()
 	defer removeNewNamespaces(snap)
 	lang.RemoveNamespace(lang.NewSymbol("user"))
-	oldOut := eval.Out
-	eval.Out = io.Discard // compile-time side effects don't belong to the run
+	oldOut := corelib.Out
+	corelib.Out = io.Discard // compile-time side effects don't belong to the run
 	prog, err := CompileProgram(entry)
-	eval.Out = oldOut
+	corelib.Out = oldOut
 	if err != nil {
 		t.Fatalf("CompileProgram: %v", err)
 	}
@@ -246,10 +246,10 @@ func TestCompileFileRefusesMultiNS(t *testing.T) {
 	entry := writeMultiNSProgram(t)
 	snap := namespaceSnapshot()
 	defer removeNewNamespaces(snap)
-	oldOut := eval.Out
-	eval.Out = io.Discard
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
 	_, err := CompileFile(entry)
-	eval.Out = oldOut
+	corelib.Out = oldOut
 	if err == nil || !strings.Contains(err.Error(), "CompileProgram") {
 		t.Fatalf("expected single-file refusal naming CompileProgram, got %v", err)
 	}

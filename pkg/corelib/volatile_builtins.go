@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 // name refers to Java memory-visibility semantics, not compare-and-swap.
 // `deref`/`@` already work on it generically via lang.IDeref. Wired into
 // internBuiltins by ONE line (e.internVolatileBuiltins(def)).
-func (e *Evaluator) internVolatileBuiltins(def func(string, func(...any) any) *lang.Var) {
+func internVolatileBuiltins(def func(string, func(...any) any) *lang.Var) {
 	def("volatile!", func(args ...any) any {
 		return lang.NewVolatile(oneArg("volatile!", args))
 	})

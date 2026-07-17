@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/muthuishere/cljgo/pkg/ast"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
@@ -38,9 +39,9 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 			// vector exactly as a direct call would.
 			name := r.Pkg + "." + r.Member
 			frv := rv
-			return &nativeFn{nm: name, fn: func(args ...any) any {
+			return corelib.NewNativeFn(name, func(args ...any) any {
 				return callHostFn(name, frv, args, false)
-			}}, nil
+			}), nil
 		}
 		// Const/var value (e.g. math/Pi): number/nil normalized so the
 		// printer renders 3.141592653589793, not float64(...).
@@ -379,7 +380,7 @@ func GoFieldGet(recv any, field string) any {
 	}
 	// deftype / defrecord instances address fields by name, not through Go
 	// reflection — `(.-f x)` reads a declared field (ADR: polymorphism v0).
-	if v, ok := instanceField(recv, field); ok {
+	if v, ok := corelib.InstanceField(recv, field); ok {
 		return v
 	}
 	rv := reflect.ValueOf(recv)

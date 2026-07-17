@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muthuishere/cljgo/pkg/eval"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
@@ -52,10 +52,10 @@ func compileAndRun(t *testing.T, src string) string {
 		t.Skip("skipping compile-and-run in -short mode")
 	}
 	lang.RemoveNamespace(lang.NewSymbol("user"))
-	oldOut := eval.Out
-	eval.Out = io.Discard // compile-time side effects don't belong to the run
+	oldOut := corelib.Out
+	corelib.Out = io.Discard // compile-time side effects don't belong to the run
 	forms, err := CompileReader(strings.NewReader(src), "test.clj")
-	eval.Out = oldOut
+	corelib.Out = oldOut
 	if err != nil {
 		t.Fatalf("compile: %v", err)
 	}
@@ -293,13 +293,13 @@ func TestInteropCompiled(t *testing.T) {
 // call shaped through the rt helpers — never the interpreter's reflect path.
 func TestInteropEmittedShape(t *testing.T) {
 	lang.RemoveNamespace(lang.NewSymbol("user"))
-	oldOut := eval.Out
-	eval.Out = io.Discard
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
 	forms, err := CompileReader(strings.NewReader(`
 (require-go '[strconv])
 (strconv/Atoi "123")
 `), "test.clj")
-	eval.Out = oldOut
+	corelib.Out = oldOut
 	if err != nil {
 		t.Fatalf("compile: %v", err)
 	}
@@ -328,10 +328,10 @@ func TestDeterministicOutput(t *testing.T) {
 `
 	emitOnce := func() string {
 		lang.RemoveNamespace(lang.NewSymbol("user"))
-		oldOut := eval.Out
-		eval.Out = io.Discard
+		oldOut := corelib.Out
+		corelib.Out = io.Discard
 		forms, err := CompileReader(strings.NewReader(src), "test.clj")
-		eval.Out = oldOut
+		corelib.Out = oldOut
 		if err != nil {
 			t.Fatalf("compile: %v", err)
 		}

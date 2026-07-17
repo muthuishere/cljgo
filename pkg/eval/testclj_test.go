@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
@@ -116,9 +117,9 @@ func TestDeftestRegistersTestVar(t *testing.T) {
 func TestRunTestsCountsMix(t *testing.T) {
 	e := bootTest(t)
 	var out bytes.Buffer
-	old := eval.Out
-	eval.Out = &out
-	defer func() { eval.Out = old }()
+	old := corelib.Out
+	corelib.Out = &out
+	defer func() { corelib.Out = old }()
 
 	evalSrc(t, e, `
 		(deftest t-pass (is (= 1 1)) (is (= 2 2)))
@@ -248,7 +249,7 @@ func mustRead(t *testing.T, e *eval.Evaluator, src string) any {
 
 func discardOut(t *testing.T) {
 	t.Helper()
-	old := eval.Out
-	eval.Out = &bytes.Buffer{}
-	t.Cleanup(func() { eval.Out = old })
+	old := corelib.Out
+	corelib.Out = &bytes.Buffer{}
+	t.Cleanup(func() { corelib.Out = old })
 }

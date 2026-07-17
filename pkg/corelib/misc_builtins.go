@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ import (
 // by ONE line (e.internMiscBuiltins(def, defPrivate)), per the
 // merge-friendly discipline (three other agents editing builtins.go
 // concurrently).
-func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Var, defPrivate func(name string, fn func(args ...any) any)) {
+func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Var, defPrivate func(name string, fn func(args ...any) any)) {
 	// --- delay / force / delay? ------------------------------------------
 	//
 	// cljgo's pkg/lang already vendors a Delay type (IDeref + IPending) —
@@ -70,7 +70,7 @@ func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any
 		name := lang.ToString(args[0])
 		v := args[1]
 
-		if vr, err := e.resolveVar(lang.NewSymbol(name)); err == nil {
+		if vr, err := ResolveVar(lang.NewSymbol(name)); err == nil {
 			if m, ok := vr.Deref().(*TypeMarker); ok {
 				return dispatchKey(v) == m.name
 			}
@@ -154,7 +154,7 @@ func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any
 			}
 			panic(fmt.Errorf("edn/read-string expects a string, got: %s", lang.PrintString(args[0])))
 		}
-		form, err := reader.ReadString(s, reader.WithResolver(e.ReaderResolver()), reader.WithEDNStrict())
+		form, err := reader.ReadString(s, reader.WithResolver(NSResolver()), reader.WithEDNStrict())
 		if err != nil {
 			if errors.Is(err, reader.ErrEOF) {
 				return nil
@@ -197,7 +197,7 @@ func (e *Evaluator) internMiscBuiltins(def func(name string, fn func(args ...any
 			opts = m
 		}
 
-		readerOpts := []reader.Option{reader.WithResolver(e.ReaderResolver()), reader.WithEDNStrict()}
+		readerOpts := []reader.Option{reader.WithResolver(NSResolver()), reader.WithEDNStrict()}
 		if opts != nil {
 			if fn, ok := lang.Get(opts, kwDefault).(lang.IFn); ok {
 				readerOpts = append(readerOpts, reader.WithDefaultReader(fn))

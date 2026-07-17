@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ import (
 //
 // Wired into internBuiltins by ONE line (e.internVersionBuiltins(def)), per
 // the merge-friendly discipline.
-func (e *Evaluator) internVersionBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
+func internVersionBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
 	// --- Clojure's own surface: the language level we target -------------
 	//
 	// Ground truth (real Clojure 1.12.5 CLI):

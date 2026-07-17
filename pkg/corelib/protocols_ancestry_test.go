@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"testing"
@@ -61,8 +61,8 @@ func TestTypeClassVarFailClosed(t *testing.T) {
 	if v := typeClassVar(lang.NewSymbol("NoDotsHere")); v != nil {
 		t.Errorf("dotless symbol resolved: %v", v)
 	}
-	// clojure.core is loaded and `inc` is bound to a fn — not a class.
-	_ = New()
+	// `inc` is interned and bound to a fn — not a class.
+	RegisterAll()
 	if v := typeClassVar(lang.NewSymbol("clojure.core.inc")); v != nil {
 		t.Errorf("var bound to a non-class value resolved: %v", v)
 	}

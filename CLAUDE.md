@@ -50,7 +50,8 @@ All green, no exceptions. `refs/` is fenced with a stub go.mod — leave it.
 
 ## Layout
 
-`pkg/lang` runtime · `pkg/reader` · `pkg/ast` · `pkg/analyzer` · `pkg/eval` ·
+`pkg/lang` runtime · `pkg/corelib` Go-native core builtins (ADR 0043) ·
+`pkg/reader` · `pkg/ast` · `pkg/analyzer` · `pkg/eval` ·
 `pkg/repl` · `cmd/cljgo` · `core/` (core.clj, Clojure-in-Clojure) ·
 `conformance/` · `design/` · `docs/adr/` · `openspec/` · `spikes/` (frozen) ·
 `refs/` (gitignored clones).

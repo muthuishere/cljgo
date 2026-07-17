@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ import (
 // with a compile error. String-index results (index-of, re match offsets)
 // are byte offsets into the UTF-8 string, which equal char offsets for
 // ASCII; JVM Clojure returns UTF-16 code-unit indices.
-func (e *Evaluator) internStringBuiltins(
+func internStringBuiltins(
 	def func(string, func(...any) any) *lang.Var,
 	defPrivate func(string, func(args ...any) any),
 ) {

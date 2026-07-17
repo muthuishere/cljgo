@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ import (
 //   - conj!/assoc!/dissoc!/disj!/pop! return the NEW transient, which
 //     must be re-bound (the pkg/lang types mutate in place and return
 //     self, so re-binding is faithful and required).
-func (e *Evaluator) internTransientBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
+func internTransientBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
 	// transient: (transient coll) -> a transient over an editable
 	// persistent collection. Throws on a non-editable collection.
 	def("transient", func(args ...any) any {
