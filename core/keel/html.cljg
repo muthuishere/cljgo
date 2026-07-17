@@ -1,0 +1,129 @@
+;; keel.html — HTML is a function over data (ADR 0041 §4, openspec
+;; app-framework T1). Hiccup-style vectors in, ESCAPED HTML out; no
+;; template DSL, no layouts, no partials, no asset pipeline — CSS is a
+;; file under public/, served by (keel.http/dir "public"). html/form is
+;; the deliberate outer boundary of the surface: it mints the CSRF
+;; token. XSS-safe by construction; the escape opt-out is explicit and
+;; ugly (unsafe-raw-html).
+(clojure.core/in-ns 'keel.html)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+(require 'keel.http)
+
+;; --- escaping ------------------------------------------------------------
+(defn escape
+  "HTML-escape a string: & < > \" ' — applied to every text node and
+  attribute value."
+  [s]
+  (-> (str s)
+      (str/replace "&" "&amp;")
+      (str/replace "<" "&lt;")
+      (str/replace ">" "&gt;")
+      (str/replace "\"" "&quot;")
+      (str/replace "'" "&#39;")))
+
+(defn unsafe-raw-html
+  "The EXPLICIT, deliberately ugly escape hatch: marks a string to be
+  emitted verbatim, unescaped. You own every byte you pass here."
+  [s]
+  {:keel.html/unsafe (str s)})
+
+(defn ^:private unsafe? [x] (and (map? x) (contains? x :keel.html/unsafe)))
+
+;; --- rendering -------------------------------------------------------------
+(def ^:private void-tags
+  #{"area" "base" "br" "col" "embed" "hr" "img" "input" "link" "meta"
+    "source" "track" "wbr"})
+
+(defn ^:private render-attrs [attrs]
+  (apply str
+         (map (fn [kv]
+                (let [k (name (key kv)) v (val kv)]
+                  (cond
+                    (true? v)  (str " " k)
+                    (or (false? v) (nil? v)) ""
+                    :else (str " " k "=\"" (escape v) "\""))))
+              (seq attrs))))
+
+(defn ^:private parse-tag
+  "Hiccup tag sugar: :div#id.a.b → [\"div\" {:id \"id\" :class \"a b\"}]."
+  [t]
+  (let [id-i    (str/index-of t "#")
+        cls-i   (str/index-of t ".")
+        tag-end (cond (and id-i cls-i) (min id-i cls-i)
+                      id-i id-i
+                      cls-i cls-i
+                      :else (count t))
+        tag     (subs t 0 tag-end)
+        rest-s  (subs t tag-end)
+        id      (when id-i
+                  (let [after (subs t (inc id-i))
+                        stop  (str/index-of after ".")]
+                    (if stop (subs after 0 stop) after)))
+        classes (when cls-i
+                  (str/join " " (remove str/blank?
+                                        (map (fn [seg] (first (str/split seg #"#")))
+                                             (rest (str/split rest-s #"\."))))))]
+    [(if (str/blank? tag) "div" tag)
+     (merge (if id {:id id} {})
+            (if (and classes (not (str/blank? classes))) {:class classes} {}))]))
+
+(defn render
+  "Render one hiccup node — a vector element, a string/number (escaped),
+  nil (nothing), a seq (concatenated), or (unsafe-raw-html s) — to an
+  HTML string."
+  [node]
+  (cond
+    (nil? node)     ""
+    (string? node)  (escape node)
+    (unsafe? node)  (:keel.html/unsafe node)
+    (vector? node)  (let [parsed   (parse-tag (name (first node)))
+                          tag      (nth parsed 0)
+                          sugar    (nth parsed 1)
+                          attrs?   (and (map? (second node))
+                                        (not (unsafe? (second node))))
+                          attrs    (merge-with (fn [a b] (str a " " b))
+                                               sugar
+                                               (if attrs? (second node) {}))
+                          children (if attrs? (nthrest node 2) (rest node))]
+                      (if (contains? void-tags tag)
+                        (str "<" tag (render-attrs attrs) ">")
+                        (str "<" tag (render-attrs attrs) ">"
+                             (apply str (map render children))
+                             "</" tag ">")))
+    (seq? node)     (apply str (map render node))
+    :else           (escape (str node))))
+
+(defn page
+  "A complete HTML document from body nodes. An optional leading opts
+  map sets :title and :stylesheet (default \"/static/app.css\")."
+  [& body]
+  (let [opts?  (map? (first body))
+        opts   (if opts? (first body) {})
+        nodes  (if opts? (rest body) body)]
+    (str "<!doctype html>"
+         (render
+          [:html
+           [:head
+            [:meta {:charset "utf-8"}]
+            [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
+            [:title (get opts :title "keel app")]
+            [:link {:rel "stylesheet" :href (get opts :stylesheet "/static/app.css")}]]
+           (into [:body] nodes)]))))
+
+(defn form
+  "A form element that MINTS THE CSRF TOKEN (the reason this fn exists —
+  and the outer boundary of keel.html). (form {:post \"/signup\"} …)
+  or (form {:get \"/search\"} …); other opts keys pass through as
+  attributes. Returns hiccup data — compose it, then render/page it."
+  [opts & body]
+  (let [method (cond (:post opts) "post" (:get opts) "get"
+                     :else (get opts :method "post"))
+        action (or (:post opts) (:get opts) (:action opts))
+        attrs  (merge {:method method :action action}
+                      (dissoc opts :post :get :method :action))
+        token  (keel.http/form-token)]
+    (into (if (and (= method "post") token)
+            [:form attrs [:input {:type "hidden" :name "__csrf" :value token}]]
+            [:form attrs])
+          body)))

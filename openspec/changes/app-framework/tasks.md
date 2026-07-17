@@ -1,6 +1,6 @@
 ## 0. T0 — scaffold and dev loop (the 15 minutes; no db verbs)
 
-- [ ] 0.1 `cljgo new <name>`: blessed layout (`src/app/main.cljg`,
+- [x] 0.1 `cljgo new <name>`: blessed layout (`src/app/main.cljg`,
       `src/app/`, `conf.edn` + minimal `conf.schema.edn`, `public/`
       with a real stylesheet, `test/` with one passing test,
       `build.cljgo`, `.gitignore`); generated files are plain code
@@ -12,22 +12,39 @@
       (every generated verb has a same-tier implementation). Each
       later tier updates the generator in the same change
       (generator/page contract, spec).
-- [ ] 0.2 `cljgo dev`: starts the app, attaches nREPL (ADR 0031),
+- [x] 0.2 `cljgo dev`: starts the app, attaches nREPL (ADR 0031),
       watches nothing (the REPL is the reload story), warns loudly
       when a route/job handler is a plain fn (non-live). Ctrl-C =
       graceful drain. Docs: the 15-minute tutorial IS this flow,
       gated with this task. (Dev-database provisioning and migration
       application join `cljgo dev` in T2.)
+      *(Applied 2026-07-17: also grew `cljgo test` — the generated
+      test needs a runner (test/ requires can't resolve src/ across
+      roots), and `cljgo config` / `cljgo routes` per tasks 1.6/1.3.
+      `--with-auth` is deferred to T2: the copied auth implementation
+      needs keel.db + password hashing — every generated verb must
+      have a same-tier implementation, and T1 has no db verbs.)*
 
 ## 1. T1 — server, html, routes, middleware, config
 
-- [ ] 1.1 Seed-registry growth: net/http, io, os, time, context
+- [x] 1.1 Seed-registry growth: net/http, io, os, time, context
       members the T1 surface needs, with the S17-style regen note;
       conformance tests for each new package (dual-harness where
       oracle-skippable). Gates green. NOTHING below T1 proceeds until
       a generated app boots through `cljgo dev` (round 3 sequencing
       rule).
-- [ ] 1.2 `keel.http`: `serve` (pings the pool before accepting;
+      *(Applied 2026-07-17 as a THIN GO SHIM instead: pkg/keel is
+      keel.http's Go half — the routes→ServeMux adapter, server with
+      default-on timeouts + SIGTERM drain, in-process test client,
+      JSON/form/HMAC/env primitives — interned as :private vars into
+      the keel namespaces, which load lazily via the lib-provider
+      registry (pkg/eval/libload.go). This closes S20's honesty gap
+      (a generated app now boots through `cljgo dev`, live re-def
+      proven over the nREPL wire in cmd/cljgo/keel_test.go) WITHOUT
+      reflect-seeding net/http wholesale; general-purpose seeding of
+      net/http · io · os · time · context for user interop remains
+      open and should land with its own conformance files.)*
+- [x] 1.2 `keel.http`: `serve` (pings the pool before accepting;
       blocks; SIGTERM graceful drain with deadline, then drains the
       handles in `:drain`; production timeouts DEFAULT ON;
       returns/accepts a stop handle for tests), routes-as-data →
@@ -39,7 +56,14 @@
       Result bridge), `health`. Escape hatch: `mux`/`server`
       accessors. Conformance: S20 prototype behaviors as frozen
       tests, incl. live-redef via nREPL.
-- [ ] 1.3 Middleware: `defaults` (applied when :middleware omitted;
+      *(Applied 2026-07-17. keel behaviors have no JVM oracle, so the
+      frozen tests live as Go suites against the real interpreter —
+      pkg/keel/keel_test.go (every spec scenario incl. live re-def on
+      a running server) and cmd/cljgo/keel_test.go (new→dev→curl→
+      nREPL-wire re-def, the T0/T1 exit transcript). Raw mux/server
+      escape-hatch accessors are not yet exposed to Clojure code —
+      the shim (pkg/keel/http.go) is the documented hatch for now.)*
+- [x] 1.3 Middleware: `defaults` (applied when :middleware omitted;
       returns inspectable DATA — conj/remove-by-name; `cljgo routes`
       prints the effective stack; dev warns when a custom stack
       lacks recover/csrf), `access-log`, `recover` (THE error
@@ -47,30 +71,37 @@
       cast/validation 422, not-found 404, constraint 409, else 500 —
       overridable via :error-map; bare Result in a response = loud
       dev-mode 500), `json` (negotiated bodies); ordering tested.
-- [ ] 1.4 Sessions (signed cookies), CSRF protection (gates
+- [x] 1.4 Sessions (signed cookies), CSRF protection (gates
       session-bearing requests; sessionless JSON passes — documented
       API posture), secure-cookie helpers — code in keel.http,
       inside `(http/defaults)` so the safe stack is what you didn't
       type.
-- [ ] 1.5 `keel.html`: hiccup-style data→escaped-HTML, `html/page`,
+- [x] 1.5 `keel.html`: hiccup-style data→escaped-HTML, `html/page`,
       `html/form` (mints the CSRF token — and is the deliberate
       outer boundary: no layouts, no partials); XSS-safe by
       construction (escaping opt-out is explicit and ugly). No
       template DSL, no asset pipeline — CSS is a file under
       `public/`, served by `http/dir`.
-- [ ] 1.6 `keel.config`: `load!` — TWO layers: conf.edn (with a
+- [x] 1.6 `keel.config`: `load!` — TWO layers: conf.edn (with a
       `:profiles` section selected by APP_PROFILE) → APP_* env
       (deterministic mapping: `__` nests, `_` joins words);
       durations/sizes are numbers; optional conf.schema.edn
       (defaults/required/type/coerce), refuse-to-boot naming key and
       layer; `cljgo config` prints the resolved map with each key's
       winning layer; secrets-are-env doctrine documented.
-- [ ] 1.7 App-testing helpers: in-process http test client; the
+- [x] 1.7 App-testing helpers: in-process http test client; the
       scaffold's generated test uses it (shown byte-for-byte in the
       guide). Per-pillar guides (http, html, config) land with this
       tier and gate it. Perf budget recorded (interpreted handler ≤
       2× native Go, CI-checked seam). Generator updated: T1 page
       edition.
+      *(Applied 2026-07-17: http/request is the client; guides at
+      docs/guides/keel-{tutorial,http,html,config}.md. The perf seam
+      is TestInterpretedHandlerOverhead (pkg/keel): S20 measured
+      1.6–1.7× at the adapter; the end-to-end HTTP ratio jitters on
+      shared runners, so the gate defaults to 6× with
+      CLJGO_KEEL_PERF_MAX per host — it exists to catch adapter
+      regressions (re-mounting, reflection), which read 10×+.)*
 
 ## 2. T2 — data layer, dev database, migrations, deployment
 

@@ -1,0 +1,156 @@
+;; keel.config — configuration is TWO layers into one plain map (ADR
+;; 0041 §4, openspec app-framework T1): conf.edn (whose :profiles
+;; section, selected by APP_PROFILE, overlays the base map) → APP_* env.
+;; Env mapping is deterministic: __ separates path segments, _ joins
+;; words (APP_DB__POOL_SIZE → [:db :pool-size]). Durations/sizes are
+;; numbers. conf.schema.edn is optional — generated minimal, ENFORCED
+;; when present: a violation aborts boot naming the key and the layer.
+;; Secrets are env-only (the doctrine; nothing here writes secrets to
+;; disk). `cljgo config` prints (explain) — every key's effective value
+;; and the layer that won.
+;;
+;; Go shims interned by pkg/keel before this loads: -read-file (nil when
+;; the file is missing), -env-pairs (vector of [name value]), -getenv.
+(clojure.core/in-ns 'keel.config)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+(require '[clojure.edn :as edn])
+
+(defn ^:private deep-merge [a b]
+  (if (and (map? a) (map? b))
+    (reduce (fn [m kv] (assoc m (key kv) (deep-merge (get m (key kv)) (val kv))))
+            a (seq b))
+    (if (nil? b) a b)))
+
+(defn ^:private env-path
+  "APP_DB__POOL_SIZE → [:db :pool-size]: __ separates path segments,
+  _ joins words inside a segment."
+  [k]
+  (mapv (fn [seg] (keyword (str/replace (str/lower-case seg) "_" "-")))
+        (str/split k #"__")))
+
+(defn ^:private coerce-env
+  "Env values arrive as strings; numbers and booleans coerce (durations
+  and sizes are NUMBERS — no stringly-typed \"5m\")."
+  [v]
+  (cond
+    (= v "true")  true
+    (= v "false") false
+    (re-matches #"-?\d+" v) (parse-long v)
+    :else v))
+
+(defn ^:private env-overlay
+  "All APP_* variables as [path value] pairs (APP_PROFILE is the
+  profile selector, not config data)."
+  []
+  (reduce (fn [acc pair]
+            (let [k (nth pair 0) v (nth pair 1)]
+              (if (and (str/starts-with? k "APP_")
+                       (not= k "APP_PROFILE")
+                       (not= k "APP_SESSION_KEY"))
+                (conj acc [(env-path (subs k 4)) (coerce-env v)])
+                acc)))
+          []
+          (-env-pairs)))
+
+(defn profile
+  "The active profile keyword: APP_PROFILE, default :dev."
+  []
+  (keyword (or (-getenv "APP_PROFILE") "dev")))
+
+(defn ^:private read-edn-file [path]
+  (let [s (-read-file path)]
+    (when s (edn/read-string s))))
+
+;; --- schema (optional, enforced when present) ------------------------------
+;; conf.schema.edn: {[:port] {:type :int :required true :default 3000}}
+(defn ^:private type-ok? [t v]
+  (cond
+    (= t :int)     (int? v)
+    (= t :number)  (number? v)
+    (= t :string)  (string? v)
+    (= t :boolean) (boolean? v)
+    (= t :keyword) (keyword? v)
+    :else true))
+
+(defn ^:private validate!
+  "Enforce the schema against the resolved map; violations abort boot
+  NAMING THE KEY AND THE LAYER (misconfigured deploys must not boot)."
+  [cfg schema layers]
+  (doseq [entry (seq (or schema {}))]
+    (let [path  (key entry)
+          spec  (val entry)
+          v     (get-in cfg path)
+          layer (get layers path :default)]
+      (when (and (:required spec) (nil? v))
+        (throw (ex-info (str "config: required key " (pr-str path)
+                             " is missing (not in conf.edn, the active profile, or APP_* env)")
+                        {:keel/error :config/invalid :key path})))
+      (when (and (some? v) (:type spec) (not (type-ok? (:type spec) v)))
+        (throw (ex-info (str "config: key " (pr-str path) " (from " (name layer)
+                             ") should be " (name (:type spec))
+                             ", got " (pr-str v))
+                        {:keel/error :config/invalid :key path :layer layer})))))
+  cfg)
+
+;; --- resolution --------------------------------------------------------------
+(defn ^:private leaf-paths
+  ([m] (leaf-paths [] m))
+  ([prefix m]
+   (reduce (fn [acc kv]
+             (let [p (conj prefix (key kv)) v (val kv)]
+               (if (map? v)
+                 (into acc (leaf-paths p v))
+                 (conj acc p))))
+           [] (seq m))))
+
+(defn ^:private resolve-layers
+  "Returns [cfg layers]: the merged map and, per leaf path, the winning
+  layer (:default :file :profile :env)."
+  [path]
+  (let [raw      (read-edn-file path)
+        base     (dissoc (or raw {}) :profiles)
+        prof     (get-in raw [:profiles (profile)])
+        schema   (read-edn-file "conf.schema.edn")
+        defaults (reduce (fn [m entry]
+                           (if (contains? (val entry) :default)
+                             (assoc-in m (key entry) (:default (val entry)))
+                             m))
+                         {} (seq (or schema {})))
+        with-file (deep-merge defaults base)
+        with-prof (deep-merge with-file prof)
+        env       (env-overlay)
+        cfg       (reduce (fn [m pv] (assoc-in m (nth pv 0) (nth pv 1)))
+                          with-prof env)
+        layer-of  (fn [p]
+                    (cond
+                      (some (fn [pv] (= p (nth pv 0))) env) :env
+                      (some? (get-in prof p))               :profile
+                      (some? (get-in base p))               :file
+                      :else                                 :default))
+        layers    (reduce (fn [m p] (assoc m p (layer-of p)))
+                          {} (leaf-paths cfg))]
+    [(validate! cfg schema layers) layers schema]))
+
+(defn load!
+  "conf.edn (+ :profiles by APP_PROFILE) → APP_* env → ONE PLAIN MAP.
+  Reads a file (and the env), no more — no sockets, no pools; a schema
+  violation throws before anything else boots."
+  ([] (load! "conf.edn"))
+  ([path] (nth (resolve-layers path) 0)))
+
+(defn explain
+  "The `cljgo config` body: every key's effective value and the layer
+  that won (default < file < profile < env)."
+  ([] (explain "conf.edn"))
+  ([path]
+   (let [pair   (resolve-layers path)
+         cfg    (nth pair 0)
+         layers (nth pair 1)]
+     (str "profile: " (name (profile)) "\n"
+          (apply str
+                 (map (fn [p]
+                        (str "  " (format "%-28s" (pr-str p)) " "
+                             (format "%-14s" (pr-str (get-in cfg p)))
+                             " <- " (name (get layers p :default)) "\n"))
+                      (sort-by pr-str (leaf-paths cfg))))))))
