@@ -1,15 +1,15 @@
-# Spike S20 verdict — AOT-core buys ~86% of the `reduce` gap; the rest is the runtime
+# Spike S23 verdict — AOT-core buys ~86% of the `reduce` gap; the rest is the runtime
 
-Closed 2026-07-16. Feeds **ADR 0037** (reserved) with S19.
+Closed 2026-07-16. Feeds **ADR 0037** (reserved) with S22.
 
 **Exit criterion Part A: MET**, on the "prize is real and large" branch —
 compiled `my-reduce` is **5.83×** faster than interpreted `clojure.core/reduce`,
 against a 3× threshold. **Part B: MET** — inventory in §3.
 
-**But the honest headline is narrower than S19 implied:** AOT-core does not win
+**But the honest headline is narrower than S22 implied:** AOT-core does not win
 `reduce`, it closes most of it. A residual ~1.8× belongs to `pkg/lang`, and
-S19's framing did not see that. This spike exists because extrapolating the
-prize from S19's 9.74× `fib` number would have been wrong — `fib` rides `rt`'s
+S22's framing did not see that. This spike exists because extrapolating the
+prize from S22's 9.74× `fib` number would have been wrong — `fib` rides `rt`'s
 arithmetic intrinsics; `reduce` is seq traversal and megamorphic dispatch.
 
 ## 1. The prize, measured
@@ -42,9 +42,9 @@ with zero interpreted code in the hot loop, we are 1.76× slower than a bytecode
 VM on compute. That is the `pkg/lang`/emitter axis, and it is the §1.4 "~10×
 handwritten Go" ladder that `pkg/emit/perf_test.go` already tracks at ~35×.
 
-## 2. Why the prize is smaller than S19's 9.74×
+## 2. Why the prize is smaller than S22's 9.74×
 
-S19's `fib` number is the best case: arithmetic through `rt.Add2`/`Sub2`'s
+S22's `fib` number is the best case: arithmetic through `rt.Add2`/`Sub2`'s
 guarded intrinsics (ADR 0004), monomorphic, no allocation. `reduce` is seq
 traversal — `first`/`next` allocate, `f` is a megamorphic `IFn`, values box.
 Compiling removes the tree-walk overhead but not the runtime's per-element
@@ -90,7 +90,7 @@ interpreter anyway and measures as zero. ADR 0037 cannot schedule this as
    ~2.26× of let-go on `reduce`, not parity. Parity needs the §5 ladder too.
 4. **Add a `clojure.core`-mediated perf gate.** `pkg/emit/perf_test.go`
    measures emitted-vs-handwritten factorial — user-code-only, the one path
-   that already works. It is structurally blind to the entire S19/S20 finding.
+   that already works. It is structurally blind to the entire S22/S23 finding.
    A suite-derived gate would have caught this in CI.
 
 ## Verdict: **proceed, with corrected expectations.**

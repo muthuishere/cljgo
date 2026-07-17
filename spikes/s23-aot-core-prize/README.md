@@ -1,15 +1,15 @@
-# Spike S20 — How big is the AOT-core prize, and what blocks collecting it?
+# Spike S23 — How big is the AOT-core prize, and what blocks collecting it?
 
-Opened 2026-07-16. Feeds **ADR 0037** (reserved), together with S19.
+Opened 2026-07-16. Feeds **ADR 0037** (reserved), together with S22.
 
 ## Context
 
-S19 established that `cljgo build` compiles the user's forms and leaves
+S22 established that `cljgo build` compiles the user's forms and leaves
 `clojure.core` as interpreted tree-walk closures: 9.74× on user code, **1.00×**
 on `clojure.core` work. It did not establish **how much** AOT-compiling
 `core.clj` would recover, nor what it costs to build.
 
-Guessing the payoff from S19 is not sound: the 9.74× user-code figure is
+Guessing the payoff from S22 is not sound: the 9.74× user-code figure is
 measured on `fib`, which is arithmetic through `rt`'s guarded intrinsics
 (`rt.Add2`/`Sub2`, ADR 0004) — the most favourable possible path. `reduce` is
 seq traversal and megamorphic `IFn` dispatch. The prize must be measured on
@@ -33,7 +33,7 @@ same (interpreted, lazy) `core/range`, so the delta isolates reduce-the-fn.
   runtime's seq/`IFn` machinery. Proceed to Part B.
 - **If compiled `my-reduce` < 1.5× faster** → the bottleneck is `pkg/lang`
   (seqs, boxing, `IFn` dispatch), NOT interpretation. AOT-core would be a
-  startup/size win only, ADR 0023's original framing was right, S19's
+  startup/size win only, ADR 0023's original framing was right, S22's
   performance reframing is **wrong**, and the gap needs its own spike.
 - Between 1.5× and 3×: report both contributions; ADR 0037 must schedule the
   runtime work alongside AOT-core rather than instead of it.
@@ -50,7 +50,7 @@ not be started before ADR 0037 rules on the approach.
 
 ## Method
 
-Host: Apple M5 Pro, go1.26.3. hyperfine, 3 warmup / 10 runs, per S19.
+Host: Apple M5 Pro, go1.26.3. hyperfine, 3 warmup / 10 runs, per S22.
 Corpus: `references/let-go/benchmark/reduce.clj` as the baseline.
 
 ## Results

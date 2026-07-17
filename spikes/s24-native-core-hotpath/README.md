@@ -1,10 +1,10 @@
-# Spike S21 — Is "move hot core fns to Go builtins" the simple fix?
+# Spike S24 — Is "move hot core fns to Go builtins" the simple fix?
 
-Opened 2026-07-17. Feeds **ADR 0038** (reserved). Follows S19/S20.
+Opened 2026-07-17. Feeds **ADR 0039** (reserved). Follows S22/S23.
 
 ## Context
 
-S19/S20 established the defect (`clojure.core` is interpreted in both modes)
+S22/S23 established the defect (`clojure.core` is interpreted in both modes)
 and priced the structural fix (AOT-core: ~86% of the gap, but gated on
 multi-namespace emission, all-or-nothing, a milestone). Before committing to
 big work, this spike asks whether the competition's answer is simpler.
@@ -30,11 +30,11 @@ honored, empty/nil-coll seeding per JVM Clojure), delete the `core.clj`
 definition, then:
 
 1. **Perf**: `reduce.clj` (1e6) must drop from ~719 ms to **≤ 150 ms** total
-   (≈ the S20 all-compiled floor of ~96 ms + margin). If it does → the
-   incremental-native path is validated; ADR 0038 decides the hot-fn list and
+   (≈ the S23 all-compiled floor of ~96 ms + margin). If it does → the
+   incremental-native path is validated; ADR 0039 decides the hot-fn list and
    its relation to AOT-core. If it lands > 300 ms → per-element cost lives in
    the seq machinery, not the fn body; native prims are NOT the lever and the
-   S20 decomposition needs revisiting.
+   S23 decomposition needs revisiting.
 2. **Correctness**: full gates green (`go build/vet/gofmt/test ./...`), the
    two core.clj reduce oracle cases hold, and `transducers`/`map-filter`
    benchmarks still produce correct output.
@@ -58,10 +58,10 @@ definition, then:
 ## Method
 
 Prototype patch to `pkg/eval` + `core/core.clj` in this worktree, measured
-with the S19 harness (hyperfine, 3 warmup / 10 runs, M5 Pro, go1.26.3),
+with the S22 harness (hyperfine, 3 warmup / 10 runs, M5 Pro, go1.26.3),
 then **reverted** — the diff is frozen as `prototype.patch` in this dir;
 spike code never merges (ADR 0027). Production landing goes through
-ADR 0038 → OpenSpec.
+ADR 0039 → OpenSpec.
 
 ## Results
 

@@ -1,6 +1,6 @@
 # 10 — Debt & blind-spot audit (2026-07-17)
 
-Draft v1. A systematic sweep for the *class* of defect that S19/S21 exposed —
+Draft v1. A systematic sweep for the *class* of defect that S22/S24 exposed —
 not one bug, but four recurring patterns. Each finding cites evidence; perf
 numbers are hyperfine means on Apple M5 Pro, go1.26.3, against let-go v1.11.1
 built from source on the same machine.
@@ -16,7 +16,7 @@ The four patterns:
 
 ## P1 — Hot core fns still interpreted (measured, ranked)
 
-With S21's native `reduce` applied, the remaining idiom gaps isolate the next
+With S24's native `reduce` applied, the remaining idiom gaps isolate the next
 offenders. "Residual" = startup-subtracted gap vs let-go after native reduce.
 Every named fn is interpreted `core.clj`; none is a builtin today.
 
@@ -33,7 +33,7 @@ Every named fn is interpreted `core.clj`; none is a builtin today.
 | `concat`+count (1e6) | 376.3 ms | — | 337.8 ms | 1.0× | fine (but see P2-5: eager) |
 | `apply str` (1e5) | 35.8 ms | — | 11.8 ms | 0.9× | fine |
 
-**ADR 0038 candidate order confirmed by measurement**: `map`, `filter`,
+**ADR 0039 candidate order confirmed by measurement**: `map`, `filter`,
 `mapv`, `comp` (and the transducer arities), then `frequencies`/`group-by` —
 which likely collapse once `map`/`reduce`/transients land, so re-measure
 before moving them (the 0038 discipline: measurement names the fn, one per
@@ -76,8 +76,8 @@ PR, JVM-oracle-gated).
    3× emitted-code regression merges green. ADR 0024's own text warns that
    neutering the gate on CI is equivalent to deleting it.
 2. **No `clojure.core`-mediated perf gate exists** — `perf_test.go` measures
-   user-code factorial only; the entire S19 finding was invisible to it.
-   (ADR 0037 decision #5; should land with the first ADR 0038 fn.)
+   user-code factorial only; the entire S22 finding was invisible to it.
+   (ADR 0037 decision #5; should land with the first ADR 0039 fn.)
 3. **The suite ratchet is specified as build-failing and runs nowhere**
    (design/08:115, ADR 0022:19 vs zero workflow references to `cljgo suite`).
 4. **`Benchmark*` funcs never run in CI** (no `-bench` outside the manual

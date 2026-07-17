@@ -195,7 +195,7 @@ So AOT-compiling `core.clj` is not a binary-size cleanup with a startup bonus,
 which is how ADR 0023 framed it. It is the **top performance lever in the
 tree**, and it is the same edge that owns startup, RSS and size.
 
-How much it buys is measured, not assumed (spike S20). Compiling `reduce`'s
+How much it buys is measured, not assumed (spike S23). Compiling `reduce`'s
 algorithm instead of interpreting it is **5.83×**; with no interpreted core in
 the hot loop at all, `reduce` goes from 674 ms to 96 ms — closing **~86%** of
 the gap:
@@ -213,8 +213,8 @@ emission doesn't exist yet and is a hard prerequisite, and the linker win is
 all-or-nothing (a half-migrated core still links the interpreter and measures
 as zero).
 
-Spikes [S19](spikes/s19-aot-core-perf/VERDICT.md) and
-[S20](spikes/s20-aot-core-prize/VERDICT.md) have the full evidence; ADR 0037
+Spikes [S22](spikes/s22-aot-core-perf/VERDICT.md) and
+[S23](spikes/s23-aot-core-prize/VERDICT.md) have the full evidence; ADR 0037
 is reserved for the decision.
 
 Boot got 8.9× faster in v0.2.0 (211 ms → 23.7 ms) by replacing a

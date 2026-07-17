@@ -1,4 +1,4 @@
-# Spike S19 verdict — `cljgo build` compiles your code and nothing else
+# Spike S22 verdict — `cljgo build` compiles your code and nothing else
 
 Closed 2026-07-16. Recommendation feeds **ADR 0037** (reserved): reframe ADR
 0023 decision #2 — AOT-`core.clj` is the top **performance** lever, not a
@@ -104,7 +104,7 @@ the fix.
 ## 5. What ADR 0037 must decide
 
 1. **Reframe.** ADR 0023 #2 calls AOT-core "the structural fix" for size.
-   S19 shows size is the *third* prize. Order: **performance** (up to 9.7× on
+   S22 shows size is the *third* prize. Order: **performance** (up to 9.7× on
    every `clojure.core` call path) → startup (≈2 ms floor vs 29.8 ms) → RSS →
    size (~2 MB). One edge, four wins.
 2. **`<10 ms startup` in README.md was false** — traced to S1's 2.3 ms, which

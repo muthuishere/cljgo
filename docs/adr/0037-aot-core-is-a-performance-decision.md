@@ -1,8 +1,8 @@
 # ADR 0037 — AOT-`core.clj` is a performance decision, and multi-namespace emission gates it
 Date: 2026-07-16 · Status: proposed
 Supersedes: **ADR 0023 decision #2** (framing only; #1 "strip by default" stands)
-Evidence: spikes **S19** (`spikes/s19-aot-core-perf/VERDICT.md`), **S20**
-(`spikes/s20-aot-core-prize/VERDICT.md`)
+Evidence: spikes **S22** (`spikes/s22-aot-core-perf/VERDICT.md`), **S23**
+(`spikes/s23-aot-core-prize/VERDICT.md`)
 
 ## Context
 
@@ -10,10 +10,10 @@ ADR 0023 #2 named AOT-compiling `core.clj` "the structural fix" for **binary
 size** (6.6MB → ~2MB), with startup (ADR 0019) as a bundled benefit. That
 framing set the priority: an M5 item, "the single biggest lever" for size.
 
-S19 and S20 measured it. The framing was wrong in a way that mattered — it
+S22 and S23 measured it. The framing was wrong in a way that mattered — it
 undersold the change and pointed the perf gates at the wrong path.
 
-**S19.** `pkg/emit/program.go:172` emits `main` as `rt.Boot(); Load()`.
+**S22.** `pkg/emit/program.go:172` emits `main` as `rt.Boot(); Load()`.
 `rt.Boot()` calls `eval.New()`, which tree-walks the embedded `core.clj` + 12
 `.cljg` files (2980 lines) on **every startup**. Emitted code reaches
 `clojure.core` only via `lang.InternVarName(...).Get()`, and `InternVarName`
@@ -48,7 +48,7 @@ it and 15.8× behind let-go (we are an interpreter). Same binary, same run. A
 third-party implementation confirms the §1 A/B and rules out "`pkg/lang` is
 just slow" — if it were, `fib` would be slow too.
 
-**S20.** Quantified the prize on `reduce`'s real shape rather than
+**S23.** Quantified the prize on `reduce`'s real shape rather than
 extrapolating from `fib` (which rides `rt.Add2`/`Sub2` intrinsics, ADR 0004):
 
 | cause of the 15.79× `reduce` gap | cost | share | fix |
@@ -88,7 +88,7 @@ Compiled `my-reduce` vs interpreted `clojure.core/reduce`: **5.83×**.
 5. **Add a `clojure.core`-mediated perf gate, before the migration, not after.**
    `pkg/emit/perf_test.go` benchmarks emitted-vs-handwritten factorial —
    user-code-only, the one path that already worked. It is structurally blind
-   to the entire S19/S20 finding: a 16.54× regression against a competitor was
+   to the entire S22/S23 finding: a 16.54× regression against a competitor was
    invisible to a green CI. A gate derived from a `clojure.core`-heavy workload
    (`reduce` over a large `range` is the obvious seed) must exist first, or we
    cannot prove the migration worked.

@@ -1,4 +1,4 @@
-# Spike S19 — What does `cljgo build` actually compile?
+# Spike S22 — What does `cljgo build` actually compile?
 
 Opened 2026-07-16. Feeds **ADR 0037** (reserved).
 
