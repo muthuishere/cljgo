@@ -1,0 +1,56 @@
+// NOT COMPILED — this is a sketch of what `cljgo build` would emit for:
+//
+//   (ffi/deflib libm "libm.dylib"
+//     (cos  "cos"  [:double] :double)
+//     (sqrt "sqrt" [:double] :double))
+//
+// in a source-emitting namespace, alongside the ADR 0042 multi-namespace
+// package-init story. Two things this sketch is arguing for (see
+// docs/adr/0044 and VERDICT.md §2):
+//
+//   1. AOT does NOT need the dynamic reflect.FuncOf path from deflib.go —
+//      the C signature is known at COMPTIME (comptime.md / ADR 0009's
+//      analyzer already walks the whole form), so the emitter can name a
+//      concrete Go func type and call purego.RegisterLibFunc directly,
+//      exactly like S7's static prototype. This is FASTER than the
+//      interpreted path (no reflect.Call marshaling per invocation, see
+//      BENCH.md) and is why the interpreted/AOT split is not just "the same
+//      code twice" — it's "the same DECLARATION, two registration
+//      strategies, one call-site contract" (both produce an ordinary
+//      Clojure fn value at the `libm/cos` var).
+//   2. Both strategies funnel through the identical purego primitives
+//      (Dlopen/Dlsym/RegisterLibFunc) — so there is exactly one thing to
+//      get right about C ABI marshaling, tested once (this spike + S7),
+//      trusted in both modes. This is the "dual-mode, one semantics"
+//      non-negotiable from design/00 §5 applied to FFI.
+
+package cljgo_ns_libm // generated package for the ffi/deflib form's namespace
+
+import (
+	"github.com/muthuishere/cljgo/pkg/runtime/ffi" // thin wrapper the ADR proposes over purego
+)
+
+// One package-level var per declared fn — a real Go closure, not a map
+// lookup, so calling it from other emitted code is a direct call with Go's
+// normal type checking (the AOT compiler catches an arity/type mistake at
+// `go build` time, something the interpreted path can only catch at eval
+// time per deflib.go's Call()).
+var libm_cos func(float64) float64
+var libm_sqrt func(float64) float64
+
+// init() runs once at program startup — the "declaration time" for AOT is
+// process start, not first call, matching the interpreted path's
+// declaration-time dlopen/dlsym failures (ffi.MustDeclare panics with the
+// same positioned error text deflib.go's Declare() returns, so a broken
+// deflib form fails a compiled binary exactly where it would fail a REPL:
+// immediately, loudly, before any business logic runs).
+func init() {
+	lib := ffi.MustDlopen("libm", "libm.dylib", "libm.so.6")
+	ffi.MustRegister(&libm_cos, lib, "cos")
+	ffi.MustRegister(&libm_sqrt, lib, "sqrt")
+}
+
+// The emitted Clojure-visible var `libm/cos` is just this func value,
+// wrapped the same way every other emitted top-level def is (ADR 0004
+// calling-convention-liveness) — ffi/deflib adds nothing new to the var
+// story, only to how the func VALUE behind the var gets its body.
