@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 // set.go) from the original vendor promotion — this file only wires
 // clojure.core names onto them. Wired into internBuiltins by ONE line
 // (e.internSortedBuiltins(def)), per the merge-friendly discipline.
-func (e *Evaluator) internSortedBuiltins(def func(string, func(...any) any) *lang.Var) {
+func internSortedBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// NaN?: is x NaN. Oracle (clojure 1.12): (NaN? ##NaN) => true;
 	// (NaN? 1) => false; (NaN? 1.0) => false; non-numbers (incl. nil,
 	// keywords, chars, strings) throw a ClassCastException on the JVM
@@ -72,10 +72,10 @@ func (e *Evaluator) internSortedBuiltins(def func(string, func(...any) any) *lan
 	// which one it is rather than invoking it on the keys (so it works on
 	// non-numeric sorted keys, e.g. keywords), and so do we.
 	def("subseq", func(args ...any) any {
-		return e.doSubseq("subseq", args, false)
+		return doSubseq("subseq", args, false)
 	})
 	def("rsubseq", func(args ...any) any {
-		return e.doSubseq("rsubseq", args, true)
+		return doSubseq("rsubseq", args, true)
 	})
 }
 
@@ -143,7 +143,7 @@ func sortedCompare(sc lang.Sorted, a, b any) int {
 	return int(lang.AsInt64(r))
 }
 
-func (e *Evaluator) doSubseq(op string, args []any, reverse bool) any {
+func doSubseq(op string, args []any, reverse bool) any {
 	if len(args) != 3 && len(args) != 5 {
 		panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), op))
 	}

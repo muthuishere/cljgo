@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -16,8 +16,12 @@ import (
 // Clojure 1.12.5 and the precedence principle applies: no drift, ever. One
 // implementation serves both modes (design/00 §2): the REPL and emitted
 // binaries call the same fns through the same vars. Kept in this file so
-// builtins.go gains exactly one call line inside internBuiltins.
-func (e *Evaluator) internHotpathBuiltins(def func(string, func(...any) any) *lang.Var) {
+// RegisterAll gains exactly one call line.
+//
+// Interpreter-independent (ADR 0043): these close over pkg/lang only, so
+// they live in corelib with the rest of the pure builtins and a compiled
+// core.clj can intern them without linking the tree-walker.
+func internHotpathBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// mapSeq : lazy 1-coll map, the hot arity.
 	//
 	// The tail is s.More(), NOT s.Next(): More is Clojure's `rest` (hands back

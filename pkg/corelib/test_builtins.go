@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 // already carries the compiled-pattern cache (lang.CachedCompileRegexp) and
 // the reader produces reader.Regex for #"..." literals — so thrown-with-msg?
 // matches JVM clojure.test semantics.
-func (e *Evaluator) registerTestBuiltins(defPrivate func(string, func(args ...any) any)) {
+func registerTestBuiltins(defPrivate func(string, func(args ...any) any)) {
 	// -re-find? reports whether re (a #"..." pattern literal) matches
 	// anywhere in s — the boolean core of clojure.core/re-find, all
 	// thrown-with-msg? needs. A non-string (e.g. nil) message never matches.

@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ import (
 // %s's display text reuses lang.ToString (pkg/lang/strconv.go's formatFloat
 // is a bit-exact-verified java.lang.Double.toString, better than the
 // spike's own approximation) instead of re-deriving Java double rendering.
-func (e *Evaluator) internFormatBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
+func internFormatBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
 	def("format", func(args ...any) any {
 		if len(args) < 1 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: format", len(args)))

@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ var gensymCounter int64
 // clojure.core fns — precedence-safe additions, never renames (CLAUDE.md
 // precedence principle). Kept in this file so builtins.go gains exactly
 // one call line inside internBuiltins.
-func (e *Evaluator) internSeqBuiltins(def func(string, func(...any) any) *lang.Var) {
+func internSeqBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// nth: (nth coll n) errors out of range; (nth coll n not-found) yields
 	// the default. Backed by lang.Nth (Indexed/ISeq/string aware).
 	def("nth", func(args ...any) any {

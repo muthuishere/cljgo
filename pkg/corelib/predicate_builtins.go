@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ import (
 // Every name is a real clojure.core name — precedence-safe additions, never
 // renames (CLAUDE.md precedence principle). Wired into internBuiltins by ONE
 // line (e.internPredicateBuiltins(def)), per the merge-friendly discipline.
-func (e *Evaluator) internPredicateBuiltins(def func(string, func(...any) any) *lang.Var) {
+func internPredicateBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// ---- type predicates ----------------------------------------------------
 
 	// any?: always true — Clojure's (constantly true) spec predicate.

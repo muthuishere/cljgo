@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -211,7 +211,11 @@ func dispatchKey(v any) string {
 
 // instanceField reads a named field off a deftype/defrecord instance, for
 // GoFieldGet (`.-f`) and the `-field` builtin (method-body field locals).
-func instanceField(recv any, field string) (any, bool) {
+func instanceField(recv any, field string) (any, bool) { return InstanceField(recv, field) }
+
+// InstanceField reads a deftype/defrecord declared field by name —
+// exported for pkg/eval's host dot-form path (GoFieldGet).
+func InstanceField(recv any, field string) (any, bool) {
 	switch x := recv.(type) {
 	case *lang.DType:
 		return x.Field(field)
@@ -245,7 +249,7 @@ func stringVals(v lang.IPersistentVector) []string {
 // clojure.core (design/00 §6 M5). The `-`-prefixed helpers are private
 // (invisible to unqualified user code); the macros in protocols.cljg emit
 // calls to them.
-func (e *Evaluator) internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
+func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// These `-`-prefixed builtins are the substrate the protocols.cljg
 	// macros expand onto. They are PUBLIC (referred into user like the rest
 	// of clojure.core) because macro expansions reference them by
@@ -305,7 +309,7 @@ func (e *Evaluator) internProtocolBuiltins(def func(string, func(...any) any) *l
 	// stable type/dispatch name, resolved when the def is evaluated (load
 	// time) in the DEFINING namespace.
 	defPrivate("-qualified-name", func(args ...any) any {
-		return e.CurrentNS().Name().Name() + "." + lang.ToString(args[0])
+		return currentNS().Name().Name() + "." + lang.ToString(args[0])
 	})
 
 	// (-extend-key protocol type-key-string method-name-string fn) -> nil.
@@ -329,7 +333,7 @@ func (e *Evaluator) internProtocolBuiltins(def func(string, func(...any) any) *l
 		if !ok {
 			return lang.ToString(args[0])
 		}
-		if v, err := e.resolveVar(sym); err == nil {
+		if v, err := ResolveVar(sym); err == nil {
 			if m, ok := v.Deref().(*TypeMarker); ok {
 				return m.name
 			}

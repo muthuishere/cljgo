@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muthuishere/cljgo/pkg/eval"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
@@ -75,10 +75,10 @@ func main() {
 
 	buildClj := func(name, src string) string {
 		lang.RemoveNamespace(lang.NewSymbol("user"))
-		oldOut := eval.Out
-		eval.Out = io.Discard
+		oldOut := corelib.Out
+		corelib.Out = io.Discard
 		forms, err := CompileReader(strings.NewReader(src), name+".clj")
-		eval.Out = oldOut
+		corelib.Out = oldOut
 		if err != nil {
 			t.Fatalf("compile %s: %v", name, err)
 		}

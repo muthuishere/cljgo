@@ -27,6 +27,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
@@ -108,9 +109,9 @@ func runSuite(args []string) int {
 	sort.Strings(files)
 
 	// Silence clojure.test's per-run "Ran N tests" chatter for the whole run.
-	savedOut := eval.Out
-	eval.Out = io.Discard
-	defer func() { eval.Out = savedOut }()
+	savedOut := corelib.Out
+	corelib.Out = io.Discard
+	defer func() { corelib.Out = savedOut }()
 
 	// Bind *print-length* for the whole run: a failing assertion whose
 	// actual value is an INFINITE lazy seq (e.g. lazy_seq.cljc's

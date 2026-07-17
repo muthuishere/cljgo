@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 // implement this clojure.core var?" check), so it must return nil on a
 // miss rather than throw. Wired into internBuiltins by ONE line
 // (e.internVarBuiltins(def)), per the merge-friendly discipline.
-func (e *Evaluator) internVarBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
+func internVarBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
 	// var?: is x a Var (design/08 Batch 1 lists it too; the harness uses it).
 	def("var?", func(args ...any) any {
 		_, ok := oneArg("var?", args).(*lang.Var)
@@ -68,18 +68,8 @@ func (e *Evaluator) internVarBuiltins(def func(name string, fn func(args ...any)
 		return nil
 	})
 
-	// eval: analyze + evaluate an already-read form through the SAME
-	// Read→Analyze→Eval path the REPL uses (Evaluator.EvalForm). The argument
-	// is data, not text, so there is no reader step here — this is the
-	// value-level eval the suite exercises ((eval (list '+ 1 2)) => 3).
-	// A read-string→eval combo composes the two, matching clojure.core.
-	def("eval", func(args ...any) any {
-		res, err := e.EvalForm(oneArg("eval", args))
-		if err != nil {
-			panic(err)
-		}
-		return res
-	})
+	// `eval` is interpreter-coupled (Evaluator.EvalForm) and registered
+	// by pkg/eval's internBuiltins, not here (ADR 0043).
 
 	// get-thread-bindings / push-thread-bindings / pop-thread-bindings: the
 	// raw thread-binding-frame primitives bound-fn*/bound-fn ride on

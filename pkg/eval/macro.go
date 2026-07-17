@@ -12,6 +12,7 @@ import (
 	"github.com/muthuishere/cljgo/core"
 	"github.com/muthuishere/cljgo/pkg/analyzer"
 	"github.com/muthuishere/cljgo/pkg/ast"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
@@ -153,7 +154,7 @@ const maxUserMacroExpansions = 1000
 // (. (var name) (setMacro)) — host interop lands in v3.
 func (e *Evaluator) installDefmacro() {
 	v := lang.NSCore.Intern(lang.NewSymbol("defmacro"))
-	v.BindRoot(&nativeFn{nm: "defmacro", fn: defmacroExpand})
+	v.BindRoot(corelib.NewNativeFn("defmacro", defmacroExpand))
 	v.SetMacro()
 }
 

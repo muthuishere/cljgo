@@ -1,4 +1,4 @@
-package eval_test
+package corelib_test
 
 // Unit tests for format/printf (ADR 0030) beyond the corpus-driven
 // conformance/tests/format-*.clj files: printf's write path specifically,
@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
@@ -17,9 +18,9 @@ import (
 func TestPrintfWritesThroughOut(t *testing.T) {
 	e := eval.New()
 	var buf bytes.Buffer
-	old := eval.Out
-	eval.Out = &buf
-	defer func() { eval.Out = old }()
+	old := corelib.Out
+	corelib.Out = &buf
+	defer func() { corelib.Out = old }()
 
 	r := reader.New(strings.NewReader(`(printf "%s=%d" "x" 1)`), reader.WithResolver(e.ReaderResolver()))
 	form, err := r.ReadOne()

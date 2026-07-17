@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -133,7 +133,7 @@ func asMultiFn(v any, ctx string) *MultiFn {
 // substrate the core.clj defmulti/defmethod macros expand onto; the public
 // spellings (methods / get-method / remove-method) are user-facing
 // clojure.core fns that operate on a MultiFn value.
-func (e *Evaluator) internMultimethodBuiltins(def func(string, func(...any) any) *lang.Var) {
+func internMultimethodBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// (-defmulti name-string dispatch-fn) -> a fresh MultiFn whose default
 	// dispatch value is :default (Clojure's fixed v0 default).
 	def("-defmulti", func(args ...any) any {

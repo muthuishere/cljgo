@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	cryptorand "crypto/rand"
@@ -34,7 +34,7 @@ import (
 // (number?/rational?/ratio?/int?/…) belong to Batch 1 and are NOT
 // defined here; this file only guarantees ratios/bigints/bigdecs are the
 // genuine tower types those predicates match.
-func (e *Evaluator) internNumericBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
+func internNumericBuiltins(def func(name string, fn func(args ...any) any) *lang.Var) {
 	// --- BigInt / BigInteger / BigDecimal coercions ----------------------
 
 	// bigint: coerce to clojure.lang.BigInt (prints with an N suffix).

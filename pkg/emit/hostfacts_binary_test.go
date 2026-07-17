@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muthuishere/cljgo/pkg/eval"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
@@ -29,10 +29,10 @@ func TestHostFactsNoNetworkForStdlib(t *testing.T) {
 	t.Setenv("GOPROXY", "off")
 
 	lang.RemoveNamespace(lang.NewSymbol("user"))
-	oldOut := eval.Out
-	eval.Out = io.Discard
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
 	forms, err := CompileReader(strings.NewReader(stdlibInteropSrc), "test.clj")
-	eval.Out = oldOut
+	corelib.Out = oldOut
 	if err != nil {
 		t.Fatalf("compile: %v", err)
 	}

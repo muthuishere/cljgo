@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ import (
 // argument to actually BE a reflect.Slice/reflect.Array (matching the
 // oracle: `(aget [1 2 3] 0)` throws on real Clojure 1.12.5 too, since
 // aget only expands onto real array classes, never persistent vectors).
-func (e *Evaluator) internArrayBuiltins(def func(string, func(...any) any) *lang.Var) {
+func internArrayBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// to-array: (to-array coll) => []any. lang.ToSlice already handles
 	// nil, vectors, maps, sets, strings, ISeqs (incl. lazy/range), and the
 	// reflect.Slice/Array fallback (so `(to-array (to-array [1 2]))` also

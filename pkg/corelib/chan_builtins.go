@@ -1,4 +1,4 @@
-package eval
+package corelib
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 // core.async names absent from clojure.core, so this is a precedence-safe
 // addition (CLAUDE.md), never a shadow/rename. All ops are Go builtins wrapping
 // pkg/lang runtime helpers, so REPL and AOT binary behave identically.
-func (e *Evaluator) internChanExtras(def func(string, func(...any) any) *lang.Var) {
+func internChanExtras(def func(string, func(...any) any) *lang.Var) {
 	// (chan) / (chan n) keep M4 v0 behaviour; (chan buf) adds buffer-policy
 	// channels. This rebinds chan's root AFTER builtins.go's plain chan (this
 	// helper is called last in internBuiltins), extending it without editing

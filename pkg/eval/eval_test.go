@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -105,9 +106,9 @@ func TestIfTruthiness(t *testing.T) {
 func TestDoReturnsLastStatementsEvaluated(t *testing.T) {
 	e := eval.New()
 	var buf bytes.Buffer
-	old := eval.Out
-	eval.Out = &buf
-	defer func() { eval.Out = old }()
+	old := corelib.Out
+	corelib.Out = &buf
+	defer func() { corelib.Out = old }()
 
 	got := evalAll(t, e, list(sym("do"),
 		list(sym("println"), "side"),
@@ -366,9 +367,9 @@ func TestPrStrAndPrintln(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	old := eval.Out
-	eval.Out = &buf
-	defer func() { eval.Out = old }()
+	old := corelib.Out
+	corelib.Out = &buf
+	defer func() { corelib.Out = old }()
 	got = evalAll(t, e, list(sym("println"), "hello", int64(42)))
 	if got != nil {
 		t.Errorf("println returned %v, want nil", got)
