@@ -1,8 +1,8 @@
-# apply-adr-0039-native-hotpath
+# apply-adr-0045-native-hotpath
 
 ## Why
 
-ADR 0039 (docs/adr/0039-native-hotpath-builtins.md, accepted, owner-directed
+ADR 0045 (docs/adr/0045-native-hotpath-builtins.md, accepted, owner-directed
 2026-07-17, on spikes S19/S21 evidence — spike/aot-core branch): `clojure.core`
 is tree-walk-interpreted in BOTH modes, so `cljgo build` output ran `reduce`
 at interpreter speed — 16× behind let-go on its own benchmark suite's worst
@@ -21,7 +21,7 @@ via IReduce). cljgo already draws this exact line ~292 times in
 - The five `core.clj` definitions are deleted (builtins intern before
   `loadCore`; a surviving defn would shadow the native) and replaced with
   pointer comments; oracle citations move to the builtins.
-- Discipline (ADR 0039 §3): no bulk migration — further fns move only when
+- Discipline (ADR 0045 §3): no bulk migration — further fns move only when
   measurement names them, one fn per PR, after re-measuring on top of this.
 
 ## Impact
@@ -37,6 +37,6 @@ via IReduce). cljgo already draws this exact line ~292 times in
   small-benchmark wall-clock totals (ADR 0037 / multi-namespace emission,
   ADR 0042 — in flight on main's branches), and frequencies/group-by/into
   residuals trace to missing HAMT transients (pkg/lang/TODO.md S4 #2).
-- Found en route, filed in ADR 0039, NOT fixed here: `(require-go '[math])`
+- Found en route, filed in ADR 0045, NOT fixed here: `(require-go '[math])`
   works interpreted but fails AOT ("no such namespace: math") — a live
   REPL↔binary divergence with no conformance coverage.

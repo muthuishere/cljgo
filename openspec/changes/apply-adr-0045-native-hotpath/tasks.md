@@ -1,4 +1,4 @@
-# Tasks — apply-adr-0039-native-hotpath
+# Tasks — apply-adr-0045-native-hotpath
 
 ## 1. Native hot-path builtins
 
@@ -21,7 +21,7 @@
   (96.7%, zero failing files) — identical to the pre-change baseline.
 - [x] 2.3 Benchmarks re-run against let-go v1.11.1 built from source on the
   same machine, wall-clock totals (no boot subtraction), outputs verified
-  identical before timing; results frozen in ADR 0039.
+  identical before timing; results frozen in ADR 0045.
 
 ## 3. Follow-ups (tracked, NOT this change)
 

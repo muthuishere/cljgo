@@ -1,4 +1,4 @@
-# ADR 0039 — Hot core fns are native Go builtins
+# ADR 0045 — Hot core fns are native Go builtins
 Date: 2026-07-17 · Status: accepted (owner-directed 2026-07-17)
 Complements: ADR 0037 (AOT-core, structural — proposed on `spike/aot-core`).
 Evidence: spikes S19/S20/S21 on `spike/aot-core` (which carries this ADR's
@@ -92,5 +92,18 @@ no conformance test uses `math`.
 - `core.clj` shrinks ~90 lines; boot shrinks slightly (fewer forms).
 - The doc-04 §5 ladder residual (~1.5× on pure fold compute) is unchanged and
   tracked; not this ADR's problem.
-- ADR-number collision resolved: this is 0039; `spike/aot-core`'s draft 0038
-  must be renamed at merge (main's 0038 = STM-lite).
+- ADR-number collision resolved: this ADR is **0045**. It was drafted as 0039,
+  but 0039 was taken on main by real-type-ancestry (PR #42) before this landed;
+  0040–0044 are likewise spoken for (core-async, app-framework, multi-ns
+  emission, builtins-to-lang, c-ffi). `spike/aot-core`'s ADR is 0037, which is
+  free on main and stays as-is.
+- Laziness contract, found in review and fixed before merge: the Go port must
+  use ISeq `More` (Clojure's `rest`) in every lazy tail, not `Next` (`next`,
+  which forces one element ahead). The first cut used `Next` and made
+  `(first (map inc <unchunked infinite>))` realize 2 source elements where the
+  core.clj defn and JVM 1.12.5 realize 1. Pinned by
+  `conformance/tests/lazy-map-filter-no-over-realization.clj`.
+- Known, pre-existing, NOT changed here: cljgo's `map` is unchunked, so
+  `(take 1 (map f (range 100)))` calls `f` once where the JVM's chunked range
+  calls it 32 times. That divergence is identical before and after this ADR;
+  it is not a regression and is tracked separately.

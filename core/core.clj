@@ -494,10 +494,10 @@
         (when s (recur (next cs) (conj acc s))))
       (seq acc))))
 
-;; map is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0039) — all
+;; map is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045) — all
 ;; arities incl. the transducer form. Oracle cases live at the builtin.
 
-;; filter is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0039) —
+;; filter is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045) —
 ;; both arities incl. the transducer form. Oracle cases live at the builtin.
 
 ;; oracle: (remove even? (range 10)) => (1 3 5 7 9)
@@ -506,7 +506,7 @@
   ([pred] (filter (fn [x] (not (pred x)))))
   ([pred coll] (filter (fn [x] (not (pred x))) coll)))
 
-;; reduce is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0039) —
+;; reduce is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045) —
 ;; the hot seq-walking fold runs in Go, both modes. Oracle cases at the builtin.
 
 ;; oracle: (reduce-kv (fn [a k v] (+ a v)) 0 {:a 1 :b 2 :c 3}) => 6
@@ -587,7 +587,7 @@
 ;; oracle: (identity 7) => 7
 (defn identity [x] x)
 
-;; comp is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0039).
+;; comp is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045).
 ;; Oracle cases live at the builtin.
 
 ;; -preserving-reduced : wraps rf so a `reduced` returned by an INNER reduce
@@ -633,7 +633,7 @@
      (seq xs)
      (-concat-seqs xs))))
 
-;; mapv is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0039).
+;; mapv is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045).
 ;; Oracle cases live at the builtin.
 
 ;; oracle: (filterv even? (range 10)) => [0 2 4 6 8]
