@@ -76,6 +76,13 @@ type pkgSpec struct {
 	nsName  string
 	srcFile string
 
+	// bindNS names the namespace Load() binds *ns* to while it runs. Empty
+	// → the requiring frame's *ns* (the ADR 0042 dependency shape: the
+	// file's own (in-ns …) sets it). The AOT core compiler sets it, because
+	// core's sources are loaded by the interpreter under an *ns* the loader
+	// binds (core.clj has no in-ns of its own) — ADR 0046.
+	bindNS string
+
 	// depImports are the module-qualified import paths of this
 	// namespace's file-backed requires, blank-imported so the linker
 	// keeps (and init-registers) them (ADR 0042 §2).
@@ -177,9 +184,21 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	if mainVar != "" {
 		out.WriteString("\"os\"\n")
 	}
-	fmt.Fprintf(&out, "rt %q\n", runtimeModule+"/pkg/emit/rt")
+	// rt: the bootstrap (main), the RegisterLib init (dependency
+	// packages), and the intrinsic/interop/exception helpers. A package
+	// that reaches for none of them must not import it (Go rejects an
+	// unused import) — pkg/coreaot's pure-Clojure packages are exactly
+	// that case.
+	if strings.Contains(body, "rt.") || spec.isMain || spec.nsName != "" {
+		fmt.Fprintf(&out, "rt %q\n", runtimeModule+"/pkg/emit/rt")
+	}
 	if usesLang {
 		fmt.Fprintf(&out, "lang %q\n", runtimeModule+"/pkg/lang")
+	}
+	// Regex literals reconstruct as &reader.Regex values (the reader's
+	// own type is the one both modes carry).
+	if g.usesReader {
+		fmt.Fprintf(&out, "reader %q\n", runtimeModule+"/pkg/reader")
 	}
 	// Go-interop imports (ADR 0010): an explicit alias only when it differs
 	// from the path's last segment; go/format tidies grouping.
@@ -195,6 +214,12 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		} else {
 			fmt.Fprintf(&out, "%s %q\n", name, p)
 		}
+	}
+	// The AOT core (ADR 0046): main blank-imports pkg/coreaot so the
+	// linker keeps it and its init() hands Load to rt.Boot. This is what
+	// makes clojure.core exist in the binary WITHOUT the interpreter.
+	if spec.isMain {
+		fmt.Fprintf(&out, "_ %q\n", runtimeModule+"/pkg/coreaot")
 	}
 	// File-backed requires: blank imports keep the dependency packages
 	// linked (and init-registered) — ADR 0042 §2.
@@ -219,14 +244,18 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		// The interpreter's load frame (repl.Driver.EvalReader shape):
 		// the file's in-ns is undone afterwards and *file* reads as this
 		// source path while the namespace loads.
-		fmt.Fprintf(&out, "lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.VarCurrentNS.Deref(), lang.VarFile, %q))\n", spec.srcFile)
+		curNS := "lang.VarCurrentNS.Deref()"
+		if spec.bindNS != "" {
+			curNS = fmt.Sprintf("lang.FindOrCreateNamespace(lang.NewSymbol(%q))", spec.bindNS)
+		}
+		fmt.Fprintf(&out, "lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, %s, lang.VarFile, %q))\n", curNS, spec.srcFile)
 		out.WriteString("defer lang.PopThreadBindings()\n")
 	}
 	out.WriteString(body)
 	out.WriteString("}\n")
 	if spec.isMain {
 		out.WriteString("\nfunc main() {\n")
-		out.WriteString("rt.Boot() // bootstrap: builtins + embedded core.clj (v0; AOT core is M5)\n")
+		out.WriteString("rt.Boot() // bootstrap: Go builtins + the AOT-compiled core (ADR 0046)\n")
 		out.WriteString("Load()\n")
 		if mainVar != "" {
 			out.WriteString("args := make([]any, 0, len(os.Args)-1)\nfor _, a := range os.Args[1:] {\nargs = append(args, a)\n}\n")
@@ -457,4 +486,20 @@ func isRuntimeDir(dir string) bool {
 		}
 	}
 	return false
+}
+
+// EmitBootPackage compiles one embedded boot source's analyzed forms
+// into a Go package for pkg/coreaot (ADR 0046, AOT-core piece 3): an
+// unregistered, guarded Load() that binds *ns* to nsName and *file* to
+// srcFile — exactly the frame eval.loadBootSource pushes — and then runs
+// the source's top-level forms in source order. pkg/coreaot's own Load()
+// calls these in core.BootSources() order, so a compiled binary's
+// namespace world is built by the same forms in the same order as the
+// interpreter's, with no interpreter linked.
+func EmitBootPackage(forms []*ast.Node, pkgName, nsName, srcFile string, opts Options) (formatted []byte, raw []byte, err error) {
+	return emitPackage(forms, opts, pkgSpec{
+		pkgName: pkgName,
+		srcFile: srcFile,
+		bindNS:  nsName,
+	})
 }

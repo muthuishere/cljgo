@@ -91,6 +91,9 @@ func TestBuildStdlibInteropOutsideRepo(t *testing.T) {
 		if isNetworkErr(err) {
 			t.Skipf("network unavailable for the runtime-module proxy fetch (unrelated to host-fact resolution, proven by TestHostFactsNoNetworkForStdlib): %v", err)
 		}
+		if isUnpublishedRuntimePkgErr(err) {
+			t.Skipf("release-pin build needs a PUBLISHED runtime containing pkg/coreaot (ADR 0046); host-fact resolution itself is proven by TestHostFactsNoNetworkForStdlib: %v", err)
+		}
 		t.Fatalf("Build: %v", err)
 	}
 

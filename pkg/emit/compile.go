@@ -153,3 +153,13 @@ func Build(srcPath, outPath, genDir string, opts Options) (string, error) {
 	}
 	return genDir, GoBuild(genDir, outPath)
 }
+
+// CompileSource is CompileReader against a CALLER-SUPPLIED evaluator:
+// read + analyze + evaluate + capture, with no evaluator construction
+// and no LibLoader opinion. It is the seam the AOT core compiler needs
+// (cmd/gencore, ADR 0046) — core's sources must compile through ONE
+// evaluator whose clojure.core grows source by source, exactly as the
+// interpreter's boot grows it.
+func CompileSource(ev *eval.Evaluator, r io.Reader, filename string) ([]*ast.Node, error) {
+	return compileStream(ev, r, filename)
+}

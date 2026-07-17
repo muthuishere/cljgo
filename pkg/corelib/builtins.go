@@ -123,6 +123,15 @@ func RegisterAll() {
 	def := Def
 	defPrivate := DefPrivate
 
+	// require + the lib-provider registry (require.go, ADR 0046): a
+	// compiled binary replays every (require …) form, so this belongs in
+	// the interpreter-free half.
+	registerRequire(def)
+	// What eval / macroexpand / macroexpand-1 / require-go do when there
+	// is no interpreter (aot_stubs.go, ADR 0046 §5). pkg/eval overwrites
+	// all four through this same seam when an Evaluator is constructed.
+	registerAOTStubs(def)
+
 	def("+", func(args ...any) any {
 		var acc any = int64(0)
 		for i, a := range args {
@@ -1260,4 +1269,23 @@ func chainCompare(name string, cmp func(x, y any) bool) func(args ...any) any {
 		}
 		return true
 	}
+}
+
+// InitUserNS creates the `user` namespace, refers clojure.core's publics
+// into it, refers clojure.repl/doc (as JVM clojure.main's repl-requires
+// does — ADR 0031: (doc x) works at any user prompt), and roots *ns* at
+// user. It is the tail of the boot sequence (design/00 §6), shared by
+// the interpreter (eval.New) and compiled binaries (rt.Boot, ADR 0046) —
+// one implementation, so the two agree by construction. Callable only
+// after the core sources are loaded.
+func InitUserNS() {
+	user := lang.FindOrCreateNamespace(lang.NewSymbol("user"))
+	ReferAll(user, lang.NSCore)
+	if nsRepl := lang.FindNamespace(lang.NewSymbol("clojure.repl")); nsRepl != nil {
+		symDoc := lang.NewSymbol("doc")
+		if v := nsRepl.FindInternedVar(symDoc); v != nil {
+			user.Refer(symDoc, v)
+		}
+	}
+	lang.VarCurrentNS.BindRoot(user)
 }

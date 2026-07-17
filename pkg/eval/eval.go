@@ -12,6 +12,7 @@ package eval
 import (
 	"fmt"
 
+	"github.com/muthuishere/cljgo/core"
 	"github.com/muthuishere/cljgo/pkg/analyzer"
 	"github.com/muthuishere/cljgo/pkg/ast"
 	"github.com/muthuishere/cljgo/pkg/corelib"
@@ -46,6 +47,22 @@ type Evaluator struct {
 // the `user` namespace (created if absent) referring core's publics,
 // and *ns* rooted at user. The whole boot is ~5ms (TestBootUnderBudget).
 func New() *Evaluator {
+	e := NewBare()
+	for _, s := range core.BootSources() {
+		e.loadBootSource(s)
+	}
+	corelib.InitUserNS()
+	return e
+}
+
+// NewBare returns an evaluator with ONLY the Go builtins (corelib's pure
+// set plus the 5 interpreter-coupled ones) and the bootstrap defmacro
+// interned — no core sources loaded, no `user` namespace. It is the
+// compile-time seam the AOT core compiler needs (cmd/gencore, ADR 0046):
+// core.clj must be analyzed against a clojure.core that holds exactly
+// what it holds when the interpreter loads it, i.e. nothing of core.clj
+// itself. New() is NewBare() + the boot sources + the user namespace.
+func NewBare() *Evaluator {
 	e := &Evaluator{hostAliases: map[string]map[string]string{}}
 	e.analyzer = &analyzer.Analyzer{
 		Macroexpand1:    e.macroexpand1,
@@ -56,30 +73,6 @@ func New() *Evaluator {
 	}
 	e.internBuiltins()
 	e.installDefmacro()
-	e.loadCore()
-	e.loadNumeric()
-	e.loadHierarchies()
-	e.loadPredicates()
-	e.loadTransducers()
-	e.loadProtocols()
-	e.loadClojureString()
-	e.loadClojureSet()
-	e.loadClojureEdn()
-	e.loadClojureTest()
-	e.loadBuild()
-	e.loadClojureTestPortability()
-	e.loadClojureRepl()
-	user := lang.FindOrCreateNamespace(lang.NewSymbol("user"))
-	corelib.ReferAll(user, lang.NSCore)
-	// Refer doc into user, as JVM clojure.main's repl-requires does
-	// (ADR 0031): (doc x) works at any user prompt, terminal or nREPL.
-	if nsRepl := lang.FindNamespace(lang.NewSymbol("clojure.repl")); nsRepl != nil {
-		symDoc := lang.NewSymbol("doc")
-		if v := nsRepl.FindInternedVar(symDoc); v != nil {
-			user.Refer(symDoc, v)
-		}
-	}
-	lang.VarCurrentNS.BindRoot(user)
 	return e
 }
 
@@ -392,7 +385,7 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 			if err != nil {
 				return nil, err
 			}
-			return GoFieldSet(recv, f.Field, val), nil
+			return corelib.GoFieldSet(recv, f.Field, val), nil
 		}
 		v := sub.Target.Sub.(*ast.VarNode).Var
 		val, err := e.Eval(sub.Val, s)
@@ -432,14 +425,14 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 
 	case ast.OpThrow:
 		// throw = panic the thrown value (design/03 §6). Throw normalizes a
-		// non-error value into a runtime exception (eval.Throw); the panic
+		// non-error value into a runtime exception (corelib.Throw); the panic
 		// unwinds to the nearest OpTry recover or the top-level boundary.
 		sub := n.Sub.(*ast.ThrowNode)
 		v, err := e.Eval(sub.Exception, s)
 		if err != nil {
 			return nil, err
 		}
-		panic(Throw(v))
+		panic(corelib.Throw(v))
 
 	case ast.OpTry:
 		return e.evalTry(n, s)

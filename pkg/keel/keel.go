@@ -4,8 +4,8 @@
 // on. The Clojure half lives in core/keel/*.cljg, embedded via the core
 // package.
 //
-// Loading is LAZY, through the interpreter's lib-provider registry
-// (pkg/eval/libload.go): Register wires a provider per keel namespace,
+// Loading is LAZY, through the lib-provider registry
+// (pkg/corelib/require.go): Register wires a provider per keel namespace,
 // and the first (require 'keel.http) interns the Go shims into the
 // namespace and evaluates its embedded source. Nothing loads at boot —
 // the boot budget (ADR 0024) is untouched — and nothing is scanned:
@@ -25,6 +25,7 @@ import (
 	"sync"
 
 	"github.com/muthuishere/cljgo/core"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
@@ -68,7 +69,7 @@ func Register(e *eval.Evaluator) {
 	wired.Do(func() {
 		for _, s := range specs() {
 			s := s
-			eval.RegisterLibProvider(s.name, func() { load(s) })
+			corelib.RegisterLibProvider(s.name, func() { load(s) })
 		}
 	})
 }

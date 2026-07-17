@@ -123,11 +123,18 @@ pkg/host        Interop machinery shared by both paths: go/packages loader +
                 signature cache (AOT), genpkg-style registry generator +
                 reflect call shaping (interpreted), coercion/nil-normalization
                 tables, ffi/ (purego).
+pkg/coreaot     GENERATED (go generate ./pkg/coreaot): cljgo's own core,
+                AOT-compiled — one Go package per boot source. Linked by
+                emitted binaries; never by the interpreter (ADR 0046).
 pkg/repl        REPL driver (Read→Analyze→Eval→bind *1/*e→print); terminal
                 frontend. pkg/nrepl later (bencode/server skeleton vendored
                 from Glojure, ops rewritten onto the driver).
 core/           clojure/core.clj etc. — the Clojure-in-Clojure standard
-                library, loaded by the evaluator and (later) AOT-compiled.
+                library. ONE table (core.BootSources) drives both modes:
+                the evaluator loads the sources at boot; cmd/gencore
+                AOT-compiles the same table, in the same order, into
+                pkg/coreaot (ADR 0046), which is what compiled binaries
+                link instead of the interpreter.
 cmd/cljgo       CLI: repl / run / build / deps sync.  (name = placeholder)
 ```
 

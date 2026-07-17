@@ -1,65 +1,15 @@
 package eval
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/muthuishere/cljgo/pkg/ast"
-	"github.com/muthuishere/cljgo/pkg/lang"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 )
 
-// This file holds the exception machinery shared by BOTH modes (ADR 0007
-// dual-mode): the tree-walk OpTry evaluator here, and the AOT emitter's
-// deferred-recover closure (pkg/emit) which calls the exact same Throw /
-// Recover / CatchMatches functions through pkg/emit/rt. Behavior is
-// byte-identical by construction — the release-blocker discipline of
-// design/03 §7d.
-
-// Throw normalizes a thrown value into the Go error that `throw` panics.
-// JVM Clojure requires a Throwable; cljgo v0 accepts any value — a value
-// that already satisfies `error` (an ex-info, a Go error surfaced by `!`
-// interop) is thrown as-is; anything else is wrapped in a *ThrownValue so
-// the catch-all classes (Throwable/Exception/RuntimeException) still catch
-// it. This is the faithful-ish v0 relaxation documented on ast.ThrowNode.
-func Throw(v any) error {
-	if err, ok := v.(error); ok {
-		return err
-	}
-	return &ThrownValue{Val: v}
-}
-
-// ThrownValue wraps a thrown non-error Clojure value (e.g. (throw 42)).
-type ThrownValue struct{ Val any }
-
-func (t *ThrownValue) Error() string { return lang.ToString(t.Val) }
-
-// Recover normalizes a recovered panic value into the thrown error. cljgo
-// panics carry errors (the IFn boundary and `throw`), but a stray non-error
-// panic is wrapped so catch matching stays total.
-func Recover(r any) error {
-	if err, ok := r.(error); ok {
-		return err
-	}
-	return fmt.Errorf("%v", r)
-}
-
-// CatchMatches reports whether a catch clause's class symbol matches the
-// thrown value (design/03 §6). v0 mapping (faithful-ish): the catch-all
-// classes match any thrown value; ExceptionInfo matches only an ex-info
-// (anything that is/wraps a lang.IExceptionInfo). Unknown class names never
-// match, so the throw propagates — as an unmatched Clojure catch would.
-func CatchMatches(className string, thrown error) bool {
-	switch className {
-	case "Throwable", "Exception", "RuntimeException",
-		"java.lang.Throwable", "java.lang.Exception", "java.lang.RuntimeException":
-		return true
-	case "ExceptionInfo", "clojure.lang.ExceptionInfo":
-		var ei lang.IExceptionInfo
-		return errors.As(thrown, &ei)
-	default:
-		return false
-	}
-}
+// The tree-walk OpTry evaluator. The throw/catch NORMALIZATION it uses
+// (Throw / Recover / CatchMatches) moved to pkg/corelib with ADR 0046 —
+// a compiled binary shapes exceptions with no interpreter linked — and
+// the AOT emitter reaches the same functions through pkg/emit/rt, so both
+// modes are byte-identical by construction (design/03 §7d).
 
 // evalTry runs an OpTry (design/03 §6): the protected body, catch matching
 // in order (first matching class binds the caught exception and runs its
@@ -90,7 +40,7 @@ func (e *Evaluator) evalTry(n *ast.Node, s *Scope) (result any, rerr error) {
 	}
 	for _, cn := range sub.Catches {
 		c := cn.Sub.(*ast.CatchNode)
-		if CatchMatches(c.ClassName, thrown) {
+		if corelib.CatchMatches(c.ClassName, thrown) {
 			cs := s.Push()
 			b := c.Binding.Sub.(*ast.BindingNode)
 			cs.Define(b.Name.Name(), thrown)
@@ -108,7 +58,7 @@ func (e *Evaluator) evalTry(n *ast.Node, s *Scope) (result any, rerr error) {
 func (e *Evaluator) evalProtected(body *ast.Node, s *Scope) (val any, thrown error) {
 	defer func() {
 		if r := recover(); r != nil {
-			thrown = Recover(r)
+			thrown = corelib.Recover(r)
 		}
 	}()
 	v, err := e.Eval(body, s)
