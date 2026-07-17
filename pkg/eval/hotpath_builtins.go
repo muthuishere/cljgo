@@ -8,7 +8,7 @@ import (
 
 // internHotpathBuiltins interns the clojure.core fns whose per-element cost
 // dominates real workloads — reduce, map, filter, mapv, comp — as native Go,
-// per ADR 0039 (spikes S19/S21: interpreted `reduce` alone cost 8.2× on the
+// per ADR 0045 (spikes S19/S21: interpreted `reduce` alone cost 8.2× on the
 // let-go benchmark suite; every fast Clojure hosts these natively — let-go's
 // reduce is Go, joker's core is Go, babashka's is GraalVM-compiled, JVM
 // Clojure bottoms out in Java). Semantics replicate the former core.clj
@@ -19,6 +19,14 @@ import (
 // builtins.go gains exactly one call line inside internBuiltins.
 func (e *Evaluator) internHotpathBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// mapSeq : lazy 1-coll map, the hot arity.
+	//
+	// The tail is s.More(), NOT s.Next(): More is Clojure's `rest` (hands back
+	// the unrealized remainder), Next is `next` (= seq(more), which FORCES one
+	// element). The former core.clj defn used `rest`, and JVM 1.12.5 realizes
+	// exactly ONE source element for (first (map inc <unchunked infinite>));
+	// Next here made that two — a real over-realization, observable whenever
+	// the source element is side-effecting, blocking, or expensive. Same rule
+	// applies to every tail position below.
 	var mapSeq func(f, coll any) any
 	mapSeq = func(f, coll any) any {
 		return lang.NewLazySeq(func() any {
@@ -26,7 +34,7 @@ func (e *Evaluator) internHotpathBuiltins(def func(string, func(...any) any) *la
 			if lang.IsNil(s) {
 				return nil
 			}
-			return lang.NewCons(lang.Apply1(f, s.First()), mapSeq(f, s.Next()))
+			return lang.NewCons(lang.Apply1(f, s.First()), mapSeq(f, s.More()))
 		})
 	}
 
@@ -39,7 +47,7 @@ func (e *Evaluator) internHotpathBuiltins(def func(string, func(...any) any) *la
 				return nil
 			}
 			return lang.NewCons(lang.Apply2(f, s1.First(), s2.First()),
-				map2Seq(f, s1.Next(), s2.Next()))
+				map2Seq(f, s1.More(), s2.More()))
 		})
 	}
 
@@ -55,7 +63,7 @@ func (e *Evaluator) internHotpathBuiltins(def func(string, func(...any) any) *la
 					return nil
 				}
 				firsts[i] = s.First()
-				rests[i] = s.Next()
+				rests[i] = s.More()
 			}
 			return lang.NewCons(lang.Apply(f, firsts), mapNSeq(f, rests))
 		})
@@ -96,6 +104,10 @@ func (e *Evaluator) internHotpathBuiltins(def func(string, func(...any) any) *la
 
 	// filterSeq : lazy filter; the thunk loops past rejects so a sparse
 	// match does not build a chain of empty lazy nodes.
+	//
+	// The tail is s.More() (see mapSeq). The loop's s.Next() is correct and is
+	// NOT over-realization: filter has to realize an element to test it, and
+	// Next is exactly seq(more) — the scan forces only what the predicate sees.
 	var filterSeq func(pred, coll any) any
 	filterSeq = func(pred, coll any) any {
 		return lang.NewLazySeq(func() any {
@@ -103,7 +115,7 @@ func (e *Evaluator) internHotpathBuiltins(def func(string, func(...any) any) *la
 			for !lang.IsNil(s) {
 				x := s.First()
 				if lang.IsTruthy(lang.Apply1(pred, x)) {
-					return lang.NewCons(x, filterSeq(pred, s.Next()))
+					return lang.NewCons(x, filterSeq(pred, s.More()))
 				}
 				s = s.Next()
 			}
