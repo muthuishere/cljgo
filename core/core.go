@@ -125,3 +125,46 @@ var TransducersSource string
 //
 //go:embed hierarchies.cljg
 var HierarchiesSource string
+
+// BootSource is one embedded boot source: the namespace it loads into,
+// the *file* name it binds while loading, and the embedded text.
+type BootSource struct {
+	// NS is the namespace the source loads into (*ns* while it runs).
+	NS string
+	// File is the *file* value bound during the load — also the stem the
+	// AOT core compiler derives its Go package name from.
+	File string
+	// Source points at the embedded text (a pointer so the table is a
+	// cheap value list, not 200KB of copies).
+	Source *string
+	// Pkg is the Go package name the AOT core compiler emits this source
+	// into (cmd/gencore, ADR 0046). Unique across the table.
+	Pkg string
+}
+
+// BootSources is the ONE ordered list of embedded sources that make up
+// cljgo's core (design/00 §6). The interpreter's boot (eval.New) and the
+// AOT core compiler (cmd/gencore → pkg/coreaot, ADR 0046) both walk this
+// table, in this order, so an interpreted session and a compiled binary
+// have byte-identically the same namespace world.
+//
+// Order is load order and it matters: core.clj first (defn/defmacro/the
+// seq library), then the clojure.core batches that ride on it, then the
+// satellite namespaces.
+func BootSources() []BootSource {
+	return []BootSource{
+		{NS: "clojure.core", File: "core.clj", Source: &Source, Pkg: "core"},
+		{NS: "clojure.core", File: "numeric.cljg", Source: &NumericSource, Pkg: "numeric"},
+		{NS: "clojure.core", File: "hierarchies.cljg", Source: &HierarchiesSource, Pkg: "hierarchies"},
+		{NS: "clojure.core", File: "predicates.cljg", Source: &PredicatesSource, Pkg: "predicates"},
+		{NS: "clojure.core", File: "transducers.cljg", Source: &TransducersSource, Pkg: "transducers"},
+		{NS: "clojure.core", File: "protocols.cljg", Source: &ProtocolsSource, Pkg: "protocols"},
+		{NS: "clojure.string", File: "string.cljg", Source: &StringSource, Pkg: "cljstring"},
+		{NS: "clojure.set", File: "set.cljg", Source: &SetSource, Pkg: "cljset"},
+		{NS: "clojure.edn", File: "edn.cljg", Source: &EdnSource, Pkg: "cljedn"},
+		{NS: "clojure.test", File: "test.cljg", Source: &TestSource, Pkg: "cljtest"},
+		{NS: "cljgo.build", File: "build.cljg", Source: &BuildSource, Pkg: "cljgobuild"},
+		{NS: "clojure.core-test.portability", File: "clojure_test_portability.cljg", Source: &PortabilitySource, Pkg: "portability"},
+		{NS: "clojure.repl", File: "repl.cljg", Source: &ReplSource, Pkg: "cljrepl"},
+	}
+}

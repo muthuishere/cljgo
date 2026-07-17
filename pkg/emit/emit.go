@@ -31,6 +31,7 @@ import (
 
 	"github.com/muthuishere/cljgo/pkg/ast"
 	"github.com/muthuishere/cljgo/pkg/lang"
+	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
 // emitErr carries an unsupported-construct failure out of the recursive
@@ -72,9 +73,10 @@ type generator struct {
 	taken   map[string]bool   // global-identifier dedup (munge is lossy)
 	decls   []hoistDecl
 
-	usesFmt  bool
-	usesMath bool
-	mainVar  string // hoisted Go name of a def'd -main, if any
+	usesFmt    bool
+	usesMath   bool
+	usesReader bool
+	mainVar    string // hoisted Go name of a def'd -main, if any
 
 	host        *hostFacts        // loaded go/packages type facts (nil = no interop)
 	hostImports map[string]string // import path → package name, for interop
@@ -150,6 +152,20 @@ func (g *generator) hoistVar(v *lang.Var) string {
 	}
 	g.vars[v] = gn
 	g.decls = append(g.decls, hoistDecl{gn, init})
+	return gn
+}
+
+// hoistRegex interns a #"…" literal as a package-level
+// `var re_N = &reader.Regex{Pattern: "…"}`. Deliberately NOT deduped:
+// real Clojure's Pattern has no .equals, so two separately-read
+// #"same text" literals are NOT `=` (pkg/reader/dispatch.go's oracle),
+// and one literal read once IS the same object on every evaluation of
+// its form — which is exactly what one package-level var per literal
+// site gives (design/00 §4.4's interning rationale, inverted).
+func (g *generator) hoistRegex(re *reader.Regex) string {
+	g.usesReader = true
+	gn := g.uniqueGlobal(fmt.Sprintf("re_%d", g.next()))
+	g.decls = append(g.decls, hoistDecl{gn, fmt.Sprintf("&reader.Regex{Pattern: %s}", strconv.Quote(re.Pattern))})
 	return gn
 }
 
@@ -246,6 +262,8 @@ func (g *generator) constExpr(v any) string {
 		return fmt.Sprintf("lang.MustBigDecimal(%s)", strconv.Quote(x.String()))
 	case lang.Char:
 		return fmt.Sprintf("lang.Char(%s)", strconv.QuoteRune(rune(x)))
+	case *reader.Regex:
+		return g.hoistRegex(x)
 	case lang.Keyword:
 		return g.hoistKeyword(x)
 	case *lang.Symbol:
@@ -551,14 +569,25 @@ func (g *generator) gen(n *ast.Node) string {
 		t := g.temp()
 		g.wf("var %s any\n_ = %s\n", t, t) // both branches may recur
 		g.wf("%s", condStmt)
-		if rv := g.gen(s.Then); rv != "" {
-			g.wf("%s = %s\n", t, rv)
+		thenRv := g.gen(s.Then)
+		if thenRv != "" {
+			g.wf("%s = %s\n", t, thenRv)
 		}
 		g.wf("} else {\n")
-		if rv := g.gen(s.Else); rv != "" {
-			g.wf("%s = %s\n", t, rv)
+		elseRv := g.gen(s.Else)
+		if elseRv != "" {
+			g.wf("%s = %s\n", t, elseRv)
 		}
 		g.wf("}\n")
+		if thenRv == "" && elseRv == "" {
+			// Both branches transferred control (recur/throw): the if
+			// produces no value and nothing after it is reachable. Say so
+			// ("" = control transfer) instead of handing back a temp the
+			// caller would assign from unreachable code — `go vet`'s
+			// unreachable check is a gate, and pkg/coreaot's generated
+			// packages are vetted like any other package in this repo.
+			return ""
+		}
 		return t
 
 	case ast.OpDef:
@@ -584,10 +613,14 @@ func (g *generator) gen(n *ast.Node) string {
 			gn := g.bindLocal(b)
 			g.wf("var %s any = %s\n_ = %s\n", gn, rv, gn)
 		}
-		if rv := g.gen(s.Body); rv != "" {
-			g.wf("%s = %s\n", t, rv)
+		bodyRv := g.gen(s.Body)
+		if bodyRv != "" {
+			g.wf("%s = %s\n", t, bodyRv)
 		}
 		g.wf("}\n")
+		if bodyRv == "" {
+			return "" // the body transferred control; propagate (see OpIf)
+		}
 		return t
 
 	case ast.OpLoop:

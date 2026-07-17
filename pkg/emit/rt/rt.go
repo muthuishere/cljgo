@@ -1,10 +1,11 @@
 // Package rt is the runtime bootstrap for cljgo-emitted binaries.
 //
-// Boot() interns the Go builtins and loads the embedded core.clj by
-// constructing the evaluator (pragmatic v0 per design/04 §7: macros are
-// compiled away, but the compiled code still references clojure.core
-// vars; AOT-compiling core.clj is M5), then snapshots the pristine
-// builtin values that back the guarded arithmetic intrinsics below.
+// Boot() interns the Go builtins (pkg/corelib) and runs the AOT-compiled
+// core (pkg/coreaot, registered through RegisterCoreLoader), snapshotting
+// the pristine builtin values that back the guarded arithmetic intrinsics
+// below in between. Since ADR 0046 NOTHING here imports pkg/eval: a
+// compiled binary has no reader, no analyzer and no tree-walk evaluator
+// linked — that is the whole point of AOT core (ADR 0023 / 0037).
 //
 // Guarded intrinsics: a 2-argument call to a core arithmetic builtin
 // (`+ - * / < > =`) emits as rt.Add2(v, x, y) etc. Each helper derefs
@@ -23,26 +24,34 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/muthuishere/cljgo/pkg/eval"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
 var (
-	booted bool
+	booted     bool
+	coreLoader func()
 
 	origAdd, origSub, origMul, origDiv any
 	origLT, origGT, origEQ             any
 )
 
-// Boot initializes the runtime exactly once: builtins + embedded
-// core.clj into clojure.core, `user` ns referring core, *ns* rooted at
-// user (~5 ms). Safe to call before any emitted Load().
+// Boot initializes the runtime exactly once: the Go builtins into
+// clojure.core (corelib.RegisterAll), then the AOT-compiled core — the
+// same sources in the same order as the interpreter's boot, as compiled
+// Go — which ends by interning `user` and rooting *ns* there
+// (corelib.InitUserNS). Safe to call before any emitted Load().
+//
+// The builtin snapshot sits BETWEEN the two: the intrinsics compare
+// against the PRISTINE builtin, and core's own compiled Load() already
+// calls them. (core's sources never re-def +/-/*/<//>/=; if one ever
+// did, the guard would simply take the redefined-value path.)
 func Boot() {
 	if booted {
 		return
 	}
 	booted = true
-	_ = eval.New()
+	corelib.RegisterAll()
 	get := func(name string) any {
 		return lang.NSCore.FindInternedVar(lang.NewSymbol(name)).Get()
 	}
@@ -53,14 +62,24 @@ func Boot() {
 	origLT = get("<")
 	origGT = get(">")
 	origEQ = get("=")
+	if coreLoader == nil {
+		panic("rt.Boot: no AOT core linked — a cljgo binary must blank-import github.com/muthuishere/cljgo/pkg/coreaot (the emitter does this; see ADR 0046)")
+	}
+	coreLoader()
 }
+
+// RegisterCoreLoader receives pkg/coreaot's Load from its init(). rt
+// cannot import coreaot (coreaot's generated packages import rt for the
+// arithmetic intrinsics), so the edge is inverted through this
+// registration — the same shape ADR 0042 uses for namespace providers.
+func RegisterCoreLoader(load func()) { coreLoader = load }
 
 // RegisterLib registers a namespace's Load() in the lib-provider
 // registry (ADR 0042 §2). Emitted dependency packages call it from
 // init() — a plain map write, safe before Boot() — so the replayed
 // (require …) form triggers the dependency load at exactly its source
 // position, once (Load is guarded).
-func RegisterLib(name string, load func()) { eval.RegisterLibProvider(name, load) }
+func RegisterLib(name string, load func()) { corelib.RegisterLibProvider(name, load) }
 
 // The helpers keep their hot bodies small (slow tails split out) so the
 // Go inliner can fuse the int64 fast path into emitted call sites.
@@ -245,38 +264,38 @@ func NilNorm(v any) any {
 // CallMethod backs the AOT emission of a Clojure dot-form method call
 // `(.Method recv arg...)` (ADR 0010, design/05 §1). The receiver's static
 // type is unknown in M3.1, so the call is reflective in AOT too — and it
-// delegates to the SAME eval.CallGoMethod the interpreter uses, so the REPL
+// delegates to the SAME corelib.CallGoMethod the interpreter uses, so the REPL
 // and the compiled binary produce byte-identical results by construction.
 func CallMethod(recv any, method string, throw bool, args ...any) any {
-	return eval.CallGoMethod(recv, method, throw, args)
+	return corelib.CallGoMethod(recv, method, throw, args)
 }
 
 // FieldGet backs the AOT emission of a Clojure dot-form field read
 // `(.-Field recv)` (ADR 0010, design/05 §1). Reflective in AOT too (the
 // receiver's static type is unknown in M3.2) and delegating to the SAME
-// eval.GoFieldGet the interpreter uses — byte-identical by construction.
+// corelib.GoFieldGet the interpreter uses — byte-identical by construction.
 func FieldGet(recv any, field string) any {
-	return eval.GoFieldGet(recv, field)
+	return corelib.GoFieldGet(recv, field)
 }
 
 // FieldSet backs the AOT emission of a Go field assignment
 // `(set! (.-Field recv) v)` (ADR 0010, design/05 §1), delegating to the SAME
-// eval.GoFieldSet the interpreter uses.
+// corelib.GoFieldSet the interpreter uses.
 func FieldSet(recv any, field string, val any) any {
-	return eval.GoFieldSet(recv, field, val)
+	return corelib.GoFieldSet(recv, field, val)
 }
 
 // MakeStruct backs the AOT emission of a struct-literal constructor
 // `(pkg/Type. {...})` (ADR 0010, design/05 §1). v0 builds reflectively via
-// the SAME eval.MakeGoStruct the interpreter uses — byte-identical.
+// the SAME corelib.MakeGoStruct the interpreter uses — byte-identical.
 func MakeStruct(pkg, typeName string, fields any) any {
-	return eval.MakeGoStruct(pkg, typeName, fields)
+	return corelib.MakeGoStruct(pkg, typeName, fields)
 }
 
 // NewStruct backs the AOT emission of `(go/new pkg/Type)` (ADR 0010,
-// design/05 §1), delegating to the SAME eval.NewGoStruct the interpreter uses.
+// design/05 §1), delegating to the SAME corelib.NewGoStruct the interpreter uses.
 func NewStruct(pkg, typeName string) any {
-	return eval.NewGoStruct(pkg, typeName)
+	return corelib.NewGoStruct(pkg, typeName)
 }
 
 // --- Exception shaping helpers (design/03 §6) ---------------------------
@@ -287,16 +306,16 @@ func NewStruct(pkg, typeName string) any {
 
 // Throw normalizes a thrown value into the error `panic` carries — a value
 // already satisfying `error` throws as-is, anything else wraps so the
-// catch-all classes still catch it (eval.Throw).
-func Throw(v any) error { return eval.Throw(v) }
+// catch-all classes still catch it (corelib.Throw).
+func Throw(v any) error { return corelib.Throw(v) }
 
-// Recover normalizes a recovered panic into the thrown error (eval.Recover).
-func Recover(r any) error { return eval.Recover(r) }
+// Recover normalizes a recovered panic into the thrown error (corelib.Recover).
+func Recover(r any) error { return corelib.Recover(r) }
 
 // CatchMatches reports whether a catch clause's class symbol matches the
-// thrown value (eval.CatchMatches).
+// thrown value (corelib.CatchMatches).
 func CatchMatches(className string, thrown error) bool {
-	return eval.CatchMatches(className, thrown)
+	return corelib.CatchMatches(className, thrown)
 }
 
 // ToFloat64 coerces a cljgo numeric arg (int64 or float64) to a Go float,
