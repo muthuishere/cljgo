@@ -12,11 +12,16 @@
 // The generated main.cljg IS the golden page of ADR 0041, trimmed to
 // the shipped tiers (T0/T1: config + routes + a styled page — no db
 // verbs until T2 ships them).
+//
+// The generated app's source lives in templates/ as REAL FILES (see
+// that package's doc) — never as string literals here. This file only
+// walks a template FS, renames the app, and writes.
 package main
 
 import (
 	"flag"
 	"fmt"
+	"io/fs"
 	"net"
 	"os"
 	"path/filepath"
@@ -27,6 +32,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/nrepl"
 	"github.com/muthuishere/cljgo/pkg/repl"
+	"github.com/muthuishere/cljgo/templates"
 )
 
 const appMain = "src/app/main.cljg"
@@ -34,20 +40,22 @@ const appMain = "src/app/main.cljg"
 // --- cljgo new ---------------------------------------------------------------
 
 func runNew(args []string) int {
-	fs := flag.NewFlagSet("new", flag.ContinueOnError)
-	fs.SetOutput(os.Stderr)
-	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: cljgo new <name>")
-		fs.PrintDefaults()
+	flags := flag.NewFlagSet("new", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+	template := flags.String("template", templates.DefaultTemplate,
+		"built-in template name, or a path to a template directory")
+	flags.Usage = func() {
+		fmt.Fprintln(os.Stderr, "usage: cljgo new [--template <name|path>] <name>")
+		flags.PrintDefaults()
 	}
-	if err := fs.Parse(args); err != nil {
+	if err := flags.Parse(args); err != nil {
 		return 2
 	}
-	if fs.NArg() != 1 {
-		fs.Usage()
+	if flags.NArg() != 1 {
+		flags.Usage()
 		return 2
 	}
-	name := fs.Arg(0)
+	name := flags.Arg(0)
 	if !validAppName(name) {
 		fmt.Fprintf(os.Stderr, "cljgo new: %q is not a valid app name (lowercase letters, digits, - _)\n", name)
 		return 2
@@ -57,30 +65,93 @@ func runNew(args []string) int {
 		return 1
 	}
 
-	for path, body := range scaffold(name) {
-		full := filepath.Join(name, path)
+	src, err := templateFS(*template)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cljgo new:", err)
+		return 2
+	}
+	files, err := renderTemplate(src, name)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cljgo new:", err)
+		return 1
+	}
+	if len(files) == 0 {
+		fmt.Fprintf(os.Stderr, "cljgo new: template %s is empty\n", *template)
+		return 1
+	}
+
+	paths := make([]string, 0, len(files))
+	for p := range files {
+		paths = append(paths, p)
+	}
+	sort.Strings(paths) // map iteration is random; the listing is not
+
+	for _, p := range paths {
+		full := filepath.Join(name, filepath.FromSlash(p))
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
 			fmt.Fprintln(os.Stderr, "cljgo new:", err)
 			return 1
 		}
-		if err := os.WriteFile(full, []byte(body), 0o644); err != nil {
+		if err := os.WriteFile(full, []byte(files[p]), 0o644); err != nil {
 			fmt.Fprintln(os.Stderr, "cljgo new:", err)
 			return 1
 		}
 	}
 
-	// Stable listing order (map iteration is random).
-	paths := make([]string, 0, len(scaffold(name)))
-	for p := range scaffold(name) {
-		paths = append(paths, p)
-	}
-	sort.Strings(paths)
 	fmt.Printf("created %s/\n", name)
 	for _, p := range paths {
 		fmt.Printf("  %s\n", p)
 	}
 	fmt.Printf("\nnext:\n  cd %s\n  cljgo dev     # server + nREPL\n  cljgo test    # the generated test\n", name)
 	return 0
+}
+
+// templateFS resolves --template: a built-in name (embedded, the
+// zero-install default) or a local directory path. Git URLs are not
+// supported yet — fetching one needs machinery we do not have, and a
+// half-done fetch is worse than an honest error (follow-up: openspec
+// app-framework task 0.3).
+func templateFS(name string) (fs.FS, error) {
+	if strings.Contains(name, "://") || strings.HasPrefix(name, "git@") {
+		return nil, fmt.Errorf("--template does not take a git URL yet — clone it and pass the path")
+	}
+	if !strings.ContainsAny(name, `/\.`) {
+		sub, err := fs.Sub(templates.FS, name)
+		if err != nil {
+			return nil, fmt.Errorf("no built-in template %q (built-in: %s)", name, templates.DefaultTemplate)
+		}
+		if _, err := fs.Stat(sub, "."); err != nil {
+			return nil, fmt.Errorf("no built-in template %q (built-in: %s)", name, templates.DefaultTemplate)
+		}
+		return sub, nil
+	}
+	info, err := os.Stat(name)
+	if err != nil || !info.IsDir() {
+		return nil, fmt.Errorf("--template %s: not a directory", name)
+	}
+	return os.DirFS(name), nil
+}
+
+// renderTemplate reads every file of a template FS and renames the app:
+// templates.DefaultName → the requested name, in file CONTENTS and in
+// PATH names. That one substitution is the whole mechanism — no
+// template language, nothing to escape, and the template files stay
+// runnable source in place (which is what lets CI run them).
+func renderTemplate(src fs.FS, name string) (map[string]string, error) {
+	files := map[string]string{}
+	err := fs.WalkDir(src, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		body, err := fs.ReadFile(src, path)
+		if err != nil {
+			return err
+		}
+		out := strings.ReplaceAll(path, templates.DefaultName, name)
+		files[out] = strings.ReplaceAll(string(body), templates.DefaultName, name)
+		return nil
+	})
+	return files, err
 }
 
 func validAppName(name string) bool {
@@ -93,120 +164,6 @@ func validAppName(name string) bool {
 		}
 	}
 	return true
-}
-
-// scaffold is the T0/T1 file manifest (openspec app-framework task 0.1):
-// the golden page trimmed to shipped pillars, conf.edn + a minimal
-// schema, a REAL stylesheet, one passing test, build.cljgo, .gitignore.
-// Every generated verb has a same-tier implementation.
-func scaffold(name string) map[string]string {
-	return map[string]string{
-		appMain: `;; app.main — generated by ` + "`cljgo new`" + `. This file is YOURS: keel is
-;; called from here, visibly; nothing scans or loads it behind your back.
-;; The top level constructs VALUES (no I/O); -main starts the world.
-(ns app.main
-  (:require [keel.http :as http]
-            [keel.html :as html]
-            [keel.config :as config]))
-
-(def cfg (config/load!))   ; conf.edn (+ :profiles by APP_PROFILE) + APP_* env.
-
-(defn home [_req]
-  (http/ok
-    (html/page {:title "` + name + `"}
-      [:main
-       [:h1 "It's alive."]
-       [:p "This page is keel.html data, served by keel.http on Go's net/http."]
-       [:p "Edit " [:code "src/app/main.cljg"] " — or connect to the nREPL port
-           printed by " [:code "cljgo dev"] " and re-" [:code "def"] " " [:code "home"] ",
-           then refresh: the route holds " [:code "#'home"] ", derefed per request."]
-       [:p.hint "routes are data · middleware defaults are on · config is one map"]])))
-
-(def routes
-  [["GET /{$}"     #'home]
-   ["GET /static/" (http/dir "public")]
-   ["GET /health"  (http/health {})]])
-
-(defn -main [& _args]
-  ;; No :middleware given = (http/defaults): access-log, recover (the
-  ;; documented error table), sessions, JSON negotiation, CSRF.
-  (http/serve routes {:port (:port cfg)}))
-`,
-		"conf.edn": `{:port 3000
- :profiles
- {:dev  {}
-  :test {}}}
-`,
-		"conf.schema.edn": `;; Optional — enforced because it exists: a violation aborts boot,
-;; naming the key and the layer. Delete this file to go schemaless.
-{[:port] {:type :int :required true :default 3000}}
-`,
-		"public/app.css": `/* ` + name + ` — a real stylesheet, served from disk by (http/dir "public").
-   No pipeline, no build step: edit, refresh. */
-:root {
-  --bg: #f7f6f3;
-  --fg: #1c1b1a;
-  --muted: #6f6b66;
-  --accent: #0f62fe;
-  --card: #ffffff;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #171614; --fg: #eceae6; --muted: #98938c; --card: #211f1c; }
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
-}
-main {
-  max-width: 34rem;
-  padding: 2.5rem 3rem;
-  background: var(--card);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
-}
-h1 { margin-top: 0; letter-spacing: -0.02em; }
-code {
-  font: 0.9em ui-monospace, "SF Mono", monospace;
-  background: rgb(127 127 127 / 0.14);
-  padding: 0.1em 0.35em;
-  border-radius: 4px;
-}
-.hint { color: var(--muted); font-size: 0.85em; }
-a { color: var(--accent); }
-`,
-		"test/app/main_test.cljg": `;; The generated test: keel's IN-PROCESS http test client (no socket)
-;; against the app's own routes. Run it with ` + "`cljgo test`" + `.
-(ns app.main-test
-  (:require [clojure.test :refer [deftest is]]
-            [clojure.string :as str]
-            [keel.http :as http]
-            [app.main :as main]))
-
-(deftest home-page-renders
-  (let [res (http/request main/routes {:method "GET" :path "/"})]
-    (is (= 200 (:status res)))
-    (is (str/includes? (:body res) "alive."))))
-`,
-		"build.cljgo": `;; build.cljgo — the project build plan (ADR 0021).
-;; NOTE: AOT compilation of keel apps lands with a later tier of the
-;; app-framework change; today the dev loop is ` + "`cljgo dev` / `cljgo test`" + `.
-(defn build [b]
-  (let [app (exe b {:name "` + name + `"
-                    :main "src/app/main.cljg"})]
-    (install b app)
-    (run b app)))
-`,
-		".gitignore": `/` + name + `
-.nrepl-port
-.dev/
-`,
-	}
 }
 
 // --- cljgo dev ------------------------------------------------------------------

@@ -1,0 +1,38 @@
+/* newapp — a real stylesheet, served from disk by (http/dir "public").
+   No pipeline, no build step: edit, refresh. */
+:root {
+  --bg: #f7f6f3;
+  --fg: #1c1b1a;
+  --muted: #6f6b66;
+  --accent: #0f62fe;
+  --card: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #171614; --fg: #eceae6; --muted: #98938c; --card: #211f1c; }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+main {
+  max-width: 34rem;
+  padding: 2.5rem 3rem;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+h1 { margin-top: 0; letter-spacing: -0.02em; }
+code {
+  font: 0.9em ui-monospace, "SF Mono", monospace;
+  background: rgb(127 127 127 / 0.14);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.hint { color: var(--muted); font-size: 0.85em; }
+a { color: var(--accent); }

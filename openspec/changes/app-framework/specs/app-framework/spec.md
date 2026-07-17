@@ -35,6 +35,38 @@ app.
 - **THEN** the same change updates `cljgo new` so the generated app
   includes it
 
+### Requirement: Templates are real files, embedded, and CI runs them
+The app `cljgo new` generates SHALL exist in the repository as a
+TEMPLATE: a directory of real, runnable source files (`templates/<name>/`),
+never as string literals in the generator. The template tree SHALL be
+embedded in the `cljgo` binary, so generating is offline, zero-install,
+and version-matched to the toolchain (no first-run fetch). Templates
+SHALL be valid source WITHOUT substitution — the app name is a real
+default name (`newapp`) that the generator renames, in file contents and
+in path names, and that rename SHALL be the only substitution mechanism.
+`cljgo new --template <name|path>` SHALL accept a built-in template name
+or a local template directory; a git URL SHALL be refused with an honest
+error until it is implemented. CI SHALL generate the built-in template,
+run its test, boot it, and fetch its pages inside the normal test gates.
+
+#### Scenario: the template cannot rot
+- **WHEN** keel's API changes in a way the generated app does not follow
+- **THEN** the gate test that generates, `cljgo test`s, boots and curls
+  the template fails — the breakage cannot ship silently
+
+#### Scenario: generating is offline
+- **WHEN** a user runs `cljgo new myapp` on a machine with no network
+- **THEN** the app is generated from the binary's embedded template
+
+#### Scenario: an alternate template
+- **WHEN** a user runs `cljgo new myapp --template ./our-template`
+- **THEN** the app is generated from that directory, with the same
+  rename applied
+
+#### Scenario: a git URL is refused, not half-done
+- **WHEN** a user passes `--template https://github.com/x/y.git`
+- **THEN** `cljgo new` refuses with an error naming the supported forms
+
 ### Requirement: The golden-path app is under a page and runs both modes
 The complete small app of ADR 0041 (server + data routes + default
 middleware + config + cast + db query + transactional background job +

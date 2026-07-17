@@ -1,0 +1,8 @@
+;; build.cljgo — the project build plan (ADR 0021).
+;; NOTE: AOT compilation of keel apps lands with a later tier of the
+;; app-framework change; today the dev loop is `cljgo dev` / `cljgo test`.
+(defn build [b]
+  (let [app (exe b {:name "newapp"
+                    :main "src/app/main.cljg"})]
+    (install b app)
+    (run b app)))

@@ -24,6 +24,26 @@ build.cljgo          the build plan (ADR 0021)
 .gitignore
 ```
 
+Those files are not generated from strings hidden in the compiler: they
+are copied from a **template** — a directory of real, runnable source in
+the cljgo repo (`templates/web/`), embedded in the binary, so `cljgo
+new` needs no network and can never hand you a version of the app that
+doesn't match your toolchain. CI generates that template, runs its test
+and boots it on every commit; the app you get is the app we test.
+
+The template is written with the app name `newapp`; `cljgo new myapp`
+renames it — in file contents and in file names — and that is the only
+substitution there is.
+
+Your own template is just a directory shaped the same way:
+
+```
+$ cljgo new myapp --template ../our-house-template
+```
+
+(A path today. Git URLs are not supported yet — clone it and pass the
+path.)
+
 ## 2. Run
 
 ```

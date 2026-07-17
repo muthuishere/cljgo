@@ -1,6 +1,6 @@
 # The gates from CLAUDE.md, enforced on every push and PR:
 #
-#   go build ./... && go vet ./... && gofmt -l pkg cmd conformance && go test ./...
+#   go build ./... && go vet ./... && gofmt -l pkg cmd conformance templates && go test ./...
 #
 # All green, no exceptions. Kept as separate steps so a red badge points at
 # which gate failed without opening the log.
@@ -52,7 +52,7 @@ jobs:
       - name: gofmt
         if: runner.os == 'Linux'
         run: |
-          unformatted=$(gofmt -l pkg cmd conformance)
+          unformatted=$(gofmt -l pkg cmd conformance templates)
           if [ -n "$unformatted" ]; then
             echo "::error::gofmt: these files need formatting:"
             echo "$unformatted"

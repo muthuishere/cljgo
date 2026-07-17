@@ -1,0 +1,12 @@
+;; The generated test: keel's IN-PROCESS http test client (no socket)
+;; against the app's own routes. Run it with `cljgo test`.
+(ns app.main-test
+  (:require [clojure.test :refer [deftest is]]
+            [clojure.string :as str]
+            [keel.http :as http]
+            [app.main :as main]))
+
+(deftest home-page-renders
+  (let [res (http/request main/routes {:method "GET" :path "/"})]
+    (is (= 200 (:status res)))
+    (is (str/includes? (:body res) "alive."))))

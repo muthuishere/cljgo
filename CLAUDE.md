@@ -23,7 +23,7 @@ Trivial fixes skip OpenSpec; nothing skips gates.
 ## Gates (before every commit)
 
 ```
-go build ./... && go vet ./... && gofmt -l pkg cmd conformance && go test ./...
+go build ./... && go vet ./... && gofmt -l pkg cmd conformance templates && go test ./...
 ```
 All green, no exceptions. `refs/` is fenced with a stub go.mod — leave it.
 
@@ -53,8 +53,9 @@ All green, no exceptions. `refs/` is fenced with a stub go.mod — leave it.
 `pkg/lang` runtime · `pkg/corelib` Go-native core builtins (ADR 0043) ·
 `pkg/reader` · `pkg/ast` · `pkg/analyzer` · `pkg/eval` ·
 `pkg/repl` · `cmd/cljgo` · `core/` (core.clj, Clojure-in-Clojure) ·
-`conformance/` · `design/` · `docs/adr/` · `openspec/` · `spikes/` (frozen) ·
-`refs/` (gitignored clones).
+`templates/` (real, runnable app templates `cljgo new` embeds — never
+string literals) · `conformance/` · `design/` · `docs/adr/` · `openspec/` ·
+`spikes/` (frozen) · `refs/` (gitignored clones).
 
 ## The precedence principle (owner, 2026-07-12)
 
