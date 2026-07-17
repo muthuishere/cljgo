@@ -494,50 +494,11 @@
         (when s (recur (next cs) (conj acc s))))
       (seq acc))))
 
-;; oracle: (map inc [1 2 3]) => (2 3 4); (map + [1 2 3] [10 20 30]) => (11 22 33)
-;; oracle: (map + [1 2] [10 20] [100 200]) => (111 222)
-;; oracle: (into [] (map inc) [1 2 3]) => [2 3 4]  -- 1-arity is the transducer form (ADR 0022 Batch 4)
-(defn map
-  ([f]
-   (fn [rf]
-     (fn
-       ([] (rf))
-       ([result] (rf result))
-       ([result input] (rf result (f input))))))
-  ([f coll]
-   (lazy-seq
-    (when-let [s (seq coll)]
-      (cons (f (first s)) (map f (rest s))))))
-  ([f c1 c2]
-   (lazy-seq
-    (let [s1 (seq c1) s2 (seq c2)]
-      (when (and s1 s2)
-        (cons (f (first s1) (first s2))
-              (map f (rest s1) (rest s2)))))))
-  ([f c1 c2 c3 & colls]
-   (let [step (fn step [cs]
-                (lazy-seq
-                 (when-let [ss (-all-seqs cs)]
-                   (cons (apply f (map first ss))
-                         (step (map rest ss))))))]
-     (step (list* c1 c2 c3 colls)))))
+;; map is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045) — all
+;; arities incl. the transducer form. Oracle cases live at the builtin.
 
-;; oracle: (filter even? (range 10)) => (0 2 4 6 8)
-;; oracle: (into [] (filter even?) (range 10)) => [0 2 4 6 8]
-(defn filter
-  ([pred]
-   (fn [rf]
-     (fn
-       ([] (rf))
-       ([result] (rf result))
-       ([result input] (if (pred input) (rf result input) result)))))
-  ([pred coll]
-   (lazy-seq
-    (when-let [s (seq coll)]
-      (let [x (first s)]
-        (if (pred x)
-          (cons x (filter pred (rest s)))
-          (filter pred (rest s))))))))
+;; filter is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045) —
+;; both arities incl. the transducer form. Oracle cases live at the builtin.
 
 ;; oracle: (remove even? (range 10)) => (1 3 5 7 9)
 ;; oracle: (into [] (remove even?) (range 10)) => [1 3 5 7 9]
@@ -545,18 +506,8 @@
   ([pred] (filter (fn [x] (not (pred x)))))
   ([pred coll] (filter (fn [x] (not (pred x))) coll)))
 
-;; oracle: (reduce + 0 (range 1 11)) => 55; (reduce + (range 1 11)) => 55.
-;; Honors the `reduced` short-circuit box.
-(defn reduce
-  ([f coll]
-   (let [s (seq coll)]
-     (if s (reduce f (first s) (rest s)) (f))))
-  ([f val coll]
-   (loop [acc val s (seq coll)]
-     (if s
-       (let [ret (f acc (first s))]
-         (if (reduced? ret) (deref ret) (recur ret (next s))))
-       acc))))
+;; reduce is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045) —
+;; the hot seq-walking fold runs in Go, both modes. Oracle cases at the builtin.
 
 ;; oracle: (reduce-kv (fn [a k v] (+ a v)) 0 {:a 1 :b 2 :c 3}) => 6
 (defn reduce-kv [f init coll]
@@ -636,12 +587,8 @@
 ;; oracle: (identity 7) => 7
 (defn identity [x] x)
 
-;; oracle: ((comp inc inc) 5) => 7
-(defn comp
-  ([] identity)
-  ([f] f)
-  ([f g] (fn [& args] (f (apply g args))))
-  ([f g & fs] (reduce comp (list* f g fs))))
+;; comp is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045).
+;; Oracle cases live at the builtin.
 
 ;; -preserving-reduced : wraps rf so a `reduced` returned by an INNER reduce
 ;; (cat's per-input reduce) re-wraps as `reduced` again, so the OUTER reduce
@@ -686,10 +633,8 @@
      (seq xs)
      (-concat-seqs xs))))
 
-;; oracle: (mapv inc [1 2 3]) => [2 3 4]
-(defn mapv
-  ([f coll] (vec (map f coll)))
-  ([f c1 c2] (vec (map f c1 c2))))
+;; mapv is a native Go builtin (pkg/eval/hotpath_builtins.go, ADR 0045).
+;; Oracle cases live at the builtin.
 
 ;; oracle: (filterv even? (range 10)) => [0 2 4 6 8]
 (defn filterv [pred coll] (vec (filter pred coll)))
