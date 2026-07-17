@@ -11,7 +11,7 @@
 // the boot budget (ADR 0024) is untouched — and nothing is scanned:
 // the app requires keel; keel never requires the app.
 //
-// S20's honesty note said `cljgo new && cljgo dev` boots NOTHING
+// S20's honesty note said `cljgo new --template web && cljgo dev` boots NOTHING
 // because the seed registry lacks net/http; this package IS the T1
 // closure of that gap — a thin Go shim rather than reflect-seeding all
 // of net/http, per the spike's own prototype (its main.go is the

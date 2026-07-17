@@ -1,21 +1,22 @@
-// keel.go — the keel framework's CLI surface (ADR 0041, openspec
+// keel.go — the project CLI surface (ADR 0041, ADR 0047, openspec
 // app-framework T0/T1):
 //
-//	cljgo new <name>   generate an app in the blessed layout
-//	cljgo dev          run it: server + nREPL attached + the dev banner
+//	cljgo new <name>   generate a project from a template (default: lib)
+//	cljgo dev          run a keel app: server + nREPL attached + the banner
 //	cljgo test         load src/, run every test under test/
 //	cljgo config       print the resolved config map, layer per key
 //	cljgo routes       print the routes and the effective middleware stack
 //
-// `cljgo new` is a generator, not a container: it writes plain files
-// the user owns; nothing scans them (the app calls keel, visibly).
-// The generated main.cljg IS the golden page of ADR 0041, trimmed to
-// the shipped tiers (T0/T1: config + routes + a styled page — no db
-// verbs until T2 ships them).
+// `cljgo new` belongs to the LANGUAGE and knows only about TEMPLATES
+// (ADR 0047): it walks a template FS, renames the app, and writes. It
+// has no idea what keel is — `web` is one of three built-ins, and the
+// default is `lib`. `dev`/`config`/`routes` below ARE keel-shaped and
+// say so.
 //
-// The generated app's source lives in templates/ as REAL FILES (see
-// that package's doc) — never as string literals here. This file only
-// walks a template FS, renames the app, and writes.
+// `cljgo new` is a generator, not a container: it writes plain files
+// the user owns; nothing scans them (a keel app calls keel, visibly).
+// The generated sources live in templates/ as REAL FILES (see that
+// package's doc) — never as string literals here.
 package main
 
 import (
@@ -43,9 +44,15 @@ func runNew(args []string) int {
 	flags := flag.NewFlagSet("new", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
 	template := flags.String("template", templates.DefaultTemplate,
-		"built-in template name, or a path to a template directory")
+		"built-in template name ("+templates.BuiltinNames()+"), or a path to a template directory")
 	flags.Usage = func() {
 		fmt.Fprintln(os.Stderr, "usage: cljgo new [--template <name|path>] <name>")
+		fmt.Fprintln(os.Stderr, "\nbuilt-in templates:")
+		for _, b := range templates.Builtins {
+			fmt.Fprintf(os.Stderr, "  %-4s %s\n", b.Name, b.Summary)
+		}
+		fmt.Fprintln(os.Stderr, "\n--template also takes a path to a local template directory.")
+		fmt.Fprintln(os.Stderr)
 		flags.PrintDefaults()
 	}
 	if err := flags.Parse(args); err != nil {
@@ -102,7 +109,17 @@ func runNew(args []string) int {
 	for _, p := range paths {
 		fmt.Printf("  %s\n", p)
 	}
-	fmt.Printf("\nnext:\n  cd %s\n  cljgo dev     # server + nREPL\n  cljgo test    # the generated test\n", name)
+	fmt.Printf("\nnext:\n  cd %s\n", name)
+	// The "next" commands are TEMPLATE metadata (they live beside the
+	// template), not knowledge this command holds. A --template path is
+	// somebody else's directory: only the generic step is honest there.
+	next := []string{"cljgo test    # the generated test"}
+	if b, ok := templates.LookupBuiltin(*template); ok {
+		next = b.Next
+	}
+	for _, line := range next {
+		fmt.Printf("  %s\n", line)
+	}
 	return 0
 }
 
@@ -116,12 +133,17 @@ func templateFS(name string) (fs.FS, error) {
 		return nil, fmt.Errorf("--template does not take a git URL yet — clone it and pass the path")
 	}
 	if !strings.ContainsAny(name, `/\.`) {
+		unknown := fmt.Errorf("no built-in template %q (built-in: %s — or pass a path to a template directory)",
+			name, templates.BuiltinNames())
+		if _, ok := templates.LookupBuiltin(name); !ok {
+			return nil, unknown
+		}
 		sub, err := fs.Sub(templates.FS, name)
 		if err != nil {
-			return nil, fmt.Errorf("no built-in template %q (built-in: %s)", name, templates.DefaultTemplate)
+			return nil, unknown
 		}
 		if _, err := fs.Stat(sub, "."); err != nil {
-			return nil, fmt.Errorf("no built-in template %q (built-in: %s)", name, templates.DefaultTemplate)
+			return nil, unknown
 		}
 		return sub, nil
 	}

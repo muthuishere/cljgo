@@ -1,0 +1,11 @@
+;; build.cljgo — the project build plan (ADR 0021).
+;;   cljgo build       → install ./newapp, one static binary
+;;   cljgo build run   → build it and run it
+;;
+;; Third-party Go is a line here, not a binding:
+;;   (go-require app "github.com/gorilla/websocket" "v1.5.3")
+(defn build [b]
+  (let [app (exe b {:name "newapp"
+                    :main "src/newapp/core.cljg"})]
+    (install b app)
+    (run b app)))

@@ -1,0 +1,14 @@
+;; build.cljgo — the project build plan (ADR 0021).
+;;
+;; A library declares no artifacts: there is no binary to install, and a
+;; namespace is consumed by requiring it. `cljgo test` is a library's
+;; build.
+;;
+;; The day this grows an entry point, it is two lines — or start from
+;; the tool template instead: `cljgo new <name> --template cli`.
+;;
+;;   (defn build [b]
+;;     (let [app (exe b {:name "newapp" :main "src/newapp/core.cljg"})]
+;;       (install b app)
+;;       (run b app)))
+(defn build [_b])

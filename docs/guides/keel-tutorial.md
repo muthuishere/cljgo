@@ -8,9 +8,15 @@ yours.
 ## 1. Generate
 
 ```
-$ cljgo new myapp
+$ cljgo new myapp --template web
 $ cd myapp
 ```
+
+`--template web` is not a detail to skim past. `cljgo new` belongs to
+the LANGUAGE, and the language does not assume you are writing a web
+app: with no `--template` it hands you `lib`, a library. keel is a
+framework cljgo ships in the box — one template of three (`lib`, `cli`,
+`web`) — not what cljgo is (ADR 0047).
 
 You get the blessed layout, all plain files:
 
@@ -31,9 +37,9 @@ new` needs no network and can never hand you a version of the app that
 doesn't match your toolchain. CI generates that template, runs its test
 and boots it on every commit; the app you get is the app we test.
 
-The template is written with the app name `newapp`; `cljgo new myapp`
-renames it — in file contents and in file names — and that is the only
-substitution there is.
+The template is written with the app name `newapp`; `cljgo new myapp
+--template web` renames it — in file contents and in file names — and
+that is the only substitution there is.
 
 Your own template is just a directory shaped the same way:
 
