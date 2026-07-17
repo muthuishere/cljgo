@@ -153,6 +153,18 @@ func (p *Plan) Run(stepArg string, opts emit.Options, keepGen bool) error {
 		want = "install"
 	}
 
+	// A plan that declares nothing is not a broken plan — it is a
+	// LIBRARY (the `lib` template's build.cljgo, ADR 0047): there is no
+	// binary to install, and the namespace is consumed by requiring it.
+	// Say so instead of failing with "no install step", which reads as a
+	// typo in the build file.
+	if len(p.Artifacts) == 0 && len(p.Steps) == 0 {
+		fmt.Fprintf(os.Stderr, "cljgo build: nothing to build — %s declares no artifacts.\n"+
+			"A library has no binary: it is consumed by requiring its namespace, and `cljgo test` is its check.\n",
+			BuildFileName)
+		return nil
+	}
+
 	ran := false
 	for _, s := range p.Steps {
 		if s.Type != want {

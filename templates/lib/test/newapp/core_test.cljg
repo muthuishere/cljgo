@@ -1,0 +1,9 @@
+;; The generated test. Run it with `cljgo test`, which loads every
+;; namespace under src/, then every one under test/, then runs
+;; clojure.test over all of it.
+(ns newapp.core-test
+  (:require [clojure.test :refer [deftest is]]
+            [newapp.core :as core]))
+
+(deftest greet-greets
+  (is (= "Hello, world!" (core/greet "world"))))

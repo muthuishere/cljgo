@@ -1,0 +1,15 @@
+;; The generated test. Run it with `cljgo test`, which loads every
+;; namespace under src/, then every one under test/, then runs
+;; clojure.test over all of it.
+;;
+;; It tests `greeting`, not `-main`: keep the work in fns of arguments
+;; and the entry point stays a one-liner nobody needs to mock.
+(ns newapp.core-test
+  (:require [clojure.test :refer [deftest is]]
+            [newapp.core :as core]))
+
+(deftest greets-the-world-by-default
+  (is (= "Hello, world!" (core/greeting []))))
+
+(deftest greets-its-arguments
+  (is (= "Hello, ada, alan!" (core/greeting ["ada" "alan"]))))

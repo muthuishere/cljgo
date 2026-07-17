@@ -1,7 +1,8 @@
 ## ADDED Requirements
 
 ### Requirement: The first fifteen minutes are generated, not assembled
-`cljgo new <name>` SHALL generate a runnable app in the blessed layout
+`cljgo new <name> --template web` SHALL generate a runnable keel app in
+the blessed layout
 — `src/app/main.cljg`, `src/app/`, `conf.edn` (and optionally
 `conf.schema.edn`), `public/` (with a real stylesheet), `test/` (with
 one passing test), `build.cljgo`, and (from T2) `migrations/` with a
@@ -18,7 +19,7 @@ session-based password auth implementation (code + tests) into the
 app.
 
 #### Scenario: new to styled page
-- **WHEN** a user runs `cljgo new myapp && cd myapp && cljgo dev`
+- **WHEN** a user runs `cljgo new myapp --template web && cd myapp && cljgo dev`
 - **THEN** a styled HTML page (markup from keel.html, CSS served from
   `public/`) is served locally and an editor can connect to the
   printed nREPL port, with no file authored by hand
@@ -35,10 +36,41 @@ app.
 - **THEN** the same change updates `cljgo new` so the generated app
   includes it
 
+### Requirement: `cljgo new` scaffolds the LANGUAGE, not a framework
+`cljgo new <name>` SHALL default to the `lib` template — a library:
+`src/<name>/core.cljg`, a passing test, `build.cljgo`, `README.md`,
+`.gitignore`, and NO server, keel dependency, or `conf.edn` (ADR 0047).
+The generator SHALL know only about TEMPLATES, never about keel: any
+per-template metadata (summary line, suggested next commands) SHALL live
+with the templates, not in the command. Three built-ins SHALL ship —
+`lib` (the default), `cli` (a command-line tool: `-main`, argument
+handling, and a `build.cljgo` producing one static binary), and `web`
+(the keel app) — and `cljgo new`'s help and its unknown-template error
+SHALL name all three plus the `--template <path>` form. `cljgo build` in
+a project whose `build.cljgo` declares no artifacts SHALL report that
+there is nothing to build and succeed — a library is not a broken build
+file.
+
+#### Scenario: the default is a library
+- **WHEN** a user runs `cljgo new mylib` with no `--template`
+- **THEN** a library is generated — no `conf.edn`, no `src/app/main.cljg`,
+  no `public/` — and `cd mylib && cljgo test` passes
+
+#### Scenario: a tool is one flag away
+- **WHEN** a user runs `cljgo new mytool --template cli`
+- **THEN** the project has a `-main` that receives the command line, its
+  test passes, and `cljgo build` produces a single static binary that
+  runs
+
+#### Scenario: keel is a template, not the language
+- **WHEN** a user wants the keel web app
+- **THEN** they pass `--template web`, and the language's `new` command
+  contains no knowledge of keel to make that work
+
 ### Requirement: Templates are real files, embedded, and CI runs them
-The app `cljgo new` generates SHALL exist in the repository as a
+Every project `cljgo new` generates SHALL exist in the repository as a
 TEMPLATE: a directory of real, runnable source files (`templates/<name>/`),
-never as string literals in the generator. The template tree SHALL be
+never as string literals in the generator. The template trees SHALL be
 embedded in the `cljgo` binary, so generating is offline, zero-install,
 and version-matched to the toolchain (no first-run fetch). Templates
 SHALL be valid source WITHOUT substitution — the app name is a real
@@ -46,17 +78,25 @@ default name (`newapp`) that the generator renames, in file contents and
 in path names, and that rename SHALL be the only substitution mechanism.
 `cljgo new --template <name|path>` SHALL accept a built-in template name
 or a local template directory; a git URL SHALL be refused with an honest
-error until it is implemented. CI SHALL generate the built-in template,
-run its test, boot it, and fetch its pages inside the normal test gates.
+error until it is implemented. CI SHALL run EVERY built-in template
+inside the normal test gates: generate it and run its test; additionally
+execute the binary `cli` builds, and boot `web` and fetch its pages. The
+manifest guard SHALL be generic over the embedded FS, so a template
+cannot be added without its file list being declared and reviewed.
 
-#### Scenario: the template cannot rot
-- **WHEN** keel's API changes in a way the generated app does not follow
-- **THEN** the gate test that generates, `cljgo test`s, boots and curls
-  the template fails — the breakage cannot ship silently
+#### Scenario: no template can rot
+- **WHEN** an API changes in a way a generated project does not follow
+- **THEN** the gate test that generates that template, `cljgo test`s it,
+  and runs what it produces fails — the breakage cannot ship silently
+
+#### Scenario: a new template cannot slip in unchecked
+- **WHEN** a directory is added under `templates/` without a declared
+  manifest and built-in entry
+- **THEN** the fast guard fails
 
 #### Scenario: generating is offline
 - **WHEN** a user runs `cljgo new myapp` on a machine with no network
-- **THEN** the app is generated from the binary's embedded template
+- **THEN** the project is generated from the binary's embedded template
 
 #### Scenario: an alternate template
 - **WHEN** a user runs `cljgo new myapp --template ./our-template`

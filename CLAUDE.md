@@ -53,8 +53,8 @@ All green, no exceptions. `refs/` is fenced with a stub go.mod — leave it.
 `pkg/lang` runtime · `pkg/corelib` Go-native core builtins (ADR 0043) ·
 `pkg/reader` · `pkg/ast` · `pkg/analyzer` · `pkg/eval` ·
 `pkg/repl` · `cmd/cljgo` · `core/` (core.clj, Clojure-in-Clojure) ·
-`templates/` (real, runnable app templates `cljgo new` embeds — never
-string literals) · `conformance/` · `design/` · `docs/adr/` · `openspec/` ·
+`templates/` (real, runnable project templates `cljgo new` embeds —
+lib (default) / cli / web; never string literals) · `conformance/` · `design/` · `docs/adr/` · `openspec/` ·
 `spikes/` (frozen) · `refs/` (gitignored clones).
 
 ## The precedence principle (owner, 2026-07-12)

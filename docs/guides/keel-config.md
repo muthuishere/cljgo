@@ -45,7 +45,7 @@ selectors/secrets, not config data — they don't appear in the map.)
 
 ## The schema (optional, enforced when present)
 
-`conf.schema.edn` — generated minimal by `cljgo new`, delete it to go
+`conf.schema.edn` — generated minimal by `cljgo new --template web`, delete it to go
 schemaless:
 
 ```clojure

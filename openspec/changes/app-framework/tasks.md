@@ -42,6 +42,35 @@
       Go client) plus a test story, and half-doing it is worse than the
       error.)*
 
+- [x] 0.4 `cljgo new` is the LANGUAGE's scaffolder (ADR 0047 — owner
+      layering call): its default becomes `lib`, NOT the keel web app.
+      cljgo is a language that ships a great framework; it is not a web
+      framework, and a library or tool author must not be handed a
+      server (`cargo new` is a lib, `mix new` is bare — Phoenix is
+      `mix phx.new`, `clj -Tnew :template lib`). Three built-ins:
+      `lib` (default — `src/<name>/core.cljg`, a test, `build.cljgo`,
+      README, .gitignore; no keel, no conf.edn), `cli` (`-main`, args,
+      the build plan that makes one static binary — the natural home of
+      the fast-startup/single-binary pitch), `web` (today's keel app,
+      content UNCHANGED); `--template <path>` unchanged. The generator
+      knows TEMPLATES, never keel: per-template metadata (summary,
+      "next:" commands) lives in `templates/`. Help and the
+      unknown-template error name all three plus the path form. CI runs
+      ALL THREE generated projects (`cmd/cljgo/keel_test.go`:
+      generate → `cljgo test`; cli also compiles + EXECUTES its binary;
+      web also boots + curls), and the fast manifest guard iterates the
+      embedded FS so no template is unchecked.
+      *(Applied 2026-07-17. Also: `cljgo build` in a project whose
+      build.cljgo declares no artifacts now reports "nothing to build"
+      and exits 0 — a library is not a broken build file, and
+      "no install step" read as a typo. OPEN, flagged in ADR 0047:
+      `cljgo dev` / `cljgo config` / `cljgo routes` are still
+      keel-SHAPED commands in the language's CLI — `dev` requires
+      `src/app/main.cljg`, `config` requires `conf.edn`, `routes`
+      evaluates `keel.http/describe`. `new` was the one that mattered
+      (it is what a first-timer types); their layering wants an owner
+      call of its own.)*
+
 ## 1. T1 — server, html, routes, middleware, config
 
 - [x] 1.1 Seed-registry growth: net/http, io, os, time, context

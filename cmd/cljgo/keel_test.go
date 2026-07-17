@@ -9,10 +9,16 @@
 // the nREPL WIRE changes the live response (the S15-style wire proof,
 // through the shipped adapter instead of a spike bridge).
 //
-// It is ALSO the proof that templates/web — the real files `cljgo new`
-// generates from — compiles and runs: every gate run generates it, runs
-// its test, boots it, and curls the page, so a template cannot rot
-// without turning this red. Fast guards: templates_test.go.
+// It is ALSO the proof that templates/web — the real files `cljgo new
+// --template web` generates from — compiles and runs: every gate run
+// generates it, runs its test, boots it, and curls the page, so a
+// template cannot rot without turning this red.
+//
+// TestNewTemplatesRun does the same for the other two built-ins (ADR
+// 0047): `cljgo new` (lib, the default) and `--template cli` are
+// generated, tested, and — for cli — compiled and EXECUTED, so all
+// three shipped templates are run by CI. Fast guards:
+// templates_test.go.
 package main
 
 import (
@@ -42,6 +48,96 @@ func buildCljgo(t *testing.T) string {
 	return bin
 }
 
+// repoRoot is the module root — the emitter needs it (CLJGO_SRC) to
+// resolve the generated go.mod's replace when a build runs from a temp
+// dir outside the repo.
+func repoRoot(t *testing.T) string {
+	t.Helper()
+	abs, err := filepath.Abs(filepath.Join("..", "..")) // this package sits at cmd/cljgo
+	if err != nil {
+		t.Fatal(err)
+	}
+	return abs
+}
+
+// TestNewTemplatesRun is the anti-rot gate for the two non-web
+// built-ins. `cljgo new` with no --template must hand a library author
+// a LIBRARY (ADR 0047), and every shipped template's generated project
+// must pass its own test — plus, for cli, actually compile and print
+// what its README claims.
+func TestNewTemplatesRun(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+
+	// --- lib: the DEFAULT. `cljgo new demo`, no --template. -------------
+	t.Run("lib", func(t *testing.T) {
+		work := t.TempDir()
+		if out, err := runIn(work, bin, "new", "demo"); err != nil {
+			t.Fatalf("cljgo new: %v\n%s", err, out)
+		}
+		app := filepath.Join(work, "demo")
+		for _, f := range []string{
+			"src/demo/core.cljg", "test/demo/core_test.cljg",
+			"build.cljgo", "README.md", ".gitignore",
+		} {
+			if _, err := os.Stat(filepath.Join(app, f)); err != nil {
+				t.Fatalf("generated library missing %s: %v", f, err)
+			}
+		}
+		// The layering itself: no server was handed to a library author.
+		if _, err := os.Stat(filepath.Join(app, "conf.edn")); err == nil {
+			t.Error("`cljgo new` generated conf.edn — the default is a library, not a web app")
+		}
+		if out, err := runIn(app, bin, "test"); err != nil {
+			t.Fatalf("cljgo test: %v\n%s", err, out)
+		}
+		// A library declares no artifacts; `cljgo build` says so and does
+		// not pretend to fail.
+		if out, err := runIn(app, bin, "build"); err != nil {
+			t.Fatalf("cljgo build in a library: %v\n%s", err, out)
+		} else if !strings.Contains(out, "nothing to build") {
+			t.Errorf("cljgo build in a library said: %q", out)
+		}
+	})
+
+	// --- cli: generated, tested, COMPILED, and run ----------------------
+	t.Run("cli", func(t *testing.T) {
+		work := t.TempDir()
+		if out, err := runIn(work, bin, "new", "--template", "cli", "demo"); err != nil {
+			t.Fatalf("cljgo new --template cli: %v\n%s", err, out)
+		}
+		app := filepath.Join(work, "demo")
+		if out, err := runIn(app, bin, "test"); err != nil {
+			t.Fatalf("cljgo test: %v\n%s", err, out)
+		}
+
+		// The tool's whole pitch is the binary. Build it and run it.
+		build := exec.Command(bin, "build")
+		build.Dir = app
+		build.Env = append(os.Environ(), "CLJGO_SRC="+repoRoot(t))
+		if out, err := build.CombinedOutput(); err != nil {
+			t.Fatalf("cljgo build: %v\n%s", err, out)
+		}
+		out, err := exec.Command(filepath.Join(app, "demo"+emit.ExeSuffix), "ada", "alan").CombinedOutput()
+		if err != nil {
+			t.Fatalf("running the built binary: %v\n%s", err, out)
+		}
+		if strings.TrimSpace(string(out)) != "Hello, ada, alan!" {
+			t.Fatalf("the built tool printed %q — the cli template's own README is wrong", out)
+		}
+	})
+}
+
+// runIn runs bin with args in dir and returns the combined output.
+func runIn(dir, bin string, args ...string) (string, error) {
+	cmd := exec.Command(bin, args...)
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
+
 func TestKeelNewDevTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping binary build in -short mode")
@@ -49,8 +145,8 @@ func TestKeelNewDevTest(t *testing.T) {
 	bin := buildCljgo(t)
 	work := t.TempDir()
 
-	// --- cljgo new demo -------------------------------------------------
-	newCmd := exec.Command(bin, "new", "demo")
+	// --- cljgo new --template web demo ----------------------------------
+	newCmd := exec.Command(bin, "new", "--template", "web", "demo")
 	newCmd.Dir = work
 	if out, err := newCmd.CombinedOutput(); err != nil {
 		t.Fatalf("cljgo new: %v\n%s", err, out)

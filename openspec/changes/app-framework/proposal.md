@@ -48,8 +48,10 @@ static binary, unmodified, and satisfy this spec.
 
 ## Tiers (topologically sorted — every generated verb has a same-tier implementation)
 
-- **T0** `cljgo new` / `cljgo dev` — the 15-minute magic (blessed
-  layout, styled page, first test; no db verbs).
+- **T0** `cljgo new --template web` / `cljgo dev` — the 15-minute magic
+  (blessed layout, styled page, first test; no db verbs). `cljgo new`
+  itself is the LANGUAGE's scaffolder and defaults to `lib`; keel is
+  one template of three (lib/cli/web) — ADR 0047.
 - **T1** server + html (+form/CSRF) + routes + middleware defaults +
   config + app-test client.
 - **T2** data layer: pgx pool, query/one/insert/tx, casts→Result,
