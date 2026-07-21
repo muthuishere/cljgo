@@ -116,6 +116,17 @@ var ZipSource string
 //go:embed edn.cljg
 var EdnSource string
 
+// PprintSource is the contents of pprint.cljg — the clojure.pprint
+// namespace (fundamentals audit 2026-07): a real pretty printer for data
+// (pprint/pp/write/write-out/print-table + the dispatch basics and the
+// seven control vars), oracle-verified against JVM clojure.pprint;
+// cl-format and the raw logical-block writer API are honest
+// "Unimplemented:" throwers (see the file's DEVIATIONS header). The
+// loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed pprint.cljg
+var PprintSource string
+
 // WalkSource is the contents of walk.cljg — the clojure.walk namespace
 // (fundamentals audit 2026-07): the generic tree-walk fns (walk/postwalk/
 // prewalk + the demo, replace, keywordize/stringify and macroexpand-all
@@ -205,6 +216,7 @@ func BootSources() []BootSource {
 		{NS: "clojure.set", File: "set.cljg", Source: &SetSource, Pkg: "cljset"},
 		{NS: "clojure.zip", File: "zip.cljg", Source: &ZipSource, Pkg: "cljzip"},
 		{NS: "clojure.edn", File: "edn.cljg", Source: &EdnSource, Pkg: "cljedn"},
+		{NS: "clojure.pprint", File: "pprint.cljg", Source: &PprintSource, Pkg: "cljpprint"},
 		{NS: "clojure.walk", File: "walk.cljg", Source: &WalkSource, Pkg: "cljwalk"},
 		{NS: "clojure.data", File: "data.cljg", Source: &DataSource, Pkg: "cljdata"},
 		{NS: "clojure.test", File: "test.cljg", Source: &TestSource, Pkg: "cljtest"},

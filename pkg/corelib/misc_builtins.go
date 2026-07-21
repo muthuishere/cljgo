@@ -258,15 +258,10 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 
 	// --- map entries (clojure.walk substrate) --------------------------------
 	//
-	// map-entry?: is x a map entry (fundamentals audit 2026-07; JVM
-	// clojure.core since 1.8). Only *lang.MapEntry (what map seqs yield,
-	// for tree and array maps alike) implements lang.IMapEntry — plain
-	// 2-vectors do not, matching the JVM. oracle (1.12.5):
-	// (map-entry? (first {:a 1})) => true; (map-entry? [1 2]) => false.
-	def("map-entry?", func(args ...any) any {
-		_, ok := oneArg("map-entry?", args).(lang.IMapEntry)
-		return ok
-	})
+	// map-entry? itself lives in predicate_builtins.go with the other type
+	// predicates; two identical registrations briefly coexisted after the
+	// walk and core-fns batches merged, and the second silently overwrote
+	// the first. Only the private constructor seam belongs here.
 	// -map-entry: (k v) -> a real MapEntry — clojure.walk's substrate for
 	// rebuilding walked entries (JVM walk uses MapEntry/create so the
 	// walking fn sees genuine entries, CLJ-2031), private like the other

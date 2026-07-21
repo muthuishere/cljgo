@@ -50,3 +50,218 @@
   [name]
   (when (resolve name)
     (list 'clojure.repl/print-doc (list 'var name))))
+
+;; ---------------------------------------------------------------------
+;; The rest of the JVM clojure.repl surface (fundamentals audit 2026-07:
+;; 11 of 13 publics were missing). Everything below is oracle-verified
+;; against JVM Clojure 1.12.5 clojure.repl except where a DEVIATION is
+;; called out:
+;;   * pst prints to *out* (cljgo has no *err* var yet), prints NO stack
+;;     frames (cljgo error values carry none — only message/data/cause),
+;;     and therefore accepts-but-ignores the depth argument.
+;;   * stack-element-str / set-break-handler! / thread-stopper throw
+;;     "Unimplemented:" — their inputs (StackTraceElement, JVM threads)
+;;     do not exist on a Go host.
+;;   * source-fn reads straight from the :file/:line var metadata via
+;;     the -source-fn-text host seam, so it ALSO works for files loaded
+;;     by path (where the JVM's classpath-resource lookup returns nil);
+;;     vars without file metadata (all of cljgo's core, every var in an
+;;     AOT binary) return nil, exactly the JVM contract for vars without
+;;     source info.
+
+;; --- demunge ----------------------------------------------------------
+
+;; The Compiler/CHAR_MAP tokens, demunged longest-token-first by the
+;; scanner below. oracle: (demunge "clojure.core$future_call") =>
+;; "clojure.core/future-call"; (demunge "foo$bar_QMARK_") => "foo/bar?";
+;; (demunge "my_ns$my_fn__1234") => "my-ns/my-fn--1234".
+(def ^:private -demunge-pairs
+  [["_COLON_" ":"] ["_PLUS_" "+"] ["_GT_" ">"] ["_LT_" "<"] ["_EQ_" "="]
+   ["_TILDE_" "~"] ["_BANG_" "!"] ["_CIRCA_" "@"] ["_SHARP_" "#"]
+   ["_SINGLEQUOTE_" "'"] ["_DOUBLEQUOTE_" "\""] ["_PERCENT_" "%"]
+   ["_CARET_" "^"] ["_AMPERSAND_" "&"] ["_STAR_" "*"] ["_BAR_" "|"]
+   ["_LBRACE_" "{"] ["_RBRACE_" "}"] ["_LBRACK_" "["] ["_RBRACK_" "]"]
+   ["_SLASH_" "/"] ["_BSLASH_" "\\"] ["_QMARK_" "?"]])
+
+(defn ^:private -demunge-token
+  "The [token replacement] pair s starts with, or nil."
+  [s]
+  (some (fn [pair]
+          (let [tok (first pair)]
+            (when (and (>= (count s) (count tok))
+                       (= tok (subs s 0 (count tok))))
+              pair)))
+        -demunge-pairs))
+
+(defn demunge
+  "Given a string representation of a fn class,
+  as in a stack trace element, returns a readable version."
+  [fn-name]
+  (loop [s fn-name acc ""]
+    (if (= s "")
+      acc
+      (let [c (subs s 0 1)]
+        (cond
+          (= c "$") (recur (subs s 1) (str acc "/"))
+          (= c "_")
+          (if-let [pair (-demunge-token s)]
+            (recur (subs s (count (first pair))) (str acc (second pair)))
+            (recur (subs s 1) (str acc "-")))
+          :else (recur (subs s 1) (str acc c)))))))
+
+;; --- cause chains -----------------------------------------------------
+
+;; oracle: (root-cause (ex-info "outer" {} (ex-info "inner" {}))) => the
+;; inner exception; an exception with no cause returns itself.
+(defn root-cause
+  "Returns the initial cause of an exception or error by peeling off all of
+  its wrappers"
+  [t]
+  (loop [cause t]
+    (let [c (ex-cause cause)]
+      (if c (recur c) cause))))
+
+;; --- apropos / dir / find-doc ----------------------------------------
+
+;; oracle: (apropos "unchecked-add") => (clojure.core/unchecked-add
+;; clojure.core/unchecked-add-int); (apropos #"^find-ke") =>
+;; (clojure.core/find-keyword); no match => ().
+(defn apropos
+  "Given a regular expression or stringable thing, return a seq of all
+  public definitions in all currently-loaded namespaces that match the
+  str-or-pattern."
+  [str-or-pattern]
+  (let [matches? (if (or (string? str-or-pattern)
+                         (symbol? str-or-pattern)
+                         (keyword? str-or-pattern))
+                   (fn [nm] (clojure.string/includes? (str nm) (str str-or-pattern)))
+                   (fn [nm] (re-find str-or-pattern (str nm))))]
+    (sort
+     (mapcat (fn [ns]
+               (let [ns-str (str (ns-name ns))]
+                 (map (fn [s] (symbol ns-str (str s)))
+                      (filter matches? (keys (ns-publics ns))))))
+             (all-ns)))))
+
+;; oracle: (dir-fn 'clojure.set) => (difference index intersection join
+;; map-invert project rename rename-keys select subset? superset? union);
+;; an alias in the current ns resolves; a missing ns throws the-ns's
+;; "No namespace: foo found".
+(defn dir-fn
+  "Returns a sorted seq of symbols naming public vars in
+  a namespace or namespace alias. Looks for aliases in *ns*"
+  [ns]
+  (sort (map first (ns-publics (the-ns (get (ns-aliases *ns*) ns ns))))))
+
+;; oracle: (dir clojure.set) prints one public name per line, sorted.
+(defmacro dir
+  "Prints a sorted directory of public vars in a namespace"
+  [nsname]
+  `(doseq [v# (dir-fn '~nsname)]
+     (println v#)))
+
+;; oracle: (find-doc #"first set without elements") prints clojure.set/
+;; difference's doc block (clojure.set loaded). DEVIATION: matches var
+;; docs only — cljgo's doc/print-doc do not cover namespace docs or
+;; special forms yet (see the header of this file).
+(defn find-doc
+  "Prints documentation for any var whose documentation or name
+ contains a match for re-string-or-pattern"
+  [re-string-or-pattern]
+  (let [re (re-pattern re-string-or-pattern)]
+    (doseq [v (mapcat (fn [ns]
+                        (sort-by (fn [v] (str v)) (vals (ns-interns ns))))
+                      (all-ns))]
+      (let [m (meta v)]
+        (when (and (:doc m)
+                   (or (re-find re (:doc m))
+                       (re-find re (name (symbol (subs (str v) 2))))))
+          (print-doc v))))))
+
+;; --- source -----------------------------------------------------------
+
+;; oracle: (source-fn 'no.such/thing) => nil; a var without :file/:line
+;; metadata => nil (JVM contract). Positive case (a var defined in a
+;; file on disk) returns the exact defining-form text — see the header
+;; DEVIATION about cljgo finding MORE sources than the JVM's
+;; classpath-only lookup.
+(defn source-fn
+  "Returns a string of the source code for the given symbol, if it can
+  find it. Returns nil if it can't find the source.
+
+  Example: (source-fn 'filter)"
+  [x]
+  (when-let [v (resolve x)]
+    (let [m (meta v)]
+      (when (and (:file m) (:line m))
+        (clojure.core/-source-fn-text (:file m) (:line m))))))
+
+;; oracle: (source no-such-thing) prints "Source not found".
+(defmacro source
+  "Prints the source code for the given symbol, if it can find it.
+  This requires that the symbol resolve to a Var defined in a
+  namespace for which the source is available.
+
+  Example: (source filter)"
+  [n]
+  `(println (or (source-fn '~n) "Source not found")))
+
+;; --- pst --------------------------------------------------------------
+
+(defn ^:private -ex-class-name
+  "The exception value's short type name (ExceptionInfo for ex-info),
+  standing in for the JVM's (.getSimpleName (class e))."
+  [e]
+  (last (clojure.string/split (str (type e)) #"\.")))
+
+;; DEVIATION (see header): prints to *out*, no stack frames, depth
+;; accepted for JVM signature parity but unused. First line matches the
+;; JVM shape: "ExceptionInfo <message> <data-map>"; each cause prints
+;; under a "Caused by:" line, as on the JVM.
+(defn pst
+  "Prints a stack trace of the exception, to the depth requested. If none supplied, uses the root cause of the
+  most recent repl exception (*e), and a depth of 12."
+  ([] (pst 12))
+  ([e-or-depth]
+   (if (number? e-or-depth)
+     (when-let [e *e]
+       (pst (root-cause e) e-or-depth))
+     (pst e-or-depth 12)))
+  ([e depth]
+   (println (str (-ex-class-name e) " " (ex-message e)
+                 (if-let [info (ex-data e)] (str " " (pr-str info)) "")))
+   (when-let [cause (ex-cause e)]
+     (println "Caused by:")
+     (pst cause depth))
+   nil))
+
+;; --- JVM-thread-bound surface (honest Unimplemented) -------------------
+
+(defn stack-element-str
+  "Returns a (possibly unmunged) string representation of a StackTraceElement"
+  [el]
+  (if true
+    (throw (ex-info "Unimplemented: stack-element-str (cljgo error values carry no stack frames — there is no StackTraceElement to format on a Go host)"
+                    {:unimplemented "stack-element-str"}))
+    nil))
+
+(defn set-break-handler!
+  "Register INT signal handler. DEVIATION: Unimplemented — JVM
+  sun.misc.Signal machinery does not exist on a Go host."
+  ([] (set-break-handler! nil))
+  ([f]
+   (if true
+     (throw (ex-info "Unimplemented: set-break-handler! (JVM signal-handler machinery; not available on a Go host)"
+                     {:unimplemented "set-break-handler!"}))
+     nil)))
+
+(defn thread-stopper
+  "Returns a function that takes one arg and uses that as an exception message
+  to stop the given thread. DEVIATION: Unimplemented — cljgo has no JVM
+  Thread objects."
+  ([] (thread-stopper nil))
+  ([thread]
+   (if true
+     (throw (ex-info "Unimplemented: thread-stopper (JVM Thread machinery; not available on a Go host)"
+                     {:unimplemented "thread-stopper"}))
+     nil)))

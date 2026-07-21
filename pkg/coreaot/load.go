@@ -15,6 +15,7 @@ import (
 	cljdata "github.com/muthuishere/cljgo/pkg/coreaot/cljdata"
 	cljedn "github.com/muthuishere/cljgo/pkg/coreaot/cljedn"
 	cljgobuild "github.com/muthuishere/cljgo/pkg/coreaot/cljgobuild"
+	cljpprint "github.com/muthuishere/cljgo/pkg/coreaot/cljpprint"
 	cljrepl "github.com/muthuishere/cljgo/pkg/coreaot/cljrepl"
 	cljset "github.com/muthuishere/cljgo/pkg/coreaot/cljset"
 	cljstring "github.com/muthuishere/cljgo/pkg/coreaot/cljstring"
@@ -58,6 +59,7 @@ func Load() {
 	cljset.Load()
 	cljzip.Load()
 	cljedn.Load()
+	cljpprint.Load()
 	cljwalk.Load()
 	cljdata.Load()
 	cljtest.Load()

@@ -1,0 +1,388 @@
+;; pprint.cljg — cljgo's clojure.pprint namespace (fundamentals audit
+;; 2026-07: the whole namespace was absent, 0/26 publics). Loaded at
+;; startup into the clojure.pprint namespace via core.BootSources (both
+;; the interpreter's boot and the AOT core, ADR 0046). The .cljg
+;; extension follows ADR 0017.
+;;
+;; WHAT THIS SLICE IS: a real pretty printer for DATA — pprint / pp /
+;; write / write-out / print-table / simple-dispatch /
+;; set-pprint-dispatch / with-pprint-dispatch plus the seven dynamic
+;; control vars — whose output is oracle-verified byte-for-byte against
+;; JVM Clojure 1.12.5 clojure.pprint (see conformance/tests/pprint-*.clj).
+;;
+;; HOW IT PRINTS: JVM pprint drives a buffering XP pretty-writer; its
+;; simple-dispatch emits only :linear conditional newlines, and for a
+;; linear newline the XP algorithm breaks iff the SECTION after it (the
+;; text up to the next conditional newline of a strict-ancestor block,
+;; including pending closing suffixes) does not fit on the line, with
+;; per-block stickiness (one break in a block breaks all its element
+;; separators). For linear-only output that whole machine reduces to one
+;; rule this file implements directly (verified empirically against the
+;; oracle across nesting/margin cases):
+;;
+;;   a block (or a map entry's key–value gap) breaks
+;;   iff start-col + flat-length + trailing-length > *print-right-margin*
+;;
+;; where trailing-length counts the pending text after the block up to
+;; the nearest enclosing break opportunity (", " before a following map
+;; entry, " " before a following element, or the run of closing
+;; brackets). Broken blocks put every element on its own line at the
+;; block's content column; a broken map entry puts the value on its own
+;; line at the entry's column. *print-length* is honored both inline and
+;; broken (a trailing "..." element), as on the JVM.
+;;
+;; DEVIATIONS from JVM clojure.pprint (documented, honest):
+;;   * cl-format / formatter / formatter-out — the Common-Lisp FORMAT
+;;     engine is NOT implemented; they throw "Unimplemented:" ex-infos.
+;;   * the raw logical-block writer API (pprint-logical-block,
+;;     pprint-newline, pprint-indent, pprint-tab, print-length-loop,
+;;     get-pretty-writer, fresh-line) — the column-tracked pretty writer
+;;     it needs is not in this slice; all seven throw "Unimplemented:".
+;;     Custom dispatch is still possible with any fn that prints
+;;     (set-pprint-dispatch / with-pprint-dispatch work).
+;;   * simple-dispatch is a plain fn, not the JVM's class-keyed
+;;     multimethod (no class-based defmethod extension).
+;;   * code-dispatch delegates to simple-dispatch: code pretty-prints as
+;;     plain data (no defn/let/binding-vector-aware layout).
+;;   * *print-miser-width* exists (default 40, as JVM) but has no output
+;;     effect: simple-dispatch emits no :miser newlines on the JVM
+;;     either, so data printing is identical; only the unimplemented
+;;     logical-block API could observe it.
+;;   * a map KEY always prints flat (JVM can break a huge collection
+;;     key internally; a broken key is vanishingly rare in real data).
+;;   * a custom dispatch fn runs with no column context (renders from
+;;     column 0) and pprint always appends one final newline.
+;;   * write's :level / :lines / :readably options throw
+;;     "Unimplemented:" (silent wrong output is worse than an error);
+;;     :length IS supported (binds *print-length*).
+;;   * *print-base* / *print-radix* affect fixed-precision integers;
+;;     base 2/8/16 of a negative prints the 64-bit two's-complement
+;;     digits exactly like the JVM's Long/toBinaryString family (oracle:
+;;     (binding [*print-base* 16] (pprint -255)) => ffffffffffffff01).
+
+(clojure.core/in-ns 'clojure.pprint)
+(clojure.core/refer 'clojure.core)
+
+;; --- control vars (JVM clojure.pprint defaults) ----------------------
+
+(def ^:dynamic *print-pretty* true)
+(def ^:dynamic *print-right-margin* 72)
+(def ^:dynamic *print-miser-width* 40)
+(def ^:dynamic *print-suppress-namespaces* nil)
+(def ^:dynamic *print-radix* nil)
+(def ^:dynamic *print-base* 10)
+
+;; --- integer base/radix rendering ------------------------------------
+
+(def ^:private -digit-chars "0123456789abcdefghijklmnopqrstuvwxyz")
+
+(defn ^:private -digit [i]
+  (subs -digit-chars i (inc i)))
+
+(defn ^:private -digits
+  "Digit string of non-negative n in base (plain positional notation)."
+  [n base]
+  (if (zero? n)
+    "0"
+    (loop [v n acc ""]
+      (if (zero? v)
+        acc
+        (recur (quot v base) (str (-digit (mod v base)) acc))))))
+
+;; base 2/8/16 of a negative long prints unsigned two's complement —
+;; exactly the JVM's Long/toHexString family, which clojure.pprint's
+;; opt-base-str calls for those bases (oracle: -255 base 16 =>
+;; ffffffffffffff01). Other bases print sign-magnitude (oracle: -5 base
+;; 3 => -12).
+(defn ^:private -base-digits [n base]
+  (if (neg? n)
+    (if (or (= base 2) (= base 8) (= base 16))
+      (let [shift (cond (= base 2) 1 (= base 8) 3 :else 4)]
+        (loop [v n acc ""]
+          (if (zero? v)
+            acc
+            (recur (unsigned-bit-shift-right v shift)
+                   (str (-digit (bit-and v (dec base))) acc)))))
+      (str "-" (-digits (- n) base)))
+    (-digits n base)))
+
+(defn ^:private -radix-prefix [base]
+  (if *print-radix*
+    (cond
+      (= base 2) "#b"
+      (= base 8) "#o"
+      (= base 16) "#x"
+      (= base 10) ""
+      :else (str "#" base "r"))
+    ""))
+
+(defn ^:private -int-str [n]
+  (let [base *print-base*]
+    (if (= base 10)
+      ;; radix-marked base 10 gets a trailing decimal point (oracle:
+      ;; (binding [*print-radix* true] (pprint 255)) => 255.)
+      (str (pr-str n) (if *print-radix* "." ""))
+      (str (-radix-prefix base) (-base-digits n base)))))
+
+;; --- shared helpers ----------------------------------------------------
+
+;; -ellipsis: identity sentinel standing in for the elements a
+;; *print-length* cut drops (an atom so no real data can collide with it).
+(def ^:private -ellipsis (atom :clojure.pprint/ellipsis))
+
+;; -limited: the elements of coll under *print-length* — a vector, with
+;; the -ellipsis sentinel appended when elements were dropped (matching
+;; how pr and JVM pprint print truncated collections).
+(defn ^:private -limited [coll]
+  (let [pl *print-length*
+        xs (seq coll)]
+    (if pl
+      (let [shown (vec (take pl xs))]
+        (if (seq (drop pl xs))
+          (conj shown -ellipsis)
+          shown))
+      (vec xs))))
+
+(defn ^:private -join [sep xs]
+  (loop [xs (seq xs) acc "" first? true]
+    (if xs
+      (recur (next xs) (str acc (if first? "" sep) (first xs)) false)
+      acc)))
+
+(defn ^:private -spaces [n]
+  (apply str (repeat n " ")))
+
+;; --- flat (single-line) rendering -------------------------------------
+
+(defn ^:private -leaf-str [x]
+  (cond
+    (and *print-suppress-namespaces* (symbol? x) (namespace x)) (name x)
+    (and (integer? x) (or (not= *print-base* 10) *print-radix*)) (-int-str x)
+    :else (pr-str x)))
+
+;; -flat: x on one line — byte-identical to cljgo's pr for collections
+;; (", " between map entries, " " elsewhere), but honoring the pprint
+;; control vars (*print-suppress-namespaces*, *print-base*,
+;; *print-radix*, *print-length*). Self-recursive; map entries inline.
+(defn ^:private -flat [x]
+  (cond
+    (identical? x -ellipsis) "..."
+    (map? x)
+    (str "{"
+         (-join ", " (map (fn [e]
+                            (if (identical? e -ellipsis)
+                              "..."
+                              (str (-flat (key e)) " " (-flat (val e)))))
+                          (-limited (seq x))))
+         "}")
+    (vector? x) (str "[" (-join " " (map -flat (-limited x))) "]")
+    (set? x) (str "#{" (-join " " (map -flat (-limited x))) "}")
+    (or (list? x) (seq? x)) (str "(" (-join " " (map -flat (-limited x))) ")")
+    :else (-leaf-str x)))
+
+;; --- pretty rendering ----------------------------------------------------
+
+;; The mutually recursive halves take the top-level render fn as an
+;; explicit argument (cljgo has no `declare` yet, so forward references
+;; are passed, not resolved).
+
+(defn ^:private -render-coll
+  "Broken rendering of a sequential block: prefix, every element on its
+  own line at the content column, suffix."
+  [render coll prefix suffix col trail]
+  (let [c (+ col (count prefix))
+        items (-limited coll)
+        n (count items)
+        rendered (map-indexed
+                  (fn [i e]
+                    (let [t (if (= i (dec n)) (+ (count suffix) trail) 1)]
+                      (if (identical? e -ellipsis)
+                        "..."
+                        (render e c t))))
+                  items)]
+    (str prefix (-join (str "\n" (-spaces c)) rendered) suffix)))
+
+(defn ^:private -render-entry
+  "One map entry at col: `k v` inline when the value (plus what trails
+  the entry) fits, else the value on its own line at the entry column."
+  [render e col trail]
+  (if (identical? e -ellipsis)
+    "..."
+    (let [kstr (-flat (key e))
+          vflat (-flat (val e))
+          vcol (+ col (count kstr) 1)]
+      (if (<= (+ vcol (count vflat) trail) *print-right-margin*)
+        (str kstr " " vflat)
+        (str kstr "\n" (-spaces col) (render (val e) col trail))))))
+
+(defn ^:private -render-map [render m col trail]
+  (let [c (+ col 1)
+        items (-limited (seq m))
+        n (count items)
+        rendered (map-indexed
+                  (fn [i e]
+                    (-render-entry render e c (if (= i (dec n)) (+ 1 trail) 2)))
+                  items)]
+    (str "{" (-join (str ",\n" (-spaces c)) rendered) "}")))
+
+(defn ^:private -render
+  "Pretty text of x starting at column col, with trail pending
+  characters between x's end and the nearest enclosing break."
+  [x col trail]
+  (let [flat (-flat x)]
+    (if (<= (+ col (count flat) trail) *print-right-margin*)
+      flat
+      (cond
+        (map? x) (-render-map -render x col trail)
+        (vector? x) (-render-coll -render x "[" "]" col trail)
+        (set? x) (-render-coll -render x "#{" "}" col trail)
+        (or (list? x) (seq? x)) (-render-coll -render x "(" ")" col trail)
+        :else flat))))
+
+;; --- dispatch ----------------------------------------------------------
+
+;; simple-dispatch: print object pretty to *out* (see DEVIATIONS: a
+;; plain fn, and renders from column 0 when called mid-stream).
+(defn simple-dispatch [object]
+  (print (-render object 0 0))
+  nil)
+
+;; code-dispatch: DEVIATION — delegates to simple-dispatch (code prints
+;; as plain data; no special defn/let layout).
+(defn code-dispatch [object]
+  (simple-dispatch object))
+
+(def ^:dynamic *print-pprint-dispatch* simple-dispatch)
+
+;; write-out: hand object to the current dispatch function (the JVM
+;; contract minus pretty-writer bookkeeping).
+(defn write-out [object]
+  (*print-pprint-dispatch* object)
+  nil)
+
+(defn set-pprint-dispatch [function]
+  (alter-var-root (var *print-pprint-dispatch*) (fn [_] function))
+  nil)
+
+(defmacro with-pprint-dispatch [function & body]
+  `(~'binding [*print-pprint-dispatch* ~function]
+     ~@body))
+
+;; --- entry points ------------------------------------------------------
+
+(defn ^:private -write-root [object]
+  (if *print-pretty*
+    (write-out object)
+    (pr object)))
+
+;; write: JVM option surface, minus :level/:lines/:readably (throwing —
+;; see DEVIATIONS). Returns the output string when :stream is nil, else
+;; writes and returns nil. Oracle: (write [1 2 3] :stream nil) =>
+;; "[1 2 3]"; (write 1) prints 1, returns nil.
+(defn write [object & kw-args]
+  (let [opts (apply hash-map kw-args)]
+    (doseq [k [:level :lines :readably :circle :shared]]
+      (when (contains? opts k)
+        (throw (ex-info (str "Unimplemented: write option " k
+                             " (cljgo clojure.pprint slice — core/pprint.cljg)")
+                        {:option k}))))
+    (binding [*print-pretty* (if (contains? opts :pretty) (:pretty opts) *print-pretty*)
+              *print-right-margin* (if (contains? opts :right-margin) (:right-margin opts) *print-right-margin*)
+              *print-miser-width* (if (contains? opts :miser-width) (:miser-width opts) *print-miser-width*)
+              *print-suppress-namespaces* (if (contains? opts :suppress-namespaces) (:suppress-namespaces opts) *print-suppress-namespaces*)
+              *print-radix* (if (contains? opts :radix) (:radix opts) *print-radix*)
+              *print-base* (if (contains? opts :base) (:base opts) *print-base*)
+              *print-length* (if (contains? opts :length) (:length opts) *print-length*)
+              *print-pprint-dispatch* (if (contains? opts :dispatch) (:dispatch opts) *print-pprint-dispatch*)]
+      (let [stream (if (contains? opts :stream) (:stream opts) true)]
+        (cond
+          (nil? stream) (with-out-str (-write-root object))
+          (true? stream) (do (-write-root object) nil)
+          :else (binding [*out* stream] (-write-root object) nil))))))
+
+;; pprint: pretty print to *out* (or writer) with a trailing newline;
+;; returns nil (oracle: (pprint 1) prints "1\n", returns nil).
+(defn pprint
+  ([object] (pprint object *out*))
+  ([object writer]
+   (binding [*out* writer]
+     (-write-root object)
+     (println))
+   nil))
+
+;; pp: pretty print the last REPL value.
+(defmacro pp [] `(pprint *1))
+
+;; --- print-table -------------------------------------------------------
+
+;; Straight port of JVM clojure.pprint/print-table (it does not use the
+;; pretty writer): right-aligned columns sized to the widest (str value),
+;; keys of the first row by default. Oracle-verified byte-for-byte
+;; (conformance/tests/pprint-print-table.clj).
+(defn print-table
+  ([ks rows]
+   (when (seq rows)
+     (let [widths (map (fn [k]
+                         (apply max (count (str k))
+                                (map (fn [row] (count (str (get row k)))) rows)))
+                       ks)
+           spacers (map (fn [w] (apply str (repeat w "-"))) widths)
+           fmts (map (fn [w] (str "%" w "s")) widths)
+           fmt-row (fn [leader divider trailer row]
+                     (str leader
+                          (-join divider
+                                 (map (fn [k fmt] (format fmt (str (get row k))))
+                                      ks fmts))
+                          trailer))]
+       (println)
+       (println (fmt-row "| " " | " " |" (zipmap ks ks)))
+       (println (fmt-row "|-" "-+-" "-|" (zipmap ks spacers)))
+       (doseq [row rows]
+         (println (fmt-row "| " " | " " |" row))))))
+  ([rows] (print-table (keys (first rows)) rows)))
+
+;; --- honest Unimplemented surface (see DEVIATIONS header) --------------
+
+;; The (if true (throw ...) nil) shape keeps the body an expression that
+;; yields a value on the else arm: pkg/emit's genMethodBody requires a
+;; method body to yield (a bare top-level throw is a control transfer
+;; the emitter refuses — "bodiless fn method").
+(defn ^:private -unimplemented [name]
+  (if true
+    (throw (ex-info (str "Unimplemented: " name
+                         " (cljgo clojure.pprint implements pprint/write/"
+                         "print-table and the dispatch basics; the cl-format "
+                         "engine and the raw logical-block writer API are not "
+                         "in this slice — core/pprint.cljg)")
+                    {:unimplemented name}))
+    nil))
+
+(defn cl-format [writer format-in & args]
+  (-unimplemented "cl-format"))
+
+(defmacro formatter [format-in]
+  `(-unimplemented "formatter"))
+
+(defmacro formatter-out [format-in]
+  `(-unimplemented "formatter-out"))
+
+(defn get-pretty-writer [writer]
+  (-unimplemented "get-pretty-writer"))
+
+(defn fresh-line []
+  (-unimplemented "fresh-line"))
+
+(defmacro pprint-logical-block [& args]
+  `(-unimplemented "pprint-logical-block"))
+
+(defn pprint-newline [kind]
+  (-unimplemented "pprint-newline"))
+
+(defn pprint-indent [relative-to n]
+  (-unimplemented "pprint-indent"))
+
+(defn pprint-tab [kind colnum colinc]
+  (-unimplemented "pprint-tab"))
+
+(defmacro print-length-loop [bindings & body]
+  `(-unimplemented "print-length-loop"))
