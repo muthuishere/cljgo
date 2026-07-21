@@ -1,10 +1,10 @@
-# keel.html — the HTML guide
+# bri.html — the HTML guide
 
 HTML is a FUNCTION over data (ADR 0041 §4): hiccup-style vectors in,
 escaped HTML out. No template language, no layouts, no partials, no
 asset pipeline — `html/form` is the deliberate outer boundary of the
 surface, and CSS is a file in `public/` served by
-`(keel.http/dir "public")`.
+`(bri.http/dir "public")`.
 
 ## Elements
 

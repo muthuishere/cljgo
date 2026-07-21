@@ -3,7 +3,7 @@
 // the fast guards, and they are GENERIC: they walk the embedded FS, so
 // a new template cannot slip in unchecked. The slow ones — every
 // template GENERATED, tested, and run through the real binary — are in
-// keel_test.go. Between them, no template can rot silently.
+// bri_test.go. Between them, no template can rot silently.
 package main
 
 import (
@@ -40,7 +40,7 @@ var templateManifests = map[string][]string{
 		"src/newapp/core.cljg",
 		"test/newapp/core_test.cljg",
 	},
-	// web: the keel app (the T0 manifest).
+	// web: the bri app (the T0 manifest).
 	"web": {
 		".gitignore",
 		"build.cljgo",
@@ -232,8 +232,8 @@ func TestNewWithLocalTemplate(t *testing.T) {
 func TestNewRejectsBadTemplates(t *testing.T) {
 	t.Chdir(t.TempDir())
 	for _, tmpl := range []string{
-		"https://github.com/someone/keel-template.git", // git URLs: deferred, honestly
-		"git@github.com:someone/keel-template.git",
+		"https://github.com/someone/bri-template.git", // git URLs: deferred, honestly
+		"git@github.com:someone/bri-template.git",
 		"nosuchtemplate",
 		"./nowhere",
 	} {

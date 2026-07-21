@@ -58,7 +58,7 @@ var libFileLoader func(libSym *lang.Symbol)
 // SetLibFileLoader installs the source-file half of require (pkg/eval's
 // loadLibFile, bound to an evaluator). Namespaces and vars are
 // process-global, so the most recently constructed evaluator wins — the
-// same rule pkg/keel's provider wiring already follows.
+// same rule pkg/bri's provider wiring already follows.
 func SetLibFileLoader(f func(libSym *lang.Symbol)) { libFileLoader = f }
 
 // libsLoading is the in-progress load stack for cycle detection (load
