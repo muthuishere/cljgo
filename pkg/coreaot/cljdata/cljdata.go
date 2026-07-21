@@ -71,18 +71,18 @@ var (
 	v_clojure_DOT_core_vector_QMARK_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("vector?"))
 	v_clojure_DOT_data_Diff                 = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("Diff"))
 	v_clojure_DOT_data_EqualityPartition    = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("EqualityPartition"))
-	v_clojure_DOT_data_atom_diff            = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("atom-diff"))
+	v_clojure_DOT_data_atom_diff            = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("atom-diff")).SetPrivate()
 	v_clojure_DOT_data_diff                 = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff"))
-	v_clojure_DOT_data_diff_associative     = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-associative"))
-	v_clojure_DOT_data_diff_associative_key = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-associative-key"))
-	v_clojure_DOT_data_diff_map             = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-map"))
-	v_clojure_DOT_data_diff_of              = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-of"))
-	v_clojure_DOT_data_diff_sequential      = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-sequential"))
-	v_clojure_DOT_data_diff_set             = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-set"))
+	v_clojure_DOT_data_diff_associative     = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-associative")).SetPrivate()
+	v_clojure_DOT_data_diff_associative_key = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-associative-key")).SetPrivate()
+	v_clojure_DOT_data_diff_map             = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-map")).SetPrivate()
+	v_clojure_DOT_data_diff_of              = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-of")).SetPrivate()
+	v_clojure_DOT_data_diff_sequential      = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-sequential")).SetPrivate()
+	v_clojure_DOT_data_diff_set             = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-set")).SetPrivate()
 	v_clojure_DOT_data_diff_similar         = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("diff-similar"))
 	v_clojure_DOT_data_equality_partition   = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("equality-partition"))
-	v_clojure_DOT_data_partition_of         = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("partition-of"))
-	v_clojure_DOT_data_vectorize            = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("vectorize"))
+	v_clojure_DOT_data_partition_of         = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("partition-of")).SetPrivate()
+	v_clojure_DOT_data_vectorize            = lang.InternVarName(lang.NewSymbol("clojure.data"), lang.NewSymbol("vectorize")).SetPrivate()
 	v_clojure_DOT_set_difference            = lang.InternVarName(lang.NewSymbol("clojure.set"), lang.NewSymbol("difference"))
 	v_clojure_DOT_set_intersection          = lang.InternVarName(lang.NewSymbol("clojure.set"), lang.NewSymbol("intersection"))
 	v_clojure_DOT_set_union                 = lang.InternVarName(lang.NewSymbol("clojure.set"), lang.NewSymbol("union"))
@@ -135,18 +135,18 @@ func Load() {
 		_ = tmp16
 		if lang.IsTruthy(tmp15) {
 			tmp17 := v_clojure_DOT_core_reduce.Get()
-			tmp18 := lang.FnFunc2(func(result19, p__8020 any) any {
+			tmp18 := lang.FnFunc2(func(result19, p__9020 any) any {
 				var tmp21 any
 				_ = tmp21
 				{
-					var vec__8122 any = p__8020
-					_ = vec__8122
+					var vec__9122 any = p__9020
+					_ = vec__9122
 					tmp23 := v_clojure_DOT_core_nth.Get()
-					tmp24 := lang.Apply3(tmp23, vec__8122, int64(0), nil)
+					tmp24 := lang.Apply3(tmp23, vec__9122, int64(0), nil)
 					var k25 any = tmp24
 					_ = k25
 					tmp26 := v_clojure_DOT_core_nth.Get()
-					tmp27 := lang.Apply3(tmp26, vec__8122, int64(1), nil)
+					tmp27 := lang.Apply3(tmp26, vec__9122, int64(1), nil)
 					var v28 any = tmp27
 					_ = v28
 					tmp29 := v_clojure_DOT_core_assoc.Get()
@@ -189,18 +189,18 @@ func Load() {
 			_ = vb51
 			tmp52 := v_clojure_DOT_data_diff.Get()
 			tmp53 := lang.Apply2(tmp52, va48, vb51)
-			var vec__8454 any = tmp53
-			_ = vec__8454
+			var vec__9454 any = tmp53
+			_ = vec__9454
 			tmp55 := v_clojure_DOT_core_nth.Get()
-			tmp56 := lang.Apply3(tmp55, vec__8454, int64(0), nil)
+			tmp56 := lang.Apply3(tmp55, vec__9454, int64(0), nil)
 			var a_STAR_57 any = tmp56
 			_ = a_STAR_57
 			tmp58 := v_clojure_DOT_core_nth.Get()
-			tmp59 := lang.Apply3(tmp58, vec__8454, int64(1), nil)
+			tmp59 := lang.Apply3(tmp58, vec__9454, int64(1), nil)
 			var b_STAR_60 any = tmp59
 			_ = b_STAR_60
 			tmp61 := v_clojure_DOT_core_nth.Get()
-			tmp62 := lang.Apply3(tmp61, vec__8454, int64(2), nil)
+			tmp62 := lang.Apply3(tmp61, vec__9454, int64(2), nil)
 			var ab63 any = tmp62
 			_ = ab63
 			tmp64 := v_clojure_DOT_core_contains_QMARK_.Get()
@@ -877,9 +877,9 @@ func Load() {
 			{
 				tmp472 := v_clojure_DOT_data_partition_of.Get()
 				tmp473 := lang.Apply1(tmp472, a463)
-				var case__87474 any = tmp473
-				_ = case__87474
-				tmp475 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__87474, kw_map_)
+				var case__97474 any = tmp473
+				_ = case__97474
+				tmp475 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__97474, kw_map_)
 				var tmp476 any
 				_ = tmp476
 				if tmp475 {
@@ -887,7 +887,7 @@ func Load() {
 					tmp478 := lang.Apply2(tmp477, a463, b464)
 					tmp476 = tmp478
 				} else {
-					tmp479 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__87474, kw_set)
+					tmp479 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__97474, kw_set)
 					var tmp480 any
 					_ = tmp480
 					if tmp479 {
@@ -895,7 +895,7 @@ func Load() {
 						tmp482 := lang.Apply2(tmp481, a463, b464)
 						tmp480 = tmp482
 					} else {
-						tmp483 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__87474, kw_sequential)
+						tmp483 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__97474, kw_sequential)
 						var tmp484 any
 						_ = tmp484
 						if tmp483 {

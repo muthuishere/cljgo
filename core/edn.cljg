@@ -30,7 +30,11 @@
 ;; cljgo-owned type explicitly rather than generalizing interop.
 
 (clojure.core/in-ns 'clojure.edn)
-(clojure.core/refer 'clojure.core)
+;; :exclude read/read-string, exactly like JVM clojure.edn's
+;; (:refer-clojure :exclude [read read-string]) — clojure.core/read-string
+;; exists since the fundamentals 2026-07 batch, and a plain refer would
+;; warn-and-replace it.
+(clojure.core/refer 'clojure.core :exclude '[read read-string])
 
 ;; read fronts the same edn-strict reader over a STREAM (the -edn-read Go
 ;; seam, pkg/corelib/misc_builtins.go): any Go io.Reader value — *in*

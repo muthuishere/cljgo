@@ -18,12 +18,17 @@ import (
 // interns these builtins and loads core.clj, a multimethod dispatches
 // byte-identically interpreted and compiled (design/00 §2, §6 M5).
 //
-// v0 is a FLAT, `=`-based dispatch table: the method for a dispatch value
-// is the entry whose key is lang.Equiv to it, with an optional :default
-// fallback. No isa?/hierarchy/prefer-method (Clojure's inheritance-based
-// resolution) — those are a later increment; the vendored pkg/lang/MultiFn
-// carries that machinery but depends on isa?/parents/hierarchy vars that
-// this runtime does not yet intern, so it stays unused.
+// Dispatch resolution (fundamentals audit 2026-07, prefer-method): an
+// EXACT lang.Equiv match wins first (the fast path, and always correct —
+// the exact key isa?-dominates every other matching key); otherwise the
+// table is scanned for keys the dispatch value `isa?` (clojure.core/isa?,
+// the real global-hierarchy fn from core/hierarchies.cljg, resolved
+// lazily by var), picking the dominant match per prefer-method
+// preferences exactly as JVM MultiFn.findAndCacheBestMethod does —
+// including the "Multiple methods ... and neither is preferred" error on
+// genuine ambiguity; only then the :default fallback. No per-call method
+// cache yet (the JVM's cache/hierarchy-epoch machinery) — correctness
+// first, the exact-match fast path keeps the common case cheap.
 
 // multiEntry is one (dispatch-value -> impl) pair in the flat table.
 type multiEntry struct {
@@ -41,6 +46,9 @@ type MultiFn struct {
 	defaultVal any
 	mu         sync.RWMutex
 	entries    []multiEntry
+	// preferTable is prefer-method's state: dispatch-val -> IPersistentSet
+	// of dispatch-vals it is preferred over (JVM MultiFn.preferTable).
+	preferTable lang.IPersistentMap
 }
 
 func (m *MultiFn) String() string { return "#multifn[" + m.name + "]" }
@@ -83,10 +91,133 @@ func (m *MultiFn) getMethod(val any) (lang.IFn, bool) {
 	return nil, false
 }
 
-// methodFor resolves the impl for a dispatch value, falling back to the
-// :default method when there is no exact match.
+// coreFnVar lazily resolves a clojure.core var by name — the hierarchy
+// fns (isa?, parents) live in core/hierarchies.cljg, loaded after these
+// builtins are interned, so resolution must happen at dispatch time, not
+// registration time.
+func coreFnVar(name string) *lang.Var {
+	ns := lang.FindNamespace(lang.NewSymbol("clojure.core"))
+	if ns == nil {
+		return nil
+	}
+	return ns.FindInternedVar(lang.NewSymbol(name))
+}
+
+// isaVal is (clojure.core/isa? child parent) against the global
+// hierarchy — false when the hierarchy layer isn't loaded (bare boot).
+func isaVal(child, parent any) bool {
+	v := coreFnVar("isa?")
+	if v == nil {
+		return false
+	}
+	return lang.IsTruthy(v.Invoke(child, parent))
+}
+
+// prefersVal is JVM MultiFn.prefers: x is preferred over y when the
+// prefer table says so directly, or transitively through either side's
+// hierarchy parents. Takes no lock of its own — safe under either a held
+// RLock (dispatch) or the write lock (preferMethod's conflict check).
+func (m *MultiFn) prefersVal(x, y any) bool {
+	if m.preferTable != nil {
+		if s, ok := lang.Get(m.preferTable, x).(lang.IPersistentSet); ok && s.Contains(y) {
+			return true
+		}
+	}
+	parentsVar := coreFnVar("parents")
+	if parentsVar == nil {
+		return false
+	}
+	for ps := lang.Seq(parentsVar.Invoke(y)); ps != nil; ps = ps.Next() {
+		if m.prefersVal(x, ps.First()) {
+			return true
+		}
+	}
+	for ps := lang.Seq(parentsVar.Invoke(x)); ps != nil; ps = ps.Next() {
+		if m.prefersVal(ps.First(), y) {
+			return true
+		}
+	}
+	return false
+}
+
+// dominates is JVM MultiFn.dominates: preference wins, else isa?.
+func (m *MultiFn) dominates(x, y any) bool {
+	return m.prefersVal(x, y) || isaVal(x, y)
+}
+
+// bestIsaMethod scans the table for entries the dispatch value isa?-
+// matches (exact = matches were already handled by the caller) and picks
+// the dominant one, panicking on ambiguity exactly as the JVM does
+// (oracle 1.12.5: "Multiple methods in multimethod 'f2' match dispatch
+// value: :user/c -> :user/b and :user/a, and neither is preferred").
+func (m *MultiFn) bestIsaMethod(dv any) (lang.IFn, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	best := -1
+	for i := range m.entries {
+		if !isaVal(dv, m.entries[i].val) {
+			continue
+		}
+		if best < 0 || m.dominates(m.entries[i].val, m.entries[best].val) {
+			best = i
+		}
+		if !m.dominates(m.entries[best].val, m.entries[i].val) {
+			panic(fmt.Errorf("Multiple methods in multimethod '%s' match dispatch value: %s -> %s and %s, and neither is preferred",
+				m.name, lang.PrintString(dv), lang.PrintString(m.entries[i].val), lang.PrintString(m.entries[best].val)))
+		}
+	}
+	if best < 0 {
+		return nil, false
+	}
+	return m.entries[best].fn, true
+}
+
+// preferMethod records that dispatch value x should win over y, guarding
+// against a contradictory existing preference (oracle 1.12.5:
+// "Preference conflict in multimethod 'f2': :user/a is already preferred
+// to :user/b").
+func (m *MultiFn) preferMethod(x, y any) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.prefersVal(y, x) {
+		panic(fmt.Errorf("Preference conflict in multimethod '%s': %s is already preferred to %s",
+			m.name, lang.PrintString(y), lang.PrintString(x)))
+	}
+	if m.preferTable == nil {
+		m.preferTable = lang.NewMap()
+	}
+	s, _ := lang.Get(m.preferTable, x).(lang.IPersistentSet)
+	if s == nil {
+		s = lang.NewSet()
+	}
+	m.preferTable = m.preferTable.Assoc(x, s.Cons(y).(lang.IPersistentSet)).(lang.IPersistentMap)
+}
+
+// preferTableSnapshot is `prefers`: the val -> #{vals} preference map.
+func (m *MultiFn) preferTableSnapshot() lang.IPersistentMap {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.preferTable == nil {
+		return lang.NewMap()
+	}
+	return m.preferTable
+}
+
+// removeAllMethods empties the method table (remove-all-methods).
+func (m *MultiFn) removeAllMethods() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.entries = nil
+}
+
+// methodFor resolves the impl for a dispatch value: exact = match first
+// (always dominant when it exists), then the isa?/preference scan, then
+// the :default fallback.
 func (m *MultiFn) methodFor(dv any) (lang.IFn, bool) {
 	if fn, ok := m.getMethod(dv); ok {
+		return fn, true
+	}
+	if fn, ok := m.bestIsaMethod(dv); ok {
 		return fn, true
 	}
 	return m.getMethod(m.defaultVal)
@@ -180,5 +311,34 @@ func internMultimethodBuiltins(def func(string, func(...any) any) *lang.Var) {
 		m := asMultiFn(args[0], "remove-method")
 		m.removeMethod(args[1])
 		return m
+	})
+
+	// (remove-all-methods multifn) -> the multifn (empties the method
+	// table). oracle 1.12.5: after remove-all-methods, (methods h) => {}
+	// and a call throws "No method in multimethod 'h' for dispatch
+	// value: ..." — even the :default method is gone.
+	def("remove-all-methods", func(args ...any) any {
+		m := asMultiFn(args[0], "remove-all-methods")
+		m.removeAllMethods()
+		return m
+	})
+
+	// (prefer-method multifn dispatch-val-x dispatch-val-y) -> the multifn.
+	// Causes x to win over y in otherwise-ambiguous isa? dispatch; a
+	// contradictory preference throws "Preference conflict ..." (oracle
+	// 1.12.5, see preferMethod).
+	def("prefer-method", func(args ...any) any {
+		if len(args) != 3 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: prefer-method", len(args)))
+		}
+		m := asMultiFn(args[0], "prefer-method")
+		m.preferMethod(args[1], args[2])
+		return m
+	})
+
+	// (prefers multifn) -> map of preferred dispatch-val -> #{vals it is
+	// preferred over}. oracle 1.12.5: (get (prefers f2) ::a) => #{:user/b}.
+	def("prefers", func(args ...any) any {
+		return asMultiFn(args[0], "prefers").preferTableSnapshot()
 	})
 }

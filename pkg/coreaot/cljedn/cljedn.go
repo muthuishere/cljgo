@@ -12,14 +12,17 @@ var (
 	kw_doc                                    = lang.InternKeywordString("doc")
 	kw_end_column                             = lang.InternKeywordString("end-column")
 	kw_end_line                               = lang.InternKeywordString("end-line")
+	kw_exclude                                = lang.InternKeywordString("exclude")
 	kw_file                                   = lang.InternKeywordString("file")
 	kw_line                                   = lang.InternKeywordString("line")
 	sym_clojure_DOT_core                      = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_edn                       = lang.NewSymbol("clojure.edn")
+	sym_read                                  = lang.NewSymbol("read")
+	sym_read_string                           = lang.NewSymbol("read-string")
 	v_clojure_DOT_core_X_STAR_in_STAR_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*in*"))
-	v_clojure_DOT_core_X_edn_read             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read"))
-	v_clojure_DOT_core_X_edn_read_string      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string"))
-	v_clojure_DOT_core_X_edn_read_string_opts = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string-opts"))
+	v_clojure_DOT_core_X_edn_read             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read")).SetPrivate()
+	v_clojure_DOT_core_X_edn_read_string      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string")).SetPrivate()
+	v_clojure_DOT_core_X_edn_read_string_opts = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string-opts")).SetPrivate()
 	v_clojure_DOT_core_in_ns                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
 	v_clojure_DOT_core_refer                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 	v_clojure_DOT_edn_read                    = lang.InternVarName(lang.NewSymbol("clojure.edn"), lang.NewSymbol("read"))
@@ -40,12 +43,12 @@ func Load() {
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
 	tmp2 := lang.Apply1(tmp1, sym_clojure_DOT_edn)
 	_ = tmp2
-	// (clojure.core/refer (quote clojure.core))
+	// (clojure.core/refer (quote clojure.core) :exclude (quote [read read-string]))
 	tmp3 := v_clojure_DOT_core_refer.Get()
-	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
+	tmp4 := lang.Apply3(tmp3, sym_clojure_DOT_core, kw_exclude, lang.NewVector(sym_read, sym_read_string))
 	_ = tmp4
 	// (def read "Reads the next object from stream (an io.Reader; defaults to *in*).\n  Reads da…
-	v_clojure_DOT_edn_read.SetMeta(lang.NewMap(kw_file, "edn.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(11), kw_doc, "Reads the next object from stream (an io.Reader; defaults to *in*).\n  Reads data in the edn format (subset of Clojure data): no reader macros,\n  no eval. Optionally takes a map of options, the same as read-string:\n\n  :eof - value to return on end-of-stream, default is to throw an exception\n  :readers - a map of tag symbols to data-reader functions\n  :default - a function of two args, called with tag and value when no\n    reader is found for a tag."))
+	v_clojure_DOT_edn_read.SetMeta(lang.NewMap(kw_file, "edn.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(11), kw_doc, "Reads the next object from stream (an io.Reader; defaults to *in*).\n  Reads data in the edn format (subset of Clojure data): no reader macros,\n  no eval. Optionally takes a map of options, the same as read-string:\n\n  :eof - value to return on end-of-stream, default is to throw an exception\n  :readers - a map of tag symbols to data-reader functions\n  :default - a function of two args, called with tag and value when no\n    reader is found for a tag."))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -74,7 +77,7 @@ func Load() {
 	v_clojure_DOT_edn_read.BindRoot(tmp5)
 	_ = v_clojure_DOT_edn_read
 	// (def read-string "Reads one object from the string s. Returns nil when s has nothing but\n…
-	v_clojure_DOT_edn_read_string.SetMeta(lang.NewMap(kw_file, "edn.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(18), kw_doc, "Reads one object from the string s. Returns nil when s has nothing but\n  whitespace/comments. Optionally takes a map of options:\n\n  :eof - value to return on end-of-stream, default is to throw an exception\n  :readers - a map of tag symbols to data-reader functions to be\n    considered before default-data-readers, and *data-readers*\n  :default - a function of two args, that will, if present and no reader\n    is found for a tag, be called with the tag and the value."))
+	v_clojure_DOT_edn_read_string.SetMeta(lang.NewMap(kw_file, "edn.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(18), kw_doc, "Reads one object from the string s. Returns nil when s has nothing but\n  whitespace/comments. Optionally takes a map of options:\n\n  :eof - value to return on end-of-stream, default is to throw an exception\n  :readers - a map of tag symbols to data-reader functions to be\n    considered before default-data-readers, and *data-readers*\n  :default - a function of two args, that will, if present and no reader\n    is found for a tag, be called with the tag and the value."))
 	tmp16 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:

@@ -137,7 +137,8 @@ func (g *generator) uniqueGlobal(base string) string {
 // `var v_… = lang.InternVarName(…)` (idempotent, order-free — design/00
 // §4.4 rationale applies to vars exactly as to keywords). Vars whose
 // compile-time metadata carries :dynamic are re-marked dynamic in the
-// emitted binary so `binding`/`set!` keep working.
+// emitted binary so `binding`/`set!` keep working; :private is replayed
+// the same way so ns-publics/ns-interns agree across modes.
 func (g *generator) hoistVar(v *lang.Var) string {
 	if gn, ok := g.vars[v]; ok {
 		return gn
@@ -149,6 +150,13 @@ func (g *generator) hoistVar(v *lang.Var) string {
 	if lang.IsTruthy(lang.Get(v.Meta(), lang.KWDynamic)) {
 		init += ".SetDynamic()"
 		g.dynVars[v] = true
+	}
+	// ^:private is replayed the same way (fundamentals audit 2026-07):
+	// def meta is applied at ANALYSIS time (analyzer parseDef), so the
+	// compile-process var carries it but the binary's re-interned var
+	// would not — and ns-publics/ns-interns would diverge between modes.
+	if lang.IsTruthy(lang.Get(v.Meta(), lang.KWPrivate)) {
+		init += ".SetPrivate()"
 	}
 	g.vars[v] = gn
 	g.decls = append(g.decls, hoistDecl{gn, init})

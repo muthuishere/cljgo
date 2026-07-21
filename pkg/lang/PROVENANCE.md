@@ -372,6 +372,13 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   (LazilyPersistentVector.createOwning; suite vec.cljc, oracle-cited in
   conformance/tests/vec-array-aliasing.clj).
 
+## Fundamentals batch: core fns (fundamentals/core-fns, 2026-07-21)
+
+- `var.go`: added `SetPrivate() *Var` (chainable, next to `SetDynamic`) —
+  pkg/emit's hoistVar replays compile-time `^:private` meta into compiled
+  binaries through it, keeping ns-publics/ns-interns identical between
+  the interpreter and a compiled binary (caught by the dual harness on
+  conformance/tests/ns-introspection.clj).
 ## Per-object monitors for `locking` (fundamentals batch 1, 2026-07-21)
 
 - `monitor.go` NEW (cljgo original, nothing vendored): `WithLock` — the
