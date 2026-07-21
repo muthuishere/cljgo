@@ -1,0 +1,301 @@
+;; zip.cljg — cljgo's clojure.zip (fundamentals audit 2026-07: whole namespace,
+;; all 28 publics). Loaded at startup into the clojure.zip namespace by the
+;; BootSources table (core/core.go), after clojure.core is up. The .cljg
+;; extension follows ADR 0017. A straight port of
+;; clojure/src/clj/clojure/zip.clj (Rich Hickey, EPL 1.0 — functional
+;; hierarchical zipper, see Huet) onto cljgo's existing core.clj primitives —
+;; no new host builtins, this namespace is pure Clojure. Behavior
+;; oracle-verified against JVM Clojure 1.12.5 (`clojure` CLI) for every fn
+;; below (see conformance/tests/clojure-zip-*.clj).
+;;
+;; Three mechanical adaptations from the upstream source, none visible in
+;; behavior:
+;;   1. `^{:zip/branch? …} [root nil]` reader metadata becomes an explicit
+;;      (with-meta [root nil] {…}) — cljgo's reader attaches metadata forms
+;;      unevaluated, and the zipper's meta must hold the fn VALUES.
+;;   2. `(throw (Exception. "msg"))` becomes `(throw (ex-info "msg" {}))` —
+;;      the established substitution (core.clj:1391); (ex-message e) yields
+;;      the same string on both hosts.
+;;   3. `(:refer-clojure :exclude (replace remove next))` in the upstream ns
+;;      form becomes in-ns + refer :exclude — same three clojure.core names
+;;      deliberately shadowed INSIDE clojure.zip, exactly as upstream (their
+;;      namespace, not clojure.core; the precedence principle is untouched).
+
+(clojure.core/in-ns 'clojure.zip)
+(clojure.core/refer 'clojure.core :exclude '[replace remove next])
+
+;; oracle: (-> [1 [2]] z/vector-zip z/node) => [1 [2]]
+(defn zipper
+  "Creates a new zipper structure.
+
+  branch? is a fn that, given a node, returns true if can have
+  children, even if it currently doesn't.
+
+  children is a fn that, given a branch node, returns a seq of its
+  children.
+
+  make-node is a fn that, given an existing node and a seq of
+  children, returns a new branch node with the supplied children.
+  root is the root node."
+  [branch? children make-node root]
+  (with-meta [root nil]
+    {:zip/branch? branch? :zip/children children :zip/make-node make-node}))
+
+;; oracle: (-> '(1 (2 3)) z/seq-zip z/down z/right z/down z/node) => 2
+(defn seq-zip
+  "Returns a zipper for nested sequences, given a root sequence"
+  [root]
+  (zipper seq?
+          identity
+          (fn [node children] (with-meta children (meta node)))
+          root))
+
+;; oracle: (-> [1 [2 3]] z/vector-zip z/down z/right z/down z/node) => 2
+(defn vector-zip
+  "Returns a zipper for nested vectors, given a root vector"
+  [root]
+  (zipper vector?
+          seq
+          (fn [node children] (with-meta (vec children) (meta node)))
+          root))
+
+;; oracle: (-> {:tag :a :content [{:tag :b :content ["x"]}]} z/xml-zip
+;;             z/down z/down z/node) => "x"
+(defn xml-zip
+  "Returns a zipper for xml elements (as from xml/parse),
+  given a root element"
+  [root]
+  (zipper (complement string?)
+          (comp seq :content)
+          (fn [node children]
+            (assoc node :content (and children (apply vector children))))
+          root))
+
+;; oracle: (z/node (z/vector-zip [1 2])) => [1 2]
+(defn node
+  "Returns the node at loc"
+  [loc] (loc 0))
+
+;; oracle: (z/branch? (z/vector-zip [1 2])) => true;
+;;         (-> [1 2] z/vector-zip z/down z/branch?) => false
+(defn branch?
+  "Returns true if the node at loc is a branch"
+  [loc]
+  ((:zip/branch? (meta loc)) (node loc)))
+
+;; oracle: (z/children (z/vector-zip [1 [2]])) => (1 [2]);
+;;         on a leaf => Exception "called children on a leaf node"
+(defn children
+  "Returns a seq of the children of node at loc, which must be a branch"
+  [loc]
+  (if (branch? loc)
+    ((:zip/children (meta loc)) (node loc))
+    (throw (ex-info "called children on a leaf node" {}))))
+
+;; oracle: (z/make-node (z/vector-zip [1]) [1] '(9 8)) => [9 8]
+(defn make-node
+  "Returns a new branch node, given an existing node and new
+  children. The loc is only used to supply the constructor."
+  [loc node children]
+  ((:zip/make-node (meta loc)) node children))
+
+;; oracle: (-> [1 [2 3]] z/vector-zip z/down z/right z/down z/path) => [[1 [2 3]] [2 3]]
+(defn path
+  "Returns a seq of nodes leading to this loc"
+  [loc]
+  (:pnodes (loc 1)))
+
+;; oracle: (-> [1 2 3] z/vector-zip z/down z/right z/right z/lefts) => (1 2)
+(defn lefts
+  "Returns a seq of the left siblings of this loc"
+  [loc]
+  (seq (:l (loc 1))))
+
+;; oracle: (-> [1 2 3] z/vector-zip z/down z/rights) => (2 3)
+(defn rights
+  "Returns a seq of the right siblings of this loc"
+  [loc]
+  (:r (loc 1)))
+
+;; oracle: (-> [1 2] z/vector-zip z/down z/node) => 1;
+;;         (z/down (z/vector-zip [])) => nil
+(defn down
+  "Returns the loc of the leftmost child of the node at this loc, or
+  nil if no children"
+  [loc]
+  (when (branch? loc)
+    (let [[node path] loc
+          [c & cnext :as cs] (children loc)]
+      (when cs
+        (with-meta [c {:l []
+                       :pnodes (if path (conj (:pnodes path) node) [node])
+                       :ppath path
+                       :r cnext}] (meta loc))))))
+
+;; oracle: (-> [1 [2]] z/vector-zip z/down z/right z/down z/up z/node) => [2];
+;;         (z/up (z/vector-zip [1])) => nil
+(defn up
+  "Returns the loc of the parent of the node at this loc, or nil if at
+  the top"
+  [loc]
+  (let [[node {l :l, ppath :ppath, pnodes :pnodes r :r, changed? :changed?, :as path}] loc]
+    (when pnodes
+      (let [pnode (peek pnodes)]
+        (with-meta (if changed?
+                     [(make-node loc pnode (concat l (cons node r)))
+                      (and ppath (assoc ppath :changed? true))]
+                     [pnode ppath])
+                   (meta loc))))))
+
+;; oracle: (-> [1 [2 3]] z/vector-zip z/down z/right z/down (z/replace 9) z/root)
+;;         => [1 [9 3]]
+(defn root
+  "zips all the way up and returns the root node, reflecting any
+ changes."
+  [loc]
+  (if (= :end (loc 1))
+    (node loc)
+    (let [p (up loc)]
+      (if p
+        (recur p)
+        (node loc)))))
+
+;; oracle: (-> [1 2] z/vector-zip z/down z/right z/node) => 2;
+;;         (-> [1 2] z/vector-zip z/down z/right z/right) => nil
+(defn right
+  "Returns the loc of the right sibling of the node at this loc, or nil"
+  [loc]
+  (let [[node {l :l [r & rnext :as rs] :r :as path}] loc]
+    (when (and path rs)
+      (with-meta [r (assoc path :l (conj l node) :r rnext)] (meta loc)))))
+
+;; oracle: (-> [1 2 3] z/vector-zip z/down z/rightmost z/node) => 3
+(defn rightmost
+  "Returns the loc of the rightmost sibling of the node at this loc, or self"
+  [loc]
+  (let [[node {l :l r :r :as path}] loc]
+    (if (and path r)
+      (with-meta [(last r) (assoc path :l (apply conj l node (butlast r)) :r nil)] (meta loc))
+      loc)))
+
+;; oracle: (-> [1 2] z/vector-zip z/down z/right z/left z/node) => 1;
+;;         (-> [1 2] z/vector-zip z/down z/left) => nil
+(defn left
+  "Returns the loc of the left sibling of the node at this loc, or nil"
+  [loc]
+  (let [[node {l :l r :r :as path}] loc]
+    (when (and path (seq l))
+      (with-meta [(peek l) (assoc path :l (pop l) :r (cons node r))] (meta loc)))))
+
+;; oracle: (-> [1 2 3] z/vector-zip z/down z/rightmost z/leftmost z/node) => 1
+(defn leftmost
+  "Returns the loc of the leftmost sibling of the node at this loc, or self"
+  [loc]
+  (let [[node {l :l r :r :as path}] loc]
+    (if (and path (seq l))
+      (with-meta [(first l) (assoc path :l [] :r (concat (rest l) [node] r))] (meta loc))
+      loc)))
+
+;; oracle: (-> [1 2] z/vector-zip z/down (z/insert-left 0) z/root) => [0 1 2];
+;;         at top => Exception "Insert at top"
+(defn insert-left
+  "Inserts the item as the left sibling of the node at this loc,
+ without moving"
+  [loc item]
+  (let [[node {l :l :as path}] loc]
+    (if (nil? path)
+      (throw (ex-info "Insert at top" {}))
+      (with-meta [node (assoc path :l (conj l item) :changed? true)] (meta loc)))))
+
+;; oracle: (-> [1 2] z/vector-zip z/down (z/insert-right 9) z/root) => [1 9 2];
+;;         at top => Exception "Insert at top"
+(defn insert-right
+  "Inserts the item as the right sibling of the node at this loc,
+  without moving"
+  [loc item]
+  (let [[node {r :r :as path}] loc]
+    (if (nil? path)
+      (throw (ex-info "Insert at top" {}))
+      (with-meta [node (assoc path :r (cons item r) :changed? true)] (meta loc)))))
+
+;; oracle: (-> [1 2] z/vector-zip z/down (z/replace 9) z/root) => [9 2]
+(defn replace
+  "Replaces the node at this loc, without moving"
+  [loc node]
+  (let [[_ path] loc]
+    (with-meta [node (assoc path :changed? true)] (meta loc))))
+
+;; oracle: (-> [1 2] z/vector-zip z/down (z/edit + 10) z/root) => [11 2]
+(defn edit
+  "Replaces the node at this loc with the value of (f node args)"
+  [loc f & args]
+  (replace loc (apply f (node loc) args)))
+
+;; oracle: (-> [[2 3]] z/vector-zip z/down (z/insert-child 1) z/root) => [[1 2 3]]
+(defn insert-child
+  "Inserts the item as the leftmost child of the node at this loc,
+  without moving"
+  [loc item]
+  (replace loc (make-node loc (node loc) (cons item (children loc)))))
+
+;; oracle: (-> [[1 2]] z/vector-zip z/down (z/append-child 3) z/root) => [[1 2 3]]
+(defn append-child
+  "Inserts the item as the rightmost child of the node at this loc,
+  without moving"
+  [loc item]
+  (replace loc (make-node loc (node loc) (concat (children loc) [item]))))
+
+;; oracle: depth-first walk of [1 [2 3]] via z/next visits
+;;         [1 [2 3]] 1 [2 3] 2 3 then end? => true and stays put
+(defn next
+  "Moves to the next loc in the hierarchy, depth-first. When reaching
+  the end, returns a distinguished loc detectable via end?. If already
+  at the end, stays there."
+  [loc]
+  (if (= :end (loc 1))
+    loc
+    (or
+     (and (branch? loc) (down loc))
+     (right loc)
+     (loop [p loc]
+       (if (up p)
+         (or (right (up p)) (recur (up p)))
+         [(node p) :end])))))
+
+;; oracle: (-> [1 [2 3]] z/vector-zip z/next z/next z/next z/prev z/node) => [2 3];
+;;         (z/prev (z/vector-zip [1])) => nil
+(defn prev
+  "Moves to the previous loc in the hierarchy, depth-first. If already
+  at the root, returns nil."
+  [loc]
+  (if-let [lloc (left loc)]
+    (loop [loc lloc]
+      (if-let [child (and (branch? loc) (down loc))]
+        (recur (rightmost child))
+        loc))
+    (up loc)))
+
+;; oracle: (z/end? (z/vector-zip [1])) => false;
+;;         after walking past the last loc, => true
+(defn end?
+  "Returns true if loc represents the end of a depth-first walk"
+  [loc]
+  (= :end (loc 1)))
+
+;; oracle: (-> [1 2] z/vector-zip z/down z/right z/remove z/root) => [1];
+;;         at top => Exception "Remove at top"
+(defn remove
+  "Removes the node at loc, returning the loc that would have preceded
+  it in a depth-first walk."
+  [loc]
+  (let [[node {l :l, ppath :ppath, pnodes :pnodes, rs :r, :as path}] loc]
+    (if (nil? path)
+      (throw (ex-info "Remove at top" {}))
+      (if (pos? (count l))
+        (loop [loc (with-meta [(peek l) (assoc path :l (pop l) :changed? true)] (meta loc))]
+          (if-let [child (and (branch? loc) (down loc))]
+            (recur (rightmost child))
+            loc))
+        (with-meta [(make-node loc (peek pnodes) rs)
+                    (and ppath (assoc ppath :changed? true))]
+                   (meta loc))))))

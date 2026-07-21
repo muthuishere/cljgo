@@ -97,6 +97,16 @@ var ReplSource string
 //go:embed set.cljg
 var SetSource string
 
+// ZipSource is the contents of zip.cljg — the clojure.zip namespace
+// (fundamentals audit 2026-07: all 28 publics), a straight port of
+// clojure/zip.clj (Rich Hickey, EPL 1.0) onto core.clj primitives — pure
+// Clojure, no new host builtins. Loaded into the clojure.zip namespace via
+// the BootSources table after clojure.core is up. The loader accepts the
+// .cljg extension per ADR 0017.
+//
+//go:embed zip.cljg
+var ZipSource string
+
 // EdnSource is the contents of edn.cljg — the clojure.edn namespace
 // (read-string over the -edn-read-string reader seam, ADR 0022
 // batch/harness-misc). pkg/eval loads it into the clojure.edn namespace
@@ -161,6 +171,7 @@ func BootSources() []BootSource {
 		{NS: "clojure.core", File: "protocols.cljg", Source: &ProtocolsSource, Pkg: "protocols"},
 		{NS: "clojure.string", File: "string.cljg", Source: &StringSource, Pkg: "cljstring"},
 		{NS: "clojure.set", File: "set.cljg", Source: &SetSource, Pkg: "cljset"},
+		{NS: "clojure.zip", File: "zip.cljg", Source: &ZipSource, Pkg: "cljzip"},
 		{NS: "clojure.edn", File: "edn.cljg", Source: &EdnSource, Pkg: "cljedn"},
 		{NS: "clojure.test", File: "test.cljg", Source: &TestSource, Pkg: "cljtest"},
 		{NS: "cljgo.build", File: "build.cljg", Source: &BuildSource, Pkg: "cljgobuild"},
