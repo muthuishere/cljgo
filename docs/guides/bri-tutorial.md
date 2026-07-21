@@ -1,6 +1,6 @@
-# The fifteen minutes — your first keel app
+# The fifteen minutes — your first bri app
 
-keel is cljgo's application framework (ADR 0041): the batteries of
+bri is cljgo's application framework (ADR 0041): the batteries of
 Spring Boot, the manners of a library — you call it, it never calls
 you. Nothing is scanned, nothing is ambient; every generated file is
 yours.
@@ -14,7 +14,7 @@ $ cd myapp
 
 `--template web` is not a detail to skim past. `cljgo new` belongs to
 the LANGUAGE, and the language does not assume you are writing a web
-app: with no `--template` it hands you `lib`, a library. keel is a
+app: with no `--template` it hands you `lib`, a library. bri is a
 framework cljgo ships in the box — one template of three (`lib`, `cli`,
 `web`) — not what cljgo is (ADR 0047).
 
@@ -54,12 +54,12 @@ path.)
 
 ```
 $ cljgo dev
-keel dev — myapp
+bri dev — myapp
   profile : dev
   nREPL   : nrepl://127.0.0.1:57123 (.nrepl-port written)
   reload  : re-(def) a handler var at the REPL — routes hold #'vars
 
-keel: listening on http://localhost:3000
+bri: listening on http://localhost:3000
 ```
 
 Open http://localhost:3000 — a styled page, CSS from `public/`, no
@@ -93,9 +93,9 @@ server sees the new definition because `#'home` is on the routes page.
 
 ```clojure
 (ns app.main
-  (:require [keel.http :as http]
-            [keel.html :as html]
-            [keel.config :as config]))
+  (:require [bri.http :as http]
+            [bri.html :as html]
+            [bri.config :as config]))
 
 (def cfg (config/load!))          ; conf.edn + APP_* env. Reads a file, no more.
 
@@ -143,9 +143,9 @@ $ cljgo routes      ; every route + the effective middleware stack
 
 ## Where next
 
-- [keel.http](keel-http.md) — handlers, middleware, the error funnel
-- [keel.html](keel-html.md) — pages, forms, escaping
-- [keel.config](keel-config.md) — profiles, env, the schema
+- [bri.http](bri-http.md) — handlers, middleware, the error funnel
+- [bri.html](bri-html.md) — pages, forms, escaping
+- [bri.config](bri-config.md) — profiles, env, the schema
 
-The data layer (`keel.db`, migrations, the embedded dev Postgres) and
+The data layer (`bri.db`, migrations, the embedded dev Postgres) and
 jobs/cache land in the next tiers of the app-framework change.

@@ -2,7 +2,7 @@
 
 ## Why
 
-ADR 0041 (proposed; evidence: spike S20) mandates keel — the
+ADR 0041 (proposed; evidence: spike S20) mandates bri — the
 batteries-included application framework, library style. S20
 demonstrated the risky claims against the real runtime (live var
 handlers on a running server, routes-as-data on stdlib ServeMux,
@@ -25,10 +25,10 @@ static binary, unmodified, and satisfy this spec.
 
 ## What Changes
 
-- New library namespaces shipped with the toolchain: `keel.http`,
-  `keel.html`, `keel.config`, `keel.db`, `keel.jobs`, `keel.cache`
-  (cljgo source under `core/keel/`, host adapters in a new
-  `pkg/keel` where Go is genuinely needed). `keel.ai` is OUT of this
+- New library namespaces shipped with the toolchain: `bri.http`,
+  `bri.html`, `bri.config`, `bri.db`, `bri.jobs`, `bri.cache`
+  (cljgo source under `core/bri/`, host adapters in a new
+  `pkg/bri` where Go is genuinely needed). `bri.ai` is OUT of this
   change — an independently versioned satellite specced separately
   after T1 boots a generated app.
 - `cmd/cljgo` grows subcommands: `new` (scaffold, incl. `--with-auth`
@@ -50,7 +50,7 @@ static binary, unmodified, and satisfy this spec.
 
 - **T0** `cljgo new --template web` / `cljgo dev` — the 15-minute magic
   (blessed layout, styled page, first test; no db verbs). `cljgo new`
-  itself is the LANGUAGE's scaffolder and defaults to `lib`; keel is
+  itself is the LANGUAGE's scaffolder and defaults to `lib`; bri is
   one template of three (lib/cli/web) — ADR 0047.
 - **T1** server + html (+form/CSRF) + routes + middleware defaults +
   config + app-test client.
@@ -63,7 +63,7 @@ static binary, unmodified, and satisfy this spec.
 
 ## Non-goals
 
-- No template DSL or asset pipeline (keel.html is a fn over data;
+- No template DSL or asset pipeline (bri.html is a fn over data;
   `html/form` is the deliberate outer boundary; owner: templating is
   not a focus).
 - No lifecycle/DI framework, no ORM, no broker-backed queue, no
@@ -71,4 +71,4 @@ static binary, unmodified, and satisfy this spec.
   shutdown).
 - Auth beyond sessions/CSRF ships as generated code you own
   (`--with-auth`) plus its guide — not a framework module.
-- `keel.ai` (deferred satellite change; positions fixed in ADR 0041).
+- `bri.ai` (deferred satellite change; positions fixed in ADR 0041).

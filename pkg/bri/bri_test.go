@@ -1,6 +1,6 @@
-// keel_test.go — the T1 behavior suite for keel.http / keel.html /
-// keel.config (openspec app-framework tasks 1.2–1.7). These behaviors
-// have NO JVM oracle (keel does not exist in Clojure 1.12.5), so they
+// bri_test.go — the T1 behavior suite for bri.http / bri.html /
+// bri.config (openspec app-framework tasks 1.2–1.7). These behaviors
+// have NO JVM oracle (bri does not exist in Clojure 1.12.5), so they
 // live here as Go tests against the real interpreter rather than in
 // conformance/tests (whose files are oracle-verified; CLAUDE.md).
 // The scenarios mirror the spec's own: security is what you didn't
@@ -8,7 +8,7 @@
 // handlers, bad path param is a 400, page from data, forms carry the
 // token, the funnel does not launder type confusion, misconfigured
 // deploys must not boot, 2 a.m. debugging.
-package keel_test
+package bri_test
 
 import (
 	"fmt"
@@ -24,17 +24,17 @@ import (
 	"github.com/muthuishere/cljgo/pkg/repl"
 )
 
-// newDriver boots a fresh driver (repl.New registers keel's lib
-// providers) with a clean keel-relevant environment.
+// newDriver boots a fresh driver (repl.New registers bri's lib
+// providers) with a clean bri-relevant environment.
 func newDriver(t *testing.T) *repl.Driver {
 	t.Helper()
-	t.Setenv("KEEL_DEV", "")
+	t.Setenv("BRI_DEV", "")
 	return repl.New(nil, io.Discard.(io.Writer), os.Stderr)
 }
 
 func eval(t *testing.T, d *repl.Driver, code string) any {
 	t.Helper()
-	v, err := d.EvalString(code, "keel_test")
+	v, err := d.EvalString(code, "bri_test")
 	if err != nil {
 		t.Fatalf("eval %q: %v", code, err)
 	}
@@ -50,10 +50,10 @@ func evalString(t *testing.T, d *repl.Driver, code string) string {
 	return s
 }
 
-// --- keel.http: routing, params, funnel, negotiation ------------------------
+// --- bri.http: routing, params, funnel, negotiation ------------------------
 
 const testClientPrelude = `
-(require '[keel.http :as http] '[keel.html :as html])
+(require '[bri.http :as http] '[bri.html :as html])
 (defn show [req] {:status 200 :body (str "user " (http/param! req :id :int))})
 (def routes [["GET /users/{id}" #'show]])
 `
@@ -87,7 +87,7 @@ func TestBadParamIsA400(t *testing.T) {
 func TestBareResultIsALoud500(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[keel.http :as http])
+(require '[bri.http :as http])
 (defn bare [_] (ok {:status 200 :body "x"}))
 (def routes [["GET /b" #'bare]])
 `)
@@ -101,16 +101,16 @@ func TestBareResultIsALoud500(t *testing.T) {
 func TestRenderBridge(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[keel.http :as http])
+(require '[bri.http :as http])
 (defn good [_] (http/render (ok {:status 201 :body "made"})))
-(defn bad  [_] (http/render (err {:keel/error :db/not-found})))
+(defn bad  [_] (http/render (err {:bri/error :db/not-found})))
 (def routes [["GET /good" #'good] ["GET /bad" #'bad]])
 `)
 	if st := eval(t, d, `(:status (http/request routes {:method "GET" :path "/good"}))`); st != int64(201) {
 		t.Fatalf("(render (ok ...)) status = %v, want 201", st)
 	}
 	if st := eval(t, d, `(:status (http/request routes {:method "GET" :path "/bad"}))`); st != int64(404) {
-		t.Fatalf("(render (err {:keel/error :db/not-found})) status = %v, want 404", st)
+		t.Fatalf("(render (err {:bri/error :db/not-found})) status = %v, want 404", st)
 	}
 }
 
@@ -118,8 +118,8 @@ func TestRenderBridge(t *testing.T) {
 func TestRecoverErrorMapOverride(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[keel.http :as http])
-(defn boom [_] (throw (ex-info "teapot" {:keel/error :app/teapot})))
+(require '[bri.http :as http])
+(defn boom [_] (throw (ex-info "teapot" {:bri/error :app/teapot})))
 (def routes [["GET /t" #'boom]])
 (def stack (into [(http/recover {:error-map {:app/teapot 418}})]
                  (http/without (http/defaults) :recover)))
@@ -134,7 +134,7 @@ func TestRecoverErrorMapOverride(t *testing.T) {
 func TestJSONNegotiation(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[keel.http :as http])
+(require '[bri.http :as http])
 (defn echo [req] {:status 200 :body {:got (:a (:json req))}})
 (def routes [["POST /e" #'echo]])
 (def res (http/request routes {:method "POST" :path "/e"
@@ -157,7 +157,7 @@ func TestJSONNegotiation(t *testing.T) {
 func TestCSRFPosture(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[keel.http :as http] '[keel.html :as html])
+(require '[bri.http :as http] '[bri.html :as html])
 (defn login [_] (http/start-session {:status 200 :body "in"} {:user "m"}))
 (defn page-h [_] (http/ok (html/page (html/form {:post "/save"} [:button "go"]))))
 (defn save [_] {:status 200 :body "saved"})
@@ -191,7 +191,7 @@ func TestCSRFPosture(t *testing.T) {
 	}
 	// A tampered cookie reads as no session (and therefore passes as sessionless).
 	if st := eval(t, d, `(:status (http/request routes {:method "POST" :path "/save"
-      :headers {"cookie" "keel-session=forged.deadbeef"}}))`); st != int64(200) {
+      :headers {"cookie" "bri-session=forged.deadbeef"}}))`); st != int64(200) {
 		t.Fatalf("tampered-cookie POST = %v, want 200 (unsigned cookie = no session)", st)
 	}
 }
@@ -204,7 +204,7 @@ func TestCSRFPosture(t *testing.T) {
 func TestLiveRedefOnARunningServer(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[keel.http :as http])
+(require '[bri.http :as http])
 (defn hello [req] {:status 200 :body (str "hello, " (:name (:params req)) " (v1)")})
 (def routes [["GET /hello/{name}" #'hello]])
 (def srv (http/serve routes {:port 0 :block? false}))
@@ -238,7 +238,7 @@ func TestStaticDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	eval(t, d, fmt.Sprintf(`
-(require '[keel.http :as http])
+(require '[bri.http :as http])
 (def routes [["GET /static/" (http/dir %q)]])
 (def srv (http/serve routes {:port 0 :block? false}))`, pub))
 	port := eval(t, d, `(:port srv)`).(int64)
@@ -258,7 +258,7 @@ func TestStaticDir(t *testing.T) {
 func TestStopDrainsHandles(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[keel.http :as http])
+(require '[bri.http :as http])
 (def drained (atom false))
 (defn h [_] {:status 200 :body "ok"})
 (def srv (http/serve [["GET /" #'h]] {:port 0 :block? false
@@ -270,13 +270,13 @@ func TestStopDrainsHandles(t *testing.T) {
 	}
 }
 
-// --- keel.html -----------------------------------------------------------------
+// --- bri.html -----------------------------------------------------------------
 
 // Scenario: page from data — escaped by construction; the opt-out is
 // explicit and ugly.
 func TestHTMLEscapingByConstruction(t *testing.T) {
 	d := newDriver(t)
-	eval(t, d, `(require '[keel.html :as html])`)
+	eval(t, d, `(require '[bri.html :as html])`)
 	if got := evalString(t, d, `(html/render [:p "<script>alert(1)</script>"])`); got != "<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>" {
 		t.Fatalf("escaping broken: %q", got)
 	}
@@ -295,7 +295,7 @@ func TestHTMLEscapingByConstruction(t *testing.T) {
 	}
 }
 
-// --- keel.config -----------------------------------------------------------------
+// --- bri.config -----------------------------------------------------------------
 
 // Two layers into one plain map: env > profile > file > schema default —
 // and `cljgo config`'s explain names the winning layer.
@@ -313,7 +313,7 @@ func TestConfigLayers(t *testing.T) {
 	t.Setenv("APP_PROFILE", "test")
 	t.Setenv("APP_DB__POOL_SIZE", "9")
 
-	eval(t, d, `(require '[keel.config :as config]) (def cfg (config/load!))`)
+	eval(t, d, `(require '[bri.config :as config]) (def cfg (config/load!))`)
 	checks := map[string]any{
 		`(:port cfg)`:                   int64(3000), // file
 		`(get-in cfg [:db :host])`:      "test-db",   // profile overlay
@@ -344,8 +344,8 @@ func TestConfigSchemaRefusesToBoot(t *testing.T) {
 	must(t, os.Chdir(dir))
 	defer os.Chdir(cwd)
 
-	eval(t, d, `(require '[keel.config :as config])`)
-	_, err := d.EvalString(`(config/load!)`, "keel_test")
+	eval(t, d, `(require '[bri.config :as config])`)
+	_, err := d.EvalString(`(config/load!)`, "bri_test")
 	if err == nil || !strings.Contains(err.Error(), "[:port]") {
 		t.Fatalf("load! with a missing required key: err = %v, want a diagnostic naming [:port]", err)
 	}
@@ -365,7 +365,7 @@ func must(t *testing.T, err error) {
 // in-process client path. S20 measured 1.6–1.7×; the spec budget is
 // ≤ 2× — but wall-clock ratios of two tiny measurements jitter on
 // shared runners (same rationale as pkg/emit's gate), so the default
-// ceiling is 6× locally and CLJGO_KEEL_PERF_MAX overrides per host.
+// ceiling is 6× locally and CLJGO_BRI_PERF_MAX overrides per host.
 // The gate exists to catch an adapter regression (per-request
 // re-mounting, accidental reflection), which shows up as 10×+.
 func TestInterpretedHandlerOverhead(t *testing.T) {
@@ -373,15 +373,15 @@ func TestInterpretedHandlerOverhead(t *testing.T) {
 		t.Skip("perf seam skipped under -short")
 	}
 	max := 6.0
-	if s := os.Getenv("CLJGO_KEEL_PERF_MAX"); s != "" {
+	if s := os.Getenv("CLJGO_BRI_PERF_MAX"); s != "" {
 		if _, err := fmt.Sscanf(s, "%f", &max); err != nil {
-			t.Fatalf("CLJGO_KEEL_PERF_MAX=%q is not a number", s)
+			t.Fatalf("CLJGO_BRI_PERF_MAX=%q is not a number", s)
 		}
 	}
 
 	d := newDriver(t)
 	eval(t, d, `
-(require '[keel.http :as http])
+(require '[bri.http :as http])
 (defn hello [req] {:status 200 :body (str "hello, " (:name (:params req)))})
 (def routes [["GET /hello/{name}" #'hello]])
 (def srv (http/serve routes {:port 0 :block? false :middleware []}))
@@ -428,6 +428,6 @@ func TestInterpretedHandlerOverhead(t *testing.T) {
 	ratio := float64(live) / float64(raw)
 	t.Logf("interpreted %v/req vs native %v/req = %.2fx (ceiling %.1fx)", live/n, raw/n, ratio, max)
 	if ratio > max {
-		t.Fatalf("interpreted handler overhead %.2fx exceeds the %.1fx ceiling (CLJGO_KEEL_PERF_MAX)", ratio, max)
+		t.Fatalf("interpreted handler overhead %.2fx exceeds the %.1fx ceiling (CLJGO_BRI_PERF_MAX)", ratio, max)
 	}
 }

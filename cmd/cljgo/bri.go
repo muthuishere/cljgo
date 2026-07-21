@@ -1,20 +1,20 @@
-// keel.go — the project CLI surface (ADR 0041, ADR 0047, openspec
+// bri.go — the project CLI surface (ADR 0041, ADR 0047, openspec
 // app-framework T0/T1):
 //
 //	cljgo new <name>   generate a project from a template (default: lib)
-//	cljgo dev          run a keel app: server + nREPL attached + the banner
+//	cljgo dev          run a bri app: server + nREPL attached + the banner
 //	cljgo test         load src/, run every test under test/
 //	cljgo config       print the resolved config map, layer per key
 //	cljgo routes       print the routes and the effective middleware stack
 //
 // `cljgo new` belongs to the LANGUAGE and knows only about TEMPLATES
 // (ADR 0047): it walks a template FS, renames the app, and writes. It
-// has no idea what keel is — `web` is one of three built-ins, and the
-// default is `lib`. `dev`/`config`/`routes` below ARE keel-shaped and
+// has no idea what bri is — `web` is one of three built-ins, and the
+// default is `lib`. `dev`/`config`/`routes` below ARE bri-shaped and
 // say so.
 //
 // `cljgo new` is a generator, not a container: it writes plain files
-// the user owns; nothing scans them (a keel app calls keel, visibly).
+// the user owns; nothing scans them (a bri app calls bri, visibly).
 // The generated sources live in templates/ as REAL FILES (see that
 // package's doc) — never as string literals here.
 package main
@@ -192,9 +192,9 @@ func validAppName(name string) bool {
 
 // runDev is the T0 dev loop (task 0.2): the app served through the
 // interpreter with an nREPL attached — the REPL is the reload story
-// (nothing is watched; re-def the var). KEEL_DEV=1 turns on keel's
+// (nothing is watched; re-def the var). BRI_DEV=1 turns on bri's
 // loud dev behaviors (plain-fn route warnings, bare-Result messages).
-// Ctrl-C/SIGTERM = graceful drain (keel.http/serve owns shutdown).
+// Ctrl-C/SIGTERM = graceful drain (bri.http/serve owns shutdown).
 func runDev(args []string) int {
 	fs := flag.NewFlagSet("dev", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -211,7 +211,7 @@ func runDev(args []string) int {
 		return 1
 	}
 
-	os.Setenv("KEEL_DEV", "1")
+	os.Setenv("BRI_DEV", "1")
 	if os.Getenv("APP_PROFILE") == "" {
 		os.Setenv("APP_PROFILE", "dev")
 	}
@@ -234,7 +234,7 @@ func runDev(args []string) int {
 	go nrepl.NewServer().Serve(ln)
 
 	appName := filepath.Base(mustGetwd())
-	fmt.Printf(`keel dev — %s
+	fmt.Printf(`bri dev — %s
   profile : %s
   nREPL   : nrepl://127.0.0.1:%d (.nrepl-port written)
   reload  : re-(def) a handler var at the REPL — routes hold #'vars
@@ -366,7 +366,7 @@ func runConfig(args []string) int {
 		return 1
 	}
 	d := repl.New(nil, os.Stdout, os.Stderr)
-	out, err := d.EvalString("(do (require 'keel.config) (keel.config/explain))", "cljgo-config")
+	out, err := d.EvalString("(do (require 'bri.config) (bri.config/explain))", "cljgo-config")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "cljgo config:", err)
 		return 1
@@ -389,7 +389,7 @@ func runRoutes(args []string) int {
 	if code := evalAppFile(d, appMain); code != 0 {
 		return code
 	}
-	out, err := d.EvalString("(keel.http/describe app.main/routes {})", "cljgo-routes")
+	out, err := d.EvalString("(bri.http/describe app.main/routes {})", "cljgo-routes")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "cljgo routes:", err)
 		return 1

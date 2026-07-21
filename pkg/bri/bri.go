@@ -1,22 +1,22 @@
-// Package keel is the Go half of the keel application framework (ADR
+// Package bri is the Go half of the bri application framework (ADR
 // 0041, openspec app-framework T1): the net/http adapter and the small
-// host primitives (JSON, HMAC, env, files) the keel.* namespaces lean
-// on. The Clojure half lives in core/keel/*.cljg, embedded via the core
+// host primitives (JSON, HMAC, env, files) the bri.* namespaces lean
+// on. The Clojure half lives in core/bri/*.cljg, embedded via the core
 // package.
 //
 // Loading is LAZY, through the lib-provider registry
-// (pkg/corelib/require.go): Register wires a provider per keel namespace,
-// and the first (require 'keel.http) interns the Go shims into the
+// (pkg/corelib/require.go): Register wires a provider per bri namespace,
+// and the first (require 'bri.http) interns the Go shims into the
 // namespace and evaluates its embedded source. Nothing loads at boot —
 // the boot budget (ADR 0024) is untouched — and nothing is scanned:
-// the app requires keel; keel never requires the app.
+// the app requires bri; bri never requires the app.
 //
 // S20's honesty note said `cljgo new --template web && cljgo dev` boots NOTHING
 // because the seed registry lacks net/http; this package IS the T1
 // closure of that gap — a thin Go shim rather than reflect-seeding all
 // of net/http, per the spike's own prototype (its main.go is the
 // sketch this adapter grew from).
-package keel
+package bri
 
 import (
 	"errors"
@@ -31,7 +31,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
-// current is the evaluator keel sources load through. Namespaces and
+// current is the evaluator bri sources load through. Namespaces and
 // vars are process-global (pkg/lang's registry), so which live
 // evaluator performs the load does not matter semantically; Register
 // keeps the most recent one (frontends create one driver per process).
@@ -42,7 +42,7 @@ var (
 	wired   sync.Once
 )
 
-// nsSpec is one keel namespace: its embedded source and the Go shims
+// nsSpec is one bri namespace: its embedded source and the Go shims
 // interned (as :private vars) before the source evaluates.
 type nsSpec struct {
 	name    string
@@ -53,13 +53,13 @@ type nsSpec struct {
 
 func specs() []nsSpec {
 	return []nsSpec{
-		{name: "keel.http", file: "keel/http.cljg", source: &core.KeelHTTPSource, install: installHTTPShims},
-		{name: "keel.html", file: "keel/html.cljg", source: &core.KeelHTMLSource, install: nil},
-		{name: "keel.config", file: "keel/config.cljg", source: &core.KeelConfigSource, install: installConfigShims},
+		{name: "bri.http", file: "bri/http.cljg", source: &core.BriHTTPSource, install: installHTTPShims},
+		{name: "bri.html", file: "bri/html.cljg", source: &core.BriHTMLSource, install: nil},
+		{name: "bri.config", file: "bri/config.cljg", source: &core.BriConfigSource, install: installConfigShims},
 	}
 }
 
-// Register makes the keel.* namespaces requireable through e. Frontends
+// Register makes the bri.* namespaces requireable through e. Frontends
 // (pkg/repl.New, pkg/nrepl.NewServer) call it when they boot an
 // evaluator; the provider wiring itself happens once per process.
 func Register(e *eval.Evaluator) {
@@ -74,9 +74,9 @@ func Register(e *eval.Evaluator) {
 	})
 }
 
-// load evaluates one keel namespace's embedded source (once per
+// load evaluates one bri namespace's embedded source (once per
 // process). The loaded flag is set BEFORE evaluating so the
-// keel.html → keel.http require chain re-enters cleanly.
+// bri.html → bri.http require chain re-enters cleanly.
 func load(s nsSpec) {
 	mu.Lock()
 	if loaded[s.name] {
@@ -87,7 +87,7 @@ func load(s nsSpec) {
 	e := current
 	mu.Unlock()
 	if e == nil {
-		panic(fmt.Errorf("keel: no evaluator registered (frontend did not call keel.Register)"))
+		panic(fmt.Errorf("bri: no evaluator registered (frontend did not call bri.Register)"))
 	}
 
 	ns := lang.FindOrCreateNamespace(lang.NewSymbol(s.name))
@@ -114,10 +114,10 @@ func load(s nsSpec) {
 			return
 		}
 		if err != nil {
-			panic(fmt.Errorf("keel: reading %s: %w", s.file, err))
+			panic(fmt.Errorf("bri: reading %s: %w", s.file, err))
 		}
 		if _, err := e.EvalForm(form); err != nil {
-			panic(fmt.Errorf("keel: evaluating %s: %w", s.file, err))
+			panic(fmt.Errorf("bri: evaluating %s: %w", s.file, err))
 		}
 	}
 }
