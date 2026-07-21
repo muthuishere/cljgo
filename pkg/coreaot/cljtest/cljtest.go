@@ -74,9 +74,9 @@ var (
 	v_clojure_DOT_core_X_GT_                                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol(">"))
 	v_clojure_DOT_core_X_PLUS_                              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("+"))
 	v_clojure_DOT_core_X_STAR_ns_STAR_                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*ns*"))
-	v_clojure_DOT_core_X_all_test_vars                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-all-test-vars"))
-	v_clojure_DOT_core_X_collect_test_vars                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-collect-test-vars"))
-	v_clojure_DOT_core_X_set_macro_BANG_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-set-macro!"))
+	v_clojure_DOT_core_X_all_test_vars                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-all-test-vars")).SetPrivate()
+	v_clojure_DOT_core_X_collect_test_vars                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-collect-test-vars")).SetPrivate()
+	v_clojure_DOT_core_X_set_macro_BANG_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-set-macro!")).SetPrivate()
 	v_clojure_DOT_core_alter_meta_BANG_                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("alter-meta!"))
 	v_clojure_DOT_core_apply                                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
 	v_clojure_DOT_core_assoc                                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
@@ -129,15 +129,15 @@ var (
 	v_clojure_DOT_test_X_STAR_report_counters_STAR_         = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*report-counters*")).SetDynamic()
 	v_clojure_DOT_test_X_STAR_testing_contexts_STAR_        = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*testing-contexts*")).SetDynamic()
 	v_clojure_DOT_test_X_STAR_testing_vars_STAR_            = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*testing-vars*")).SetDynamic()
-	v_clojure_DOT_test_X_bindings_map                       = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-bindings-map"))
-	v_clojure_DOT_test_X_drop                               = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-drop"))
-	v_clojure_DOT_test_X_function_QMARK_                    = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-function?"))
-	v_clojure_DOT_test_X_take                               = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-take"))
-	v_clojure_DOT_test_X_template_subst                     = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-template-subst"))
-	v_clojure_DOT_test_add_ns_meta                          = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("add-ns-meta"))
+	v_clojure_DOT_test_X_bindings_map                       = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-bindings-map")).SetPrivate()
+	v_clojure_DOT_test_X_drop                               = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-drop")).SetPrivate()
+	v_clojure_DOT_test_X_function_QMARK_                    = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-function?")).SetPrivate()
+	v_clojure_DOT_test_X_take                               = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-take")).SetPrivate()
+	v_clojure_DOT_test_X_template_subst                     = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-template-subst")).SetPrivate()
+	v_clojure_DOT_test_add_ns_meta                          = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("add-ns-meta")).SetPrivate()
 	v_clojure_DOT_test_are                                  = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("are"))
 	v_clojure_DOT_test_compose_fixtures                     = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("compose-fixtures"))
-	v_clojure_DOT_test_default_fixture                      = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("default-fixture"))
+	v_clojure_DOT_test_default_fixture                      = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("default-fixture")).SetPrivate()
 	v_clojure_DOT_test_deftest                              = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("deftest"))
 	v_clojure_DOT_test_do_report                            = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("do-report"))
 	v_clojure_DOT_test_inc_report_counter                   = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("inc-report-counter"))
@@ -2411,14 +2411,14 @@ func Load() {
 					{
 						tmp1617 := v_clojure_DOT_core_first.Get()
 						tmp1618 := lang.Apply1(tmp1617, s__9__auto__1613)
-						var vec__881619 any = tmp1618
-						_ = vec__881619
+						var vec__981619 any = tmp1618
+						_ = vec__981619
 						tmp1620 := v_clojure_DOT_core_nth.Get()
-						tmp1621 := lang.Apply3(tmp1620, vec__881619, int64(0), nil)
+						tmp1621 := lang.Apply3(tmp1620, vec__981619, int64(0), nil)
 						var ns1622 any = tmp1621
 						_ = ns1622
 						tmp1623 := v_clojure_DOT_core_nth.Get()
-						tmp1624 := lang.Apply3(tmp1623, vec__881619, int64(1), nil)
+						tmp1624 := lang.Apply3(tmp1623, vec__981619, int64(1), nil)
 						var vs1625 any = tmp1624
 						_ = vs1625
 						var tmp1626 any

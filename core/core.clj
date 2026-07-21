@@ -1491,7 +1491,6 @@
                 (cons (list 'clojure.core/refer (list 'quote 'clojure.core))
                       requires)))))
 
-<<<<<<< HEAD
 ;; --- fundamentals batch: seq/collection/function idioms (audit 2026-07) -----
 ;; Missing-A-list clojure.core FUNCTIONS from docs/fundamentals-audit-2026-07.md,
 ;; ported from clojure.core (Rich Hickey, EPL 1.0) onto cljgo's existing
@@ -1658,8 +1657,6 @@
        ret)))
   ([f & args]
    (trampoline #(apply f args))))
-||||||| 7982f4f
-=======
 ;; ===========================================================================
 ;; Fundamentals batch 1 — the missing control-flow / binding bread-and-butter
 ;; macros (docs/fundamentals-audit-2026-07.md A-list + the amap/areduce/memfn/
@@ -1894,4 +1891,3 @@
        (if (< ~idx l#)
          (recur (inc ~idx) ~expr)
          ~ret))))
->>>>>>> origin/main
