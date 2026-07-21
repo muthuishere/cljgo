@@ -10,9 +10,15 @@ var (
 	kw_arch                        = lang.InternKeywordString("arch")
 	kw_artifacts                   = lang.InternKeywordString("artifacts")
 	kw_builder                     = lang.InternKeywordString("builder")
+	kw_column                      = lang.InternKeywordString("column")
 	kw_default_                    = lang.InternKeywordString("default")
+	kw_doc                         = lang.InternKeywordString("doc")
+	kw_end_column                  = lang.InternKeywordString("end-column")
+	kw_end_line                    = lang.InternKeywordString("end-line")
+	kw_file                        = lang.InternKeywordString("file")
 	kw_go_requires                 = lang.InternKeywordString("go-requires")
 	kw_kind                        = lang.InternKeywordString("kind")
+	kw_line                        = lang.InternKeywordString("line")
 	kw_name                        = lang.InternKeywordString("name")
 	kw_os                          = lang.InternKeywordString("os")
 	kw_path                        = lang.InternKeywordString("path")
@@ -56,6 +62,7 @@ func Load() {
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
 	// (def make-builder "Returns a fresh builder: an atom over an empty build plan." (clojure.co…
+	v_cljgo_DOT_build_make_builder.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(24), kw_column, int64(7), kw_end_line, int64(24), kw_end_column, int64(19), kw_doc, "Returns a fresh builder: an atom over an empty build plan."))
 	tmp5 := lang.FnFunc0(func() any {
 		tmp6 := v_clojure_DOT_core_atom.Get()
 		tmp7 := lang.NewVector()
@@ -68,6 +75,7 @@ func Load() {
 	v_cljgo_DOT_build_make_builder.BindRoot(tmp5)
 	_ = v_cljgo_DOT_build_make_builder
 	// (def exe "Declares an executable artifact from spec {:name … :main \"path.cljg\" …}\n …
+	v_cljgo_DOT_build_exe.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(29), kw_column, int64(7), kw_end_line, int64(29), kw_end_column, int64(10), kw_doc, "Declares an executable artifact from spec {:name … :main \"path.cljg\" …}\n  and returns an artifact handle {:builder b :name …} the step/require fns\n  take. :target/:optimize are carried through untouched (minimal for B1)."))
 	tmp12 := lang.FnFunc2(func(b13, spec14 any) any {
 		var tmp15 any
 		_ = tmp15
@@ -98,6 +106,7 @@ func Load() {
 	v_cljgo_DOT_build_exe.BindRoot(tmp12)
 	_ = v_cljgo_DOT_build_exe
 	// (def go-require "Records a pinned third-party Go module requirement (ADR 0021 — this\n  …
+	v_cljgo_DOT_build_go_require.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(17), kw_doc, "Records a pinned third-party Go module requirement (ADR 0021 — this\n  REPLACES deps.edn). art is an artifact handle from exe; the pin is\n  accumulated module-wide (the emitted go.mod is one module)."))
 	tmp32 := lang.FnFunc3(func(art33, path34, version35 any) any {
 		var tmp36 any
 		_ = tmp36
@@ -126,6 +135,7 @@ func Load() {
 	v_cljgo_DOT_build_go_require.BindRoot(tmp32)
 	_ = v_cljgo_DOT_build_go_require
 	// (def install "Adds an install step for an artifact and makes it the default step\n  (the t…
+	v_cljgo_DOT_build_install.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(50), kw_column, int64(7), kw_end_line, int64(50), kw_end_column, int64(14), kw_doc, "Adds an install step for an artifact and makes it the default step\n  (the target of a bare `cljgo build`). Mirrors zig's b.installArtifact."))
 	tmp51 := lang.FnFunc2(func(b52, art53 any) any {
 		tmp54 := v_clojure_DOT_core_swap_BANG_.Get()
 		tmp55 := lang.FnFunc1(func(m56 any) any {
@@ -165,6 +175,7 @@ func Load() {
 	v_cljgo_DOT_build_install.BindRoot(tmp51)
 	_ = v_cljgo_DOT_build_install
 	// (def run "Adds a run step for an artifact (the `cljgo build run` target). Mirrors\n  zig's…
+	v_cljgo_DOT_build_run.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(10), kw_doc, "Adds a run step for an artifact (the `cljgo build run` target). Mirrors\n  zig's b.addRunArtifact + a top-level `run` step."))
 	tmp74 := lang.FnFunc2(func(b75, art76 any) any {
 		tmp77 := v_clojure_DOT_core_swap_BANG_.Get()
 		tmp78 := lang.FnFunc1(func(m79 any) any {
@@ -186,6 +197,7 @@ func Load() {
 	v_cljgo_DOT_build_run.BindRoot(tmp74)
 	_ = v_cljgo_DOT_build_run
 	// (def option "Build option (Zig -D). B1 stub: returns (get opts :default) — no CLI\n  -D …
+	v_cljgo_DOT_build_option.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(73), kw_column, int64(7), kw_end_line, int64(73), kw_end_column, int64(13), kw_doc, "Build option (Zig -D). B1 stub: returns (get opts :default) — no CLI\n  -D wiring yet (B3)."))
 	tmp90 := lang.FnFunc4(func(b91, name92, typ93, opts94 any) any {
 		tmp95 := v_clojure_DOT_core_get.Get()
 		tmp96 := lang.Apply2(tmp95, opts94, kw_default_)
@@ -194,6 +206,7 @@ func Load() {
 	v_cljgo_DOT_build_option.BindRoot(tmp90)
 	_ = v_cljgo_DOT_build_option
 	// (def host-target "The host os/arch. B1 stub: an empty tuple means \"host default\" to the\…
+	v_cljgo_DOT_build_host_target.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(18), kw_doc, "The host os/arch. B1 stub: an empty tuple means \"host default\" to the\n  emitter (cross-compile matrix is B5)."))
 	tmp97 := lang.FnFunc1(func(b98 any) any {
 		tmp99 := lang.NewMap(kw_os, "", kw_arch, "")
 		return tmp99

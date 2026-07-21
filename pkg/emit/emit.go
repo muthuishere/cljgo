@@ -596,6 +596,16 @@ func (g *generator) gen(n *ast.Node) string {
 		if s.Name.Name() == "-main" {
 			g.mainVar = gv
 		}
+		if s.Meta != nil {
+			// Re-apply the def's constant metadata (parseDef put the same
+			// map on the compile-time var): :private/:declared/:doc and
+			// reader position must read back identically from (meta #'v)
+			// in a compiled binary (dual-mode meta, ADR 0002/0007).
+			// s.Meta is always an OpQuote of an IPersistentMap, so gen
+			// yields a constExpr whose Go type is lang.IPersistentMap.
+			mrv := g.gen(s.Meta)
+			g.wf("%s.SetMeta(%s)\n", gv, mrv)
+		}
 		if s.Init != nil {
 			rv := g.gen(s.Init)
 			g.wf("%s.BindRoot(%s)\n", gv, rv)
@@ -1043,8 +1053,11 @@ func (g *generator) genMethodBody(m *ast.FnMethodNode, gnames []string) {
 	if !recursTo(m.Body, m.LoopID) {
 		rv := g.gen(m.Body)
 		if rv == "" {
-			// recursTo said no recur, so the body always yields a value.
-			g.failf("emit: internal: bodiless fn method %s", m.LoopID)
+			// The body transferred control on every path (e.g. a fn whose
+			// whole body is a throw, like with-redefs wrapping a throwing
+			// body): the emitted panic is a Go terminating statement, so
+			// the method needs no return.
+			return
 		}
 		g.wf("return %s\n", rv)
 		return

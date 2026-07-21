@@ -637,6 +637,9 @@ func RegisterAll() {
 	// add-watch/remove-watch, Thread/sleep seam (ADR 0022 batch/harness-misc,
 	// misc_builtins.go).
 	internMiscBuiltins(def, defPrivate)
+	// --- private substrate for the fundamentals batch-1 macros (time/
+	// locking/defonce/io!/with-open — macro_support_builtins.go).
+	internMacroSupportBuiltins(defPrivate)
 	internFormatBuiltins(def)
 	// --- var reflection (resolve/find-var/ns-resolve/var?): the
 	// clojure-test-suite harness surface (ADR 0022, var_builtins.go);

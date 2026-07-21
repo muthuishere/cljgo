@@ -10,8 +10,15 @@ import (
 
 var (
 	kw_ancestors                        = lang.InternKeywordString("ancestors")
+	kw_column                           = lang.InternKeywordString("column")
 	kw_descendants                      = lang.InternKeywordString("descendants")
+	kw_doc                              = lang.InternKeywordString("doc")
+	kw_end_column                       = lang.InternKeywordString("end-column")
+	kw_end_line                         = lang.InternKeywordString("end-line")
+	kw_file                             = lang.InternKeywordString("file")
+	kw_line                             = lang.InternKeywordString("line")
 	kw_parents                          = lang.InternKeywordString("parents")
+	kw_private                          = lang.InternKeywordString("private")
 	sym_X_EQ_                           = lang.NewSymbol("=")
 	sym_and                             = lang.NewSymbol("and")
 	sym_class_QMARK_                    = lang.NewSymbol("class?")
@@ -83,6 +90,7 @@ func Load() {
 	tmp2 := lang.Apply1(tmp1, sym_clojure_DOT_core)
 	_ = tmp2
 	// (def make-hierarchy "Creates a hierarchy object for use with derive, isa? etc." (clojure.c…
+	v_clojure_DOT_core_make_hierarchy.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(29), kw_column, int64(7), kw_end_line, int64(29), kw_end_column, int64(21), kw_doc, "Creates a hierarchy object for use with derive, isa? etc."))
 	tmp3 := lang.FnFunc0(func() any {
 		tmp4 := lang.NewMap()
 		tmp5 := lang.NewMap()
@@ -93,11 +101,13 @@ func Load() {
 	v_clojure_DOT_core_make_hierarchy.BindRoot(tmp3)
 	_ = v_clojure_DOT_core_make_hierarchy
 	// (def global-hierarchy (make-hierarchy))
+	v_clojure_DOT_core_global_hierarchy.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(33), kw_column, int64(6), kw_end_line, int64(33), kw_end_column, int64(32), kw_private, true))
 	tmp8 := v_clojure_DOT_core_make_hierarchy.Get()
 	tmp9 := lang.Apply0(tmp8)
 	v_clojure_DOT_core_global_hierarchy.BindRoot(tmp9)
 	_ = v_clojure_DOT_core_global_hierarchy
 	// (def isa? "Returns true if (= child parent), or child is directly or indirectly\n  derived…
+	v_clojure_DOT_core_isa_QMARK_.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(11), kw_doc, "Returns true if (= child parent), or child is directly or indirectly\n  derived from parent via a relationship established with derive. h must\n  be a hierarchy obtained from make-hierarchy; if not supplied defaults to\n  the global hierarchy. cljgo note (ADR 0039): a class child's REAL supers\n  (a record/type's declared protocols and implemented interfaces; Object\n  for concrete well-known classes) count, as the JVM's isAssignableFrom\n  branch does — but no JVM class graph is fabricated beyond that."))
 	tmp10 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -323,6 +333,7 @@ func Load() {
 	v_clojure_DOT_core_isa_QMARK_.BindRoot(tmp10)
 	_ = v_clojure_DOT_core_isa_QMARK_
 	// (def parents "Returns the immediate parents of tag, both via a relationship\n  established…
+	v_clojure_DOT_core_parents.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(66), kw_column, int64(7), kw_end_line, int64(66), kw_end_column, int64(14), kw_doc, "Returns the immediate parents of tag, both via a relationship\n  established with derive and, for a class tag, its real direct supers\n  (ADR 0039). h must be a hierarchy obtained from make-hierarchy; if not\n  supplied defaults to the global hierarchy."))
 	tmp96 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -386,6 +397,7 @@ func Load() {
 	v_clojure_DOT_core_parents.BindRoot(tmp96)
 	_ = v_clojure_DOT_core_parents
 	// (def ancestors "Returns the immediate and indirect parents of tag, both via a\n  relations…
+	v_clojure_DOT_core_ancestors.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(16), kw_doc, "Returns the immediate and indirect parents of tag, both via a\n  relationship established with derive and, for a class tag, its real\n  supers (ADR 0039). h must be a hierarchy obtained from make-hierarchy;\n  if not supplied defaults to the global hierarchy."))
 	tmp122 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -471,6 +483,7 @@ func Load() {
 	v_clojure_DOT_core_ancestors.BindRoot(tmp122)
 	_ = v_clojure_DOT_core_ancestors
 	// (def descendants "Returns the immediate and indirect children of tag, via a relationship\n…
+	v_clojure_DOT_core_descendants.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(105), kw_column, int64(7), kw_end_line, int64(105), kw_end_column, int64(18), kw_doc, "Returns the immediate and indirect children of tag, via a relationship\n  established with derive. h must be a hierarchy obtained from\n  make-hierarchy; if not supplied defaults to, and modifies, the global\n  hierarchy. Note: cljgo has no class inheritance to walk (design/05)."))
 	tmp164 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -510,6 +523,7 @@ func Load() {
 	v_clojure_DOT_core_descendants.BindRoot(tmp164)
 	_ = v_clojure_DOT_core_descendants
 	// (def derive "Establishes a parent/child relationship between parent and tag. Parent\n  mus…
+	v_clojure_DOT_core_derive.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(124), kw_column, int64(7), kw_end_line, int64(124), kw_end_column, int64(13), kw_doc, "Establishes a parent/child relationship between parent and tag. Parent\n  must be a namespace-qualified keyword or symbol; tag may also be a\n  class (ADR 0036: a ClassRef or deftype/defrecord type). h must be a\n  hierarchy obtained from make-hierarchy; if not supplied defaults to,\n  and modifies, the global hierarchy."))
 	tmp182 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -841,6 +855,7 @@ func Load() {
 	v_clojure_DOT_core_derive.BindRoot(tmp182)
 	_ = v_clojure_DOT_core_derive
 	// (def underive "Removes a parent/child relationship between parent and tag. h must be a\n  …
+	v_clojure_DOT_core_underive.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(159), kw_column, int64(7), kw_end_line, int64(159), kw_end_column, int64(15), kw_doc, "Removes a parent/child relationship between parent and tag. h must be a\n  hierarchy obtained from make-hierarchy; if not supplied defaults to, and\n  modifies, the global hierarchy."))
 	tmp343 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
