@@ -1,6 +1,10 @@
 # ADR 0041 — keel: a batteries-included application framework, library style
 Date: 2026-07-17 · Status: proposed (owner mandate 2026-07-17; evidence: spike S20)
 
+> 2026-07-17: renamed keel → bri (owner). The rest of this ADR keeps the
+> original name "keel" throughout its body, as the historical record of
+> the decision; the code, docs, and templates now use "bri".
+
 ## Context
 
 Clojure's historical weakness is that anything past the language is

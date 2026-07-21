@@ -20,9 +20,9 @@ cljgo repl    # a REPL
 - A command-line tool instead? `cljgo new <name> --template cli` — a
   `-main`, argument handling, and a build plan that produces one static
   binary.
-- A web app? `cljgo new <name> --template web` — keel, cljgo's
+- A web app? `cljgo new <name> --template web` — bri, cljgo's
   application framework: routes as data, config as one map, a styled
-  page (`docs/guides/keel-tutorial.md`).
+  page (`docs/guides/bri-tutorial.md`).
 
 Both are templates over this same shape: plain namespaces, plain files,
 nothing scanned.

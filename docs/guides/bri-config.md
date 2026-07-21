@@ -1,4 +1,4 @@
-# keel.config — the configuration guide
+# bri.config — the configuration guide
 
 TWO layers into ONE plain map (ADR 0041 §4): `conf.edn` → `APP_*` env.
 No config classes, no watchers, no remote sources.

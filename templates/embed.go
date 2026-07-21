@@ -13,9 +13,9 @@
 //
 // The default is "lib" (ADR 0047): cljgo is a language that ships a
 // great web framework, not a web framework — someone writing a library
-// or a tool must not be handed a server. keel is one template among
+// or a tool must not be handed a server. bri is one template among
 // three, exactly like `mix new` vs `mix phx.new`. Nothing in this
-// package, or in `cljgo new`, knows what keel is; it knows TEMPLATES.
+// package, or in `cljgo new`, knows what bri is; it knows TEMPLATES.
 //
 // # Directly runnable, in place
 //
@@ -23,7 +23,7 @@
 // app name is not a mustache, it is a REAL default name — DefaultName
 // ("newapp") — which the generator renames. `cd templates/cli && cljgo
 // test` passes on the tree as it sits; that is exactly why CI can run
-// the templates (cmd/cljgo/keel_test.go generates each one, tests it,
+// the templates (cmd/cljgo/bri_test.go generates each one, tests it,
 // and runs what it produces).
 //
 // # Adding a template
@@ -88,7 +88,7 @@ var Builtins = []Builtin{
 	},
 	{
 		Name:    "web",
-		Summary: "a keel web app: routes, config, a styled page",
+		Summary: "a bri web app: routes, config, a styled page",
 		Next: []string{
 			"cljgo dev     # server + nREPL",
 			"cljgo test    # the generated test",

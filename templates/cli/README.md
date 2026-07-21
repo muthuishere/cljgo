@@ -28,5 +28,5 @@ CI step, or a shell pipeline.
 
 - A library instead (no `-main`)? `cljgo new <name>` — that is the
   default.
-- A web app? `cljgo new <name> --template web` — keel, cljgo's
-  application framework (`docs/guides/keel-tutorial.md`).
+- A web app? `cljgo new <name> --template web` — bri, cljgo's
+  application framework (`docs/guides/bri-tutorial.md`).

@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: The first fifteen minutes are generated, not assembled
-`cljgo new <name> --template web` SHALL generate a runnable keel app in
+`cljgo new <name> --template web` SHALL generate a runnable bri app in
 the blessed layout
 — `src/app/main.cljg`, `src/app/`, `conf.edn` (and optionally
 `conf.schema.edn`), `public/` (with a real stylesheet), `test/` (with
@@ -20,7 +20,7 @@ app.
 
 #### Scenario: new to styled page
 - **WHEN** a user runs `cljgo new myapp --template web && cd myapp && cljgo dev`
-- **THEN** a styled HTML page (markup from keel.html, CSS served from
+- **THEN** a styled HTML page (markup from bri.html, CSS served from
   `public/`) is served locally and an editor can connect to the
   printed nREPL port, with no file authored by hand
 
@@ -39,13 +39,13 @@ app.
 ### Requirement: `cljgo new` scaffolds the LANGUAGE, not a framework
 `cljgo new <name>` SHALL default to the `lib` template — a library:
 `src/<name>/core.cljg`, a passing test, `build.cljgo`, `README.md`,
-`.gitignore`, and NO server, keel dependency, or `conf.edn` (ADR 0047).
-The generator SHALL know only about TEMPLATES, never about keel: any
+`.gitignore`, and NO server, bri dependency, or `conf.edn` (ADR 0047).
+The generator SHALL know only about TEMPLATES, never about bri: any
 per-template metadata (summary line, suggested next commands) SHALL live
 with the templates, not in the command. Three built-ins SHALL ship —
 `lib` (the default), `cli` (a command-line tool: `-main`, argument
 handling, and a `build.cljgo` producing one static binary), and `web`
-(the keel app) — and `cljgo new`'s help and its unknown-template error
+(the bri app) — and `cljgo new`'s help and its unknown-template error
 SHALL name all three plus the `--template <path>` form. `cljgo build` in
 a project whose `build.cljgo` declares no artifacts SHALL report that
 there is nothing to build and succeed — a library is not a broken build
@@ -62,10 +62,10 @@ file.
   test passes, and `cljgo build` produces a single static binary that
   runs
 
-#### Scenario: keel is a template, not the language
-- **WHEN** a user wants the keel web app
+#### Scenario: bri is a template, not the language
+- **WHEN** a user wants the bri web app
 - **THEN** they pass `--template web`, and the language's `new` command
-  contains no knowledge of keel to make that work
+  contains no knowledge of bri to make that work
 
 ### Requirement: Templates are real files, embedded, and CI runs them
 Every project `cljgo new` generates SHALL exist in the repository as a
@@ -123,7 +123,7 @@ conformance artifact (divergence = release blocker, ADR 0007).
 - **THEN** observable behavior is identical
 
 ### Requirement: No hidden call graph, no I/O at namespace load
-keel SHALL expose only plain namespaces of plain functions. It SHALL
+bri SHALL expose only plain namespaces of plain functions. It SHALL
 NOT scan, register by convention, proxy, or instantiate user code; the
 only inversion is an adapter invoking a handler/job fn the user passed
 explicitly (directly or as a var). Handles (pools, queue registries,
@@ -155,7 +155,7 @@ a data vector of `[pattern handler]` with Go ServeMux pattern strings;
 `(http/param! req :name :int)` SHALL be the blessed typed accessor
 (failure maps through the error table as 400). Middleware SHALL be
 handler → handler fns. When `:middleware` is omitted,
-`(keel.http/serve routes opts)` SHALL apply `(http/defaults)` —
+`(bri.http/serve routes opts)` SHALL apply `(http/defaults)` —
 access-log, recover, sessions (signed cookies), CSRF protection, JSON
 negotiation. `(http/defaults)` SHALL return inspectable DATA (a
 vector supporting conj/removal by name); `cljgo routes` SHALL print
@@ -196,7 +196,7 @@ handler is a plain fn rather than a var (silent non-liveness).
   error-handling code in the handler
 
 ### Requirement: HTML is a function over data
-`keel.html` SHALL render hiccup-style vectors to escaped HTML
+`bri.html` SHALL render hiccup-style vectors to escaped HTML
 (`html/page` for full documents), XSS-safe by construction with an
 explicit, visually loud unescape form. `html/form` SHALL emit the
 CSRF token for session-bearing browsers and is the outer boundary of
@@ -217,7 +217,7 @@ asset pipeline — static assets are files served by
 ### Requirement: Errors have one blessed surface and one documented funnel
 App handlers SHALL use `!` variants (unwrap-or-throw) with the
 `recover` funnel — THE blessed surface; all documentation entry paths
-and generated code use it. keel fns that are expected to fail SHALL
+and generated code use it. bri fns that are expected to fail SHALL
 also exist in plain form returning Result (the language-wide rule:
 plain = value/Result, `!` = throws); Result values SHALL cross the
 http boundary only through `(http/render result-expr)` — the visible
@@ -248,7 +248,7 @@ constraint violation → 409, otherwise 500), overridable via
   through `http/render`, not a quietly derived status
 
 ### Requirement: Configuration is two layers into one plain map
-`(keel.config/load!)` SHALL merge `conf.edn` (whose `:profiles`
+`(bri.config/load!)` SHALL merge `conf.edn` (whose `:profiles`
 section, selected by `APP_PROFILE`, overlays the base map) and then
 `APP_*` environment variables, yielding one plain map — two layers,
 file then env. The env mapping SHALL be deterministic: `__` separates
@@ -268,7 +268,7 @@ print the resolved map annotated with each key's winning layer.
 - **THEN** every key shows its effective value and the layer that won
 
 ### Requirement: Data layer is SQL and maps, never an ORM
-`keel.db` SHALL provide connect!/query/one/insert/update/delete/tx
+`bri.db` SHALL provide connect!/query/one/insert/update/delete/tx
 over pgx with sane pool and timeout defaults: SQL as strings (THE
 blessed form), rows as plain maps, results as Result values with `!`
 variants; `db/one!` SHALL throw `:db/not-found` on a missing row
@@ -310,7 +310,7 @@ configured database, with no files carried alongside the binary.
 Under `APP_PROFILE=test`, the pool returned by `db/connect!` SHALL
 operate in the sandbox model: one connection per test wrapping it in
 a transaction rolled back at test end — the SAME top-level pool var
-the app defines, no `with-redefs`. keel SHALL ship an in-process http
+the app defines, no `with-redefs`. bri SHALL ship an in-process http
 test client and a `:memory`-jobs drain-and-assert helper; `cljgo new`
 SHALL generate one passing test using the http test client.
 
@@ -321,7 +321,7 @@ SHALL generate one passing test using the http test client.
   after the run
 
 ### Requirement: Jobs are transactional rows, workers are live goroutines
-`(keel.jobs/queue handlers)` SHALL be a pure registry value whose
+`(bri.jobs/queue handlers)` SHALL be a pure registry value whose
 handler values accept vars, derefed at dispatch, so job handlers are
 as live as http handlers. `(jobs/start! pg q)` — called in `-main` —
 SHALL start goroutine workers woken by LISTEN/NOTIFY with polling
@@ -350,7 +350,7 @@ for tests only.
 - **THEN** the next dispatched job runs the new definition
 
 ### Requirement: Cache is fetch-through with stampede suppression
-`(keel.cache/fetch c key f)` SHALL return the cached value or invoke
+`(bri.cache/fetch c key f)` SHALL return the cached value or invoke
 `f` exactly once across concurrent callers for the same key
 (singleflight), storing with the cache's TTL (a number of seconds).
 The same protocol SHALL be implemented by `local` and `redis`

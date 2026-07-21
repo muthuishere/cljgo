@@ -1,4 +1,4 @@
-// keel_test.go — the T0 exit criterion, end to end through the REAL
+// bri_test.go — the T0 exit criterion, end to end through the REAL
 // binary (openspec app-framework tasks 0.1/0.2; S20 VERDICT: "the
 // terminal transcript below is the T0 exit criterion"):
 //
@@ -138,7 +138,7 @@ func runIn(dir, bin string, args ...string) (string, error) {
 	return string(out), err
 }
 
-func TestKeelNewDevTest(t *testing.T) {
+func TestBriNewDevTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping binary build in -short mode")
 	}
@@ -244,7 +244,7 @@ func TestKeelNewDevTest(t *testing.T) {
 		t.Fatal("no .nrepl-port written by cljgo dev")
 	}
 	nreplEval(t, nreplPort,
-		`(in-ns 'app.main) (defn home [_req] (keel.http/ok (keel.html/page [:h1 "redefined live"])))`)
+		`(in-ns 'app.main) (defn home [_req] (bri.http/ok (bri.html/page [:h1 "redefined live"])))`)
 	if code, body := get("/"); code != 200 || !strings.Contains(body, "redefined live") {
 		t.Fatalf("after nREPL re-def: %d %q — the live-var story is broken", code, body)
 	}

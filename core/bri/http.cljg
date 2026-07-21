@@ -1,6 +1,6 @@
-;; keel.http — Ring-contract handlers on stdlib net/http (ADR 0041 §4,
-;; openspec app-framework T1). Loaded lazily by pkg/keel's lib provider
-;; on the first (require 'keel.http); before this source evaluates, the
+;; bri.http — Ring-contract handlers on stdlib net/http (ADR 0041 §4,
+;; openspec app-framework T1). Loaded lazily by pkg/bri's lib provider
+;; on the first (require 'bri.http); before this source evaluates, the
 ;; provider interns the private Go host shims it leans on:
 ;;
 ;;   -serve -request -json-encode -json-decode -form-decode -hmac-sign
@@ -12,25 +12,25 @@
 ;; strings — no router of our own. `#'var` handlers deref PER REQUEST
 ;; (live REPL web dev); omitting :middleware applies (defaults) — the
 ;; safe stack is what you didn't type.
-;; :exclude ok — keel.http/ok is the 200-response helper the golden page
+;; :exclude ok — bri.http/ok is the 200-response helper the golden page
 ;; blesses ((http/ok ...)); clojure.core/ok (the Result constructor)
 ;; stays reachable fully qualified. Excluding the refer keeps the
 ;; precedence principle's letter (nothing in core is shadowed for USER
 ;; code — http/ok is namespace-qualified by construction) and kills the
 ;; replace warning at load.
-(clojure.core/in-ns 'keel.http)
+(clojure.core/in-ns 'bri.http)
 (clojure.core/refer 'clojure.core :exclude '[ok])
 (require '[clojure.string :as str])
 (require '[clojure.edn :as edn])
 
 ;; --- dev mode ---------------------------------------------------------
-;; `cljgo dev` sets KEEL_DEV=1 in its own process; keel's loud-in-dev
+;; `cljgo dev` sets BRI_DEV=1 in its own process; bri's loud-in-dev
 ;; behaviors (plain-fn handler warnings, bare-Result explanations,
 ;; error messages in funnel bodies) key off it.
-(defn ^:private dev? [] (= "1" (-getenv "KEEL_DEV")))
+(defn ^:private dev? [] (= "1" (-getenv "BRI_DEV")))
 
 ;; --- the error funnel table (shipped, documented DATA) ----------------
-;; recover maps a thrown ex-info's :keel/error through this table;
+;; recover maps a thrown ex-info's :bri/error through this table;
 ;; override per app via (recover {:error-map ...}).
 (def default-error-map
   {:http/bad-param 400
@@ -64,24 +64,24 @@
    (let [s (get (:params req) k)]
      (when (nil? s)
        (throw (ex-info (str "missing path param " k)
-                       {:keel/error :http/bad-param :param k})))
+                       {:bri/error :http/bad-param :param k})))
      (cond
        (= type :string) s
        (= type :int)    (or (parse-long s)
                             (throw (ex-info (str "path param " k " is not an int: " (pr-str s))
-                                            {:keel/error :http/bad-param :param k :value s})))
+                                            {:bri/error :http/bad-param :param k :value s})))
        (= type :uuid)   (or (parse-uuid s)
                             (throw (ex-info (str "path param " k " is not a uuid: " (pr-str s))
-                                            {:keel/error :http/bad-param :param k :value s})))
+                                            {:bri/error :http/bad-param :param k :value s})))
        (= type :keyword) (keyword s)
        :else (throw (ex-info (str "param!: unknown type " type)
-                             {:keel/error :http/bad-param :param k :type type}))))))
+                             {:bri/error :http/bad-param :param k :type type}))))))
 
 ;; --- the Result bridge --------------------------------------------------
 (defn render
   "The VISIBLE bridge for Result values at the http boundary (ADR 0041
   §5): (ok resp) → resp; (err e) → thrown through the funnel table (an
-  err payload map may carry :keel/error to pick its row; anything else
+  err payload map may carry :bri/error to pick its row; anything else
   maps through :else). A non-Result value passes through unchanged."
   [result]
   (cond
@@ -89,9 +89,9 @@
     (err? result) (let [e    (-result-payload result)
                         data (if (map? e) e {:error e})]
                     (throw (ex-info (str "render: " (pr-str e))
-                                    (if (:keel/error data)
+                                    (if (:bri/error data)
                                       data
-                                      (assoc data :keel/error :else)))))
+                                      (assoc data :bri/error :else)))))
     :else result))
 
 ;; --- static files & health ----------------------------------------------
@@ -99,14 +99,14 @@
   "Static file handler for a directory, served by Go's http.FileServer.
   Mount under a trailing-slash pattern: [\"GET /static/\" (dir \"public\")]."
   [path]
-  {:keel.http/dir path})
+  {:bri.http/dir path})
 
 (defn managed
-  "Mark a keel-produced plain-fn handler so dev mode does not warn
+  "Mark a bri-produced plain-fn handler so dev mode does not warn
   about it (the liveness warning is for USER handlers that forgot the
-  #'var; a keel helper's closure is deliberate)."
+  #'var; a bri helper's closure is deliberate)."
   [f]
-  {:keel.http/handler f})
+  {:bri.http/handler f})
 
 (defn health
   "A health handler. T1 edition: reports the process up; deps whose
@@ -126,7 +126,7 @@
          (json 503 {:ok false :checks checks}))))))
 
 ;; --- sessions (signed cookies) -------------------------------------------
-(def ^:private session-cookie "keel-session")
+(def ^:private session-cookie "bri-session")
 
 (def ^:private session-key
   ;; Lazily resolved: APP_SESSION_KEY when set (the secrets-are-env
@@ -178,13 +178,13 @@
 
 ;; --- CSRF ------------------------------------------------------------------
 (def ^:dynamic *csrf-token*
-  ;; Bound per request by the csrf middleware; keel.html/form mints it
+  ;; Bound per request by the csrf middleware; bri.html/form mints it
   ;; into forms. nil outside a request.
   nil)
 
 (defn form-token
   "The CSRF token for the current request (bound by the csrf
-  middleware). keel.html/form calls this; user code can too, for
+  middleware). bri.html/form calls this; user code can too, for
   hand-rolled forms or JS that sets the x-csrf-token header."
   []
   *csrf-token*)
@@ -193,14 +193,14 @@
   (contains? #{:post :put :patch :delete} (:request-method req)))
 
 (defn ^:private csrf-ok? [req]
-  (let [expected (get (:session req) :keel.http/csrf-token)
+  (let [expected (get (:session req) :bri.http/csrf-token)
         given    (or (get (:form-params req) :__csrf)
                      (get (:headers req) "x-csrf-token"))]
     (and (string? expected) (string? given) (-const-eq expected given))))
 
 (def csrf
   "Default middleware: gates SESSION-BEARING mutating requests on a
-  token minted into forms by keel.html/form (or sent as the
+  token minted into forms by bri.html/form (or sent as the
   x-csrf-token header). Sessionless requests pass — the documented API
   posture: a JSON curl with no cookie has nothing to forge. Sits inside
   :sessions and :json (which parses form bodies)."
@@ -211,14 +211,14 @@
                {:status 403
                 :headers {"content-type" "text/plain; charset=utf-8"}
                 :body "invalid or missing CSRF token"}
-               (let [token (or (get (:session req) :keel.http/csrf-token) (-rand-token))
+               (let [token (or (get (:session req) :bri.http/csrf-token) (-rand-token))
                      res   (binding [*csrf-token* token]
-                             (handler (assoc-in req [:session :keel.http/csrf-token] token)))]
+                             (handler (assoc-in req [:session :bri.http/csrf-token] token)))]
                  ;; Persist the token whenever the response writes a
                  ;; session (a fresh session started, or one continues) so
                  ;; the NEXT request's form post verifies.
                  (if (and (map? res) (contains? res :session) (some? (:session res)))
-                   (assoc-in res [:session :keel.http/csrf-token] token)
+                   (assoc-in res [:session :bri.http/csrf-token] token)
                    res)))))})
 
 (defn start-session
@@ -247,18 +247,18 @@
                          (assoc req :json (try (-json-decode (:body req))
                                                (catch Throwable _
                                                  (throw (ex-info "malformed JSON body"
-                                                                 {:keel/error :http/bad-param})))))
+                                                                 {:bri/error :http/bad-param})))))
                          (= ct "application/x-www-form-urlencoded")
                          (assoc req :form-params (-form-decode (:body req)))
                          :else req)
                    res (handler req)]
                (when (or (result? res) (and (map? res) (result? (:body res))))
                  (throw (ex-info (str "handler returned a bare Result — Result values cross "
-                                      "the http boundary only through (keel.http/render ...)")
-                                 {:keel/error :else})))
+                                      "the http boundary only through (bri.http/render ...)")
+                                 {:bri/error :else})))
                (cond
                  (nil? res)
-                 (throw (ex-info "handler returned nil, not a response map" {:keel/error :else}))
+                 (throw (ex-info "handler returned nil, not a response map" {:bri/error :else}))
 
                  (and (map? res) (or (map? (:body res)) (vector? (:body res))))
                  (-> res
@@ -274,7 +274,7 @@
 ;; --- recover (THE funnel) ------------------------------------------------
 (defn recover
   "The error funnel: catches anything a handler throws and maps
-  (:keel/error (ex-data t)) through the table — 400 bad param, 422
+  (:bri/error (ex-data t)) through the table — 400 bad param, 422
   invalid cast, 404 not found, 409 constraint, else 500. Bodies name
   the error kind; messages appear in dev only. Override rows with
   (recover {:error-map {...}})."
@@ -287,7 +287,7 @@
                 (try
                   (handler req)
                   (catch Throwable t
-                    (let [kind   (:keel/error (ex-data t))
+                    (let [kind   (:bri/error (ex-data t))
                           status (get table kind (get table :else 500))]
                       {:status status
                        :headers {"content-type" "application/json"}
@@ -328,8 +328,8 @@
   (let [names (set (stack-names stack))]
     (doseq [required [:recover :csrf]]
       (when-not (contains? names required)
-        (println (str "keel.http WARNING: custom :middleware stack lacks " required
-                      " — the safe default stack includes it (see (keel.http/defaults))"))))))
+        (println (str "bri.http WARNING: custom :middleware stack lacks " required
+                      " — the safe default stack includes it (see (bri.http/defaults))"))))))
 
 ;; --- routes → mounted handlers -----------------------------------------------
 (defn ^:private wrap-stack [stack handler]
@@ -342,20 +342,20 @@
   [pattern h]
   (cond
     (var? h) (fn [req] ((deref h) req))
-    (and (map? h) (:keel.http/handler h)) (:keel.http/handler h)
+    (and (map? h) (:bri.http/handler h)) (:bri.http/handler h)
     :else (do (when (dev?)
-                (println (str "keel.http WARNING: route " (pr-str pattern)
+                (println (str "bri.http WARNING: route " (pr-str pattern)
                               " holds a plain fn, not a #'var — re-defs at the REPL will NOT update it")))
               (fn [req] (h req)))))
 
 (defn ^:private mount
   "Compile routes-as-data + a middleware stack into [pattern handler-fn]
-  pairs for the Go adapter ({:keel.http/dir ...} markers pass through)."
+  pairs for the Go adapter ({:bri.http/dir ...} markers pass through)."
   [routes stack]
   (mapv (fn [route]
           (let [pattern (nth route 0)
                 h       (nth route 1)]
-            (if (and (map? h) (contains? h :keel.http/dir))
+            (if (and (map? h) (contains? h :bri.http/dir))
               [pattern h]
               [pattern (wrap-stack stack (base-handler pattern h))])))
         routes))
@@ -393,9 +393,9 @@
                              (str "  " (format "%-24s" pattern) " "
                                   (cond
                                     (var? h) (pr-str h)
-                                    (and (map? h) (:keel.http/dir h))
-                                    (str "(http/dir " (pr-str (:keel.http/dir h)) ")")
-                                    (and (map? h) (:keel.http/handler h)) "(keel handler)"
+                                    (and (map? h) (:bri.http/dir h))
+                                    (str "(http/dir " (pr-str (:bri.http/dir h)) ")")
+                                    (and (map? h) (:bri.http/handler h)) "(bri handler)"
                                     :else "(plain fn — not live)")
                                   "\n")))
                          routes)))))

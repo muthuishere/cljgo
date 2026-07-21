@@ -242,7 +242,7 @@ usage:
   cljgo run <file.clj>             evaluate a file
   cljgo build [-o out] <file.clj>  compile a file to a native binary
   cljgo new [--template T] <name>  generate a project: T = lib (default) | cli | web | <path>
-  cljgo dev                        run a keel app: server + nREPL + dev warnings
+  cljgo dev                        run a bri app: server + nREPL + dev warnings
   cljgo test                       run the app's tests (test/ via clojure.test)
   cljgo config                     print resolved config, winning layer per key
   cljgo routes                     print routes + the effective middleware stack
