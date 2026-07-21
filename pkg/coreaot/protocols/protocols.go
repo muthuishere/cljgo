@@ -8,6 +8,12 @@ import (
 )
 
 var (
+	kw_column                            = lang.InternKeywordString("column")
+	kw_end_column                        = lang.InternKeywordString("end-column")
+	kw_end_line                          = lang.InternKeywordString("end-line")
+	kw_file                              = lang.InternKeywordString("file")
+	kw_line                              = lang.InternKeywordString("line")
+	kw_private                           = lang.InternKeywordString("private")
 	sym_X_AMP_                           = lang.NewSymbol("&")
 	sym_X_extend_key                     = lang.NewSymbol("-extend-key")
 	sym_X_field                          = lang.NewSymbol("-field")
@@ -82,6 +88,7 @@ func Load() {
 	tmp2 := lang.Apply1(tmp1, sym_clojure_DOT_core)
 	_ = tmp2
 	// (def -group-impls (clojure.core/fn [specs] (loop [s (seq specs) proto nil acc []] (if (nil…
+	v_clojure_DOT_core_X_group_impls.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(22), kw_column, int64(7), kw_end_line, int64(22), kw_end_column, int64(29), kw_private, true))
 	tmp3 := lang.FnFunc1(func(specs4 any) any {
 		var tmp5 any
 		_ = tmp5
@@ -166,6 +173,7 @@ func Load() {
 	v_clojure_DOT_core_X_group_impls.BindRoot(tmp3)
 	_ = v_clojure_DOT_core_X_group_impls
 	// (def -method-specs (clojure.core/fn [specs] (filter seq? specs)))
+	v_clojure_DOT_core_X_method_specs.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(30), kw_private, true))
 	tmp41 := lang.FnFunc1(func(specs42 any) any {
 		tmp43 := v_clojure_DOT_core_filter.Get()
 		tmp44 := v_clojure_DOT_core_seq_QMARK_.Get()
@@ -175,6 +183,7 @@ func Load() {
 	v_clojure_DOT_core_X_method_specs.BindRoot(tmp41)
 	_ = v_clojure_DOT_core_X_method_specs
 	// (def -decl-protocols (clojure.core/fn [specs] (vec (distinct (filter symbol? specs)))))
+	v_clojure_DOT_core_X_decl_protocols.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(32), kw_private, true))
 	tmp46 := lang.FnFunc1(func(specs47 any) any {
 		tmp48 := v_clojure_DOT_core_vec.Get()
 		tmp49 := v_clojure_DOT_core_distinct.Get()
@@ -188,6 +197,7 @@ func Load() {
 	v_clojure_DOT_core_X_decl_protocols.BindRoot(tmp46)
 	_ = v_clojure_DOT_core_X_decl_protocols
 	// (def -field-lets (clojure.core/fn [fields params] (let [pset (apply hash-set params) this …
+	v_clojure_DOT_core_X_field_lets.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(28), kw_private, true))
 	tmp55 := lang.FnFunc2(func(fields56, params57 any) any {
 		var tmp58 any
 		_ = tmp58
@@ -227,6 +237,7 @@ func Load() {
 	v_clojure_DOT_core_X_field_lets.BindRoot(tmp55)
 	_ = v_clojure_DOT_core_X_field_lets
 	// (def -typed-fn (clojure.core/fn [fields mform] (let [params (second mform) body (drop 2 mf…
+	v_clojure_DOT_core_X_typed_fn.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(26), kw_private, true))
 	tmp83 := lang.FnFunc2(func(fields84, mform85 any) any {
 		var tmp86 any
 		_ = tmp86
@@ -265,6 +276,7 @@ func Load() {
 	v_clojure_DOT_core_X_typed_fn.BindRoot(tmp83)
 	_ = v_clojure_DOT_core_X_typed_fn
 	// (def -plain-fn (clojure.core/fn [mform] (list* (quote fn) (second mform) (drop 2 mform))))
+	v_clojure_DOT_core_X_plain_fn.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(26), kw_private, true))
 	tmp105 := lang.FnFunc1(func(mform106 any) any {
 		tmp107 := v_clojure_DOT_core_list_STAR_.Get()
 		tmp108 := v_clojure_DOT_core_second.Get()
@@ -277,6 +289,7 @@ func Load() {
 	v_clojure_DOT_core_X_plain_fn.BindRoot(tmp105)
 	_ = v_clojure_DOT_core_X_plain_fn
 	// (do (def defprotocol (fn* defprotocol ([&form &env pname & specs] (let [methods (-method-s…
+	v_clojure_DOT_core_defprotocol.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(76), kw_column, int64(11), kw_end_line, int64(76), kw_end_column, int64(22)))
 	var defprotocol113 any
 	_ = defprotocol113
 	tmp114 := lang.FnFunc(func(args ...any) any {
@@ -367,6 +380,7 @@ func Load() {
 	_ = tmp166
 	_ = v_clojure_DOT_core_defprotocol
 	// (do (def deftype (fn* deftype ([&form &env tname fields & specs] (let [tnstr (name tname) …
+	v_clojure_DOT_core_deftype.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(96), kw_column, int64(11), kw_end_line, int64(96), kw_end_column, int64(18)))
 	var deftype167 any
 	_ = deftype167
 	tmp168 := lang.FnFunc(func(args ...any) any {
@@ -468,6 +482,7 @@ func Load() {
 	_ = tmp234
 	_ = v_clojure_DOT_core_deftype
 	// (do (def defrecord (fn* defrecord ([&form &env tname fields & specs] (let [tnstr (name tna…
+	v_clojure_DOT_core_defrecord.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(120), kw_column, int64(11), kw_end_line, int64(120), kw_end_column, int64(20)))
 	var defrecord235 any
 	_ = defrecord235
 	tmp236 := lang.FnFunc(func(args ...any) any {
@@ -581,6 +596,7 @@ func Load() {
 	_ = tmp313
 	_ = v_clojure_DOT_core_defrecord
 	// (do (def extend-type (fn* extend-type ([&form &env tsym & specs] (let [tkey (list (quote -…
+	v_clojure_DOT_core_extend_type.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(149), kw_column, int64(11), kw_end_line, int64(149), kw_end_column, int64(22)))
 	var extend_type314 any
 	_ = extend_type314
 	tmp315 := lang.FnFunc(func(args ...any) any {
@@ -651,6 +667,7 @@ func Load() {
 	_ = tmp354
 	_ = v_clojure_DOT_core_extend_type
 	// (do (def extend-protocol (fn* extend-protocol ([&form &env pname & specs] (let [pairs (-gr…
+	v_clojure_DOT_core_extend_protocol.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(160), kw_column, int64(11), kw_end_line, int64(160), kw_end_column, int64(26)))
 	var extend_protocol355 any
 	_ = extend_protocol355
 	tmp356 := lang.FnFunc(func(args ...any) any {

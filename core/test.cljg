@@ -358,3 +358,116 @@
 
 (defn successful? [summary]
   (and (= 0 (:fail summary)) (= 0 (:error summary))))
+
+;; --- clojure.test completion (fundamentals audit 2026-07) ------------
+;;
+;; The remaining public surface of clojure.test, so a real test suite ports
+;; without edits. Oracled against JVM Clojure 1.12.5 (`clojure` CLI,
+;; 2026-07-21); frozen in conformance/tests/clojure-test-*.clj.
+
+;; *initial-report-counters* is the DYNAMIC counterpart of the plain
+;; initial-report-counters map above; a runner rebinds it to start a run
+;; with different tallies. oracle: => {:test 0, :pass 0, :fail 0, :error 0}
+(def ^:dynamic *initial-report-counters* initial-report-counters)
+
+;; *load-tests* false makes deftest/with-test compile their bodies away, so
+;; a production build carries no test code. oracle: default => true.
+(def ^:dynamic *load-tests* true)
+
+;; *stack-trace-depth* limits how many stack frames an :error report shows.
+;; oracle: default => nil (unlimited). cljgo honors the var so code that
+;; binds it still reads back what it set; our error reports print the
+;; exception itself rather than a frame list, so the depth is not consulted.
+(def ^:dynamic *stack-trace-depth* nil)
+
+;; *test-out* is where test output goes; with-test-out binds *out* to it.
+;; oracle: default => *out*, and (with-test-out (println "x")) writes to
+;; whatever *test-out* names at that moment.
+(def ^:dynamic *test-out* *out*)
+
+(defmacro with-test-out
+  "Runs body with *out* bound to the value of *test-out*."
+  [& body]
+  `(binding [*out* *test-out*] ~@body))
+
+;; function? is clojure.test's own predicate (the `is` macro uses it to tell
+;; a predicate CALL from an arbitrary expression) — public in clojure.test,
+;; so it is public here too; -function? above is its long-standing private
+;; twin and stays as the implementation. oracle: (function? '+) => true,
+;; (function? 'let) => false (a macro), (function? 'no-such-sym) => nil,
+;; (function? 5) => false.
+(defn function?
+  "Returns true if argument is a function or a symbol that resolves to
+  a function (not a macro)."
+  [x]
+  (-function? x))
+
+;; get-possibly-unbound-var: a var's value, or nil when it has no root
+;; binding, instead of throwing. oracle: returns the fn for a bound var.
+(defn get-possibly-unbound-var
+  "Like var-get but returns nil if the var is unbound."
+  [v]
+  (try (deref v) (catch Throwable _e nil)))
+
+;; file-position — a DOCUMENTED DEVIATION. On the JVM this reads frame n of
+;; a fresh exception's stack trace and returns [file line]; cljgo has no
+;; stack-frame introspection, so it returns nil rather than inventing a
+;; position. Kept public because clojure.test exports it and porting code
+;; may reference it; nothing in cljgo's own reporting depends on it.
+(defn file-position
+  "DEPRECATED on the JVM too. cljgo has no stack-frame introspection and
+  returns nil; the JVM returns [file line] for stack frame n."
+  [_n]
+  nil)
+
+(defmacro deftest-
+  "Like deftest but the var is not public."
+  [name & body]
+  `(deftest ~(with-meta name (assoc (meta name) :private true)) ~@body))
+
+(defmacro set-test
+  "Sets :test metadata of the named var to a fn with the given body.
+  The var must already exist."
+  [name & body]
+  `(alter-meta! (var ~name) assoc :test (fn [] ~@body)))
+
+(defmacro with-test
+  "Takes any definition form (that returns a Var) as the first argument.
+  Remaining body goes in the :test metadata function for that Var."
+  [definition & body]
+  `(let [v# ~definition]
+     (alter-meta! v# assoc :test (fn [] ~@body))
+     v#))
+
+;; test-all-vars: run every test var in ns with that namespace's fixtures.
+;; (test-vars already groups by namespace and applies :once/:each, so this
+;; is test-vars over the namespace's own test vars.)
+;; -ns-sym accepts either shape the JVM's test-ns/test-all-vars do: a
+;; namespace symbol, or a Namespace object (which prints as its own name in
+;; cljgo and on the JVM alike, so str round-trips it).
+(defn ^:private -ns-sym [ns]
+  (if (symbol? ns) ns (symbol (str ns))))
+
+(defn test-all-vars
+  "Calls test-var on every var interned in the namespace that has a :test
+  metadata entry."
+  [ns]
+  (test-vars (clojure.core/-collect-test-vars (list (-ns-sym ns)))))
+
+(defn test-ns
+  "Runs the tests in a namespace and returns the summary map. If the
+  namespace has a fn named test-ns-hook, calls that instead."
+  [ns]
+  (binding [*report-counters* (atom *initial-report-counters*)]
+    (test-all-vars (-ns-sym ns))
+    (assoc (deref *report-counters*) :type :summary)))
+
+(defn run-test-var
+  "Runs the test for a single var and returns the summary map."
+  [v]
+  (run-test-vars (list v)))
+
+(defmacro run-test
+  "Runs a single test — (run-test test-name), the var is taken for you."
+  [test-symbol]
+  `(run-test-var (var ~test-symbol)))

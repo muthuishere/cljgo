@@ -236,7 +236,7 @@ func (a *Analyzer) analyzeSeq(seq lang.ISeq, env Env) (*ast.Node, error) {
 
 	form := seq
 	for i := 0; i < maxMacroExpansions; i++ {
-		if sym, ok := form.First().(*lang.Symbol); ok && !sym.HasNamespace() {
+		if sym, ok := form.First().(*lang.Symbol); ok && (!sym.HasNamespace() || isQualifiedCoreMacroSpecial(sym)) {
 			// Specials are checked before locals and macros: they cannot
 			// be shadowed (Compiler.java analyzeSeq).
 			if parse, isSpecial := a.specialParser(sym.Name()); isSpecial {
@@ -273,6 +273,23 @@ func IsSpecial(name string) bool {
 	var probe Analyzer
 	_, ok := probe.specialParser(name)
 	return ok
+}
+
+// isQualifiedCoreMacroSpecial reports whether sym is `clojure.core/binding`.
+//
+// cljgo implements `binding` as a special form; real Clojure implements it as
+// a MACRO in clojure.core. That difference is invisible until someone
+// syntax-quotes it — “(binding [...] ~@body)` reads as
+// `clojure.core/binding`, which on the JVM resolves to the macro var and
+// works, but here hit the qualified-symbol guard below and failed with
+// "cannot call as a function (special form)". Every user macro expanding to
+// (binding …) was affected; clojure.test/with-test-out found it.
+//
+// Only `binding` gets this treatment: the rest of the specials list is
+// special in Clojure too, where `clojure.core/if` and friends are equally
+// unresolvable (verified against clojure 1.12.5).
+func isQualifiedCoreMacroSpecial(sym *lang.Symbol) bool {
+	return sym.Namespace() == "clojure.core" && sym.Name() == "binding"
 }
 
 // specialParser returns the parser for a v0 special form name.
@@ -412,7 +429,10 @@ func (a *Analyzer) parseDef(seq lang.ISeq, env Env) (*ast.Node, error) {
 
 	// Symbol metadata (+ docstring) goes onto the var. v0: metadata is
 	// constant (from the reader / hand-built forms), so it is applied
-	// here rather than analyzed as an expression; DefNode.Meta stays nil.
+	// here rather than analyzed as an expression; DefNode.Meta carries
+	// the same constant map as an OpQuote so the emitter can re-apply it
+	// in a compiled binary (a def's :private/:declared/:doc must survive
+	// AOT — dual-mode meta, ADR 0002/0007).
 	meta := sym.Meta()
 	if docstring != nil {
 		if meta == nil {
@@ -421,12 +441,14 @@ func (a *Analyzer) parseDef(seq lang.ISeq, env Env) (*ast.Node, error) {
 			meta = meta.Assoc(lang.KWDoc, docstring).(lang.IPersistentMap)
 		}
 	}
+	var metaNode *ast.Node
 	if meta != nil {
 		v.SetMeta(meta)
 		// ^:dynamic marks the var dynamically rebindable (binding/set!).
 		if lang.IsTruthy(lang.Get(meta, lang.KWDynamic)) {
 			v.SetDynamic()
 		}
+		metaNode = &ast.Node{Op: ast.OpQuote, Form: seq, Sub: &ast.QuoteNode{Value: meta}, IsLiteral: true}
 	}
 
 	var init *ast.Node
@@ -438,7 +460,7 @@ func (a *Analyzer) parseDef(seq lang.ISeq, env Env) (*ast.Node, error) {
 			return nil, err
 		}
 	}
-	return &ast.Node{Op: ast.OpDef, Form: seq, Sub: &ast.DefNode{Name: sym, Var: v, Init: init}}, nil
+	return &ast.Node{Op: ast.OpDef, Form: seq, Sub: &ast.DefNode{Name: sym, Var: v, Init: init, Meta: metaNode}}, nil
 }
 
 // parseLet handles let*: an even-count binding vector of simple symbols,
