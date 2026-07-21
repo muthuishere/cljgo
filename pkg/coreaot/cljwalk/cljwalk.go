@@ -7,7 +7,13 @@ import (
 )
 
 var (
+	kw_column                           = lang.InternKeywordString("column")
+	kw_doc                              = lang.InternKeywordString("doc")
 	kw_else_                            = lang.InternKeywordString("else")
+	kw_end_column                       = lang.InternKeywordString("end-column")
+	kw_end_line                         = lang.InternKeywordString("end-line")
+	kw_file                             = lang.InternKeywordString("file")
+	kw_line                             = lang.InternKeywordString("line")
 	sym_clojure_DOT_core                = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_walk                = lang.NewSymbol("clojure.walk")
 	v_clojure_DOT_core_apply            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
@@ -70,6 +76,7 @@ func Load() {
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
 	// (def walk "Traverses form, an arbitrary data structure.  inner and outer are\n  functions.…
+	v_clojure_DOT_walk_walk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(11), kw_doc, "Traverses form, an arbitrary data structure.  inner and outer are\n  functions.  Applies inner to each element of form, building up a\n  data structure of the same type, then applies outer to the result.\n  Recognizes all Clojure data structures. Consumes seqs as with doall."))
 	tmp5 := lang.FnFunc3(func(inner6, outer7, form8 any) any {
 		tmp9 := v_clojure_DOT_core_list_QMARK_.Get()
 		tmp10 := lang.Apply1(tmp9, form8)
@@ -164,6 +171,7 @@ func Load() {
 	v_clojure_DOT_walk_walk.BindRoot(tmp5)
 	_ = v_clojure_DOT_walk_walk
 	// (def postwalk "Performs a depth-first, post-order traversal of form.  Calls f on\n  each s…
+	v_clojure_DOT_walk_postwalk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(15), kw_doc, "Performs a depth-first, post-order traversal of form.  Calls f on\n  each sub-form, uses f's return value in place of the original.\n  Recognizes all Clojure data structures. Consumes seqs as with doall."))
 	tmp61 := lang.FnFunc2(func(f62, form63 any) any {
 		tmp64 := v_clojure_DOT_walk_walk.Get()
 		tmp65 := v_clojure_DOT_core_partial.Get()
@@ -175,6 +183,7 @@ func Load() {
 	v_clojure_DOT_walk_postwalk.BindRoot(tmp61)
 	_ = v_clojure_DOT_walk_postwalk
 	// (def prewalk "Like postwalk, but does pre-order traversal." (clojure.core/fn [f form] (wal…
+	v_clojure_DOT_walk_prewalk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(55), kw_column, int64(7), kw_end_line, int64(55), kw_end_column, int64(14), kw_doc, "Like postwalk, but does pre-order traversal."))
 	tmp69 := lang.FnFunc2(func(f70, form71 any) any {
 		tmp72 := v_clojure_DOT_walk_walk.Get()
 		tmp73 := v_clojure_DOT_core_partial.Get()
@@ -188,6 +197,7 @@ func Load() {
 	v_clojure_DOT_walk_prewalk.BindRoot(tmp69)
 	_ = v_clojure_DOT_walk_prewalk
 	// (def postwalk-demo "Demonstrates the behavior of postwalk by printing each form as it is\n…
+	v_clojure_DOT_walk_postwalk_demo.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(62), kw_column, int64(7), kw_end_line, int64(62), kw_end_column, int64(20), kw_doc, "Demonstrates the behavior of postwalk by printing each form as it is\n  walked.  Returns form."))
 	tmp79 := lang.FnFunc1(func(form80 any) any {
 		tmp81 := v_clojure_DOT_walk_postwalk.Get()
 		tmp82 := lang.FnFunc1(func(x83 any) any {
@@ -205,6 +215,7 @@ func Load() {
 	v_clojure_DOT_walk_postwalk_demo.BindRoot(tmp79)
 	_ = v_clojure_DOT_walk_postwalk_demo
 	// (def prewalk-demo "Demonstrates the behavior of prewalk by printing each form as it is\n  …
+	v_clojure_DOT_walk_prewalk_demo.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(68), kw_column, int64(7), kw_end_line, int64(68), kw_end_column, int64(19), kw_doc, "Demonstrates the behavior of prewalk by printing each form as it is\n  walked.  Returns form."))
 	tmp89 := lang.FnFunc1(func(form90 any) any {
 		tmp91 := v_clojure_DOT_walk_prewalk.Get()
 		tmp92 := lang.FnFunc1(func(x93 any) any {
@@ -222,22 +233,23 @@ func Load() {
 	v_clojure_DOT_walk_prewalk_demo.BindRoot(tmp89)
 	_ = v_clojure_DOT_walk_prewalk_demo
 	// (def keywordize-keys "Recursively transforms all map keys from strings to keywords." (cloj…
+	v_clojure_DOT_walk_keywordize_keys.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(22), kw_doc, "Recursively transforms all map keys from strings to keywords."))
 	tmp99 := lang.FnFunc1(func(m100 any) any {
 		var tmp101 any
 		_ = tmp101
 		{
-			tmp102 := lang.FnFunc1(func(p__69103 any) any {
+			tmp102 := lang.FnFunc1(func(p__72103 any) any {
 				var tmp104 any
 				_ = tmp104
 				{
-					var vec__70105 any = p__69103
-					_ = vec__70105
+					var vec__73105 any = p__72103
+					_ = vec__73105
 					tmp106 := v_clojure_DOT_core_nth.Get()
-					tmp107 := lang.Apply3(tmp106, vec__70105, int64(0), nil)
+					tmp107 := lang.Apply3(tmp106, vec__73105, int64(0), nil)
 					var k108 any = tmp107
 					_ = k108
 					tmp109 := v_clojure_DOT_core_nth.Get()
-					tmp110 := lang.Apply3(tmp109, vec__70105, int64(1), nil)
+					tmp110 := lang.Apply3(tmp109, vec__73105, int64(1), nil)
 					var v111 any = tmp110
 					_ = v111
 					tmp112 := v_clojure_DOT_core_string_QMARK_.Get()
@@ -285,22 +297,23 @@ func Load() {
 	v_clojure_DOT_walk_keywordize_keys.BindRoot(tmp99)
 	_ = v_clojure_DOT_walk_keywordize_keys
 	// (def stringify-keys "Recursively transforms all map keys from keywords to strings." (cloju…
+	v_clojure_DOT_walk_stringify_keys.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(21), kw_doc, "Recursively transforms all map keys from keywords to strings."))
 	tmp132 := lang.FnFunc1(func(m133 any) any {
 		var tmp134 any
 		_ = tmp134
 		{
-			tmp135 := lang.FnFunc1(func(p__73136 any) any {
+			tmp135 := lang.FnFunc1(func(p__76136 any) any {
 				var tmp137 any
 				_ = tmp137
 				{
-					var vec__74138 any = p__73136
-					_ = vec__74138
+					var vec__77138 any = p__76136
+					_ = vec__77138
 					tmp139 := v_clojure_DOT_core_nth.Get()
-					tmp140 := lang.Apply3(tmp139, vec__74138, int64(0), nil)
+					tmp140 := lang.Apply3(tmp139, vec__77138, int64(0), nil)
 					var k141 any = tmp140
 					_ = k141
 					tmp142 := v_clojure_DOT_core_nth.Get()
-					tmp143 := lang.Apply3(tmp142, vec__74138, int64(1), nil)
+					tmp143 := lang.Apply3(tmp142, vec__77138, int64(1), nil)
 					var v144 any = tmp143
 					_ = v144
 					tmp145 := v_clojure_DOT_core_keyword_QMARK_.Get()
@@ -348,6 +361,7 @@ func Load() {
 	v_clojure_DOT_walk_stringify_keys.BindRoot(tmp132)
 	_ = v_clojure_DOT_walk_stringify_keys
 	// (def prewalk-replace "Recursively transforms form by replacing keys in smap with their\n  …
+	v_clojure_DOT_walk_prewalk_replace.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(92), kw_column, int64(7), kw_end_line, int64(92), kw_end_column, int64(22), kw_doc, "Recursively transforms form by replacing keys in smap with their\n  values.  Like clojure/replace but works on any data structure.  Does\n  replacement at the root of the tree first."))
 	tmp165 := lang.FnFunc2(func(smap166, form167 any) any {
 		tmp168 := v_clojure_DOT_walk_prewalk.Get()
 		tmp169 := lang.FnFunc1(func(x170 any) any {
@@ -369,6 +383,7 @@ func Load() {
 	v_clojure_DOT_walk_prewalk_replace.BindRoot(tmp165)
 	_ = v_clojure_DOT_walk_prewalk_replace
 	// (def postwalk-replace "Recursively transforms form by replacing keys in smap with their\n …
+	v_clojure_DOT_walk_postwalk_replace.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(23), kw_doc, "Recursively transforms form by replacing keys in smap with their\n  values.  Like clojure/replace but works on any data structure.  Does\n  replacement at the leaves of the tree first."))
 	tmp176 := lang.FnFunc2(func(smap177, form178 any) any {
 		tmp179 := v_clojure_DOT_walk_postwalk.Get()
 		tmp180 := lang.FnFunc1(func(x181 any) any {
@@ -390,6 +405,7 @@ func Load() {
 	v_clojure_DOT_walk_postwalk_replace.BindRoot(tmp176)
 	_ = v_clojure_DOT_walk_postwalk_replace
 	// (def macroexpand-all "Recursively performs all possible macroexpansions in form." (clojure…
+	v_clojure_DOT_walk_macroexpand_all.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(22), kw_doc, "Recursively performs all possible macroexpansions in form."))
 	tmp187 := lang.FnFunc1(func(form188 any) any {
 		tmp189 := v_clojure_DOT_walk_prewalk.Get()
 		tmp190 := lang.FnFunc1(func(x191 any) any {

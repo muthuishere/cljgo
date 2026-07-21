@@ -379,3 +379,14 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   binaries through it, keeping ns-publics/ns-interns identical between
   the interpreter and a compiled binary (caught by the dual harness on
   conformance/tests/ns-introspection.clj).
+## Per-object monitors for `locking` (fundamentals batch 1, 2026-07-21)
+
+- `monitor.go` NEW (cljgo original, nothing vendored): `WithLock` — the
+  substrate of the `locking` macro — a refcounted table of per-object
+  reentrant monitors (reentrancy by goroutine id via `internal/goid`,
+  the same key the dynamic-var frames use). DEVIATION vs the JVM's
+  identity monitors: the table keys by Go map equality, so `=`-equal
+  comparable values share a monitor (over-serializes, never
+  under-locks); non-comparable lock objects throw. Covered by
+  `monitor_test.go` + conformance/tests/locking-reentrant-exclusion.clj
+  (JVM oracle 1.12.5).

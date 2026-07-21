@@ -10,8 +10,15 @@ import (
 
 var (
 	kw_atom                                 = lang.InternKeywordString("atom")
+	kw_column                               = lang.InternKeywordString("column")
+	kw_doc                                  = lang.InternKeywordString("doc")
 	kw_else_                                = lang.InternKeywordString("else")
+	kw_end_column                           = lang.InternKeywordString("end-column")
+	kw_end_line                             = lang.InternKeywordString("end-line")
+	kw_file                                 = lang.InternKeywordString("file")
+	kw_line                                 = lang.InternKeywordString("line")
 	kw_map_                                 = lang.InternKeywordString("map")
+	kw_private                              = lang.InternKeywordString("private")
 	kw_sequential                           = lang.InternKeywordString("sequential")
 	kw_set                                  = lang.InternKeywordString("set")
 	sym_Boolean                             = lang.NewSymbol("Boolean")
@@ -100,8 +107,10 @@ func Load() {
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
 	// (def diff)
+	v_clojure_DOT_data_diff.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(25), kw_column, int64(6), kw_end_line, int64(25), kw_end_column, int64(10)))
 	_ = v_clojure_DOT_data_diff
 	// (def atom-diff "Internal helper for diff." (clojure.core/fn [a b] (if (= a b) [nil nil a] …
+	v_clojure_DOT_data_atom_diff.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(28), kw_column, int64(7), kw_end_line, int64(28), kw_end_column, int64(26), kw_private, true, kw_doc, "Internal helper for diff."))
 	tmp5 := lang.FnFunc2(func(a6, b7 any) any {
 		tmp8 := rt.EQBool(v_clojure_DOT_core_X_EQ_, a6, b7)
 		var tmp9 any
@@ -118,6 +127,7 @@ func Load() {
 	v_clojure_DOT_data_atom_diff.BindRoot(tmp5)
 	_ = v_clojure_DOT_data_atom_diff
 	// (def vectorize "Convert an associative-by-numeric-index collection into\n  an equivalent v…
+	v_clojure_DOT_data_vectorize.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(26), kw_private, true, kw_doc, "Convert an associative-by-numeric-index collection into\n  an equivalent vector, with nil for any missing keys."))
 	tmp12 := lang.FnFunc1(func(m13 any) any {
 		tmp14 := v_clojure_DOT_core_seq.Get()
 		tmp15 := lang.Apply1(tmp14, m13)
@@ -125,18 +135,18 @@ func Load() {
 		_ = tmp16
 		if lang.IsTruthy(tmp15) {
 			tmp17 := v_clojure_DOT_core_reduce.Get()
-			tmp18 := lang.FnFunc2(func(result19, p__7720 any) any {
+			tmp18 := lang.FnFunc2(func(result19, p__8020 any) any {
 				var tmp21 any
 				_ = tmp21
 				{
-					var vec__7822 any = p__7720
-					_ = vec__7822
+					var vec__8122 any = p__8020
+					_ = vec__8122
 					tmp23 := v_clojure_DOT_core_nth.Get()
-					tmp24 := lang.Apply3(tmp23, vec__7822, int64(0), nil)
+					tmp24 := lang.Apply3(tmp23, vec__8122, int64(0), nil)
 					var k25 any = tmp24
 					_ = k25
 					tmp26 := v_clojure_DOT_core_nth.Get()
-					tmp27 := lang.Apply3(tmp26, vec__7822, int64(1), nil)
+					tmp27 := lang.Apply3(tmp26, vec__8122, int64(1), nil)
 					var v28 any = tmp27
 					_ = v28
 					tmp29 := v_clojure_DOT_core_assoc.Get()
@@ -164,6 +174,7 @@ func Load() {
 	v_clojure_DOT_data_vectorize.BindRoot(tmp12)
 	_ = v_clojure_DOT_data_vectorize
 	// (def diff-associative-key "Diff associative things a and b, comparing only the key k." (cl…
+	v_clojure_DOT_data_diff_associative_key.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(43), kw_column, int64(7), kw_end_line, int64(43), kw_end_column, int64(37), kw_private, true, kw_doc, "Diff associative things a and b, comparing only the key k."))
 	tmp41 := lang.FnFunc3(func(a42, b43, k44 any) any {
 		var tmp45 any
 		_ = tmp45
@@ -178,18 +189,18 @@ func Load() {
 			_ = vb51
 			tmp52 := v_clojure_DOT_data_diff.Get()
 			tmp53 := lang.Apply2(tmp52, va48, vb51)
-			var vec__8154 any = tmp53
-			_ = vec__8154
+			var vec__8454 any = tmp53
+			_ = vec__8454
 			tmp55 := v_clojure_DOT_core_nth.Get()
-			tmp56 := lang.Apply3(tmp55, vec__8154, int64(0), nil)
+			tmp56 := lang.Apply3(tmp55, vec__8454, int64(0), nil)
 			var a_STAR_57 any = tmp56
 			_ = a_STAR_57
 			tmp58 := v_clojure_DOT_core_nth.Get()
-			tmp59 := lang.Apply3(tmp58, vec__8154, int64(1), nil)
+			tmp59 := lang.Apply3(tmp58, vec__8454, int64(1), nil)
 			var b_STAR_60 any = tmp59
 			_ = b_STAR_60
 			tmp61 := v_clojure_DOT_core_nth.Get()
-			tmp62 := lang.Apply3(tmp61, vec__8154, int64(2), nil)
+			tmp62 := lang.Apply3(tmp61, vec__8454, int64(2), nil)
 			var ab63 any = tmp62
 			_ = ab63
 			tmp64 := v_clojure_DOT_core_contains_QMARK_.Get()
@@ -366,6 +377,7 @@ func Load() {
 	v_clojure_DOT_data_diff_associative_key.BindRoot(tmp41)
 	_ = v_clojure_DOT_data_diff_associative_key
 	// (def diff-associative "Diff associative things a and b, comparing only keys in ks." (cloju…
+	v_clojure_DOT_data_diff_associative.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(58), kw_column, int64(7), kw_end_line, int64(58), kw_end_column, int64(33), kw_private, true, kw_doc, "Diff associative things a and b, comparing only keys in ks."))
 	tmp122 := lang.FnFunc3(func(a123, b124, ks125 any) any {
 		tmp126 := v_clojure_DOT_core_reduce.Get()
 		tmp127 := lang.FnFunc2(func(diff1128, diff2129 any) any {
@@ -388,6 +400,7 @@ func Load() {
 	v_clojure_DOT_data_diff_associative.BindRoot(tmp122)
 	_ = v_clojure_DOT_data_diff_associative
 	// (def diff-sequential (clojure.core/fn [a b] (vec (map vectorize (diff-associative (if (vec…
+	v_clojure_DOT_data_diff_sequential.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(70), kw_column, int64(7), kw_end_line, int64(70), kw_end_column, int64(32), kw_private, true))
 	tmp142 := lang.FnFunc2(func(a143, b144 any) any {
 		tmp145 := v_clojure_DOT_core_vec.Get()
 		tmp146 := v_clojure_DOT_core_map_.Get()
@@ -431,6 +444,7 @@ func Load() {
 	v_clojure_DOT_data_diff_sequential.BindRoot(tmp142)
 	_ = v_clojure_DOT_data_diff_sequential
 	// (def diff-set (clojure.core/fn [a b] [(not-empty (clojure.set/difference a b)) (not-empty …
+	v_clojure_DOT_data_diff_set.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(25), kw_private, true))
 	tmp170 := lang.FnFunc2(func(a171, b172 any) any {
 		tmp173 := v_clojure_DOT_core_not_empty.Get()
 		tmp174 := v_clojure_DOT_set_difference.Get()
@@ -450,6 +464,7 @@ func Load() {
 	v_clojure_DOT_data_diff_set.BindRoot(tmp170)
 	_ = v_clojure_DOT_data_diff_set
 	// (def diff-map (clojure.core/fn [a b] (diff-associative a b (clojure.set/union (set (keys a…
+	v_clojure_DOT_data_diff_map.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(86), kw_column, int64(7), kw_end_line, int64(86), kw_end_column, int64(25), kw_private, true))
 	tmp186 := lang.FnFunc2(func(a187, b188 any) any {
 		tmp189 := v_clojure_DOT_data_diff_associative.Get()
 		tmp190 := v_clojure_DOT_set_union.Get()
@@ -468,6 +483,7 @@ func Load() {
 	v_clojure_DOT_data_diff_map.BindRoot(tmp186)
 	_ = v_clojure_DOT_data_diff_map
 	// (do (def EqualityPartition (-protocol (-qualified-name "EqualityPartition") ["equality-par…
+	v_clojure_DOT_data_EqualityPartition.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(91), kw_column, int64(14), kw_end_line, int64(91), kw_end_column, int64(31)))
 	tmp201 := v_clojure_DOT_core_X_protocol.Get()
 	tmp202 := v_clojure_DOT_core_X_qualified_name.Get()
 	tmp203 := lang.Apply1(tmp202, "EqualityPartition")
@@ -475,6 +491,7 @@ func Load() {
 	tmp205 := lang.Apply2(tmp201, tmp203, tmp204)
 	v_clojure_DOT_data_EqualityPartition.BindRoot(tmp205)
 	_ = v_clojure_DOT_data_EqualityPartition
+	v_clojure_DOT_data_equality_partition.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(92), kw_column, int64(4), kw_end_line, int64(92), kw_end_column, int64(22)))
 	tmp206 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -497,6 +514,7 @@ func Load() {
 	tmp211 := v_clojure_DOT_data_EqualityPartition.Get()
 	_ = tmp211
 	// (do (def Diff (-protocol (-qualified-name "Diff") ["diff-similar"])) (def diff-similar (fn…
+	v_clojure_DOT_data_Diff.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(94), kw_column, int64(14), kw_end_line, int64(94), kw_end_column, int64(18)))
 	tmp212 := v_clojure_DOT_core_X_protocol.Get()
 	tmp213 := v_clojure_DOT_core_X_qualified_name.Get()
 	tmp214 := lang.Apply1(tmp213, "Diff")
@@ -504,6 +522,7 @@ func Load() {
 	tmp216 := lang.Apply2(tmp212, tmp214, tmp215)
 	v_clojure_DOT_data_Diff.BindRoot(tmp216)
 	_ = v_clojure_DOT_data_Diff
+	v_clojure_DOT_data_diff_similar.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(95), kw_column, int64(4), kw_end_line, int64(95), kw_end_column, int64(16)))
 	tmp217 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -788,6 +807,7 @@ func Load() {
 	tmp443 := lang.Apply4(tmp434, tmp435, tmp437, "diff-similar", tmp438)
 	_ = tmp443
 	// (def partition-of (clojure.core/fn [x] (cond (satisfies? EqualityPartition x) (equality-pa…
+	v_clojure_DOT_data_partition_of.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(132), kw_column, int64(7), kw_end_line, int64(132), kw_end_column, int64(29), kw_private, true))
 	tmp444 := lang.FnFunc1(func(x445 any) any {
 		tmp446 := v_clojure_DOT_core_satisfies_QMARK_.Get()
 		tmp447 := v_clojure_DOT_data_EqualityPartition.Get()
@@ -840,6 +860,7 @@ func Load() {
 	v_clojure_DOT_data_partition_of.BindRoot(tmp444)
 	_ = v_clojure_DOT_data_partition_of
 	// (def diff-of (clojure.core/fn [a b] (if (satisfies? Diff a) (diff-similar a b) (case (part…
+	v_clojure_DOT_data_diff_of.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(141), kw_column, int64(7), kw_end_line, int64(141), kw_end_column, int64(24), kw_private, true))
 	tmp462 := lang.FnFunc2(func(a463, b464 any) any {
 		tmp465 := v_clojure_DOT_core_satisfies_QMARK_.Get()
 		tmp466 := v_clojure_DOT_data_Diff.Get()
@@ -856,9 +877,9 @@ func Load() {
 			{
 				tmp472 := v_clojure_DOT_data_partition_of.Get()
 				tmp473 := lang.Apply1(tmp472, a463)
-				var case__84474 any = tmp473
-				_ = case__84474
-				tmp475 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__84474, kw_map_)
+				var case__87474 any = tmp473
+				_ = case__87474
+				tmp475 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__87474, kw_map_)
 				var tmp476 any
 				_ = tmp476
 				if tmp475 {
@@ -866,7 +887,7 @@ func Load() {
 					tmp478 := lang.Apply2(tmp477, a463, b464)
 					tmp476 = tmp478
 				} else {
-					tmp479 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__84474, kw_set)
+					tmp479 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__87474, kw_set)
 					var tmp480 any
 					_ = tmp480
 					if tmp479 {
@@ -874,7 +895,7 @@ func Load() {
 						tmp482 := lang.Apply2(tmp481, a463, b464)
 						tmp480 = tmp482
 					} else {
-						tmp483 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__84474, kw_sequential)
+						tmp483 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__87474, kw_sequential)
 						var tmp484 any
 						_ = tmp484
 						if tmp483 {
@@ -899,6 +920,7 @@ func Load() {
 	v_clojure_DOT_data_diff_of.BindRoot(tmp462)
 	_ = v_clojure_DOT_data_diff_of
 	// (def diff "Recursively compares a and b, returning a tuple of\n  [things-only-in-a things-…
+	v_clojure_DOT_data_diff.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(154), kw_column, int64(7), kw_end_line, int64(154), kw_end_column, int64(11), kw_doc, "Recursively compares a and b, returning a tuple of\n  [things-only-in-a things-only-in-b things-in-both].\n  Comparison rules:\n\n  * For equal a and b, return [nil nil a].\n  * Maps are subdiffed where keys match and values differ.\n  * Sets are never subdiffed.\n  * All sequential things are treated as associative collections\n    by their indexes, with results returned as vectors.\n  * Everything else (including strings!) is treated as\n    an atom and compared for equality."))
 	tmp489 := lang.FnFunc2(func(a490, b491 any) any {
 		tmp492 := rt.EQBool(v_clojure_DOT_core_X_EQ_, a490, b491)
 		var tmp493 any

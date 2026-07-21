@@ -8,6 +8,11 @@ import (
 )
 
 var (
+	kw_column                                               = lang.InternKeywordString("column")
+	kw_end_column                                           = lang.InternKeywordString("end-column")
+	kw_end_line                                             = lang.InternKeywordString("end-line")
+	kw_file                                                 = lang.InternKeywordString("file")
+	kw_line                                                 = lang.InternKeywordString("line")
 	sym_clojure_DOT_core                                    = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_core_test_DOT_portability               = lang.NewSymbol("clojure.core-test.portability")
 	sym_do                                                  = lang.NewSymbol("do")
@@ -46,6 +51,7 @@ func Load() {
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
 	// (do (def when-var-exists (fn* when-var-exists ([&form &env var-sym & body] (if (clojure.co…
+	v_clojure_DOT_core_test_DOT_portability_when_var_exists.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(26), kw_column, int64(11), kw_end_line, int64(26), kw_end_column, int64(26)))
 	var when_var_exists5 any
 	_ = when_var_exists5
 	tmp6 := lang.FnFunc(func(args ...any) any {
@@ -87,6 +93,7 @@ func Load() {
 	_ = tmp17
 	_ = v_clojure_DOT_core_test_DOT_portability_when_var_exists
 	// (def big-int? (clojure.core/fn [n] (clojure.core/and (clojure.core/integer? n) (clojure.co…
+	v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(37), kw_column, int64(7), kw_end_line, int64(37), kw_end_column, int64(15)))
 	tmp18 := lang.FnFunc1(func(n19 any) any {
 		var tmp20 any
 		_ = tmp20
@@ -113,6 +120,7 @@ func Load() {
 	v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_.BindRoot(tmp18)
 	_ = v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_
 	// (def lazy-seq? (clojure.core/fn [x] (clojure.core/seq? x)))
+	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(16)))
 	tmp29 := lang.FnFunc1(func(x30 any) any {
 		tmp31 := v_clojure_DOT_core_seq_QMARK_.Get()
 		tmp32 := lang.Apply1(tmp31, x30)
@@ -121,6 +129,7 @@ func Load() {
 	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.BindRoot(tmp29)
 	_ = v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_
 	// (def sleep (clojure.core/fn [ms] (clojure.core/-sleep-ms ms)))
+	v_clojure_DOT_core_test_DOT_portability_sleep.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(50), kw_column, int64(7), kw_end_line, int64(50), kw_end_column, int64(12)))
 	tmp33 := lang.FnFunc1(func(ms34 any) any {
 		tmp35 := v_clojure_DOT_core_X_sleep_ms.Get()
 		tmp36 := lang.Apply1(tmp35, ms34)

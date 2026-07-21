@@ -8,7 +8,12 @@ import (
 
 var (
 	kw_arglists                          = lang.InternKeywordString("arglists")
+	kw_column                            = lang.InternKeywordString("column")
 	kw_doc                               = lang.InternKeywordString("doc")
+	kw_end_column                        = lang.InternKeywordString("end-column")
+	kw_end_line                          = lang.InternKeywordString("end-line")
+	kw_file                              = lang.InternKeywordString("file")
+	kw_line                              = lang.InternKeywordString("line")
 	kw_macro                             = lang.InternKeywordString("macro")
 	sym_clojure_DOT_core                 = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_repl                 = lang.NewSymbol("clojure.repl")
@@ -46,6 +51,7 @@ func Load() {
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
 	// (def print-doc "Prints the documentation block for var v to *out* (the JVM shape;\n  publi…
+	v_clojure_DOT_repl_print_doc.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(16), kw_doc, "Prints the documentation block for var v to *out* (the JVM shape;\n  public here because cljgo has no private defs yet)."))
 	tmp5 := lang.FnFunc1(func(v6 any) any {
 		var tmp7 any
 		_ = tmp7
@@ -105,6 +111,7 @@ func Load() {
 	v_clojure_DOT_repl_print_doc.BindRoot(tmp5)
 	_ = v_clojure_DOT_repl_print_doc
 	// (do (def doc "Prints documentation for a var, given its name. Prints nothing when\n  the n…
+	v_clojure_DOT_repl_doc.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(47), kw_column, int64(11), kw_end_line, int64(47), kw_end_column, int64(14), kw_doc, "Prints documentation for a var, given its name. Prints nothing when\n  the name does not resolve."))
 	var doc33 any
 	_ = doc33
 	tmp34 := lang.FnFunc3(func(X_AMP_form35, X_AMP_env36, name37 any) any {
