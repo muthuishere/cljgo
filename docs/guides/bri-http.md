@@ -1,4 +1,4 @@
-# keel.http — the server guide
+# bri.http — the server guide
 
 The Ring contract on stdlib routing (ADR 0041 §4): a handler is a fn
 of request-map → response-map; middleware is handler → handler; routes
@@ -85,16 +85,16 @@ custom stack lacks `recover` or `csrf`.
   bodies → `:form-params`; map/vector response bodies → JSON; string
   bodies default to `text/html`.
 - **csrf** — gates SESSION-BEARING mutating requests on the token
-  `keel.html/form` mints (or the `x-csrf-token` header). Sessionless
+  `bri.html/form` mints (or the `x-csrf-token` header). Sessionless
   requests pass: the documented API posture — a JSON curl with no
   cookie has nothing to forge.
 
 ## Errors: one blessed surface, one documented funnel
 
 App handlers use `!` forms and let the funnel answer (ADR 0014 under
-keel's doctrine). The funnel's mapping is shipped DATA:
+bri's doctrine). The funnel's mapping is shipped DATA:
 
-| `:keel/error` in ex-data | status |
+| `:bri/error` in ex-data | status |
 |---|---|
 | `:http/bad-param` | 400 |
 | `:cast/invalid`   | 422 |
@@ -116,7 +116,7 @@ Result values cross the http boundary ONLY through the visible bridge:
 ```
 
 `(ok resp)` → the response; `(err e)` → the funnel (an err payload map
-may carry `:keel/error` to pick its row). A handler that returns a
+may carry `:bri/error` to pick its row). A handler that returns a
 bare Result WITHOUT `http/render` is a loud 500 explaining exactly
 that — never a silently laundered status.
 
@@ -134,6 +134,6 @@ socket:
 
 ## Escape hatch
 
-The adapter is a thin shim over `net/http` (pkg/keel). When you
+The adapter is a thin shim over `net/http` (pkg/bri). When you
 outgrow the blessed path, mount your own patterns — routes are just
 data and the mux is the stdlib's.

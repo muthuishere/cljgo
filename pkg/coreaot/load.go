@@ -18,6 +18,7 @@ import (
 	cljset "github.com/muthuishere/cljgo/pkg/coreaot/cljset"
 	cljstring "github.com/muthuishere/cljgo/pkg/coreaot/cljstring"
 	cljtest "github.com/muthuishere/cljgo/pkg/coreaot/cljtest"
+	cljzip "github.com/muthuishere/cljgo/pkg/coreaot/cljzip"
 	core "github.com/muthuishere/cljgo/pkg/coreaot/core"
 	hierarchies "github.com/muthuishere/cljgo/pkg/coreaot/hierarchies"
 	numeric "github.com/muthuishere/cljgo/pkg/coreaot/numeric"
@@ -53,6 +54,7 @@ func Load() {
 	protocols.Load()
 	cljstring.Load()
 	cljset.Load()
+	cljzip.Load()
 	cljedn.Load()
 	cljtest.Load()
 	cljgobuild.Load()

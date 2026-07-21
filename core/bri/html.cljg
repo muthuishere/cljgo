@@ -1,14 +1,14 @@
-;; keel.html — HTML is a function over data (ADR 0041 §4, openspec
+;; bri.html — HTML is a function over data (ADR 0041 §4, openspec
 ;; app-framework T1). Hiccup-style vectors in, ESCAPED HTML out; no
 ;; template DSL, no layouts, no partials, no asset pipeline — CSS is a
-;; file under public/, served by (keel.http/dir "public"). html/form is
+;; file under public/, served by (bri.http/dir "public"). html/form is
 ;; the deliberate outer boundary of the surface: it mints the CSRF
 ;; token. XSS-safe by construction; the escape opt-out is explicit and
 ;; ugly (unsafe-raw-html).
-(clojure.core/in-ns 'keel.html)
+(clojure.core/in-ns 'bri.html)
 (clojure.core/refer 'clojure.core)
 (require '[clojure.string :as str])
-(require 'keel.http)
+(require 'bri.http)
 
 ;; --- escaping ------------------------------------------------------------
 (defn escape
@@ -26,9 +26,9 @@
   "The EXPLICIT, deliberately ugly escape hatch: marks a string to be
   emitted verbatim, unescaped. You own every byte you pass here."
   [s]
-  {:keel.html/unsafe (str s)})
+  {:bri.html/unsafe (str s)})
 
-(defn ^:private unsafe? [x] (and (map? x) (contains? x :keel.html/unsafe)))
+(defn ^:private unsafe? [x] (and (map? x) (contains? x :bri.html/unsafe)))
 
 ;; --- rendering -------------------------------------------------------------
 (def ^:private void-tags
@@ -76,7 +76,7 @@
   (cond
     (nil? node)     ""
     (string? node)  (escape node)
-    (unsafe? node)  (:keel.html/unsafe node)
+    (unsafe? node)  (:bri.html/unsafe node)
     (vector? node)  (let [parsed   (parse-tag (name (first node)))
                           tag      (nth parsed 0)
                           sugar    (nth parsed 1)
@@ -107,13 +107,13 @@
            [:head
             [:meta {:charset "utf-8"}]
             [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-            [:title (get opts :title "keel app")]
+            [:title (get opts :title "bri app")]
             [:link {:rel "stylesheet" :href (get opts :stylesheet "/static/app.css")}]]
            (into [:body] nodes)]))))
 
 (defn form
   "A form element that MINTS THE CSRF TOKEN (the reason this fn exists —
-  and the outer boundary of keel.html). (form {:post \"/signup\"} …)
+  and the outer boundary of bri.html). (form {:post \"/signup\"} …)
   or (form {:get \"/search\"} …); other opts keys pass through as
   attributes. Returns hiccup data — compose it, then render/page it."
   [opts & body]
@@ -122,7 +122,7 @@
         action (or (:post opts) (:get opts) (:action opts))
         attrs  (merge {:method method :action action}
                       (dissoc opts :post :get :method :action))
-        token  (keel.http/form-token)]
+        token  (bri.http/form-token)]
     (into (if (and (= method "post") token)
             [:form attrs [:input {:type "hidden" :name "__csrf" :value token}]]
             [:form attrs])
