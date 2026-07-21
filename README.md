@@ -107,12 +107,20 @@ on Apple M5 Pro, go1.26.3, with `hello.clj` = `(println "hi")`:
 
 | | cljgo | reproduce |
 |---|---|---|
-| Tool binary | 8.3 MB stripped (12.1 MB plain) | `go build -trimpath -ldflags="-s -w" ./cmd/cljgo` |
+| Tool binary | 12 MB stripped | `go build -trimpath -ldflags="-s -w" ./cmd/cljgo` |
 | Compiled binary, hello | 4.6 MB | `cljgo build hello.clj` (strips by default) |
 | Compiled startup, hello | 5.5 ms | `hyperfine -N ./hello` |
 | Peak RSS, hello | 11.7 MB | `/usr/bin/time -l ./hello` |
 | Interpreter boot | 22.3 ms · 28.5 MB · 459k allocs | `go test -bench=BenchmarkBoot -benchmem -run '^$' ./pkg/eval/` |
 | clojure-test-suite | 238/242 (98.3%) | `cljgo suite` |
+
+**Building an AOT binary is one command** — `cljgo build -o hello hello.clj`.
+It emits Go and invokes `go build`, so it needs the Go toolchain on `PATH`
+(`cljgo run` / `cljgo repl` do not); it strips by default; and it links the
+**compiled** core, never the interpreter (ADR 0046), which is why a compiled
+binary starts in ~5 ms instead of the interpreter's ~22 ms boot. There is no
+separate AOT-core step for users — cljgo's core is compiled ahead of time and
+checked in, and your build just links it.
 
 Two budgets run inside plain `go test ./...`, and are host-relative because a
 CI runner is not your laptop (ADR 0024) — override with `CLJGO_BOOT_BUDGET`
@@ -157,27 +165,39 @@ Run on **let-go's own benchmark suite**, unmodified, with let-go's published
 methodology (hyperfine, 3 warmup / 10 runs). All 7 files compile and run on
 cljgo with no edits.
 
+Reproduce it yourself with **`bash benchmark/run.sh`** — the committed harness
+(corpus + runner + report). It reports **both cljgo legs**, interpreted
+(`cljgo run`) and AOT (`cljgo build`), the way let-go now reports its VM against
+its own AOT; the `cljgo` column below is the AOT leg, which is what you ship.
+See [`benchmark/README.md`](benchmark/README.md) for methodology, binary sizes,
+how AOT binaries are built, and the `reduce` gap analysis.
+
 Every runtime below was **installed and measured on the same machine** (Apple
 M5 Pro, go1.26.3) — no normalization, no quoted numbers, wall-clock mean of 10
 runs. Totals include each runtime's startup. Best per row in bold.
 
-| Benchmark | cljgo | let-go | babashka | joker | clojure JVM |
-|---|---|---|---|---|---|
-| startup | 5.5 ms | **4.7 ms** | 10.6 ms | 7.2 ms | 336.3 ms |
-| `tak` | 901.0 ms | 1.23 s | 1.13 s | 12.33 s | **447.8 ms** |
-| `fib` | 889.7 ms | 1.18 s | 1.16 s | 12.84 s | **449.7 ms** |
-| `loop-recur` | 40.2 ms | 38.1 ms | 38.2 ms | 445.3 ms | 399.1 ms |
-| `persistent-map` | **10.0 ms** | 13.1 ms | 13.8 ms | 30.4 ms | 378.1 ms |
-| `map-filter` | **5.6 ms** | 6.3 ms | 11.0 ms | 9.9 ms | 330.4 ms |
-| `transducers` | 18.9 ms | 26.0 ms | **13.3 ms** | — | 318.5 ms |
-| `reduce` | 54.0 ms | 41.6 ms | **21.4 ms** | 1.48 s | 305.3 ms |
-| runtime size | **8.3 MB** | 12.2 MB | 67.9 MB | 27.4 MB | 385.0 MB |
+`cljgo run` is the interpreter, `cljgo` is the AOT binary (`cljgo build`) —
+what you ship, and the column to read against the field.
 
-Versions: cljgo @HEAD (post-ADR-0045), let-go v1.11.1 (tag, built from source),
+| Benchmark | cljgo run | cljgo | let-go | babashka | joker | clojure JVM |
+|---|---|---|---|---|---|---|
+| startup | 32.6 ms | 6.5 ms | **5.7 ms** | 12.5 ms | 9.1 ms | 338.0 ms |
+| `tak` | 12.10 s | 858.5 ms | 1.38 s | 1.18 s | — | **531.8 ms** |
+| `fib` | 9.32 s | 975.4 ms | 1.29 s | 1.16 s | — | **438.5 ms** |
+| `loop-recur` | 482.3 ms | 52.1 ms | 49.8 ms | **45.5 ms** | 447.3 ms | 462.0 ms |
+| `persistent-map` | 43.6 ms | **14.6 ms** | 15.7 ms | 18.9 ms | 34.8 ms | 449.1 ms |
+| `map-filter` | 32.1 ms | 7.2 ms | **5.6 ms** | 10.5 ms | 9.9 ms | 340.4 ms |
+| `transducers` | 88.5 ms | 20.9 ms | 26.7 ms | **16.2 ms** | — | 381.2 ms |
+| `reduce` | 97.5 ms | 60.8 ms | 25.4 ms | **22.1 ms** | 1.56 s | 355.2 ms |
+| runtime size | — | **12 MB** | 13 MB | 67.9 MB | 27.4 MB | 385.0 MB |
+
+Versions: cljgo @HEAD (post-ADR-0046), let-go v1.11.1 (tag, built from source),
 babashka v1.12.218, joker v1.9.0, Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1.
-`joker` has no `transducers`. Runtime size is the stripped binary for cljgo /
-let-go, the installed binary for babashka / joker, and JDK + `clojure.jar`
-(381.0 + 4.0 MB) for the JVM. Re-measured 2026-07-17; every cell above was run
+`joker` has no `transducers` and is skipped on `fib`/`tak` (~13× slower there).
+Runtime size is the stripped binary for cljgo / let-go, the installed binary for
+babashka / joker, and JDK + `clojure.jar` (381.0 + 4.0 MB) for the JVM; a
+*compiled cljgo program* is 4.6 MB. Re-measured 2026-07-22 via
+`bash benchmark/run.sh`; every cell above was run
 on this machine, and all seven benchmarks produce identical values across all
 five runtimes (`persistent-map` differs only in hash-map print order, so it is
 compared on `[count, sum-keys, sum-vals, (get m 9999)]`).
@@ -189,14 +209,26 @@ Two honest reads of that table.
 
 **The good.** On `tak` and `fib` cljgo is the fastest thing here except the
 JVM — ahead of both a bytecode VM (let-go) and a GraalVM native image
-(babashka), and **13.1× ahead of joker**, the other Go tree-walker. cljgo also
-ships the smallest runtime in the field at 8.3 MB. With AOT core landed
-(ADR 0046) it now also **wins `persistent-map` and `map-filter` outright** and
-beats let-go on `transducers` — rows it used to lose 2.7× and 4.8×.
+(babashka); against joker, the other Go tree-walker, the 2026-07-17 run measured
+**13.1×** (joker is skipped on those rows here for runtime). cljgo also ships
+the smallest runtime in the field at 12 MB, and a *compiled program* is 4.6 MB.
+With AOT core landed (ADR 0046) it **wins `persistent-map` outright** and beats
+let-go on `transducers` — rows it used to lose 2.7× and 4.8×. It also trades
+`map-filter` with let-go within noise (7.2 vs 5.6 ms; the 07-17 run had it the
+other way at 5.6 vs 6.3 — treat that row as a tie, not a win).
 
-**The bad.** `reduce` is still 1.3× let-go and **2.5× babashka**, and
-`transducers` 1.4× babashka. The `clojure.core`-routed rows improved a lot,
-but the two runtimes with a purpose-built core still lead them.
+**The bad.** `reduce` is **2.4× let-go and 2.8× babashka**, and `transducers`
+1.3× babashka. The `clojure.core`-routed rows improved a lot,
+but the two runtimes with a purpose-built core still lead them. `reduce` is the
+one row `cljgo build` does *not* help — interpreted and compiled are both slow —
+because the fold loop is already native Go (ADR 0045); the cost is *inside* it:
+`f` is invoked per element through `lang.Apply2`'s generic `IFn` dispatch, with
+every intermediate `long` boxed as `any` and a seq node allocated per step. `fib`
+wins precisely because its `(+ a b)` compiles to a direct `rt.Add` intrinsic —
+the reducing fn in `reduce` is the case that intrinsic can't reach. The fix is
+Clojure-canonical (`IReduce`/internal-reduce on `range`/vectors for an unboxed
+node-free fold, then native `map`/`filter`/`take`); see
+[`benchmark/README.md`](benchmark/README.md) for the full analysis and plan.
 
 **What changed.** ADR 0046 compiled `core.clj` and the 12 `.cljg` boot sources
 through cljgo's own emitter (`pkg/coreaot`) and cut `rt.Boot() → eval.New()`:

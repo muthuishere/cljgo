@@ -23,6 +23,10 @@ s3repl
 # local build artifact
 /cljgo
 
+# benchmark harness build artifacts (binaries + raw hyperfine JSON); rebuild
+# with `bash benchmark/run.sh`. The corpus, harness, and results.md are tracked.
+benchmark/.build/
+
 # spike modules are self-contained
 spikes/s11-result-rep/cljgo-spike*
 
