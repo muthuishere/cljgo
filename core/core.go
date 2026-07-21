@@ -116,6 +116,26 @@ var ZipSource string
 //go:embed edn.cljg
 var EdnSource string
 
+// WalkSource is the contents of walk.cljg — the clojure.walk namespace
+// (fundamentals audit 2026-07): the generic tree-walk fns (walk/postwalk/
+// prewalk + the demo, replace, keywordize/stringify and macroexpand-all
+// surfaces), a pure port of clojure/walk.clj onto core.clj primitives.
+// Loaded into the clojure.walk namespace after clojure.edn is up. The
+// loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed walk.cljg
+var WalkSource string
+
+// DataSource is the contents of data.cljg — the clojure.data namespace
+// (fundamentals audit 2026-07): diff + the EqualityPartition/Diff
+// protocols, ported from clojure/data.clj onto core.clj + the protocol
+// machinery (clojure.set referenced fully qualified — it loads earlier in
+// BootSources). Loaded into the clojure.data namespace after clojure.walk.
+// The loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed data.cljg
+var DataSource string
+
 // TransducersSource is the contents of transducers.cljg — transduce/
 // eduction/sequence/completing/partition-by/dedupe/halt-when/replace, plus
 // the `into` xform arity (design/08 §5 Batch 4, ADR 0022). pkg/eval loads it
@@ -173,6 +193,8 @@ func BootSources() []BootSource {
 		{NS: "clojure.set", File: "set.cljg", Source: &SetSource, Pkg: "cljset"},
 		{NS: "clojure.zip", File: "zip.cljg", Source: &ZipSource, Pkg: "cljzip"},
 		{NS: "clojure.edn", File: "edn.cljg", Source: &EdnSource, Pkg: "cljedn"},
+		{NS: "clojure.walk", File: "walk.cljg", Source: &WalkSource, Pkg: "cljwalk"},
+		{NS: "clojure.data", File: "data.cljg", Source: &DataSource, Pkg: "cljdata"},
 		{NS: "clojure.test", File: "test.cljg", Source: &TestSource, Pkg: "cljtest"},
 		{NS: "cljgo.build", File: "build.cljg", Source: &BuildSource, Pkg: "cljgobuild"},
 		{NS: "clojure.core-test.portability", File: "clojure_test_portability.cljg", Source: &PortabilitySource, Pkg: "portability"},
