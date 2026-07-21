@@ -236,7 +236,7 @@ func (a *Analyzer) analyzeSeq(seq lang.ISeq, env Env) (*ast.Node, error) {
 
 	form := seq
 	for i := 0; i < maxMacroExpansions; i++ {
-		if sym, ok := form.First().(*lang.Symbol); ok && !sym.HasNamespace() {
+		if sym, ok := form.First().(*lang.Symbol); ok && (!sym.HasNamespace() || isQualifiedCoreMacroSpecial(sym)) {
 			// Specials are checked before locals and macros: they cannot
 			// be shadowed (Compiler.java analyzeSeq).
 			if parse, isSpecial := a.specialParser(sym.Name()); isSpecial {
@@ -273,6 +273,23 @@ func IsSpecial(name string) bool {
 	var probe Analyzer
 	_, ok := probe.specialParser(name)
 	return ok
+}
+
+// isQualifiedCoreMacroSpecial reports whether sym is `clojure.core/binding`.
+//
+// cljgo implements `binding` as a special form; real Clojure implements it as
+// a MACRO in clojure.core. That difference is invisible until someone
+// syntax-quotes it — “(binding [...] ~@body)` reads as
+// `clojure.core/binding`, which on the JVM resolves to the macro var and
+// works, but here hit the qualified-symbol guard below and failed with
+// "cannot call as a function (special form)". Every user macro expanding to
+// (binding …) was affected; clojure.test/with-test-out found it.
+//
+// Only `binding` gets this treatment: the rest of the specials list is
+// special in Clojure too, where `clojure.core/if` and friends are equally
+// unresolvable (verified against clojure 1.12.5).
+func isQualifiedCoreMacroSpecial(sym *lang.Symbol) bool {
+	return sym.Namespace() == "clojure.core" && sym.Name() == "binding"
 }
 
 // specialParser returns the parser for a v0 special form name.
