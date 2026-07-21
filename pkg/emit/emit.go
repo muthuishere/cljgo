@@ -150,6 +150,14 @@ func (g *generator) hoistVar(v *lang.Var) string {
 		init += ".SetDynamic()"
 		g.dynVars[v] = true
 	}
+	// ^:private has to be carried the same way: a compiled var is interned
+	// by name only, so without this every private helper comes back public
+	// and ns-publics/dir report a namespace the interpreter never shows
+	// (found by conformance/tests/repl-tooling.clj — clojure.set's
+	// -bubble-max-key leaked into (dir clojure.set) in compiled binaries).
+	if !v.IsPublic() {
+		init += ".SetPrivate()"
+	}
 	g.vars[v] = gn
 	g.decls = append(g.decls, hoistDecl{gn, init})
 	return gn

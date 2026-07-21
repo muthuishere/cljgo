@@ -48,7 +48,7 @@ var (
 	v_clojure_DOT_core_transient        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("transient"))
 	v_clojure_DOT_core_vals             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("vals"))
 	v_clojure_DOT_core_with_meta        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("with-meta"))
-	v_clojure_DOT_set_X_bubble_max_key  = lang.InternVarName(lang.NewSymbol("clojure.set"), lang.NewSymbol("-bubble-max-key"))
+	v_clojure_DOT_set_X_bubble_max_key  = lang.InternVarName(lang.NewSymbol("clojure.set"), lang.NewSymbol("-bubble-max-key")).SetPrivate()
 	v_clojure_DOT_set_difference        = lang.InternVarName(lang.NewSymbol("clojure.set"), lang.NewSymbol("difference"))
 	v_clojure_DOT_set_index             = lang.InternVarName(lang.NewSymbol("clojure.set"), lang.NewSymbol("index"))
 	v_clojure_DOT_set_intersection      = lang.InternVarName(lang.NewSymbol("clojure.set"), lang.NewSymbol("intersection"))

@@ -106,6 +106,17 @@ var SetSource string
 //go:embed edn.cljg
 var EdnSource string
 
+// PprintSource is the contents of pprint.cljg — the clojure.pprint
+// namespace (fundamentals audit 2026-07): a real pretty printer for data
+// (pprint/pp/write/write-out/print-table + the dispatch basics and the
+// seven control vars), oracle-verified against JVM clojure.pprint;
+// cl-format and the raw logical-block writer API are honest
+// "Unimplemented:" throwers (see the file's DEVIATIONS header). The
+// loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed pprint.cljg
+var PprintSource string
+
 // TransducersSource is the contents of transducers.cljg — transduce/
 // eduction/sequence/completing/partition-by/dedupe/halt-when/replace, plus
 // the `into` xform arity (design/08 §5 Batch 4, ADR 0022). pkg/eval loads it
@@ -162,6 +173,7 @@ func BootSources() []BootSource {
 		{NS: "clojure.string", File: "string.cljg", Source: &StringSource, Pkg: "cljstring"},
 		{NS: "clojure.set", File: "set.cljg", Source: &SetSource, Pkg: "cljset"},
 		{NS: "clojure.edn", File: "edn.cljg", Source: &EdnSource, Pkg: "cljedn"},
+		{NS: "clojure.pprint", File: "pprint.cljg", Source: &PprintSource, Pkg: "cljpprint"},
 		{NS: "clojure.test", File: "test.cljg", Source: &TestSource, Pkg: "cljtest"},
 		{NS: "cljgo.build", File: "build.cljg", Source: &BuildSource, Pkg: "cljgobuild"},
 		{NS: "clojure.core-test.portability", File: "clojure_test_portability.cljg", Source: &PortabilitySource, Pkg: "portability"},

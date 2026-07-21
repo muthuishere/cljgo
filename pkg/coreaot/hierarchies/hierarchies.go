@@ -42,7 +42,7 @@ var (
 	v_clojure_DOT_core_dissoc           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("dissoc"))
 	v_clojure_DOT_core_ex_info          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("ex-info"))
 	v_clojure_DOT_core_get              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
-	v_clojure_DOT_core_global_hierarchy = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("global-hierarchy"))
+	v_clojure_DOT_core_global_hierarchy = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("global-hierarchy")).SetPrivate()
 	v_clojure_DOT_core_in_ns            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
 	v_clojure_DOT_core_inc              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("inc"))
 	v_clojure_DOT_core_interpose        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("interpose"))

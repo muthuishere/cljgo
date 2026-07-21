@@ -642,6 +642,13 @@ func RegisterAll() {
 	// clojure-test-suite harness surface (ADR 0022, var_builtins.go);
 	// `eval` itself stays interpreter-registered (pkg/eval).
 	internVarBuiltins(def)
+	// --- namespace introspection (ns-name/the-ns/all-ns/ns-publics/
+	// ns-interns/ns-map/ns-refers/ns-aliases/ns-imports): the tooling
+	// substrate clojure.repl + clojure.test ride on (fundamentals audit
+	// 2026-07, ns_builtins.go).
+	internNSBuiltins(def)
+	// --- clojure.repl/source-fn's file-reading seam (repl_builtins.go).
+	internReplBuiltins(defPrivate)
 
 	// --- Result/Option primitives (ADR 0014, spike S11) ------------------
 	//
@@ -1272,20 +1279,34 @@ func chainCompare(name string, cmp func(x, y any) bool) func(args ...any) any {
 }
 
 // InitUserNS creates the `user` namespace, refers clojure.core's publics
-// into it, refers clojure.repl/doc (as JVM clojure.main's repl-requires
-// does — ADR 0031: (doc x) works at any user prompt), and roots *ns* at
-// user. It is the tail of the boot sequence (design/00 §6), shared by
-// the interpreter (eval.New) and compiled binaries (rt.Boot, ADR 0046) —
-// one implementation, so the two agree by construction. Callable only
-// after the core sources are loaded.
+// into it, refers JVM clojure.main's repl-requires set — clojure.repl's
+// doc/source/apropos/dir/pst/find-doc and clojure.pprint's pp/pprint
+// (ADR 0031 established the pattern with doc; the fundamentals-audit
+// 2026-07 batch completes the set) — and roots *ns* at user. It is the
+// tail of the boot sequence (design/00 §6), shared by the interpreter
+// (eval.New) and compiled binaries (rt.Boot, ADR 0046) — one
+// implementation, so the two agree by construction. Callable only after
+// the core sources are loaded.
 func InitUserNS() {
 	user := lang.FindOrCreateNamespace(lang.NewSymbol("user"))
 	ReferAll(user, lang.NSCore)
-	if nsRepl := lang.FindNamespace(lang.NewSymbol("clojure.repl")); nsRepl != nil {
-		symDoc := lang.NewSymbol("doc")
-		if v := nsRepl.FindInternedVar(symDoc); v != nil {
-			user.Refer(symDoc, v)
+	referInto(user, "clojure.repl", "doc", "source", "apropos", "dir", "pst", "find-doc")
+	referInto(user, "clojure.pprint", "pp", "pprint")
+	lang.VarCurrentNS.BindRoot(user)
+}
+
+// referInto refers the named public vars of nsName into ns, skipping
+// silently when the namespace or a var is absent (boot stays robust if
+// a satellite namespace is trimmed from a build).
+func referInto(ns *lang.Namespace, nsName string, names ...string) {
+	from := lang.FindNamespace(lang.NewSymbol(nsName))
+	if from == nil {
+		return
+	}
+	for _, n := range names {
+		sym := lang.NewSymbol(n)
+		if v := from.FindInternedVar(sym); v != nil {
+			ns.Refer(sym, v)
 		}
 	}
-	lang.VarCurrentNS.BindRoot(user)
 }

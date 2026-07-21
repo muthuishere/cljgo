@@ -217,6 +217,16 @@ func (v *Var) SetMacro() {
 	v.SetMeta(v.Meta().Assoc(KWMacro, true).(IPersistentMap))
 }
 
+// SetPrivate marks the var ^:private — the metadata IsPublic reads, and so
+// what ns-publics (and clojure.repl/dir on top of it) filters on. The
+// interpreter gets this for free from the def form's metadata; the emitter
+// calls it explicitly, because a compiled var is interned by name and would
+// otherwise come back public (a REPL-vs-binary divergence).
+func (v *Var) SetPrivate() *Var {
+	v.SetMeta(v.Meta().Assoc(KWPrivate, true).(IPersistentMap))
+	return v
+}
+
 func (v *Var) IsPublic() bool {
 	meta := v.Meta()
 	isPrivate := meta.EntryAt(KWPrivate)

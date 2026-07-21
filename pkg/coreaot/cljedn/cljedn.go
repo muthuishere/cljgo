@@ -10,8 +10,8 @@ import (
 var (
 	sym_clojure_DOT_core                      = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_edn                       = lang.NewSymbol("clojure.edn")
-	v_clojure_DOT_core_X_edn_read_string      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string"))
-	v_clojure_DOT_core_X_edn_read_string_opts = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string-opts"))
+	v_clojure_DOT_core_X_edn_read_string      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string")).SetPrivate()
+	v_clojure_DOT_core_X_edn_read_string_opts = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string-opts")).SetPrivate()
 	v_clojure_DOT_core_in_ns                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
 	v_clojure_DOT_core_refer                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 	v_clojure_DOT_edn_read_string             = lang.InternVarName(lang.NewSymbol("clojure.edn"), lang.NewSymbol("read-string"))
