@@ -412,7 +412,10 @@ func (a *Analyzer) parseDef(seq lang.ISeq, env Env) (*ast.Node, error) {
 
 	// Symbol metadata (+ docstring) goes onto the var. v0: metadata is
 	// constant (from the reader / hand-built forms), so it is applied
-	// here rather than analyzed as an expression; DefNode.Meta stays nil.
+	// here rather than analyzed as an expression; DefNode.Meta carries
+	// the same constant map as an OpQuote so the emitter can re-apply it
+	// in a compiled binary (a def's :private/:declared/:doc must survive
+	// AOT — dual-mode meta, ADR 0002/0007).
 	meta := sym.Meta()
 	if docstring != nil {
 		if meta == nil {
@@ -421,12 +424,14 @@ func (a *Analyzer) parseDef(seq lang.ISeq, env Env) (*ast.Node, error) {
 			meta = meta.Assoc(lang.KWDoc, docstring).(lang.IPersistentMap)
 		}
 	}
+	var metaNode *ast.Node
 	if meta != nil {
 		v.SetMeta(meta)
 		// ^:dynamic marks the var dynamically rebindable (binding/set!).
 		if lang.IsTruthy(lang.Get(meta, lang.KWDynamic)) {
 			v.SetDynamic()
 		}
+		metaNode = &ast.Node{Op: ast.OpQuote, Form: seq, Sub: &ast.QuoteNode{Value: meta}, IsLiteral: true}
 	}
 
 	var init *ast.Node
@@ -438,7 +443,7 @@ func (a *Analyzer) parseDef(seq lang.ISeq, env Env) (*ast.Node, error) {
 			return nil, err
 		}
 	}
-	return &ast.Node{Op: ast.OpDef, Form: seq, Sub: &ast.DefNode{Name: sym, Var: v, Init: init}}, nil
+	return &ast.Node{Op: ast.OpDef, Form: seq, Sub: &ast.DefNode{Name: sym, Var: v, Init: init, Meta: metaNode}}, nil
 }
 
 // parseLet handles let*: an even-count binding vector of simple symbols,

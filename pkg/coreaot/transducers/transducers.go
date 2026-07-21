@@ -10,7 +10,12 @@ import (
 
 var (
 	kw_cljgo_DOT_transducers_SLASH_halt = lang.InternKeywordString("cljgo.transducers/halt")
+	kw_column                           = lang.InternKeywordString("column")
 	kw_else_                            = lang.InternKeywordString("else")
+	kw_end_column                       = lang.InternKeywordString("end-column")
+	kw_end_line                         = lang.InternKeywordString("end-line")
+	kw_file                             = lang.InternKeywordString("file")
+	kw_line                             = lang.InternKeywordString("line")
 	sym_clojure_DOT_core                = lang.NewSymbol("clojure.core")
 	v_clojure_DOT_core_X_EQ_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
 	v_clojure_DOT_core_X_sequence_lazy  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-sequence-lazy"))
@@ -78,6 +83,7 @@ func Load() {
 	tmp2 := lang.Apply1(tmp1, sym_clojure_DOT_core)
 	_ = tmp2
 	// (def transduce (clojure.core/fn ([xform f coll] (transduce xform f (f) coll)) ([xform f in…
+	v_clojure_DOT_core_transduce.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(27), kw_column, int64(7), kw_end_line, int64(27), kw_end_column, int64(16)))
 	tmp3 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 3:
@@ -123,6 +129,7 @@ func Load() {
 	v_clojure_DOT_core_transduce.BindRoot(tmp3)
 	_ = v_clojure_DOT_core_transduce
 	// (def completing (clojure.core/fn ([f] (completing f identity)) ([f cf] (fn ([] (f)) ([resu…
+	v_clojure_DOT_core_completing.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(36), kw_column, int64(7), kw_end_line, int64(36), kw_end_column, int64(17)))
 	tmp23 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -166,6 +173,7 @@ func Load() {
 	v_clojure_DOT_core_completing.BindRoot(tmp23)
 	_ = v_clojure_DOT_core_completing
 	// (def -sequence-lazy (clojure.core/fn [rf s-atom buf done] (lazy-seq (loop [] (cond (seq (c…
+	v_clojure_DOT_core_X_sequence_lazy.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(51), kw_column, int64(7), kw_end_line, int64(51), kw_end_column, int64(21)))
 	tmp37 := lang.FnFunc4(func(rf38, s_atom39, buf40, done41 any) any {
 		tmp42 := v_clojure_DOT_core_lazy_seq_STAR_.Get()
 		tmp43 := lang.FnFunc0(func() any {
@@ -280,6 +288,7 @@ func Load() {
 	v_clojure_DOT_core_X_sequence_lazy.BindRoot(tmp37)
 	_ = v_clojure_DOT_core_X_sequence_lazy
 	// (def sequence (clojure.core/fn ([coll] (if (seq? coll) coll (or (seq coll) ()))) ([xform c…
+	v_clojure_DOT_core_sequence.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(15)))
 	tmp94 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -383,6 +392,7 @@ func Load() {
 	v_clojure_DOT_core_sequence.BindRoot(tmp94)
 	_ = v_clojure_DOT_core_sequence
 	// (def into (clojure.core/fn ([to from] (reduce conj to from)) ([to xform from] (transduce x…
+	v_clojure_DOT_core_into.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(11)))
 	tmp132 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -412,6 +422,7 @@ func Load() {
 	v_clojure_DOT_core_into.BindRoot(tmp132)
 	_ = v_clojure_DOT_core_into
 	// (def eduction (clojure.core/fn [& xforms] (sequence (apply comp (butlast xforms)) (last xf…
+	v_clojure_DOT_core_eduction.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(98), kw_column, int64(7), kw_end_line, int64(98), kw_end_column, int64(15)))
 	tmp144 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -438,6 +449,7 @@ func Load() {
 	v_clojure_DOT_core_eduction.BindRoot(tmp144)
 	_ = v_clojure_DOT_core_eduction
 	// (def partition-by (clojure.core/fn ([f] (fn [rf] (let [a (atom []) pv (atom nil) started (…
+	v_clojure_DOT_core_partition_by.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(105), kw_column, int64(7), kw_end_line, int64(105), kw_end_column, int64(19)))
 	tmp155 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -680,6 +692,7 @@ func Load() {
 	v_clojure_DOT_core_partition_by.BindRoot(tmp155)
 	_ = v_clojure_DOT_core_partition_by
 	// (def dedupe (clojure.core/fn ([] (fn [rf] (let [pv (atom nil) started (atom false)] (fn ([…
+	v_clojure_DOT_core_dedupe.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(148), kw_column, int64(7), kw_end_line, int64(148), kw_end_column, int64(13)))
 	tmp271 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -781,6 +794,7 @@ func Load() {
 	v_clojure_DOT_core_dedupe.BindRoot(tmp271)
 	_ = v_clojure_DOT_core_dedupe
 	// (def halt-when (clojure.core/fn ([pred] (halt-when pred nil)) ([pred retf] (fn [rf] (fn ([…
+	v_clojure_DOT_core_halt_when.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(170), kw_column, int64(7), kw_end_line, int64(170), kw_end_column, int64(16)))
 	tmp313 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -874,6 +888,7 @@ func Load() {
 	v_clojure_DOT_core_halt_when.BindRoot(tmp313)
 	_ = v_clojure_DOT_core_halt_when
 	// (def replace (clojure.core/fn ([smap] (map (fn [x] (if-let [e (find smap x)] (val e) x))))…
+	v_clojure_DOT_core_replace.SetMeta(lang.NewMap(kw_file, "transducers.cljg", kw_line, int64(189), kw_column, int64(7), kw_end_line, int64(189), kw_end_column, int64(14)))
 	tmp347 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:

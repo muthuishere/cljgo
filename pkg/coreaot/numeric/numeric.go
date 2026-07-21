@@ -9,6 +9,11 @@ import (
 )
 
 var (
+	kw_column                        = lang.InternKeywordString("column")
+	kw_end_column                    = lang.InternKeywordString("end-column")
+	kw_end_line                      = lang.InternKeywordString("end-line")
+	kw_file                          = lang.InternKeywordString("file")
+	kw_line                          = lang.InternKeywordString("line")
 	sym_clojure_DOT_core             = lang.NewSymbol("clojure.core")
 	v_clojure_DOT_core_X_LT_         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("<"))
 	v_clojure_DOT_core_filter        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("filter"))
@@ -32,6 +37,7 @@ func Load() {
 	tmp2 := lang.Apply1(tmp1, sym_clojure_DOT_core)
 	_ = tmp2
 	// (def random-sample (clojure.core/fn ([prob] (filter (fn [_] (< (rand) prob)))) ([prob coll…
+	v_clojure_DOT_core_random_sample.SetMeta(lang.NewMap(kw_file, "numeric.cljg", kw_line, int64(18), kw_column, int64(7), kw_end_line, int64(18), kw_end_column, int64(20)))
 	tmp3 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:

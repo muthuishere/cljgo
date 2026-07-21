@@ -1490,3 +1490,238 @@
           (cons (list 'clojure.core/in-ns (list 'quote nsname))
                 (cons (list 'clojure.core/refer (list 'quote 'clojure.core))
                       requires)))))
+
+;; ===========================================================================
+;; Fundamentals batch 1 — the missing control-flow / binding bread-and-butter
+;; macros (docs/fundamentals-audit-2026-07.md A-list + the amap/areduce/memfn/
+;; io!/sync B-items): declare, defn-, defonce, letfn, lazy-cat, time, locking,
+;; with-open, with-redefs(-fn), memfn, io!, sync, amap, areduce. Every
+;; behavior below is oracle-verified against JVM Clojure 1.12.5 (`clojure`
+;; CLI); host substrate (-nano-time/-with-lock/-has-root/-io-guard/
+;; -close-resource) lives in pkg/corelib/macro_support_builtins.go.
+;; ===========================================================================
+
+;; declare : forward-declare vars (no root binding) so later fns can
+;; reference them before their defn. Marks each name ^:declared like the
+;; real macro.
+;; oracle: (declare f1 g1) => #'user/g1 (the last var);
+;; (select-keys (meta #'f1) [:declared]) => {:declared true};
+;; declare then (defn h1 [x] (f1 x)), defn f1 later, (h1 21) => 42;
+;; (declare d2) then (defonce d2 5) => d2 is 5 (declare leaves no root).
+(defmacro declare [& names]
+  (cons 'do
+        (map (fn [n] (list 'def (with-meta n (assoc (meta n) :declared true))))
+             names)))
+
+;; defn- : defn with ^:private metadata on the name.
+;; oracle: (macroexpand-1 '(defn- pf [x] x)) => (clojure.core/defn pf [x] x)
+;; with {:private true} on the name symbol; (:private (meta #'pf)) => true.
+(defmacro defn- [name & decls]
+  (list* 'clojure.core/defn
+         (with-meta name (assoc (meta name) :private true))
+         decls))
+
+;; defonce : def name to expr only if the var has no root binding yet.
+;; -has-root is the (.hasRoot v) of the real macro.
+;; oracle: (defonce d1 1) => #'user/d1; (defonce d1 2) => nil; d1 => 1;
+;; (declare d2) (defonce d2 5) => d2 is 5.
+(defmacro defonce [name expr]
+  `(let [v# (def ~name)]
+     (when-not (-has-root v#)
+       (def ~name ~expr))))
+
+;; letfn : local fns that can see each other (mutual recursion), all names
+;; in scope in every fnspec body and in the letfn body.
+;;
+;; DEVIATION (mechanism, not semantics): JVM Clojure has a letfn* special
+;; form that binds the fn locals cell-first; cljgo expands to plain
+;; let*/fn* instead — the classic derived letrec: one volatile box per
+;; name, a variadic shim per name (so every body can call every other),
+;; then vreset! each box to its real fn. Same observable behavior in both
+;; harnesses with zero compiler surface; calls through a letfn-bound name
+;; pay one deref+apply hop (upgrade path: a real letfn* special form, if a
+;; profile ever cares).
+;; oracle: (letfn [(f [x] (g x)) (g [x] (* 2 x))] (f 21)) => 42;
+;; (letfn [(f ([x] (f x 10)) ([x y] (+ x y)))] (f 5)) => 15;
+;; (letfn [] 7) => 7;
+;; (letfn [(fact [n] (if (zero? n) 1 (* n (fact (dec n)))))] (fact 5)) => 120;
+;; (let [f :outer] (letfn [(f [] :inner)] (f))) => :inner (letfn shadows);
+;; (letfn [(f [[a b]] (+ a b))] (f [3 4])) => 7 (params destructure);
+;; (letfn [(f [& xs] (count xs))] (f 1 2 3)) => 3.
+(defmacro letfn [fnspecs & body]
+  (when-not (vector? fnspecs)
+    (throw (ex-info "letfn requires a vector for its binding" {:fnspecs fnspecs})))
+  (let [specs (seq fnspecs)
+        names (map (fn [spec]
+                     (when-not (and (seq? spec) (symbol? (first spec)))
+                       (throw (ex-info "letfn requires a parenthesized fnspec: (fname [params*] exprs*)"
+                                       {:spec spec})))
+                     (first spec))
+                   specs)
+        boxes (map (fn [n] (gensym (str n "__letfn"))) names)
+        box-binds (mapcat (fn [b] [b `(volatile! nil)]) boxes)
+        shim-binds (mapcat (fn [n b] [n `(fn [& args#] (apply (deref ~b) args#))])
+                           names boxes)
+        fills (map (fn [b spec] `(vreset! ~b (fn ~@spec))) boxes specs)]
+    `(let [~@box-binds ~@shim-binds]
+       ~@fills
+       ~@body)))
+
+;; lazy-cat : concat of lazy-seq-wrapped colls — nothing is realized until
+;; the result is walked.
+;; oracle: (macroexpand-1 '(lazy-cat a b)) =>
+;;   (clojure.core/concat (clojure.core/lazy-seq a) (clojure.core/lazy-seq b));
+;; with (spy x) recording calls: (def lc (lazy-cat (spy 1) (spy 2))) records
+;; nothing, (doall lc) => (1 2) and records [1 2]; (lazy-cat) => ().
+(defmacro lazy-cat [& colls]
+  `(concat ~@(map (fn [c] (list 'clojure.core/lazy-seq c)) colls)))
+
+;; time : evaluate expr, prn "Elapsed time: <ms> msecs", return the value.
+;; -nano-time is the (. System (nanoTime)) stopwatch on the Go monotonic
+;; clock.
+;; oracle: (with-out-str (time (+ 1 2))) => "\"Elapsed time: 0.004458 msecs\"\n"
+;; (digits vary); (time (+ 1 2)) => 3.
+(defmacro time [expr]
+  `(let [start# (-nano-time)
+         ret# ~expr]
+     (prn (str "Elapsed time: " (/ (double (- (-nano-time) start#)) 1000000.0) " msecs"))
+     ret#))
+
+;; locking : run body holding a per-object monitor (mutual exclusion on x),
+;; reentrant like the JVM monitor the real macro uses. -with-lock wraps
+;; lang.WithLock (pkg/lang/monitor.go); its DEVIATION — monitors key by Go
+;; map equality, not object identity, so `=`-equal comparable values share
+;; a monitor (over-serializes, never under-locks) — is logged there.
+;; oracle: (locking o (+ 1 2)) => 3; (locking o (locking o :reentrant)) =>
+;; :reentrant; (locking o) => nil.
+(defmacro locking [x & body]
+  (list 'clojure.core/-with-lock x (list* 'fn* [] body)))
+
+;; with-open : bind resources left-to-right, run body, close them in
+;; REVERSE order in nested finally blocks (close runs on throw too).
+;;
+;; DEVIATION (host spelling only): JVM with-open closes via reflective
+;; (. name close); on the Go host -close-resource closes an io.Closer
+;; (any Go value with Close() error) or a cljgo channel (idempotent
+;; close!, pkg/lang/chan.go). Structure and semantics are the oracle's.
+;; oracle: (macroexpand-1 '(with-open [a x b y] body)) =>
+;;   (clojure.core/let [a x] (try (clojure.core/with-open [b y] body)
+;;                                (finally (. a close))));
+;; two resources close [:b :a] (reverse); a throwing body still closes;
+;; (with-open [] :nothing) => :nothing; a non-symbol binding form =>
+;; IllegalArgumentException "with-open only allows Symbols in bindings".
+(defmacro with-open [bindings & body]
+  (when-not (vector? bindings)
+    (throw (ex-info "with-open requires a vector for its binding" {:bindings bindings})))
+  (when-not (even? (count bindings))
+    (throw (ex-info "with-open requires an even number of forms in binding vector"
+                    {:bindings bindings})))
+  (cond
+    (= (count bindings) 0) `(do ~@body)
+    (symbol? (bindings 0)) `(let [~(bindings 0) ~(bindings 1)]
+                              (try
+                                (with-open ~(vec (drop 2 bindings)) ~@body)
+                                (finally
+                                  (-close-resource ~(bindings 0)))))
+    :else (throw (ex-info "with-open only allows Symbols in bindings"
+                          {:bindings bindings}))))
+
+;; with-redefs-fn / with-redefs : temporarily rebind var ROOTS (visible on
+;; every goroutine, unlike binding), run the body/fn, restore the old
+;; roots in finally. The standard test-time stubbing macro. Root swap rides
+;; alter-var-root+constantly (JVM uses .bindRoot; same observable root).
+;; oracle: (with-redefs [f2 (fn [] :redef)] (f2)) => :redef;
+;; (with-redefs [f2 (fn [] :redef)] @(future (f2))) => :redef (root, not
+;; thread-local); after the form (f2) => :orig; a throwing body still
+;; restores => :orig; (with-redefs-fn {#'f2 (fn [] :redef2)} (fn [] (f2)))
+;; => :redef2; (with-redefs [f2 (fn [] :redef)] :v) => :v.
+(defn with-redefs-fn [binding-map func]
+  (let [root-bind (fn [m]
+                    (doseq [[a-var a-val] m]
+                      (alter-var-root a-var (constantly a-val))))
+        old-vals (zipmap (keys binding-map)
+                         (map var-get (keys binding-map)))]
+    (try
+      (root-bind binding-map)
+      (func)
+      (finally
+        (root-bind old-vals)))))
+
+(defmacro with-redefs [bindings & body]
+  (when-not (vector? bindings)
+    (throw (ex-info "with-redefs requires a vector for its binding" {:bindings bindings})))
+  (when-not (even? (count bindings))
+    (throw (ex-info "with-redefs requires an even number of forms in binding vector"
+                    {:bindings bindings})))
+  `(with-redefs-fn ~(zipmap (map (fn [v] (list 'var v)) (take-nth 2 bindings))
+                            (take-nth 2 (drop 1 bindings)))
+     (fn [] ~@body)))
+
+;; memfn : wrap a host method as a first-class fn — (memfn Name) =>
+;; (fn [target] (.Name target)). Method names are the HOST's: Go-exported
+;; (capitalized) here, reflective in both modes (rt.CallMethod), where the
+;; JVM's are java camelCase — same macro, host spelling.
+;; oracle: (macroexpand-1 '(memfn getName)) =>
+;;   (clojure.core/fn [target263] (. target263 (getName)));
+;; (map (memfn intValue) [1 2 3]) => (1 2 3);
+;; ((memfn charAt i) "abc" 1) => \b (extra args become fn params).
+(defmacro memfn [name & args]
+  (let [t (gensym "target__")]
+    `(fn [~t ~@args]
+       (~(symbol (str "." name)) ~t ~@args))))
+
+;; io! : guard side-effecting code against running inside a dosync
+;; transaction — throws IllegalStateException there, otherwise runs body
+;; (implicit do). An optional leading string is the error message and is
+;; NOT part of the body.
+;; oracle: (io! (+ 1 2)) => 3;
+;; (dosync (io! (+ 1 2))) THREW [java.lang.IllegalStateException
+;; "I/O in transaction"]; (dosync (io! "custom msg" (+ 1 2))) THREW
+;; "custom msg"; (io! "custom msg" (+ 1 2)) => 3 (message dropped outside).
+(defmacro io! [& body]
+  (let [message (if (string? (first body)) (first body) "I/O in transaction")
+        body (if (string? (first body)) (next body) body)]
+    `(do (-io-guard ~message)
+         ~@body)))
+
+;; sync : run body in a transaction, like dosync; flags-ignored-for-now is
+;; the real macro's placeholder first argument (unused, per its docstring).
+;; Rides the same -tx-run/STM-lite substrate as dosync (ADR 0038).
+;; oracle: (sync nil (+ 1 2)) => 3; (sync nil (alter r1 + 5)) => 15 (alter
+;; accepted, exactly as in dosync); JVM expansion is
+;; (. clojure.lang.LockingTransaction (runInTransaction (fn [] body...))).
+(defmacro sync [flags-ignored-for-now & body]
+  (list 'clojure.core/-tx-run (list* 'fn* [] body)))
+
+;; amap : array comprehension — ret is bound to (aclone a), idx counts up,
+;; expr's value is aset into ret at idx; returns ret. Uses inc where the
+;; JVM macro uses unchecked-inc (cljgo ints are int64; same values at any
+;; real array size).
+;; oracle: (amap ar i ret (* 2 (aget ar i))) over [1 2 3] => [2 4 6], the
+;; source array unchanged; expr sees ret — (amap ar i ret (+ (aget ret i)
+;; 10)) => [11 12 13]. JVM expansion: (let [a (alength) ret (aclone a)]
+;; (loop [i 0] (if (< i l) (do (aset ret i expr) (recur (unchecked-inc i)))
+;; ret))).
+(defmacro amap [a idx ret expr]
+  `(let [a# ~a
+         l# (alength a#)
+         ~ret (aclone a#)]
+     (loop [~idx 0]
+       (if (< ~idx l#)
+         (do (aset ~ret ~idx ~expr)
+             (recur (inc ~idx)))
+         ~ret))))
+
+;; areduce : array reduction — idx counts up, ret rebinds to expr each
+;; step from init; returns ret. inc for unchecked-inc-int, as in amap.
+;; oracle: (areduce ar i acc 0 (+ acc (aget ar i))) over [1 2 3] => 6;
+;; (areduce ar i acc 100 (+ acc i)) => 103. JVM expansion: (let [a l]
+;; (loop [i 0 acc init] (if (< i l) (recur (unchecked-inc-int i) expr)
+;; acc))).
+(defmacro areduce [a idx ret init expr]
+  `(let [a# ~a
+         l# (alength a#)]
+     (loop [~idx 0 ~ret ~init]
+       (if (< ~idx l#)
+         (recur (inc ~idx) ~expr)
+         ~ret))))
