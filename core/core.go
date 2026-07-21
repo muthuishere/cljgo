@@ -156,6 +156,18 @@ var TransducersSource string
 //go:embed hierarchies.cljg
 var HierarchiesSource string
 
+// AsyncSource is the contents of async.cljg — the macro half of
+// clojure.core.async (ADR 0040: go-loop / alt! / alt!!; the fn half is
+// Go-native, pkg/corelib registerAsync). Deliberately NOT a BootSource:
+// pkg/eval registers a lazy lib provider for it (loadAsync), so nothing
+// evaluates until the first (require 'clojure.core.async) and the boot
+// budget (ADR 0024) is untouched. Macros expand at compile time, so AOT
+// binaries never need this source at all — their replayed (require …)
+// finds the namespace already interned by rt.Boot's RegisterAll.
+//
+//go:embed async.cljg
+var AsyncSource string
+
 // BootSource is one embedded boot source: the namespace it loads into,
 // the *file* name it binds while loading, and the embedded text.
 type BootSource struct {
