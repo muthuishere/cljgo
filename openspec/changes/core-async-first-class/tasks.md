@@ -10,7 +10,7 @@ run, cited in a comment.
 
 ## 1. T1 — the channel core
 
-- [ ] 1.1 **Close rework** (`pkg/lang/chan.go`, ADR 0040 #2 — lands first):
+- [x] 1.1 **Close rework** (`pkg/lang/chan.go`, ADR 0040 #2 — lands first):
   done-chan close per S19 `gobacked2.go` — close! never closes the data
   chan; Take = probe → select data|done → final probe; Put checks the
   closed flag; delete all send-on-closed recovers. `(chan 0)` now throws
@@ -18,7 +18,7 @@ run, cited in a comment.
   (chan-*.clj) + new conformance: parked-put-survives-close,
   closed-read-drains-buffer, put-after-close false, double-close no-op.
   `go test -race` on pkg/lang. Gates green.
-- [ ] 1.2 **Transducer + ex-handler channels**: `(chan buf-or-n xform)`,
+- [x] 1.2 **Transducer + ex-handler channels**: `(chan buf-or-n xform)`,
   `(chan buf-or-n xform ex-handler)`; xf step serialized on the put side;
   `reduced` → close; xform without buffer throws (oracle
   xform-unbuffered-chan-throws); ex-handler return nil skips, non-nil
@@ -26,24 +26,24 @@ run, cited in a comment.
   (put completes, poisoned value dropped) frozen as conformance. Policy
   interaction: dropping+xform => [1 2 nil], sliding+xform => [4 5 nil].
   Add `buffer`, `unblocking-buffer?`. Gates green.
-- [ ] 1.3 **`clojure.core.async` namespace** (`core/async.cljg`, embedded
+- [x] 1.3 **`clojure.core.async` namespace** (`core/async.cljg`, embedded
   per the core/test.cljg pattern): canonical vars for the whole surface;
   M4-v0 clojure.core names re-pointed as aliases of the SAME vars; new
   names async-ns-only; ns docstring records the ADR 0040 #4/#5
   extensions. Conformance: `(require '[clojure.core.async :as async])` +
   aliased-and-canonical names resolve to identical vars. Gates green.
-- [ ] 1.4 **alts done-integration + alt! macros**: extend lang.Alts (S10)
+- [x] 1.4 **alts done-integration + alt! macros**: extend lang.Alts (S10)
   with per-read-port done cases (drain-probe on fire); `alt!`/`alt!!`
   macros over alts! incl. `:default`/`:priority` and write ports
   `[c v]`; conformance from oracle alts-* lines. Gates green.
-- [ ] 1.5 **T1 stragglers**: `go-loop` (macro), `put!`/`take!` (goroutine
+- [x] 1.5 **T1 stragglers**: `go-loop` (macro), `put!`/`take!` (goroutine
   + callback; put! true before taker — oracle), `offer!`/`poll!` (nil on
   miss — oracle offer-poll => [true nil 1 nil]), `promise-chan` (first
   put wins, all takes see it, later puts accepted-and-ignored — oracle
   [:a :a]), `timeout` stays uncached (ADR 0040 #4; conformance asserts
   close-after-ms only). Align nil-channel/nil-put error messages with the
   JVM's. Gates green.
-- [ ] 1.6 **Perf budget**: benchmark file pinning channel-op tax vs raw Go
+- [x] 1.6 **Perf budget**: benchmark file pinning channel-op tax vs raw Go
   chans (rendezvous, buffered throughput, alts n=2/n=8) with
   host-relative assertions per ADR 0024, thresholds from the S19 tables
   (wrapper ≤ ~1.5× raw; alts ≤ ~5× static select at n=2). Gates green.

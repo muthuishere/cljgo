@@ -10,10 +10,13 @@ import (
 var (
 	sym_clojure_DOT_core                      = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_edn                       = lang.NewSymbol("clojure.edn")
+	v_clojure_DOT_core_X_STAR_in_STAR_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*in*"))
+	v_clojure_DOT_core_X_edn_read             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read")).SetPrivate()
 	v_clojure_DOT_core_X_edn_read_string      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string")).SetPrivate()
 	v_clojure_DOT_core_X_edn_read_string_opts = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string-opts")).SetPrivate()
 	v_clojure_DOT_core_in_ns                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
 	v_clojure_DOT_core_refer                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	v_clojure_DOT_edn_read                    = lang.InternVarName(lang.NewSymbol("clojure.edn"), lang.NewSymbol("read"))
 	v_clojure_DOT_edn_read_string             = lang.InternVarName(lang.NewSymbol("clojure.edn"), lang.NewSymbol("read-string"))
 )
 
@@ -35,27 +38,55 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def read-string "Reads one object from the string s. Returns nil when s has nothing but\n…
+	// (def read "Reads the next object from stream (an io.Reader; defaults to *in*).\n  Reads da…
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
-		case 1:
-			s6 := args[0]
-			_ = s6
-			tmp7 := v_clojure_DOT_core_X_edn_read_string.Get()
-			tmp8 := lang.Apply1(tmp7, s6)
+		case 0:
+			tmp6 := v_clojure_DOT_edn_read.Get()
+			tmp7 := v_clojure_DOT_core_X_STAR_in_STAR_.Get()
+			tmp8 := lang.Apply1(tmp6, tmp7)
 			return tmp8
+		case 1:
+			stream9 := args[0]
+			_ = stream9
+			tmp10 := v_clojure_DOT_core_X_edn_read.Get()
+			tmp11 := lang.Apply2(tmp10, nil, stream9)
+			return tmp11
 		case 2:
-			opts9 := args[0]
-			_ = opts9
-			s10 := args[1]
-			_ = s10
-			tmp11 := v_clojure_DOT_core_X_edn_read_string_opts.Get()
-			tmp12 := lang.Apply2(tmp11, opts9, s10)
-			return tmp12
+			opts12 := args[0]
+			_ = opts12
+			stream13 := args[1]
+			_ = stream13
+			tmp14 := v_clojure_DOT_core_X_edn_read.Get()
+			tmp15 := lang.Apply2(tmp14, opts12, stream13)
+			return tmp15
 		default:
 			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
 		}
 	})
-	v_clojure_DOT_edn_read_string.BindRoot(tmp5)
+	v_clojure_DOT_edn_read.BindRoot(tmp5)
+	_ = v_clojure_DOT_edn_read
+	// (def read-string "Reads one object from the string s. Returns nil when s has nothing but\n…
+	tmp16 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		case 1:
+			s17 := args[0]
+			_ = s17
+			tmp18 := v_clojure_DOT_core_X_edn_read_string.Get()
+			tmp19 := lang.Apply1(tmp18, s17)
+			return tmp19
+		case 2:
+			opts20 := args[0]
+			_ = opts20
+			s21 := args[1]
+			_ = s21
+			tmp22 := v_clojure_DOT_core_X_edn_read_string_opts.Get()
+			tmp23 := lang.Apply2(tmp22, opts20, s21)
+			return tmp23
+		default:
+			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+		}
+	})
+	v_clojure_DOT_edn_read_string.BindRoot(tmp16)
 	_ = v_clojure_DOT_edn_read_string
 }

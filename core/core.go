@@ -97,6 +97,16 @@ var ReplSource string
 //go:embed set.cljg
 var SetSource string
 
+// ZipSource is the contents of zip.cljg — the clojure.zip namespace
+// (fundamentals audit 2026-07: all 28 publics), a straight port of
+// clojure/zip.clj (Rich Hickey, EPL 1.0) onto core.clj primitives — pure
+// Clojure, no new host builtins. Loaded into the clojure.zip namespace via
+// the BootSources table after clojure.core is up. The loader accepts the
+// .cljg extension per ADR 0017.
+//
+//go:embed zip.cljg
+var ZipSource string
+
 // EdnSource is the contents of edn.cljg — the clojure.edn namespace
 // (read-string over the -edn-read-string reader seam, ADR 0022
 // batch/harness-misc). pkg/eval loads it into the clojure.edn namespace
@@ -117,6 +127,26 @@ var EdnSource string
 //go:embed pprint.cljg
 var PprintSource string
 
+// WalkSource is the contents of walk.cljg — the clojure.walk namespace
+// (fundamentals audit 2026-07): the generic tree-walk fns (walk/postwalk/
+// prewalk + the demo, replace, keywordize/stringify and macroexpand-all
+// surfaces), a pure port of clojure/walk.clj onto core.clj primitives.
+// Loaded into the clojure.walk namespace after clojure.edn is up. The
+// loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed walk.cljg
+var WalkSource string
+
+// DataSource is the contents of data.cljg — the clojure.data namespace
+// (fundamentals audit 2026-07): diff + the EqualityPartition/Diff
+// protocols, ported from clojure/data.clj onto core.clj + the protocol
+// machinery (clojure.set referenced fully qualified — it loads earlier in
+// BootSources). Loaded into the clojure.data namespace after clojure.walk.
+// The loader accepts the .cljg extension per ADR 0017.
+//
+//go:embed data.cljg
+var DataSource string
+
 // TransducersSource is the contents of transducers.cljg — transduce/
 // eduction/sequence/completing/partition-by/dedupe/halt-when/replace, plus
 // the `into` xform arity (design/08 §5 Batch 4, ADR 0022). pkg/eval loads it
@@ -136,6 +166,18 @@ var TransducersSource string
 //
 //go:embed hierarchies.cljg
 var HierarchiesSource string
+
+// AsyncSource is the contents of async.cljg — the macro half of
+// clojure.core.async (ADR 0040: go-loop / alt! / alt!!; the fn half is
+// Go-native, pkg/corelib registerAsync). Deliberately NOT a BootSource:
+// pkg/eval registers a lazy lib provider for it (loadAsync), so nothing
+// evaluates until the first (require 'clojure.core.async) and the boot
+// budget (ADR 0024) is untouched. Macros expand at compile time, so AOT
+// binaries never need this source at all — their replayed (require …)
+// finds the namespace already interned by rt.Boot's RegisterAll.
+//
+//go:embed async.cljg
+var AsyncSource string
 
 // BootSource is one embedded boot source: the namespace it loads into,
 // the *file* name it binds while loading, and the embedded text.
@@ -172,8 +214,11 @@ func BootSources() []BootSource {
 		{NS: "clojure.core", File: "protocols.cljg", Source: &ProtocolsSource, Pkg: "protocols"},
 		{NS: "clojure.string", File: "string.cljg", Source: &StringSource, Pkg: "cljstring"},
 		{NS: "clojure.set", File: "set.cljg", Source: &SetSource, Pkg: "cljset"},
+		{NS: "clojure.zip", File: "zip.cljg", Source: &ZipSource, Pkg: "cljzip"},
 		{NS: "clojure.edn", File: "edn.cljg", Source: &EdnSource, Pkg: "cljedn"},
 		{NS: "clojure.pprint", File: "pprint.cljg", Source: &PprintSource, Pkg: "cljpprint"},
+		{NS: "clojure.walk", File: "walk.cljg", Source: &WalkSource, Pkg: "cljwalk"},
+		{NS: "clojure.data", File: "data.cljg", Source: &DataSource, Pkg: "cljdata"},
 		{NS: "clojure.test", File: "test.cljg", Source: &TestSource, Pkg: "cljtest"},
 		{NS: "cljgo.build", File: "build.cljg", Source: &BuildSource, Pkg: "cljgobuild"},
 		{NS: "clojure.core-test.portability", File: "clojure_test_portability.cljg", Source: &PortabilitySource, Pkg: "portability"},

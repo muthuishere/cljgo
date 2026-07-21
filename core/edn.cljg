@@ -32,6 +32,28 @@
 (clojure.core/in-ns 'clojure.edn)
 (clojure.core/refer 'clojure.core)
 
+;; read fronts the same edn-strict reader over a STREAM (the -edn-read Go
+;; seam, pkg/corelib/misc_builtins.go): any Go io.Reader value — *in*
+;; (os.Stdin) by default, or e.g. (strings/NewReader s) via require-go.
+;; oracle (JVM Clojure 1.12.5, java.io.PushbackReader over a StringReader):
+;; successive (read r) calls return successive forms; bare EOF throws
+;; "EOF while reading"; (read {:eof :done} r) => :done at EOF; :readers /
+;; :default work as in read-string. DEVIATION: the JVM stream type is
+;; java.io.PushbackReader; cljgo's is a Go io.Reader — same contract,
+;; host-appropriate type.
+(defn read
+  "Reads the next object from stream (an io.Reader; defaults to *in*).
+  Reads data in the edn format (subset of Clojure data): no reader macros,
+  no eval. Optionally takes a map of options, the same as read-string:
+
+  :eof - value to return on end-of-stream, default is to throw an exception
+  :readers - a map of tag symbols to data-reader functions
+  :default - a function of two args, called with tag and value when no
+    reader is found for a tag."
+  ([] (read *in*))
+  ([stream] (clojure.core/-edn-read nil stream))
+  ([opts stream] (clojure.core/-edn-read opts stream)))
+
 (defn read-string
   "Reads one object from the string s. Returns nil when s has nothing but
   whitespace/comments. Optionally takes a map of options:

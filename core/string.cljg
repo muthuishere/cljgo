@@ -148,6 +148,20 @@
 ;; reverse is defined near the top (before the clojure.core refer) — see the
 ;; comment there for why.
 
+;; re-quote-replacement: escape replacement so regex `replace`/`replace-first`
+;; treat it as a LITERAL. cljgo's replace rides Go's regexp expansion, where
+;; only `$` is special (escaped as `$$`); the JVM's Matcher.quoteReplacement
+;; escapes `\` and `$` with backslashes instead. The escaped VALUE is
+;; host-specific by construction — the CONTRACT is oracle-identical (JVM
+;; Clojure 1.12.5): (replace "day money day" #"(d)ay"
+;; (re-quote-replacement "$1x")) => "$1x money $1x".
+(defn re-quote-replacement
+  "Given a replacement string that you wish to be a literal
+  replacement for a pattern match in replace or replace-first, do the
+  necessary escaping of special characters in the replacement."
+  [replacement]
+  (clojure.core/-str-replace replacement "$" "$$"))
+
 ;; --- escaping ---------------------------------------------------------
 
 (defn escape

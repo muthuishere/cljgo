@@ -52,6 +52,9 @@ func New() *Evaluator {
 		e.loadBootSource(s)
 	}
 	corelib.InitUserNS()
+	// clojure.core.async's macro half loads lazily on first require
+	// (asyncload.go, ADR 0040) — registered, not evaluated, here.
+	registerAsyncProvider(e)
 	return e
 }
 

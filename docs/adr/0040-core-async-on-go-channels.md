@@ -1,6 +1,6 @@
 # ADR 0040 — core.async, first-class, on Go channels
 
-Date: 2026-07-17 · Status: **proposed** (owner reviews before implementation)
+Date: 2026-07-17 · Status: **accepted** (owner-approved 2026-07-21; T1 implemented in openspec core-async-first-class)
 Evidence: spike S19 (`spikes/s19-core-async/` — benchmarks, prototypes, JVM
 core.async 1.6.681 oracle transcripts) + spike S10 (`reflect.Select` numbers).
 Owner mandate (2026-07-17): core.async, first-class, on Go channels.

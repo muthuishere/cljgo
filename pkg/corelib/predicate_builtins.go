@@ -117,6 +117,24 @@ func internPredicateBuiltins(def func(string, func(...any) any) *lang.Var) {
 		return ok
 	})
 
+	// map-entry?: a map entry (IMapEntry) — only *lang.MapEntry implements
+	// Key()/Val(), matching the JVM where MapEntry is a distinct class.
+	// Oracle (clojure 1.12.5): (map-entry? (first {:a 1})) => true;
+	// (map-entry? [1 2]) / (map-entry? {:a 1}) / (map-entry? nil) => false.
+	// clojure.walk's map-entry branch depends on this (core/walk.cljg).
+	def("map-entry?", func(args ...any) any {
+		_, ok := oneArg("map-entry?", args).(lang.IMapEntry)
+		return ok
+	})
+
+	// record?: a defrecord instance (JVM: instance? IRecord). A deftype
+	// instance is NOT a record. Oracle (clojure 1.12.5): (record? (->P 1))
+	// => true; (record? {:a 1}) / (record? nil) => false.
+	def("record?", func(args ...any) any {
+		_, ok := oneArg("record?", args).(*lang.Record)
+		return ok
+	})
+
 	// ---- number predicates --------------------------------------------------
 
 	// number?: a Number (every numeric type; Char is NOT a number).
