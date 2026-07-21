@@ -1,0 +1,108 @@
+;; walk.cljg — cljgo's clojure.walk (fundamentals audit 2026-07, A-list:
+;; the whole namespace was absent). Loaded at startup into the clojure.walk
+;; namespace via core.BootSources (the .cljg extension follows ADR 0017).
+;; A port of clojure/walk.clj (Stuart Sierra, Rich Hickey — EPL 1.0) onto
+;; cljgo's core.clj primitives; pure data manipulation, no host builtins.
+;;
+;; Map entries get the same explicit branch JVM walk has (CLJ-2031: without
+;; it, (empty entry) => nil and the coll? branch dissolves entries into
+;; lists, breaking map reassembly): map-entry? detects them and -map-entry
+;; (the private Go seam, misc_builtins.go — cljgo's MapEntry/create) rebuilds
+;; a genuine entry from the walked key and value.
+;;
+;; cljgo DEVIATION (pre-existing, empty's): (empty (sorted-map ...)) is {}
+;; in cljgo (loses sortedness), so walking a sorted map rebuilds a plain
+;; map; JVM preserves the sorted type. Tracked by the audit as an `empty`
+;; gap, not walk's.
+;;
+;; Behavior oracle-verified against JVM Clojure 1.12.5 (`clojure` CLI),
+;; 2026-07-21; frozen evidence in conformance/tests/walk-*.clj.
+
+(clojure.core/in-ns 'clojure.walk)
+(clojure.core/refer 'clojure.core)
+
+;; oracle: (walk inc #(reduce + %) [1 2 3]) => 9;
+;; (walk #(* 2 %) identity (list 1 2 3)) => (2 4 6);
+;; (walk identity identity '(1 2)) stays a list (list? => true)
+(defn walk
+  "Traverses form, an arbitrary data structure.  inner and outer are
+  functions.  Applies inner to each element of form, building up a
+  data structure of the same type, then applies outer to the result.
+  Recognizes all Clojure data structures. Consumes seqs as with doall."
+  [inner outer form]
+  (cond
+    (list? form) (outer (apply list (map inner form)))
+    (map-entry? form)
+    (outer (clojure.core/-map-entry (inner (key form)) (inner (val form))))
+    (seq? form) (outer (doall (map inner form)))
+    (coll? form) (outer (into (empty form) (map inner form)))
+    :else (outer form)))
+
+;; oracle: (postwalk (fn [x] (if (number? x) (inc x) x)) {:a 1 :b [2 3]})
+;; => {:a 2, :b [3 4]}; visit order (atom trace on {:a [1 2]}) =>
+;; [:a 1 2 [1 2] [:a [1 2]] {:a [1 2]}]
+(defn postwalk
+  "Performs a depth-first, post-order traversal of form.  Calls f on
+  each sub-form, uses f's return value in place of the original.
+  Recognizes all Clojure data structures. Consumes seqs as with doall."
+  [f form]
+  (walk (partial postwalk f) f form))
+
+;; oracle: (prewalk (fn [x] (if (vector? x) (seq x) x)) [1 [2 [3]]])
+;; => (1 (2 (3))); visit order (atom trace on {:a [1 2]}) =>
+;; [{:a [1 2]} [:a [1 2]] :a [1 2] 1 2]
+(defn prewalk
+  "Like postwalk, but does pre-order traversal."
+  [f form]
+  (walk (partial prewalk f) identity (f form)))
+
+;; oracle: (postwalk-demo [[1 2] [3 4 [5 6]] [7 8]]) prints one
+;; "Walked: ..." line per sub-form in post-order and returns the form.
+(defn postwalk-demo
+  "Demonstrates the behavior of postwalk by printing each form as it is
+  walked.  Returns form."
+  [form]
+  (postwalk (fn [x] (print "Walked: ") (prn x) x) form))
+
+;; oracle: (prewalk-demo [[1 2] [3 4 [5 6]] [7 8]]) prints one
+;; "Walked: ..." line per sub-form in pre-order and returns the form.
+(defn prewalk-demo
+  "Demonstrates the behavior of prewalk by printing each form as it is
+  walked.  Returns form."
+  [form]
+  (prewalk (fn [x] (print "Walked: ") (prn x) x) form))
+
+;; oracle: (keywordize-keys {"a" 1 "b" {"c" 2} :d 3}) =>
+;; {:a 1, :b {:c 2}, :d 3}; works inside any structure:
+;; (keywordize-keys [{"a" 1} {"b" 2}]) => [{:a 1} {:b 2}]
+(defn keywordize-keys
+  "Recursively transforms all map keys from strings to keywords."
+  [m]
+  (let [f (fn [[k v]] (if (string? k) [(keyword k) v] [k v]))]
+    ;; only apply to maps
+    (postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
+
+;; oracle: (stringify-keys {:a 1 :b {:c 2} "d" 3}) =>
+;; {"a" 1, "b" {"c" 2}, "d" 3}
+(defn stringify-keys
+  "Recursively transforms all map keys from keywords to strings."
+  [m]
+  (let [f (fn [[k v]] (if (keyword? k) [(name k) v] [k v]))]
+    ;; only apply to maps
+    (postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
+
+;; oracle: (prewalk-replace {:a 1} {:a :a}) => {1 1}
+(defn prewalk-replace
+  "Recursively transforms form by replacing keys in smap with their
+  values.  Like clojure/replace but works on any data structure.  Does
+  replacement at the root of the tree first."
+  [smap form]
+  (prewalk (fn [x] (if (contains? smap x) (smap x) x)) form))
+
+;; oracle: (postwalk-replace {:a 1 :b 2} [:a :b :c [:a]]) => [1 2 :c [1]]
+(defn postwalk-replace
+  "Recursively transforms form by replacing keys in smap with their
+  values.  Like clojure/replace but works on any data structure.  Does
+  replacement at the leaves of the tree first."
+  [smap form]
+  (postwalk (fn [x] (if (contains? smap x) (smap x) x)) form))

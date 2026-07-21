@@ -8,10 +8,13 @@ import (
 )
 
 var (
+	kw_exclude                                = lang.InternKeywordString("exclude")
 	sym_clojure_DOT_core                      = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_edn                       = lang.NewSymbol("clojure.edn")
-	v_clojure_DOT_core_X_edn_read_string      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string"))
-	v_clojure_DOT_core_X_edn_read_string_opts = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string-opts"))
+	sym_read                                  = lang.NewSymbol("read")
+	sym_read_string                           = lang.NewSymbol("read-string")
+	v_clojure_DOT_core_X_edn_read_string      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string")).SetPrivate()
+	v_clojure_DOT_core_X_edn_read_string_opts = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string-opts")).SetPrivate()
 	v_clojure_DOT_core_in_ns                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
 	v_clojure_DOT_core_refer                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 	v_clojure_DOT_edn_read_string             = lang.InternVarName(lang.NewSymbol("clojure.edn"), lang.NewSymbol("read-string"))
@@ -31,9 +34,9 @@ func Load() {
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
 	tmp2 := lang.Apply1(tmp1, sym_clojure_DOT_edn)
 	_ = tmp2
-	// (clojure.core/refer (quote clojure.core))
+	// (clojure.core/refer (quote clojure.core) :exclude (quote [read read-string]))
 	tmp3 := v_clojure_DOT_core_refer.Get()
-	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
+	tmp4 := lang.Apply3(tmp3, sym_clojure_DOT_core, kw_exclude, lang.NewVector(sym_read, sym_read_string))
 	_ = tmp4
 	// (def read-string "Reads one object from the string s. Returns nil when s has nothing but\n…
 	tmp5 := lang.FnFunc(func(args ...any) any {

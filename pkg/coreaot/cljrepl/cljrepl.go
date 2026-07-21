@@ -14,7 +14,7 @@ var (
 	sym_clojure_DOT_repl                 = lang.NewSymbol("clojure.repl")
 	sym_clojure_DOT_repl_SLASH_print_doc = lang.NewSymbol("clojure.repl/print-doc")
 	sym_var_                             = lang.NewSymbol("var")
-	v_clojure_DOT_core_X_set_macro_BANG_ = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-set-macro!"))
+	v_clojure_DOT_core_X_set_macro_BANG_ = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-set-macro!")).SetPrivate()
 	v_clojure_DOT_core_in_ns             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
 	v_clojure_DOT_core_list              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("list"))
 	v_clojure_DOT_core_meta              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("meta"))

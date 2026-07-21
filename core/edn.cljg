@@ -30,7 +30,11 @@
 ;; cljgo-owned type explicitly rather than generalizing interop.
 
 (clojure.core/in-ns 'clojure.edn)
-(clojure.core/refer 'clojure.core)
+;; :exclude read/read-string, exactly like JVM clojure.edn's
+;; (:refer-clojure :exclude [read read-string]) — clojure.core/read-string
+;; exists since the fundamentals 2026-07 batch, and a plain refer would
+;; warn-and-replace it.
+(clojure.core/refer 'clojure.core :exclude '[read read-string])
 
 (defn read-string
   "Reads one object from the string s. Returns nil when s has nothing but

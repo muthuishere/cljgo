@@ -235,6 +235,20 @@ func (v *Var) SetDynamic() *Var {
 	return v
 }
 
+// SetPrivate marks the var ^:private in its metadata and returns it for
+// chaining — pkg/emit's hoistVar replays compile-time :private meta into
+// the compiled binary through this, exactly as SetDynamic replays
+// :dynamic (fundamentals audit 2026-07: without it a compiled binary's
+// ns-publics showed ^:private vars the interpreter hid).
+func (v *Var) SetPrivate() *Var {
+	if m := v.Meta(); m != nil {
+		v.SetMeta(m.Assoc(KWPrivate, true).(IPersistentMap))
+	} else {
+		v.SetMeta(NewMap(KWPrivate, true))
+	}
+	return v
+}
+
 func (v *Var) Deref() interface{} {
 	if b := v.getDynamicBinding(); b != nil {
 		return b.val

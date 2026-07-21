@@ -1,0 +1,4 @@
+# scratch file written by tests/slurp-spit-roundtrip.clj (both harnesses
+# run with cwd = this dir; the test always truncates first, so the
+# leftover is inert)
+slurp-spit-scratch.tmp
