@@ -1,9 +1,12 @@
 package corelib
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -174,8 +177,6 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 	// :override)}} "#uuid \"...\"") => :override, overriding even a
 	// built-in tag). Same edn-strict reader rules as the 1-arg form.
 	kwEOF := lang.NewKeyword("eof")
-	kwDefault := lang.NewKeyword("default")
-	kwReaders := lang.NewKeyword("readers")
 	defPrivate("-edn-read-string-opts", func(args ...any) any {
 		if len(args) != 2 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: edn/read-string", len(args)))
@@ -188,45 +189,45 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 			}
 			panic(fmt.Errorf("edn/read-string expects a string, got: %s", lang.PrintString(sArg)))
 		}
-		var opts lang.IPersistentMap
-		if optsArg != nil {
-			m, ok := optsArg.(lang.IPersistentMap)
-			if !ok {
-				panic(fmt.Errorf("edn/read-string: opts must be a map, got: %s", lang.PrintString(optsArg)))
-			}
-			opts = m
-		}
+		opts := ednOptsMap("edn/read-string", optsArg)
 
-		readerOpts := []reader.Option{reader.WithResolver(NSResolver()), reader.WithEDNStrict()}
-		if opts != nil {
-			if fn, ok := lang.Get(opts, kwDefault).(lang.IFn); ok {
-				readerOpts = append(readerOpts, reader.WithDefaultReader(fn))
-			}
-			if rm, ok := lang.Get(opts, kwReaders).(lang.IPersistentMap); ok {
-				tagReaders := make(map[string]lang.IFn)
-				for seq := lang.Seq(rm); seq != nil; seq = seq.Next() {
-					entry := seq.First().(lang.IMapEntry)
-					tagSym, ok := entry.Key().(*lang.Symbol)
-					if !ok {
-						panic(fmt.Errorf("edn/read-string: :readers keys must be symbols, got: %s", lang.PrintString(entry.Key())))
-					}
-					fn, ok := entry.Val().(lang.IFn)
-					if !ok {
-						panic(fmt.Errorf("edn/read-string: :readers values must be functions, got: %s", lang.PrintString(entry.Val())))
-					}
-					tagReaders[tagSym.FullName()] = fn
-				}
-				readerOpts = append(readerOpts, reader.WithTagReaders(tagReaders))
-			}
-		}
-
-		form, err := reader.ReadString(s, readerOpts...)
+		form, err := reader.ReadString(s, ednReaderOptions("edn/read-string", opts)...)
 		if err != nil {
 			if errors.Is(err, reader.ErrEOF) {
 				if opts != nil && opts.ContainsKey(kwEOF) {
 					return lang.Get(opts, kwEOF)
 				}
 				panic(fmt.Errorf("edn/read-string: EOF while reading"))
+			}
+			panic(err)
+		}
+		return form
+	})
+
+	// -edn-read backs clojure.edn/read (core/edn.cljg): read ONE form from
+	// a STREAM — any Go io.Reader value, *in* (os.Stdin) by default — with
+	// the same edn-strict reader and the same :eof / :default / :readers
+	// options as -edn-read-string-opts (oracle 1.12.5 over a
+	// java.io.PushbackReader: successive reads return successive forms;
+	// bare EOF throws "EOF while reading"; {:eof v} returns v). Streams
+	// that are not io.RuneScanners are wrapped once and cached
+	// (ednRuneScanner) so successive reads continue where the last
+	// stopped; a fresh reader.Reader per call is safe because all
+	// read-ahead lives in the RuneScanner (one-rune peeks are UnreadRune'd
+	// back).
+	defPrivate("-edn-read", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: edn/read", len(args)))
+		}
+		opts := ednOptsMap("edn/read", args[0])
+		rs := ednRuneScanner(args[1])
+		form, err := reader.New(rs, ednReaderOptions("edn/read", opts)...).ReadOne()
+		if err != nil {
+			if errors.Is(err, reader.ErrEOF) {
+				if opts != nil && opts.ContainsKey(kwEOF) {
+					return lang.Get(opts, kwEOF)
+				}
+				panic(fmt.Errorf("edn/read: EOF while reading"))
 			}
 			panic(err)
 		}
@@ -273,4 +274,81 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 		return nil
 	})
+}
+
+// ednOptsMap coerces a clojure.edn opts argument (nil or a map) into an
+// IPersistentMap, panicking with the caller's name otherwise. Shared by
+// -edn-read-string-opts and -edn-read.
+func ednOptsMap(op string, optsArg any) lang.IPersistentMap {
+	if optsArg == nil {
+		return nil
+	}
+	m, ok := optsArg.(lang.IPersistentMap)
+	if !ok {
+		panic(fmt.Errorf("%s: opts must be a map, got: %s", op, lang.PrintString(optsArg)))
+	}
+	return m
+}
+
+// ednReaderOptions translates a clojure.edn opts map's :default / :readers
+// entries into reader options on top of the edn-strict base (resolver +
+// WithEDNStrict). :eof is handled by the callers — it is an EOF policy,
+// not a reader option. Shared by -edn-read-string-opts and -edn-read.
+func ednReaderOptions(op string, opts lang.IPersistentMap) []reader.Option {
+	readerOpts := []reader.Option{reader.WithResolver(NSResolver()), reader.WithEDNStrict()}
+	if opts == nil {
+		return readerOpts
+	}
+	if fn, ok := lang.Get(opts, lang.NewKeyword("default")).(lang.IFn); ok {
+		readerOpts = append(readerOpts, reader.WithDefaultReader(fn))
+	}
+	if rm, ok := lang.Get(opts, lang.NewKeyword("readers")).(lang.IPersistentMap); ok {
+		tagReaders := make(map[string]lang.IFn)
+		for seq := lang.Seq(rm); seq != nil; seq = seq.Next() {
+			entry := seq.First().(lang.IMapEntry)
+			tagSym, ok := entry.Key().(*lang.Symbol)
+			if !ok {
+				panic(fmt.Errorf("%s: :readers keys must be symbols, got: %s", op, lang.PrintString(entry.Key())))
+			}
+			fn, ok := entry.Val().(lang.IFn)
+			if !ok {
+				panic(fmt.Errorf("%s: :readers values must be functions, got: %s", op, lang.PrintString(entry.Val())))
+			}
+			tagReaders[tagSym.FullName()] = fn
+		}
+		readerOpts = append(readerOpts, reader.WithTagReaders(tagReaders))
+	}
+	return readerOpts
+}
+
+// ednScanners caches one RuneScanner per plain io.Reader stream handed to
+// clojure.edn/read, so successive reads continue exactly where the last
+// one stopped (a fresh bufio wrapper per call would buffer ahead and drop
+// input). Streams that already implement io.RuneScanner (strings.Reader,
+// bufio.Reader) keep their own position and are used directly. Entries
+// are never evicted — a process reads from a handful of streams (usually
+// just *in*), so the cache stays a few entries.
+var (
+	ednScannersMu sync.Mutex
+	ednScanners   = map[io.Reader]io.RuneScanner{}
+)
+
+// ednRuneScanner resolves clojure.edn/read's stream argument to the
+// io.RuneScanner the reader consumes.
+func ednRuneScanner(stream any) io.RuneScanner {
+	if rs, ok := stream.(io.RuneScanner); ok {
+		return rs
+	}
+	r, ok := stream.(io.Reader)
+	if !ok {
+		panic(fmt.Errorf("edn/read expects a reader (a Go io.Reader; *in* by default), got: %s", lang.PrintString(stream)))
+	}
+	ednScannersMu.Lock()
+	defer ednScannersMu.Unlock()
+	if rs, ok := ednScanners[r]; ok {
+		return rs
+	}
+	rs := bufio.NewReader(r)
+	ednScanners[r] = rs
+	return rs
 }
