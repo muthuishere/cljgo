@@ -1,0 +1,113 @@
+;; async.cljg — the macro half of clojure.core.async (ADR 0040, openspec
+;; core-async-first-class T1). Loaded LAZILY by pkg/eval's lib provider on
+;; the first (require 'clojure.core.async) — NOT a boot source, so boot
+;; cost is untouched (ADR 0024). The fn half of the namespace (chan, the
+;; put/take family, alts!, timeout, …) is Go-native, interned by
+;; pkg/corelib's registerAsync at RegisterAll time; macros expand at
+;; compile time, so AOT binaries never need this source.
+;;
+;; ADR 0040 extensions, recorded (the one-way portability rule — code
+;; that works on JVM core.async works identically here; the reverse is a
+;; documented extension):
+;;   #4 (timeout ms) is a FRESH channel closed after ms — no per-tick
+;;      channel cache, so (identical? (timeout n) (timeout n)) is false.
+;;   #5 <! / >! / alts! are legal on ANY goroutine: there is no IOC
+;;      transform, so `go` bodies are real goroutines and the JVM's
+;;      "used not in (go ...) block" assert is not mirrored. <!!/>!!/
+;;      alts!!/thread are aliases of <!/>!/alts!/go.
+;; Semantics frozen against JVM core.async 1.6.681 (Clojure 1.12.5):
+;; spikes/s19-core-async/oracle/ + conformance/tests/chan-*.clj.
+(clojure.core/in-ns 'clojure.core.async)
+(clojure.core/refer 'clojure.core)
+
+;; (go-loop bindings & body) — (go (loop bindings body...)). The JVM
+;; needs this fused for its IOC transform; here it is pure sugar (oracle
+;; go-loop-result => 3).
+(defmacro go-loop [bindings & body]
+  (list 'clojure.core.async/go (cons 'clojure.core/loop (cons bindings body))))
+
+;; -do-alt builds the alt! expansion — the do-alt shape of JVM
+;; core.async, macro-only here. Clauses are pairs of
+;;   channel-op[s] result-expr
+;; where a channel-op is a take port, a [put-chan put-val] PAIR (inside a
+;; wrapping vector: a put clause is written [[c v]]), or a vector of such
+;; ops sharing one result-expr; result-expr is an expression or a
+;; ([binding-form] body...) list binding the whole [val port] result
+;; (so ([v] ...) binds the value, ([v ch] ...) both). :default expr and
+;; :priority flag pass through to alts!. Every port expression is
+;; evaluated ONCE (bound to a gensym) so clause dispatch compares the
+;; same value alts! saw. Oracle (2026-07-21 fresh run, core.async
+;; 1.6.681): alt!-take-clause :took · alt!-binding-clause 42 ·
+;; alt!-binding-clause-val-ch [42 true] · alt!-put-clause :wrote ·
+;; alt!-put-clause-binding [true true] · alt!-multi-port-vector :b ·
+;; alt!-default-hit :none · alt!-priority :a.
+(defn ^:private -do-alt [alts-sym clauses]
+  (when (odd? (count clauses))
+    (throw (ex-info "alt! requires an even number of forms" {})))
+  (let [pairs   (partition 2 clauses)
+        opts    (filter (fn [p] (keyword? (first p))) pairs)
+        claws   (remove (fn [p] (keyword? (first p))) pairs)
+        ;; normalize each clause to [ops result-expr], binding every port
+        ;; expression to a gensym; ops entries are a symbol (take) or a
+        ;; [chan-sym val-sym] pair (put). norm = [clauses binds].
+        norm    (reduce
+                 (fn [acc-binds pair]
+                   (let [acc  (first acc-binds)
+                         bnds (second acc-binds)
+                         op   (first pair)
+                         expr (second pair)
+                         ops-binds
+                         (reduce
+                          (fn [ob port]
+                            (let [ops  (first ob)
+                                  bnds (second ob)]
+                              (if (vector? port)
+                                (let [gp (gensym "alt_port") gv (gensym "alt_pval")]
+                                  [(conj ops [gp gv])
+                                   (conj bnds gp (first port) gv (second port))])
+                                (let [gp (gensym "alt_port")]
+                                  [(conj ops gp) (conj bnds gp port)]))))
+                          [[] bnds]
+                          (if (vector? op) op [op]))]
+                     [(conj acc [(first ops-binds) expr]) (second ops-binds)]))
+                 [[] []]
+                 claws)
+        claws2  (first norm)
+        binds   (second norm)
+        gret    (gensym "alt_ret")
+        gval    (gensym "alt_v")
+        gch     (gensym "alt_ch")
+        ports   (vec (mapcat (fn [c] (first c)) claws2))
+        branch  (fn [c]
+                  (let [ops  (first c)
+                        expr (second c)
+                        test (cons 'clojure.core/or
+                                   (map (fn [p]
+                                          (list 'clojure.core/= gch
+                                                (if (vector? p) (first p) p)))
+                                        ops))
+                        body (if (and (seq? expr) (vector? (first expr)))
+                               (list 'clojure.core/let
+                                     (vector (first expr) gret)
+                                     ;; `do` is a special form — must stay
+                                     ;; unqualified (the analyzer only
+                                     ;; recognizes bare specials).
+                                     (cons 'do (rest expr)))
+                               expr)]
+                    [test body]))
+        branches (mapcat branch claws2)
+        dflt     (first (filter (fn [p] (= :default (first p))) opts))
+        tail     (if dflt
+                   (concat branches [(list 'clojure.core/= gch :default) gval])
+                   branches)]
+    (list 'clojure.core/let
+          (vec (concat binds
+                       [gret (cons alts-sym (cons ports (mapcat identity opts)))
+                        gval (list 'clojure.core/nth gret 0)
+                        gch  (list 'clojure.core/nth gret 1)]))
+          (cons 'clojure.core/cond tail))))
+
+;; (alt! & clauses) — cond over one alts! call; (alt!! & clauses) is the
+;; same expansion (no parking distinction, ADR 0040 #5).
+(defmacro alt! [& clauses] (-do-alt 'clojure.core.async/alts! clauses))
+(defmacro alt!! [& clauses] (-do-alt 'clojure.core.async/alts!! clauses))

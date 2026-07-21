@@ -37,11 +37,11 @@ func TestChanSendNilRejected(t *testing.T) {
 	ChanSend(c, nil)
 }
 
-func TestChanSendOnClosedIsNoop(t *testing.T) {
+func TestChanSendOnClosedReturnsFalse(t *testing.T) {
 	c := NewChan(1)
 	ChanClose(c)
-	if got := ChanSend(c, int64(1)); got != nil { // recovered, no panic
-		t.Fatalf("send on closed = %v, want nil", got)
+	if got := ChanSend(c, int64(1)); got != false { // JVM: closed put => false
+		t.Fatalf("send on closed = %v, want false", got)
 	}
 }
 
