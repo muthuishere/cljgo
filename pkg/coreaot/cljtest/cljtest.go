@@ -13,6 +13,7 @@ var (
 	kw_clojure_DOT_test_SLASH_each_fixtures                 = lang.InternKeywordString("clojure.test/each-fixtures")
 	kw_clojure_DOT_test_SLASH_once_fixtures                 = lang.InternKeywordString("clojure.test/once-fixtures")
 	kw_column                                               = lang.InternKeywordString("column")
+	kw_doc                                                  = lang.InternKeywordString("doc")
 	kw_dynamic                                              = lang.InternKeywordString("dynamic")
 	kw_each                                                 = lang.InternKeywordString("each")
 	kw_else_                                                = lang.InternKeywordString("else")
@@ -36,19 +37,24 @@ var (
 	sym_binding                                             = lang.NewSymbol("binding")
 	sym_catch                                               = lang.NewSymbol("catch")
 	sym_clojure_DOT_core                                    = lang.NewSymbol("clojure.core")
+	sym_clojure_DOT_core_SLASH__STAR_out_STAR_              = lang.NewSymbol("clojure.core/*out*")
 	sym_clojure_DOT_core_SLASH__re_find_QMARK_              = lang.NewSymbol("clojure.core/-re-find?")
 	sym_clojure_DOT_core_SLASH_alter_meta_BANG_             = lang.NewSymbol("clojure.core/alter-meta!")
 	sym_clojure_DOT_core_SLASH_apply                        = lang.NewSymbol("clojure.core/apply")
 	sym_clojure_DOT_core_SLASH_assoc                        = lang.NewSymbol("clojure.core/assoc")
+	sym_clojure_DOT_core_SLASH_binding                      = lang.NewSymbol("clojure.core/binding")
 	sym_clojure_DOT_core_SLASH_cons                         = lang.NewSymbol("clojure.core/cons")
 	sym_clojure_DOT_core_SLASH_ex_message                   = lang.NewSymbol("clojure.core/ex-message")
 	sym_clojure_DOT_core_SLASH_fn                           = lang.NewSymbol("clojure.core/fn")
 	sym_clojure_DOT_core_SLASH_let                          = lang.NewSymbol("clojure.core/let")
 	sym_clojure_DOT_core_SLASH_list                         = lang.NewSymbol("clojure.core/list")
 	sym_clojure_DOT_test                                    = lang.NewSymbol("clojure.test")
+	sym_clojure_DOT_test_SLASH__STAR_test_out_STAR_         = lang.NewSymbol("clojure.test/*test-out*")
 	sym_clojure_DOT_test_SLASH__STAR_testing_contexts_STAR_ = lang.NewSymbol("clojure.test/*testing-contexts*")
+	sym_clojure_DOT_test_SLASH_deftest                      = lang.NewSymbol("clojure.test/deftest")
 	sym_clojure_DOT_test_SLASH_do_report                    = lang.NewSymbol("clojure.test/do-report")
 	sym_clojure_DOT_test_SLASH_is                           = lang.NewSymbol("clojure.test/is")
+	sym_clojure_DOT_test_SLASH_run_test_var                 = lang.NewSymbol("clojure.test/run-test-var")
 	sym_clojure_DOT_test_SLASH_test_var                     = lang.NewSymbol("clojure.test/test-var")
 	sym_def                                                 = lang.NewSymbol("def")
 	sym_do                                                  = lang.NewSymbol("do")
@@ -67,6 +73,7 @@ var (
 	sym_thrown_QMARK_                                       = lang.NewSymbol("thrown?")
 	sym_thrown_with_msg_QMARK_                              = lang.NewSymbol("thrown-with-msg?")
 	sym_try                                                 = lang.NewSymbol("try")
+	sym_v__42__auto__                                       = lang.NewSymbol("v__42__auto__")
 	sym_value__40__auto__                                   = lang.NewSymbol("value__40__auto__")
 	sym_values__37__auto__                                  = lang.NewSymbol("values__37__auto__")
 	sym_var_                                                = lang.NewSymbol("var")
@@ -74,6 +81,7 @@ var (
 	v_clojure_DOT_core_X_GT_                                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol(">"))
 	v_clojure_DOT_core_X_PLUS_                              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("+"))
 	v_clojure_DOT_core_X_STAR_ns_STAR_                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*ns*"))
+	v_clojure_DOT_core_X_STAR_out_STAR_                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*out*"))
 	v_clojure_DOT_core_X_all_test_vars                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-all-test-vars"))
 	v_clojure_DOT_core_X_collect_test_vars                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-collect-test-vars"))
 	v_clojure_DOT_core_X_set_macro_BANG_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-set-macro!"))
@@ -122,16 +130,23 @@ var (
 	v_clojure_DOT_core_set_QMARK_                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("set?"))
 	v_clojure_DOT_core_str                                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
 	v_clojure_DOT_core_swap_BANG_                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("swap!"))
+	v_clojure_DOT_core_symbol                               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("symbol"))
 	v_clojure_DOT_core_symbol_QMARK_                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("symbol?"))
 	v_clojure_DOT_core_val                                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("val"))
 	v_clojure_DOT_core_vector                               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("vector"))
 	v_clojure_DOT_core_vector_QMARK_                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("vector?"))
+	v_clojure_DOT_core_with_meta                            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("with-meta"))
+	v_clojure_DOT_test_X_STAR_initial_report_counters_STAR_ = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*initial-report-counters*")).SetDynamic()
+	v_clojure_DOT_test_X_STAR_load_tests_STAR_              = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*load-tests*")).SetDynamic()
 	v_clojure_DOT_test_X_STAR_report_counters_STAR_         = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*report-counters*")).SetDynamic()
+	v_clojure_DOT_test_X_STAR_stack_trace_depth_STAR_       = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*stack-trace-depth*")).SetDynamic()
+	v_clojure_DOT_test_X_STAR_test_out_STAR_                = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*test-out*")).SetDynamic()
 	v_clojure_DOT_test_X_STAR_testing_contexts_STAR_        = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*testing-contexts*")).SetDynamic()
 	v_clojure_DOT_test_X_STAR_testing_vars_STAR_            = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("*testing-vars*")).SetDynamic()
 	v_clojure_DOT_test_X_bindings_map                       = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-bindings-map"))
 	v_clojure_DOT_test_X_drop                               = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-drop"))
 	v_clojure_DOT_test_X_function_QMARK_                    = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-function?"))
+	v_clojure_DOT_test_X_ns_sym                             = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-ns-sym"))
 	v_clojure_DOT_test_X_take                               = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-take"))
 	v_clojure_DOT_test_X_template_subst                     = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("-template-subst"))
 	v_clojure_DOT_test_add_ns_meta                          = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("add-ns-meta"))
@@ -139,22 +154,33 @@ var (
 	v_clojure_DOT_test_compose_fixtures                     = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("compose-fixtures"))
 	v_clojure_DOT_test_default_fixture                      = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("default-fixture"))
 	v_clojure_DOT_test_deftest                              = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("deftest"))
+	v_clojure_DOT_test_deftest_                             = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("deftest-"))
 	v_clojure_DOT_test_do_report                            = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("do-report"))
+	v_clojure_DOT_test_file_position                        = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("file-position"))
+	v_clojure_DOT_test_function_QMARK_                      = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("function?"))
+	v_clojure_DOT_test_get_possibly_unbound_var             = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("get-possibly-unbound-var"))
 	v_clojure_DOT_test_inc_report_counter                   = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("inc-report-counter"))
 	v_clojure_DOT_test_initial_report_counters              = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("initial-report-counters"))
 	v_clojure_DOT_test_is                                   = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("is"))
 	v_clojure_DOT_test_join_fixtures                        = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("join-fixtures"))
 	v_clojure_DOT_test_report_summary                       = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("report-summary"))
 	v_clojure_DOT_test_run_all_tests                        = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("run-all-tests"))
+	v_clojure_DOT_test_run_test                             = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("run-test"))
+	v_clojure_DOT_test_run_test_var                         = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("run-test-var"))
 	v_clojure_DOT_test_run_test_vars                        = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("run-test-vars"))
 	v_clojure_DOT_test_run_tests                            = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("run-tests"))
+	v_clojure_DOT_test_set_test                             = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("set-test"))
 	v_clojure_DOT_test_successful_QMARK_                    = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("successful?"))
+	v_clojure_DOT_test_test_all_vars                        = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("test-all-vars"))
+	v_clojure_DOT_test_test_ns                              = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("test-ns"))
 	v_clojure_DOT_test_test_var                             = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("test-var"))
 	v_clojure_DOT_test_test_vars                            = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("test-vars"))
 	v_clojure_DOT_test_testing                              = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("testing"))
 	v_clojure_DOT_test_testing_contexts_str                 = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("testing-contexts-str"))
 	v_clojure_DOT_test_testing_vars_str                     = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("testing-vars-str"))
 	v_clojure_DOT_test_use_fixtures                         = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("use-fixtures"))
+	v_clojure_DOT_test_with_test                            = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("with-test"))
+	v_clojure_DOT_test_with_test_out                        = lang.InternVarName(lang.NewSymbol("clojure.test"), lang.NewSymbol("with-test-out"))
 )
 
 var loaded = false
@@ -2616,4 +2642,407 @@ func Load() {
 	})
 	v_clojure_DOT_test_successful_QMARK_.BindRoot(tmp1695)
 	_ = v_clojure_DOT_test_successful_QMARK_
+	// (def *initial-report-counters* initial-report-counters)
+	v_clojure_DOT_test_X_STAR_initial_report_counters_STAR_.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(371), kw_column, int64(6), kw_end_line, int64(371), kw_end_column, int64(41), kw_dynamic, true))
+	tmp1704 := v_clojure_DOT_test_initial_report_counters.Get()
+	v_clojure_DOT_test_X_STAR_initial_report_counters_STAR_.BindRoot(tmp1704)
+	_ = v_clojure_DOT_test_X_STAR_initial_report_counters_STAR_
+	// (def *load-tests* true)
+	v_clojure_DOT_test_X_STAR_load_tests_STAR_.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(375), kw_column, int64(6), kw_end_line, int64(375), kw_end_column, int64(28), kw_dynamic, true))
+	v_clojure_DOT_test_X_STAR_load_tests_STAR_.BindRoot(true)
+	_ = v_clojure_DOT_test_X_STAR_load_tests_STAR_
+	// (def *stack-trace-depth* nil)
+	v_clojure_DOT_test_X_STAR_stack_trace_depth_STAR_.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(381), kw_column, int64(6), kw_end_line, int64(381), kw_end_column, int64(35), kw_dynamic, true))
+	v_clojure_DOT_test_X_STAR_stack_trace_depth_STAR_.BindRoot(nil)
+	_ = v_clojure_DOT_test_X_STAR_stack_trace_depth_STAR_
+	// (def *test-out* *out*)
+	v_clojure_DOT_test_X_STAR_test_out_STAR_.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(386), kw_column, int64(6), kw_end_line, int64(386), kw_end_column, int64(26), kw_dynamic, true))
+	tmp1705 := v_clojure_DOT_core_X_STAR_out_STAR_.Get()
+	v_clojure_DOT_test_X_STAR_test_out_STAR_.BindRoot(tmp1705)
+	_ = v_clojure_DOT_test_X_STAR_test_out_STAR_
+	// (do (def with-test-out "Runs body with *out* bound to the value of *test-out*." (fn* with-…
+	v_clojure_DOT_test_with_test_out.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(388), kw_column, int64(11), kw_end_line, int64(388), kw_end_column, int64(24), kw_doc, "Runs body with *out* bound to the value of *test-out*."))
+	var with_test_out1706 any
+	_ = with_test_out1706
+	tmp1707 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		default:
+			if len(args) < 2 {
+				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "with-test-out"))
+			}
+			X_AMP_form1708 := args[0]
+			_ = X_AMP_form1708
+			X_AMP_env1709 := args[1]
+			_ = X_AMP_env1709
+			var body1710 any
+			if len(args) > 2 {
+				body1710 = lang.NewList(args[2:]...)
+			}
+			_ = body1710
+			tmp1711 := v_clojure_DOT_core_seq.Get()
+			tmp1712 := v_clojure_DOT_core_concat.Get()
+			tmp1713 := v_clojure_DOT_core_list.Get()
+			tmp1714 := lang.Apply1(tmp1713, sym_clojure_DOT_core_SLASH_binding)
+			tmp1715 := v_clojure_DOT_core_list.Get()
+			tmp1716 := v_clojure_DOT_core_apply.Get()
+			tmp1717 := v_clojure_DOT_core_vector.Get()
+			tmp1718 := v_clojure_DOT_core_seq.Get()
+			tmp1719 := v_clojure_DOT_core_concat.Get()
+			tmp1720 := v_clojure_DOT_core_list.Get()
+			tmp1721 := lang.Apply1(tmp1720, sym_clojure_DOT_core_SLASH__STAR_out_STAR_)
+			tmp1722 := v_clojure_DOT_core_list.Get()
+			tmp1723 := lang.Apply1(tmp1722, sym_clojure_DOT_test_SLASH__STAR_test_out_STAR_)
+			tmp1724 := lang.Apply2(tmp1719, tmp1721, tmp1723)
+			tmp1725 := lang.Apply1(tmp1718, tmp1724)
+			tmp1726 := lang.Apply2(tmp1716, tmp1717, tmp1725)
+			tmp1727 := lang.Apply1(tmp1715, tmp1726)
+			tmp1728 := lang.Apply3(tmp1712, tmp1714, tmp1727, body1710)
+			tmp1729 := lang.Apply1(tmp1711, tmp1728)
+			return tmp1729
+		}
+	})
+	with_test_out1706 = tmp1707
+	v_clojure_DOT_test_with_test_out.BindRoot(tmp1707)
+	_ = v_clojure_DOT_test_with_test_out
+	tmp1730 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp1731 := lang.Apply1(tmp1730, v_clojure_DOT_test_with_test_out)
+	_ = tmp1731
+	_ = v_clojure_DOT_test_with_test_out
+	// (def function? "Returns true if argument is a function or a symbol that resolves to\n  a f…
+	v_clojure_DOT_test_function_QMARK_.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(399), kw_column, int64(7), kw_end_line, int64(399), kw_end_column, int64(16), kw_doc, "Returns true if argument is a function or a symbol that resolves to\n  a function (not a macro)."))
+	tmp1732 := lang.FnFunc1(func(x1733 any) any {
+		tmp1734 := v_clojure_DOT_test_X_function_QMARK_.Get()
+		tmp1735 := lang.Apply1(tmp1734, x1733)
+		return tmp1735
+	})
+	v_clojure_DOT_test_function_QMARK_.BindRoot(tmp1732)
+	_ = v_clojure_DOT_test_function_QMARK_
+	// (def get-possibly-unbound-var "Like var-get but returns nil if the var is unbound." (cloju…
+	v_clojure_DOT_test_get_possibly_unbound_var.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(407), kw_column, int64(7), kw_end_line, int64(407), kw_end_column, int64(31), kw_doc, "Like var-get but returns nil if the var is unbound."))
+	tmp1736 := lang.FnFunc1(func(v1737 any) any {
+		var tmp1738 any
+		_ = tmp1738
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					thrown := rt.Recover(r)
+					if rt.CatchMatches("Throwable", thrown) {
+						var X_e1739 any = thrown
+						_ = X_e1739
+						tmp1738 = nil
+						return
+					}
+					panic(r)
+				}
+			}()
+			tmp1740 := v_clojure_DOT_core_deref.Get()
+			tmp1741 := lang.Apply1(tmp1740, v1737)
+			tmp1738 = tmp1741
+		}()
+		return tmp1738
+	})
+	v_clojure_DOT_test_get_possibly_unbound_var.BindRoot(tmp1736)
+	_ = v_clojure_DOT_test_get_possibly_unbound_var
+	// (def file-position "DEPRECATED on the JVM too. cljgo has no stack-frame introspection and\…
+	v_clojure_DOT_test_file_position.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(417), kw_column, int64(7), kw_end_line, int64(417), kw_end_column, int64(20), kw_doc, "DEPRECATED on the JVM too. cljgo has no stack-frame introspection and\n  returns nil; the JVM returns [file line] for stack frame n."))
+	tmp1742 := lang.FnFunc1(func(X_n1743 any) any {
+		return nil
+	})
+	v_clojure_DOT_test_file_position.BindRoot(tmp1742)
+	_ = v_clojure_DOT_test_file_position
+	// (do (def deftest- "Like deftest but the var is not public." (fn* deftest- ([&form &env nam…
+	v_clojure_DOT_test_deftest_.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(423), kw_column, int64(11), kw_end_line, int64(423), kw_end_column, int64(19), kw_doc, "Like deftest but the var is not public."))
+	var deftest_1744 any
+	_ = deftest_1744
+	tmp1745 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		default:
+			if len(args) < 3 {
+				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "deftest-"))
+			}
+			X_AMP_form1746 := args[0]
+			_ = X_AMP_form1746
+			X_AMP_env1747 := args[1]
+			_ = X_AMP_env1747
+			name1748 := args[2]
+			_ = name1748
+			var body1749 any
+			if len(args) > 3 {
+				body1749 = lang.NewList(args[3:]...)
+			}
+			_ = body1749
+			tmp1750 := v_clojure_DOT_core_seq.Get()
+			tmp1751 := v_clojure_DOT_core_concat.Get()
+			tmp1752 := v_clojure_DOT_core_list.Get()
+			tmp1753 := lang.Apply1(tmp1752, sym_clojure_DOT_test_SLASH_deftest)
+			tmp1754 := v_clojure_DOT_core_list.Get()
+			tmp1755 := v_clojure_DOT_core_with_meta.Get()
+			tmp1756 := v_clojure_DOT_core_assoc.Get()
+			tmp1757 := v_clojure_DOT_core_meta.Get()
+			tmp1758 := lang.Apply1(tmp1757, name1748)
+			tmp1759 := lang.Apply3(tmp1756, tmp1758, kw_private, true)
+			tmp1760 := lang.Apply2(tmp1755, name1748, tmp1759)
+			tmp1761 := lang.Apply1(tmp1754, tmp1760)
+			tmp1762 := lang.Apply3(tmp1751, tmp1753, tmp1761, body1749)
+			tmp1763 := lang.Apply1(tmp1750, tmp1762)
+			return tmp1763
+		}
+	})
+	deftest_1744 = tmp1745
+	v_clojure_DOT_test_deftest_.BindRoot(tmp1745)
+	_ = v_clojure_DOT_test_deftest_
+	tmp1764 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp1765 := lang.Apply1(tmp1764, v_clojure_DOT_test_deftest_)
+	_ = tmp1765
+	_ = v_clojure_DOT_test_deftest_
+	// (do (def set-test "Sets :test metadata of the named var to a fn with the given body.\n  Th…
+	v_clojure_DOT_test_set_test.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(428), kw_column, int64(11), kw_end_line, int64(428), kw_end_column, int64(19), kw_doc, "Sets :test metadata of the named var to a fn with the given body.\n  The var must already exist."))
+	var set_test1766 any
+	_ = set_test1766
+	tmp1767 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		default:
+			if len(args) < 3 {
+				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "set-test"))
+			}
+			X_AMP_form1768 := args[0]
+			_ = X_AMP_form1768
+			X_AMP_env1769 := args[1]
+			_ = X_AMP_env1769
+			name1770 := args[2]
+			_ = name1770
+			var body1771 any
+			if len(args) > 3 {
+				body1771 = lang.NewList(args[3:]...)
+			}
+			_ = body1771
+			tmp1772 := v_clojure_DOT_core_seq.Get()
+			tmp1773 := v_clojure_DOT_core_concat.Get()
+			tmp1774 := v_clojure_DOT_core_list.Get()
+			tmp1775 := lang.Apply1(tmp1774, sym_clojure_DOT_core_SLASH_alter_meta_BANG_)
+			tmp1776 := v_clojure_DOT_core_list.Get()
+			tmp1777 := v_clojure_DOT_core_seq.Get()
+			tmp1778 := v_clojure_DOT_core_concat.Get()
+			tmp1779 := v_clojure_DOT_core_list.Get()
+			tmp1780 := lang.Apply1(tmp1779, sym_var_)
+			tmp1781 := v_clojure_DOT_core_list.Get()
+			tmp1782 := lang.Apply1(tmp1781, name1770)
+			tmp1783 := lang.Apply2(tmp1778, tmp1780, tmp1782)
+			tmp1784 := lang.Apply1(tmp1777, tmp1783)
+			tmp1785 := lang.Apply1(tmp1776, tmp1784)
+			tmp1786 := v_clojure_DOT_core_list.Get()
+			tmp1787 := lang.Apply1(tmp1786, sym_clojure_DOT_core_SLASH_assoc)
+			tmp1788 := v_clojure_DOT_core_list.Get()
+			tmp1789 := lang.Apply1(tmp1788, kw_test)
+			tmp1790 := v_clojure_DOT_core_list.Get()
+			tmp1791 := v_clojure_DOT_core_seq.Get()
+			tmp1792 := v_clojure_DOT_core_concat.Get()
+			tmp1793 := v_clojure_DOT_core_list.Get()
+			tmp1794 := lang.Apply1(tmp1793, sym_clojure_DOT_core_SLASH_fn)
+			tmp1795 := v_clojure_DOT_core_list.Get()
+			tmp1796 := v_clojure_DOT_core_apply.Get()
+			tmp1797 := v_clojure_DOT_core_vector.Get()
+			tmp1798 := v_clojure_DOT_core_seq.Get()
+			tmp1799 := v_clojure_DOT_core_concat.Get()
+			tmp1800 := lang.Apply0(tmp1799)
+			tmp1801 := lang.Apply1(tmp1798, tmp1800)
+			tmp1802 := lang.Apply2(tmp1796, tmp1797, tmp1801)
+			tmp1803 := lang.Apply1(tmp1795, tmp1802)
+			tmp1804 := lang.Apply3(tmp1792, tmp1794, tmp1803, body1771)
+			tmp1805 := lang.Apply1(tmp1791, tmp1804)
+			tmp1806 := lang.Apply1(tmp1790, tmp1805)
+			tmp1807 := lang.Apply(tmp1773, []any{tmp1775, tmp1785, tmp1787, tmp1789, tmp1806})
+			tmp1808 := lang.Apply1(tmp1772, tmp1807)
+			return tmp1808
+		}
+	})
+	set_test1766 = tmp1767
+	v_clojure_DOT_test_set_test.BindRoot(tmp1767)
+	_ = v_clojure_DOT_test_set_test
+	tmp1809 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp1810 := lang.Apply1(tmp1809, v_clojure_DOT_test_set_test)
+	_ = tmp1810
+	_ = v_clojure_DOT_test_set_test
+	// (do (def with-test "Takes any definition form (that returns a Var) as the first argument.\…
+	v_clojure_DOT_test_with_test.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(434), kw_column, int64(11), kw_end_line, int64(434), kw_end_column, int64(20), kw_doc, "Takes any definition form (that returns a Var) as the first argument.\n  Remaining body goes in the :test metadata function for that Var."))
+	var with_test1811 any
+	_ = with_test1811
+	tmp1812 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		default:
+			if len(args) < 3 {
+				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "with-test"))
+			}
+			X_AMP_form1813 := args[0]
+			_ = X_AMP_form1813
+			X_AMP_env1814 := args[1]
+			_ = X_AMP_env1814
+			definition1815 := args[2]
+			_ = definition1815
+			var body1816 any
+			if len(args) > 3 {
+				body1816 = lang.NewList(args[3:]...)
+			}
+			_ = body1816
+			tmp1817 := v_clojure_DOT_core_seq.Get()
+			tmp1818 := v_clojure_DOT_core_concat.Get()
+			tmp1819 := v_clojure_DOT_core_list.Get()
+			tmp1820 := lang.Apply1(tmp1819, sym_clojure_DOT_core_SLASH_let)
+			tmp1821 := v_clojure_DOT_core_list.Get()
+			tmp1822 := v_clojure_DOT_core_apply.Get()
+			tmp1823 := v_clojure_DOT_core_vector.Get()
+			tmp1824 := v_clojure_DOT_core_seq.Get()
+			tmp1825 := v_clojure_DOT_core_concat.Get()
+			tmp1826 := v_clojure_DOT_core_list.Get()
+			tmp1827 := lang.Apply1(tmp1826, sym_v__42__auto__)
+			tmp1828 := v_clojure_DOT_core_list.Get()
+			tmp1829 := lang.Apply1(tmp1828, definition1815)
+			tmp1830 := lang.Apply2(tmp1825, tmp1827, tmp1829)
+			tmp1831 := lang.Apply1(tmp1824, tmp1830)
+			tmp1832 := lang.Apply2(tmp1822, tmp1823, tmp1831)
+			tmp1833 := lang.Apply1(tmp1821, tmp1832)
+			tmp1834 := v_clojure_DOT_core_list.Get()
+			tmp1835 := v_clojure_DOT_core_seq.Get()
+			tmp1836 := v_clojure_DOT_core_concat.Get()
+			tmp1837 := v_clojure_DOT_core_list.Get()
+			tmp1838 := lang.Apply1(tmp1837, sym_clojure_DOT_core_SLASH_alter_meta_BANG_)
+			tmp1839 := v_clojure_DOT_core_list.Get()
+			tmp1840 := lang.Apply1(tmp1839, sym_v__42__auto__)
+			tmp1841 := v_clojure_DOT_core_list.Get()
+			tmp1842 := lang.Apply1(tmp1841, sym_clojure_DOT_core_SLASH_assoc)
+			tmp1843 := v_clojure_DOT_core_list.Get()
+			tmp1844 := lang.Apply1(tmp1843, kw_test)
+			tmp1845 := v_clojure_DOT_core_list.Get()
+			tmp1846 := v_clojure_DOT_core_seq.Get()
+			tmp1847 := v_clojure_DOT_core_concat.Get()
+			tmp1848 := v_clojure_DOT_core_list.Get()
+			tmp1849 := lang.Apply1(tmp1848, sym_clojure_DOT_core_SLASH_fn)
+			tmp1850 := v_clojure_DOT_core_list.Get()
+			tmp1851 := v_clojure_DOT_core_apply.Get()
+			tmp1852 := v_clojure_DOT_core_vector.Get()
+			tmp1853 := v_clojure_DOT_core_seq.Get()
+			tmp1854 := v_clojure_DOT_core_concat.Get()
+			tmp1855 := lang.Apply0(tmp1854)
+			tmp1856 := lang.Apply1(tmp1853, tmp1855)
+			tmp1857 := lang.Apply2(tmp1851, tmp1852, tmp1856)
+			tmp1858 := lang.Apply1(tmp1850, tmp1857)
+			tmp1859 := lang.Apply3(tmp1847, tmp1849, tmp1858, body1816)
+			tmp1860 := lang.Apply1(tmp1846, tmp1859)
+			tmp1861 := lang.Apply1(tmp1845, tmp1860)
+			tmp1862 := lang.Apply(tmp1836, []any{tmp1838, tmp1840, tmp1842, tmp1844, tmp1861})
+			tmp1863 := lang.Apply1(tmp1835, tmp1862)
+			tmp1864 := lang.Apply1(tmp1834, tmp1863)
+			tmp1865 := v_clojure_DOT_core_list.Get()
+			tmp1866 := lang.Apply1(tmp1865, sym_v__42__auto__)
+			tmp1867 := lang.Apply4(tmp1818, tmp1820, tmp1833, tmp1864, tmp1866)
+			tmp1868 := lang.Apply1(tmp1817, tmp1867)
+			return tmp1868
+		}
+	})
+	with_test1811 = tmp1812
+	v_clojure_DOT_test_with_test.BindRoot(tmp1812)
+	_ = v_clojure_DOT_test_with_test
+	tmp1869 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp1870 := lang.Apply1(tmp1869, v_clojure_DOT_test_with_test)
+	_ = tmp1870
+	_ = v_clojure_DOT_test_with_test
+	// (def -ns-sym (clojure.core/fn [ns] (if (symbol? ns) ns (symbol (str ns)))))
+	v_clojure_DOT_test_X_ns_sym.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(448), kw_column, int64(7), kw_end_line, int64(448), kw_end_column, int64(24), kw_private, true))
+	tmp1871 := lang.FnFunc1(func(ns1872 any) any {
+		tmp1873 := v_clojure_DOT_core_symbol_QMARK_.Get()
+		tmp1874 := lang.Apply1(tmp1873, ns1872)
+		var tmp1875 any
+		_ = tmp1875
+		if lang.IsTruthy(tmp1874) {
+			tmp1875 = ns1872
+		} else {
+			tmp1876 := v_clojure_DOT_core_symbol.Get()
+			tmp1877 := v_clojure_DOT_core_str.Get()
+			tmp1878 := lang.Apply1(tmp1877, ns1872)
+			tmp1879 := lang.Apply1(tmp1876, tmp1878)
+			tmp1875 = tmp1879
+		}
+		return tmp1875
+	})
+	v_clojure_DOT_test_X_ns_sym.BindRoot(tmp1871)
+	_ = v_clojure_DOT_test_X_ns_sym
+	// (def test-all-vars "Calls test-var on every var interned in the namespace that has a :test…
+	v_clojure_DOT_test_test_all_vars.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(451), kw_column, int64(7), kw_end_line, int64(451), kw_end_column, int64(20), kw_doc, "Calls test-var on every var interned in the namespace that has a :test\n  metadata entry."))
+	tmp1880 := lang.FnFunc1(func(ns1881 any) any {
+		tmp1882 := v_clojure_DOT_test_test_vars.Get()
+		tmp1883 := v_clojure_DOT_core_X_collect_test_vars.Get()
+		tmp1884 := v_clojure_DOT_core_list.Get()
+		tmp1885 := v_clojure_DOT_test_X_ns_sym.Get()
+		tmp1886 := lang.Apply1(tmp1885, ns1881)
+		tmp1887 := lang.Apply1(tmp1884, tmp1886)
+		tmp1888 := lang.Apply1(tmp1883, tmp1887)
+		tmp1889 := lang.Apply1(tmp1882, tmp1888)
+		return tmp1889
+	})
+	v_clojure_DOT_test_test_all_vars.BindRoot(tmp1880)
+	_ = v_clojure_DOT_test_test_all_vars
+	// (def test-ns "Runs the tests in a namespace and returns the summary map. If the\n  namespa…
+	v_clojure_DOT_test_test_ns.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(457), kw_column, int64(7), kw_end_line, int64(457), kw_end_column, int64(14), kw_doc, "Runs the tests in a namespace and returns the summary map. If the\n  namespace has a fn named test-ns-hook, calls that instead."))
+	tmp1890 := lang.FnFunc1(func(ns1891 any) any {
+		tmp1892 := v_clojure_DOT_core_atom.Get()
+		tmp1893 := v_clojure_DOT_test_X_STAR_initial_report_counters_STAR_.Get()
+		tmp1894 := lang.Apply1(tmp1892, tmp1893)
+		lang.PushThreadBindings(lang.NewMap(v_clojure_DOT_test_X_STAR_report_counters_STAR_, tmp1894))
+		tmp1895 := v_clojure_DOT_test_test_all_vars.Get()
+		tmp1896 := v_clojure_DOT_test_X_ns_sym.Get()
+		tmp1897 := lang.Apply1(tmp1896, ns1891)
+		tmp1898 := lang.Apply1(tmp1895, tmp1897)
+		_ = tmp1898
+		tmp1899 := v_clojure_DOT_core_assoc.Get()
+		tmp1900 := v_clojure_DOT_core_deref.Get()
+		tmp1901 := v_clojure_DOT_test_X_STAR_report_counters_STAR_.Get()
+		tmp1902 := lang.Apply1(tmp1900, tmp1901)
+		tmp1903 := lang.Apply3(tmp1899, tmp1902, kw_type_, kw_summary)
+		var tmp1904 any = tmp1903
+		lang.PopThreadBindings()
+		return tmp1904
+	})
+	v_clojure_DOT_test_test_ns.BindRoot(tmp1890)
+	_ = v_clojure_DOT_test_test_ns
+	// (def run-test-var "Runs the test for a single var and returns the summary map." (clojure.c…
+	v_clojure_DOT_test_run_test_var.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(465), kw_column, int64(7), kw_end_line, int64(465), kw_end_column, int64(19), kw_doc, "Runs the test for a single var and returns the summary map."))
+	tmp1905 := lang.FnFunc1(func(v1906 any) any {
+		tmp1907 := v_clojure_DOT_test_run_test_vars.Get()
+		tmp1908 := v_clojure_DOT_core_list.Get()
+		tmp1909 := lang.Apply1(tmp1908, v1906)
+		tmp1910 := lang.Apply1(tmp1907, tmp1909)
+		return tmp1910
+	})
+	v_clojure_DOT_test_run_test_var.BindRoot(tmp1905)
+	_ = v_clojure_DOT_test_run_test_var
+	// (do (def run-test "Runs a single test — (run-test test-name), the var is taken for you."…
+	v_clojure_DOT_test_run_test.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(470), kw_column, int64(11), kw_end_line, int64(470), kw_end_column, int64(19), kw_doc, "Runs a single test — (run-test test-name), the var is taken for you."))
+	var run_test1911 any
+	_ = run_test1911
+	tmp1912 := lang.FnFunc3(func(X_AMP_form1913, X_AMP_env1914, test_symbol1915 any) any {
+		tmp1916 := v_clojure_DOT_core_seq.Get()
+		tmp1917 := v_clojure_DOT_core_concat.Get()
+		tmp1918 := v_clojure_DOT_core_list.Get()
+		tmp1919 := lang.Apply1(tmp1918, sym_clojure_DOT_test_SLASH_run_test_var)
+		tmp1920 := v_clojure_DOT_core_list.Get()
+		tmp1921 := v_clojure_DOT_core_seq.Get()
+		tmp1922 := v_clojure_DOT_core_concat.Get()
+		tmp1923 := v_clojure_DOT_core_list.Get()
+		tmp1924 := lang.Apply1(tmp1923, sym_var_)
+		tmp1925 := v_clojure_DOT_core_list.Get()
+		tmp1926 := lang.Apply1(tmp1925, test_symbol1915)
+		tmp1927 := lang.Apply2(tmp1922, tmp1924, tmp1926)
+		tmp1928 := lang.Apply1(tmp1921, tmp1927)
+		tmp1929 := lang.Apply1(tmp1920, tmp1928)
+		tmp1930 := lang.Apply2(tmp1917, tmp1919, tmp1929)
+		tmp1931 := lang.Apply1(tmp1916, tmp1930)
+		return tmp1931
+	})
+	run_test1911 = tmp1912
+	v_clojure_DOT_test_run_test.BindRoot(tmp1912)
+	_ = v_clojure_DOT_test_run_test
+	tmp1932 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp1933 := lang.Apply1(tmp1932, v_clojure_DOT_test_run_test)
+	_ = tmp1933
+	_ = v_clojure_DOT_test_run_test
 }
