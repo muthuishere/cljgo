@@ -176,13 +176,17 @@ func (p *Plan) Run(stepArg string, opts emit.Options, keepGen bool) error {
 		}
 		switch s.Type {
 		case "install":
-			out := filepath.Join(p.ProjectDir, art.Name)
+			// The artifact name comes from build.cljgo without an extension;
+			// Windows will not execute a file that lacks .exe, so the suffix
+			// is ours to add — same rule as the single-file path (an explicit
+			// -o is still honored verbatim).
+			out := filepath.Join(p.ProjectDir, art.Name+emit.ExeSuffix)
 			if _, err := p.buildArtifact(art, out, opts, keepGen); err != nil {
 				return err
 			}
 			fmt.Fprintf(os.Stderr, "cljgo build: installed %s\n", out)
 		case "run":
-			out, err := os.CreateTemp("", "cljgo-run-"+art.Name+"-*")
+			out, err := os.CreateTemp("", "cljgo-run-"+art.Name+"-*"+emit.ExeSuffix)
 			if err != nil {
 				return err
 			}
