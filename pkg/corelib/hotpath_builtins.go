@@ -181,6 +181,31 @@ func internHotpathBuiltins(def func(string, func(...any) any) *lang.Var) {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: reduce", len(args)))
 		}
 		for !lang.IsNil(s) {
+			// Chunked fast path: when the source hands out chunks (range,
+			// vector seqs — pkg/lang/longrange.go, chunkedcons.go), walk the
+			// chunk by index and advance a whole chunk at a time. The plain
+			// Next() walk below allocates one seq node PER ELEMENT, which is
+			// what dominates reduce over a large range; a chunk is 32, so
+			// this is ~1/32nd the seq churn for the same work. (How let-go's
+			// reduce gets its edge on this workload — references/let-go
+			// pkg/rt/native_prims.go reduceColl.)
+			//
+			// This is the JVM's behavior too: Clojure's chunked seqs realize
+			// a chunk at a time, so a `reduced` short-circuit stops at the
+			// chunk boundary, not the element. cljgo previously realized
+			// element-by-element (the documented chunking divergence); on
+			// this path we now match Clojure rather than diverge from it.
+			if cs, ok := s.(lang.IChunkedSeq); ok {
+				c := cs.ChunkedFirst()
+				for i, n := 0, c.Count(); i < n; i++ {
+					acc = lang.Apply2(f, acc, c.Nth(i))
+					if r, ok := acc.(*lang.Reduced); ok {
+						return r.Deref()
+					}
+				}
+				s = cs.ChunkedNext()
+				continue
+			}
 			acc = lang.Apply2(f, acc, s.First())
 			if r, ok := acc.(*lang.Reduced); ok {
 				return r.Deref()
