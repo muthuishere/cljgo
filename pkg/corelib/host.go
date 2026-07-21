@@ -38,6 +38,9 @@ func buildHostRegistry() map[string]map[string]reflect.Value {
 			"TrimSpace":   reflect.ValueOf(strings.TrimSpace),
 			"HasPrefix":   reflect.ValueOf(strings.HasPrefix),
 			"NewReplacer": reflect.ValueOf(strings.NewReplacer),
+			// NewReader: an in-memory io.Reader/RuneScanner — the natural
+			// stream to hand clojure.edn/read (conformance edn-read-stream).
+			"NewReader": reflect.ValueOf(strings.NewReader),
 		},
 		"strconv": {
 			"Itoa":       reflect.ValueOf(strconv.Itoa),

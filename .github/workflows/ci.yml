@@ -75,3 +75,12 @@ jobs:
           # on rerun). 120 stays far under the ~168x naive-emission regression
           # the gate exists to catch.
           CLJGO_PERF_RATIO_MAX: "120"
+          # Channel-op budgets (ADR 0040 / ADR 0024, pkg/lang
+          # chan_budget_test.go): local defaults are 1.5x wrapper-vs-raw
+          # and 5x alts-vs-static-select (S19 measured 1.37x/1.9x). Both
+          # are ratios of two same-host measurements, so runner contention
+          # swings the quotient — 3x/10x stays far under the pathology the
+          # gates exist to catch (S19's rejected handler-queue channel was
+          # 2.7-5.6x on EVERY op, and a lock/alloc regression lands there).
+          CLJGO_CHAN_TAX_MAX: "3"
+          CLJGO_ALTS_TAX_MAX: "10"

@@ -51,6 +51,7 @@ var (
 	v_clojure_DOT_string_join                   = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("join"))
 	v_clojure_DOT_string_last_index_of          = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("last-index-of"))
 	v_clojure_DOT_string_lower_case             = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("lower-case"))
+	v_clojure_DOT_string_re_quote_replacement   = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("re-quote-replacement"))
 	v_clojure_DOT_string_replace                = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("replace"))
 	v_clojure_DOT_string_replace_first          = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("replace-first"))
 	v_clojure_DOT_string_reverse                = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("reverse"))
@@ -327,58 +328,66 @@ func Load() {
 	})
 	v_clojure_DOT_string_last_index_of.BindRoot(tmp116)
 	_ = v_clojure_DOT_string_last_index_of
-	// (def escape "Return a new string, using cmap to escape each character ch\n  from s as foll…
-	tmp126 := lang.FnFunc2(func(s127, cmap128 any) any {
-		tmp129 := v_clojure_DOT_core_string_QMARK_.Get()
-		tmp130 := lang.Apply1(tmp129, s127)
-		var tmp131 any
-		_ = tmp131
-		if lang.IsTruthy(tmp130) {
-			tmp132 := v_clojure_DOT_core_apply.Get()
-			tmp133 := v_clojure_DOT_core_str.Get()
-			tmp134 := v_clojure_DOT_core_map_.Get()
-			tmp135 := lang.FnFunc1(func(ch136 any) any {
-				var tmp137 any
-				_ = tmp137
-				{
-					tmp138 := lang.Apply1(cmap128, ch136)
-					var temp__4__auto__139 any = tmp138
-					_ = temp__4__auto__139
-					var tmp140 any
-					_ = tmp140
-					if lang.IsTruthy(temp__4__auto__139) {
-						var tmp141 any
-						_ = tmp141
-						{
-							var r142 any = temp__4__auto__139
-							_ = r142
-							tmp143 := v_clojure_DOT_core_str.Get()
-							tmp144 := lang.Apply1(tmp143, r142)
-							tmp141 = tmp144
-						}
-						tmp140 = tmp141
-					} else {
-						tmp140 = ch136
-					}
-					tmp137 = tmp140
-				}
-				return tmp137
-			})
-			tmp145 := lang.Apply2(tmp134, tmp135, s127)
-			tmp146 := lang.Apply2(tmp132, tmp133, tmp145)
-			tmp131 = tmp146
-		} else {
-			tmp147 := v_clojure_DOT_core_ex_info.Get()
-			tmp148 := v_clojure_DOT_core_str.Get()
-			tmp149 := v_clojure_DOT_core_pr_str.Get()
-			tmp150 := lang.Apply1(tmp149, s127)
-			tmp151 := lang.Apply2(tmp148, "clojure.string/escape: not a string: ", tmp150)
-			tmp152 := lang.NewMap()
-			tmp153 := lang.Apply2(tmp147, tmp151, tmp152)
-			panic(rt.Throw(tmp153))
-		}
-		return tmp131
+	// (def re-quote-replacement "Given a replacement string that you wish to be a literal\n  rep…
+	tmp126 := lang.FnFunc1(func(replacement127 any) any {
+		tmp128 := v_clojure_DOT_core_X_str_replace.Get()
+		tmp129 := lang.Apply3(tmp128, replacement127, "$", "$$")
+		return tmp129
 	})
-	v_clojure_DOT_string_escape.BindRoot(tmp126)
+	v_clojure_DOT_string_re_quote_replacement.BindRoot(tmp126)
+	_ = v_clojure_DOT_string_re_quote_replacement
+	// (def escape "Return a new string, using cmap to escape each character ch\n  from s as foll…
+	tmp130 := lang.FnFunc2(func(s131, cmap132 any) any {
+		tmp133 := v_clojure_DOT_core_string_QMARK_.Get()
+		tmp134 := lang.Apply1(tmp133, s131)
+		var tmp135 any
+		_ = tmp135
+		if lang.IsTruthy(tmp134) {
+			tmp136 := v_clojure_DOT_core_apply.Get()
+			tmp137 := v_clojure_DOT_core_str.Get()
+			tmp138 := v_clojure_DOT_core_map_.Get()
+			tmp139 := lang.FnFunc1(func(ch140 any) any {
+				var tmp141 any
+				_ = tmp141
+				{
+					tmp142 := lang.Apply1(cmap132, ch140)
+					var temp__4__auto__143 any = tmp142
+					_ = temp__4__auto__143
+					var tmp144 any
+					_ = tmp144
+					if lang.IsTruthy(temp__4__auto__143) {
+						var tmp145 any
+						_ = tmp145
+						{
+							var r146 any = temp__4__auto__143
+							_ = r146
+							tmp147 := v_clojure_DOT_core_str.Get()
+							tmp148 := lang.Apply1(tmp147, r146)
+							tmp145 = tmp148
+						}
+						tmp144 = tmp145
+					} else {
+						tmp144 = ch140
+					}
+					tmp141 = tmp144
+				}
+				return tmp141
+			})
+			tmp149 := lang.Apply2(tmp138, tmp139, s131)
+			tmp150 := lang.Apply2(tmp136, tmp137, tmp149)
+			tmp135 = tmp150
+		} else {
+			tmp151 := v_clojure_DOT_core_ex_info.Get()
+			tmp152 := v_clojure_DOT_core_str.Get()
+			tmp153 := v_clojure_DOT_core_pr_str.Get()
+			tmp154 := lang.Apply1(tmp153, s131)
+			tmp155 := lang.Apply2(tmp152, "clojure.string/escape: not a string: ", tmp154)
+			tmp156 := lang.NewMap()
+			tmp157 := lang.Apply2(tmp151, tmp155, tmp156)
+			panic(rt.Throw(tmp157))
+		}
+		return tmp135
+	})
+	v_clojure_DOT_string_escape.BindRoot(tmp130)
 	_ = v_clojure_DOT_string_escape
 }

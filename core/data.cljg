@@ -1,0 +1,171 @@
+;; data.cljg — cljgo's clojure.data (fundamentals audit 2026-07). Loaded at
+;; startup into the clojure.data namespace (core.BootSources, after
+;; clojure.walk; clojure.set loads earlier and is referenced fully
+;; qualified). The .cljg extension follows ADR 0017. A port of
+;; clojure/data.clj (Stuart Halloway, EPL 1.0) onto cljgo's core + protocol
+;; machinery; every behavior below oracle-verified against JVM Clojure
+;; 1.12.5 (`clojure` CLI, 2026-07-21).
+;;
+;; Host adaptation (behavior-preserving for diff, the real API): the JVM
+;; version extends EqualityPartition/Diff to Object and the java.util.Set/
+;; List/Map interfaces. cljgo protocol dispatch has neither a default
+;; (Object) impl nor interface keys, so the protocols are extended to every
+;; built-in dispatch designator instead, and diff itself falls back —
+;; satisfies? first, else map?/set?/sequential?/atom by predicate — so
+;; records, bigints, deftypes and raw Go values still diff exactly as the
+;; JVM's Object/interface impls would (records diff as maps: oracle
+;; (diff (->P 1) (->P 2)) => ({:a 1} {:a 2} nil)). DEVIATION: calling the
+;; protocol methods equality-partition/diff-similar DIRECTLY on such a value
+;; throws cljgo's "No implementation of method" where the JVM answers via
+;; its Object/interface impls; go through diff, as real programs do.
+
+(clojure.core/in-ns 'clojure.data)
+(clojure.core/refer 'clojure.core)
+
+(def diff) ; forward declaration — diff-associative-key recurses through it
+
+;; oracle: (diff 1 2) => [1 2 nil]; (diff 1 1) => [nil nil 1]
+(defn ^:private atom-diff
+  "Internal helper for diff."
+  [a b]
+  (if (= a b) [nil nil a] [a b nil]))
+
+(defn ^:private vectorize
+  "Convert an associative-by-numeric-index collection into
+  an equivalent vector, with nil for any missing keys."
+  [m]
+  (when (seq m)
+    (reduce
+     (fn [result [k v]] (assoc result k v))
+     (vec (repeat (apply max (keys m)) nil))
+     m)))
+
+(defn ^:private diff-associative-key
+  "Diff associative things a and b, comparing only the key k."
+  [a b k]
+  (let [va (get a k)
+        vb (get b k)
+        [a* b* ab] (diff va vb)
+        in-a (contains? a k)
+        in-b (contains? b k)
+        same (and in-a in-b
+                  (or (not (nil? ab))
+                      (and (nil? va) (nil? vb))))]
+    [(when (and in-a (or (not (nil? a*)) (not same))) {k a*})
+     (when (and in-b (or (not (nil? b*)) (not same))) {k b*})
+     (when same {k ab})]))
+
+(defn ^:private diff-associative
+  "Diff associative things a and b, comparing only keys in ks."
+  [a b ks]
+  (reduce
+   (fn [diff1 diff2]
+     (doall (map merge diff1 diff2)))
+   [nil nil nil]
+   (map
+    (partial diff-associative-key a b)
+    ks)))
+
+;; oracle: (diff [1 2 3] [1 9 3 4]) => [[nil 2] [nil 9 nil 4] [1 nil 3]]
+(defn ^:private diff-sequential
+  [a b]
+  (vec (map vectorize
+            (diff-associative
+             (if (vector? a) a (vec a))
+             (if (vector? b) b (vec b))
+             (range (max (count a) (count b)))))))
+
+;; oracle: (diff #{1 2 3} #{2 3 4}) => [#{1} #{4} #{3 2}]
+(defn ^:private diff-set
+  [a b]
+  [(not-empty (clojure.set/difference a b))
+   (not-empty (clojure.set/difference b a))
+   (not-empty (clojure.set/intersection a b))])
+
+;; oracle: (diff {:a 1 :b 2} {:a 1 :c 3}) => ({:b 2} {:c 3} {:a 1})
+(defn ^:private diff-map
+  [a b]
+  (diff-associative a b (clojure.set/union (set (keys a)) (set (keys b)))))
+
+;; "Implementation detail. Subject to change." — both protocols, as on the JVM.
+(defprotocol EqualityPartition
+  (equality-partition [x]))
+
+(defprotocol Diff
+  (diff-similar [a b]))
+
+;; oracle: (equality-partition {:a 1}) => :map; [1] => :sequential;
+;;         #{1} => :set; 1 / "s" / nil => :atom; '(1 2) => :sequential
+(extend-protocol EqualityPartition
+  nil (equality-partition [x] :atom)
+  Boolean (equality-partition [x] :atom)
+  String (equality-partition [x] :atom)
+  Character (equality-partition [x] :atom)
+  Long (equality-partition [x] :atom)
+  Double (equality-partition [x] :atom)
+  Keyword (equality-partition [x] :atom)
+  Symbol (equality-partition [x] :atom)
+  Fn (equality-partition [x] :atom)
+  PersistentVector (equality-partition [x] :sequential)
+  ISeq (equality-partition [x] :sequential)
+  PersistentHashSet (equality-partition [x] :set)
+  PersistentArrayMap (equality-partition [x] :map))
+
+;; oracle: (diff-similar [1 2] [1 3]) => [[nil 2] [nil 3] [1]]
+(extend-protocol Diff
+  nil (diff-similar [a b] (atom-diff a b))
+  Boolean (diff-similar [a b] (atom-diff a b))
+  String (diff-similar [a b] (atom-diff a b))
+  Character (diff-similar [a b] (atom-diff a b))
+  Long (diff-similar [a b] (atom-diff a b))
+  Double (diff-similar [a b] (atom-diff a b))
+  Keyword (diff-similar [a b] (atom-diff a b))
+  Symbol (diff-similar [a b] (atom-diff a b))
+  Fn (diff-similar [a b] (atom-diff a b))
+  PersistentVector (diff-similar [a b] (diff-sequential a b))
+  ISeq (diff-similar [a b] (diff-sequential a b))
+  PersistentHashSet (diff-similar [a b] (diff-set a b))
+  PersistentArrayMap (diff-similar [a b] (diff-map a b)))
+
+;; partition-of / diff-of: the Object/interface fallback the JVM gets from
+;; extending to Object + java.util.* — see the header note.
+(defn ^:private partition-of
+  [x]
+  (cond
+    (satisfies? EqualityPartition x) (equality-partition x)
+    (map? x) :map
+    (set? x) :set
+    (sequential? x) :sequential
+    :else :atom))
+
+(defn ^:private diff-of
+  [a b]
+  (if (satisfies? Diff a)
+    (diff-similar a b)
+    (case (partition-of a)
+      :map (diff-map a b)
+      :set (diff-set a b)
+      :sequential (diff-sequential a b)
+      (atom-diff a b))))
+
+;; oracle: (diff {:a 1} {:a 2}) => ({:a 1} {:a 2} nil)
+;; oracle: (diff {:a 1} [1 2]) => [{:a 1} [1 2] nil]
+;; oracle: (diff nil nil) => [nil nil nil]; (diff '(1 2) [1 2]) => [nil nil (1 2)]
+(defn diff
+  "Recursively compares a and b, returning a tuple of
+  [things-only-in-a things-only-in-b things-in-both].
+  Comparison rules:
+
+  * For equal a and b, return [nil nil a].
+  * Maps are subdiffed where keys match and values differ.
+  * Sets are never subdiffed.
+  * All sequential things are treated as associative collections
+    by their indexes, with results returned as vectors.
+  * Everything else (including strings!) is treated as
+    an atom and compared for equality."
+  [a b]
+  (if (= a b)
+    [nil nil a]
+    (if (= (partition-of a) (partition-of b))
+      (diff-of a b)
+      (atom-diff a b))))
