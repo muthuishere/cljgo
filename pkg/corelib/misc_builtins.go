@@ -204,6 +204,72 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 		return form
 	})
 
+	// --- clojure.core/read-string --------------------------------------------
+	//
+	// The GENERAL reader's read-string (fundamentals audit 2026-07 — distinct
+	// from clojure.edn/read-string above): cljgo's full reader, NOT
+	// edn-strict, so ::autoresolved keywords, #(...) fn literals and
+	// syntax-quote all read. oracle (JVM 1.12.5, conformance/tests/
+	// read-string-core.clj): (read-string "(+ 1 2)") => (+ 1 2);
+	// (read-string "{:a 1} ignored") => {:a 1} (one form only);
+	// (read-string "") throws "EOF while reading"; (read-string {:eof :done}
+	// "") => :done; (read-string "::a") => :user/a in ns user.
+	//
+	// DEVIATION (documented): the opts arity honors :eof only — :read-cond/
+	// :features are reader-conditional policy cljgo's reader does not expose
+	// per-call, and #= eval-on-read does not exist in cljgo's reader at all
+	// (it throws), which is the safe subset of *read-eval*'s default. The
+	// stream-based `read` and *in*-based `read-line` stay unimplemented
+	// pending the *in* design note (audit batch 5).
+	def("read-string", func(args ...any) any {
+		var opts lang.IPersistentMap
+		var s any
+		switch len(args) {
+		case 1:
+			s = args[0]
+		case 2:
+			if args[0] != nil {
+				m, ok := args[0].(lang.IPersistentMap)
+				if !ok {
+					panic(fmt.Errorf("read-string: opts must be a map, got: %s", lang.PrintString(args[0])))
+				}
+				opts = m
+			}
+			s = args[1]
+		default:
+			panic(fmt.Errorf("wrong number of args (%d) passed to: read-string", len(args)))
+		}
+		str, ok := s.(string)
+		if !ok {
+			panic(fmt.Errorf("read-string expects a string, got: %s", lang.PrintString(s)))
+		}
+		form, err := reader.ReadString(str, reader.WithResolver(NSResolver()))
+		if err != nil {
+			if errors.Is(err, reader.ErrEOF) {
+				if opts != nil && opts.ContainsKey(kwEOF) {
+					return lang.Get(opts, kwEOF)
+				}
+				panic(fmt.Errorf("EOF while reading"))
+			}
+			panic(err)
+		}
+		return form
+	})
+
+	// --- map entries (clojure.walk substrate) --------------------------------
+	//
+	// map-entry? itself lives in predicate_builtins.go with the other type
+	// predicates; two identical registrations briefly coexisted after the
+	// walk and core-fns batches merged, and the second silently overwrote
+	// the first. Only the private constructor seam belongs here.
+	// -map-entry: (k v) -> a real MapEntry — clojure.walk's substrate for
+	// rebuilding walked entries (JVM walk uses MapEntry/create so the
+	// walking fn sees genuine entries, CLJ-2031), private like the other
+	// `-` seams; cljgo has no MapEntry constructor surface otherwise.
+	defPrivate("-map-entry", func(args ...any) any {
+		k, v := twoArgs("-map-entry", args)
+		return lang.NewMapEntry(k, v)
+	})
 	// -edn-read backs clojure.edn/read (core/edn.cljg): read ONE form from
 	// a STREAM — any Go io.Reader value, *in* (os.Stdin) by default — with
 	// the same edn-strict reader and the same :eof / :default / :readers

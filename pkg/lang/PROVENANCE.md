@@ -372,18 +372,13 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   (LazilyPersistentVector.createOwning; suite vec.cljc, oracle-cited in
   conformance/tests/vec-array-aliasing.clj).
 
-## Var.SetPrivate (fundamentals batch, 2026-07-21)
+## Fundamentals batch: core fns (fundamentals/core-fns, 2026-07-21)
 
-- `var.go`: added `SetPrivate()`, mirroring the existing `SetMacro()` /
-  `SetDynamic()` mutators — it assocs `:private true` onto the var's meta,
-  which is what `IsPublic()` (and therefore `ns-publics`, and
-  `clojure.repl/dir` on top of it) reads. The interpreter picks privacy up
-  from the def form's metadata; the EMITTER had no way to say it, because a
-  compiled var is interned by name alone. Without this, every `^:private`
-  helper came back public in an AOT binary — `(dir clojure.set)` listed
-  `-bubble-max-key` when compiled and not in the REPL. Caught by
-  conformance/tests/repl-tooling.clj; frozen by
-  conformance/tests/private-var-visibility.clj.
+- `var.go`: added `SetPrivate() *Var` (chainable, next to `SetDynamic`) —
+  pkg/emit's hoistVar replays compile-time `^:private` meta into compiled
+  binaries through it, keeping ns-publics/ns-interns identical between
+  the interpreter and a compiled binary (caught by the dual harness on
+  conformance/tests/ns-introspection.clj).
 ## Per-object monitors for `locking` (fundamentals batch 1, 2026-07-21)
 
 - `monitor.go` NEW (cljgo original, nothing vendored): `WithLock` — the

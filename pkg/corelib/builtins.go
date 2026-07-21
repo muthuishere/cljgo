@@ -419,9 +419,19 @@ func RegisterAll() {
 	internProtocolBuiltins(def)
 
 	// Multimethod substrate (defmulti/defmethod + methods/get-method/
-	// remove-method): the flat =-based dispatch table the core.clj
-	// defmulti/defmethod macros expand onto (multimethod_builtins.go).
+	// remove-method/prefer-method/prefers/remove-all-methods): the
+	// dispatch table (exact-= fast path + isa?/preference resolution) the
+	// core.clj defmulti/defmethod macros expand onto
+	// (multimethod_builtins.go).
 	internMultimethodBuiltins(def)
+
+	// Namespace introspection (ns-name/the-ns/all-ns/ns-publics/
+	// ns-interns/ns-map/ns-refers/ns-aliases/ns-imports) over the live
+	// lang namespace registry (ns_builtins.go).
+	internNamespaceBuiltins(def)
+
+	// slurp/spit file convenience over the Go host (io_builtins.go).
+	internIOBuiltins(def)
 
 	// atom / swap! / reset! / deref: the minimal mutable-cell set
 	// (clojure.core). test.cljg holds its report counters in an atom.
@@ -649,7 +659,6 @@ func RegisterAll() {
 	// ns-interns/ns-map/ns-refers/ns-aliases/ns-imports): the tooling
 	// substrate clojure.repl + clojure.test ride on (fundamentals audit
 	// 2026-07, ns_builtins.go).
-	internNSBuiltins(def)
 	// --- clojure.repl/source-fn's file-reading seam (repl_builtins.go).
 	internReplBuiltins(defPrivate)
 
@@ -870,6 +879,17 @@ func RegisterAll() {
 			panic(fmt.Errorf("future-done?: not a future: %s", lang.PrintString(args[0])))
 		}
 		return f.IsRealized()
+	})
+	// future?: is x a future (fundamentals audit 2026-07 — the one missing
+	// member of the future family). The `IsCancelled() bool` assertion is
+	// the same type test future-cancelled? above already uses, and
+	// *lang.future is the only type in the runtime carrying it — promises
+	// and delays are not futures (oracle 1.12.5: (future? (future 1)) =>
+	// true; (future? 1) / (future? (promise)) / (future? (delay 1)) =>
+	// false).
+	def("future?", func(args ...any) any {
+		_, ok := oneArg("future?", args).(interface{ IsCancelled() bool })
+		return ok
 	})
 
 	// STM-lite refs (ADR 0038): ref is a mutex cell with watches; dosync

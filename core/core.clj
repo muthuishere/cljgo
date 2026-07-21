@@ -1491,6 +1491,172 @@
                 (cons (list 'clojure.core/refer (list 'quote 'clojure.core))
                       requires)))))
 
+;; --- fundamentals batch: seq/collection/function idioms (audit 2026-07) -----
+;; Missing-A-list clojure.core FUNCTIONS from docs/fundamentals-audit-2026-07.md,
+;; ported from clojure.core (Rich Hickey, EPL 1.0) onto cljgo's existing
+;; primitives. Every behavior below is oracle-verified against JVM Clojure
+;; 1.12.5 (`clojure` CLI); the frozen evidence lives in
+;; conformance/tests/fundamentals-*.clj.
+
+;; oracle: (split-with #(< % 3) [1 2 3 4 1]) => [(1 2) (3 4 1)];
+;; (split-with pos? []) => [() ()]
+(defn split-with
+  "Returns a vector of [(take-while pred coll) (drop-while pred coll)]"
+  [pred coll]
+  [(take-while pred coll) (drop-while pred coll)])
+
+;; oracle: (reductions + [1 2 3 4]) => (1 3 6 10); (reductions + 10 [1 2 3])
+;; => (10 11 13 16); (reductions + []) => (0); (reductions + 5 []) => (5);
+;; (take 5 (reductions + (range))) => (0 1 3 6 10) (lazy)
+(defn reductions
+  "Returns a lazy seq of the intermediate values of the reduction (as
+  per reduce) of coll by f, starting with init."
+  ([f coll]
+   (lazy-seq
+    (if-let [s (seq coll)]
+      (reductions f (first s) (rest s))
+      (list (f)))))
+  ([f init coll]
+   (if (reduced? init)
+     (list (deref init))
+     (cons init
+           (lazy-seq
+            (when-let [s (seq coll)]
+              (reductions f (f init (first s)) (rest s))))))))
+
+;; oracle: (tree-seq seq? identity '((1 2 (3)) (4))) =>
+;; (((1 2 (3)) (4)) (1 2 (3)) 1 2 (3) 3 (4) 4);
+;; (tree-seq vector? seq [1 [2 3] [4 [5]]]) =>
+;; ([1 [2 3] [4 [5]]] 1 [2 3] 2 3 [4 [5]] 4 [5] 5)
+(defn tree-seq
+  "Returns a lazy sequence of the nodes in a tree, via a depth-first walk.
+  branch? must be a fn of one arg that returns true if passed a node
+  that can have children (but may not). children must be a fn of one
+  arg that returns a sequence of the children. Will only be called on
+  nodes for which branch? returns true. Root is the root node of the
+  tree."
+  [branch? children root]
+  (let [walk (fn walk [node]
+               (lazy-seq
+                (cons node
+                      (when (branch? node)
+                        (mapcat walk (children node))))))]
+    (walk root)))
+
+;; oracle: (update-keys {:a 1 :b 2} name) => {"a" 1, "b" 2};
+;; (update-keys {} name) => {};
+;; (meta (update-keys (with-meta {:a 1} {:m 1}) name)) => {:m 1}
+(defn update-keys
+  "m f => {(f k) v ...}
+
+  Given a map m and a function f of 1-argument, returns a new map whose
+  keys are the result of applying f to the keys of m, mapped to the
+  corresponding values of m.
+  f must return a unique key for each key of m, else the behavior is
+  undefined."
+  [m f]
+  (let [ret (persistent!
+             (reduce-kv (fn [acc k v] (assoc! acc (f k) v))
+                        (transient {})
+                        m))]
+    (with-meta ret (meta m))))
+
+;; oracle: (update-vals {:a 1 :b 2} inc) => {:a 2, :b 3}; (update-vals {} inc)
+;; => {}; (meta (update-vals (with-meta {:a 1} {:m 1}) inc)) => {:m 1}
+;; cljgo note: always builds on (transient {}) — JVM update-vals reuses an
+;; IEditableCollection input's own transient, but the resulting map is
+;; equal either way (every key is re-assoc'd), and cljgo's instance? has
+;; no IEditableCollection designator to branch on.
+(defn update-vals
+  "m f => {k (f v) ...}
+
+  Given a map m and a function f of 1-argument, returns a new map where
+  the keys of m are mapped to result of applying f to the corresponding
+  values of m."
+  [m f]
+  (with-meta
+    (persistent!
+     (reduce-kv (fn [acc k v] (assoc! acc k (f v)))
+                (transient {})
+                m))
+    (meta m)))
+
+;; oracle: (distinct? 1) => true; (distinct? 1 2) => true;
+;; (distinct? 1 2 3 1) => false; (distinct? :a :b :c) => true
+(defn distinct?
+  "Returns true if no two of the arguments are ="
+  ([x] true)
+  ([x y] (not (= x y)))
+  ([x y & more]
+   ;; (not (= ..)) rather than not= — core.clj loads before predicates.cljg,
+   ;; where not= is defined.
+   (if (not (= x y))
+     (loop [s #{x y} [x & etc :as xs] more]
+       (if xs
+         (if (contains? s x)
+           false
+           (recur (conj s x) etc))
+         true))
+     false)))
+
+;; oracle: (bounded-count 3 [1 2 3 4 5]) => 5 (counted? colls return their
+;; real count); (bounded-count 2 (map inc (range 100))) => 2;
+;; (bounded-count 0 (list 1 2)) => 2
+(defn bounded-count
+  "If coll is counted? returns its count, else will count at most the first n
+  elements of coll using its seq"
+  [n coll]
+  (if (counted? coll)
+    (count coll)
+    (loop [i 0 s (seq coll)]
+      (if (and s (< i n))
+        (recur (inc i) (next s))
+        i))))
+
+;; oracle: (vary-meta (with-meta [1] {:a 1}) assoc :b 2) => [1] with meta
+;; {:a 1, :b 2}; (meta (vary-meta [1] assoc :b 2)) => {:b 2}
+(defn vary-meta
+  "Returns an object of the same type and value as obj, with
+  (apply f (meta obj) args) as its metadata."
+  [obj f & args]
+  (with-meta obj (apply f (meta obj) args)))
+
+;; oracle: caching by args — first call computes, a repeat call with = args
+;; returns the cached value without re-invoking f (call-count atom probe:
+;; [(mf 2) (mf 2) (mf 3) @calls] => [20 20 30 2]); distinct variadic arg
+;; lists cache separately ([(mf2 1 2) (mf2) (mf2 1 2 3)] => [3 0 6]).
+(defn memoize
+  "Returns a memoized version of a referentially transparent function. The
+  memoized version of the function keeps a cache of the mapping from arguments
+  to results and, when calls with the same arguments are repeated often, has
+  higher performance at the expense of higher memory use."
+  [f]
+  (let [mem (atom {})]
+    (fn [& args]
+      (if-let [e (find (deref mem) args)]
+        (val e)
+        (let [ret (apply f args)]
+          (swap! mem assoc args ret)
+          ret)))))
+
+;; oracle: (trampoline (fn f [n] (if (zero? n) :done #(f (dec n)))) 10000)
+;; => :done (no stack growth); (trampoline + 1 2) => 3; a returned fn keeps
+;; bouncing: (trampoline (fn [] (fn [] 7))) => 7; (trampoline (fn [] 42)) => 42
+(defn trampoline
+  "trampoline can be used to convert algorithms requiring mutual
+  recursion without stack consumption. Calls f with supplied args, if
+  any. If f returns a fn, calls that fn with no arguments, and
+  continues repeating, until the return value is not a fn, then
+  returns that non-fn value. Note that if you want to return a fn as a
+  final value, you must wrap it in some data structure and unpack it
+  after trampoline returns."
+  ([f]
+   (let [ret (f)]
+     (if (fn? ret)
+       (recur ret)
+       ret)))
+  ([f & args]
+   (trampoline #(apply f args))))
 ;; ===========================================================================
 ;; Fundamentals batch 1 — the missing control-flow / binding bread-and-butter
 ;; macros (docs/fundamentals-audit-2026-07.md A-list + the amap/areduce/memfn/

@@ -137,7 +137,8 @@ func (g *generator) uniqueGlobal(base string) string {
 // `var v_… = lang.InternVarName(…)` (idempotent, order-free — design/00
 // §4.4 rationale applies to vars exactly as to keywords). Vars whose
 // compile-time metadata carries :dynamic are re-marked dynamic in the
-// emitted binary so `binding`/`set!` keep working.
+// emitted binary so `binding`/`set!` keep working; :private is replayed
+// the same way so ns-publics/ns-interns agree across modes.
 func (g *generator) hoistVar(v *lang.Var) string {
 	if gn, ok := g.vars[v]; ok {
 		return gn
@@ -150,12 +151,11 @@ func (g *generator) hoistVar(v *lang.Var) string {
 		init += ".SetDynamic()"
 		g.dynVars[v] = true
 	}
-	// ^:private has to be carried the same way: a compiled var is interned
-	// by name only, so without this every private helper comes back public
-	// and ns-publics/dir report a namespace the interpreter never shows
-	// (found by conformance/tests/repl-tooling.clj — clojure.set's
-	// -bubble-max-key leaked into (dir clojure.set) in compiled binaries).
-	if !v.IsPublic() {
+	// ^:private is replayed the same way (fundamentals audit 2026-07):
+	// def meta is applied at ANALYSIS time (analyzer parseDef), so the
+	// compile-process var carries it but the binary's re-interned var
+	// would not — and ns-publics/ns-interns would diverge between modes.
+	if lang.IsTruthy(lang.Get(v.Meta(), lang.KWPrivate)) {
 		init += ".SetPrivate()"
 	}
 	g.vars[v] = gn
