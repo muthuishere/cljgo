@@ -17,6 +17,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -927,6 +928,57 @@ func RegisterAll() {
 	// commute is alter in STM-lite: with one global transaction lock there
 	// is no concurrent commit to reorder against (deviation, ADR 0038).
 	def("commute", refAlter("commute"))
+	// ensure: protect a ref from another transaction's writes for the rest
+	// of this one, returning its in-transaction value. cljgo's single global
+	// transaction lock already gives that protection, so ensure is a
+	// transaction-gated deref (throws "No transaction running" outside one).
+	def("ensure", func(args ...any) any {
+		r, ok := oneArg("ensure", args).(*lang.Ref)
+		if !ok {
+			panic(fmt.Errorf("ensure: not a ref: %s", lang.PrintString(args[0])))
+		}
+		return r.TxEnsure()
+	})
+	// ref-history-count / ref-min-history / ref-max-history: the JVM's MVCC
+	// history-tuning knobs. cljgo keeps no snapshot history (single global
+	// lock, no MVCC), so the count is always 0 (matching a fresh JVM ref);
+	// min/max are stored-and-read but never consulted. min/max are getters
+	// at arity 1 and setters (returning the ref) at arity 2.
+	def("ref-history-count", func(args ...any) any {
+		r, ok := oneArg("ref-history-count", args).(*lang.Ref)
+		if !ok {
+			panic(fmt.Errorf("ref-history-count: not a ref: %s", lang.PrintString(args[0])))
+		}
+		return r.HistoryCount()
+	})
+	def("ref-min-history", func(args ...any) any {
+		if len(args) == 0 || len(args) > 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: ref-min-history", len(args)))
+		}
+		r, ok := args[0].(*lang.Ref)
+		if !ok {
+			panic(fmt.Errorf("ref-min-history: not a ref: %s", lang.PrintString(args[0])))
+		}
+		if len(args) == 2 {
+			r.SetMinHistory(lang.AsInt64(args[1]))
+			return r
+		}
+		return r.MinHistory()
+	})
+	def("ref-max-history", func(args ...any) any {
+		if len(args) == 0 || len(args) > 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: ref-max-history", len(args)))
+		}
+		r, ok := args[0].(*lang.Ref)
+		if !ok {
+			panic(fmt.Errorf("ref-max-history: not a ref: %s", lang.PrintString(args[0])))
+		}
+		if len(args) == 2 {
+			r.SetMaxHistory(lang.AsInt64(args[1]))
+			return r
+		}
+		return r.MaxHistory()
+	})
 	defPrivate("-tx-run", func(args ...any) any {
 		f, ok := oneArg("-tx-run", args).(lang.IFn)
 		if !ok {
@@ -938,8 +990,63 @@ func RegisterAll() {
 	// Agents (ADR 0038): a value cell + a serialized action queue drained
 	// by one goroutine. send/send-off are the same operation (the
 	// go/thread collapse, design/05 §4); await drains via a latch action.
+	// agent: (agent init & options). Options are keyword/value pairs;
+	// cljgo honors :error-mode (:fail|:continue), :error-handler (fn of
+	// [agent throwable]) and :meta. The default error-mode is :continue
+	// when an :error-handler is supplied, else :fail (oracle 1.12.5,
+	// fundamentals audit 2026-07). :validator routes through the existing
+	// (unimplemented) SetValidator path unchanged.
 	def("agent", func(args ...any) any {
-		return lang.NewAgent(oneArg("agent", args))
+		if len(args) == 0 {
+			panic(fmt.Errorf("wrong number of args (0) passed to: agent"))
+		}
+		a := lang.NewAgent(args[0])
+		opts := args[1:]
+		if len(opts)%2 != 0 {
+			panic(fmt.Errorf("agent: options must be keyword/value pairs"))
+		}
+		var handlerSet, modeSet bool
+		for i := 0; i < len(opts); i += 2 {
+			k, ok := opts[i].(lang.Keyword)
+			if !ok {
+				panic(fmt.Errorf("agent: option key must be a keyword: %s", lang.PrintString(opts[i])))
+			}
+			v := opts[i+1]
+			switch k {
+			case lang.NewKeyword("error-handler"):
+				if v != nil {
+					fn, ok := v.(lang.IFn)
+					if !ok {
+						panic(fmt.Errorf("agent: :error-handler must be a function"))
+					}
+					a.SetErrorHandler(fn)
+					handlerSet = true
+				}
+			case lang.NewKeyword("error-mode"):
+				a.SetErrorMode(coerceErrorMode(v))
+				modeSet = true
+			case lang.NewKeyword("meta"):
+				if m, ok := v.(lang.IPersistentMap); ok {
+					a.SetMeta(m)
+				}
+			case lang.NewKeyword("validator"):
+				if v != nil {
+					fn, ok := v.(lang.IFn)
+					if !ok {
+						panic(fmt.Errorf("agent: :validator must be a function"))
+					}
+					a.SetValidator(fn)
+				}
+			default:
+				panic(fmt.Errorf("agent: unsupported option %s", lang.PrintString(k)))
+			}
+		}
+		// Default error-mode is :continue when a handler was supplied and no
+		// explicit :error-mode overrode it (JVM Agent constructor).
+		if handlerSet && !modeSet {
+			a.SetErrorMode(lang.NewKeyword("continue"))
+		}
+		return a
 	})
 	agentSend := func(op string) func(args ...any) any {
 		return func(args ...any) any {
@@ -999,6 +1106,117 @@ func RegisterAll() {
 			panic(fmt.Errorf("restart-agent: not an agent: %s", lang.PrintString(args[0])))
 		}
 		return a.Restart(args[1])
+	})
+
+	// clear-agent-errors (DEPRECATED on the JVM too): clears a failed
+	// agent's error and returns its current value — restart-agent to the
+	// value it already holds. Like restart-agent it throws on a non-failed
+	// agent ("Agent does not need a restart", oracle 1.12.5, 2026-07-21).
+	def("clear-agent-errors", func(args ...any) any {
+		a, ok := oneArg("clear-agent-errors", args).(*lang.Agent)
+		if !ok {
+			panic(fmt.Errorf("clear-agent-errors: not an agent: %s", lang.PrintString(args[0])))
+		}
+		return a.Restart(a.Deref())
+	})
+
+	// agent-errors (DEPRECATED on the JVM too): a seq of the agent's
+	// error(s), or nil when it has none. cljgo agents hold at most one
+	// error, so this is (list err) when failed, nil otherwise (oracle
+	// 1.12.5, 2026-07-21).
+	def("agent-errors", func(args ...any) any {
+		a, ok := oneArg("agent-errors", args).(*lang.Agent)
+		if !ok {
+			panic(fmt.Errorf("agent-errors: not an agent: %s", lang.PrintString(args[0])))
+		}
+		if err := a.AgentError(); err != nil {
+			return lang.NewList(err)
+		}
+		return nil
+	})
+
+	// await-for: block up to timeout-ms for every action sent to each agent
+	// before the call to run; true if all drained in time, false on timeout
+	// or a failed agent. One shared deadline spans all the agents (JVM
+	// semantics), so the total wait is bounded by timeout-ms, not N×.
+	def("await-for", func(args ...any) any {
+		if len(args) < 1 {
+			panic(fmt.Errorf("wrong number of args (0) passed to: await-for"))
+		}
+		timeout := lang.AsInt64(args[0])
+		deadline := time.Now().Add(time.Duration(timeout) * time.Millisecond)
+		for _, arg := range args[1:] {
+			a, ok := arg.(*lang.Agent)
+			if !ok {
+				panic(fmt.Errorf("await-for: not an agent: %s", lang.PrintString(arg)))
+			}
+			if !a.AwaitForOne(deadline) {
+				return false
+			}
+		}
+		return true
+	})
+
+	// error-mode / error-handler read the agent's error policy;
+	// set-error-mode! / set-error-handler! change it (returning nil, like
+	// the JVM's void setters). error-mode is :fail (default) or :continue;
+	// in :continue mode a throwing action no longer fails the agent.
+	def("error-mode", func(args ...any) any {
+		a, ok := oneArg("error-mode", args).(*lang.Agent)
+		if !ok {
+			panic(fmt.Errorf("error-mode: not an agent: %s", lang.PrintString(args[0])))
+		}
+		return a.ErrorMode()
+	})
+	def("error-handler", func(args ...any) any {
+		a, ok := oneArg("error-handler", args).(*lang.Agent)
+		if !ok {
+			panic(fmt.Errorf("error-handler: not an agent: %s", lang.PrintString(args[0])))
+		}
+		if h := a.ErrorHandler(); h != nil {
+			return h
+		}
+		return nil
+	})
+	def("set-error-mode!", func(args ...any) any {
+		a, mode := twoArgs("set-error-mode!", args)
+		ag, ok := a.(*lang.Agent)
+		if !ok {
+			panic(fmt.Errorf("set-error-mode!: not an agent: %s", lang.PrintString(a)))
+		}
+		ag.SetErrorMode(coerceErrorMode(mode))
+		return nil
+	})
+	def("set-error-handler!", func(args ...any) any {
+		a, h := twoArgs("set-error-handler!", args)
+		ag, ok := a.(*lang.Agent)
+		if !ok {
+			panic(fmt.Errorf("set-error-handler!: not an agent: %s", lang.PrintString(a)))
+		}
+		fn, ok := h.(lang.IFn)
+		if !ok {
+			panic(fmt.Errorf("set-error-handler!: not a function: %s", lang.PrintString(h)))
+		}
+		ag.SetErrorHandler(fn)
+		return nil
+	})
+
+	// shutdown-agents: on the JVM this drains and closes the agent thread
+	// pools; cljgo's per-agent goroutines are never pooled or torn down, so
+	// this is a documented no-op returning nil (agents remain usable after,
+	// a lenient deviation).
+	def("shutdown-agents", func(args ...any) any {
+		lang.ShutdownAgents()
+		return nil
+	})
+
+	// release-pending-sends: the JVM flushes actions queued by the current
+	// action/transaction and returns how many were released; cljgo dispatches
+	// each send immediately (no in-action batching), so there are never
+	// pending sends to release — always 0 (oracle 1.12.5: 0 outside an
+	// action).
+	def("release-pending-sends", func(args ...any) any {
+		return int64(0)
 	})
 
 	// promise / deliver: a single-value cell (design/08 batch E, ADR 0022;
@@ -1120,6 +1338,16 @@ func symbolArg(op string, args []any) *lang.Symbol {
 		panic(fmt.Errorf("%s expects a symbol, got: %s", op, lang.PrintString(args[0])))
 	}
 	return sym
+}
+
+// coerceErrorMode validates an agent error-mode value: it must be the
+// keyword :fail or :continue (clojure.core's {:pre} on set-error-mode!).
+func coerceErrorMode(v any) lang.Keyword {
+	k, ok := v.(lang.Keyword)
+	if !ok || (k != lang.NewKeyword("fail") && k != lang.NewKeyword("continue")) {
+		panic(fmt.Errorf("error-mode must be :fail or :continue, got: %s", lang.PrintString(v)))
+	}
+	return k
 }
 
 // currentNS mirrors Evaluator.CurrentNS for builtins (one *ns* world).

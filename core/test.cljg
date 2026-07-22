@@ -107,10 +107,22 @@
     (clojure.core/fn? x)))
 
 ;; `is` supports (= a b) / a plain (pred args...) call, a bare expression,
-;; (thrown? Class body...) and (thrown-with-msg? Class #"re" body...). Every
-;; branch is wrapped in a REAL (try ... (catch Throwable ...)) — matching JVM
-;; clojure.test's try-expr — so an assertion whose body throws unexpectedly
-;; reports :error and the run continues, rather than crashing the process.
+;; (thrown? Class body...) and (thrown-with-msg? Class #"re" body...) — and,
+;; since the fundamentals batch below, ANY form a user teaches it about by
+;; adding a method to the `assert-expr` multimethod. The structure is JVM
+;; clojure.test's exactly (oracle: clojure/test.clj 1.12.5, read with
+;; clojure.repl/source + the resource on the CLI classpath, 2026-07-21):
+;;
+;;   is        -> (try-expr msg form)
+;;   try-expr  -> (try <(assert-expr msg form)> (catch Throwable ...))
+;;   assert-expr — a MULTIMETHOD dispatching on the head symbol of form
+;;
+;; so every assertion is still wrapped in exactly one REAL
+;; (try ... (catch Throwable ...)): an assertion whose body throws
+;; unexpectedly reports :error and the run continues, rather than crashing
+;; the process. The generated code per branch is unchanged from cljgo's
+;; previous hand-rolled `is` cond — only the dispatch moved into the
+;; extension point.
 ;;
 ;; NOTE on class symbols in syntax-quote: cljgo's reader keeps try/catch/throw
 ;; as bare specials, but a class symbol like Throwable is NOT special, so a
@@ -118,86 +130,131 @@
 ;; Throwable) and never match. The outer catch therefore forces the bare
 ;; symbol with ~'Throwable; the thrown?/thrown-with-msg? class is spliced
 ;; straight from the user's form (~klass), so it is already unqualified.
+
+(defn assert-predicate
+  "Returns generic assertion code for any functional predicate. The
+  'expected' argument to 'report' will contain the original form, the
+  'actual' argument will contain the form with all its sub-forms
+  evaluated. If the predicate returns false, the 'actual' form will be
+  wrapped in (not...)."
+  [msg form]
+  (let [args (rest form)
+        pred (first form)]
+    `(let [values# (clojure.core/list ~@args)
+           result# (clojure.core/apply ~pred values#)]
+       (if result#
+         (do-report {:type :pass :message ~msg :expected '~form
+                     :actual (clojure.core/cons '~pred values#)})
+         ;; '~'not => the bare symbol `not`, so :actual prints as
+         ;; (not (= 1 2)) like JVM clojure.test, not clojure.core/not.
+         (do-report {:type :fail :message ~msg :expected '~form
+                     :actual (clojure.core/list '~'not (clojure.core/cons '~pred values#))}))
+       result#)))
+
+(defn assert-any
+  "Returns generic assertion code for any test, including macros, host
+  calls, or isolated symbols."
+  [msg form]
+  `(let [value# ~form]
+     (if value#
+       (do-report {:type :pass :message ~msg :expected '~form :actual value#})
+       (do-report {:type :fail :message ~msg :expected '~form :actual value#}))
+     value#))
+
+;; -assert-expr-dispatch is JVM clojure.test's assert-expr dispatch fn plus
+;; ONE cljgo-specific normalization, kept from the previous `is`:
+;;
+;;   portability p/thrown? — the jank clojure-test-suite writes exception
+;;   assertions as (is (p/thrown? body...)), a NAMESPACE-qualified thrown?
+;;   (the clojure.core-test.portability hook, ADR 0022) with NO class arg,
+;;   asserting the body throws *something*. On the JVM the suite's own
+;;   portability.cljc registers that defmethod itself; cljgo ships its own
+;;   shim (core/clojure_test_portability.cljg) instead, so the dispatch fn
+;;   folds any namespaced symbol named "thrown?" (bare thrown? always
+;;   carries a class) onto ::any-thrown?, whose method is below.
+(defn ^:private -assert-expr-dispatch [_msg form]
+  (cond
+    (nil? form) :always-fail
+    (seq? form)
+    (let [head (first form)]
+      (if (and (symbol? head) (namespace head) (= "thrown?" (name head)))
+        ::any-thrown?
+        head))
+    :else :default))
+
+;; assert-expr — THE extension point. (defmethod assert-expr 'my-pred
+;; [msg form] ...) teaches `is` a new special form; the method is a
+;; macroexpansion-time fn returning the code the assertion becomes.
+(defmulti assert-expr -assert-expr-dispatch)
+
+(defmethod assert-expr :always-fail [msg form]
+  ;; nil test: always fail
+  `(do-report {:type :fail :message ~msg}))
+
+;; :default — a seq whose head is a function VALUE (not a macro, not a
+;; special form) is a predicate call reported with its evaluated args;
+;; anything else is an opaque expression. cljgo gates on `seq?` where the
+;; JVM gates on `sequential?`: a literal vector is data here, never a
+;; predicate call. Documented deviation, unchanged from the previous `is`.
+(defmethod assert-expr :default [msg form]
+  (if (and (seq? form) (-function? (first form)))
+    (assert-predicate msg form)
+    (assert-any msg form)))
+
+(defmethod assert-expr 'thrown? [msg form]
+  ;; (is (thrown? c expr)) — asserts evaluating expr throws an instance of
+  ;; c. Returns the exception thrown.
+  (let [klass (second form)
+        body (nnext form)]
+    `(try
+       ~@body
+       ;; body returned without throwing => the assertion fails.
+       (do-report {:type :fail :message ~msg :expected '~form :actual nil})
+       nil
+       (catch ~klass e#
+         (do-report {:type :pass :message ~msg :expected '~form :actual e#})
+         e#))))
+
+(defmethod assert-expr ::any-thrown? [msg form]
+  ;; (is (p/thrown? expr)) — asserts expr throws *something*, no class arg.
+  (let [body (rest form)]
+    `(try
+       ~@body
+       (do-report {:type :fail :message ~msg :expected '~form :actual nil})
+       nil
+       (catch ~'Throwable e#
+         (do-report {:type :pass :message ~msg :expected '~form :actual e#})
+         e#))))
+
+(defmethod assert-expr 'thrown-with-msg? [msg form]
+  ;; (is (thrown-with-msg? c re expr)) — as thrown?, and the exception's
+  ;; message must re-find-match re. cljgo reads the message with
+  ;; ex-message and matches through the -re-find? host seam (the JVM uses
+  ;; .getMessage + re-find).
+  (let [klass (nth form 1)
+        re (nth form 2)
+        body (nthnext form 3)]
+    `(try
+       ~@body
+       (do-report {:type :fail :message ~msg :expected '~form :actual nil})
+       nil
+       (catch ~klass e#
+         (if (clojure.core/-re-find? ~re (ex-message e#))
+           (do-report {:type :pass :message ~msg :expected '~form :actual e#})
+           (do-report {:type :fail :message ~msg :expected '~form :actual e#}))
+         e#))))
+
+(defmacro try-expr
+  "Used by the 'is' macro to catch unexpected exceptions.
+  You don't call this."
+  [msg form]
+  `(try ~(assert-expr msg form)
+        (catch ~'Throwable t#
+          (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
+
 (defmacro is
   ([form] (list 'clojure.test/is form nil))
-  ([form msg]
-   (cond
-     (and (seq? form) (= (first form) 'thrown?))
-     (let [klass (second form)
-           body (nnext form)]
-       `(try
-          (try
-            ~@body
-            ;; body returned without throwing => the assertion fails.
-            (do-report {:type :fail :message ~msg :expected '~form :actual nil})
-            nil
-            (catch ~klass e#
-              (do-report {:type :pass :message ~msg :expected '~form :actual e#})
-              e#))
-          (catch ~'Throwable t#
-            (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
-
-     ;; portability p/thrown?: the jank clojure-test-suite writes exception
-     ;; assertions as (is (p/thrown? body...)) — a NAMESPACE-qualified thrown?
-     ;; (the clojure.core-test.portability hook, ADR 0022) with NO class arg,
-     ;; asserting the body throws *something*. Match any namespaced symbol whose
-     ;; name is "thrown?" (bare thrown? above always carries a class), and expand
-     ;; to a catch-Throwable any-throw check.
-     (and (seq? form) (symbol? (first form))
-          (= "thrown?" (name (first form))) (namespace (first form)))
-     (let [body (rest form)]
-       `(try
-          (try
-            ~@body
-            (do-report {:type :fail :message ~msg :expected '~form :actual nil})
-            nil
-            (catch ~'Throwable e#
-              (do-report {:type :pass :message ~msg :expected '~form :actual e#})
-              e#))
-          (catch ~'Throwable t#
-            (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
-
-     (and (seq? form) (= (first form) 'thrown-with-msg?))
-     (let [klass (second form)
-           re (nth form 2)
-           body (nthnext form 3)]
-       `(try
-          (try
-            ~@body
-            (do-report {:type :fail :message ~msg :expected '~form :actual nil})
-            nil
-            (catch ~klass e#
-              (if (clojure.core/-re-find? ~re (ex-message e#))
-                (do-report {:type :pass :message ~msg :expected '~form :actual e#})
-                (do-report {:type :fail :message ~msg :expected '~form :actual e#}))
-              e#))
-          (catch ~'Throwable t#
-            (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
-
-     (and (seq? form) (-function? (first form)))
-     `(try
-        (let [values# (clojure.core/list ~@(rest form))
-              result# (clojure.core/apply ~(first form) values#)]
-          (if result#
-            (do-report {:type :pass :message ~msg :expected '~form
-                        :actual (clojure.core/cons '~(first form) values#)})
-            ;; '~'not => the bare symbol `not`, so :actual prints as
-            ;; (not (= 1 2)) like JVM clojure.test, not clojure.core/not.
-            (do-report {:type :fail :message ~msg :expected '~form
-                        :actual (clojure.core/list '~'not (clojure.core/cons '~(first form) values#))}))
-          result#)
-        (catch ~'Throwable e#
-          (do-report {:type :error :message ~msg :expected '~form :actual e#})))
-
-     :else
-     `(try
-        (let [value# ~form]
-          (if value#
-            (do-report {:type :pass :message ~msg :expected '~form :actual value#})
-            (do-report {:type :fail :message ~msg :expected '~form :actual value#}))
-          value#)
-        (catch ~'Throwable e#
-          (do-report {:type :error :message ~msg :expected '~form :actual e#}))))))
+  ([form msg] `(try-expr ~msg ~form)))
 
 ;; `binding` is a cljgo special form (not in the reader's syntax-quote
 ;; special list, which knows only standard-Clojure specials), so force the
