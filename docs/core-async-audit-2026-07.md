@@ -52,6 +52,14 @@ is hidden, and every shared public is confirmed under a conformance test.
 | cljgo extras vs JVM (after — `go*` made `^:private`) | **0** |
 | JVM publics still absent from cljgo | **35** = 11 deprecated + 3 T3 + 21 internal |
 
+> **Update (T3 landed, 2026-07-22, change `apply/core-async-t3`).** The three
+> T3 pipeline publics — `pipeline`, `pipeline-blocking`, `pipeline-async` — are
+> now implemented (see the T3 section below), taking cljgo's
+> `clojure.core.async` surface to **55** publics, still a strict subset of the
+> JVM's 87 with **0** extras. JVM publics still absent = **32** = 11 deprecated
+> + 21 internal; every non-deprecated, non-internal JVM public is now present
+> (55 = 87 − 11 − 21). This is the FULL practical core.async surface.
+
 Every one of cljgo's 52 publics is now a strict subset of the JVM surface (no
 non-Clojure name is advertised), and every JVM public that is absent is absent
 for a documented reason (deprecated-upstream, ADR-deferred, or internal
@@ -112,22 +120,23 @@ implement individually, but the default is skip-with-note.
 > they are harmless and stay. This audit does not remove already-shipped
 > deprecated aliases, only declines to add new ones.
 
-### T3 — deferred by ADR 0040 (3)
+### T3 — DONE (3, implemented 2026-07-22, change `apply/core-async-t3`)
 
-ADR 0040 #9 tiers the surface T1 (core) → T2 (pumps) → **T3 (pipelines)**, and
-the pipeline tier is explicitly deferred. Not `:deprecated`; genuinely absent
-pending a future change.
+ADR 0040 #9 tiered the surface T1 (core) → T2 (pumps) → **T3 (pipelines)**;
+the pipeline tier was the last deferred stage and is now implemented. Not
+`:deprecated`; all three present with full arities.
 
-| var | `:arglists` |
-|---|---|
-| `pipeline` | `([n to xf from] [n to xf from close?] [n to xf from close? ex-handler])` |
-| `pipeline-async` | `([n to af from] [n to af from close?])` |
-| `pipeline-blocking` | `([n to xf from] [n to xf from close?] [n to xf from close? ex-handler])` |
+| var | `:arglists` | behaviour (oracle-frozen) | conformance |
+|---|---|---|---|
+| `pipeline` | `([n to xf from] [+ close?] [+ ex-handler])` | read `from`, transform each value through the transducer `xf` with parallelism `n`, write results to `to` **in input order**, close `to` when `from` drains unless `close?=false`; returns a completion channel that closes when done. Per-input transducer (fresh `(chan 1 xf ex-handler)` per value), so stateful xf does not accumulate across inputs. `ex-handler` (6th arg) replaces a thrown value; nil / default drops it. | `chan-pipeline`, `chan-pipeline-order`, `chan-pipeline-close`, `chan-pipeline-xform`, `chan-pipeline-ex-handler` |
+| `pipeline-blocking` | `([n to xf from] [+ close?] [+ ex-handler])` | identical to `pipeline` on the Go host — the JVM's compute-vs-blocking executor split collapses to goroutines (ADR 0040 #9), documented as observable equality. | `chan-pipeline-blocking` |
+| `pipeline-async` | `([n to af from] [+ close?])` | like `pipeline` but the async fn `af = (fn [val result-ch])` delivers 0+ results to `result-ch` and closes it; multi-emit and zero-emit per input, results in input order. | `chan-pipeline-async` |
 
-**Recommendation: leave deferred** until an ADR/openspec change opens T3. On Go,
-all three collapse toward one goroutine-parallel implementation (ADR 0040 #9:
-"real goroutines collapse the thread-pool distinctions";
-`pipeline-blocking` is upstream an alias of `pipeline`).
+Runtime: `lang.Pipeline` / `lang.PipelineAsync` (`pkg/lang/chan_pump.go`),
+built on a dispatcher → n workers → single ordered writer over the T1
+primitives. Registered via `areg` in `pkg/corelib/chan_builtins.go` (NOT
+`def`), async-ns-only. `n` must be positive (oracle `n0 =>` AssertionError).
+Every behaviour frozen against JVM core.async 1.6.681.
 
 ### C — internal machinery / protocols / IOC transform; correctly absent (21)
 
@@ -224,4 +233,6 @@ Oracle metadata dump (87 rows, `name | macro | deprecated | arglists`) and the
 cljgo `ns-publics` dump (52 rows) were computed with the commands in §Method;
 throwaway scratch files, not checked in. Counts reconcile as
 **50 shared(before) + 2 A + 11 B-deprecated + 3 T3 + 21 C-internal = 87**, with
-cljgo's post-change surface = 50 + 2 = **52**, extras vs JVM = **0**.
+cljgo's post-change surface = 50 + 2 = **52**, extras vs JVM = **0**. After T3
+landed (2026-07-22) the 3 T3 vars join the shared set: **52 + 3 = 55**
+publics, absent = 11 deprecated + 21 internal = **32**, extras still **0**.
