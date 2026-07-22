@@ -24,7 +24,10 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 		rv, ok := corelib.LookupHostMember(r.Pkg, r.Member)
 		if !ok {
 			if isThirdPartyGoPath(r.Pkg) {
-				return nil, nil // AOT-only member (ADR 0021 B2): compile-time no-op
+				if e.HostUnlinkedTolerant {
+					return nil, nil // AOT discovery pass: the binary links it for real
+				}
+				return nil, e.unlinkedGoError(r.Pkg, r.Member) // ADR 0049 dec 2
 			}
 			return nil, fmt.Errorf("unable to resolve Go member: %s.%s", r.Pkg, r.Member)
 		}
@@ -56,10 +59,13 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 		}
 		if !ok {
 			if isThirdPartyGoPath(c.Pkg) {
-				// AOT-only member (ADR 0021 B2): args are evaluated for their
-				// side effects, but the unlinked call is a compile-time no-op —
-				// the emitted binary makes the real, non-reflective call.
-				return nil, nil
+				if e.HostUnlinkedTolerant {
+					// AOT discovery pass: args ran for their side effects, but
+					// the unlinked call is a compile-time no-op — the emitted
+					// binary makes the real, non-reflective call.
+					return nil, nil
+				}
+				return nil, e.unlinkedGoError(c.Pkg, c.Member) // ADR 0049 dec 2
 			}
 			return nil, fmt.Errorf("unable to resolve Go member: %s.%s", c.Pkg, c.Member)
 		}
@@ -175,6 +181,26 @@ func isThirdPartyGoPath(path string) bool {
 		first = path[:i]
 	}
 	return strings.Contains(first, ".")
+}
+
+// unlinkedGoError builds the hard error for an access to a member of a
+// third-party require-go module that is NOT linked into the interpreter
+// (ADR 0049 decision 2). It names the module path and the member, and —
+// when *file* is bound to a real source path — the file, so the message is
+// actionable rather than a silent nil. (v0 AST nodes carry no line/col, so
+// no line is shown; *file* is the finest position available at this layer.)
+// This restores dual-mode parity: `cljgo run`/the REPL error here, while
+// the AOT binary links the module and produces the real value.
+func (e *Evaluator) unlinkedGoError(pkg, member string) error {
+	loc := ""
+	if fv, ok := lang.VarFile.Deref().(string); ok && fv != "" &&
+		fv != "NO_SOURCE_FILE" && fv != "NO_SOURCE_PATH" {
+		loc = fmt.Sprintf(" (at %s)", fv)
+	}
+	return fmt.Errorf(
+		"go module %s is not linked into the interpreter (accessing member %s)%s; "+
+			"build it (cljgo build), or use the self-rebuild flow (design/05 §1)",
+		pkg, member, loc)
 }
 
 // registerRequireGo backs the `require-go` builtin: it records an

@@ -41,6 +41,14 @@ type Options struct {
 	// PrintLastValue makes main() print pr-str of the last top-level
 	// form's value — the conformance dual-harness contract (ADR 0007).
 	PrintLastValue bool
+	// EntrySrcFile is the entry namespace's logical source path. When set,
+	// the emitted main package's Load() binds *file* to it (ADR 0049 dec 3),
+	// so an AOT binary reports the same *file* semantics as the interpreter
+	// rather than NO_SOURCE_FILE. WriteProgram sets it from the program's
+	// entry path; direct EmitMain callers may leave it empty (no binding,
+	// the pre-0049 behavior). A binary has no source tree at runtime, so
+	// this is a logical path — semantics match, not on-disk byte-identity.
+	EntrySrcFile string
 }
 
 // EmitMain compiles analyzed top-level forms into a complete
@@ -59,7 +67,9 @@ type Options struct {
 // Returns gofmt-ed source; the raw pre-format text comes back too so a
 // format failure — the syntax gate (ADR 0001) — is debuggable.
 func EmitMain(forms []*ast.Node, opts Options) (formatted []byte, raw []byte, err error) {
-	return emitPackage(forms, opts, pkgSpec{pkgName: "main", isMain: true})
+	// ADR 0049 dec 3: the entry namespace's *file* binds to its logical
+	// source path (matching the interpreter), not NO_SOURCE_FILE.
+	return emitPackage(forms, opts, pkgSpec{pkgName: "main", isMain: true, srcFile: opts.EntrySrcFile})
 }
 
 // pkgSpec parameterizes one emitted Go package (ADR 0042 §1): the entry

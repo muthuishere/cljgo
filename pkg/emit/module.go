@@ -91,6 +91,12 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	// convention); compileStream's evalNode recovers those raised while
 	// evaluating a require form into errors, so nothing extra here.
 	ev := eval.New()
+	// ADR 0049 dec 2: the namespace-discovery pass evaluates require and
+	// member-access forms through the interpreter, but the emitted binary
+	// links third-party require-go modules for real — so tolerate an
+	// unlinked third-party member here rather than hard-erroring (which is
+	// what `cljgo run` / the REPL do, default HostUnlinkedTolerant=false).
+	ev.HostUnlinkedTolerant = true
 	mc := &moduleCompiler{done: map[string]*CompiledNS{}}
 	ev.LibLoader = mc.load
 
@@ -106,6 +112,9 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 // single-file layout when there are no file-backed requires, else one
 // package per dependency namespace plus main.go (ADR 0042 §1).
 func WriteProgram(dir string, p *Program, opts Options) error {
+	// ADR 0049 dec 3: the entry namespace's *file* binds to its logical
+	// source path so a binary matches the interpreter (not NO_SOURCE_FILE).
+	opts.EntrySrcFile = p.Entry.Path
 	if len(p.Deps) == 0 {
 		return WriteModule(dir, p.Entry.Forms, opts)
 	}
@@ -183,6 +192,7 @@ func WriteProgram(dir string, p *Program, opts Options) error {
 	mainSpec := pkgSpec{
 		pkgName:    "main",
 		isMain:     true,
+		srcFile:    p.Entry.Path, // ADR 0049 dec 3: entry *file* = logical source path
 		depImports: imports(p.Entry.Requires),
 		host:       host,
 	}
