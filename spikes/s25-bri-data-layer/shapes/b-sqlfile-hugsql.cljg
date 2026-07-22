@@ -1,0 +1,38 @@
+;; Shape B — HugSQL-style: SQL lives in .sql files, named params, each
+;; query becomes a generated Clojure fn.
+;;
+;; users.sql:
+;;   -- :name find-user :? :1
+;;   -- :doc one user by id
+;;   SELECT id, full_name, email_address, created_at
+;;   FROM users WHERE id = :id
+;;
+;;   -- :name recent-users :? :*
+;;   SELECT id, full_name FROM users
+;;   ORDER BY created_at DESC LIMIT :limit
+;;
+;;   -- :name insert-user! :! :n
+;;   INSERT INTO users (full_name, email_address)
+;;   VALUES (:full-name, :email-address)
+;;
+;; (db/def-queries "sql/users.sql") reads that file and INTERNS a var per
+;; -- :name. This is the shape being compared; bri.db is not built.
+(ns app.users
+  (:require [bri.db :as db]))
+
+(db/def-queries "sql/users.sql")   ; interns #'find-user #'recent-users #'insert-user!
+
+(defn show [pool id]
+  (find-user pool {:id id}))       ; named params as a map, not positional
+
+(defn create [pool full-name email]
+  (insert-user! pool {:full-name full-name :email-address email}))
+
+;; --- the liveness trap (the reason this shape is a T2-hatch, not blessed) -
+;;
+;; def-queries interns the vars ONCE, at load. Editing users.sql does NOT
+;; re-run def-queries — so the live-redef story requires re-evaluating the
+;; def-queries form (a file watcher, or a REPL re-eval). Inline SQL (shape
+;; A) is already live: the SQL is a value in the handler's own var, which
+;; re-defs like any other. This is the measured advantage inline SQL keeps
+;; on cljgo specifically — see VERDICT §liveness.

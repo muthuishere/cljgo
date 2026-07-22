@@ -1,0 +1,42 @@
+;; Shape C — Datomic-ish entity / pull API over Postgres.
+;;
+;; No SQL at the call site at all: a schema declares entities, the API is
+;; pull/entity/transact, and a query engine compiles pull patterns down to
+;; SQL. This is the maximal-abstraction end of the spectrum, included so
+;; the comparison has a real high-ceremony pole. bri.db is not built.
+(ns app.users
+  (:require [bri.entity :as e]))
+
+;; The schema is the ceremony budget: every attribute declared up front.
+(def schema
+  {:user/full-name     {:type :string :required true}
+   :user/email-address {:type :email  :unique true}
+   :user/posts         {:type :ref    :cardinality :many :ref :post}
+   :post/title         {:type :string}})
+
+(defn show [db id]
+  ;; pull pattern -> a nested map, joins inferred from :ref attrs.
+  (e/pull db [:user/full-name
+              {:user/posts [:post/title]}]
+          [:user/id id]))
+;; => {:user/full-name "…" :user/posts [{:post/title "…"} …]}
+
+(defn create [conn full-name email]
+  (e/transact conn [{:user/full-name full-name
+                     :user/email-address email}]))
+
+;; --- why this is NOT the bri blessing (recorded, not chosen) -------------
+;;
+;; 1. It IS an ORM by another name: the schema map is the mapping layer
+;;    ADR 0041 rules out. "no ORM ceremony" and "declare every attribute
+;;    and its join semantics" are in tension.
+;; 2. The query engine (pull-pattern -> SQL compiler) is a large piece of
+;;    framework code cljgo would own and debug — the opposite of "library
+;;    style, plain fns, no hidden call graph."
+;; 3. It hides the SQL, which is the thing a Postgres-fluent user reaches
+;;    for when a query is slow. ADR 0041: SQL strings are the blessed form
+;;    precisely so the user keeps that lever.
+;; The entity shape is a legitimate LIBRARY someone can build on bri.db;
+;; it is not the framework's blessed path. Datomic's real value (time,
+;; datalog, the transactor) does not come from the entity map — and none
+;; of it is on the table for a Postgres-row store.

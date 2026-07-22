@@ -1,0 +1,49 @@
+;; Shape A — inline SQL strings (ADR 0041's blessed form).
+;;
+;; SQL is a string literal at the call site; params are positional ($1…).
+;; Rows come back as plain Clojure maps with the names doctrine applied
+;; (snake_case column -> kebab-case keyword). `!` variants throw and feed
+;; the http recover funnel; plain variants return Result.
+;;
+;; This is illustrative bri.db usage — bri.db is NOT built (this is a
+;; spike). It is REAL code in the sense that every form is a plausible
+;; call the blessed API would expose; it is not executed here.
+(ns app.users
+  (:require [bri.db :as db]
+            [bri.cast :as cast]))
+
+;; --- reads ---------------------------------------------------------------
+
+(defn find-user [pool id]
+  ;; db/one -> Result<map|nil>; db/one! throws :db/not-found (funnel 404).
+  (db/one! pool "SELECT id, full_name, email_address, created_at
+                 FROM users WHERE id = $1" id))
+;; => {:id 7 :full-name "User 7" :email-address "u7@example.com" :created-at #inst…}
+
+(defn recent-users [pool limit]
+  (db/query pool "SELECT id, full_name FROM users
+                  ORDER BY created_at DESC LIMIT $1" limit))
+;; => [ {:id …, :full-name …} … ]  (vector of maps)
+
+;; --- writes: casting is day one (mass assignment off the blessed path) ---
+
+(def new-user-cast
+  ;; Ecto-style cast: whitelist + coerce, returns Result. The request body
+  ;; NEVER reaches the insert unfiltered.
+  (cast/schema {:full-name     :string
+                :email-address :email}))
+
+(defn create-user [pool params]
+  ;; let? threads the Result; a bad cast short-circuits to a :cast/invalid
+  ;; the funnel maps to 422.
+  (bri/let? [attrs (cast/run new-user-cast params)]
+    (db/insert! pool :users attrs)))     ; :users + kebab keys -> snake cols
+
+;; --- transaction: composes as data --------------------------------------
+
+(defn transfer-ownership [pool from to post-id]
+  (db/tx pool
+    (fn [t]
+      (db/update! t :posts {:owner-id to}    ["id = $1" post-id])
+      (db/insert! t :audit  {:action "transfer" :from from :to to}))))
+;; both writes commit together or roll back together.
