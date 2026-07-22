@@ -277,6 +277,15 @@ func gcd(u, v int64) int64 {
 func (o int64Ops) Divide(x, y any) any {
 	n := AsInt64(x)
 	val := AsInt64(y)
+	// Integer division by zero throws, exactly as JVM Clojure does — the
+	// message is "Divide by zero" (oracle 1.12.5). Without this guard the
+	// two zero cases both misbehaved: (/ 1 0) reached big.NewRat(n, 0) and
+	// leaked Go's own "division by zero" panic, and (/ 0 0) hit the gcd==0
+	// branch below and wrongly returned 0. Float division by zero is a
+	// separate path (float64Ops) and still yields ##Inf, as it must.
+	if val == 0 {
+		panic(NewArithmeticError("Divide by zero"))
+	}
 	gcd := gcd(n, val)
 	if gcd == 0 {
 		return 0
@@ -294,9 +303,19 @@ func (o int64Ops) Divide(x, y any) any {
 	return NewRatio(n, d)
 }
 func (o int64Ops) Quotient(x, y any) any {
+	// Guard zero before Go's `/` panics with its own raw "runtime error:
+	// integer divide by zero" — JVM Clojure throws ArithmeticException
+	// "/ by zero" for integer quot/rem (distinct from `/`'s "Divide by
+	// zero"; oracle 1.12.5).
+	if AsInt64(y) == 0 {
+		panic(NewArithmeticError("/ by zero"))
+	}
 	return AsInt64(x) / AsInt64(y)
 }
 func (o int64Ops) Remainder(x, y any) any {
+	if AsInt64(y) == 0 {
+		panic(NewArithmeticError("/ by zero"))
+	}
 	return AsInt64(x) % AsInt64(y)
 }
 func (o int64Ops) LT(x, y any) bool {

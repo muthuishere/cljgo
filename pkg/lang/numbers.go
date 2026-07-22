@@ -86,7 +86,7 @@ func (nm *NumberMethods) Divide(x, y any) any {
 		if isInf(x) {
 			return x
 		}
-		panic(NewArithmeticError("divide by zero"))
+		panic(NewArithmeticError("Divide by zero"))
 	}
 	return Ops(x).Combine(yops).Divide(x, y)
 }
@@ -97,7 +97,7 @@ func (nm *NumberMethods) Quotient(x, y any) any {
 	}
 	yops := Ops(y)
 	if yops.IsZero(y) {
-		panic(NewArithmeticError("divide by zero"))
+		panic(NewArithmeticError("Divide by zero"))
 	}
 	return Ops(x).Combine(yops).Quotient(x, y)
 }
@@ -105,7 +105,7 @@ func (nm *NumberMethods) Quotient(x, y any) any {
 func (nm *NumberMethods) Remainder(x, y any) any {
 	yops := Ops(y)
 	if yops.IsZero(y) {
-		panic(NewArithmeticError("divide by zero"))
+		panic(NewArithmeticError("Divide by zero"))
 	}
 	return Ops(x).Combine(yops).Remainder(x, y)
 }
