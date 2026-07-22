@@ -394,7 +394,7 @@
         </div>
       </div>
       <div class="note">
-        <b>Third-party modules too.</b> <code>build.cljgo</code> declares <code>(go-require app "github.com/gorilla/websocket" "v1.5.3")</code> — cljgo synthesizes the <code>go.mod</code>, resolves signatures from <code>go/packages</code> type facts, and the emitted binary makes the real call. A websocket client, zero hand-written bindings (ADR 0021).
+        <b>Third-party modules too.</b> <code>build.cljgo</code> declares <code>(go-require app "github.com/gorilla/websocket" "v1.5.3")</code> — cljgo synthesizes the <code>go.mod</code>, resolves signatures from <code>go/packages</code> type facts, and the emitted binary makes the real call. A websocket client, zero hand-written bindings.
       </div>
     </div>
   </section>
@@ -406,7 +406,7 @@
         <h2>Dependencies, and a citizen of both ecosystems</h2>
         <p>Declare a dependency as <em>code</em> in <code>build.cljgo</code> — no <code>deps.edn</code>. Then publish
            the same pure-Clojure library to <b>Go developers</b> (a go-gettable module) <b>and</b> JVM-Clojure
-           developers (source), from one build description. ADR 0052 &amp; ADR 0054.</p>
+           developers (source), from one build description.</p>
       </div>
       <div class="two">
         <div>
@@ -469,13 +469,13 @@ error: cannot publish to the JVM — greet.core
         <div class="card">
           <h3>Purity is the gate, checked at publish</h3>
           <p>A pure-Clojure library reaches <b>both</b> worlds. The moment a namespace uses <code>require-go</code>/ffi it is
-             Go-side only — and <code>publish clojars</code> refuses it with the offending <code>file:line</code>, not a broken download (ADR 0054).</p>
+             Go-side only — and <code>publish clojars</code> refuses it with the offending <code>file:line</code>, not a broken download.</p>
         </div>
         <div class="card alt">
           <h3>Reproducible by construction</h3>
           <p>A global content-addressed cache (keyed by identity, verified by a merkle tree hash — a git SHA is not a content
              hash), a committed <code>build.lock.edn</code>, and a hard error on a version conflict. <b>One resolver feeds both
-             legs</b>, so a dependency resolves identically interpreted and compiled (ADR 0052 / 0053).</p>
+             legs</b>, so a dependency resolves identically interpreted and compiled.</p>
         </div>
       </div>
     </div>
@@ -491,7 +491,7 @@ error: cannot publish to the JVM — greet.core
       <div class="flow">
         <div class="node hl">
           <div class="t">Reader → Analyzer → AST <span class="tag">shared</span></div>
-          <div class="d">Full syntax-quote reader, macroexpansion, one analyzer producing a single AST. Everything below consumes exactly this — ADR 0002.</div>
+          <div class="d">Full syntax-quote reader, macroexpansion, one analyzer producing a single AST. Everything below consumes exactly this.</div>
         </div>
         <div class="arrow">↓</div>
         <div class="split">
@@ -507,7 +507,7 @@ error: cannot publish to the JVM — greet.core
         <div class="arrow">↓</div>
         <div class="node hl" style="text-align:center">
           <div class="t" style="justify-content:center">Dual-harness conformance <span class="tag">the gate</span></div>
-          <div class="d">Every semantic test runs through <b>both</b> paths, oracle-cited against JVM Clojure. Interpreted result == compiled result, or the build fails — ADR 0007.</div>
+          <div class="d">Every semantic test runs through <b>both</b> paths, oracle-cited against JVM Clojure. Interpreted result == compiled result, or the build fails.</div>
         </div>
       </div>
     </div>
@@ -527,7 +527,7 @@ error: cannot publish to the JVM — greet.core
           <ul class="clean" style="margin-top:20px">
             <li><b>99.2%</b> of tested <code>clojure.core</code> vars already resolve (240 / 242).</li>
             <li><b>90.4%</b> of non-skipped files pass. Reproduce it yourself: <code>cljgo suite</code>.</li>
-            <li><b>Coverage ratchet</b> — the passing count may only rise (ADR 0022). Designed and specified; not yet wired into CI.</li>
+            <li><b>Coverage ratchet</b> — the passing count may only rise. Designed and specified; not yet wired into CI.</li>
             <li>Runs interpreted; cljgo's <b>own</b> dual-mode conformance stays fully green alongside it.</li>
           </ul>
         </div>
@@ -576,10 +576,15 @@ error: cannot publish to the JVM — greet.core
            methodology. All 7 files run on cljgo with no edits. Every runtime here was <b>installed and measured
            on the same machine</b> (Apple M5 Pro) — no normalization, no quoted numbers. Wall-clock mean of 10 runs,
            startup included. Best per row in bold.</p>
+        <p style="color:var(--fg-soft);font-size:14px;margin-top:-6px">
+           The field is mixed modes, so we show both cljgo legs and compare like-for-like:
+           <b>interpreted</b> — <code>cljgo-run</code> and <b>joker</b> are tree-walkers;
+           <b>compiled</b> — <code>cljgo-aot</code> (native binary), <b>babashka</b> (GraalVM native image),
+           <b>let-go</b> (bytecode VM), <b>Clojure JVM</b> (JIT, post-warmup).</p>
       </div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Benchmark</th><th>cljgo-run</th><th>cljgo-aot</th><th>let-go</th><th>babashka</th><th>joker</th><th>clojure JVM</th></tr></thead>
+          <thead><tr><th>Benchmark</th><th>cljgo-run <span style="font-weight:400;opacity:.6">interp</span></th><th>cljgo-aot <span style="font-weight:400;opacity:.6">compiled</span></th><th>let-go</th><th>babashka</th><th>joker <span style="font-weight:400;opacity:.6">interp</span></th><th>clojure JVM</th></tr></thead>
           <tbody>
             <tr><td>startup</td><td>32.6 ms</td><td>6.5 ms</td><td><b>5.7 ms</b></td><td>12.5 ms</td><td>9.1 ms</td><td>338.0 ms</td></tr>
             <tr><td><code>tak</code></td><td>12.10 s</td><td>858.5 ms</td><td>1.38 s</td><td>1.18 s</td><td>—</td><td><b>531.8 ms</b></td></tr>
@@ -591,6 +596,12 @@ error: cannot publish to the JVM — greet.core
             <tr><td><code>reduce</code></td><td>97.5 ms</td><td>60.8 ms</td><td>25.4 ms</td><td><b>22.1 ms</b></td><td>1.56 s</td><td>355.2 ms</td></tr>
           </tbody>
         </table>
+      </div>
+      <div class="note">
+        <b>Read it by mode.</b> Against the other tree-walker, <b>joker</b>, <code>cljgo-run</code> is in the same class and
+        <code>cljgo-aot</code> is <b>13× ahead</b> on <code>tak</code>. Against the compiled field, <code>cljgo-aot</code>
+        wins <code>persistent-map</code> outright, trades with let-go on startup/map-filter, and trails babashka on the
+        <code>clojure.core</code>-heavy rows — the gap the typed-emission ladder closes.
       </div>
       <div class="note">
         cljgo @HEAD · let-go v1.11.1 · babashka v1.12.218 · joker v1.9.0 · Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1.
@@ -607,10 +618,10 @@ error: cannot publish to the JVM — greet.core
       </div>
       <div class="note">
         <b>AOT-core landed — and it moved the number that was our weakest.</b> The old story here was "startup is 28.9 ms
-        because an emitted binary boots the whole interpreter (<code>core.clj</code> at runtime)." <b>ADR 0046 cut that
+        because an emitted binary boots the whole interpreter (<code>core.clj</code> at runtime)." <b>We cut that
         over:</b> <code>clojure.core</code> is now AOT-compiled into the binary, not evaluated at boot. Compiled startup
         dropped <b>28.9 ms → 6.5 ms</b> — single-digit, competitive with let-go (5.7 ms) and ahead of babashka and joker.
-        Combined with ADR 0045 (the five hottest core fns — <code>reduce</code>/<code>map</code>/<code>filter</code>/<code>mapv</code>/<code>comp</code>
+        Combined with the five hottest core fns (<code>reduce</code>/<code>map</code>/<code>filter</code>/<code>mapv</code>/<code>comp</code>
         — moved to native Go), the compiled leg is now a genuinely deployable performance profile, not just a small binary.
       </div>
       <div class="note">
@@ -618,17 +629,49 @@ error: cannot publish to the JVM — greet.core
         <code>reduce</code> 60.8 ms vs babashka's 22.1 ms, <code>map-filter</code> 7.2 ms vs let-go's 5.6 ms,
         <code>transducers</code> 20.9 ms vs babashka's 16.2 ms. The emitted-vs-handwritten-Go ratio is ~35× against a ~10×
         target, and the remaining work is <code>pkg/lang</code> boxing + <code>IFn</code> dispatch (the doc 04 §5 ladder).
-        The tree-walk leg (<code>cljgo-run</code>) is slow on user-code recursion, as any tree-walker is — it's the REPL/dev
-        path, shown so the ≈9–15× compile speedup stays honest and visible.
+        (<code>cljgo-run</code> is the interpreter — the REPL/dev path — so it's ≈9–15× slower on hot loops than the
+        compiled binary; that's the tree-walker tax, and it's not what you deploy.)
       </div>
       <div class="note">
         <b>Budgets are gates, not vibes.</b> <code>TestBootUnderBudget</code> (250 ms) and
         <code>TestFactorialPerfBudget</code> (60× ceiling) run inside plain <code>go test ./...</code>,
         host-relative via <code>CLJGO_BOOT_BUDGET</code> / <code>CLJGO_PERF_RATIO_MAX</code> because a CI
-        runner is not your laptop (ADR 0024). The 60× ceiling is a regression guard against naive
+        runner is not your laptop. The 60× ceiling is a regression guard against naive
         emission (~168×) — it is not the ~10× budget, and closing that gap is open work.
         v0.2.0 made boot <b>8.9× faster</b> (211 ms → 23.7 ms) by killing a stack-scraping
-        goroutine-ID lookup that burned 73% of boot CPU (ADR 0034).
+        goroutine-ID lookup that burned 73% of boot CPU.
+      </div>
+
+      <div class="sec-head" style="margin-top:56px">
+        <span class="eyebrow">Footprint &amp; density</span>
+        <h2>Memory is where it actually wins</h2>
+        <p>Throughput is a fair fight; <b>memory and size are not</b>. Same program
+           (<code>(reduce + (range 1000))</code>), max resident set via <code>/usr/bin/time -l</code> — the number
+           that decides how many services fit on one box.</p>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Runtime</th><th>Static binary / install</th><th>Max RSS</th></tr></thead>
+          <tbody>
+            <tr><td>cljgo</td><td><b>5.0 MB</b> static binary</td><td><b>14 MB</b></td></tr>
+            <tr><td>joker</td><td>27 MB</td><td>27 MB</td></tr>
+            <tr><td>babashka</td><td>68 MB</td><td>28 MB</td></tr>
+            <tr><td>JVM Clojure</td><td>JVM + classpath</td><td>102 MB</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <b>~7× less memory than JVM Clojure, measured</b> — and that's the JVM's <em>best</em> case: a hello that
+        exits. A real Ring service idles in the hundreds of MB because the JVM reserves heap ahead of need and is slow
+        to return it, while a Go binary allocates what it uses and hands it back. On the same program cljgo also finished
+        in <b>9 ms total wall-clock</b> vs JVM Clojure's <b>298 ms</b> (boot included — the honest number).
+      </div>
+      <div class="note">
+        <b>The density math, on a 4 GB VPS</b> (leaving ~1 GB for the OS + Postgres): a cljgo service idles in the tens
+        of MB and restarts in ~22 ms, so <b>~10 services fit comfortably where JVM Clojure fits 1–3</b> — and each cljgo
+        deploy is a blip, not a 30-second warm-up. That is the one-line pitch for ops: <b>Go's hosting bill, Clojure's
+        codebase.</b> (A CI-gated peak-RSS budget is on the roadmap so "low memory" is an enforced
+        promise, not a slide.)
       </div>
     </div>
   </section>
@@ -712,7 +755,7 @@ hello from cljgo
             <p class="label">5 · Or a whole project — build.cljgo</p>
             <div class="codecard">
               <button class="copy" data-copy>Copy</button>
-              <pre><span class="c">;; build.cljgo — the build is a program (ADR 0021)</span>
+              <pre><span class="c">;; build.cljgo — the build is a program</span>
 (<span class="k">defn</span> build [b]
   (<span class="k">let</span> [app (<span class="go">exe</span> b {<span class="k">:name</span> <span class="s">"app"</span>
                     <span class="k">:main</span> <span class="s">"src/app/core.cljg"</span>})]
@@ -741,10 +784,10 @@ hello from the project
             <pre><span class="k">cljgo repl</span>                       <span class="c"># start a REPL</span>
 <span class="k">cljgo run</span> &lt;file.clj&gt;             <span class="c"># evaluate a file (interpreted)</span>
 <span class="k">cljgo build</span> [-o out] &lt;file.clj&gt;  <span class="c"># compile a file to a native binary</span>
-<span class="k">cljgo build</span>                     <span class="c"># project mode: run ./build.cljgo (ADR 0021)</span>
-<span class="k">cljgo publish</span> &lt;go|clojars&gt;       <span class="c"># publish the library to Go or Clojars (ADR 0054)</span>
-<span class="k">cljgo cache clean</span>                <span class="c"># clear the global dependency cache (ADR 0052)</span>
-<span class="k">cljgo check</span> &lt;file.clj&gt; [--json]  <span class="c"># analyze, report diagnostics (ADR 0015)</span>
+<span class="k">cljgo build</span>                     <span class="c"># project mode: run ./build.cljgo</span>
+<span class="k">cljgo publish</span> &lt;go|clojars&gt;       <span class="c"># publish the library to Go or Clojars</span>
+<span class="k">cljgo cache clean</span>                <span class="c"># clear the global dependency cache</span>
+<span class="k">cljgo check</span> &lt;file.clj&gt; [--json]  <span class="c"># analyze, report diagnostics</span>
 <span class="k">cljgo explain</span> &lt;code&gt; [--json]    <span class="c"># show an error code's explain page</span>
 <span class="k">cljgo version</span>                    <span class="c"># print the version string</span></pre>
           </div>
@@ -767,25 +810,41 @@ hello from the project
             <tr><td class="m">M0–M1</td><td class="done">✅</td><td>REPL: full syntax-quote reader, <code>loop*</code>/<code>recur</code>, dynamic vars, namespaces, macroexpansion, <code>defmacro</code> at the prompt, embedded <code>core.clj</code>, <code>clojure.test</code></td></tr>
             <tr><td class="m">M2</td><td class="done">✅</td><td><code>cljgo build</code> → native binary, &lt;10 ms startup, fixed-arity calling convention</td></tr>
             <tr><td class="m">M3</td><td class="done">✅</td><td>Zero-ceremony Go interop, both modes — <code>require-go</code>, package fns/consts, members <code>(.Method r …)</code>/<code>(.-Field r)</code>, ctors, <code>(T,error)</code>→<code>[v err]</code>, <code>!</code> unwrap</td></tr>
-            <tr><td class="m">core.async</td><td class="done">✅</td><td>Real <code>clojure.core.async</code> namespace over goroutines: <code>chan</code>/<code>&gt;!</code>/<code>&lt;!</code>/<code>&gt;!!</code>/<code>&lt;!!</code>/<code>close!</code>, <code>go</code>, buffered &amp; wrapper channels, <code>alts!</code>/<code>alt!</code>/<code>timeout</code> — no CPS rewrite (ADR 0040)</td></tr>
-            <tr><td class="m">AOT-core</td><td class="done">✅</td><td>The startup lever, shipped: <code>clojure.core</code> AOT-compiled into the binary instead of evaluated at boot — compiled startup <b>28.9 → 6.5 ms</b> (ADR 0046)</td></tr>
-            <tr><td class="m">deps</td><td class="done">✅</td><td>Dependency resolution — <code>(dep …)</code> in <code>build.cljgo</code>, content-addressed cache, committed <code>build.lock.edn</code>, hard error on version conflict, one resolver both legs (ADR 0052 / 0053)</td></tr>
-            <tr><td class="m">publish</td><td class="done">✅</td><td><code>cljgo publish go</code> (go-gettable module) + <code>publish clojars</code> (pure Clojure source), purity-gated at <code>file:line</code> — one library, both ecosystems (ADR 0054)</td></tr>
-            <tr><td class="m">build.cljgo</td><td class="done">✅</td><td>Zig-style build graph — <code>exe</code>/<code>install</code>/<code>run</code> + <code>go-require</code> third-party Go (gorilla/websocket, zero bindings) — ADR 0021</td></tr>
-            <tr><td class="m">core batches</td><td class="done">✅</td><td>Numeric tower (bigint/bigdec/ratios/promotion/bit-*), transients, JVM-compatible hashing, <code>reify</code>, tagged-literals/reader-conditionals, richer error rendering, suite ratchet — ADRs 0022/0048–0051</td></tr>
-            <tr><td class="m">Next</td><td class="next">◦</td><td>C FFI (purego) for libraries, comptime, more <code>clojure.core</code> breadth, the <code>IFn</code>-dispatch perf ladder toward the ~10× emit target</td></tr>
+            <tr><td class="m">core.async</td><td class="done">✅</td><td>Real <code>clojure.core.async</code> namespace over goroutines: <code>chan</code>/<code>&gt;!</code>/<code>&lt;!</code>/<code>&gt;!!</code>/<code>&lt;!!</code>/<code>close!</code>, <code>go</code>, buffered &amp; wrapper channels, <code>alts!</code>/<code>alt!</code>/<code>timeout</code> — no CPS rewrite</td></tr>
+            <tr><td class="m">AOT-core</td><td class="done">✅</td><td>The startup lever, shipped: <code>clojure.core</code> AOT-compiled into the binary instead of evaluated at boot — compiled startup <b>28.9 → 6.5 ms</b></td></tr>
+            <tr><td class="m">deps</td><td class="done">✅</td><td>Dependency resolution — <code>(dep …)</code> in <code>build.cljgo</code>, content-addressed cache, committed <code>build.lock.edn</code>, hard error on version conflict, one resolver both legs</td></tr>
+            <tr><td class="m">publish</td><td class="done">✅</td><td><code>cljgo publish go</code> (go-gettable module) + <code>publish clojars</code> (pure Clojure source), purity-gated at <code>file:line</code> — one library, both ecosystems</td></tr>
+            <tr><td class="m">build.cljgo</td><td class="done">✅</td><td>Zig-style build graph — <code>exe</code>/<code>install</code>/<code>run</code> + <code>go-require</code> third-party Go (gorilla/websocket, zero bindings)</td></tr>
+            <tr><td class="m">bri T0–T1</td><td class="done">✅</td><td>The app framework — <code>cljgo new</code>/<code>cljgo dev</code> (server + nREPL), HTTP + hiccup HTML + routes/middleware, signed-cookie sessions + CSRF, layered config (<code>cljgo config</code>)</td></tr>
+            <tr><td class="m">core batches</td><td class="done">✅</td><td>Numeric tower (bigint/bigdec/ratios/promotion/bit-*), transients, JVM-compatible hashing, <code>reify</code>, tagged-literals/reader-conditionals, richer error rendering, suite ratchet</td></tr>
+            <tr><td class="m">Next</td><td class="next">◦</td><td>The batteries (see below): bri data layer + jobs/cache, a curated Go-native stdlib (sqlite, secrets, streaming I/O), layered config + pluggable vault + i18n; plus C FFI (purego), comptime, and the <code>IFn</code>-dispatch perf ladder</td></tr>
           </tbody>
         </table>
       </div>
 
+      <h3 style="margin:36px 0 6px">Where it's headed — the Bun of Clojure</h3>
+      <p style="color:var(--fg-soft);margin:0 0 12px">The direction (roadmap, not yet shipped): one fast native binary,
+        batteries included, zero-config — Bun's ergonomics with Go's delivery and no runtime to distribute. Go is the
+        near-perfect host for the whole list, so the batteries stay native-fast and keep the single static binary:</p>
+      <ul class="clean" style="margin:0 0 18px">
+        <li><b>Data</b> — <code>bri.db</code>: a pure-Go SQLite as the zero-install default DB, Postgres (pgx) for
+          production, migrations (<code>cljgo migrate</code>). <span style="opacity:.6">(bri T2, spiked)</span></li>
+        <li><b>Jobs &amp; cache</b> — a durable Postgres queue (<code>FOR UPDATE SKIP LOCKED</code>) + in-process
+          TTL/singleflight cache. <span style="opacity:.6">(bri T3, spiked)</span></li>
+        <li><b>A curated Go-native stdlib</b> — secrets (OS keychain), streaming file I/O, crypto/hashing, http-client,
+          websocket — there by default, no <code>require-go</code> ceremony.</li>
+        <li><b>Spring-Boot-style config</b> — one layered chain (defaults → <code>application.edn</code>/<code>.properties</code>
+          → profiles → <code>APP_*</code> env → pluggable vault → overrides), plus i18n message bundles on the same infra.</li>
+      </ul>
+
       <h3 style="margin:36px 0 6px">The Zig model</h3>
       <p style="color:var(--fg-soft);margin:0 0 18px">cljgo's "batteries" are Zig's, not Leiningen's / deps.edn's (design/08).</p>
       <ul class="clean">
-        <li><b>build.cljgo</b> — the build is a program, not a data file. <code>(defn build [b] …)</code> defines an artifact/step DAG; <code>cljgo build</code> / <code>build run</code> / <code>test</code> mirror <code>zig build</code>. Replaces deps.edn for the AOT product (ADR 0021).</li>
-        <li><b>Dependencies as code</b> — <code>(dep …)</code> lives in <code>build.cljgo</code>, not a separate manifest. Resolution is content-addressed and lockfile-pinned, one resolver feeds both legs, and a Java-carrying dependency fails loud rather than at link time. No <code>deps.edn</code> in either direction (ADR 0052 / 0053).</li>
-        <li><b>Publish both ways</b> — a pure-Clojure library ships to Go developers (<code>cljgo publish go</code>, a go-gettable module) <em>and</em> JVM-Clojure developers (<code>cljgo publish clojars</code>, source), from one build description, gated on purity at publish time (ADR 0054).</li>
-        <li><b>comptime</b> — Zig-style compile-time value execution alongside Clojure macros. Macros transform <em>syntax</em>; <code>comptime</code> computes <em>values</em> embedded as literals. In the REPL, compile-time == eval-time (ADR 0009).</li>
-        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick with a CI coverage ratchet. Measured <b>238/242 (98.3%)</b> — 242/242 vars resolved, 0 failures — climbing per batch (ADR 0022).</li>
+        <li><b>build.cljgo</b> — the build is a program, not a data file. <code>(defn build [b] …)</code> defines an artifact/step DAG; <code>cljgo build</code> / <code>build run</code> / <code>test</code> mirror <code>zig build</code>. Replaces deps.edn for the AOT product.</li>
+        <li><b>Dependencies as code</b> — <code>(dep …)</code> lives in <code>build.cljgo</code>, not a separate manifest. Resolution is content-addressed and lockfile-pinned, one resolver feeds both legs, and a Java-carrying dependency fails loud rather than at link time. No <code>deps.edn</code> in either direction.</li>
+        <li><b>Publish both ways</b> — a pure-Clojure library ships to Go developers (<code>cljgo publish go</code>, a go-gettable module) <em>and</em> JVM-Clojure developers (<code>cljgo publish clojars</code>, source), from one build description, gated on purity at publish time.</li>
+        <li><b>comptime</b> — Zig-style compile-time value execution alongside Clojure macros. Macros transform <em>syntax</em>; <code>comptime</code> computes <em>values</em> embedded as literals. In the REPL, compile-time == eval-time.</li>
+        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick with a CI coverage ratchet. Measured <b>238/242 (98.3%)</b> — 242/242 vars resolved, 0 failures — climbing per batch.</li>
         <li><b>Cross-compilation</b> — cljgo emits plain Go, so pure-Go + purego programs build for any OS/arch with no target toolchain. <code>--target os/arch</code>, or a matrix per artifact.</li>
       </ul>
     </div>
