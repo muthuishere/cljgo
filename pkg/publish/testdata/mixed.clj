@@ -1,0 +1,5 @@
+(ns demo.mixed)
+(defn now [] (System/currentTimeMillis))
+(defn pure-add [a b] (+ a b))
+(defn up [s] (.toUpperCase s))
+(defn uuid [] (java.util.UUID/randomUUID))
