@@ -76,6 +76,8 @@ var registry = []Entry{
 	{Code: "G5003", Title: "value is not seqable", Since: "M5"},
 	{Code: "G5004", Title: "index out of bounds", Since: "M5"},
 	{Code: "G5005", Title: "value is not a collection", Since: "M5"},
+	{Code: "G5006", Title: "divide by zero", Since: "M5"},
+	{Code: "G5007", Title: "no value supplied for key", Since: "M5"},
 }
 
 // Lookup returns the registry entry for code.

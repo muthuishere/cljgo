@@ -36,21 +36,24 @@ func TestFromErrorRuntimeCarriers(t *testing.T) {
 				"help: run `cljgo explain A2004`",
 		},
 		{
-			name: "not-a-number carries G5001",
+			// Batch 2: the Go type names int64/string/Ops are humanized to
+			// their Clojure/JVM-facing names in the rendered Message; the raw
+			// err.Error() below still reads "…string…Ops" (byte-stable).
+			name: "not-a-number carries G5001 and names the type like the JVM",
 			err:  lang.NewCodedError("G5001", "cannot convert string to Ops"),
-			want: "cannot convert string to Ops\n" +
+			want: "cannot convert String to Number\n" +
 				"help: run `cljgo explain G5001`",
 		},
 		{
-			name: "not-a-function carries G5002",
+			name: "not-a-function carries G5002 and names the type like the JVM",
 			err:  lang.NewCodedError("G5002", "cannot apply non-function int64"),
-			want: "cannot apply non-function int64\n" +
+			want: "cannot apply non-function Long\n" +
 				"help: run `cljgo explain G5002`",
 		},
 		{
-			name: "not-seqable carries G5003",
+			name: "not-seqable carries G5003, names Long, keeps the Clojure ISeq name",
 			err:  lang.NewCodedError("G5003", "can't convert int64 to ISeq"),
-			want: "can't convert int64 to ISeq\n" +
+			want: "can't convert Long to ISeq\n" +
 				"help: run `cljgo explain G5003`",
 		},
 		{
@@ -64,6 +67,34 @@ func TestFromErrorRuntimeCarriers(t *testing.T) {
 			err:  lang.NewCodedError("G5005", "conj: cannot conj onto 5"),
 			want: "conj: cannot conj onto 5\n" +
 				"help: run `cljgo explain G5005`",
+		},
+		{
+			// Batch 2: divide-by-zero carries G5006 via ArithmeticError.DiagCode;
+			// the "Divide by zero" / "/ by zero" text is oracle-frozen, unchanged.
+			name: "divide-by-zero carries G5006 (/)",
+			err:  lang.NewArithmeticError("Divide by zero"),
+			want: "Divide by zero\n" +
+				"help: run `cljgo explain G5006`",
+		},
+		{
+			name: "divide-by-zero carries G5006 (quot/rem fixnum)",
+			err:  lang.NewArithmeticError("/ by zero"),
+			want: "/ by zero\n" +
+				"help: run `cljgo explain G5006`",
+		},
+		{
+			// A non-divide ArithmeticError has no G5006 code — falls to G5000.
+			name: "integer overflow stays uncoded (G5000), not G5006",
+			err:  lang.NewArithmeticError("integer overflow"),
+			want: "integer overflow\n" +
+				"help: run `cljgo explain G5000`",
+		},
+		{
+			// Batch 2: an odd map-constructor arg count carries G5007.
+			name: "no value supplied for key carries G5007 (constructor path)",
+			err:  lang.NewCodedError("G5007", "no value supplied for key: :b"),
+			want: "no value supplied for key: :b\n" +
+				"help: run `cljgo explain G5007`",
 		},
 	}
 	for _, tc := range cases {

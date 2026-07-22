@@ -77,7 +77,8 @@ func CreatePersistentStructMap(def *PersistentStructMapDef, keyvals ISeq) *Persi
 	var ext IPersistentMap = emptyMap
 	for ; keyvals != nil; keyvals = keyvals.Next().Next() {
 		if keyvals.Next() == nil {
-			panic(fmt.Errorf("no value supplied for key: %v", keyvals.First()))
+			// Coded G5007 at the raise site (ADR 0048 batch 2); text unchanged.
+			panic(NewCodedError("G5007", fmt.Sprintf("no value supplied for key: %v", keyvals.First())))
 		}
 		k := keyvals.First()
 		v := First(Rest(keyvals))

@@ -38,7 +38,7 @@ func internSortedBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// once past the threshold.
 	def("array-map", func(args ...any) any {
 		if len(args)%2 != 0 {
-			panic(fmt.Errorf("array-map: no value supplied for key: %s", lang.PrintString(args[len(args)-1])))
+			panic(lang.NewCodedError("G5007", fmt.Sprintf("array-map: no value supplied for key: %s", lang.PrintString(args[len(args)-1]))))
 		}
 		return lang.NewArrayMapForce(args...)
 	})
@@ -46,7 +46,7 @@ func internSortedBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// sorted-map: (sorted-map & keyvals) — a map sorted by (compare).
 	def("sorted-map", func(args ...any) any {
 		if len(args)%2 != 0 {
-			panic(fmt.Errorf("sorted-map: no value supplied for key: %s", lang.PrintString(args[len(args)-1])))
+			panic(lang.NewCodedError("G5007", fmt.Sprintf("sorted-map: no value supplied for key: %s", lang.PrintString(args[len(args)-1]))))
 		}
 		return lang.CreatePersistentTreeMap(lang.NewList(args...))
 	})
@@ -62,7 +62,7 @@ func internSortedBuiltins(def func(string, func(...any) any) *lang.Var) {
 		}
 		rest := args[1:]
 		if len(rest)%2 != 0 {
-			panic(fmt.Errorf("sorted-map-by: no value supplied for key: %s", lang.PrintString(rest[len(rest)-1])))
+			panic(lang.NewCodedError("G5007", fmt.Sprintf("sorted-map-by: no value supplied for key: %s", lang.PrintString(rest[len(rest)-1]))))
 		}
 		return lang.CreatePersistentTreeMapWithComparator(comp, lang.NewList(rest...))
 	})

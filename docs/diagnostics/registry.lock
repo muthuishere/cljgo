@@ -12,6 +12,8 @@ G5002 value is not a function
 G5003 value is not seqable
 G5004 index out of bounds
 G5005 value is not a collection
+G5006 divide by zero
+G5007 no value supplied for key
 R1001 unterminated form
 R1002 unmatched delimiter
 R1003 map literal with odd number of forms
