@@ -2,24 +2,24 @@
 
 Date: 2026-07-22 · Status: **accepted** — implemented (commit `b0e591a`;
 OpenSpec change `apply-adr-0049-host-parity`, archived). Diagnosis evidence:
-spikes S25, S26, S27; fix-validation: spike S31 — all closed. Enforces **ADR 0007**
+spikes S30, S31, S32; fix-validation: spike S36 — all closed. Enforces **ADR 0007**
 (JVM-oracle dual harness) and **ADR 0002** (dual-mode, one analyzer) as an
 executable invariant. Gates **ADR 0048** and **ADR 0050**.
 
 ## Context
 
-The dependency-resolution spike round (S25–S28) was not sent to find bugs. It
+The dependency-resolution spike round (S30–S33) was not sent to find bugs. It
 found two — both **live on `main` today**, both the failure mode CLAUDE.md
 calls *unforgivable*: the interpreter (`cljgo run`, the REPL) and the compiled
 binary (`cljgo build`) silently produce **different results for the same
 program**, each exiting `0`.
 
 **Divergence 1 — a third-party `go-require` returns `nil` interpreted, the real
-value compiled.** Measured *independently* by S26 and S27:
+value compiled.** Measured *independently* by S31 and S32:
 
 ```
-$ cljgo run src/main.cljg   →  uuid: nil          (S26)   RTLD_NOW=      (S27)
-$ ./app                     →  uuid: 3d91365f-…   (S26)   RTLD_NOW=2     (S27)
+$ cljgo run src/main.cljg   →  uuid: nil          (S31)   RTLD_NOW=      (S32)
+$ ./app                     →  uuid: 3d91365f-…   (S31)   RTLD_NOW=2     (S32)
 ```
 
 Both exit `0`. It also corrupts a boolean (interpreted `false`, compiled
@@ -33,7 +33,7 @@ repo's own `examples/build-websocket`. Dependencies (ADR 0048) do not introduce
 it; they *multiply* it, because a consumer inherits an impure dependency's
 `require-go` without ever typing one.
 
-**Divergence 2 — entry-namespace `*file*` and `require`.** Measured by S25 with
+**Divergence 2 — entry-namespace `*file*` and `require`.** Measured by S30 with
 an in-tree control fixture: an entry namespace's `*file*` reads
 `NO_SOURCE_FILE` in an AOT binary but the real path under the interpreter, and
 entry-namespace `require` is therefore unresolvable inside a binary — masked
@@ -59,7 +59,7 @@ manifest only as *"this operation is not available here,"* never as a wrong
 answer. A capability the interpreter lacks (linking arbitrary third-party Go)
 is honest as an error and dishonest as a `nil`.
 
-### 2. Fix — third-party `go-require` (divergence 1) [S31]
+### 2. Fix — third-party `go-require` (divergence 1) [S36]
 
 Access to a member of a `require-go`'d third-party package that is **not linked
 into the interpreter** must **hard-error** — `"go module <path> is not linked
@@ -72,7 +72,7 @@ set (ADR 0021); when that lands, the reference resolves and the error does not
 fire. Until then, **error, not `nil`.** The invariant is satisfied either way —
 by linking, or by erroring — but never by a silent wrong value.
 
-*S31 showed (PASS) — the distinction is structural, not a heuristic.* The silent
+*S36 showed (PASS) — the distinction is structural, not a heuristic.* The silent
 `nil` is an explicit `return nil, nil` at two sites in `pkg/eval/host.go` (`:27`,
 `:62`), reached by exactly one predicate: a miss in the reflect-seed registry
 (`corelib.LookupHostMember`) for a domain-dotted import path
@@ -96,7 +96,7 @@ member + `file`, fires at the exact divergence point, and does not reject a
 forms *through the interpreter*, so an unconditional error would break every
 third-party build. The fix is one boolean — `Evaluator.HostUnlinkedTolerant`
 (default `false`: `run`/REPL error; the emitter sets `true`: tolerate). Measured
-with the prototype patch (`spikes/s31-.../prototype.patch`): after the fix
+with the prototype patch (`spikes/s36-.../prototype.patch`): after the fix
 `cljgo run` errors (exit 1) while the AOT binary still prints the real value
 (exit 0) — the silent `nil`-vs-value divergence is gone, and
 `go test ./pkg/eval/... ./pkg/emit/...` stays green. Recommended message:
@@ -119,7 +119,7 @@ with the prototype patch (`spikes/s31-.../prototype.patch`): after the fix
 
 Each divergence lands with a **dual-harness conformance case** (ADR 0007): the
 same program run interpreted and AOT-compiled. **The accepted outcomes are
-three, not two** — S31 showed a two-outcome gate ("identical output *or*
+three, not two** — S36 showed a two-outcome gate ("identical output *or*
 identical error") would flag *this very fix* as a failure, because the correct
 fix makes `cljgo run` error while the AOT binary succeeds. The parity assertion
 is therefore:
@@ -157,10 +157,10 @@ keeps ADR 0048 and 0050's cross-leg guarantees honest.
 
 | spike | question | outcome |
 |---|---|---|
-| **S31** | Can the interpreter reliably distinguish an unlinked third-party `require-go` member (→ hard error) from a legitimately-`nil` symbol, without false-erroring on stdlib / cljgo-own symbols? | **PASS** — distinction is structural (`host.go:27/:62`, registry `ok`), zero false positives; fix is the `HostUnlinkedTolerant` mode flag; and it forced the §4 gate to add a third accepted outcome |
+| **S36** | Can the interpreter reliably distinguish an unlinked third-party `require-go` member (→ hard error) from a legitimately-`nil` symbol, without false-erroring on stdlib / cljgo-own symbols? | **PASS** — distinction is structural (`host.go:27/:62`, registry `ok`), zero false positives; fix is the `HostUnlinkedTolerant` mode flag; and it forced the §4 gate to add a third accepted outcome |
 
-Diagnosis was closed evidence (S25/S26/S27 VERDICTs); S31 validated the *fix's*
+Diagnosis was closed evidence (S30/S31/S32 VERDICTs); S36 validated the *fix's*
 detection mechanism and froze a working prototype patch
-(`spikes/s31-unlinked-goref-detection/prototype.patch`). This ADR is now
+(`spikes/s36-unlinked-goref-detection/prototype.patch`). This ADR is now
 `proposed`. Implementation (spike code never merges — ADR 0027) follows via
 `/opsx:propose`, ahead of ADR 0048/0050's own spec stages since it gates them.

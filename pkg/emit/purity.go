@@ -4,7 +4,7 @@
 // captured (Entry + Deps, ADR 0042's transitive-require traversal) and walks
 // each namespace's analyzed forms with the canonical emit.eachChild child
 // enumerator, switching on the five OpHost* ops. A pluggable Predicate slot
-// lets N taint classes compose over the same walk (S29 proved this); the
+// lets N taint classes compose over the same walk (S34 proved this); the
 // shipping predicate is GoInteropPredicate. From the resulting per-namespace
 // taint map both gates read: the whole-library `publish clojars` gate is an OR
 // over all namespaces, the per-namespace `use <ns>` gate is a lookup, and
@@ -42,7 +42,7 @@ const (
 // prove, or nil if the namespace is clean of that predicate's class. Predicates
 // are independent and composable: Classify runs every predicate over every
 // namespace, recording the first taint any predicate reports (predicate order,
-// then form order). This is the pluggable slot S29 proved N predicates compose
+// then form order). This is the pluggable slot S34 proved N predicates compose
 // over one walk.
 type Predicate func(ns *CompiledNS) *Taint
 
@@ -144,7 +144,7 @@ func Classify(p *Program, preds ...Predicate) map[string]*Taint {
 // no `sc/…` use produces no host-op node, yet the form itself is not valid
 // Clojure and cannot load on the JVM. ADR 0050 dec 2/3 name require-go/ffi
 // itself as the disqualifying surface — so this predicate closes that gap. It
-// is the second composed predicate over the one walk (the slot S29 reserved).
+// is the second composed predicate over the one walk (the slot S34 reserved).
 func RequireGoPredicate(ns *CompiledNS) *Taint {
 	name := nsRealName(ns)
 	for _, form := range ns.Forms {

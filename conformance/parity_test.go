@@ -56,7 +56,7 @@ func TestClassifyParity(t *testing.T) {
 	}
 }
 
-// TestParityEntryFile is the S25 entry-*file* repro, run live through both
+// TestParityEntryFile is the S30 entry-*file* repro, run live through both
 // legs and asserted with the parity comparator. Pre-fix (ADR 0049 dec 3) the
 // binary bound *file* to NO_SOURCE_FILE while the interpreter bound the real
 // path — a silent divergence. Now both bind the logical source path, so the

@@ -1,4 +1,4 @@
-## 1. Go-interop taint classifier — `pkg/emit/purity.go` (decision 3, from S29)
+## 1. Go-interop taint classifier — `pkg/emit/purity.go` (decision 3, from S34)
 
 - [x] 1.1 `pkg/emit/purity.go`: `Taint` + `ClassifyGoInterop` — one pass over `Program.Entry`+`Deps`, walking `CompiledNS.Forms` via the real `eachChild`, switching on the five host ops, first offending `file:line` per namespace
 - [x] 1.2 Entry namespace name (`""`) recovered textually (`readNSName`)
@@ -6,11 +6,11 @@
 - [x] 1.4 `WholeLibPure` (OR/first-offender) + `NamespacePure` (lookup); `whole-lib == AND(per-ns)`
 - [x] 1.5 Tests: buried require-go caught at leaf `file:line`; pure fixture zero-FP; mixed; invariant; **bare-require-go tainted** (regression)
 
-## 2. `certain-java?` courtesy predicate — `pkg/publish/java.go` (decision 2, from S30)
+## 2. `certain-java?` courtesy predicate — `pkg/publish/java.go` (decision 2, from S35)
 
 - [x] 2.1 `pkg/publish/java.go`: `CertainJava`/`CertainJavaFile` (reader-level) — `import`/`new` heads, `java.*`/`javax.*`/`clojure.java.*` + bare-JVM-class table in call-ns position
 - [x] 2.2 Zero-FP: never flags bare dot-forms, `instance?`, `catch`, class-ref values; never a gate
-- [x] 2.3 Tests: S30 corpus — precision 10/10, zero FP
+- [x] 2.3 Tests: S35 corpus — precision 10/10, zero FP
 
 ## 3. `publish clojars` producer + CLI + surface (decisions 1, 3)
 
@@ -38,7 +38,7 @@
 
 ## 7. Close-out
 
-- [x] 7.1 No spike code merged verbatim into `pkg/`; S29/S30 reference-only (ADR 0027)
+- [x] 7.1 No spike code merged verbatim into `pkg/`; S34/S35 reference-only (ADR 0027)
 - [x] 7.2 Update ADR 0050 status proposed → accepted (implemented); record ADR 0013 producer-side follow-ups
 - [ ] 7.3 `/opsx:archive` this change
 

@@ -5,9 +5,9 @@ and pinned, and how a namespace symbol resolves to source across the project,
 its dependencies, and the embedded core — for **both** execution legs.
 
 Status: **design**, tracking **ADR 0048** (`proposed`). Evidence base: the four
-closed spikes ADR 0048 rests on — **S25** (load-path resolver),
-**S26** (impure deps / Go modules), **S27** (impure deps / ffi+cgo),
-**S28** (fetch, cache, lock). This doc consolidates ADR 0048's six decisions
+closed spikes ADR 0048 rests on — **S30** (load-path resolver),
+**S31** (impure deps / Go modules), **S32** (impure deps / ffi+cgo),
+**S33** (fetch, cache, lock). This doc consolidates ADR 0048's six decisions
 into an implementable shape and cites the spike that grounds each part. It is
 the content `design/00-architecture.md:141` has promised since M0 ("Not yet
 written: a doc 06 (project layout / deps / load-path conventions)") and the
@@ -36,7 +36,7 @@ whole design: **there is exactly one resolver in the codebase.**
 `ResolveLibPath` (`pkg/eval/libload.go:65`) has one non-test caller,
 `loadLibFile` (`pkg/eval/libload.go:39`), and the AOT emitter consumes the
 *already-resolved path* that `loadLibFile` hands its installed `LibLoader`
-(S25 §1, verified by construction and by measurement). So a change to
+(S30 §1, verified by construction and by measurement). So a change to
 `ResolveLibPath` moves both legs at once — dual-mode parity comes **free by
 construction** here, not by keeping two loaders in sync by discipline. `pkg/emit`
 is never touched by any decision in this doc.
@@ -84,15 +84,15 @@ cache (§3) — code in the repo, runtime state outside it.
 
 ---
 
-## 2. The load path [ADR 0048 decision 2 · S25 — MET]
+## 2. The load path [ADR 0048 decision 2 · S30 — MET]
 
 Namespace resolution gains an **ordered load path, appended to** the
 requiring-file-relative roots `ResolveLibPath` already computes; it does not
-replace them. S25 met its exit criterion with an **8-line addition** to
+replace them. S30 met its exit criterion with an **8-line addition** to
 `ResolveLibPath`: a library living entirely outside the consumer's tree
 resolved **byte-identically** under `cljgo run` and `cljgo build`
 (`cmp` exit 0), with the AOT module containing a Go package per dep namespace,
-and `pkg/emit` untouched (S25 §1).
+and `pkg/emit` untouched (S30 §1).
 
 ### 2.1 Resolution order, first match wins
 
@@ -122,11 +122,11 @@ So the load path proper sits at the very bottom, below anything embedded.
 
 ### 2.2 "Append, never replace" is load-bearing
 
-S25 baked a decoy `a.util` into the *consumer's own* root, competing with the
+S30 baked a decoy `a.util` into the *consumer's own* root, competing with the
 dependency's `a.util`. The decoy did **not** win for the dependency's
 `a.core` — because `evalLibFile` (`pkg/eval/libload.go:104`) rebinds `*file*`
 to each loaded file's own path before evaluating it, so every file resolves its
-own requires from *its own* root by construction (S25 §2). ADR 0042 already
+own requires from *its own* root by construction (S30 §2). ADR 0042 already
 solved the predicted `*file*` trap; "append, never replace" is what keeps it
 solved. Relative-first is what lets a foreign library keep its internal
 structure and stops a consumer-local namespace from hijacking a dependency's
@@ -135,10 +135,10 @@ sibling.
 ### 2.3 `clojure.*` is unshadowable — a deliberate divergence
 
 Because slots 1–2 outrank all file roots, **a root carrying
-`clojure/string.clj` is ignored**: `clojure.*` cannot be shadowed. S25 oracled
+`clojure/string.clj` is ignored**: `clojure.*` cannot be shadowed. S30 oracled
 this against the real `clojure` CLI (1.12.5, `-Sdeps :paths`), which *does*
 permit hijacking (it printed `HIJACKED clojure.string`); cljgo cannot, because
-embedded namespaces exist before any require runs (S25 §3). This is a **safer,
+embedded namespaces exist before any require runs (S30 §3). This is a **safer,
 permanent divergence** from JVM classpath semantics, recorded here deliberately
 rather than inherited by accident. It is consistent with the precedence
 principle: the divergence *protects* clojure.core, it does not change it.
@@ -146,19 +146,19 @@ principle: the divergence *protects* clojure.core, it does not change it.
 ### 2.4 Ambiguity among roots — silent first-wins + a diagnostic
 
 Two roots carrying the same namespace resolve to the first, silently, order-
-dependent — and this **exactly matches the classpath**. S25 oracled both
-orderings against the CLI; both tools agree (S25 §4). Keep the semantics
+dependent — and this **exactly matches the classpath**. S30 oracled both
+orderings against the CLI; both tools agree (S30 §4). Keep the semantics
 unchanged; add a **shadowing diagnostic** (a `--warn-on-shadow`-style report
 that a namespace is resolvable from more than one root). Diagnosing is not
 changing resolution order, so it stays inside the precedence principle.
 
 ### 2.5 One `ResolveLibPath` change serves both legs
 
-This is the central de-risk (§0), verified end-to-end by S25: the module
+This is the central de-risk (§0), verified end-to-end by S30: the module
 compiler consumes paths resolved by `pkg/eval.ResolveLibPath` and has no
 resolver of its own, so interpreter and AOT legs move together. The 8-line
 change produced byte-identical output on both legs with **zero** `pkg/emit`
-changes (S25 §1). Every conformance case for dependency loading therefore runs
+changes (S30 §1). Every conformance case for dependency loading therefore runs
 in the ADR 0007 dual harness with no new machinery (§8).
 
 ### 2.6 `$CLJGO_PATH`: fine for `run`, barred from `build`
@@ -167,18 +167,18 @@ An environment root override is a **run-leg developer escape hatch**, not a
 product surface. `cljgo build` bakes foreign source into the binary, so an
 env-supplied root makes the same command produce a different binary per
 machine, invisible in the repo — a worse failure than §2.4's ambiguity because
-it cannot be reviewed (S25 §5). Therefore: roots are declared in `build.cljgo`;
+it cannot be reviewed (S30 §5). Therefore: roots are declared in `build.cljgo`;
 `cljgo run` may honor an env override freely; **env-supplied roots must not
 contribute source to a `cljgo build` artifact.** No `pkg/emit` change is
 required for any of this.
 
 ---
 
-## 3. The dependency cache [ADR 0048 decision 1 · S28 — MET]
+## 3. The dependency cache [ADR 0048 decision 1 · S33 — MET]
 
 Fetched dependencies live in a **global cache** at `$XDG_CACHE_HOME/cljgo`
 (falling back to `~/.cache/cljgo`, overridable by `$CLJGO_CACHE` — the last used
-by S28 to simulate "a different machine"). Layout (S28 §2, E8):
+by S33 to simulate "a different machine"). Layout (S33 §2, E8):
 
 ```
 <root>/dl/<sha256(url)>.git        bare git mirrors, one per remote (refetch source)
@@ -189,9 +189,9 @@ by S28 to simulate "a different machine"). Layout (S28 §2, E8):
 ### 3.1 Key by identity, verify by content — two distinct guarantees
 
 ADR 0048's draft phrase "content-addressed … keyed by git SHA" **conflated two
-guarantees**, and S28 falsified it empirically: force-moving a tag onto an empty
+guarantees**, and S33 falsified it empirically: force-moving a tag onto an empty
 commit moved the SHA but **not** the tree hash; onto a content-changing commit,
-both moved (S28 §1, E3e/E3g). A git SHA alone provides neither guarantee
+both moved (S33 §1, E3e/E3g). A git SHA alone provides neither guarantee
 reliably:
 
 | field | answers | catches |
@@ -216,37 +216,37 @@ believes they have both.
 - **`git archive`, not `git checkout`.** The tree is materialized by piping
   `git archive --format=tar <sha>` into `tar -x` — no `.git`, no index, no
   mtime-dependent state, a deterministic materialization that can be hashed
-  reproducibly. A worktree checkout is not (S28 §2).
+  reproducibly. A worktree checkout is not (S33 §2).
 - **Entries are `0555`.** Not security (integrity is the tree hash) but a
   tripwire making "I edited the cache" loud. Practical cost, found the hard way:
   `rm -rf` on a `0555` tree fails, so a **`cljgo cache clean` verb is required** —
-  a user cannot cleanly delete the cache by hand (S28 §2).
+  a user cannot cleanly delete the cache by hand (S33 §2).
 - **Concurrency is `flock` + atomic rename, no daemon.** `syscall.Flock
   (LOCK_EX)` on the per-entry lockfile around fetch (released by the OS on
   process death, so a killed resolver cannot wedge the cache), then materialize
   into `src/.tmp-XXXX` and `os.Rename` to the final name. Entries are immutable,
-  so a lost race **discards** the loser's copy — there is no merge case. S28's
-  8-way race on one cold cache: 8× exit 0, 3 entries, 0 temp leftovers (S28 §3,
+  so a lost race **discards** the loser's copy — there is no merge case. S33's
+  8-way race on one cold cache: 8× exit 0, 3 entries, 0 temp leftovers (S33 §3,
   E5).
 
 ### 3.3 `vendor/` overrides under the same lock hash, no new slot
 
 A project-local `vendor/<name>/` overrides the cache for that dep, **verified by
 the same lock `:tree/hash`** — one integrity mechanism, two storage backends
-(the hash is a property of the dependency, not of where it sits; S28 §4, E4e).
+(the hash is a property of the dependency, not of where it sits; S33 §4, E4e).
 Vendoring is invisible to the load path: it changes which directory fills §2's
 slot 3, not the slot order. Precedence *inside* slot 3 is `:path` dep →
 `vendor/<name>` → global cache. It covers air-gapped and audited builds without
-making the common path pay (S28 §4, E4d — a resolve succeeded with the cache
+making the common path pay (S33 §4, E4d — a resolve succeeded with the cache
 emptied, the remotes renamed off disk, and `-offline`).
 
 ### 3.4 Cost and honest limits
 
-S28 (3 deps, medians): cold **163 ms**, warm **3.5 ms**, offline **3.3 ms**,
+S33 (3 deps, medians): cold **163 ms**, warm **3.5 ms**, offline **3.3 ms**,
 against a **3.3 ms** process baseline — warm resolution including full tree
 re-verification is indistinguishable from process startup *at this size*.
 
-**Open (S28 §6, §10):** full re-hashing on every read will not stay free at
+**Open (S33 §6, §10):** full re-hashing on every read will not stay free at
 ecosystem scale; Go's per-entry `.ok`-stamp-after-verify trick (recompute the
 full hash on demand via a `cljgo cache verify`, not every build) is the known
 answer but is deliberately **not** built yet — a premature stamp is a
@@ -257,10 +257,10 @@ needs a Windows `LockFileEx` equivalent. Reproducibility across machines is
 
 ---
 
-## 4. The lockfile [ADR 0048 decision 3 · S28 — MET]
+## 4. The lockfile [ADR 0048 decision 3 · S33 — MET]
 
 `build.lock.edn` is EDN, adjacent to `build.cljgo`, committed, generated by
-`cljgo resolve`, never hand-edited. S28 prototyped and validated the schema.
+`cljgo resolve`, never hand-edited. S33 prototyped and validated the schema.
 
 ### 4.1 Schema
 
@@ -278,9 +278,9 @@ Per dependency:
 
 Top level: `:lock/version` and `:build/hash` (a hash of `build.cljgo`, to detect
 drift). Dependencies are emitted **name-sorted, with sorted map keys**, so two
-machines produce **byte-identical** lockfiles (S28 §E1c, `cmp` exit 0).
+machines produce **byte-identical** lockfiles (S33 §E1c, `cmp` exit 0).
 
-Verbatim shape from S28's prototype (E7):
+Verbatim shape from S33's prototype (E7):
 
 ```edn
 ;; GENERATED by `cljgo resolve` — commit this file, do not hand-edit.
@@ -314,20 +314,20 @@ deliberately **no** `:git/sha`, **no** `:tree/hash`; recorded, never hashed.
 Omitting it would (1) drop its transitive deps from the graph, (2) lose its
 load-path position (§2 slot 3, "in lock order"), and (3) make an irreproducible
 project *look* fully locked. `:local/unlocked? true` lets CI say "not
-reproducible: 1 unlocked path dep" instead of trusting a green lock (S28 §5).
+reproducible: 1 unlocked path dep" instead of trusting a green lock (S33 §5).
 The rule: **the lock records every node in the graph; it hashes only the nodes
 whose bytes it can pin.**
 
 ### 4.3 The lock is authoritative on `:git/sha`
 
 A `build.cljgo` ref that disagrees with the lock is a **divergence error naming
-both**, never a silent re-pin (S28 §1, E3f). `:git/ref` is provenance, not
+both**, never a silent re-pin (S33 §1, E3f). `:git/ref` is provenance, not
 identity — a tag moves, a branch always moves; git coordinates without a pinned
 SHA are not reproducible, and a SHA without a content hash cannot detect a
 tampered cache (§3). Because `build.cljgo` is executable, the lock is also the
 only artifact resolution can *read* rather than *run* (§6).
 
-Fields S28 **considered and rejected** (the schema argument is as much about
+Fields S33 **considered and rejected** (the schema argument is as much about
 absence): `:git/branch`/`:git/tag` as separate keys (invites treating a tag as
 identity — the exact §3.1 bug), fetch timestamp (breaks byte-identical locks),
 per-file hashes (the merkle root already pins every byte), download URL/mirror
@@ -339,16 +339,16 @@ merge question — record each dep's *declared* `go-require`, do not pre-decide)
 
 ---
 
-## 5. Version selection & conflict [ADR 0048 decision 4 · S26/S27 — MET, reasoning corrected]
+## 5. Version selection & conflict [ADR 0048 decision 4 · S31/S32 — MET, reasoning corrected]
 
 The decision — **explicit pins, hard error on conflict** — survives; the
-draft's *reasoning* did not, and both S26 and S27 killed it independently.
+draft's *reasoning* did not, and both S31 and S32 killed it independently.
 
 ### 5.1 A duplicate require is not a Go error — it silently MVS-resolves
 
 Measured through the real pipeline: dep A pinning `go-cmp v0.6.0` and dep B
-pinning `v0.7.0` produced **exit 0, no diagnostic, `v0.7.0` linked** (S26 §2.2,
-`results/J`; S27 §3.5). `go mod tidy` on a duplicate-require `go.mod` exits 0,
+pinning `v0.7.0` produced **exit 0, no diagnostic, `v0.7.0` linked** (S31 §2.2,
+`results/J`; S32 §3.5). `go mod tidy` on a duplicate-require `go.mod` exits 0,
 collapses to the higher version, order-independent — Go applies MVS with no
 diagnostic. And cljgo runs `tidy` whenever `GoRequires` is non-empty
 (`pkg/build/build.go:263`, consuming `p.GoRequires` populated at
@@ -363,7 +363,7 @@ write**, keyed by module path; it cannot delegate to `go mod tidy` without
 inheriting MVS through the back door. This is already sequenceable with no
 restructuring: `emit.CompileProgram` runs at `pkg/build/build.go:220`, *before*
 `os.MkdirTemp` (`:225`) and `emit.SynthGoMod` (`:246`), so transitive discovery
-completes before the single `go.mod` write (S25 §6, S26 §2.5). The merge must
+completes before the single `go.mod` write (S30 §6, S31 §2.5). The merge must
 produce a `go.mod` written **once, fully-formed, into a directory that did not
 previously exist** — §7.4's write-once constraint.
 
@@ -372,9 +372,9 @@ previously exist** — §7.4's write-once constraint.
 Flattening cljgo's deps into one Go module **destroys provenance**: a real Go
 module graph keeps `depa → go-cmp@v0.6.0`, but cljgo's single flattened module
 shows only `cljgo.gen/main → v0.7.0`, so `go mod why`/`go mod graph` can never
-name the requirer (S26 §2.3). cljgo must produce the message from its own
+name the requirer (S31 §2.3). cljgo must produce the message from its own
 records — which is exactly why §4's `:requires` provenance is **mandatory, not
-decorative**. Policy C's message, verbatim from S26's prototype:
+decorative**. Policy C's message, verbatim from S31's prototype:
 
 ```
 conflicting go-require for github.com/google/go-cmp
@@ -386,7 +386,7 @@ resolve it in build.cljgo with an explicit (go-require ...) override
 ### 5.4 Consumer override; MVS deferred
 
 The error names both requirers and both versions. Still not MVS, not
-nearest-wins, no solver at the cljgo layer. **S26's caveat:** a hard error needs
+nearest-wins, no solver at the cljgo layer. **S31's caveat:** a hard error needs
 a **consumer-side override** — an explicit `(go-require app "path" "v")` in the
 consumer's own `build.cljgo` that overrides dep-contributed pins and silences
 the conflict (Go's `replace`/`exclude` role) — or it is unusable the first time
@@ -396,7 +396,7 @@ nothing (ADR 0048 rationale).
 
 ---
 
-## 6. Transitivity without execution [ADR 0048 decision 5 · S26/S27]
+## 6. Transitivity without execution [ADR 0048 decision 5 · S31/S32]
 
 Resolution reads the **lock** and a dependency's **declarative manifest surface**
 only; it never evaluates a dependency's `(defn build [b] …)`. ADR 0021 made
@@ -407,39 +407,39 @@ still runs, because the consumer chose it.
 
 This forces a real constraint: a dependency's requirements must be expressible
 as **data**. **`build.lock.edn` is that source** — §4's `:requires` and
-`:impure` fields carry the whole transitive requirement set as data. S26 built
-the reader against S28's exact schema and **recovered every transitive require
-with provenance, evaluating nothing** (S26 §2.6, `results/F`) — adopted by
-reference rather than forking the resolver. S28 independently confirmed
+`:impure` fields carry the whole transitive requirement set as data. S31 built
+the reader against S33's exact schema and **recovered every transitive require
+with provenance, evaluating nothing** (S31 §2.6, `results/F`) — adopted by
+reference rather than forking the resolver. S33 independently confirmed
 breadth-first resolution + a flat lock is sufficient, and that the lock alone
-reproduces the graph on a cold machine (S28 §7).
+reproduces the graph on a cold machine (S33 §7).
 
 **Open (the production-side edge):** this validates the **consumption** side
 only. Whether a dependency can *produce* that data from ADR 0021's code-first
 surface — emitted at publish time, or restricted to a statically-readable subset
-— is **S27's** territory. S27's prototype emits a `cljgo.manifest.edn` at publish
+— is **S32's** territory. S32's prototype emits a `cljgo.manifest.edn` at publish
 time (the one moment a library's own code may legitimately run: the author's
-machine) and reads it as data forever after (S27 §3.1). If a manifest cannot
+machine) and reads it as data forever after (S32 §3.1). If a manifest cannot
 exist, §3/§4 survive unchanged — only the *source* of `:requires`/`:impure`
 moves. This is the open edge that may yet amend ADR 0021 rather than be smuggled
 past it, and it is not this doc's to close.
 
 ---
 
-## 7. Purity / impurity [ADR 0048 decision 6 + §6a · S26/S27 — MET]
+## 7. Purity / impurity [ADR 0048 decision 6 + §6a · S31/S32 — MET]
 
 A cljgo dependency need not be pure Clojure: via ADR 0021 it may carry
 `go-require` Go modules; via ADR 0011/0044 it may carry `c-link` cgo deps or
 purego `ffi` declarations. The consumer emits **one Go module** (`SynthGoMod`,
 one `go.mod`, `pkg/emit/program.go:328`), so impurity is **not contained** — it
 propagates into the consumer's build. Every module any dep pins is importable
-from every namespace in the program (S26 §2.4, leakage by construction).
+from every namespace in the program (S31 §2.4, leakage by construction).
 
 ### 7.1 Policy: capability sets, explicit opt-in, default deny
 
-S27's option (c) enforced via (b): a consumer must **acknowledge** a
+S32's option (c) enforced via (b): a consumer must **acknowledge** a
 dependency's impurity for it to resolve; unacknowledged impurity is **refused,
-not warned** (S27 §5). A published library carries a `:capabilities` set drawn
+not warned** (S32 §5). A published library carries a `:capabilities` set drawn
 from `#{:go-module :ffi :cgo}` (empty = pure); a consumer opts in per
 capability in `build.cljgo` (`(allow-capabilities b [:ffi])`), and resolution
 fails on any capability in the transitive closure the consumer has not allowed,
@@ -448,7 +448,7 @@ is the empty set: **pure by default.**
 
 ### 7.2 `:ffi` and `:cgo` are separate switches — measured asymmetry
 
-S27 measured why one switch is wrong (S27 §1.4, §2.1–§2.4):
+S32 measured why one switch is wrong (S32 §1.4, §2.1–§2.4):
 
 | capability | cost | portability |
 |---|---|---|
@@ -459,7 +459,7 @@ A single boolean would let `:cgo` in through a door opened for `:ffi`. Two hard
 clauses follow:
 
 - **`:cgo` is *refused*, not warned,** when the project declares any
-  cross-target (`:target`). S27 measured zig-cc cross-compiling cgo-against-libc
+  cross-target (`:target`). S32 measured zig-cc cross-compiling cgo-against-libc
   fine (a5) but **failing on cgo-against-sqlite3** (a4, `'sqlite3.h' file not
   found`) — zig supplies a toolchain and libc, **not** a sysroot for third-party
   libraries, so the escape hatch does not cover the case `c-link` is *for*
@@ -471,14 +471,14 @@ clauses follow:
 ### 7.3 Detectability: YES, from the lock alone at resolve time
 
 Impurity is readable at **resolve time from `:impure`** (§4) before any fetch or
-build. S27 shipped a runnable prototype that parses a static manifest with
+build. S32 shipped a runnable prototype that parses a static manifest with
 cljgo's own `pkg/reader`, evaluates **no** build fn, probes the host with real
 `purego.Dlopen`/`Dlsym`, and **refuses bad graphs before fetching** — catching a
 missing library, missing symbol, missing pkg-config, cgo-vs-cross-compile, and a
-Go-module version conflict, each with a named fix (S27 §3). It replaces, at
+Go-module version conflict, each with a named fix (S32 §3). It replaces, at
 resolve time, diagnostics that today surface as a 60-line `runtime/cgo`
 assembler dump, a 12-line clang dump, or an `init()`-time panic before `main`
-(S27 §3.4, §4.2) — the latter being the *only* layer at which a good message is
+(S32 §3.4, §4.2) — the latter being the *only* layer at which a good message is
 possible for the AOT path, since `init()` has no error return.
 
 ### 7.4 The write-once `go.mod` constraint
@@ -493,7 +493,7 @@ at `pkg/build/build.go:246` survives `WriteProgram`'s later `nil`-requires call
 at `pkg/emit/program.go:305`). The fresh-temp-`genDir` discipline
 (`os.MkdirTemp`, `pkg/build/build.go:225`; removed on success at `:273`) keeps
 re-resolution correct — `go.mod` never pre-exists on the project path, so the
-guard never fires there and editing `go-require` **does** take effect (S26 §2.5,
+guard never fires there and editing `go-require` **does** take effect (S31 §2.5,
 falsifiable test `results/I`; the drafted "staleness bug" was false and is
 retracted). Any future path that must *rewrite* an existing `go.mod` first has to
 distinguish generated from user-edited, which is a real migration, not a
@@ -504,8 +504,8 @@ one-liner.
 `p.GoRequires` is populated *exclusively* from the consumer's own `build.cljgo`
 (`pkg/build/build.go:120`), and §6 forbids evaluating a dependency's build fn —
 so **no path exists today** for a dependency's FFI/Go-module requirement to
-reach the consumer's `go.mod`. S27 built exactly this (pure-Clojure consumer,
-FFI in the *dependency*) and the build failed (S27 §1.2). ADR 0044 decision 2's
+reach the consumer's `go.mod`. S32 built exactly this (pure-Clojure consumer,
+FFI in the *dependency*) and the build failed (S32 §1.2). ADR 0044 decision 2's
 conditional-inclusion rule was written for a *program's own source*; but
 **libraries, not applications, are what carry FFI.** ADR 0044 needs amendment
 (ADR 0048 consequences). The fix under this design: the dep's `:go-require`
@@ -515,14 +515,14 @@ conditional-inclusion rule was written for a *program's own source*; but
 ### 7.6 BLOCKER — third-party `go-require` silently diverges REPL from binary (§6a)
 
 This is the most important output of the spike round and it **gates
-implementation**. S26 and S27 independently measured the same defect: the
+implementation**. S31 and S32 independently measured the same defect: the
 interpreter cannot reach an **unlinked** third-party Go package and **returns
 `nil`/`""` instead of erroring**, while the AOT binary returns the real value —
-both exit 0 (S26 §2.1, S27 §1.3):
+both exit 0 (S31 §2.1, S32 §1.3):
 
 ```
-$ cljgo run src/main.cljg   →  uuid: nil          # S26 interpreter
-$ ./consumerapp             →  uuid: 3d91365f-…   # S26 binary
+$ cljgo run src/main.cljg   →  uuid: nil          # S31 interpreter
+$ ./consumerapp             →  uuid: 3d91365f-…   # S31 binary
 ```
 
 It also corrupts a boolean (interpreted `false`, binary `true`). Stdlib
@@ -546,7 +546,7 @@ pull an impure dependency (§9).
 
 Because there is one resolver and both legs pass through it (§0, §2.5), a
 dependency loaded under `cljgo run` and one baked in under `cljgo build`
-resolve identically **by construction** — S25 proved byte-identical output on
+resolve identically **by construction** — S30 proved byte-identical output on
 both legs from the single 8-line change. Consequence: every conformance case
 for dependency loading is an ordinary ADR 0007 dual-harness `.clj` test (doc 03
 §7d) — one `.clj` + frozen `;; expect:` output, run tree-walk and
@@ -571,9 +571,9 @@ work, both ADR 0002/0007-class, and both outranking the resolver:
 1. **§7.6 / ADR 0048 §6a** — the third-party `go-require` `nil` divergence.
    Must land as its **own ADR + fix first** (**ADR 0049** owns it). It gates a
    `(dep …)` that can pull an impure dependency.
-2. **The entry-namespace `*file*` divergence** — S25 found that an entry
+2. **The entry-namespace `*file*` divergence** — S30 found that an entry
    namespace's `*file*` reads `NO_SOURCE_FILE` in an AOT binary but the real
-   path under the interpreter (S25 §"Caveat"), which also makes entry-namespace
+   path under the interpreter (S30 §"Caveat"), which also makes entry-namespace
    `require` unresolvable inside a binary, masked today only by the provider
    registry. Also ADR 0002/0007-class; also owed a separate ADR.
 
@@ -584,16 +584,16 @@ the OpenSpec proposal draws from** — it does not itself create a change.
 Related fixes the spikes flagged, to be filed **separately**, not folded into
 the resolver work:
 - ADR 0044 amendment for the library-carries-FFI hole (§7.5) and the
-  `RegisterLibFunc`-panics constraint (S27 §4.1).
+  `RegisterLibFunc`-panics constraint (S32 §4.1).
 - ADR 0011 decision 3's zig-cc claim narrowed to libc-only cgo (§7.2).
 - ADR 0021's `{:pkg-config …}` surface needs a raw `:libs`/`:headers`
-  alternative — pkg-config is absent on a normal dev Mac (S27 §2.2).
-- ADR 0023's binary-size framing: for cgo, track **linkage, not bytes** (S27
+  alternative — pkg-config is absent on a normal dev Mac (S32 §2.2).
+- ADR 0023's binary-size framing: for cgo, track **linkage, not bytes** (S32
   measured a cgo binary 13,600 bytes *smaller* while strictly less portable,
   §2.3).
 - `pkg/repl/session.go:57` hardcodes `~/.config/cljgo/sessions` with no XDG
   lookup — a one-function fix so config (`.config`) and cache (`.cache`) agree
-  on the pattern (S28 §2). Note and file; do not smuggle into the dep work.
+  on the pattern (S33 §2). Note and file; do not smuggle into the dep work.
 
 ---
 
@@ -603,4 +603,4 @@ A package registry or index; publishing/distribution (ADR 0013's `--lib` /
 `--c-shared` producer side); semver ranges and any constraint solver;
 private/authenticated dependency sources; dependency vulnerability scanning;
 cache GC/eviction; the `.ok`-stamp fast path (§3.4); cross-filesystem rename
-fallback. All deliberately deferred (ADR 0048 out-of-scope; S28 §9).
+fallback. All deliberately deferred (ADR 0048 out-of-scope; S33 §9).

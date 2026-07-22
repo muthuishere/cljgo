@@ -1,6 +1,6 @@
 ## 1. `pkg/deps` foundation — lock schema + deterministic EDN (decision 3)
 
-- [x] 1.1 Create `pkg/deps` package. Re-author S28's `edn.go` as `pkg/deps/edn_{emit,read}.go`: a deterministic sorted-key EDN emitter (byte-identical output) plus a reader built on `pkg/reader` (`ReadAll`), not a bespoke parser
+- [x] 1.1 Create `pkg/deps` package. Re-author S33's `edn.go` as `pkg/deps/edn_{emit,read}.go`: a deterministic sorted-key EDN emitter (byte-identical output) plus a reader built on `pkg/reader` (`ReadAll`), not a bespoke parser
 - [x] 1.2 Define the `Lock`/`LockedDep` types and `LoadLock`/`WriteLock` (`build.lock.edn`): top `:lock/version`, `:build/hash`; per-dep `:name :git/url :git/ref :git/sha :tree/hash :paths :requires` and `:pure? true` | `:impure {…}`; deps name-sorted, keys sorted
 - [x] 1.3 `:path` local deps recorded as named holes (`:local/unlocked? true`, unhashed)
 - [x] 1.4 Lock is authoritative on `:git/sha`: a divergence check that errors naming both the lock SHA and a disagreeing ref SHA
@@ -8,7 +8,7 @@
 
 ## 2. `pkg/deps` cache — identity key, content verify, flock (decision 1)
 
-- [x] 2.1 Re-author S28's `cas.go` as `pkg/deps/cache.go`: `CacheRoot()` (`$CLJGO_CACHE` → `$XDG_CACHE_HOME/cljgo` → `~/.cache/cljgo`), `dl/` + `src/` layout
+- [x] 2.1 Re-author S33's `cas.go` as `pkg/deps/cache.go`: `CacheRoot()` (`$CLJGO_CACHE` → `$XDG_CACHE_HOME/cljgo` → `~/.cache/cljgo`), `dl/` + `src/` layout
 - [x] 2.2 Identity key `sha256(url‖sha‖subdir)` computable before fetch; `TreeHash(dir)` merkle content hash recomputed on every read
 - [x] 2.3 `materialize`: bare git mirror into `dl/`, `git archive` into an immutable `0555` `src/` tree; `flock(LOCK_EX)` + atomic rename; losing racers discard, no temp leftovers; `flock` behind a POSIX build-tag (`lock_unix.go`) with an `O_EXCL` spin fallback (`lock_windows.go`) so Windows CI stays green
 - [x] 2.4 Verify-by-content on read: recompute tree hash, error with expected/got on mismatch; a force-moved tag with unchanged sha+hash resolves unchanged

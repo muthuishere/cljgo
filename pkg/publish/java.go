@@ -2,7 +2,7 @@
 // `certain-java?` (ADR 0050 dec 4): a best-effort COURTESY diagnostic over the
 // SELF-IDENTIFYING JVM surfaces only — never a gate, never a guess.
 //
-// It is certain-only and zero-false-positive by construction (S30, precision
+// It is certain-only and zero-false-positive by construction (S35, precision
 // 10/10): it flags import/new heads, java.*/javax.*/clojure.java.* in
 // call-namespace position, and a fixed table of bare JVM classes in call-ns
 // position. It deliberately does NOT flag the undecidable bare instance
@@ -33,7 +33,7 @@ type Diag struct {
 // surface appears as a call namespace `Class/member` (e.g. System/getProperty,
 // Math/sqrt). It deliberately excludes the ADR 0036 class-ref value vocabulary
 // used by instance?/catch/bare-value positions — those are pure and must NOT be
-// flagged. This is the exact table S30 validated (proto/main.go:105-111).
+// flagged. This is the exact table S35 validated (proto/main.go:105-111).
 var jvmBareClassNS = map[string]bool{
 	"System": true, "Math": true, "Thread": true, "Integer": true, "Long": true,
 	"Double": true, "Float": true, "Boolean": true, "Character": true, "Byte": true,

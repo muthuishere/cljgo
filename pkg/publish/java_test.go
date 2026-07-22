@@ -17,9 +17,9 @@ const (
 	lJavaAmbig // Java but the accepted undecidable dot-form tail — MUST NOT be flagged
 )
 
-// corpus is S30's 30-form labeled oracle (proto/main.go:60-96), each java
+// corpus is S35's 30-form labeled oracle (proto/main.go:60-96), each java
 // entry oracle-confirmed on Clojure 1.12.5. `lJavaAmbig` marks the four bare
-// dot-forms S30 accepts as permanent, safe false negatives.
+// dot-forms S35 accepts as permanent, safe false negatives.
 var corpus = []struct {
 	src   string
 	label jlabel

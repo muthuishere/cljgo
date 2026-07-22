@@ -68,5 +68,5 @@ archived (ADR 0049), so decisions 1–6 are unblocked.
 - `cmd/cljgo/main.go` (`cache` subcommand).
 - Conformance: dependency-loading cases run in the ADR 0007 dual harness (one
   resolver → parity free by construction).
-- Frozen references adopted: S28 (cache + lock schema), S26 (lock reader), S27
-  (purity validator), S25 (load-path patch).
+- Frozen references adopted: S33 (cache + lock schema), S31 (lock reader), S32
+  (purity validator), S30 (load-path patch).

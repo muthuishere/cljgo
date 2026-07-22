@@ -31,7 +31,7 @@ remains the canonical default.
    (portable fallback) — mirroring Clojure's own host-extension pattern (a JVM
    host prefers `.clj` over `.cljc`, ClojureScript prefers `.cljs`). This
    reverses the prior `.clj`-first order. Because `ResolveLibPath` is the
-   single shared resolver (S25), both execution legs inherit this identically —
+   single shared resolver (S30), both execution legs inherit this identically —
    dual-mode parity by construction (ADR 0049 invariant), no second resolver.
 
 2. **The build file is probed, not fixed:** `cljgo build` looks for
@@ -40,7 +40,7 @@ remains the canonical default.
    emits and the canonical default in error messages.
 
 3. **Ambiguity is most-specific-wins, silently** — consistent with the
-   load-path first-wins of the ADR 0048 / S25 design. A shadowing diagnostic
+   load-path first-wins of the ADR 0048 / S30 design. A shadowing diagnostic
    may be added later; it is not a semantic change.
 
 ## Consequences

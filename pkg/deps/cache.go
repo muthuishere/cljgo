@@ -6,7 +6,7 @@
 // (no MVS, no solver), and a default-deny purity gate with separate :ffi/:cgo
 // switches.
 //
-// This package is re-authored from the frozen spikes S25–S28 (ADR 0027 forbids
+// This package is re-authored from the frozen spikes S30–S33 (ADR 0027 forbids
 // merging spike code verbatim). It imports only pkg/reader (+ its pkg/lang data
 // types) and the standard library; it must not import pkg/eval, pkg/build,
 // pkg/emit, or pkg/analyzer, to keep those free to import deps without a cycle.
@@ -25,7 +25,7 @@ import (
 
 // CacheRoot resolves the global cache root, in precedence order:
 //
-//	$CLJGO_CACHE           explicit override (also S28's "different machine" proxy)
+//	$CLJGO_CACHE           explicit override (also S33's "different machine" proxy)
 //	$XDG_CACHE_HOME/cljgo   ADR 0048 §1
 //	~/.cache/cljgo          fallback
 //

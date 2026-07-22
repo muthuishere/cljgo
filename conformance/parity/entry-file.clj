@@ -1,4 +1,4 @@
-;; ADR 0049 dec 3 — entry-namespace *file* parity (S25 entry-*file* repro).
+;; ADR 0049 dec 3 — entry-namespace *file* parity (S30 entry-*file* repro).
 ;; The entry namespace's *file* MUST bind to its logical source path in an
 ;; AOT binary, matching the interpreter — not NO_SOURCE_FILE. Pre-fix, the
 ;; compiled leg printed "has-file false" while the interpreter printed

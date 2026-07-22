@@ -1,8 +1,8 @@
 ## Context
 
-ADR 0049 is the authority; this is its implementation design. Spike S31
-(`spikes/s31-unlinked-goref-detection/`, PASS) established the mechanism and
-froze a working `prototype.patch`; S25/S26/S27 diagnosed the divergences. The
+ADR 0049 is the authority; this is its implementation design. Spike S36
+(`spikes/s36-unlinked-goref-detection/`, PASS) established the mechanism and
+froze a working `prototype.patch`; S30/S31/S32 diagnosed the divergences. The
 silent `nil` is an explicit `return nil, nil` at two sites in
 `pkg/eval/host.go` (`:27`, `:62`), reached only by a reflect-seed registry miss
 (`corelib.LookupHostMember`) for a domain-dotted import path
@@ -45,7 +45,7 @@ interpreter and emitter agree by construction.
 4. **Parity gate**: extend the ADR-0007 dual harness with a comparator that
    passes on {identical output} ∪ {identical error} ∪ {interpreter
    capability-error AND AOT success}, and fails on different-non-error-values or
-   silent-`nil`-vs-value. Seed it with the S26/S27 and S25 repro cases.
+   silent-`nil`-vs-value. Seed it with the S31/S32 and S30 repro cases.
 
 ## Risks / Trade-offs
 
@@ -55,7 +55,7 @@ interpreter and emitter agree by construction.
 - **Tolerant-flag plumbing**: the flag must reach every discovery-pass evaluator
   or a legitimate build could spuriously error. Mitigation: set it at the single
   emitter entry point and cover with a build test over a third-party-`go-require`
-  fixture (S26 has one).
+  fixture (S31 has one).
 - **Entry `*file*` value**: a binary has no source tree at runtime, so `*file*`
   is a logical path, not an on-disk one — semantics match, not byte-identity.
   Acceptable and documented.

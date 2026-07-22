@@ -2,8 +2,8 @@
 
 ADR 0050 is the authority; this is its implementation design. Its dependencies
 have both landed: ADR 0049 (never silent `nil`) and ADR 0048 §6 (purity walk).
-The producer side of ADR 0013 is unbuilt except `exe`. Spikes S29 (transitive
-purity/taint classifier) and S30 (`certain-java?`) are closed, MET, and read-only
+The producer side of ADR 0013 is unbuilt except `exe`. Spikes S34 (transitive
+purity/taint classifier) and S35 (`certain-java?`) are closed, MET, and read-only
 against `pkg/` — their `driver.go`/`proto/main.go` are re-authored here, not
 copied (ADR 0027).
 
@@ -18,7 +18,7 @@ Verified reuse points (Explore pass, at `d522d8a`):
 - **The five host ops** `OpHostRef/OpHostCall/OpHostMethod/OpHostField/OpHostNew`
   (`pkg/ast/ast.go:47-51`); the canonical child-walker `eachChild`
   (`pkg/emit/emit.go:313`, unexported — so the classifier lives IN `package emit`
-  to use it directly, rather than S29's copied `eachChildS29`).
+  to use it directly, rather than S34's copied `eachChildS29`).
 - **No `publish` command** (`cmd/cljgo/main.go:52-92`); `Artifact{Name, Main,
   Kind}` (`build.go:55-58`) — `Kind` is where `"go"`/`"clojars"` attach. `(exe b
   spec)` (`core/build.cljg:30-37`) is the verb pattern a `publish`/lib target
@@ -42,9 +42,9 @@ Verified reuse points (Explore pass, at `d522d8a`):
 
 **Goals:**
 - A per-namespace Go-interop taint classifier in `pkg/emit` (re-authored from
-  S29), one pass over `CompileProgram`'s capture, exposing the whole-library OR
+  S34), one pass over `CompileProgram`'s capture, exposing the whole-library OR
   gate and the per-namespace lookup, with `file:line`.
-- A `certain-java?` courtesy predicate (re-authored from S30), certain-only,
+- A `certain-java?` courtesy predicate (re-authored from S35), certain-only,
   zero-FP, never a gate.
 - `cljgo publish go` and `cljgo publish clojars` producers, gated by the
   classifier, with a `publish`/lib verb in `build.cljgo`.
@@ -55,7 +55,7 @@ Verified reuse points (Explore pass, at `d522d8a`):
 - Consuming Maven/Clojars libraries (deferred import — ADR 0050 out of scope).
 - A JVM bytecode backend (explicitly never).
 - `c-shared`/`c-archive` producers (ADR 0013's later work).
-- A *total* `uses-java?` predicate (S30: not achievable, not needed — the gate is
+- A *total* `uses-java?` predicate (S35: not achievable, not needed — the gate is
   `uses-go-interop?`).
 - Clojars *distribution* mechanics beyond a git-coordinate `deps.edn` (a
   source-jar/coordinate step is a scoping item, git-coord first).
@@ -68,11 +68,11 @@ Verified reuse points (Explore pass, at `d522d8a`):
    NS name; entry recovered textually since `Entry.Name==""`). It walks each
    `CompiledNS.Forms` via `eachChild`, switching on the five `OpHost*` ops,
    recording the first offending `file:line`. A pluggable
-   `type Predicate func(*CompiledNS) *Taint` slot is reserved (S29 proved N
+   `type Predicate func(*CompiledNS) *Taint` slot is reserved (S34 proved N
    predicates compose) so `ffi`/`c-link` taint can be added without touching the
    traversal. Whole-library gate = OR over the map; per-namespace = lookup.
 
-2. **`certain-java?` in `pkg/publish`** (re-authored from S30 `javaSyntactic`),
+2. **`certain-java?` in `pkg/publish`** (re-authored from S35 `javaSyntactic`),
    working on reader forms: flags `import`/`new` heads, `java.*`/`javax.*` and
    `clojure.java.*` in **call-namespace** position, and the bare-JVM-class table
    (`System Math Thread Integer …`) in call-ns position — and **nothing else**
@@ -99,7 +99,7 @@ Verified reuse points (Explore pass, at `d522d8a`):
 
 5. **Decision 4 (loud per-namespace Java failure)**: verify the existing
    analyzer errors (`no such namespace`/`unable to resolve symbol`) already fire
-   with `file:line` and never `nil` (S30 measured they do); add a conformance
+   with `file:line` and never `nil` (S35 measured they do); add a conformance
    case pinning it, and the optional strict resolve-time rejection hook in
    `pkg/deps` (a manifest `Java` taint → default-deny), reusing the ADR 0048
    `checkPurity` shape. No new interpreter divergence surface (ADR 0049 covers Go;
@@ -108,15 +108,15 @@ Verified reuse points (Explore pass, at `d522d8a`):
 ## Risks / Trade-offs
 
 - **`publish go` library-emission scope** → the classifier + clojars are fully
-  spiked (S29); the go *library* mode is new emitter work. Mitigation: reuse
+  spiked (S34); the go *library* mode is new emitter work. Mitigation: reuse
   `WriteProgram`/`hostfacts` per-ns layout + signatures; scope the first cut to a
   correct go-gettable package for pure + go-interop libraries, and be explicit in
   the report about which export shapes are supported vs deferred. Do not
   gold-plate signature inference beyond what `hostfacts.go` already resolves.
-- **Entry NS name is `""`** → recover it textually (S29 `readNSName`) when keying
+- **Entry NS name is `""`** → recover it textually (S34 `readNSName`) when keying
   the taint map so the entry is addressable in gate output.
-- **certain-java? at reader vs AST level** → S30 ran it on reader forms; keep it
-  reader-level and self-contained so it needs no analyzer, matching S30's zero-FP
+- **certain-java? at reader vs AST level** → S35 ran it on reader forms; keep it
+  reader-level and self-contained so it needs no analyzer, matching S35's zero-FP
   measurement. It only ever *upgrades* an error message; correctness never
   depends on it.
 - **No gold-plated clojars coordinate** → git-coord `deps.edn` first; a

@@ -1,0 +1,542 @@
+package main
+
+// Resolution: build.cljgo dep forms -> fetch -> cache -> build.lock.edn.
+//
+// ADR 0048 decision 5: a dependency's own build fn is NEVER evaluated. Its
+// requirements are read from a declarative manifest (cljgo.manifest.edn) —
+// pure data — and, once locked, from the lock alone.
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"strings"
+)
+
+const lockVersion = 1
+
+type Dep struct {
+	Name   string
+	Kind   string // "git" | "path"
+	URL    string
+	Ref    string // tag/branch/sha as WRITTEN (provenance, not identity)
+	SHA    string // resolved immutable identity
+	Subdir string
+	Path   string // :path deps only
+	Tree   string // content hash of the materialized tree
+	Paths  []string
+	Reqs   []string // transitive cljgo dep names
+	GoReq  []Val
+	CLink  []Val
+	FFI    []Val
+}
+
+type Resolver struct {
+	Root    string // cache root
+	Project string
+	Offline bool
+	Update  bool // ignore locked SHAs, re-resolve refs against remotes
+	Vendor  string
+	locked  map[string]*Dep
+	Trace   []string
+}
+
+func (r *Resolver) tracef(f string, a ...any) {
+	r.Trace = append(r.Trace, fmt.Sprintf(f, a...))
+}
+
+// ---------- build.cljgo: scan the (dep b "name" {...}) surface ----------
+//
+// S33 is not the build evaluator (that is ADR 0021 / pkg/build). It scans
+// the literal dep forms, which is exactly the statically-readable subset
+// decision 5 says resolution is allowed to look at.
+
+func ScanBuildFile(path string) ([]*Dep, error) {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	s := string(src)
+	var out []*Dep
+	for i := 0; ; {
+		j := strings.Index(s[i:], "(dep ")
+		if j < 0 {
+			break
+		}
+		i += j + len("(dep ")
+		// skip the builder symbol
+		for i < len(s) && s[i] == ' ' {
+			i++
+		}
+		for i < len(s) && s[i] != ' ' {
+			i++
+		}
+		p := &parser{s: s, i: i}
+		p.ws()
+		nameV, err := p.value()
+		if err != nil {
+			return nil, fmt.Errorf("%s: dep name: %w", path, err)
+		}
+		name, ok := nameV.(string)
+		if !ok {
+			return nil, fmt.Errorf("%s: dep name must be a string", path)
+		}
+		p.ws()
+		optV, err := p.value()
+		if err != nil {
+			return nil, fmt.Errorf("%s: dep %s opts: %w", path, name, err)
+		}
+		d := &Dep{Name: name}
+		if pv := mstr(optV, "path"); pv != "" {
+			d.Kind, d.Path = "path", pv
+		} else {
+			d.Kind = "git"
+			d.URL = mstr(optV, "git")
+			d.Ref = mstr(optV, "ref")
+			d.Subdir = mstr(optV, "subdir")
+			if d.Ref == "" {
+				d.Ref = "HEAD"
+			}
+		}
+		out = append(out, d)
+		i = p.i
+	}
+	return out, nil
+}
+
+// ---------- lock ----------
+
+func (r *Resolver) lockPath() string { return filepath.Join(r.Project, "build.lock.edn") }
+
+func (r *Resolver) LoadLock() error {
+	r.locked = map[string]*Dep{}
+	b, err := os.ReadFile(r.lockPath())
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	v, err := ParseEDN(string(b))
+	if err != nil {
+		return fmt.Errorf("build.lock.edn: %w", err)
+	}
+	if n, _ := mget(v, "lock/version").(int); n != lockVersion {
+		return fmt.Errorf("build.lock.edn: lock/version %v, this cljgo speaks %d", mget(v, "lock/version"), lockVersion)
+	}
+	for _, e := range mvec(v, "deps") {
+		d := &Dep{
+			Name:   mstr(e, "name"),
+			URL:    mstr(e, "git/url"),
+			Ref:    mstr(e, "git/ref"),
+			SHA:    mstr(e, "git/sha"),
+			Subdir: mstr(e, "git/subdir"),
+			Path:   mstr(e, "local/path"),
+			Tree:   mstr(e, "tree/hash"),
+			Paths:  strs(mvec(e, "paths")),
+			Reqs:   strs(mvec(e, "requires")),
+		}
+		d.Kind = "git"
+		if d.Path != "" {
+			d.Kind = "path"
+		}
+		if imp := mget(e, "impure"); imp != nil {
+			d.GoReq = mvec(imp, "go-require")
+			d.CLink = mvec(imp, "c-link")
+			d.FFI = mvec(imp, "ffi")
+		}
+		r.locked[d.Name] = d
+	}
+	return nil
+}
+
+func (r *Resolver) WriteLock(deps []*Dep, buildHash string) error {
+	sort.Slice(deps, func(i, j int) bool { return deps[i].Name < deps[j].Name })
+	var out []Val
+	for _, d := range deps {
+		m := map[Kw]Val{"name": d.Name}
+		if d.Kind == "path" {
+			// See VERDICT §5: :path deps are recorded as a NAMED HOLE — the
+			// name and its contributed roots, never a hash. They are not
+			// reproducible across machines and must not pretend to be.
+			m["local/path"] = d.Path
+			m["local/unlocked?"] = true
+		} else {
+			m["git/url"] = d.URL
+			m["git/ref"] = d.Ref
+			m["git/sha"] = d.SHA
+			if d.Subdir != "" {
+				m["git/subdir"] = d.Subdir
+			}
+			m["tree/hash"] = d.Tree
+		}
+		m["paths"] = vals(d.Paths)
+		m["requires"] = vals(d.Reqs)
+		imp := map[Kw]Val{}
+		if len(d.GoReq) > 0 {
+			imp["go-require"] = d.GoReq
+		}
+		if len(d.CLink) > 0 {
+			imp["c-link"] = d.CLink
+		}
+		if len(d.FFI) > 0 {
+			imp["ffi"] = d.FFI
+		}
+		if len(imp) > 0 {
+			m["impure"] = imp
+		} else {
+			m["pure?"] = true
+		}
+		out = append(out, m)
+	}
+	top := map[Kw]Val{
+		"lock/version": lockVersion,
+		"build/hash":   buildHash,
+		"deps":         out,
+	}
+	body := ";; GENERATED by `cljgo resolve` — commit this file, do not hand-edit.\n" +
+		EmitEDN(top, "") + "\n"
+	return os.WriteFile(r.lockPath(), []byte(body), 0o644)
+}
+
+func HashFile(p string) (string, error) {
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return "", err
+	}
+	h := sha256.Sum256(b)
+	return "sha256:" + hex.EncodeToString(h[:]), nil
+}
+
+// ---------- git ----------
+
+func git(dir string, args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0", "GIT_CONFIG_NOSYSTEM=1")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return string(out), fmt.Errorf("git %s: %v: %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
+	}
+	return string(out), nil
+}
+
+// resolveRef turns a ref into an immutable SHA by asking the remote. This
+// is the ONLY step that requires the network, and a locked build skips it.
+func resolveRef(url, ref string) (string, error) {
+	out, err := git("", "ls-remote", url, ref)
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(out, "\n") {
+		f := strings.Fields(line)
+		if len(f) >= 2 {
+			return f[0], nil
+		}
+	}
+	// A 40-hex ref is already an identity.
+	if len(ref) == 40 {
+		return ref, nil
+	}
+	return "", fmt.Errorf("ref %q not found at %s", ref, url)
+}
+
+// ---------- materialize ----------
+
+// materialize ensures the cache holds the tree for (url, sha) and returns
+// its directory. Concurrency-safe: flock around fetch, atomic rename to
+// publish, immutable once published.
+func (r *Resolver) materialize(d *Dep) (string, error) {
+	dst := srcDir(r.Root, d.URL, d.SHA, d.Subdir)
+	if fi, err := os.Stat(dst); err == nil && fi.IsDir() {
+		r.tracef("cache hit  %s@%s", d.Name, shortSHA(d.SHA))
+		return dst, nil
+	}
+	if r.Offline {
+		return "", fmt.Errorf("offline: %s@%s is not in the cache (%s)", d.Name, shortSHA(d.SHA), dst)
+	}
+	key := d.URL + "\x00" + d.SHA + "\x00" + d.Subdir
+	err := withLock(r.Root, key, func() error {
+		if fi, err := os.Stat(dst); err == nil && fi.IsDir() {
+			return nil // another process published while we waited
+		}
+		mirror := mirrorDir(r.Root, d.URL)
+		if _, err := os.Stat(mirror); os.IsNotExist(err) {
+			if err := os.MkdirAll(filepath.Dir(mirror), 0o755); err != nil {
+				return err
+			}
+			if _, err := git("", "clone", "--bare", "--quiet", d.URL, mirror); err != nil {
+				return err
+			}
+		} else if _, err := git(mirror, "cat-file", "-e", d.SHA+"^{commit}"); err != nil {
+			if _, err := git(mirror, "fetch", "--quiet", "origin", "+refs/*:refs/*"); err != nil {
+				return err
+			}
+		}
+		tmp, err := os.MkdirTemp(filepath.Join(r.Root, "src"), ".tmp-")
+		if err != nil {
+			if err := os.MkdirAll(filepath.Join(r.Root, "src"), 0o755); err != nil {
+				return err
+			}
+			tmp, err = os.MkdirTemp(filepath.Join(r.Root, "src"), ".tmp-")
+			if err != nil {
+				return err
+			}
+		}
+		defer os.RemoveAll(tmp)
+		// git archive writes the tree at SHA with no .git and no mtimes —
+		// a deterministic materialization, unlike a worktree checkout.
+		spec := d.SHA
+		if d.Subdir != "" {
+			spec = d.SHA + ":" + d.Subdir
+		}
+		tarPath := filepath.Join(tmp+".tar", "t.tar")
+		if err := os.MkdirAll(filepath.Dir(tarPath), 0o755); err != nil {
+			return err
+		}
+		defer os.RemoveAll(filepath.Dir(tarPath))
+		if _, err := git(mirror, "archive", "--format=tar", "-o", tarPath, spec); err != nil {
+			return err
+		}
+		if out, err := exec.Command("tar", "-xf", tarPath, "-C", tmp).CombinedOutput(); err != nil {
+			return fmt.Errorf("tar -xf: %v: %s", err, out)
+		}
+		if err := markReadOnly(tmp); err != nil {
+			return err
+		}
+		r.tracef("fetched    %s@%s", d.Name, shortSHA(d.SHA))
+		return publishAtomically(tmp, dst)
+	})
+	if err != nil {
+		return "", err
+	}
+	return dst, nil
+}
+
+// ---------- manifest (data only — decision 5) ----------
+
+func readManifest(dir string) (Val, error) {
+	b, err := os.ReadFile(filepath.Join(dir, "cljgo.manifest.edn"))
+	if os.IsNotExist(err) {
+		return map[Kw]Val{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return ParseEDN(string(b))
+}
+
+func (r *Resolver) applyManifest(d *Dep, dir string) error {
+	man, err := readManifest(dir)
+	if err != nil {
+		return fmt.Errorf("%s: manifest: %w", d.Name, err)
+	}
+	d.Paths = strs(mvec(man, "paths"))
+	if len(d.Paths) == 0 {
+		d.Paths = []string{"src"}
+	}
+	d.GoReq = mvec(man, "go-require")
+	d.CLink = mvec(man, "c-link")
+	d.FFI = mvec(man, "ffi")
+	d.Reqs = nil
+	for _, e := range mvec(man, "deps") {
+		d.Reqs = append(d.Reqs, mstr(e, "name"))
+	}
+	sort.Strings(d.Reqs)
+	return nil
+}
+
+func manifestDeps(dir string) ([]*Dep, error) {
+	man, err := readManifest(dir)
+	if err != nil {
+		return nil, err
+	}
+	var out []*Dep
+	for _, e := range mvec(man, "deps") {
+		d := &Dep{Name: mstr(e, "name"), Kind: "git", URL: mstr(e, "git"), Ref: mstr(e, "ref"), Subdir: mstr(e, "subdir")}
+		if p := mstr(e, "path"); p != "" {
+			d.Kind, d.Path = "path", p
+		}
+		if d.Ref == "" && d.Kind == "git" {
+			d.Ref = "HEAD"
+		}
+		out = append(out, d)
+	}
+	return out, nil
+}
+
+// ---------- the resolve loop ----------
+
+// Resolve walks the dep graph breadth-first. Every git dep is pinned to a
+// SHA (from the lock unless -update), materialized into the cache, and
+// VERIFIED against the locked tree hash before its manifest is read.
+func (r *Resolver) Resolve(roots []*Dep) ([]*Dep, error) {
+	seen := map[string]*Dep{}
+	queue := append([]*Dep(nil), roots...)
+	var order []*Dep
+
+	for len(queue) > 0 {
+		d := queue[0]
+		queue = queue[1:]
+		if prev, ok := seen[d.Name]; ok {
+			// S31 owns conflict policy; S33 only refuses to resolve two
+			// different identities under one name silently.
+			if prev.Kind == "git" && d.Kind == "git" && prev.Ref != d.Ref && d.Ref != "" {
+				return nil, fmt.Errorf("dependency conflict: %q required at ref %q and %q (S31 owns the policy; S33 refuses to pick)", d.Name, prev.Ref, d.Ref)
+			}
+			continue
+		}
+		seen[d.Name] = d
+
+		if d.Kind == "path" {
+			abs := d.Path
+			if !filepath.IsAbs(abs) {
+				abs = filepath.Join(r.Project, d.Path)
+			}
+			if _, err := os.Stat(abs); err != nil {
+				return nil, fmt.Errorf(":path dep %q: %w", d.Name, err)
+			}
+			if err := r.applyManifest(d, abs); err != nil {
+				return nil, err
+			}
+			r.tracef("path       %s -> %s (unlocked by design)", d.Name, d.Path)
+			order = append(order, d)
+			kids, err := manifestDeps(abs)
+			if err != nil {
+				return nil, err
+			}
+			queue = append(queue, kids...)
+			continue
+		}
+
+		lk := r.locked[d.Name]
+
+		// 1. vendor/ wins over the cache entirely (air-gap hatch).
+		if r.Vendor != "" {
+			vd := filepath.Join(r.Vendor, d.Name)
+			if fi, err := os.Stat(vd); err == nil && fi.IsDir() {
+				th, err := TreeHash(vd)
+				if err != nil {
+					return nil, err
+				}
+				if lk != nil && lk.Tree != "" && lk.Tree != th {
+					return nil, fmt.Errorf("vendor/%s does not match the lock\n  expected %s\n  got      %s\n  (vendor was re-populated from a different commit, or edited in place)", d.Name, lk.Tree, th)
+				}
+				d.SHA, d.Tree = orDefault(lkSHA(lk), "vendored"), th
+				if err := r.applyManifest(d, vd); err != nil {
+					return nil, err
+				}
+				r.tracef("vendor     %s (%s)", d.Name, shortHash(th))
+				order = append(order, d)
+				kids, err := manifestDeps(vd)
+				if err != nil {
+					return nil, err
+				}
+				queue = append(queue, kids...)
+				continue
+			}
+		}
+
+		// 2. identity: lock first, remote only when updating or unlocked.
+		switch {
+		case lk != nil && !r.Update:
+			if lk.URL != d.URL && d.URL != "" {
+				return nil, fmt.Errorf("lock/build divergence for %q:\n  build.cljgo :git %s\n  build.lock.edn  %s\n  run `cljgo resolve -update`", d.Name, d.URL, lk.URL)
+			}
+			if d.Ref != "" && lk.Ref != d.Ref {
+				return nil, fmt.Errorf("lock/build divergence for %q:\n  build.cljgo asks for ref %q\n  build.lock.edn pins ref %q (sha %s)\n  run `cljgo resolve -update` to re-pin", d.Name, d.Ref, lk.Ref, shortSHA(lk.SHA))
+			}
+			d.SHA, d.URL, d.Ref = lk.SHA, lk.URL, lk.Ref
+		case r.Offline:
+			return nil, fmt.Errorf("offline: %q is not in build.lock.edn, so its ref %q cannot be resolved without a remote", d.Name, d.Ref)
+		default:
+			sha, err := resolveRef(d.URL, d.Ref)
+			if err != nil {
+				return nil, err
+			}
+			if lk != nil && lk.SHA != sha {
+				r.tracef("REF MOVED  %s: ref %q was %s, remote now %s", d.Name, d.Ref, shortSHA(lk.SHA), shortSHA(sha))
+			}
+			d.SHA = sha
+		}
+
+		// 3. materialize + VERIFY before trusting a single byte.
+		dir, err := r.materialize(d)
+		if err != nil {
+			return nil, err
+		}
+		th, err := TreeHash(dir)
+		if err != nil {
+			return nil, err
+		}
+		if lk != nil && lk.Tree != "" && lk.SHA == d.SHA && lk.Tree != th {
+			return nil, fmt.Errorf("INTEGRITY FAILURE for %q @ %s\n  expected tree/hash %s\n  got      tree/hash %s\n  cache entry: %s\n  the cache entry does not match the lock — it was modified after it was\n  written. Remove that directory and re-resolve.", d.Name, shortSHA(d.SHA), lk.Tree, th, dir)
+		}
+		d.Tree = th
+		if err := r.applyManifest(d, dir); err != nil {
+			return nil, err
+		}
+		r.tracef("resolved   %s ref=%s sha=%s tree=%s", d.Name, d.Ref, shortSHA(d.SHA), shortHash(th))
+		order = append(order, d)
+
+		kids, err := manifestDeps(dir)
+		if err != nil {
+			return nil, err
+		}
+		queue = append(queue, kids...)
+	}
+	return order, nil
+}
+
+func lkSHA(d *Dep) string {
+	if d == nil {
+		return ""
+	}
+	return d.SHA
+}
+
+func orDefault(s, def string) string {
+	if s == "" {
+		return def
+	}
+	return s
+}
+
+// baseDir is where a resolved dep's tree actually lives.
+// Precedence: :path (in-project) > vendor/ > global cache.
+func (r *Resolver) baseDir(d *Dep) string {
+	switch {
+	case d.Kind == "path":
+		base := d.Path
+		if !filepath.IsAbs(base) {
+			base = filepath.Join(r.Project, base)
+		}
+		return base
+	case r.Vendor != "" && dirExists(filepath.Join(r.Vendor, d.Name)):
+		return filepath.Join(r.Vendor, d.Name)
+	default:
+		return srcDir(r.Root, d.URL, d.SHA, d.Subdir)
+	}
+}
+
+// LoadPathRoots is what S30's resolver would consume: dep roots in lock
+// order (ADR 0048 §2 slot 3).
+func (r *Resolver) LoadPathRoots(deps []*Dep) []string {
+	var out []string
+	for _, d := range deps {
+		base := r.baseDir(d)
+		for _, p := range d.Paths {
+			out = append(out, filepath.Join(base, p))
+		}
+	}
+	return out
+}
+
+func dirExists(p string) bool {
+	fi, err := os.Stat(p)
+	return err == nil && fi.IsDir()
+}

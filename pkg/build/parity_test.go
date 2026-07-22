@@ -15,7 +15,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/repl"
 )
 
-// TestParityThirdPartyGoRequire is the S26/S27 third-party go-require repro,
+// TestParityThirdPartyGoRequire is the S31/S32 third-party go-require repro,
 // run live through both legs and asserted with the ADR 0049 dec 4 parity
 // comparator (conformance.ClassifyParity). The interpreter cannot link a
 // third-party Go module (gorilla/websocket), so it MUST hard-error naming it

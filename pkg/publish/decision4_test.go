@@ -36,7 +36,7 @@ func TestJavaStaticFailsLoudPerNamespace(t *testing.T) {
 // TestCertainJavaFlagsStaticNotAmbiguous — the certain-java? courtesy diagnostic
 // flags the self-identifying static Java surface (System/…) but NOT the pure,
 // Java-flavored surfaces (instance?/catch/class-ref) — zero false positives
-// (ADR 0050 decision 4; S30). It only ever upgrades an error message; it is
+// (ADR 0050 decision 4; S35). It only ever upgrades an error message; it is
 // never a gate.
 func TestCertainJavaFlagsStaticNotAmbiguous(t *testing.T) {
 	static, err := CertainJavaFile(filepath.FromSlash("testdata/javastatic/js/core.clj"))

@@ -13,11 +13,11 @@
 ## 3. Dual-harness parity gate
 
 - [x] 3.1 Add a comparator to the ADR-0007 dual harness that accepts {identical output} ∪ {identical error} ∪ {interpreter capability-error AND AOT success} and fails on different-non-error-values or silent-nil-vs-value
-- [x] 3.2 Seed parity cases from the S26/S27 third-party-go-require repro and the S25 entry-`*file*` repro
+- [x] 3.2 Seed parity cases from the S31/S32 third-party-go-require repro and the S30 entry-`*file*` repro
 
 ## 4. Tests and gates
 
-- [x] 4.1 Unit test: unlinked member errors under run/REPL, is tolerated under the emitter flag, stdlib/genuine-nil unaffected (adapt S31's fixtures)
+- [x] 4.1 Unit test: unlinked member errors under run/REPL, is tolerated under the emitter flag, stdlib/genuine-nil unaffected (adapt S36's fixtures)
 - [x] 4.2 Build test: a program using a third-party go-require compiles (discovery tolerates) and the binary resolves the real value
 - [x] 4.3 Conformance/dual-harness cases for the entry-`*file*` and uncompiled-`require` behaviors
 - [x] 4.4 Full gates green: `go build ./... && go vet ./... && gofmt -l pkg cmd conformance templates && go test ./...`

@@ -37,7 +37,7 @@ func readManifest(dir string) (*manifest, error) {
 	}
 
 	imp := &Impurity{}
-	// go-requires (S27 manifest) / go-require (lenient alias)
+	// go-requires (S32 manifest) / go-require (lenient alias)
 	gr := ednGet(form, "go-requires")
 	if gr == nil {
 		gr = ednGet(form, "go-require")
@@ -77,7 +77,7 @@ func readManifest(dir string) (*manifest, error) {
 		m.Impure = imp
 	}
 
-	// Transitive children with fetch coordinates (:deps — S28 shape).
+	// Transitive children with fetch coordinates (:deps — S33 shape).
 	names := map[string]bool{}
 	for _, e := range ednSlice(ednGet(form, "deps")) {
 		d := Dep{
@@ -95,7 +95,7 @@ func readManifest(dir string) (*manifest, error) {
 			names[d.Name] = true
 		}
 	}
-	// cljgo-requires (S27 shape) — names only, no fetch coords.
+	// cljgo-requires (S32 shape) — names only, no fetch coords.
 	for _, e := range ednSlice(ednGet(form, "cljgo-requires")) {
 		if n := ednStr(ednGet(e, "name")); n != "" {
 			names[n] = true

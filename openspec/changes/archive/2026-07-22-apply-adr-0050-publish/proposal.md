@@ -21,7 +21,7 @@ nil", ADR 0048 §6 purity walk) have both landed, so it is unblocked.
 - **Purity gate decides eligibility.** `publish clojars` walks the library's
   **whole transitive required surface** and refuses if any reachable form uses
   **Go interop** (`require-go`/ffi), naming the offending `file:line`. The gate
-  is **`uses-go-interop?`, NOT "no Java"** (S30: Java runs on the JVM, so it does
+  is **`uses-go-interop?`, NOT "no Java"** (S35: Java runs on the JVM, so it does
   not disqualify a clojars artifact). A pure-Clojure library is the only artifact
   that reaches both worlds.
 - **No new walk.** The validator is a predicate pass over the existing ADR-0042
@@ -62,6 +62,6 @@ nil", ADR 0048 §6 purity walk) have both landed, so it is unblocked.
 - `core/build.cljg` + AOT mirror: library-target / publish declaration surface.
 - Conformance: taint-classifier cases (buried Go-interop caught at `file:line`;
   pure fixture zero-FP; whole-lib == AND of per-ns).
-- Frozen references adopted: S29 (transitive purity/taint classifier), S30
+- Frozen references adopted: S34 (transitive purity/taint classifier), S35
   (certain-java? predicate).
 - Owed ADR 0013 note: `c-shared`/`c-archive` producers remain its later work.

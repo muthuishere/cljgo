@@ -4,7 +4,7 @@
 // ("identical output OR the file is eval-only") is too strict for a
 // declared host-capability gap: the correct fix for the unlinked
 // third-party require-go divergence makes `cljgo run` hard-error while the
-// AOT binary succeeds with the real value (S31). This comparator therefore
+// AOT binary succeeds with the real value (S36). This comparator therefore
 // accepts THREE outcomes and forbids only the silent-divergence quadrant.
 package conformance
 

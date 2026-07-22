@@ -1,8 +1,0 @@
-;; S27 exp1b — identical project, EXCEPT the consumer hand-declares purego.
-;; This is the only mechanism that exists: the CONSUMER's own build.cljgo.
-;; Nothing derives this line from the dependency that actually needs it.
-(defn build [b]
-  (let [app (exe b {:name "consumer" :main "src/main.cljg"})]
-    (go-require app "github.com/ebitengine/purego" "v0.10.1")
-    (install b app)
-    (run b app)))
