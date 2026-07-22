@@ -434,6 +434,62 @@ func registerAsync() {
 		return lang.Go(oneArg("thread-call", args))
 	})
 
+	// pipeline / pipeline-blocking / pipeline-async (ADR 0040 tier T3):
+	// transform `from` into `to` with parallelism n, IN INPUT ORDER, closing
+	// `to` when from drains unless close?=false; returns a completion channel
+	// that closes when done. n must be positive (oracle n0 => AssertionError).
+	// On Go all three collapse to one goroutine-parallel engine — pipeline and
+	// pipeline-blocking are observably identical (ADR 0040 #9: real goroutines
+	// collapse the JVM's compute-vs-blocking thread-pool distinction). Runtime
+	// in pkg/lang/chan_pump.go; frozen against JVM core.async 1.6.681
+	// (conformance/tests/chan-pipeline*.clj).
+	pipeN := func(op string, v any) int {
+		n, ok := v.(int64)
+		if !ok {
+			panic(fmt.Errorf("%s expects an integer parallelism, got: %s", op, lang.PrintString(v)))
+		}
+		if n <= 0 {
+			panic(fmt.Errorf("Assert failed: (pos? n)"))
+		}
+		return int(n)
+	}
+	pipeline := func(op string) func(...any) any {
+		return func(args ...any) any {
+			if len(args) < 4 || len(args) > 6 {
+				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), op))
+			}
+			n := pipeN(op, args[0])
+			to := chanArg(op, args[1])
+			xf := args[2]
+			from := chanArg(op, args[3])
+			closeWhenDone := true
+			if len(args) >= 5 {
+				closeWhenDone = lang.IsTruthy(args[4])
+			}
+			var exh any
+			if len(args) == 6 {
+				exh = args[5]
+			}
+			return lang.Pipeline(n, to, xf, from, closeWhenDone, exh)
+		}
+	}
+	areg("pipeline", pipeline("pipeline"))
+	areg("pipeline-blocking", pipeline("pipeline-blocking"))
+	areg("pipeline-async", func(args ...any) any {
+		if len(args) < 4 || len(args) > 5 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: pipeline-async", len(args)))
+		}
+		n := pipeN("pipeline-async", args[0])
+		to := chanArg("pipeline-async", args[1])
+		af := args[2]
+		from := chanArg("pipeline-async", args[3])
+		closeWhenDone := true
+		if len(args) == 5 {
+			closeWhenDone = lang.IsTruthy(args[4])
+		}
+		return lang.PipelineAsync(n, to, af, from, closeWhenDone)
+	})
+
 	// mult / tap / untap / untap-all: fan-out every value to every tap.
 	multArg := func(op string, v any) *lang.Mult {
 		m, ok := v.(*lang.Mult)

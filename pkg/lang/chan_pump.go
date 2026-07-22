@@ -278,6 +278,137 @@ func ChanTake(n int, ch *Channel, buf int) *Channel {
 }
 
 // ---------------------------------------------------------------------
+// pipeline / pipeline-blocking / pipeline-async  (ADR 0040 §2 tier T3)
+// ---------------------------------------------------------------------
+//
+// A pipeline reads values from `from`, transforms each with parallelism
+// `n`, and writes the results to `to` IN INPUT ORDER, closing `to` when
+// `from` drains (unless close?=false). It returns a completion channel
+// that closes once every result has been flushed to `to` — JVM parity
+// (core.async's pipeline* returns the go-loop's result channel; oracle
+// done-yields => nil then nil).
+//
+// Order preservation with n>1 is the contract: a transform that sleeps
+// longer on earlier inputs still emits in input order (oracle
+// order => [0 10 … 70] for sleeps inversely proportional to input). The
+// mechanism mirrors core.async: the dispatcher, reading `from` serially,
+// creates ONE result channel per input and enqueues it on the bounded
+// `results` channel in input order; n workers fill those result channels
+// concurrently; a single writer drains `results` — hence each input's
+// result channel — strictly in order into `to`.
+//
+// pipeline vs pipeline-blocking: on the JVM they differ ONLY by executor
+// (a bounded compute pool vs the unbounded blocking pool). On the Go host
+// every worker is a goroutine, so the distinction collapses (ADR 0040 #9)
+// — both call pipelineImpl and are observably identical here. The xform
+// is applied PER INPUT on a fresh (chan 1 xf ex-handler) transducer
+// channel, so a stateful/aggregating transducer does NOT accumulate across
+// inputs (oracle statefulxf: (partition-all 2) => [[1] [2] [3] [4]]).
+
+type pipelineJob struct {
+	v   any
+	res *Channel
+}
+
+// pipelineImpl is the shared engine. newRes creates a per-input result
+// channel; fill (run on a worker goroutine) populates it with the input's
+// 0+ output values and closes it.
+func pipelineImpl(n int, to, from *Channel, closeWhenDone bool, newRes func() *Channel, fill func(any, *Channel)) *Channel {
+	jobs := make(chan pipelineJob, n)
+	results := NewChan(n)
+	done := NewChan(1)
+
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				fill(j.v, j.res)
+			}
+		}()
+	}
+	// results closes once every worker has drained its jobs — every result
+	// channel has already been enqueued on results by then (the dispatcher
+	// sends each res before it closes jobs), so nothing is lost.
+	go func() {
+		wg.Wait()
+		ChanClose(results)
+	}()
+
+	// dispatcher: read from serially, enqueue a result channel per input in
+	// input order (onto both jobs and results).
+	go func() {
+		for {
+			v := ChanRecv(from)
+			if v == nil {
+				close(jobs)
+				return
+			}
+			res := newRes()
+			jobs <- pipelineJob{v, res}
+			ChanSend(results, res)
+		}
+	}()
+
+	// writer: drain each result channel fully, in order, into to.
+	go func() {
+		for {
+			r := ChanRecv(results)
+			if r == nil {
+				if closeWhenDone {
+					ChanClose(to)
+				}
+				ChanClose(done)
+				return
+			}
+			res := r.(*Channel)
+			for {
+				v := ChanRecv(res)
+				if v == nil {
+					break
+				}
+				if !ChanSend(to, v) {
+					break // to closed downstream — stop forwarding this result
+				}
+			}
+		}
+	}()
+	return done
+}
+
+// Pipeline implements (pipeline n to xf from) / (+ close?) / (+ ex-handler)
+// and (pipeline-blocking …) — the same engine on Go. Each input is
+// transduced on a fresh (chan 1 xf ex-handler) channel: an ex-handler
+// (nil = drop-and-continue, JVM logs+drops) receives a thrown exception and
+// its return replaces the value (oracle exh => [10 :handled 30], exhdrop
+// and exdefault => [10 30]).
+func Pipeline(n int, to *Channel, xf any, from *Channel, closeWhenDone bool, exh any) *Channel {
+	return pipelineImpl(n, to, from, closeWhenDone,
+		func() *Channel {
+			res := NewChan(1)
+			res.SetXform(xf, exh)
+			return res
+		},
+		func(v any, res *Channel) {
+			ChanSend(res, v)
+			ChanClose(res)
+		})
+}
+
+// PipelineAsync implements (pipeline-async n to af from) / (+ close?): the
+// async fn af is (fn [val result-ch]) and delivers 0+ results to result-ch
+// and closes it (oracle async => [100 101 200 201 300 301], async-zero =>
+// [10 30] when af emits nothing for even inputs). af is expected to be
+// non-blocking (it spawns its own go block), so the worker returns as soon
+// as af does.
+func PipelineAsync(n int, to *Channel, af any, from *Channel, closeWhenDone bool) *Channel {
+	return pipelineImpl(n, to, from, closeWhenDone,
+		func() *Channel { return NewChan(1) },
+		func(v any, res *Channel) { Apply2(af, v, res) })
+}
+
+// ---------------------------------------------------------------------
 // mult / tap  (ADR 0040 §2.3)
 // ---------------------------------------------------------------------
 

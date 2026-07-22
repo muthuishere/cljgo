@@ -71,13 +71,20 @@ run, cited in a comment.
   mix-pause,mix-solo,mix-solo-pause,mix-unmix,mix-unmix-all}.clj. Gates
   green.
 
-## 3. T3 — pipelines
+## 3. T3 — pipelines (DONE 2026-07-22, change `apply/core-async-t3`)
 
-- [ ] 3.1 `pipeline` (n worker goroutines, ordered results — order
-  guarantee oracled) + `pipeline-blocking` as a documented alias
-  (ADR 0040 #9). Gates green.
-- [ ] 3.2 `pipeline-async` (af receives result chan to close; concurrency
-  bound oracled). Gates green.
+- [x] 3.1 `pipeline` (n worker goroutines, ordered results — order
+  guarantee oracled: `chan-pipeline-order.clj` proves in-order output
+  under non-monotonic per-input latency) + `pipeline-blocking` as a
+  documented observable-equal engine (ADR 0040 #9 — goroutines collapse
+  the compute/blocking pool split). Also `ex-handler` (replace/drop) and
+  `close?`. `lang.Pipeline` in `pkg/lang/chan_pump.go`, `areg`-registered.
+  Gates green.
+- [x] 3.2 `pipeline-async` (af `(fn [val result-ch])` delivers 0+ then
+  closes result-ch; multi-emit / zero-emit / close? oracled). Concurrency
+  bounded by the `jobs`/`results` channels (cap n). `lang.PipelineAsync`.
+  Conformance: `chan-pipeline{,-order,-close,-xform,-ex-handler,-blocking,-async}.clj`.
+  Gates green.
 
 ## 4. Wrap-up
 
