@@ -168,6 +168,28 @@ func PrintString(v interface{}) string {
 	return sb.String()
 }
 
+// PrintStringReadably renders v exactly like PrintString but with
+// *print-readably* forced to `readably` for the WHOLE recursive print.
+//
+// This is the seam print/println need. They are the "human readable" pair,
+// which on the JVM binds *print-readably* nil around the same machinery `pr`
+// uses — so string quotes and char escapes are stripped at EVERY depth, not
+// just the top: (print-str ["a" :x]) => "[a :x]", not "[\"a\" :x]" (oracle
+// 1.12.5). cljgo previously routed print/println through ToString, which for
+// a collection delegates to PrintString at the DEFAULT readability (true), so
+// nested strings kept their quotes — a divergence from JVM print in a very
+// common function. Binding the dynamic var (rather than threading a flag) is
+// both faithful to Clojure and correct here: Print re-reads *print-readably*
+// at every recursive call, so one push covers the entire tree. str/pr/prn are
+// untouched — str keeps quotes in collections, matching the JVM.
+func PrintStringReadably(v interface{}, readably bool) string {
+	PushThreadBindings(NewMap(VarPrintReadably, readably))
+	defer PopThreadBindings()
+	sb := strings.Builder{}
+	Print(v, &sb)
+	return sb.String()
+}
+
 // Print prints a value to the given io.Writer. Corresponds to
 // Clojure's RT.print.
 func Print(x interface{}, w io.Writer) {
