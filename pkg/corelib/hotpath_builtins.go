@@ -38,6 +38,24 @@ func internHotpathBuiltins(def func(string, func(...any) any) *lang.Var) {
 			if lang.IsNil(s) {
 				return nil
 			}
+			// Chunk-aware fast path (JVM parity): when the source hands out
+			// chunks (range, vector seqs), map the WHOLE chunk in a tight loop
+			// into a fresh chunk and chunk-cons it onto a lazy map of the
+			// chunk-rest. This preserves chunking downstream — a `reduce`/
+			// `count`/further `map`/`filter` then advances a chunk at a time
+			// instead of realizing one LazySeq+Cons node per element. Mirrors
+			// clojure.core/map's (chunked-seq? s) branch. NOTE: this realizes a
+			// whole chunk (up to 32) per step — matching JVM's chunked
+			// granularity, not the old element-at-a-time realization.
+			if cs, ok := s.(lang.IChunkedSeq); ok {
+				c := cs.ChunkedFirst()
+				n := c.Count()
+				b := lang.NewChunkBuffer(n)
+				for i := 0; i < n; i++ {
+					b.Add(lang.Apply1(f, c.Nth(i)))
+				}
+				return lang.NewChunkedCons(b.Chunk(), mapSeq(f, cs.ChunkedMore()).(lang.ISeq))
+			}
 			return lang.NewCons(lang.Apply1(f, s.First()), mapSeq(f, s.More()))
 		})
 	}
@@ -117,6 +135,32 @@ func internHotpathBuiltins(def func(string, func(...any) any) *lang.Var) {
 		return lang.NewLazySeq(func() any {
 			s := lang.Seq(coll)
 			for !lang.IsNil(s) {
+				// Chunk-aware fast path (JVM parity, mirrors clojure.core/
+				// filter's (chunked-seq? s) branch): test the whole chunk in a
+				// tight loop, collecting survivors into a fresh chunk sized to
+				// the source chunk, and chunk-cons onto a lazy filter of the
+				// chunk-rest. Even an all-reject chunk costs one ChunkedCons
+				// with an empty chunk rather than 32 empty LazySeq nodes. See
+				// the map note on realization granularity (whole chunk / step).
+				if cs, ok := s.(lang.IChunkedSeq); ok {
+					c := cs.ChunkedFirst()
+					n := c.Count()
+					b := lang.NewChunkBuffer(n)
+					for i := 0; i < n; i++ {
+						x := c.Nth(i)
+						if lang.IsTruthy(lang.Apply1(pred, x)) {
+							b.Add(x)
+						}
+					}
+					tail := filterSeq(pred, cs.ChunkedMore()).(lang.ISeq)
+					// chunk-cons drops an empty chunk (all-reject) — an empty
+					// ChunkedCons would panic on First()/Nth(0). Fall through to
+					// the lazy tail instead, exactly as clojure.core/chunk-cons.
+					if b.Count() == 0 {
+						return tail
+					}
+					return lang.NewChunkedCons(b.Chunk(), tail)
+				}
 				x := s.First()
 				if lang.IsTruthy(lang.Apply1(pred, x)) {
 					return lang.NewCons(x, filterSeq(pred, s.More()))
