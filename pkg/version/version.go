@@ -46,6 +46,15 @@ func IsRelease() bool {
 // about our implementation. (cljgo-version) answers the latter.
 const ClojureVersion = "1.12.5"
 
+// CoreAsyncVersion is the version of JVM org.clojure/core.async that cljgo's
+// clojure.core.async is verified against — the semantic oracle for channels,
+// alts!/alt!, and the mult/pub/mix distribution surface (ADR 0040). core.async
+// is a separate library from Clojure with its own release cadence, so its
+// oracle version is tracked separately from ClojureVersion. The conformance
+// suite's chan-*.clj expectations are frozen from `clojure -Sdeps
+// '{:deps {org.clojure/core.async {:mvn/version "1.6.681"}}}'`.
+const CoreAsyncVersion = "1.6.681"
+
 // GoVersion is the Go toolchain hosting this binary, without the "go"
 // prefix ("1.26.3"). Read from the runtime rather than hardcoded or
 // injected, so it is always the toolchain that actually built this binary

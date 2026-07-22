@@ -5,6 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/muthuishere/cljgo.svg)](https://pkg.go.dev/github.com/muthuishere/cljgo)
 [![Go](https://img.shields.io/badge/go-1.26-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Clojure](https://img.shields.io/badge/clojure-1.12.5-5881d8?logo=clojure&logoColor=white)](https://clojure.org)
+[![core.async](https://img.shields.io/badge/core.async-1.6.681-5881d8?logo=clojure&logoColor=white)](https://github.com/clojure/core.async)
 [![clojure-test-suite](https://img.shields.io/badge/clojure--test--suite-238%2F242%20(98.3%25)-brightgreen)](#status)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -92,7 +93,7 @@ get from the suite as it ships. Early, moving fast.
 | **M2** | ✅ | `cljgo build` → native binary, fixed-arity calling convention ([perf](#performance)) |
 | **M3-v0** | ✅ | **Zero-ceremony Go interop, both modes** — `require-go`, package fns/consts, `(T,error)`→`[v err]`, `!` unwrap-or-throw |
 | **M3.1/3.2** | ✅ | Members: `(.Method r …)`, `(.-Field r)`, `(set! (.-Field r) v)`, ctors `(pkg/T. {…})`, `(go/new T)` |
-| **M4-v0** | ✅ | Concurrency: `(chan)`/`(chan n)`, `(>! c v)`/`(<! c)`, `(close! c)`, `(go …)` over **real goroutines** — no CPS rewrite |
+| **core.async** | ✅ | Full `clojure.core.async` over **real goroutines** — no CPS rewrite. Channels, `go`/`thread`, `alts!`/`alt!`, transducers, and the `mult`/`pub`/`mix`/`pipe` distribution surface (ADR 0040 T1+T2). Verified against JVM **core.async 1.6.681** |
 | **Result/Option** | ✅ | `ok`/`err`/`just`/`none` + `unwrap`/`and-then`/`map-ok` + `let?`, `#cljgo/ok` literals (ADR 0014) |
 | **Diagnostics** | ✅ | `cljgo check --json` structured records, `cljgo explain <code>` (ADR 0015) |
 | **nREPL** | ✅ | `cljgo nrepl` — babashka's 13-op surface, per-session `*ns*`/`*1`/`*out*` streaming, `.nrepl-port`, `doc` (ADR 0031) |
