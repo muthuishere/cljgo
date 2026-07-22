@@ -1,0 +1,13 @@
+# CGO_ENABLED=0 build settings embedded in binary
+	build	CGO_ENABLED=0
+
+# dynamic libraries (only libSystem+libresolv = pure-Go macOS baseline)
+/tmp/s39prove:
+	/usr/lib/libSystem.B.dylib (compatibility version 0.0.0, current version 0.0.0)
+	/usr/lib/libresolv.9.dylib (compatibility version 0.0.0, current version 0.0.0)
+
+# no package in build tree imports cgo
+no package in the build imports cgo (all CgoFiles empty)
+
+# keyring execs the security CLI (embedded string)
+/usr/bin/security found in binary

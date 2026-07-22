@@ -1,0 +1,74 @@
+;; sketch.cljg — the BLESSED bri.io surface S40 recommends. Illustration only;
+;; NOT loaded, NOT a conformance test (ADR 0027). The Go prototype in probe/
+;; is the thing that was measured; this is the Clojure-first face it wears.
+;;
+;; Core idea: `bri.io/lines` returns a REDUCIBLE (a value implementing
+;; IReduceInit in pkg/lang terms). It never realises the file — reduce/
+;; transduce/into drive it, one line live at a time, closing the handle when
+;; the reduction ends. Because reduce bottoms out on IReduceInit, EVERY
+;; existing core seq/transducer form composes for free (design/08 transducers,
+;; ADR 0022). No new "stream" protocol, no lazy-seq holding the file open.
+
+(ns bri.io
+  (:require [clojure.core :as c]))
+
+;; --- readers ---------------------------------------------------------------
+
+;; (io/lines path) -> reducible of the file's lines (strings, no trailing \n).
+;; Codec auto-selected by extension (.gz -> gzip); force with :codec.
+;; Opens lazily at reduce time; closes on normal end OR early `reduced`.
+;;
+;;   (reduce (fn [n _] (inc n)) 0 (io/lines "big.log"))        ; count, O(1) mem
+;;   (transduce (map parse-long) + 0 (io/lines "nums.txt"))    ; streamed sum
+;;   (into [] (comp (filter error?) (take 20)) (io/lines "app.log")) ; first 20,
+;;                                                             ; stops scanning
+(defn lines
+  ([path] (lines path {}))
+  ([path {:keys [codec buffer-kb] :or {codec :auto buffer-kb 256}}]
+   ;; -> LinesReducible{path codec buffer-kb} ; IReduceInit in the runtime
+   ))
+
+;; (io/bytes path) -> reducible of fixed-size byte chunks (default 64KB),
+;; each a Go []byte view. For binary / non-line streams.
+(defn bytes
+  ([path] (bytes path {:chunk-kb 64}))
+  ([path opts] ,,,))
+
+;; --- writers ---------------------------------------------------------------
+
+;; (io/writer path) -> an open, buffered sink handle. Prefer spit-lines / the
+;; reduce-into-a-sink forms below; expose writer for the escape hatch.
+(defn writer
+  ([path] (writer path {}))
+  ([path {:keys [codec append buffer-kb]}] ,,,))
+
+;; (io/spit-lines path coll) — stream a (possibly lazy / huge / infinite-until-
+;; `take`) seq of strings to disk through a bufio.Writer. Constant memory; each
+;; item written and dropped. Returns bytes written. Codec by extension.
+;;
+;;   (io/spit-lines "out.txt"    (map str (range 10000000)))   ; flat memory
+;;   (io/spit-lines "out.txt.gz" (map str (range 10000000)))   ; gzip on the way
+(defn spit-lines
+  ([path coll] (spit-lines path coll {}))
+  ([path coll opts] ,,,))
+
+;; --- byte plumbing ----------------------------------------------------------
+
+;; (io/copy src dst) — Reader->Writer stream copy (Go io.Copy), constant memory.
+;; src/dst may be paths (opened/created + codec by ext) or open handles.
+(defn copy [src dst] ,,,)
+
+;; (io/tee src dst) — wrap src so everything read from it is ALSO written to
+;; dst, while you reduce over src. Fan-out without a second pass.
+;;
+;;   (transduce (map count) + 0 (io/lines (io/tee "in.log" "audit.log")))
+(defn tee [src dst] ,,,)
+
+;; --- notes ------------------------------------------------------------------
+;; * Precedence principle: nothing here shadows clojure.core. `bytes`/`copy`
+;;   live in bri.io, referenced qualified (clojure.core/bytes is a different
+;;   fn); if that friction bites, rename the reader to io/byte-chunks.
+;; * The reducible is single-shot per reduce but re-reducible: each reduce
+;;   re-opens the file, so a var holding `(io/lines p)` stays REPL-live.
+;; * Errors route through diag (ADR 0015): a missing file is an I4xxx/G5xxx
+;;   Diagnostic with the path + `help:`, never a raw Go panic.

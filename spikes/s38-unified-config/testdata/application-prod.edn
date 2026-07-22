@@ -1,0 +1,3 @@
+;; profile overlay, selected by APP_PROFILE=prod
+{:db  {:pool-size 20}
+ :log {:level "info"}}

@@ -1,0 +1,5 @@
+{:greeting "Bonjour, {name} !"
+ :farewell "Au revoir, {name}."
+ :help "Tapez « ? » pour l'aide."
+ ;; EDN plural-map shape (criterion 4b). French: 0 and 1 are "one".
+ :items {:one "{count} article" :other "{count} articles"}}

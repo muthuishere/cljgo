@@ -1,0 +1,85 @@
+;; S41 — the blessed `bri.i18n` API sketch (NOT wired; a design shape).
+;;
+;; Sits on the Go core proven in this spike (loader + fallback +
+;; interpolation + plural). Never shadows clojure.core; the public verb
+;; is `t` (translate) — short, unclaimed by core, the de-facto i18n name
+;; (gettext/gruntskip/tongue all use it). `bri.i18n/t`, fully qualified,
+;; is unambiguous.
+
+(ns bri.i18n
+  "Locale message bundles, named-arg interpolation, CLDR-subset plurals.
+   Bundles are .properties (Java-familiar) or .edn (canonical), embedded
+   into the binary at build and overridable from disk at runtime.")
+
+;; ---------------------------------------------------------------------
+;; Loading. `messages` is the comptime-embedded default set (ADR 0021
+;; embed): the single binary carries every locale under resources/i18n/.
+;; `load-bundles` layers an app-supplied on-disk directory ON TOP,
+;; shadowing embedded keys locale-by-locale (criterion 5).
+
+(def ^:embed messages           ; comptime embed.FS of resources/i18n/*
+  (embed-dir "resources/i18n"))
+
+(defn load-bundles
+  "Merge an on-disk bundle directory over the embedded set. Files follow
+   ResourceBundle naming: messages[.properties|.edn],
+   messages_en[.…], messages_en_US[.…]. Returns the updated store."
+  [path])
+
+;; ---------------------------------------------------------------------
+;; The current locale. Resolved once per scope by precedence
+;; (criterion 6): explicit `with-locale` > HTTP Accept-Language >
+;; config APP_LOCALE > built-in default. Held in a dynamic var so
+;; `with-locale` is a lexical/dynamic override, not a global mutation.
+
+(def ^:dynamic *locale* nil)     ; nil => fall through to resolver
+
+(defmacro with-locale
+  "Run body with *locale* bound to `loc` (a keyword/string like :fr,
+   :en_US). Highest-precedence locale source."
+  [loc & body]
+  `(binding [*locale* (name ~loc)] ~@body))
+
+(defn current-locale
+  "The effective locale: *locale*, else the request's Accept-Language,
+   else config :app/locale, else the store default."
+  ([] (current-locale {}))
+  ([{:keys [accept-language app-locale]}]))
+
+;; ---------------------------------------------------------------------
+;; Translate. `t` is the whole surface.
+;;   (t :greeting)                       ; no args
+;;   (t :greeting {:name "Muthu"})       ; interpolation
+;;   (t :items {:count 5})               ; plural (count operand)
+;;   (t :fr :greeting {:name "Muthu"})   ; explicit locale, one-off
+;; A missing key returns a visible marker (⟦missing:greeting⟧), never
+;; throwing — a missing translation must not take down a page.
+
+(defn t
+  ([key]            (t (current-locale) key {}))
+  ([key args]       (t (current-locale) key args))
+  ([locale key args]))
+
+;; ---------------------------------------------------------------------
+;; Worked examples (mirror the Go probe, which PASSES all of these):
+(comment
+  (t :greeting {:name "Muthu"})              ;=> "Hello, Muthu!"      (en .properties)
+  (t :tagline)                               ;=> "Clojure, hosted on Go." (.edn, same lookup)
+  (with-locale :en_US (t :help))             ;=> "Type '?' for help."  (en_US -> en fallback)
+  (t :does.not.exist)                        ;=> "⟦missing:does.not.exist⟧"
+  (t :items {:count 1})                      ;=> "1 item"   (ICU-subset inline plural)
+  (t :items {:count 5})                      ;=> "5 items"
+  (with-locale :fr (t :items {:count 1}))    ;=> "1 article" (EDN plural map, fr rule)
+  (with-locale :fr (t :greeting {:name "Muthu"})) ;=> "Bonjour, Muthu !"
+  )
+
+;; ---------------------------------------------------------------------
+;; Bundle formats (both resolve through the same `t`):
+;;
+;; resources/i18n/messages_en.properties   (Java-familiar)
+;;   greeting=Hello, {name}!
+;;   items={count, plural, zero {no items} one {# item} other {# items}}
+;;
+;; resources/i18n/messages_fr.edn          (canonical)
+;;   {:greeting "Bonjour, {name} !"
+;;    :items {:one "{count} article" :other "{count} articles"}}

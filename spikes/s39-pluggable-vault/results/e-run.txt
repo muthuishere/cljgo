@@ -1,0 +1,29 @@
+=== S39 pluggable vault — proof run ===
+registered schemes: [age aws-sm env gcp-sm gh keychain vault]
+
+--- E1  env://  (bootstrap floor) ---
+provider=env hit=true err=<nil> value=len=18 ***…r2 sha=sha256:59aa2b24e7bd
+
+--- E2  keychain://  (OS keychain, must be CGO-free) ---
+provider=keychain:cljgo-s39-spike hit=true err=<nil> value=len=25 ***…sh sha=sha256:e497442f0839
+after delete: hit=false (expect false)
+
+--- E3  age://  (encrypted, repo-committable file; identity from env) ---
+wrote ciphertext /var/folders/cb/fw9_2_fd39n1jn_xm5r7q1dh0000gn/T/s39-store.age (278 bytes, armored=true)
+provider=age:/var/folders/cb/fw9_2_fd39n1jn_xm5r7q1dh0000gn/T/s39-store.age key=stripe-key hit=true err=<nil> value=len=30 ***…ef sha=sha256:77e6d2fb33e9
+miss key=no-such-key hit=false (expect false → drives fallback)
+
+--- E4  cloud stubs (scheme→provider resolution, not dialed) ---
+aws-sm://prod/db/password?region=eu-central-1        → provider=aws-sm:prod/db/password      hit=false err=stub provider: not dialed (no cloud creds wired in spike)
+gcp-sm://projects/deemwar/secrets/db/versions/latest → provider=gcp-sm:projects/deemwar/secrets/db/versions/latest hit=false err=stub provider: not dialed (no cloud creds wired in spike)
+vault://secret/deemwar/db#password                   → provider=vault:secret/deemwar/db      hit=false err=stub provider: not dialed (no cloud creds wired in spike)
+gh://muthuishere/cljgo#DEPLOY_TOKEN                  → provider=gh:muthuishere/cljgo         hit=false err=gh: GitHub Actions secrets are write-only out-of-workflow; read via env:// inside the workflow
+
+--- E5  fallback chain (keychain miss → env hit) ---
+chain=chain[keychain:cljgo-s39-spike→env] hit=true err=<nil> value=len=17 ***…na (came from env tail)
+all-miss chain=chain[env→env] hit=false err=<nil> (expect hit=false, err=nil)
+
+--- E6  resolver seam AsGetFunc (s38 hook) ---
+GetFunc hit=true err=<nil> masked=len=17 ***…na (resolver receives raw string at the boundary)
+
+RESULT: all proofs GREEN
