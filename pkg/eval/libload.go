@@ -87,7 +87,9 @@ func ResolveLibPath(libSym *lang.Symbol) string {
 
 	stem := libPathStem(libSym)
 	for _, root := range roots {
-		for _, ext := range []string{".clj", ".cljg"} {
+		// Most-specific-first: cljgo-native extensions win over the portable
+		// `.clj` fallback (ADR 0051), mirroring Clojure's host-extension order.
+		for _, ext := range []string{".cljgo", ".cljg", ".clj"} {
 			cand := filepath.Join(root, stem+ext)
 			if fi, err := os.Stat(cand); err == nil && !fi.IsDir() {
 				return cand

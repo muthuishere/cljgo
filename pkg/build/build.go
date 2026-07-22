@@ -27,8 +27,26 @@ import (
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
-// BuildFileName is the project-root build description (ADR 0021).
+// BuildFileName is the canonical project-root build description name (ADR
+// 0021) — what `cljgo new` emits and what error messages name. `cljgo build`
+// accepts any of BuildFileNames (ADR 0051).
 const BuildFileName = "build.cljgo"
+
+// BuildFileNames are the accepted build-description names, most-specific-first
+// (ADR 0051): cljgo-native `.cljgo`/`.cljg` before the portable `.clj`.
+var BuildFileNames = []string{"build.cljgo", "build.cljg", "build.clj"}
+
+// FindBuildFile returns the first accepted build file present in dir (ADR 0051
+// precedence), or "" if none exists.
+func FindBuildFile(dir string) string {
+	for _, name := range BuildFileNames {
+		p := filepath.Join(dir, name)
+		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+			return p
+		}
+	}
+	return ""
+}
 
 // Artifact is one buildable output declared by (exe b …) (lib/kinds are
 // later milestones). Main is the entry .cljg path, relative to the

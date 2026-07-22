@@ -187,14 +187,16 @@ func runBuild(args []string) int {
 	return 0
 }
 
-// runProjectBuild loads ./build.cljgo, evaluates its build fn, and runs the
-// requested step (empty → default). keepGen preserves the generated modules.
+// runProjectBuild loads the project build file (build.cljgo/.cljg/.clj — ADR
+// 0051, most-specific-first), evaluates its build fn, and runs the requested
+// step (empty → default). keepGen preserves the generated modules.
 func runProjectBuild(step, runtimeDir string, keepGen bool) int {
-	if _, err := os.Stat(build.BuildFileName); err != nil {
+	buildFile := build.FindBuildFile(".")
+	if buildFile == "" {
 		fmt.Fprintf(os.Stderr, "cljgo build: no %s in the current directory\n", build.BuildFileName)
 		return 1
 	}
-	plan, err := build.LoadPlan(build.BuildFileName)
+	plan, err := build.LoadPlan(buildFile)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return 1
