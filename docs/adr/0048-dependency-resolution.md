@@ -1,9 +1,24 @@
 # ADR 0048 — Dependency resolution: load path, lock, and the purity question
 
-Date: 2026-07-22 · Status: **proposed** (evidence: spikes S25–S28, all
-closed) · Ratifies the dependency clauses of **ADR 0021** (`build.cljgo`,
-itself still `proposed`), on the rails of **ADR 0042** (multi-namespace
-emission) and **ADR 0013** (every project is a library).
+Date: 2026-07-22 · Status: **accepted** — implemented (OpenSpec change
+`apply-adr-0048-deps`; the `pkg/deps` resolver + load-path/build/CLI
+integration). Evidence: spikes S25–S28, all closed. Ratifies the dependency
+clauses of **ADR 0021** (`build.cljgo`, itself still `proposed`), on the rails
+of **ADR 0042** (multi-namespace emission) and **ADR 0013** (every project is a
+library). Its §6a blocker was fixed and archived as **ADR 0049** before this
+landed.
+
+**Amendments this ADR leaves owed (recorded, not silently done):** ADR 0044
+needs the library-carries-FFI inclusion path (§6, closed in the resolver by
+routing a dep's FFI/go-require into the consumer go.mod, but ADR 0044's text
+still reasons only about a program's own source); ADR 0021 needs a raw
+`:libs`/`:headers` alternative to `{:pkg-config …}` and its code-first surface
+may need a statically-readable subset (decision 5); ADR 0011 decision 3's
+zig-cc escape hatch is narrower than claimed (cgo-against-third-party-lib);
+ADR 0023's binary-size framing needs the linkage-not-bytes note. Deferred
+follow-ups within this ADR's own scope are listed in the change's `tasks.md`
+(the `-update` flag, feeding real `:target`s to `CrossTargets`, cross-set
+conflict provenance).
 
 ## Context
 

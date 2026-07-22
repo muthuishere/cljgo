@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/muthuishere/cljgo/pkg/corelib"
+	"github.com/muthuishere/cljgo/pkg/deps"
 	"github.com/muthuishere/cljgo/pkg/emit"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/repl"
@@ -102,6 +103,66 @@ func TestParityUncompiledRequire(t *testing.T) {
 	if ok, reason := ClassifyParity(interp, aot); !ok {
 		t.Fatalf("uncompiled-require parity FAILED (%s):\n--- interp ---\n%v\n--- aot ---\n%v",
 			reason, interp.Err, aot.Err)
+	}
+}
+
+// TestParityDependencyNamespace is the ADR 0048 dual-harness case: a program
+// that requires a DEPENDENCY namespace — one living entirely outside the
+// consumer's own source tree, reachable only through load-path slot 3 (the
+// resolved dependency roots) — must resolve identically under `cljgo run` (the
+// interpreter leg) and the `cljgo build` binary (the AOT leg). Parity is free
+// by construction: one resolver (deps.SetResolvedRoots / ResolvedRoots) feeds
+// both legs, so interpreter and emitter cannot diverge.
+//
+// Hermetic: the dependency is a local :path dep materialized under the test's
+// temp dir and resolved through deps.Resolve — no network, no git.
+func TestParityDependencyNamespace(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping compiled parity leg in -short mode")
+	}
+
+	// A dependency package outside any consumer tree: its default source root
+	// is <dep>/src, so mydep.core lives at <dep>/src/mydep/core.cljg.
+	depDir := t.TempDir()
+	depSrc := filepath.Join(depDir, "src", "mydep")
+	if err := os.MkdirAll(depSrc, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(depSrc, "core.cljg"),
+		[]byte("(ns mydep.core)\n(defn greeting [] \"hello from mydep\")\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// The consumer requires the dep namespace; it does not live under the
+	// consumer's directory, so only slot 3 can resolve it.
+	consumerDir := t.TempDir()
+	consumer := filepath.Join(consumerDir, "main.cljg")
+	if err := os.WriteFile(consumer,
+		[]byte("(require 'mydep.core)\n(mydep.core/greeting)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Resolve the dependency ONCE and publish its roots — the single handle
+	// both legs read (the dual-mode parity guarantee).
+	resolved, err := deps.Resolve([]deps.Dep{{Name: "mydep", Path: depDir}},
+		deps.ResolveOptions{ProjectDir: consumerDir})
+	if err != nil {
+		t.Fatalf("resolve dep: %v", err)
+	}
+	deps.SetResolvedRoots(resolved.Roots)
+	defer deps.SetResolvedRoots(nil)
+
+	interp := parityEvalLeg(t, consumer)
+	aot := parityCompiledLeg(t, consumer)
+	if interp.Err != nil {
+		t.Fatalf("interpreter leg failed to resolve the dependency namespace: %v", interp.Err)
+	}
+	if aot.Err != nil {
+		t.Fatalf("AOT leg failed to resolve the dependency namespace: %v (output %q)", aot.Err, aot.Output)
+	}
+	if ok, reason := ClassifyParity(interp, aot); !ok {
+		t.Fatalf("dependency-namespace parity FAILED (%s):\n--- interp ---\n%q\n--- aot ---\n%q",
+			reason, interp.Output, aot.Output)
 	}
 }
 

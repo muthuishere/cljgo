@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/muthuishere/cljgo/pkg/build"
+	"github.com/muthuishere/cljgo/pkg/deps"
 	"github.com/muthuishere/cljgo/pkg/emit"
 	"github.com/muthuishere/cljgo/pkg/repl"
 	"github.com/muthuishere/cljgo/pkg/version"
@@ -60,6 +61,8 @@ func run(args []string) int {
 		return runFile(args[1])
 	case "build":
 		return runBuild(args[1:])
+	case "cache":
+		return runCache(args[1:])
 	case "new":
 		return runNew(args[1:])
 	case "dev":
@@ -117,12 +120,65 @@ func runFile(path string) int {
 		return 1
 	}
 	defer f.Close()
+	// ADR 0048: if the project is locked (build.lock.edn present), resolve its
+	// dependencies and publish their roots before evaluating, so a `cljgo run`
+	// of a project with deps resolves them the same way `cljgo build` does.
+	if err := resolveRunDeps(path); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		return 1
+	}
 	d := repl.New(nil, os.Stdout, os.Stderr)
 	if _, err := d.EvalReader(f, path); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return 1
 	}
 	return 0
+}
+
+// resolveRunDeps wires dependency resolution into the `cljgo run` bootstrap
+// (ADR 0048 decision 2). It looks for a project build file next to the source
+// file, then in the current directory; if that project is already locked
+// (build.lock.edn present), it resolves the declared deps and publishes their
+// roots for the interpreter load path. No lock means nothing has been resolved
+// yet — `cljgo build` creates the lock — so run stays a no-op there.
+func resolveRunDeps(file string) error {
+	for _, dir := range []string{filepath.Dir(file), "."} {
+		buildFile := build.FindBuildFile(dir)
+		if buildFile == "" {
+			continue
+		}
+		lockPath := filepath.Join(filepath.Dir(buildFile), "build.lock.edn")
+		if _, err := os.Stat(lockPath); err != nil {
+			continue
+		}
+		return build.ResolveProjectDeps(buildFile)
+	}
+	return nil
+}
+
+// runCache implements `cljgo cache <subcommand>` (ADR 0048 decision 1). The
+// global dependency cache holds immutable 0555 source trees, so a plain
+// `rm -rf` cannot remove them cleanly — `cljgo cache clean` is required.
+func runCache(args []string) int {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "usage: cljgo cache clean")
+		return 2
+	}
+	switch args[0] {
+	case "clean":
+		if err := deps.CacheClean(); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			return 1
+		}
+		fmt.Fprintln(os.Stderr, "cljgo cache: cleaned")
+		return 0
+	case "help", "--help", "-h":
+		fmt.Fprintln(os.Stdout, "usage: cljgo cache clean   remove the global dependency cache ($CLJGO_CACHE / $XDG_CACHE_HOME/cljgo / ~/.cache/cljgo)")
+		return 0
+	default:
+		fmt.Fprintf(os.Stderr, "cljgo cache: unknown subcommand %q\nusage: cljgo cache clean\n", args[0])
+		return 2
+	}
 }
 
 // runBuild fronts two modes (ADR 0021):
@@ -243,6 +299,7 @@ usage:
   cljgo nrepl [--port N]           start an nREPL server for editors (writes .nrepl-port; ADR 0031)
   cljgo run <file.clj>             evaluate a file
   cljgo build [-o out] <file.clj>  compile a file to a native binary
+  cljgo cache clean                remove the global dependency cache (ADR 0048)
   cljgo new [--template T] <name>  generate a project: T = lib (default) | cli | web | <path>
   cljgo dev                        run a bri app: server + nREPL + dev warnings
   cljgo test                       run the app's tests (test/ via clojure.test)

@@ -27,9 +27,22 @@ import (
 	"strings"
 
 	"github.com/muthuishere/cljgo/pkg/corelib"
+	"github.com/muthuishere/cljgo/pkg/deps"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
+
+// envPathEnabled controls whether $CLJGO_PATH roots feed ResolveLibPath. It is
+// TRUE for `run`/REPL and FALSE during a `cljgo build` (ADR 0048 decision 2):
+// an env-supplied root must not silently bake foreign source into a binary, or
+// the same command would produce a different binary per machine. The build
+// entry (emit.CompileProgram) disables it, so a build that would need an
+// env-only root fails to resolve — an error, not a silent inclusion.
+var envPathEnabled = true
+
+// SetEnvPathEnabled toggles $CLJGO_PATH participation in load-path resolution
+// (ADR 0048 decision 2). The build/emit bootstrap disables it.
+func SetEnvPathEnabled(b bool) { envPathEnabled = b }
 
 // loadLibFile makes libSym's namespace exist by loading its source
 // file. Panics (the IFn-boundary error convention) when no file
@@ -84,6 +97,26 @@ func ResolveLibPath(libSym *lang.Symbol) string {
 		}
 	}
 	roots = append(roots, dir)
+
+	// ADR 0048 §2 slot 3: resolved dependency roots, in lock order, APPENDED
+	// after the requiring-file roots (never replacing them — "append, never
+	// replace" is load-bearing for correctness). The provider registry still
+	// outranks all roots via loadLib, so clojure.* cannot be shadowed. Both
+	// execution legs read the same process-level handle, so interpreter and
+	// emitter resolve identically by construction (the dual-mode guarantee).
+	roots = append(roots, deps.ResolvedRoots()...)
+
+	// $CLJGO_PATH augments `run`/REPL only (envPathEnabled); a build disables
+	// it so an env-only root cannot silently bake into a binary (ADR 0048 §2).
+	if envPathEnabled {
+		if ep := os.Getenv("CLJGO_PATH"); ep != "" {
+			for _, r := range filepath.SplitList(ep) {
+				if r != "" {
+					roots = append(roots, r)
+				}
+			}
+		}
+	}
 
 	stem := libPathStem(libSym)
 	for _, root := range roots {

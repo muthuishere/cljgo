@@ -90,6 +90,16 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	// The capture loader panics on load errors (the IFn-boundary
 	// convention); compileStream's evalNode recovers those raised while
 	// evaluating a require form into errors, so nothing extra here.
+	// ADR 0048 decision 2: a build must not resolve namespaces through
+	// $CLJGO_PATH — an env-supplied root would bake foreign source into the
+	// binary invisibly to the repo. Disable env-path participation for the
+	// build's discovery pass; a namespace reachable only via $CLJGO_PATH then
+	// fails to resolve (an error), never silently included. Restore on return so
+	// a later in-process run/REPL (or the next test) is unaffected — the flag is
+	// scoped to this discovery pass, not latched for the process.
+	eval.SetEnvPathEnabled(false)
+	defer eval.SetEnvPathEnabled(true)
+
 	ev := eval.New()
 	// ADR 0049 dec 2: the namespace-discovery pass evaluates require and
 	// member-access forms through the interpreter, but the emitted binary
