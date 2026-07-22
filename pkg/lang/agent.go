@@ -24,13 +24,19 @@ type (
 		watches IPersistentMap
 
 		// err is the stored throwable once an action (or one of its watch
-		// notifications) has panicked — nil while the agent is :ready.
-		// Oracle-verified (clojure 1.12.5, 2026-07-17): the JVM's default
-		// :fail error-mode. cljgo only ever models :fail — no
-		// error-handler/error-mode knobs (set-error-handler!/
-		// set-error-mode!), since no suite file exercises them; a
-		// documented gap, not an oversight.
+		// notifications) has panicked in :fail mode — nil while the agent is
+		// :ready or when the mode is :continue.
 		err error
+
+		// errorMode is :fail or :continue (fundamentals audit 2026-07,
+		// oracle 1.12.5). Default :fail, or :continue when an error-handler
+		// is supplied at construction. In :continue mode a throwing action
+		// does NOT fail the agent — the error is reported to the handler (if
+		// any) and the queue keeps draining. errorHandler, when non-nil, is
+		// called (agent, throwable) on every action/watch error regardless
+		// of mode; its own panics are swallowed.
+		errorMode    Keyword
+		errorHandler IFn
 
 		queue chan func()
 	}
@@ -131,16 +137,53 @@ func (f *future) IsCancelled() bool {
 ////////////////////////////////////////////////////////////////////////////////
 // Agent
 
+// kwFail / kwContinue are the two error-mode values.
+var (
+	kwFail     = NewKeyword("fail")
+	kwContinue = NewKeyword("continue")
+)
+
 // NewAgent builds an agent holding val and starts its queue-draining
-// goroutine (never shut down — ShutdownAgents remains a no-op).
+// goroutine (never shut down — ShutdownAgents remains a no-op). Default
+// error-mode :fail, no error-handler; use SetErrorMode/SetErrorHandler
+// (the agent builtin's :error-mode/:error-handler options) to change them.
 func NewAgent(val any) *Agent {
-	a := &Agent{state: val, watches: emptyMap, queue: make(chan func(), 32)}
+	a := &Agent{state: val, watches: emptyMap, errorMode: kwFail, queue: make(chan func(), 32)}
 	go func() {
 		for act := range a.queue {
 			act()
 		}
 	}()
 	return a
+}
+
+// ErrorMode backs error-mode: :fail or :continue.
+func (a *Agent) ErrorMode() Keyword {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+	return a.errorMode
+}
+
+// SetErrorMode backs set-error-mode! — validated to :fail/:continue by the
+// caller (the builtin), matching clojure.core's {:pre} on the mode.
+func (a *Agent) SetErrorMode(mode Keyword) {
+	a.mtx.Lock()
+	a.errorMode = mode
+	a.mtx.Unlock()
+}
+
+// ErrorHandler backs error-handler: the fn, or nil.
+func (a *Agent) ErrorHandler() IFn {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+	return a.errorHandler
+}
+
+// SetErrorHandler backs set-error-handler!.
+func (a *Agent) SetErrorHandler(fn IFn) {
+	a.mtx.Lock()
+	a.errorHandler = fn
+	a.mtx.Unlock()
 }
 
 func (a *Agent) Deref() any {
@@ -189,15 +232,15 @@ func (a *Agent) runAction(f IFn, args ISeq) {
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				a.mtx.Lock()
-				a.err = asAgentError(r)
-				a.mtx.Unlock()
+				a.recordError(r)
 				failed = true
 			}
 		}()
 		nw = f.ApplyTo(NewCons(old, args))
 	}()
 	if failed {
+		// action threw: the new state was never produced, old state stays.
+		// In :continue mode the agent is still :ready and keeps draining.
 		return
 	}
 
@@ -208,13 +251,39 @@ func (a *Agent) runAction(f IFn, args ISeq) {
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				a.mtx.Lock()
-				a.err = asAgentError(r)
-				a.mtx.Unlock()
+				a.recordError(r)
 			}
 		}()
 		a.notifyWatches(old, nw)
 	}()
+}
+
+// recordError handles an action/watch panic per the agent's error-mode
+// (oracle 1.12.5, fundamentals audit 2026-07): the error-handler, if any,
+// is ALWAYS called (agent, throwable) — in both modes — and its own panic
+// is swallowed; then in :fail mode the throwable is stored (agent enters
+// :failed, rejecting further sends), while in :continue mode it is dropped
+// and the queue keeps draining. The agent's default mode is :continue when
+// an error-handler is supplied at construction, else :fail — the builtin
+// resolves that; here the stored mode is authoritative.
+func (a *Agent) recordError(r any) {
+	e := asAgentError(r)
+	a.mtx.Lock()
+	handler := a.errorHandler
+	mode := a.errorMode
+	a.mtx.Unlock()
+	if handler != nil {
+		func() {
+			defer func() { _ = recover() }()
+			handler.Invoke(a, e)
+		}()
+	}
+	if mode == kwContinue {
+		return
+	}
+	a.mtx.Lock()
+	a.err = e
+	a.mtx.Unlock()
 }
 
 // asAgentError normalizes a recovered panic into the throwable stored as
@@ -253,6 +322,34 @@ func (a *Agent) Await() {
 	}
 }
 
+// AwaitForOne backs await-for for a single agent: block until every action
+// sent before the call has run, but no later than the shared absolute
+// deadline. Reports whether the agent drained in time (true) or the
+// deadline hit first (false). A failed agent short-circuits to false —
+// like Await it cannot make progress, but await-for returns false rather
+// than throwing (oracle 1.12.5, 2026-07-21).
+func (a *Agent) AwaitForOne(deadline time.Time) bool {
+	a.mtx.Lock()
+	failed := a.err != nil
+	a.mtx.Unlock()
+	if failed {
+		return false
+	}
+	done := make(chan struct{})
+	a.queue <- func() { close(done) }
+	timer := time.NewTimer(time.Until(deadline))
+	defer timer.Stop()
+	select {
+	case <-done:
+		a.mtx.Lock()
+		failed = a.err != nil
+		a.mtx.Unlock()
+		return !failed
+	case <-timer.C:
+		return false
+	}
+}
+
 // AgentError backs agent-error: the stored throwable, or nil while ready.
 func (a *Agent) AgentError() error {
 	a.mtx.Lock()
@@ -280,6 +377,15 @@ func (a *Agent) SetValidator(vf IFn) {
 
 func (a *Agent) Validator() IFn {
 	return nil
+}
+
+// Meta / SetMeta back the agent's IObj metadata (the :meta constructor
+// option); stored on the cell, unused by the runtime otherwise.
+func (a *Agent) Meta() IPersistentMap { return a.meta }
+func (a *Agent) SetMeta(m IPersistentMap) {
+	a.mtx.Lock()
+	a.meta = m
+	a.mtx.Unlock()
 }
 
 func (a *Agent) Watches() IPersistentMap {
