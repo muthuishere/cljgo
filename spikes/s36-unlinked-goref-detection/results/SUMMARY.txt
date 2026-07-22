@@ -29,7 +29,7 @@ AFTER FIX — LAZY prototype (fixed-*.out), error at member access
  cljgo build (websocket) EXIT 0  installed wsclient  (tolerant discovery) (4) OK
    installed binary               EXIT 0  close-normal code: 1000  (real value)
    => interpreter honestly errors; binary produces the real value; NO silent
-      wrong value. ADR 0049 invariant satisfied.
+      wrong value. ADR 0053 invariant satisfied.
 
 ================================================================================
 AFTER FIX — EAGER variant (eager-*.out), error at require-go

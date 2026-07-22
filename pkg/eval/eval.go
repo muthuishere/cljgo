@@ -40,7 +40,7 @@ type Evaluator struct {
 	// that refuses.
 	LibLoader func(e *Evaluator, lib *lang.Symbol, path string)
 
-	// HostUnlinkedTolerant (ADR 0049 decision 2): when true, accessing a
+	// HostUnlinkedTolerant (ADR 0053 decision 2): when true, accessing a
 	// member of an UNLINKED third-party require-go module is TOLERATED
 	// (no-op nil) — the mode the AOT emitter's namespace-discovery pass
 	// runs in, because the emitted binary links the module for real. When

@@ -1,4 +1,4 @@
-// library.go — go-gettable library emission (ADR 0050 dec 1, `publish go`).
+// library.go — go-gettable library emission (ADR 0054 dec 1, `publish go`).
 //
 // WriteProgram (module.go) emits an EXECUTABLE: the entry namespace becomes
 // `package main` with main()+rt.Boot(). A published Go library is the same
@@ -9,7 +9,7 @@
 // an idiomatic exported Go function, so a Go developer `go get`s the module and
 // calls `pkg.Greet(x)` directly.
 //
-// Scope (honest, ADR 0050 risk note): exported wrappers use the `any`-typed
+// Scope (honest, ADR 0054 risk note): exported wrappers use the `any`-typed
 // calling convention (`func Name(args ...any) any` for defns, `func Name() any`
 // for value defs). Resolved-from-type-hint Go signatures (defn ^long → func(int64)
 // int64) are DEFERRED — the module still compiles and is go-gettable; the

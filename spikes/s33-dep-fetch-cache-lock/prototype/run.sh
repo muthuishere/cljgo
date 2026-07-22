@@ -167,7 +167,7 @@ CLJGO_CACHE="$W/cacheC" "$BIN" resolve -project "$W/proj" 2>&1
 
 ##############################################################################
 {
-hdr "E6  load path handed to S30's resolver (ADR 0048 §2 slot 3), lock order"
+hdr "E6  load path handed to S30's resolver (ADR 0052 §2 slot 3), lock order"
 CLJGO_CACHE="$W/cacheA" "$BIN" loadpath -project "$W/proj" 2>/dev/null | sed "s|$W|\$W|"
 hdr "E7  the lockfile"
 sed "s|$W|\$W|g" "$W/proj/build.lock.edn"

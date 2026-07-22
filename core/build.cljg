@@ -39,7 +39,7 @@
 (defn lib
   "Declares a publishable library artifact from spec
   {:name … :main \"path.cljg\" :module \"github.com/you/lib\"} — the producer
-  side of ADR 0013 / ADR 0050. ONE library, both ecosystems: `cljgo publish go`
+  side of ADR 0013 / ADR 0054. ONE library, both ecosystems: `cljgo publish go`
   emits a go-gettable module and `cljgo publish clojars` emits pure Clojure
   source, from this one declaration. :kind is stamped \"lib\"; the target
   (go|clojars) is chosen at publish time. :module is the library's module path /
@@ -62,7 +62,7 @@
     art))
 
 (defn dep
-  "Declares a dependency (ADR 0048). `name` is the dependency name; `opts` is
+  "Declares a dependency (ADR 0052). `name` is the dependency name; `opts` is
   a map of fetch coordinates — {:git url :ref \"v1.2.0\" :subdir \"…\"} for a
   git dep, or {:path \"../local\"} for a local one. Accumulated project-wide
   onto :deps (the emitted binary bakes one dependency graph). Returns b."
@@ -74,7 +74,7 @@
   b)
 
 (defn accept-version
-  "Consumer-side version override (ADR 0048 decision 4): accept `version` for
+  "Consumer-side version override (ADR 0052 decision 4): accept `version` for
   Go module `module` when two dependencies pin it at different versions,
   instead of the hard conflict error. Accumulated onto the :accept-versions
   map. Returns b."
@@ -85,7 +85,7 @@
   b)
 
 (defn allow-capability
-  "Acknowledges a dependency's impure capability (ADR 0048 decision 6,
+  "Acknowledges a dependency's impure capability (ADR 0052 decision 6,
   default-deny): `cap` is a capability keyword — :ffi, :cgo, or :go-require.
   Unacknowledged impurity is refused at resolve time. Accumulated onto
   :allow-caps. Returns b."

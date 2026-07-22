@@ -1,4 +1,4 @@
-;; Option (b) from ADR 0048 decision 6: the consumer EXPLICITLY opts in to
+;; Option (b) from ADR 0052 decision 6: the consumer EXPLICITLY opts in to
 ;; :ffi, and does not require cross-compilation. fastjson-cgo is dropped.
 {:project "consumer-app"
  :allow   [:ffi]

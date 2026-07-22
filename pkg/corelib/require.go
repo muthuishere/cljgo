@@ -174,7 +174,7 @@ func loadLib(libSym *lang.Symbol, opts lang.ISeq) {
 		if libFileLoader == nil {
 			// A compiled binary: no reader, no analyzer, no evaluator. The
 			// namespace was not compiled in and no provider serves it, so
-			// hard-error naming it (ADR 0049 dec 3) rather than silently
+			// hard-error naming it (ADR 0053 dec 3) rather than silently
 			// no-op'ing or failing as an obscure nil map lookup. A static
 			// binary legitimately cannot load un-compiled source at runtime.
 			panic(fmt.Errorf("namespace %s was not compiled into this binary: no registered provider, and an AOT-compiled binary has no interpreter to load it from source (compile the namespace in, or run it with the cljgo interpreter)",

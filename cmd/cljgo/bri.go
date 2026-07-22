@@ -241,7 +241,7 @@ func runDev(args []string) int {
 
 `, appName, os.Getenv("APP_PROFILE"), actual)
 
-	// ADR 0048: resolve declared dependencies (if the project is locked) and
+	// ADR 0052: resolve declared dependencies (if the project is locked) and
 	// publish their roots before loading any namespace, so `cljgo dev` resolves
 	// deps the same way `cljgo run`/`build` do — one resolver, no divergence.
 	if err := resolveRunDeps(appMain); err != nil {
@@ -307,7 +307,7 @@ func runTest(args []string) int {
 		os.Setenv("APP_PROFILE", "test")
 	}
 
-	// ADR 0048: resolve declared dependencies (if locked) and publish their
+	// ADR 0052: resolve declared dependencies (if locked) and publish their
 	// roots before loading src/ and test/, so `cljgo test` sees dep namespaces
 	// the same way the other entry points do.
 	if err := resolveRunDeps("."); err != nil {

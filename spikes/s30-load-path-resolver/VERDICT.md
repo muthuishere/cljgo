@@ -1,6 +1,6 @@
 # Spike S30 verdict — one resolver change genuinely serves both legs
 
-Closed 2026-07-21. Recommendation feeds **ADR 0048**.
+Closed 2026-07-21. Recommendation feeds **ADR 0052**.
 
 **Exit criterion: MET.** An 8-line addition to `ResolveLibPath` — the only
 resolver in the codebase — made a namespace whose source lives entirely
@@ -84,7 +84,7 @@ So each file resolves from its own root **by construction**. The decoy is
 genuinely reachable — requiring `a.util` directly from the entry loads it
 and prints `-20979` — it simply never wins for `a.core`.
 
-**Consequence for ADR 0048:** the load path must be appended to, never
+**Consequence for ADR 0052:** the load path must be appended to, never
 replace, the requiring-file-relative roots. Relative-first is what keeps
 a dep's internal structure self-consistent.
 
@@ -120,7 +120,7 @@ HIJACKED clojure.string
 
 The JVM lets a classpath root shadow `clojure.string`; cljgo cannot,
 because embedded namespaces exist before any require runs. I regard
-cljgo's behavior as *safer* but ADR 0048 must state it deliberately
+cljgo's behavior as *safer* but ADR 0052 must state it deliberately
 rather than inherit it by accident — it is a real, permanent divergence
 from classpath semantics.
 
@@ -142,7 +142,7 @@ $ clojure -Sdeps '{:paths ["amb/root2" "amb/root1"]}' → Z FROM ROOT2
 
 Silent, order-dependent, first-wins — identical to the classpath. This is
 JVM-faithful, so it is defensible; but it is also the classpath's
-best-known failure mode. Recommend ADR 0048 keep first-wins semantics
+best-known failure mode. Recommend ADR 0052 keep first-wins semantics
 (precedence principle: don't differ from Clojure) while adding a
 **diagnostic** — a `--warn-on-shadow` style check that reports when a
 namespace is resolvable from more than one root. Diagnosing is not
@@ -195,11 +195,11 @@ resolved `a.core` from is also where its `build.cljgo` would sit.
 
 Since `build.cljgo` is *evaluated* code, reading a dep's build file at
 resolve time is arbitrary code execution during dependency resolution.
-Recommend ADR 0048 require a **static, data-only** manifest for deps (or
+Recommend ADR 0052 require a **static, data-only** manifest for deps (or
 read only a declared data key without invoking artifacts/steps), so
 transitive `go-require` discovery never executes a dep's build fn.
 
-## 7. What ADR 0048 decision 2 should say
+## 7. What ADR 0052 decision 2 should say
 
 > **Decision 2 — Namespace resolution gains an ordered load path, appended
 > to the requiring-file-relative roots; it does not replace them.**

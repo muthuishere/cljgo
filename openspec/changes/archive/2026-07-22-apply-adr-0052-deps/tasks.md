@@ -45,7 +45,7 @@
 ## 7. Close-out
 
 - [x] 7.1 No spike code merged verbatim into `pkg/`; prototypes stay reference-only (ADR 0027) — `pkg/deps` re-authored, verified by the adversarial review
-- [x] 7.2 Update ADR 0048 status proposed → accepted (implemented); ADR 0021/0044 amendments owed recorded (not silently done)
+- [x] 7.2 Update ADR 0052 status proposed → accepted (implemented); ADR 0021/0044 amendments owed recorded (not silently done)
 - [ ] 7.3 `/opsx:archive` this change
 
 ## Deferred follow-ups (tracked, not blocking — outside the ratified `run`/`build` paths)

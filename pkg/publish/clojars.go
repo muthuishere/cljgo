@@ -1,4 +1,4 @@
-// clojars.go — the `publish clojars` producer (ADR 0050 dec 1, 3).
+// clojars.go — the `publish clojars` producer (ADR 0054 dec 1, 3).
 //
 // cljgo compiles to Go, not JVM bytecode, so a cljgo library reaches the
 // Clojure ecosystem only as pure Clojure SOURCE the JVM's own Clojure compiles.
@@ -58,7 +58,7 @@ func PublishClojars(entrySrc, outDir string, opts ...Opt) error {
 	m := emit.ClassifyGoInterop(prog)
 	if ok, off := emit.WholeLibPure(m); !ok {
 		return fmt.Errorf(
-			"publish clojars: cannot publish to the JVM — namespace %s (%s:%d) %s: uses Go interop, cannot run on the JVM (ADR 0050 decision 3)",
+			"publish clojars: cannot publish to the JVM — namespace %s (%s:%d) %s: uses Go interop, cannot run on the JVM (ADR 0054 decision 3)",
 			off.NS, off.Path, off.Line, off.Detail)
 	}
 
@@ -148,14 +148,14 @@ func copyFile(src, dst string) error {
 	return os.WriteFile(dst, b, 0o644)
 }
 
-// writeClojarsDepsEDN writes the git-coordinate deps.edn stub (ADR 0050: git
+// writeClojarsDepsEDN writes the git-coordinate deps.edn stub (ADR 0054: git
 // coord first; a Clojars coordinate is deferred). module may be empty.
 func writeClojarsDepsEDN(outDir, module string) error {
 	coord := module
 	if coord == "" {
 		coord = "io.github.you/lib"
 	}
-	body := ";; Published by `cljgo publish clojars` (ADR 0050): pure Clojure source.\n" +
+	body := ";; Published by `cljgo publish clojars` (ADR 0054): pure Clojure source.\n" +
 		";; Consume from a JVM Clojure project's deps.edn via a git coordinate:\n" +
 		";;   " + coord + " {:git/url \"https://" + coord + "\" :git/sha \"<sha>\"}\n" +
 		"{:paths [\"src\"]}\n"
@@ -167,7 +167,7 @@ func writeClojarsDepsEDN(outDir, module string) error {
 // pure). It is emitted here so a downstream cljgo consumer resolves this source
 // tree as a pure dependency.
 func writePureManifest(outDir string) error {
-	body := ";; Emitted by `cljgo publish clojars` (ADR 0050). Read as DATA by pkg/deps.\n" +
+	body := ";; Emitted by `cljgo publish clojars` (ADR 0054). Read as DATA by pkg/deps.\n" +
 		"{:paths [\"src\"]\n" +
 		" :pure? true}\n"
 	return os.WriteFile(filepath.Join(outDir, "cljgo.manifest.edn"), []byte(body), 0o644)

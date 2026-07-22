@@ -90,7 +90,7 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	// The capture loader panics on load errors (the IFn-boundary
 	// convention); compileStream's evalNode recovers those raised while
 	// evaluating a require form into errors, so nothing extra here.
-	// ADR 0048 decision 2: a build must not resolve namespaces through
+	// ADR 0052 decision 2: a build must not resolve namespaces through
 	// $CLJGO_PATH — an env-supplied root would bake foreign source into the
 	// binary invisibly to the repo. Disable env-path participation for the
 	// build's discovery pass; a namespace reachable only via $CLJGO_PATH then
@@ -101,7 +101,7 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	defer eval.SetEnvPathEnabled(true)
 
 	ev := eval.New()
-	// ADR 0049 dec 2: the namespace-discovery pass evaluates require and
+	// ADR 0053 dec 2: the namespace-discovery pass evaluates require and
 	// member-access forms through the interpreter, but the emitted binary
 	// links third-party require-go modules for real — so tolerate an
 	// unlinked third-party member here rather than hard-erroring (which is
@@ -122,7 +122,7 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 // single-file layout when there are no file-backed requires, else one
 // package per dependency namespace plus main.go (ADR 0042 §1).
 func WriteProgram(dir string, p *Program, opts Options) error {
-	// ADR 0049 dec 3: the entry namespace's *file* binds to its logical
+	// ADR 0053 dec 3: the entry namespace's *file* binds to its logical
 	// source path so a binary matches the interpreter (not NO_SOURCE_FILE).
 	opts.EntrySrcFile = p.Entry.Path
 	if len(p.Deps) == 0 {
@@ -202,7 +202,7 @@ func WriteProgram(dir string, p *Program, opts Options) error {
 	mainSpec := pkgSpec{
 		pkgName:    "main",
 		isMain:     true,
-		srcFile:    p.Entry.Path, // ADR 0049 dec 3: entry *file* = logical source path
+		srcFile:    p.Entry.Path, // ADR 0053 dec 3: entry *file* = logical source path
 		depImports: imports(p.Entry.Requires),
 		host:       host,
 	}

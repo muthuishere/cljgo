@@ -1,6 +1,6 @@
 # Spike S30 — Can a load path make out-of-tree libraries resolve identically in both legs?
 
-Opened 2026-07-21. Feeds **ADR 0048**. Follows ADR 0042 (multi-namespace
+Opened 2026-07-21. Feeds **ADR 0052**. Follows ADR 0042 (multi-namespace
 emission), whose §4 is the resolution rule this spike proposes to widen.
 
 ## Context — the verified current state
@@ -20,7 +20,7 @@ emission), whose §4 is the resolution rule this spike proposes to widen.
   that loader (`libload.go:37-51`). The emitter has **no independent
   resolver**.
 
-The second bullet is the central de-risk claim of the whole ADR 0048
+The second bullet is the central de-risk claim of the whole ADR 0052
 design: *one resolver change serves both legs*. It is stated here as a
 hypothesis to be **verified by measurement**, not assumed.
 
@@ -53,7 +53,7 @@ The criterion is met iff, with the prototype resolver in place and
 
 Anything less — e.g. the run leg works but the emitter cannot see the
 foreign namespace, or the two stdouts differ — closes this spike **no**,
-and ADR 0048 must then design two resolvers or a different mechanism.
+and ADR 0052 must then design two resolvers or a different mechanism.
 
 ## What must additionally be investigated and reported
 

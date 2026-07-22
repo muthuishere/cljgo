@@ -2,7 +2,7 @@ package main
 
 // Resolution: build.cljgo dep forms -> fetch -> cache -> build.lock.edn.
 //
-// ADR 0048 decision 5: a dependency's own build fn is NEVER evaluated. Its
+// ADR 0052 decision 5: a dependency's own build fn is NEVER evaluated. Its
 // requirements are read from a declarative manifest (cljgo.manifest.edn) —
 // pure data — and, once locked, from the lock alone.
 
@@ -524,7 +524,7 @@ func (r *Resolver) baseDir(d *Dep) string {
 }
 
 // LoadPathRoots is what S30's resolver would consume: dep roots in lock
-// order (ADR 0048 §2 slot 3).
+// order (ADR 0052 §2 slot 3).
 func (r *Resolver) LoadPathRoots(deps []*Dep) []string {
 	var out []string
 	for _, d := range deps {

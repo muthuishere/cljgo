@@ -1,10 +1,10 @@
-# ADR 0049 — Dual-mode host-resolution parity: never silently diverge, always hard-error
+# ADR 0053 — Dual-mode host-resolution parity: never silently diverge, always hard-error
 
 Date: 2026-07-22 · Status: **accepted** — implemented (commit `b0e591a`;
-OpenSpec change `apply-adr-0049-host-parity`, archived). Diagnosis evidence:
+OpenSpec change `apply-adr-0053-host-parity`, archived). Diagnosis evidence:
 spikes S30, S31, S32; fix-validation: spike S36 — all closed. Enforces **ADR 0007**
 (JVM-oracle dual harness) and **ADR 0002** (dual-mode, one analyzer) as an
-executable invariant. Gates **ADR 0048** and **ADR 0050**.
+executable invariant. Gates **ADR 0052** and **ADR 0054**.
 
 ## Context
 
@@ -29,7 +29,7 @@ only the stdlib and cljgo's own dependencies are in the reflect registry — and
 in both legs; the divergence is specific to *third-party* modules. It fires
 during **every `cljgo build`**, because the emitter discovers namespaces by
 evaluating require forms through the interpreter, and it reproduces against the
-repo's own `examples/build-websocket`. Dependencies (ADR 0048) do not introduce
+repo's own `examples/build-websocket`. Dependencies (ADR 0052) do not introduce
 it; they *multiply* it, because a consumer inherits an impure dependency's
 `require-go` without ever typing one.
 
@@ -134,11 +134,11 @@ What remains forbidden is the fourth quadrant: **different non-error values**, o
 **one leg silently succeeding with `nil`/`""`/`false`/a no-op while the other
 produces a real value.** That is the only failure the gate must catch, and it is
 exactly what shipped on `main`. This closes the CI-gate gap named in Context and
-keeps ADR 0048 and 0050's cross-leg guarantees honest.
+keeps ADR 0052 and 0050's cross-leg guarantees honest.
 
 ## Consequences
 
-- **Unblocks ADR 0048 and 0050.** ADR 0048 §6a and ADR 0050 decision 4 both
+- **Unblocks ADR 0052 and 0050.** ADR 0052 §6a and ADR 0054 decision 4 both
   assert "never silent `nil`" for impure/Java references; that guarantee is
   *this ADR's* invariant. Neither can ship its purity policy until §2 lands —
   0049 is on their critical path, ahead of `/opsx:propose` on either.
@@ -147,7 +147,7 @@ keeps ADR 0048 and 0050's cross-leg guarantees honest.
   call returned `nil`. The self-rebuild capability (design/05) upgrades the
   error to a working call later, without changing the invariant.
 - **The dual-harness parity gate is reusable.** Once it exists, every future
-  host-interop addition (ffi, more Go surface, the Java-detection of ADR 0050)
+  host-interop addition (ffi, more Go surface, the Java-detection of ADR 0054)
   inherits a divergence check for free.
 - **Scope note:** this ADR fixes *host-resolution* parity. It does not attempt
   general REPL-vs-binary equivalence (timing, ordering, GC) — only that a
@@ -163,4 +163,4 @@ Diagnosis was closed evidence (S30/S31/S32 VERDICTs); S36 validated the *fix's*
 detection mechanism and froze a working prototype patch
 (`spikes/s36-unlinked-goref-detection/prototype.patch`). This ADR is now
 `proposed`. Implementation (spike code never merges — ADR 0027) follows via
-`/opsx:propose`, ahead of ADR 0048/0050's own spec stages since it gates them.
+`/opsx:propose`, ahead of ADR 0052/0054's own spec stages since it gates them.

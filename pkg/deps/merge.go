@@ -1,6 +1,6 @@
 package deps
 
-// Go-module version conflict handling (ADR 0048 decision 4). cljgo detects a
+// Go-module version conflict handling (ADR 0052 decision 4). cljgo detects a
 // duplicate module required at two different versions and HARD-ERRORS naming
 // both, in its OWN layer, BEFORE the go.mod write — never delegating to
 // `go mod tidy`, which silently applies MVS (exit 0, higher version wins). A

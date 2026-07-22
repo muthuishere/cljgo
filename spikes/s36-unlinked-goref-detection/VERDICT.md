@@ -1,6 +1,6 @@
 # Spike S36 verdict — the unlinked-vs-nil distinction is reliably detectable; the fix is one mode-aware predicate
 
-Closed 2026-07-22. Validates **ADR 0049 decision 2**. Host: darwin/arm64,
+Closed 2026-07-22. Validates **ADR 0053 decision 2**. Host: darwin/arm64,
 go1.26.3, cljgo built from this worktree at `specs/toolkit`.
 
 **VERDICT: PASS. Exit criterion MET on all four clauses.** The interpreter
@@ -9,7 +9,7 @@ legitimate `nil` **with zero ambiguity**, because the two are produced at
 different points in the evaluator and one of them is already an explicit,
 labelled branch in the code. The fix is ~40 lines, mode-aware so it does
 not break `cljgo build`, and yields a message naming module + member +
-file. ADR 0049 moves to `proposed`.
+file. ADR 0053 moves to `proposed`.
 
 All claims below are backed by real captured output under `results/`
 (`baseline-*.out` pre-fix, `fixed-*.out` lazy prototype, `eager-*.out`
@@ -181,7 +181,7 @@ cljgo run  (interp) close-normal code: nil  →  error: not linked (EXIT 1)
 
 The silent nil-vs-1000 divergence is gone. The interpreter honestly reports
 "this capability is not available here"; the binary produces the real
-value. ADR 0049's invariant — *never silently a different value* — holds.
+value. ADR 0053's invariant — *never silently a different value* — holds.
 
 The mode signal already exists structurally (only the emitter installs a
 capturing `LibLoader`); the explicit boolean makes the intent legible and
@@ -190,7 +190,7 @@ is the natural home for the same flag the eventual self-rebuild flow
 
 ---
 
-## 5. Note for ADR 0049 decision 4 (the dual-harness parity gate)
+## 5. Note for ADR 0053 decision 4 (the dual-harness parity gate)
 
 The parity gate as drafted asserts *"identical output OR identical error."*
 For **this** divergence that is not the post-fix reality: the interpreter
@@ -206,7 +206,7 @@ fix as a failure.
 
 ---
 
-## 6. Exact text ADR 0049 decision 2 should carry
+## 6. Exact text ADR 0053 decision 2 should carry
 
 > Access to a member of a `require-go`'d third-party package that is not
 > linked into the interpreter is detected by a single predicate at

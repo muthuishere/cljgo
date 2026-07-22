@@ -1,7 +1,7 @@
 # S32 VERDICT
 
 **VERDICT: PASS on all four exit criteria — with three findings that force
-rework if ADR 0048 decisions 1–5 are implemented as written.**
+rework if ADR 0052 decisions 1–5 are implemented as written.**
 
 Impurity *is* detectable at resolve time, cheaply, from a small declarative
 manifest — the prototype in `exp4-resolve-check/` does it and refuses a bad
@@ -95,7 +95,7 @@ and builds and runs.
 is satisfiable only if something derives the requirement from the
 dependency. Nothing does: `p.GoRequires` is populated **exclusively** by
 `go-require` calls in the consumer's own `build.cljgo`
-(`pkg/build/build.go:241-252`), and per ADR 0048 decision 5 a dependency's
+(`pkg/build/build.go:241-252`), and per ADR 0052 decision 5 a dependency's
 build fn is never evaluated — so there is no path by which a dependency's
 `go-require` reaches the consumer's `go.mod`, today or under the ADR-0048
 design as drafted. The conditional-inclusion rule is not wrong so much as
@@ -134,7 +134,7 @@ EXIT=0
 ```
 
 This predates S32 and belongs to the `require-go` interpreter path
-(design/05 §1's unimplemented self-rebuild), **but ADR 0048 makes it much
+(design/05 §1's unimplemented self-rebuild), **but ADR 0052 makes it much
 more likely to be hit**: today you only meet it by writing `require-go`
 yourself, so you know what you did. With dependencies, a library you did
 not write and cannot see silently returns nils under `cljgo run` and
@@ -312,7 +312,7 @@ anything**. Properties, all deliberate:
 
 - the manifest is parsed with **cljgo's own `pkg/reader`** — no new parser,
   and it demonstrates the shape is ordinary EDN a cljgo program can read;
-- **no dependency's `build` fn is evaluated** (ADR 0048 decision 5 holds);
+- **no dependency's `build` fn is evaluated** (ADR 0052 decision 5 holds);
 - the `:ffi` host probe is a **real `purego.Dlopen` + `Dlsym`** — the exact
   call the program would make at run time, executed at resolve time
   instead;
@@ -431,7 +431,7 @@ EXIT=1
 
 ### 3.5 MEASURED — the Go-module merge question, answered
 
-ADR 0048 decision 6 bullet 1 asks whether delegating to `go mod tidy`
+ADR 0052 decision 6 bullet 1 asks whether delegating to `go mod tidy`
 inherits MVS "through the back door". It does, silently:
 
 ```
@@ -446,7 +446,7 @@ $ cat go.mod
 require github.com/ebitengine/purego v0.10.1
 ```
 
-**The Go toolchain picks the higher version and says nothing.** So ADR 0048
+**The Go toolchain picks the higher version and says nothing.** So ADR 0052
 decision 4's "hard error on conflict, never silently pick" is **false for
 the Go-module lane** unless cljgo detects the conflict itself, before
 emitting `go.mod`. The prototype does:
@@ -547,7 +547,7 @@ for the static/AOT path.
 
 ---
 
-## 5. Recommendation for ADR 0048 decision 6
+## 5. Recommendation for ADR 0052 decision 6
 
 **Adopt (c) — a declared capability set — with (b)'s explicit consumer
 opt-in as the enforcement mechanism. Default deny.** (a) "allowed silently"
@@ -620,7 +620,7 @@ over data already in hand.
   measured 13,600 bytes **smaller** while being strictly less portable
   (§2.3).
 - **The `require-go` interpreter divergence (§1.3) should be a release
-  blocker in its own right**, tracked separately from ADR 0048. Silently
+  blocker in its own right**, tracked separately from ADR 0052. Silently
   resolving members of an unlinked Go module to nil is the unforgivable
   failure mode, and dependencies make it reachable without the user ever
   writing `require-go`.

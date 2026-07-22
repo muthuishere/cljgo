@@ -1,7 +1,7 @@
 # dependency-resolution Specification
 
 ## Purpose
-TBD - created by archiving change apply-adr-0048-deps. Update Purpose after archive.
+TBD - created by archiving change apply-adr-0052-deps. Update Purpose after archive.
 ## Requirements
 ### Requirement: Fetched dependencies live in a global cache keyed by identity and verified by content
 

@@ -1,6 +1,6 @@
 # Spike S31 verdict — impurity does not merge cleanly, and it already breaks dual-mode parity
 
-Closed 2026-07-22. Feeds **ADR 0048** decisions **4**, **5** and **6**.
+Closed 2026-07-22. Feeds **ADR 0052** decisions **4**, **5** and **6**.
 
 **Exit criterion: MET on all five clauses.** All output under `results/`,
 produced against real `go1.26.3` and a real `cljgo 0.1.0-dev` binary.
@@ -103,7 +103,7 @@ and rewrites the file. Order-independent — listing `v0.7.0` first or
 cljgo runs `go mod tidy` whenever `GoRequires` is non-empty
 (`pkg/build/build.go:262`), so the **silent** row is the one cljgo hits.
 
-⇒ **ADR 0048 decision 4's hard error must be actively implemented at the
+⇒ **ADR 0052 decision 4's hard error must be actively implemented at the
 cljgo layer. It is not the default, and today's code already inherits MVS
 through the back door — the exact outcome decision 6 flagged as "these
 cannot both be true".** Decision 4 is currently contradicted by the
@@ -148,7 +148,7 @@ it, at which point an unrelated namespace fails to build.
 ### 2.5 The write-once guard: no bug — a constraint
 
 My brief asked me to confirm a cross-build staleness bug. **There is no such
-bug**, and ADR 0048 lines 48–56 are right. Falsifiable test
+bug**, and ADR 0052 lines 48–56 are right. Falsifiable test
 (`results/I-reresolution.txt`) — pin a real version, then a nonexistent one
 in the same project directory:
 
@@ -163,7 +163,7 @@ Build #2 fails, so the edited require set **does** reach `go.mod`.
 `pkg/build/build.go:225`) and removes it on success (`:272`), so `go.mod`
 never pre-exists on the project path and the guard never fires there.
 (Reached independently here and by coordinator correction; recorded rather
-than deleted, per ADR 0048's own discipline.)
+than deleted, per ADR 0052's own discipline.)
 
 What the guard actually does is sequence **two writes within one build**:
 `SynthGoMod` receives the real requires at `pkg/build/build.go:246`, and
@@ -187,7 +187,7 @@ That constraint is already satisfiable with no restructuring: `CompileProgram`
 runs at `build.go:220`, **before** `MkdirTemp` (`:225`) and `SynthGoMod`
 (`:246`), so transitive namespace discovery completes before `go.mod` is
 written (S30). No rewrite-an-existing-`go.mod` design is needed, and the
-"distinguish generated from user-edited" migration ADR 0048's Consequences
+"distinguish generated from user-edited" migration ADR 0052's Consequences
 worries about does not have to be paid.
 
 ### 2.6 Discovery without executing dep build code — the crux
@@ -195,7 +195,7 @@ worries about does not have to be paid.
 The blocker is sharper than "we must not run dep build code". **Only the
 consumer's own `./build.cljgo` is ever read** (S30). A dependency's
 `go-require`s are not merely unsafe to obtain — they are *invisible*. And
-since `build.cljgo` is evaluated code, and ADR 0048 decision 5 forbids
+since `build.cljgo` is evaluated code, and ADR 0052 decision 5 forbids
 evaluating a dep's build fn at resolve time, they must arrive as **static,
 data-only** input emitted per library.
 
@@ -239,7 +239,7 @@ unresolved.
 
 ## 3. Recommendation
 
-### ADR 0048 decision 4 — keep the hard error, but say it is not free
+### ADR 0052 decision 4 — keep the hard error, but say it is not free
 
 Ratify "explicit pins, hard error on conflict", and add the measured fact
 that makes it non-trivial: **a duplicate require is not a Go error.** The
@@ -260,7 +260,7 @@ explicit `(go-require app "path" "v")` in the consumer's own `build.cljgo`
 Go's `replace`/`exclude` role and it is what makes "one bad conflict per
 ecosystem-lifetime" survivable.
 
-### ADR 0048 decision 5 — the lock is the answer; adopt S33's schema by reference
+### ADR 0052 decision 5 — the lock is the answer; adopt S33's schema by reference
 
 Decision 5 holds and is prototyped. Strengthen it to name the artifact:
 transitive `go-require`s come from `build.lock.edn`'s per-dep
@@ -273,7 +273,7 @@ Two constraints S31 adds:
 2. Decision 5 is only half-answered. S32 still owns whether a dep can
    *produce* that data without its build fn being run.
 
-### ADR 0048 decision 6 — resolve it, and lead with the divergence
+### ADR 0052 decision 6 — resolve it, and lead with the divergence
 
 Decision 6 can now be written rather than left open:
 
@@ -299,7 +299,7 @@ error instead of `nil` when it declines to write. **That is wrong and would
 break the build.** `WriteProgram` (`pkg/emit/program.go:305`) *depends* on
 the `nil` return to no-op its second call within the same build (§2.5).
 Recorded rather than deleted, because it is exactly the kind of "obvious
-fix" a future reader would re-propose. ADR 0048's Consequences already say
+fix" a future reader would re-propose. ADR 0052's Consequences already say
 this correctly: the write-once rule is *a constraint to respect, not a bug
 to fix*.
 
@@ -331,7 +331,7 @@ fresh, rather than relying on the caller's discipline.
 | 4. write-once guard's real constraint | yes — staleness bug **disproven**; constraint stated (§2.5) | `I`, `D` |
 | 5. transitive discovery without eval | yes, via S33's lock schema | `F` |
 
-The spike can state which conflict policy ADR 0048 should adopt: **policy C,
+The spike can state which conflict policy ADR 0052 should adopt: **policy C,
 hard error with provenance and a consumer override.**
 
 ## 6. Follow-on

@@ -4,8 +4,8 @@ ADR 0013 says a cljgo project can publish as a Clojure library, a Go library, a
 C library, or an executable — but **only the executable exists**. The owner's
 goal: cljgo is a citizen of **both** ecosystems — write pure Clojure once, ship
 it to Go developers and to JVM-Clojure developers from one `build.cljgo`, no
-`deps.edn`. ADR 0050 decides `publish`; its dependencies (ADR 0049 "never silent
-nil", ADR 0048 §6 purity walk) have both landed, so it is unblocked.
+`deps.edn`. ADR 0054 decides `publish`; its dependencies (ADR 0053 "never silent
+nil", ADR 0052 §6 purity walk) have both landed, so it is unblocked.
 
 ## What Changes
 
@@ -32,7 +32,7 @@ nil", ADR 0048 §6 purity walk) have both landed, so it is unblocked.
   A pluggable predicate slot is reserved for `ffi`/`c-link` (not yet AST ops).
 - **A Java-tainted (deferred-import) namespace fails LOUD and PER-NAMESPACE** —
   hard-errors at the point it's required with `file:line` and "Java interop is
-  unsupported on cljgo's Go host", never `nil` (extends ADR 0049's guarantee to
+  unsupported on cljgo's Go host", never `nil` (extends ADR 0053's guarantee to
   Java). Pure namespaces of the same dependency stay usable. Optional strict
   resolve-time rejection is available.
 - **A `certain-java?` courtesy diagnostic** over the self-identifying JVM
@@ -51,7 +51,7 @@ nil", ADR 0048 §6 purity walk) have both landed, so it is unblocked.
   `emit.CompileProgram` traversal, no new resolution machinery.
 
 ### Modified Capabilities
-<!-- host-resolution-parity (ADR 0049) and dependency-resolution (ADR 0048) are
+<!-- host-resolution-parity (ADR 0053) and dependency-resolution (ADR 0052) are
      prerequisites already satisfied; not modified here. -->
 
 ## Impact

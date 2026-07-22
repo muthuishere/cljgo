@@ -1,5 +1,5 @@
 
-### E6  load path handed to S30's resolver (ADR 0048 §2 slot 3), lock order
+### E6  load path handed to S30's resolver (ADR 0052 §2 slot 3), lock order
 $W/cacheA/src/1821cad30fb7d11225f53d3d245d8026/src
 $W/cacheA/src/fc16fa6cec4a6ebb8f5a7de174b67f12/src
 $W/proj/local-lib/src

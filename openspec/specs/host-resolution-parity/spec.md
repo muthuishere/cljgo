@@ -1,7 +1,7 @@
 # host-resolution-parity Specification
 
 ## Purpose
-TBD - created by archiving change apply-adr-0049-host-parity. Update Purpose after archive.
+TBD - created by archiving change apply-adr-0053-host-parity. Update Purpose after archive.
 ## Requirements
 ### Requirement: Host references resolve identically or hard-error, never silently diverge
 

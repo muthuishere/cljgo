@@ -30,14 +30,14 @@ import (
 
 // BuildFileName is the canonical project-root build description name (ADR
 // 0021) — what `cljgo new` emits and what error messages name. `cljgo build`
-// accepts any of BuildFileNames (ADR 0051).
+// accepts any of BuildFileNames (ADR 0055).
 const BuildFileName = "build.cljgo"
 
 // BuildFileNames are the accepted build-description names, most-specific-first
-// (ADR 0051): cljgo-native `.cljgo`/`.cljg` before the portable `.clj`.
+// (ADR 0055): cljgo-native `.cljgo`/`.cljg` before the portable `.clj`.
 var BuildFileNames = []string{"build.cljgo", "build.cljg", "build.clj"}
 
-// FindBuildFile returns the first accepted build file present in dir (ADR 0051
+// FindBuildFile returns the first accepted build file present in dir (ADR 0055
 // precedence), or "" if none exists.
 func FindBuildFile(dir string) string {
 	for _, name := range BuildFileNames {
@@ -57,7 +57,7 @@ type Artifact struct {
 	Main string
 	Kind string
 	// Module is a library artifact's Go module path / Clojure coordinate
-	// (ADR 0050 `lib`), used by `cljgo publish`. Empty for exe artifacts.
+	// (ADR 0054 `lib`), used by `cljgo publish`. Empty for exe artifacts.
 	Module string
 }
 
@@ -79,7 +79,7 @@ type Plan struct {
 	ProjectDir string
 	Artifacts  []Artifact
 	GoRequires []GoRequire
-	// Deps are the declared (dep …) dependencies (ADR 0048), resolved before
+	// Deps are the declared (dep …) dependencies (ADR 0052), resolved before
 	// compilation; their source roots feed the interpreter load path (slot 3)
 	// and their Go-requires merge into the consumer go.mod.
 	Deps           []deps.Dep
@@ -151,7 +151,7 @@ func planFromValue(v any) (*Plan, error) {
 			Version: str(lang.Get(r, kw("version"))),
 		})
 	}
-	// (dep name {:git … :ref … :subdir … | :path …}) — ADR 0048.
+	// (dep name {:git … :ref … :subdir … | :path …}) — ADR 0052.
 	for _, d := range lang.ToSlice(lang.Get(m, kw("deps"))) {
 		p.Deps = append(p.Deps, deps.Dep{
 			Name:   str(lang.Get(d, kw("name"))),
@@ -190,7 +190,7 @@ func planFromValue(v any) (*Plan, error) {
 	return p, nil
 }
 
-// LibArtifact returns the library artifact (ADR 0050 `lib`) to publish: the one
+// LibArtifact returns the library artifact (ADR 0054 `lib`) to publish: the one
 // named, or — when name is "" — the sole lib artifact. It errors when there is
 // no lib, or when name is "" and more than one lib is declared (ambiguous).
 func (p *Plan) LibArtifact(name string) (Artifact, error) {
@@ -303,7 +303,7 @@ func (p *Plan) Run(stepArg string, opts emit.Options, keepGen bool) error {
 // them), emit main.go with host facts resolved against that module, `go
 // build`. Returns the generated module dir.
 func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, keepGen bool) (string, error) {
-	// ADR 0048: resolve declared dependencies BEFORE compiling. This publishes
+	// ADR 0052: resolve declared dependencies BEFORE compiling. This publishes
 	// their source roots (deps.SetResolvedRoots) so the emitter's interpreter
 	// discovery pass — which evaluates require forms — finds dep namespaces
 	// (load-path slot 3), and merges their Go-requires with the consumer's own,
@@ -320,7 +320,7 @@ func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, ke
 		// No deps, but the consumer's own go-requires must still be
 		// conflict-checked: a self-conflict (same module pinned twice at two
 		// versions in one build.cljgo) must hard-error, not be silently
-		// MVS-collapsed by `go mod tidy` (ADR 0048 decision 4).
+		// MVS-collapsed by `go mod tidy` (ADR 0052 decision 4).
 		merged, err := mergeOwnGoRequires(p.GoRequires, p.AcceptVersions)
 		if err != nil {
 			return "", err
@@ -376,7 +376,7 @@ func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, ke
 	// With third-party imports present, tidy the go.sum for transitive deps
 	// now that main.go references them (a no-op for pure-Go programs). The
 	// require SET is already merged and conflict-checked above, so tidy only
-	// fills go.sum — it is never the version arbiter (ADR 0048 decision 4).
+	// fills go.sum — it is never the version arbiter (ADR 0052 decision 4).
 	if len(goReqs) > 0 {
 		if err := goModTidy(genDir); err != nil {
 			return genDir, err
@@ -392,7 +392,7 @@ func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, ke
 	return genDir, nil
 }
 
-// resolveDeps resolves the plan's declared (dep …) dependencies (ADR 0048),
+// resolveDeps resolves the plan's declared (dep …) dependencies (ADR 0052),
 // publishes their source roots for the interpreter load path (slot 3), and
 // returns the merged, conflict-checked Go-require set (the consumer's own
 // go-requires + every resolved dependency's) for the generated go.mod. It
@@ -448,7 +448,7 @@ func (p *Plan) resolveDeps() ([]GoRequire, error) {
 
 // mergeOwnGoRequires conflict-checks a plan's own go-requires (no dependencies
 // involved) through the same layer as resolveDeps, so a self-conflict hard-errors
-// rather than reaching `go mod tidy`'s silent MVS (ADR 0048 decision 4).
+// rather than reaching `go mod tidy`'s silent MVS (ADR 0052 decision 4).
 func mergeOwnGoRequires(reqs []GoRequire, accept map[string]string) ([]GoRequire, error) {
 	own := make([]deps.GoReq, len(reqs))
 	for i, r := range reqs {
@@ -467,7 +467,7 @@ func mergeOwnGoRequires(reqs []GoRequire, accept map[string]string) ([]GoRequire
 
 // ResolveProjectDeps loads buildFile and, if it declares (dep …) dependencies,
 // resolves them and publishes their source roots for the interpreter load path
-// (ADR 0048 slot 3). It is used by the `cljgo run` bootstrap so a project with
+// (ADR 0052 slot 3). It is used by the `cljgo run` bootstrap so a project with
 // locked dependencies resolves them the same way `cljgo build` does — one
 // resolver, one order, no REPL-vs-binary divergence. It never evaluates a
 // dependency's build fn (decision 5); it reads the lock and manifests as data.

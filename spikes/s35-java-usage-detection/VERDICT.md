@@ -1,6 +1,6 @@
 # Spike S35 verdict — perfect `uses-java?` is neither achievable NOR necessary; the gate that matters is `uses-go-interop?`
 
-Closed 2026-07-22. Feeds **ADR 0050** decision 4 (purity validation).
+Closed 2026-07-22. Feeds **ADR 0054** decision 4 (purity validation).
 Framed by the owner insight (coordinator, 2026-07-22): a mis-detected Java
 form does **not** ship broken code, so this predicate is a **best-effort
 early diagnostic for a nicer/earlier error**, not a correctness barrier.
@@ -36,8 +36,8 @@ because a later stage always catches it loudly (measured / by construction):
   reject Java at all — it only rejects `require-go`/ffi (the Go-only
   surfaces that can't run on a JVM), which S34 already detects cleanly by
   AST node. **"No Java" was never the clojars gate; "no Go-interop" is.**
-- **`run` (interpreter):** the one silent-`nil` hole (ADR 0048 §6a) is
-  closed by **ADR 0049** making the interpreter hard-error on an
+- **`run` (interpreter):** the one silent-`nil` hole (ADR 0052 §6a) is
+  closed by **ADR 0053** making the interpreter hard-error on an
   unresolvable/unlinked host ref. Post-0049 every leg fails loudly whether
   or not the detector fired first.
 
@@ -66,7 +66,7 @@ genuine working JVM interop on `clojure` 1.12.5. cljgo's behavior splits
 | **instance dot-method** | `(.toUpperCase s)`, `(.getBytes x)`, `(.length s)` | `no method toUpperCase on string` | **RUNTIME** |
 | **dot-method, uncalled** | `(defn up [s] (.toUpperCase s))` | **`ok` — no error at all** | **never** |
 
-**No form ever silently returned `nil`** (the ADR 0048 §6a failure mode —
+**No form ever silently returned `nil`** (the ADR 0052 §6a failure mode —
 that defect is specific to *third-party `require-go`*, not Java surfaces).
 Every explicit Java surface **hard-errors with `file:line` at analysis
 time**: self-identifying, reliably detectable today. This matches S34's
@@ -116,7 +116,7 @@ instance dot-forms.** None can be positively confirmed Java at analysis
 time. Symmetrically, "flag every dot-form as Java" has a false-positive
 floor of 100% of Go dot-method interop (the `.Replace`/`.Do`/`.Read`
 idiom, which is the *normal* way ADR 0010 Go interop calls methods).
-ADR 0050 decision 4 must acknowledge this floor explicitly.
+ADR 0054 decision 4 must acknowledge this floor explicitly.
 
 Case convention (idiomatic Java `getBytes` lowercase-first vs idiomatic Go
 exported `Replace` uppercase-first) is a **heuristic, not a signal**:
@@ -194,17 +194,17 @@ is genuinely unresolvable and flagged, while its cljgo/Go analog
 host interop, not Java. The overlap is disambiguated by **position + a Go
 binding**, exactly as the reframing predicts.
 
-## 5. Recommendation — the exact text ADR 0050 decision 4 should carry
+## 5. Recommendation — the exact text ADR 0054 decision 4 should carry
 
 **The design is dictated by an error asymmetry** (coordinator, 2026-07-22):
 a **false positive** (valid Go/pure code wrongly flagged Java) is *harmful*
 — it rejects a legitimately pure clojars publish or blocks a real Go method
 call; a **false negative** (Java slips through) is *safe* — the Go
-compiler, ADR 0049, or the JVM catches it downstream (§0). The two are not
+compiler, ADR 0053, or the JVM catches it downstream (§0). The two are not
 symmetric, so the predicate must be **certain-only: zero false positives by
 construction, an accepted false-negative tail. It must NEVER guess on the
 ambiguous bare `(.method obj)` — that guess is deferred to the compiler /
-ADR 0049, which fail only on *actually* unresolvable refs, never on valid
+ADR 0053, which fail only on *actually* unresolvable refs, never on valid
 Go.** P1 is exactly this predicate and measured it: precision **10/10**
 (zero FP), recall 10/14 (the four dot-form misses are the intended tail).
 
@@ -214,7 +214,7 @@ Go.** P1 is exactly this predicate and measured it: precision **10/10**
 >
 > A mis-detected Java form does not ship broken code (§0): `build`/`publish
 > --go` fail at Go compile on an unresolvable method; `publish --clojars`
-> emits pure Clojure source and Java runs on the JVM; ADR 0049 makes the
+> emits pure Clojure source and Java runs on the JVM; ADR 0053 makes the
 > interpreter hard-error on an unresolvable host ref. The validator is a
 > **best-effort early diagnostic** that moves the error earlier and
 > friendlier — never the barrier that keeps a broken artifact from shipping.
@@ -242,7 +242,7 @@ Go.** P1 is exactly this predicate and measured it: precision **10/10**
 >    this Go host." **Never flag a bare `(.method obj)`/`(.-field obj)`** —
 >    its Java-vs-Go provenance is undecidable at analysis time (below), so
 >    guessing would risk a false positive on valid Go interop; defer it to
->    the Go compiler / ADR 0049.
+>    the Go compiler / ADR 0053.
 >
 > **Zero-false-positive guarantee, by construction.** A bare well-known
 > class **value** (`String`, `java.util.UUID` — an ADR 0036 ClassRef) is a
@@ -272,18 +272,18 @@ Go.** P1 is exactly this predicate and measured it: precision **10/10**
 static/import surfaces (already self-erroring today) and provably
 undecidable for the bare instance dot-form. But given the error asymmetry
 and the downstream net, perfect Java detection is neither achievable nor
-necessary. ADR 0050 decision 4 should adopt **certain-only, zero-FP
+necessary. ADR 0054 decision 4 should adopt **certain-only, zero-FP
 predicates** — `uses-go-interop?` for the clojars gate, `certain-java?` for
 the Go-host courtesy diagnostic — that flag only self-identifying surfaces
 and **never guess the ambiguous `(.method obj)`**, leaving it to the Go
-compiler / ADR 0049. Measured: precision 10/10, an accepted false-negative
+compiler / ADR 0053. Measured: precision 10/10, an accepted false-negative
 tail of the four bare dot-forms.
 
 ### Exit criterion checklist
 - ✅ ≥30-form labeled corpus, java class oracle-confirmed on `clojure` 1.12.5.
 - ✅ Obvious JVM markers classified with **zero false negatives** (P1 10/10 on the explicit self-identifying subset — the certain-only gate).
 - ✅ False-positive rate **stated and bounded — and zero** for the recommended certain-only predicate: P1 0/16 non-java after position-awareness (every candidate FP enumerated in §4). The asymmetry making FP the metric that matters is honored by construction (§5).
-- ✅ Residual ambiguous set enumerated (`(.method obj)`/`(.-field obj)`), resolved as "never flag — defer to compiler/ADR 0049," with the accepted false-negative floor and why it is safe (§0, §2, §5).
+- ✅ Residual ambiguous set enumerated (`(.method obj)`/`(.-field obj)`), resolved as "never flag — defer to compiler/ADR 0053," with the accepted false-negative floor and why it is safe (§0, §2, §5).
 - ✅ cljgo's today-behavior measured per snippet as real output (§1, `results/`).
 
 ## Files

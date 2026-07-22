@@ -343,14 +343,14 @@ func checkPurity(name string, imp *Impurity, opts ResolveOptions) error {
 		if cap == "cgo" && len(opts.CrossTargets) > 0 {
 			return fmt.Errorf(
 				"dependency %q requires :cgo (c-link %v), refused: the project declares cross-compile target(s) %v — "+
-					"cgo against a third-party system library cannot cross-compile (ADR 0048 decision 6). "+
+					"cgo against a third-party system library cannot cross-compile (ADR 0052 decision 6). "+
 					"Drop the dependency, use an :ffi equivalent, or drop the cross-target.",
 				name, imp.CLink, opts.CrossTargets)
 		}
 		if !opts.AllowCaps[cap] {
 			return fmt.Errorf(
 				"dependency %q declares impure capability :%s which the consumer has not acknowledged; "+
-					"acknowledge :%s in the allowed capability set to permit it (default deny, ADR 0048 decision 6)",
+					"acknowledge :%s in the allowed capability set to permit it (default deny, ADR 0052 decision 6)",
 				name, cap, cap)
 		}
 	}

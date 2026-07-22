@@ -36,7 +36,7 @@ func CompileFile(path string) ([]*ast.Node, error) {
 // dep without capturing its forms would emit a binary missing it.
 func CompileReader(r io.Reader, filename string) ([]*ast.Node, error) {
 	ev := eval.New()
-	// ADR 0049 dec 2: this single-file AOT compile evaluates member-access
+	// ADR 0053 dec 2: this single-file AOT compile evaluates member-access
 	// forms through the interpreter for discovery, but the emitted binary
 	// links any third-party require-go module for real — so tolerate an
 	// unlinked member here rather than hard-erroring as `cljgo run` does.

@@ -1,7 +1,7 @@
 # publish Specification
 
 ## Purpose
-TBD - created by archiving change apply-adr-0050-publish. Update Purpose after archive.
+TBD - created by archiving change apply-adr-0054-publish. Update Purpose after archive.
 ## Requirements
 ### Requirement: `cljgo publish` produces a library for a named ecosystem from one build.cljgo
 
@@ -71,7 +71,7 @@ for future `ffi`/`c-link` taint without changing the traversal.
 
 When a namespace uses unsupported Java interop, requiring it MUST hard-error at
 that point with `file:line` and a message that Java interop is unsupported on
-cljgo's Go host. It MUST NOT return `nil`/`""` (the ADR 0049 unforgivable
+cljgo's Go host. It MUST NOT return `nil`/`""` (the ADR 0053 unforgivable
 divergence). Purity being per-namespace, the pure namespaces of the same
 dependency MUST remain usable. A project MAY opt into strict resolve-time
 rejection of any dependency declaring Java taint.

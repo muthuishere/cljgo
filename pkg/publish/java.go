@@ -1,5 +1,5 @@
-// Package publish holds the ADR 0050 publish-side diagnostics. This file is
-// `certain-java?` (ADR 0050 dec 4): a best-effort COURTESY diagnostic over the
+// Package publish holds the ADR 0054 publish-side diagnostics. This file is
+// `certain-java?` (ADR 0054 dec 4): a best-effort COURTESY diagnostic over the
 // SELF-IDENTIFYING JVM surfaces only — never a gate, never a guess.
 //
 // It is certain-only and zero-false-positive by construction (S35, precision
@@ -9,7 +9,7 @@
 // dot-form `(.method obj)` — that AST node is Go-valid or Java depending only
 // on the runtime receiver (design/05 M4+), so guessing it would reject good Go
 // code. The false negatives that leaves (all bare dot-forms) are safe: the Go
-// compiler, `cljgo run` (ADR 0049, never silent nil), and the JVM itself each
+// compiler, `cljgo run` (ADR 0053, never silent nil), and the JVM itself each
 // catch a missed Java form loudly downstream.
 package publish
 

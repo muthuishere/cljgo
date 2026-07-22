@@ -1,7 +1,7 @@
 # Spike S34 — One transitive walk that classifies every reachable namespace by purity
 
-Opened 2026-07-22. Feeds **ADR 0050** (decisions 3 and 4 — publish gates).
-Rides on **ADR 0042** (multi-namespace emission) and **ADR 0048** (§6 purity
+Opened 2026-07-22. Feeds **ADR 0054** (decisions 3 and 4 — publish gates).
+Rides on **ADR 0042** (multi-namespace emission) and **ADR 0052** (§6 purity
 axis, §6a nil-divergence blocker). Follows the ADR 0027 lifecycle: this README
 and its exit criterion are written **before any code**.
 
@@ -85,12 +85,12 @@ The criterion is MET iff, from a **single** `CompileProgram` walk per fixture:
 
 Anything less — e.g. burial 2 levels deep is missed, or the two granularities
 need separate traversals, or a pure lib shows spurious taint — closes S34 **no**
-and forces ADR 0050 to redesign decisions 3/4.
+and forces ADR 0054 to redesign decisions 3/4.
 
 ## What must additionally be reported
 
 1. Is `CompileProgram`'s transitive traversal reusable as-is for purity, or
    does purity need its own walk? (item 3)
 2. Does the classification key a **hard-error-not-nil** at require time, and how
-   does that relate to ADR 0048 §6a? (item 5 — confirm, do not re-litigate)
+   does that relate to ADR 0052 §6a? (item 5 — confirm, do not re-litigate)
 3. What did the Java fixture actually DO when analyzed by cljgo (for S35)?

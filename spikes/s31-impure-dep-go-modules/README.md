@@ -1,6 +1,6 @@
 # Spike S31 — Impure cljgo deps: how do a dependency's `go-require`s compose into ONE go.mod?
 
-Opened 2026-07-21. Feeds **ADR 0048** (decisions 4/5/6). Follows S30.
+Opened 2026-07-21. Feeds **ADR 0052** (decisions 4/5/6). Follows S30.
 
 ## Context
 
@@ -74,7 +74,7 @@ captured under `results/`:
    would have produced.
 
 FAIL for the spike as a whole = we cannot state, at close, which of the
-three conflict policies ADR 0048 should adopt.
+three conflict policies ADR 0052 should adopt.
 
 ## Method
 

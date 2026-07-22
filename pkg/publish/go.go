@@ -1,4 +1,4 @@
-// go.go — the `publish go` producer (ADR 0050 dec 1, target table).
+// go.go — the `publish go` producer (ADR 0054 dec 1, target table).
 //
 // A cljgo library reaches the Go ecosystem as a go-gettable module: the same
 // per-namespace Go packages `cljgo build` emits, LIBRARY-shaped (registered
@@ -6,7 +6,7 @@
 // exported defn as an exported Go function. Go interop is ALLOWED here (unlike
 // clojars) — Go is the host.
 //
-// Scope (honest, ADR 0050 risk note): exported wrappers use the `any`-typed
+// Scope (honest, ADR 0054 risk note): exported wrappers use the `any`-typed
 // calling convention. Resolved-from-type-hint Go signatures are DEFERRED — the
 // emitted module compiles and is go-gettable, the signatures are uniformly
 // `any`. See emit.WriteLibrary for the full scope statement.

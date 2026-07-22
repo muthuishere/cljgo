@@ -203,7 +203,7 @@ func TestWriteProgramSingleFileDelegates(t *testing.T) {
 	}
 	gen2 := t.TempDir()
 	// WriteProgram threads the entry's logical source path into the delegated
-	// WriteModule call (ADR 0049 dec 3: entry *file*), so the byte-for-byte
+	// WriteModule call (ADR 0053 dec 3: entry *file*), so the byte-for-byte
 	// delegation comparison must pass the same EntrySrcFile.
 	if err := WriteModule(gen2, prog.Entry.Forms, Options{PrintLastValue: true, EntrySrcFile: prog.Entry.Path}); err != nil {
 		t.Fatalf("WriteModule: %v", err)
@@ -243,7 +243,7 @@ func TestRequireCycleFailsCompile(t *testing.T) {
 	}
 }
 
-// TestThirdPartyDiscoveryTolerates is the emitter half of ADR 0049 dec 2:
+// TestThirdPartyDiscoveryTolerates is the emitter half of ADR 0053 dec 2:
 // the namespace-discovery pass sets HostUnlinkedTolerant=true, so compiling
 // a program that require-go's a third-party (domain-dotted) module and
 // references an unlinked member SUCCEEDS (the emitted binary links it for
@@ -272,7 +272,7 @@ func TestThirdPartyDiscoveryTolerates(t *testing.T) {
 	}
 }
 
-// TestBinaryUncompiledRequireHardErrors is ADR 0049 dec 3: a binary that
+// TestBinaryUncompiledRequireHardErrors is ADR 0053 dec 3: a binary that
 // evaluates (require 'some.ns) for a namespace NOT compiled into it must
 // hard-error naming the namespace, rather than silently no-op'ing behind the
 // provider registry. The require is deferred inside -main, so the build-time

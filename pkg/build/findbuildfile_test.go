@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// ADR 0051: `cljgo build` accepts build.cljgo / build.cljg / build.clj,
+// ADR 0055: `cljgo build` accepts build.cljgo / build.cljg / build.clj,
 // most-specific-first, and reports "" when none is present.
 func TestFindBuildFile(t *testing.T) {
 	write := func(dir, name string) {

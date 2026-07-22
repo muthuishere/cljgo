@@ -20,7 +20,7 @@ import (
 //
 //	$CLJGO_CACHE            (explicit override; the spike uses it as the
 //	                         "different machine" proxy)
-//	$XDG_CACHE_HOME/cljgo   (ADR 0048 §1)
+//	$XDG_CACHE_HOME/cljgo   (ADR 0052 §1)
 //	~/.cache/cljgo          (fallback)
 func CacheRoot() string {
 	if v := os.Getenv("CLJGO_CACHE"); v != "" {
