@@ -155,9 +155,21 @@ func registerAsync() {
 	// and call go* — so the emitter needs NO new op: it compiles the fn
 	// literal and the go* invoke like any other call, and lang.Go does the
 	// real `go func(){}()` for both modes.
+	//
+	// go* is a cljgo-only var — real core.async has no public go* (its `go`
+	// is the IOC-transform macro, which cljgo deletes per ADR 0040). It is
+	// marked ^:private (fundamentals audit, core-async-audit 2026-07): the
+	// go/thread macros emit a QUALIFIED clojure.core.async/go* reference,
+	// which resolves fine to a private var in BOTH the interpreter and an
+	// AOT binary (rt.Boot re-runs RegisterAll, so the :private meta is live
+	// in compiled code too), so hiding it from ns-publics costs nothing and
+	// matches the JVM surface (no go*). Verified: the full chan-* conformance
+	// set — go/thread/go-loop/alt! — stays green in both harnesses with go*
+	// private. The M4-v0 clojure.core refer (asyncCoreAliases) is kept for
+	// back-compat, but the canonical namespace no longer advertises it.
 	areg("go*", func(args ...any) any {
 		return lang.Go(oneArg("go*", args))
-	})
+	}).SetPrivate()
 
 	// go / thread macros: (go body...) =>
 	// (clojure.core.async/go* (fn* [] body...)). thread is an alias of go
@@ -389,6 +401,37 @@ func registerAsync() {
 			buf = bufOf(args[2])
 		}
 		return lang.ChanTake(int(n), chanArg("take", args[1]), buf)
+	})
+
+	// (map f chs) / (map f chs buf-or-n): combine N channels through f —
+	// each round takes one value from every input, delivers (apply f vals),
+	// and closes as soon as any input closes (oracle map-sum => 11 22 33,
+	// map-uneven => [1 10] [2 20] nil). NOT deprecated (unlike map</map>);
+	// interns only in clojure.core.async (clojure.core/map is untouched —
+	// the precedence principle: async's map shadows nothing in core, it is
+	// a different var reached as clojure.core.async/map).
+	areg("map", func(args ...any) any {
+		if len(args) != 2 && len(args) != 3 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: map", len(args)))
+		}
+		var chans []*lang.Channel
+		for s := lang.Seq(args[1]); s != nil; s = s.Next() {
+			chans = append(chans, chanArg("map", s.First()))
+		}
+		buf := 0
+		if len(args) == 3 {
+			buf = bufOf(args[2])
+		}
+		return lang.MapChans(args[0], chans, buf)
+	})
+
+	// (thread-call f): run f on a real goroutine, returning a channel that
+	// yields f's result once and then closes (a nil result sends nothing —
+	// the channel just closes; oracle thread-call => 42 then nil,
+	// thread-call-nil => nil). This is the public fn the `thread` macro is
+	// built on; it is the same runtime seam as go* (lang.Go).
+	areg("thread-call", func(args ...any) any {
+		return lang.Go(oneArg("thread-call", args))
 	})
 
 	// mult / tap / untap / untap-all: fan-out every value to every tap.

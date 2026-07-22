@@ -119,6 +119,40 @@ func MergeChans(chans []*Channel, buf int) *Channel {
 	return out
 }
 
+// MapChans implements (map f chs) / (map f chs buf-or-n): a fresh channel
+// that, each round, takes ONE value from every input channel (in order) and
+// delivers (apply f values). It closes as soon as ANY input closes — the
+// value already taken from earlier inputs that round is discarded (JVM
+// parity: oracle map-sum => 11 22 33 nil, map-uneven => [1 10] [2 20] nil).
+// An empty chs vector closes the output immediately (oracle map-empty =>
+// nil). buf-or-n sizes the output channel (nil/0 = unbuffered).
+func MapChans(f any, chans []*Channel, buf int) *Channel {
+	out := NewChan(buf)
+	if len(chans) == 0 {
+		ChanClose(out)
+		return out
+	}
+	go func() {
+		vals := make([]any, len(chans))
+		for {
+			for i, c := range chans {
+				v := ChanRecv(c)
+				if v == nil {
+					ChanClose(out) // any input closed → close out (JVM parity)
+					return
+				}
+				vals[i] = v
+			}
+			args := make([]any, len(vals))
+			copy(args, vals)
+			if !ChanSend(out, Apply(f, args)) {
+				return // out closed under us
+			}
+		}
+	}()
+	return out
+}
+
 // Split implements (split p ch) / (split p ch t-buf f-buf): returns two
 // channels [tc fc]; each value goes to tc when (p v) is truthy, else fc.
 // Both close when ch closes (oracle split => [2 4 6] / [1 3 5]).
