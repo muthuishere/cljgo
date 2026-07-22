@@ -25,4 +25,4 @@
 ## 5. Close-out
 
 - [x] 5.1 Verify no spike code merged into `pkg/`; `prototype.patch` stays a reference only
-- [ ] 5.2 Move ADR 0049 note to reflect implementation landed; `/opsx:archive` this change
+- [x] 5.2 Move ADR 0049 note to reflect implementation landed; `/opsx:archive` this change

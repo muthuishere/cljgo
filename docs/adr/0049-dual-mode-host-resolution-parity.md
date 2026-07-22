@@ -1,7 +1,8 @@
 # ADR 0049 — Dual-mode host-resolution parity: never silently diverge, always hard-error
 
-Date: 2026-07-22 · Status: **proposed** (diagnosis evidence: spikes S25, S26,
-S27; fix-validation: spike S31 — all closed) · Enforces **ADR 0007**
+Date: 2026-07-22 · Status: **accepted** — implemented (commit `b0e591a`;
+OpenSpec change `apply-adr-0049-host-parity`, archived). Diagnosis evidence:
+spikes S25, S26, S27; fix-validation: spike S31 — all closed. Enforces **ADR 0007**
 (JVM-oracle dual harness) and **ADR 0002** (dual-mode, one analyzer) as an
 executable invariant. Gates **ADR 0048** and **ADR 0050**.
 
