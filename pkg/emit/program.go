@@ -175,13 +175,15 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		printLast || mainVar != "" || spec.srcFile != ""
 
 	out.WriteString("import (\n")
-	if g.usesFmt || printLast {
+	if g.usesFmt || printLast || spec.isMain {
 		out.WriteString("\"fmt\"\n")
 	}
 	if g.usesMath {
 		out.WriteString("\"math\"\n")
 	}
-	if mainVar != "" {
+	// isMain always imports os: the top-level recover() boundary (spike s28)
+	// prints to os.Stderr and os.Exit(1)s on an uncaught runtime error.
+	if mainVar != "" || spec.isMain {
 		out.WriteString("\"os\"\n")
 	}
 	// rt: the bootstrap (main), the RegisterLib init (dependency
@@ -255,6 +257,13 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	out.WriteString("}\n")
 	if spec.isMain {
 		out.WriteString("\nfunc main() {\n")
+		// The error boundary (spike s28 P0): a runtime error must print the
+		// same clean detailed line the REPL/run print — NEVER a raw Go panic
+		// + goroutine stack trace. Recover, render through the one shared
+		// renderer, exit non-zero.
+		out.WriteString("defer func() {\nif r := recover(); r != nil {\n")
+		out.WriteString("fmt.Fprintln(os.Stderr, \"error: \"+rt.RenderRecovered(r))\n")
+		out.WriteString("os.Exit(1)\n}\n}()\n")
 		out.WriteString("rt.Boot() // bootstrap: Go builtins + the AOT-compiled core (ADR 0046)\n")
 		out.WriteString("Load()\n")
 		if mainVar != "" {

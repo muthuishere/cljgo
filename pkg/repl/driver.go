@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 
 	"github.com/muthuishere/cljgo/pkg/bri"
+	"github.com/muthuishere/cljgo/pkg/diag"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
@@ -314,10 +315,28 @@ func (d *Driver) evalAndPrint(form any, src string) {
 }
 
 func (d *Driver) reportError(err error) {
-	// Reader and analyzer errors carry file:line:col in their message.
 	d.outMu.Lock()
-	fmt.Fprintf(d.errOut, "error: %v\n", err)
+	fmt.Fprintf(d.errOut, "error: %s\n", d.RenderError(err))
 	d.outMu.Unlock()
+}
+
+// RenderError maps err into the richer detailed line (spike s28): the
+// structured Diagnostic (name/location/expected-found from a Carrier, or
+// prose-classified for reader/analyzer errors) plus a did-you-mean `help:`
+// line for unresolved symbols, rendered by the one shared diag.Render. It is
+// exported so `cljgo run` renders errors identically to the REPL (the
+// consistency requirement) — did-you-mean now fires outside the REPL too.
+func (d *Driver) RenderError(err error) string {
+	dg := diag.FromError(err)
+	if name, ok := unresolvedName(err); ok {
+		if cands := d.nearbySymbols(name); len(cands) > 0 {
+			dg.Fixes = append(dg.Fixes, diag.Fix{
+				Title:       "did you mean " + strings.Join(cands, ", ") + "?",
+				Replacement: cands[0],
+			})
+		}
+	}
+	return diag.Render(dg)
 }
 
 // EvalReader reads and evaluates every form from r (e.g. a .clj file),

@@ -133,8 +133,12 @@ func TestEvalErrorBindsStarEAndContinues(t *testing.T) {
 	if !strings.Contains(errOut.String(), "unable to resolve symbol: undefined-sym") {
 		t.Fatalf("missing resolve error: %q", errOut.String())
 	}
-	if !strings.Contains(errOut.String(), "wrong number of args (3) passed to: f") {
-		t.Fatalf("missing arity error (panic must be recovered): %q", errOut.String())
+	// Since spike s28 the rendered arity error names the fn JVM-accurately
+	// (user/f, from the resolved Var) and carries expects + call-site
+	// position — the bare err.Error() still reads "...passed to: f" (frozen
+	// by conformance), but the driver's rendered line is the richer form.
+	if !strings.Contains(errOut.String(), "wrong number of args (3) passed to: user/f (expects 1: [x])") {
+		t.Fatalf("missing enriched arity error (panic must be recovered): %q", errOut.String())
 	}
 	if !strings.Contains(out.String(), ":err-bound") {
 		t.Fatalf("*e not bound in-session: %q", out.String())

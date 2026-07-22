@@ -10,6 +10,16 @@ import (
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
+// Carrier is implemented by error values that carry a fully-formed
+// Diagnostic computed at the raise site (spike s28 span/name-carry). The
+// bool is false when the value has no enriched diagnostic yet, so FromError
+// falls through to prose-classification. Kept as an interface (not a
+// concrete type) so pkg/diag stays dependency-free of the runtime packages
+// that raise these errors.
+type Carrier interface {
+	Diagnostic() (Diagnostic, bool)
+}
+
 // compilerErrRe parses the stable text rendered by lang.CompilerError:
 // "compiler error at <file>:<line>:<col>: <message>". lang keeps that
 // type's fields unexported and offers no accessor, so the CLI wiring of
@@ -28,6 +38,19 @@ var compilerErrRe = regexp.MustCompile(`^compiler error at (.*):(\d+):(\d+): ([\
 func FromError(err error) Diagnostic {
 	if err == nil {
 		return Diagnostic{}
+	}
+
+	// A Carrier is a runtime error value that already computed its own
+	// structured Diagnostic at the raise site — the span/name-carry hook
+	// (spike s28). It wins over prose-classification: this is how a runtime
+	// arity error surfaces `user/f`, its call-site location and expected/
+	// found instead of degrading to an unlocated G5000. errors.As unwraps,
+	// so a wrapped carrier still contributes its detail.
+	var c Carrier
+	if errors.As(err, &c) {
+		if d, ok := c.Diagnostic(); ok {
+			return d
+		}
 	}
 
 	// Reader errors expose position and inner cause via exported fields.
