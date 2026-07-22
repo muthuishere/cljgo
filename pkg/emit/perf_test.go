@@ -167,3 +167,89 @@ func perfRatioMax(t *testing.T) float64 {
 	}
 	return v
 }
+
+// TestCoreReducePerfBudget is the clojure.core-mediated perf gate ADR 0037
+// decision #5 mandates — and which, until now, did not exist.
+//
+// TestFactorialPerfBudget above measures USER code only: fn*, arithmetic and
+// recur, all of which the emitter turns into direct Go. That path was already
+// fast, and its greenness is exactly why a 16.54x regression against a
+// competitor stayed invisible — nothing in CI ran a workload that went THROUGH
+// clojure.core. This one does: (reduce + (range N)) touches the seq machinery,
+// the IFn dispatch on the reducing fn, and the boxing of every intermediate —
+// the costs ADR 0045 and the benchmark suite both point at.
+//
+// It asserts a WALL-CLOCK TOTAL, not a ratio against handwritten Go. The
+// ratio shape was tried first and rejected on measurement: raw Go sums two
+// million int64s in well under a millisecond, so dividing by that denominator
+// swung the same unchanged code between 75x and 157x run to run. A total also
+// matches how this project reports performance everywhere else — whole
+// wall-clock, never boot-subtracted, because that is what a user experiences.
+//
+// It is a REGRESSION gate, not a target. The known fix path
+// (IReduce/internal-reduce on range and vectors, native map/filter/take,
+// Apply2 fast paths) should make this number FALL; lower the budget with it.
+func TestCoreReducePerfBudget(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping perf measurement in -short mode")
+	}
+	const n = 2_000_000
+
+	lang.RemoveNamespace(lang.NewSymbol("user"))
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
+	forms, err := CompileReader(strings.NewReader(fmt.Sprintf("(reduce + (range %d))\n", n)), "corereduce.clj")
+	corelib.Out = oldOut
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	dir := t.TempDir()
+	if err := WriteModule(dir, forms, Options{PrintLastValue: true}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	bin := filepath.Join(dir, "corereduce"+ExeSuffix)
+	if err := GoBuild(dir, bin); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+
+	best := time.Duration(1<<62 - 1)
+	for i := 0; i < 3; i++ {
+		start := time.Now()
+		if err := exec.Command(bin).Run(); err != nil {
+			t.Fatalf("run: %v", err)
+		}
+		if d := time.Since(start); d < best {
+			best = d
+		}
+	}
+
+	budget := coreReduceBudget(t)
+	t.Logf("(reduce + (range %d)) compiled: %v total wall clock (budget %v)", n, best, budget)
+	if best > budget {
+		t.Fatalf("clojure.core-mediated reduce took %v, past the %v budget — a core-path regression (ADR 0037 #5)", best, budget)
+	}
+}
+
+// defaultCoreReduceBudget locks in today's measured cost with headroom, NOT a
+// target: ~110ms measured on the owner's machine (2026-07-22) for
+// (reduce + (range 2e6)) including startup, so 350ms leaves ~3x before the
+// gate fires. A budget loose enough to sleep through a real regression would
+// not be a gate at all. Lower it as the IReduce/Apply2 work lands.
+const defaultCoreReduceBudget = 350 * time.Millisecond
+
+// coreReduceBudget is the clojure.core-mediated wall-clock budget, overridable
+// via CLJGO_CORE_REDUCE_BUDGET (ADR 0024 host-relative budgets — CI runners
+// are slower and noisier than a laptop).
+func coreReduceBudget(t *testing.T) time.Duration {
+	t.Helper()
+	s := os.Getenv("CLJGO_CORE_REDUCE_BUDGET")
+	if s == "" {
+		return defaultCoreReduceBudget
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		// Don't silently fall back: a typo'd budget must not look like a pass.
+		t.Fatalf("CLJGO_CORE_REDUCE_BUDGET=%q is not a duration: %v", s, err)
+	}
+	return d
+}
