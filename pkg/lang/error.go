@@ -17,8 +17,33 @@ type (
 
 	IndexOutOfBoundsError struct{}
 
+	// CodedError is a runtime error that carries a registered diagnostic
+	// code chosen at the raise site (ADR 0048 batch 1). diag.FromError reads
+	// DiagCode() to render the code + explain pointer without prose-matching.
+	// The type lives in lang (diag imports lang, never the reverse) so raise
+	// sites across lang/corelib attach codes without an import cycle. Msg is
+	// returned verbatim by Error(), keeping the user-facing string byte-stable.
+	CodedError struct {
+		Msg  string
+		Code string
+	}
+
 	IllegalArgumentError struct {
 		msg string
+	}
+
+	// ArityError is a wrong-number-of-args mismatch — Clojure's
+	// ArityException (which on the JVM extends IllegalArgumentException).
+	// It is the compiled-binary counterpart of pkg/eval's *arityError:
+	// carrying Name/Expected on the thrown value lets diag.FromError render
+	// the same named, expected/found line the interpreter produces, so
+	// compiled == interpreted (ADR 0048). Error() stays byte-stable: with a
+	// Name it reads like the interpreter's arity error, and with only the
+	// count it keeps the FnFuncN fast-path's historical wording.
+	ArityError struct {
+		Actual   int    // args actually passed
+		Name     string // qualified fn name (user/f) when known, else ""
+		Expected string // arity label ("1: [x] or 2: [x y]") when known, else ""
 	}
 
 	IllegalStateError struct {
@@ -103,6 +128,22 @@ func (e *IndexOutOfBoundsError) Is(other error) bool {
 	return ok
 }
 
+// DiagCode gives every IndexOutOfBoundsError the G5004 code — the type is
+// this error by construction (ADR 0048 batch 1).
+func (e *IndexOutOfBoundsError) DiagCode() string { return "G5004" }
+
+////////////////////////////////////////////////////////////////////////////////
+
+// NewCodedError builds a CodedError carrying a registered diagnostic code.
+func NewCodedError(code, msg string) error {
+	return &CodedError{Msg: msg, Code: code}
+}
+
+func (e *CodedError) Error() string { return e.Msg }
+
+// DiagCode implements the raise-site code seam diag.FromError reads.
+func (e *CodedError) DiagCode() string { return e.Code }
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func NewIllegalArgumentError(msg string) error {
@@ -116,6 +157,34 @@ func (e *IllegalArgumentError) Error() string {
 func (e *IllegalArgumentError) Is(other error) bool {
 	_, ok := other.(*IllegalArgumentError)
 	return ok
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// NewArityError builds an ArityError. name and expected may be "" when the
+// throw site cannot know them (the FnFuncN fast path), in which case Error()
+// falls back to the historical count-only wording for byte-stability.
+func NewArityError(actual int, name, expected string) error {
+	return &ArityError{Actual: actual, Name: name, Expected: expected}
+}
+
+func (e *ArityError) Error() string {
+	if e.Name != "" {
+		return fmt.Sprintf("wrong number of args (%d) passed to: %s", e.Actual, e.Name)
+	}
+	return fmt.Sprintf("wrong number of arguments: expected %s, got %d", e.Expected, e.Actual)
+}
+
+// Is matches both *ArityError and *IllegalArgumentError, mirroring the JVM
+// hierarchy (ArityException extends IllegalArgumentException) so replacing a
+// former IllegalArgumentError throw with an ArityError never changes what an
+// errors.Is check sees.
+func (e *ArityError) Is(other error) bool {
+	switch other.(type) {
+	case *ArityError, *IllegalArgumentError:
+		return true
+	}
+	return false
 }
 
 ////////////////////////////////////////////////////////////////////////////////

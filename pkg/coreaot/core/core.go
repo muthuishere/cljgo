@@ -3,7 +3,6 @@
 package core
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -401,7 +400,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/fn", "2+: [&form &env decl & more]"))
 			}
 			X_AMP_form3 := args[0]
 			_ = X_AMP_form3
@@ -432,7 +431,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "let"))
+				panic(lang.NewArityError(len(args), "clojure.core/let", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form12 := args[0]
 			_ = X_AMP_form12
@@ -467,7 +466,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "loop"))
+				panic(lang.NewArityError(len(args), "clojure.core/loop", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form24 := args[0]
 			_ = X_AMP_form24
@@ -502,7 +501,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "defn"))
+				panic(lang.NewArityError(len(args), "clojure.core/defn", "3+: [&form &env name fdecl & more]"))
 			}
 			X_AMP_form36 := args[0]
 			_ = X_AMP_form36
@@ -556,7 +555,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "when"))
+				panic(lang.NewArityError(len(args), "clojure.core/when", "3+: [&form &env test body & more]"))
 			}
 			X_AMP_form61 := args[0]
 			_ = X_AMP_form61
@@ -591,7 +590,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "when-not"))
+				panic(lang.NewArityError(len(args), "clojure.core/when-not", "3+: [&form &env test body & more]"))
 			}
 			X_AMP_form73 := args[0]
 			_ = X_AMP_form73
@@ -679,7 +678,7 @@ func Load() {
 			tmp125 := lang.Apply1(tmp106, tmp124)
 			return tmp125
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "if-not"))
+			panic(lang.NewArityError(len(args), "clojure.core/if-not", "4: [&form &env test then] or 5: [&form &env test then else]"))
 		}
 	})
 	if_not83 = tmp84
@@ -711,7 +710,7 @@ func Load() {
 			return x134
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "and"))
+				panic(lang.NewArityError(len(args), "clojure.core/and", "2: [&form &env] or 3: [&form &env x] or 3+: [&form &env x next & more]"))
 			}
 			X_AMP_form135 := args[0]
 			_ = X_AMP_form135
@@ -795,7 +794,7 @@ func Load() {
 			return x186
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "or"))
+				panic(lang.NewArityError(len(args), "clojure.core/or", "2: [&form &env] or 3: [&form &env x] or 3+: [&form &env x next & more]"))
 			}
 			X_AMP_form187 := args[0]
 			_ = X_AMP_form187
@@ -865,7 +864,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "->"))
+				panic(lang.NewArityError(len(args), "clojure.core/->", "3+: [&form &env x forms & more]"))
 			}
 			X_AMP_form234 := args[0]
 			_ = X_AMP_form234
@@ -959,7 +958,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "->>"))
+				panic(lang.NewArityError(len(args), "clojure.core/->>", "3+: [&form &env x forms & more]"))
 			}
 			X_AMP_form277 := args[0]
 			_ = X_AMP_form277
@@ -1053,7 +1052,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "cond"))
+				panic(lang.NewArityError(len(args), "clojure.core/cond", "2+: [&form &env clauses & more]"))
 			}
 			X_AMP_form320 := args[0]
 			_ = X_AMP_form320
@@ -1277,7 +1276,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "let?"))
+				panic(lang.NewArityError(len(args), "clojure.core/let?", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form493 := args[0]
 			_ = X_AMP_form493
@@ -2170,7 +2169,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "let"))
+				panic(lang.NewArityError(len(args), "clojure.core/let", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form924 := args[0]
 			_ = X_AMP_form924
@@ -2307,7 +2306,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "loop"))
+				panic(lang.NewArityError(len(args), "clojure.core/loop", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form994 := args[0]
 			_ = X_AMP_form994
@@ -2388,7 +2387,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/fn", "2+: [&form &env sigs & more]"))
 			}
 			X_AMP_form1033 := args[0]
 			_ = X_AMP_form1033
@@ -2515,7 +2514,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "defn"))
+				panic(lang.NewArityError(len(args), "clojure.core/defn", "3+: [&form &env name fdecl & more]"))
 			}
 			X_AMP_form1090 := args[0]
 			_ = X_AMP_form1090
@@ -2609,7 +2608,7 @@ func Load() {
 			return tmp1137
 		default:
 			if len(args) < 4 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/list*", "1: [args] or 2: [a args] or 3: [a b args] or 4: [a b c args] or 4+: [a b c d more & more]"))
 			}
 			a1138 := args[0]
 			_ = a1138
@@ -2648,7 +2647,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "lazy-seq"))
+				panic(lang.NewArityError(len(args), "clojure.core/lazy-seq", "2+: [&form &env body & more]"))
 			}
 			X_AMP_form1156 := args[0]
 			_ = X_AMP_form1156
@@ -2784,7 +2783,7 @@ func Load() {
 			}
 			return tmp1191
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "if-let"))
+			panic(lang.NewArityError(len(args), "clojure.core/if-let", "4: [&form &env bindings then] or 5: [&form &env bindings then else]"))
 		}
 	})
 	if_let1168 = tmp1169
@@ -2802,7 +2801,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "when-let"))
+				panic(lang.NewArityError(len(args), "clojure.core/when-let", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form1256 := args[0]
 			_ = X_AMP_form1256
@@ -2912,7 +2911,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "comment"))
+				panic(lang.NewArityError(len(args), "clojure.core/comment", "2+: [&form &env body & more]"))
 			}
 			X_AMP_form1330 := args[0]
 			_ = X_AMP_form1330
@@ -2941,7 +2940,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "when-first"))
+				panic(lang.NewArityError(len(args), "clojure.core/when-first", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form1337 := args[0]
 			_ = X_AMP_form1337
@@ -3070,7 +3069,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "with-out-str"))
+				panic(lang.NewArityError(len(args), "clojure.core/with-out-str", "2+: [&form &env body & more]"))
 			}
 			X_AMP_form1422 := args[0]
 			_ = X_AMP_form1422
@@ -3155,7 +3154,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "future"))
+				panic(lang.NewArityError(len(args), "clojure.core/future", "2+: [&form &env body & more]"))
 			}
 			X_AMP_form1485 := args[0]
 			_ = X_AMP_form1485
@@ -3189,7 +3188,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "dosync"))
+				panic(lang.NewArityError(len(args), "clojure.core/dosync", "2+: [&form &env body & more]"))
 			}
 			X_AMP_form1497 := args[0]
 			_ = X_AMP_form1497
@@ -3229,7 +3228,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args1514 any
 					if len(args) > 0 {
@@ -3268,7 +3267,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "bound-fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/bound-fn", "2+: [&form &env fntail & more]"))
 			}
 			X_AMP_form1524 := args[0]
 			_ = X_AMP_form1524
@@ -3309,7 +3308,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/print-str", "0+: [xs & more]"))
 			}
 			var xs1544 any
 			if len(args) > 0 {
@@ -3345,7 +3344,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/println-str", "0+: [xs & more]"))
 			}
 			var xs1556 any
 			if len(args) > 0 {
@@ -3381,7 +3380,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/prn-str", "0+: [xs & more]"))
 			}
 			var xs1568 any
 			if len(args) > 0 {
@@ -3500,7 +3499,7 @@ func Load() {
 			tmp1621 := lang.Apply2(tmp1615, tmp1616, coll1614)
 			return tmp1621
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/remove", "1: [pred] or 2: [pred coll]"))
 		}
 	})
 	v_clojure_DOT_core_remove.BindRoot(tmp1604)
@@ -3601,7 +3600,7 @@ func Load() {
 						}
 						return tmp1660
 					default:
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 					}
 				})
 				return tmp1654
@@ -3671,7 +3670,7 @@ func Load() {
 			tmp1696 := lang.Apply1(tmp1669, tmp1670)
 			return tmp1696
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/keep", "1: [f] or 2: [f coll]"))
 		}
 	})
 	v_clojure_DOT_core_keep.BindRoot(tmp1650)
@@ -3759,7 +3758,7 @@ func Load() {
 							tmp1740 := lang.Apply2(rf1725, result1734, tmp1739)
 							return tmp1740
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp1726 = tmp1730
@@ -3776,7 +3775,7 @@ func Load() {
 			tmp1744 := lang.Apply3(tmp1743, f1741, int64(0), coll1742)
 			return tmp1744
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/map-indexed", "1: [f] or 2: [f coll]"))
 		}
 	})
 	v_clojure_DOT_core_map_indexed.BindRoot(tmp1722)
@@ -3904,7 +3903,7 @@ func Load() {
 							}
 							return tmp1795
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp1785 = tmp1789
@@ -3921,7 +3920,7 @@ func Load() {
 			tmp1809 := lang.Apply3(tmp1808, f1806, int64(0), coll1807)
 			return tmp1809
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/keep-indexed", "1: [f] or 2: [f coll]"))
 		}
 	})
 	v_clojure_DOT_core_keep_indexed.BindRoot(tmp1781)
@@ -3991,7 +3990,7 @@ func Load() {
 					tmp1838 := lang.Apply3(tmp1837, rrf1830, result1835, input1836)
 					return tmp1838
 				default:
-					panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+					panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 				}
 			})
 			tmp1827 = tmp1831
@@ -4058,7 +4057,7 @@ func Load() {
 			return tmp1865
 		default:
 			if len(args) < 1 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/mapcat", "1: [f] or 1+: [f colls & more]"))
 			}
 			f1866 := args[0]
 			_ = f1866
@@ -4183,7 +4182,7 @@ func Load() {
 							}
 							return tmp1907
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp1897 = tmp1901
@@ -4245,7 +4244,7 @@ func Load() {
 			tmp1951 := lang.Apply1(tmp1929, tmp1930)
 			return tmp1951
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/take", "1: [n] or 2: [n coll]"))
 		}
 	})
 	v_clojure_DOT_core_take.BindRoot(tmp1893)
@@ -4305,7 +4304,7 @@ func Load() {
 							}
 							return tmp1966
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp1956 = tmp1960
@@ -4371,7 +4370,7 @@ func Load() {
 			tmp1999 := lang.Apply1(tmp1979, tmp1980)
 			return tmp1999
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/drop", "1: [n] or 2: [n coll]"))
 		}
 	})
 	v_clojure_DOT_core_drop.BindRoot(tmp1952)
@@ -4503,7 +4502,7 @@ func Load() {
 						}
 						return tmp2044
 					default:
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 					}
 				})
 				return tmp2037
@@ -4562,7 +4561,7 @@ func Load() {
 			tmp2071 := lang.Apply1(tmp2050, tmp2051)
 			return tmp2071
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/take-while", "1: [pred] or 2: [pred coll]"))
 		}
 	})
 	v_clojure_DOT_core_take_while.BindRoot(tmp2033)
@@ -4627,7 +4626,7 @@ func Load() {
 							}
 							return tmp2092
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp2076 = tmp2080
@@ -4688,7 +4687,7 @@ func Load() {
 			tmp2115 := lang.Apply1(tmp2098, tmp2099)
 			return tmp2115
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/drop-while", "1: [pred] or 2: [pred coll]"))
 		}
 	})
 	v_clojure_DOT_core_drop_while.BindRoot(tmp2072)
@@ -4747,7 +4746,7 @@ func Load() {
 							}
 							return tmp2130
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp2120 = tmp2124
@@ -4798,7 +4797,7 @@ func Load() {
 			tmp2160 := lang.Apply1(tmp2143, tmp2144)
 			return tmp2160
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/take-nth", "1: [n] or 2: [n coll]"))
 		}
 	})
 	v_clojure_DOT_core_take_nth.BindRoot(tmp2116)
@@ -4987,7 +4986,7 @@ func Load() {
 			tmp2242 := lang.Apply1(tmp2213, tmp2214)
 			return tmp2242
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/partition", "2: [n coll] or 3: [n step coll] or 4: [n step pad coll]"))
 		}
 	})
 	v_clojure_DOT_core_partition.BindRoot(tmp2177)
@@ -5069,7 +5068,7 @@ func Load() {
 			tmp2285 := lang.Apply2(tmp2282, n2280, tmp2284)
 			return tmp2285
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/repeatedly", "1: [f] or 2: [n f]"))
 		}
 	})
 	v_clojure_DOT_core_repeatedly.BindRoot(tmp2270)
@@ -5296,7 +5295,7 @@ func Load() {
 							}
 							return tmp2385
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp2370 = tmp2375
@@ -5312,7 +5311,7 @@ func Load() {
 			tmp2393 := lang.Apply2(tmp2391, coll2390, tmp2392)
 			return tmp2393
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/distinct", "0: [] or 1: [coll]"))
 		}
 	})
 	v_clojure_DOT_core_distinct.BindRoot(tmp2367)
@@ -5380,7 +5379,7 @@ func Load() {
 							}
 							return tmp2410
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp2398 = tmp2402
@@ -5404,7 +5403,7 @@ func Load() {
 			tmp2430 := lang.Apply2(tmp2423, int64(1), tmp2429)
 			return tmp2430
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/interpose", "1: [sep] or 2: [sep coll]"))
 		}
 	})
 	v_clojure_DOT_core_interpose.BindRoot(tmp2394)
@@ -5485,7 +5484,7 @@ func Load() {
 			return tmp2465
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/interleave", "0: [] or 1: [c1] or 2: [c1 c2] or 2+: [c1 c2 colls & more]"))
 			}
 			c12466 := args[0]
 			_ = c12466
@@ -5656,7 +5655,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/merge", "0+: [maps & more]"))
 			}
 			var maps2558 any
 			if len(args) > 0 {
@@ -5706,7 +5705,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 1 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/merge-with", "1+: [f maps & more]"))
 			}
 			f2575 := args[0]
 			_ = f2575
@@ -5881,7 +5880,7 @@ func Load() {
 			}
 			return tmp2635
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/get-in", "2: [m ks] or 3: [m ks not-found]"))
 		}
 	})
 	v_clojure_DOT_core_get_in.BindRoot(tmp2626)
@@ -5982,7 +5981,7 @@ func Load() {
 			return tmp2712
 		default:
 			if len(args) < 5 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/update", "3: [m k f] or 4: [m k f x] or 5: [m k f x y] or 5+: [m k f x y more & more]"))
 			}
 			m2713 := args[0]
 			_ = m2713
@@ -6016,7 +6015,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/update-in", "3+: [m p__8 f args & more]"))
 			}
 			m2726 := args[0]
 			_ = m2726
@@ -6184,7 +6183,7 @@ func Load() {
 			switch len(args) {
 			default:
 				if len(args) < 0 {
-					panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+					panic(lang.NewArityError(len(args), "fn", "0+: [_ & more]"))
 				}
 				var X_2807 any
 				if len(args) > 0 {
@@ -6215,7 +6214,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args2813 any
 					if len(args) > 0 {
@@ -6239,7 +6238,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args2820 any
 					if len(args) > 0 {
@@ -6265,7 +6264,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args2828 any
 					if len(args) > 0 {
@@ -6280,7 +6279,7 @@ func Load() {
 			return tmp2827
 		default:
 			if len(args) < 4 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/partial", "1: [f] or 2: [f a] or 3: [f a b] or 4: [f a b c] or 4+: [f a b c more & more]"))
 			}
 			f2831 := args[0]
 			_ = f2831
@@ -6299,7 +6298,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args2837 any
 					if len(args) > 0 {
@@ -6325,7 +6324,7 @@ func Load() {
 			switch len(args) {
 			default:
 				if len(args) < 0 {
-					panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+					panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 				}
 				var args2845 any
 				if len(args) > 0 {
@@ -6356,7 +6355,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 1 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "1+: [x args & more]"))
 					}
 					x2854 := args[0]
 					_ = x2854
@@ -6391,7 +6390,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 2 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "2+: [x y args & more]"))
 					}
 					x2865 := args[0]
 					_ = x2865
@@ -6439,7 +6438,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 3 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "3+: [x y z args & more]"))
 					}
 					x2881 := args[0]
 					_ = x2881
@@ -6486,7 +6485,7 @@ func Load() {
 			})
 			return tmp2880
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/fnil", "2: [f a] or 3: [f a b] or 4: [f a b c]"))
 		}
 	})
 	v_clojure_DOT_core_fnil.BindRoot(tmp2850)
@@ -6502,7 +6501,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args2899 any
 					if len(args) > 0 {
@@ -6525,7 +6524,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args2906 any
 					if len(args) > 0 {
@@ -6552,7 +6551,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args2916 any
 					if len(args) > 0 {
@@ -6572,7 +6571,7 @@ func Load() {
 			return tmp2915
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/juxt", "1: [f] or 2: [f g] or 3: [f g h] or 3+: [f g h fs & more]"))
 			}
 			f2924 := args[0]
 			_ = f2924
@@ -6589,7 +6588,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args2929 any
 					if len(args) > 0 {
@@ -6622,7 +6621,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/every-pred", "0+: [preds & more]"))
 			}
 			var preds2943 any
 			if len(args) > 0 {
@@ -6633,7 +6632,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args2945 any
 					if len(args) > 0 {
@@ -6721,7 +6720,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 1 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/some-fn", "1+: [p preds & more]"))
 			}
 			p2972 := args[0]
 			_ = p2972
@@ -6741,7 +6740,7 @@ func Load() {
 					switch len(args) {
 					default:
 						if len(args) < 0 {
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 						}
 						var args2979 any
 						if len(args) > 0 {
@@ -6939,7 +6938,7 @@ func Load() {
 			return tmp3050
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/max-key", "2: [k x] or 3: [k x y] or 3+: [k x y more & more]"))
 			}
 			k3051 := args[0]
 			_ = k3051
@@ -7012,7 +7011,7 @@ func Load() {
 			return tmp3077
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/min-key", "2: [k x] or 3: [k x y] or 3+: [k x y more & more]"))
 			}
 			k3078 := args[0]
 			_ = k3078
@@ -7122,7 +7121,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "dotimes"))
+				panic(lang.NewArityError(len(args), "clojure.core/dotimes", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form3118 := args[0]
 			_ = X_AMP_form3118
@@ -7316,7 +7315,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "doseq"))
+				panic(lang.NewArityError(len(args), "clojure.core/doseq", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form3250 := args[0]
 			_ = X_AMP_form3250
@@ -7764,7 +7763,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "cond->"))
+				panic(lang.NewArityError(len(args), "clojure.core/cond->", "3+: [&form &env expr clauses & more]"))
 			}
 			X_AMP_form3584 := args[0]
 			_ = X_AMP_form3584
@@ -7829,7 +7828,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "cond->>"))
+				panic(lang.NewArityError(len(args), "clojure.core/cond->>", "3+: [&form &env expr clauses & more]"))
 			}
 			X_AMP_form3621 := args[0]
 			_ = X_AMP_form3621
@@ -7978,7 +7977,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "some->"))
+				panic(lang.NewArityError(len(args), "clojure.core/some->", "3+: [&form &env expr forms & more]"))
 			}
 			X_AMP_form3727 := args[0]
 			_ = X_AMP_form3727
@@ -8043,7 +8042,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "some->>"))
+				panic(lang.NewArityError(len(args), "clojure.core/some->>", "3+: [&form &env expr forms & more]"))
 			}
 			X_AMP_form3764 := args[0]
 			_ = X_AMP_form3764
@@ -8151,7 +8150,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 4 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "as->"))
+				panic(lang.NewArityError(len(args), "clojure.core/as->", "4+: [&form &env expr name forms & more]"))
 			}
 			X_AMP_form3834 := args[0]
 			_ = X_AMP_form3834
@@ -8317,7 +8316,7 @@ func Load() {
 			}
 			return tmp3889
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "if-some"))
+			panic(lang.NewArityError(len(args), "clojure.core/if-some", "4: [&form &env bindings then] or 5: [&form &env bindings then else]"))
 		}
 	})
 	if_some3866 = tmp3867
@@ -8335,7 +8334,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "when-some"))
+				panic(lang.NewArityError(len(args), "clojure.core/when-some", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form3962 := args[0]
 			_ = X_AMP_form3962
@@ -8601,7 +8600,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 4 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "condp"))
+				panic(lang.NewArityError(len(args), "clojure.core/condp", "4+: [&form &env pred expr clauses & more]"))
 			}
 			X_AMP_form4158 := args[0]
 			_ = X_AMP_form4158
@@ -8802,7 +8801,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "case"))
+				panic(lang.NewArityError(len(args), "clojure.core/case", "3+: [&form &env e clauses & more]"))
 			}
 			X_AMP_form4302 := args[0]
 			_ = X_AMP_form4302
@@ -8867,7 +8866,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "doto"))
+				panic(lang.NewArityError(len(args), "clojure.core/doto", "3+: [&form &env x forms & more]"))
 			}
 			X_AMP_form4339 := args[0]
 			_ = X_AMP_form4339
@@ -8962,7 +8961,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "while"))
+				panic(lang.NewArityError(len(args), "clojure.core/while", "3+: [&form &env test body & more]"))
 			}
 			X_AMP_form4399 := args[0]
 			_ = X_AMP_form4399
@@ -9087,7 +9086,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 5 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "defmethod"))
+				panic(lang.NewArityError(len(args), "clojure.core/defmethod", "5+: [&form &env mm-name dispatch-val params body & more]"))
 			}
 			X_AMP_form4469 := args[0]
 			_ = X_AMP_form4469
@@ -9289,7 +9288,7 @@ func Load() {
 			}
 			return tmp4554
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "assert"))
+			panic(lang.NewArityError(len(args), "clojure.core/assert", "3: [&form &env x] or 4: [&form &env x message]"))
 		}
 	})
 	assert4481 = tmp4482
@@ -9307,7 +9306,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "with-precision"))
+				panic(lang.NewArityError(len(args), "clojure.core/with-precision", "3+: [&form &env precision exprs & more]"))
 			}
 			X_AMP_form4624 := args[0]
 			_ = X_AMP_form4624
@@ -9411,7 +9410,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "delay"))
+				panic(lang.NewArityError(len(args), "clojure.core/delay", "2+: [&form &env body & more]"))
 			}
 			X_AMP_form4685 := args[0]
 			_ = X_AMP_form4685
@@ -9474,7 +9473,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "ns"))
+				panic(lang.NewArityError(len(args), "clojure.core/ns", "3+: [&form &env nsname clauses & more]"))
 			}
 			X_AMP_form4714 := args[0]
 			_ = X_AMP_form4714
@@ -9678,7 +9677,7 @@ func Load() {
 			}
 			return tmp4794
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/reductions", "2: [f coll] or 3: [f init coll]"))
 		}
 	})
 	v_clojure_DOT_core_reductions.BindRoot(tmp4767)
@@ -9796,7 +9795,7 @@ func Load() {
 			return tmp4888
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/distinct?", "1: [x] or 2: [x y] or 2+: [x y more & more]"))
 			}
 			x4889 := args[0]
 			_ = x4889
@@ -9983,7 +9982,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/vary-meta", "2+: [obj f args & more]"))
 			}
 			obj4966 := args[0]
 			_ = obj4966
@@ -10020,7 +10019,7 @@ func Load() {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
 					var args4983 any
 					if len(args) > 0 {
@@ -10108,7 +10107,7 @@ func Load() {
 			}
 		default:
 			if len(args) < 1 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/trampoline", "1: [f] or 1+: [f args & more]"))
 			}
 			f5012 := args[0]
 			_ = f5012
@@ -10137,7 +10136,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "declare"))
+				panic(lang.NewArityError(len(args), "clojure.core/declare", "2+: [&form &env names & more]"))
 			}
 			X_AMP_form5021 := args[0]
 			_ = X_AMP_form5021
@@ -10181,7 +10180,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "defn-"))
+				panic(lang.NewArityError(len(args), "clojure.core/defn-", "3+: [&form &env name decls & more]"))
 			}
 			X_AMP_form5042 := args[0]
 			_ = X_AMP_form5042
@@ -10291,7 +10290,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "letfn"))
+				panic(lang.NewArityError(len(args), "clojure.core/letfn", "3+: [&form &env fnspecs body & more]"))
 			}
 			X_AMP_form5123 := args[0]
 			_ = X_AMP_form5123
@@ -10496,7 +10495,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "lazy-cat"))
+				panic(lang.NewArityError(len(args), "clojure.core/lazy-cat", "2+: [&form &env colls & more]"))
 			}
 			X_AMP_form5267 := args[0]
 			_ = X_AMP_form5267
@@ -10639,7 +10638,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "locking"))
+				panic(lang.NewArityError(len(args), "clojure.core/locking", "3+: [&form &env x body & more]"))
 			}
 			X_AMP_form5380 := args[0]
 			_ = X_AMP_form5380
@@ -10675,7 +10674,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "with-open"))
+				panic(lang.NewArityError(len(args), "clojure.core/with-open", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form5393 := args[0]
 			_ = X_AMP_form5393
@@ -10925,7 +10924,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "with-redefs"))
+				panic(lang.NewArityError(len(args), "clojure.core/with-redefs", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form5540 := args[0]
 			_ = X_AMP_form5540
@@ -11024,7 +11023,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "memfn"))
+				panic(lang.NewArityError(len(args), "clojure.core/memfn", "3+: [&form &env name args & more]"))
 			}
 			X_AMP_form5601 := args[0]
 			_ = X_AMP_form5601
@@ -11095,7 +11094,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "io!"))
+				panic(lang.NewArityError(len(args), "clojure.core/io!", "2+: [&form &env body & more]"))
 			}
 			X_AMP_form5644 := args[0]
 			_ = X_AMP_form5644
@@ -11175,7 +11174,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "sync"))
+				panic(lang.NewArityError(len(args), "clojure.core/sync", "3+: [&form &env flags-ignored-for-now body & more]"))
 			}
 			X_AMP_form5684 := args[0]
 			_ = X_AMP_form5684
@@ -11350,7 +11349,7 @@ func Load() {
 			tmp5828 := lang.Apply1(tmp5703, tmp5827)
 			return tmp5828
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "amap"))
+			panic(lang.NewArityError(len(args), "clojure.core/amap", "6: [&form &env a idx ret expr]"))
 		}
 	})
 	amap5695 = tmp5696
@@ -11481,7 +11480,7 @@ func Load() {
 			tmp5937 := lang.Apply1(tmp5840, tmp5936)
 			return tmp5937
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "areduce"))
+			panic(lang.NewArityError(len(args), "clojure.core/areduce", "7: [&form &env a idx ret init expr]"))
 		}
 	})
 	areduce5831 = tmp5832

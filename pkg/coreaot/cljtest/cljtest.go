@@ -3,7 +3,6 @@
 package cljtest
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -1507,7 +1506,7 @@ func Load() {
 			tmp1026 := lang.Apply1(tmp1017, tmp1025)
 			return tmp1026
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "is"))
+			panic(lang.NewArityError(len(args), "clojure.test/is", "3: [&form &env form] or 4: [&form &env form msg]"))
 		}
 	})
 	is1006 = tmp1007
@@ -1525,7 +1524,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "testing"))
+				panic(lang.NewArityError(len(args), "clojure.test/testing", "3+: [&form &env string body & more]"))
 			}
 			X_AMP_form1031 := args[0]
 			_ = X_AMP_form1031
@@ -1866,7 +1865,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 4 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "are"))
+				panic(lang.NewArityError(len(args), "clojure.test/are", "4+: [&form &env argv expr args & more]"))
 			}
 			X_AMP_form1205 := args[0]
 			_ = X_AMP_form1205
@@ -1957,7 +1956,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "deftest"))
+				panic(lang.NewArityError(len(args), "clojure.test/deftest", "3+: [&form &env name body & more]"))
 			}
 			X_AMP_form1245 := args[0]
 			_ = X_AMP_form1245
@@ -2131,7 +2130,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 1 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.test/use-fixtures", "1+: [fixture-type fixtures & more]"))
 			}
 			fixture_type1376 := args[0]
 			_ = fixture_type1376
@@ -2433,7 +2432,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.test/run-tests", "0+: [namespaces & more]"))
 			}
 			var namespaces1510 any
 			if len(args) > 0 {
@@ -2511,7 +2510,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "with-test-out"))
+				panic(lang.NewArityError(len(args), "clojure.test/with-test-out", "2+: [&form &env body & more]"))
 			}
 			X_AMP_form1533 := args[0]
 			_ = X_AMP_form1533
@@ -2601,7 +2600,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "deftest-"))
+				panic(lang.NewArityError(len(args), "clojure.test/deftest-", "3+: [&form &env name body & more]"))
 			}
 			X_AMP_form1571 := args[0]
 			_ = X_AMP_form1571
@@ -2646,7 +2645,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "set-test"))
+				panic(lang.NewArityError(len(args), "clojure.test/set-test", "3+: [&form &env name body & more]"))
 			}
 			X_AMP_form1593 := args[0]
 			_ = X_AMP_form1593
@@ -2714,7 +2713,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "with-test"))
+				panic(lang.NewArityError(len(args), "clojure.test/with-test", "3+: [&form &env definition body & more]"))
 			}
 			X_AMP_form1638 := args[0]
 			_ = X_AMP_form1638

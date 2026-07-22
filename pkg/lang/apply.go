@@ -54,7 +54,7 @@ func Apply(fn interface{}, args []interface{}) interface{} {
 	}
 
 	if gvKind != reflect.Func {
-		panic(fmt.Errorf("cannot apply non-function %T", fn))
+		panic(NewCodedError("G5002", fmt.Sprintf("cannot apply non-function %T", fn)))
 	}
 	if gvType.NumIn() != len(args) && !gvType.IsVariadic() {
 		panic(fmt.Errorf("wrong number of arguments: expected %d, got %d", gvType.NumIn(), len(args)))

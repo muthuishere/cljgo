@@ -3,7 +3,6 @@
 package cljpprint
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -929,7 +928,7 @@ func Load() {
 			}
 			return tmp294
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.pprint/-render-coll", "6: [render coll prefix suffix col trail]"))
 		}
 	})
 	v_clojure_DOT_pprint_X_render_coll.BindRoot(tmp287)
@@ -1208,7 +1207,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "with-pprint-dispatch"))
+				panic(lang.NewArityError(len(args), "clojure.pprint/with-pprint-dispatch", "3+: [&form &env function body & more]"))
 			}
 			X_AMP_form481 := args[0]
 			_ = X_AMP_form481
@@ -1275,7 +1274,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 1 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.pprint/write", "1+: [object kw-args & more]"))
 			}
 			object515 := args[0]
 			_ = object515
@@ -1542,7 +1541,7 @@ func Load() {
 			_ = tmp624
 			return nil
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.pprint/pprint", "1: [object] or 2: [object writer]"))
 		}
 	})
 	v_clojure_DOT_pprint_pprint.BindRoot(tmp613)
@@ -1729,7 +1728,7 @@ func Load() {
 			}
 			return tmp651
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.pprint/print-table", "2: [ks rows] or 1: [rows]"))
 		}
 	})
 	v_clojure_DOT_pprint_print_table.BindRoot(tmp639)
@@ -1759,7 +1758,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.pprint/cl-format", "2+: [writer format-in args & more]"))
 			}
 			writer751 := args[0]
 			_ = writer751
@@ -1847,7 +1846,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "pprint-logical-block"))
+				panic(lang.NewArityError(len(args), "clojure.pprint/pprint-logical-block", "2+: [&form &env args & more]"))
 			}
 			X_AMP_form795 := args[0]
 			_ = X_AMP_form795
@@ -1911,7 +1910,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "print-length-loop"))
+				panic(lang.NewArityError(len(args), "clojure.pprint/print-length-loop", "3+: [&form &env bindings body & more]"))
 			}
 			X_AMP_form825 := args[0]
 			_ = X_AMP_form825

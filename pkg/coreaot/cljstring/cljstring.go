@@ -3,7 +3,6 @@
 package cljstring
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 	reader "github.com/muthuishere/cljgo/pkg/reader"
@@ -156,7 +155,7 @@ func Load() {
 			}
 			return tmp30
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.string/join", "1: [coll] or 2: [separator coll]"))
 		}
 	})
 	v_clojure_DOT_string_join.BindRoot(tmp21)
@@ -184,7 +183,7 @@ func Load() {
 			tmp53 := lang.Apply3(tmp52, re50, s49, limit51)
 			return tmp53
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.string/split", "2: [s re] or 3: [s re limit]"))
 		}
 	})
 	v_clojure_DOT_string_split.BindRoot(tmp44)
@@ -320,7 +319,7 @@ func Load() {
 			tmp115 := lang.Apply3(tmp114, s111, value112, from_index113)
 			return tmp115
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.string/index-of", "2: [s value] or 3: [s value from-index]"))
 		}
 	})
 	v_clojure_DOT_string_index_of.BindRoot(tmp106)
@@ -348,7 +347,7 @@ func Load() {
 			tmp125 := lang.Apply3(tmp124, s121, value122, from_index123)
 			return tmp125
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.string/last-index-of", "2: [s value] or 3: [s value from-index]"))
 		}
 	})
 	v_clojure_DOT_string_last_index_of.BindRoot(tmp116)

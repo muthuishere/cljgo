@@ -3,7 +3,6 @@
 package protocols
 
 import (
-	"fmt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
 
@@ -296,7 +295,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "defprotocol"))
+				panic(lang.NewArityError(len(args), "clojure.core/defprotocol", "3+: [&form &env pname specs & more]"))
 			}
 			X_AMP_form115 := args[0]
 			_ = X_AMP_form115
@@ -387,7 +386,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 4 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "deftype"))
+				panic(lang.NewArityError(len(args), "clojure.core/deftype", "4+: [&form &env tname fields specs & more]"))
 			}
 			X_AMP_form169 := args[0]
 			_ = X_AMP_form169
@@ -489,7 +488,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 4 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "defrecord"))
+				panic(lang.NewArityError(len(args), "clojure.core/defrecord", "4+: [&form &env tname fields specs & more]"))
 			}
 			X_AMP_form237 := args[0]
 			_ = X_AMP_form237
@@ -603,7 +602,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "extend-type"))
+				panic(lang.NewArityError(len(args), "clojure.core/extend-type", "3+: [&form &env tsym specs & more]"))
 			}
 			X_AMP_form316 := args[0]
 			_ = X_AMP_form316
@@ -674,7 +673,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "extend-protocol"))
+				panic(lang.NewArityError(len(args), "clojure.core/extend-protocol", "3+: [&form &env pname specs & more]"))
 			}
 			X_AMP_form357 := args[0]
 			_ = X_AMP_form357

@@ -3,7 +3,6 @@
 package transducers
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -123,7 +122,7 @@ func Load() {
 			}
 			return tmp14
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/transduce", "3: [xform f coll] or 4: [xform f init coll]"))
 		}
 	})
 	v_clojure_DOT_core_transduce.BindRoot(tmp3)
@@ -162,12 +161,12 @@ func Load() {
 					tmp36 := lang.Apply2(f28, result34, input35)
 					return tmp36
 				default:
-					panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+					panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 				}
 			})
 			return tmp30
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/completing", "1: [f] or 2: [f cf]"))
 		}
 	})
 	v_clojure_DOT_core_completing.BindRoot(tmp23)
@@ -352,7 +351,7 @@ func Load() {
 						_ = tmp117
 						return result113
 					default:
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 					}
 				})
 				var collect118 any = tmp111
@@ -386,7 +385,7 @@ func Load() {
 			}
 			return tmp106
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/sequence", "1: [coll] or 2: [xform coll]"))
 		}
 	})
 	v_clojure_DOT_core_sequence.BindRoot(tmp94)
@@ -416,7 +415,7 @@ func Load() {
 			tmp143 := lang.Apply4(tmp141, xform139, tmp142, to138, from140)
 			return tmp143
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/into", "2: [to from] or 3: [to xform from]"))
 		}
 	})
 	v_clojure_DOT_core_into.BindRoot(tmp132)
@@ -427,7 +426,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/eduction", "0+: [xforms & more]"))
 			}
 			var xforms145 any
 			if len(args) > 0 {
@@ -610,7 +609,7 @@ func Load() {
 							}
 							return tmp193
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp159 = tmp170
@@ -686,7 +685,7 @@ func Load() {
 			tmp270 := lang.Apply1(tmp236, tmp237)
 			return tmp270
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/partition-by", "1: [f] or 2: [f coll]"))
 		}
 	})
 	v_clojure_DOT_core_partition_by.BindRoot(tmp155)
@@ -771,7 +770,7 @@ func Load() {
 							}
 							return tmp287
 						default:
-							panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+							panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 						}
 					})
 					tmp274 = tmp281
@@ -788,7 +787,7 @@ func Load() {
 			tmp312 := lang.Apply2(tmp309, tmp311, coll308)
 			return tmp312
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/dedupe", "0: [] or 1: [coll]"))
 		}
 	})
 	v_clojure_DOT_core_dedupe.BindRoot(tmp271)
@@ -875,14 +874,14 @@ func Load() {
 						}
 						return tmp338
 					default:
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "0: [] or 1: [result] or 2: [result input]"))
 					}
 				})
 				return tmp321
 			})
 			return tmp319
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/halt-when", "1: [pred] or 2: [pred retf]"))
 		}
 	})
 	v_clojure_DOT_core_halt_when.BindRoot(tmp313)
@@ -1009,7 +1008,7 @@ func Load() {
 			}
 			return tmp366
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/replace", "1: [smap] or 2: [smap coll]"))
 		}
 	})
 	v_clojure_DOT_core_replace.BindRoot(tmp347)

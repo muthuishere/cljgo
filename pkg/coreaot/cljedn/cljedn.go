@@ -3,7 +3,6 @@
 package cljedn
 
 import (
-	"fmt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
 
@@ -71,7 +70,7 @@ func Load() {
 			tmp15 := lang.Apply2(tmp14, opts12, stream13)
 			return tmp15
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.edn/read", "0: [] or 1: [stream] or 2: [opts stream]"))
 		}
 	})
 	v_clojure_DOT_edn_read.BindRoot(tmp5)
@@ -95,7 +94,7 @@ func Load() {
 			tmp23 := lang.Apply2(tmp22, opts20, s21)
 			return tmp23
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.edn/read-string", "1: [s] or 2: [opts s]"))
 		}
 	})
 	v_clojure_DOT_edn_read_string.BindRoot(tmp16)

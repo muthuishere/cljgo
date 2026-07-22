@@ -3,7 +3,6 @@
 package cljzip
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -915,7 +914,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.zip/edit", "2+: [loc f args & more]"))
 			}
 			loc446 := args[0]
 			_ = loc446
