@@ -50,14 +50,19 @@
         ;; normalize each clause to [ops result-expr], binding every port
         ;; expression to a gensym; ops entries are a symbol (take) or a
         ;; [chan-sym val-sym] pair (put). norm = [clauses binds].
-        norm    (reduce
+        ;; clojure.core/reduce is QUALIFIED: clojure.core.async now interns
+        ;; its own `reduce` (the T2 channel fold, ADR 0040 §2.2), which
+        ;; shadows the clojure.core refer inside this namespace — exactly as
+        ;; JVM core.async excludes and redefines it. This macro helper wants
+        ;; the seq fold, so it names clojure.core/reduce explicitly.
+        norm    (clojure.core/reduce
                  (fn [acc-binds pair]
                    (let [acc  (first acc-binds)
                          bnds (second acc-binds)
                          op   (first pair)
                          expr (second pair)
                          ops-binds
-                         (reduce
+                         (clojure.core/reduce
                           (fn [ob port]
                             (let [ops  (first ob)
                                   bnds (second ob)]

@@ -50,16 +50,26 @@ run, cited in a comment.
 
 ## 2. T2 — plumbing (goroutine pumps)
 
-- [ ] 2.1 `onto-chan!` / `to-chan!` / `pipe` / `split` / `merge` (pumps;
-  close propagation oracled per fn). Gates green.
-- [ ] 2.2 `into` / `reduce` / `transduce` (take-loop returning a result
-  chan; reduced short-circuit oracled). Gates green.
-- [ ] 2.3 `mult` / `tap` / `untap` / `untap-all` (registry + fan-out pump;
-  slow-tap-blocks-all JVM parity oracled). Gates green.
-- [ ] 2.4 `pub` / `sub` / `unsub` / `unsub-all` (topic-fn → per-topic
-  mult). Gates green.
-- [ ] 2.5 `mix` / `admix` / `unmix` / `toggle` / `solo-mode` (stateful
-  fan-in pump; mute/pause/solo oracled). Gates green.
+- [x] 2.1 `onto-chan!` / `to-chan!` / `pipe` / `split` / `merge` (pumps;
+  close propagation oracled per fn). Also the deprecated non-bang
+  `onto-chan`/`to-chan` and the `onto-chan!!`/`to-chan!!` thread-variant
+  aliases (identical — ADR 0040 #5), plus `take` (bounded pump).
+  pkg/lang/chan_pump.go + registerAsync; conformance chan-{to-chan,
+  onto-chan,pipe,split,merge,take}.clj. Gates green.
+- [x] 2.2 `into` / `reduce` / `transduce` (take-loop returning a result
+  chan; reduced short-circuit oracled). conformance chan-{into,reduce,
+  transduce}.clj. Gates green.
+- [x] 2.3 `mult` / `tap` / `untap` / `untap-all` (registry + fan-out pump;
+  slow-tap-blocks-all via blocking per-tap sends — JVM parity).
+  conformance chan-{mult,untap,untap-all}.clj. Gates green.
+- [x] 2.4 `pub` / `sub` / `unsub` / `unsub-all` (topic-fn → per-topic
+  mult). `unsub-all` covers both the all-topics and single-topic arities.
+  conformance chan-{pub-sub,unsub,unsub-all}.clj. Gates green.
+- [x] 2.5 `mix` / `admix` / `unmix` / `unmix-all` / `toggle` / `solo-mode`
+  (stateful fan-in pump; mute/pause/solo oracled — determinism via the
+  atomic toggle-add-in-state, JVM parity). conformance chan-{mix,mix-mute,
+  mix-pause,mix-solo,mix-solo-pause,mix-unmix,mix-unmix-all}.clj. Gates
+  green.
 
 ## 3. T3 — pipelines
 
