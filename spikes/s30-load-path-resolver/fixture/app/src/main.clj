@@ -1,0 +1,5 @@
+(ns main)
+(println "entry start")
+(require 'a.core)
+(println "entry after require")
+(println (a.core/greet 21))

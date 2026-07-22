@@ -1,0 +1,8 @@
+{:name "absentlib" :version "1.0.0"
+ :capabilities #{:ffi}
+ :cljgo-requires [] :go-requires []
+ :ffi [{:lib "totally-absent"
+        :soname {:darwin "libtotally_absent_s27.dylib"
+                 :linux  "libtotally_absent_s27.so"}
+        :min-version "1.0.0"
+        :symbols ["some_fn"]}]}

@@ -1,0 +1,5 @@
+;; A dependency whose system library is simply not on this host.
+{:project "consumer-app"
+ :allow   [:ffi]
+ :require-cross-compile false
+ :deps ["absentlib"]}

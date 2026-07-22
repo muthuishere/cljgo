@@ -1,0 +1,7 @@
+;; Two impure deps pinning DIFFERENT versions of the same Go module — the
+;; merge question in ADR 0048 decision 6, bullet 1, surfaced at resolve time
+;; instead of being silently MVS-resolved by `go mod tidy`.
+{:project "consumer-app"
+ :allow   [:ffi]
+ :require-cross-compile false
+ :deps ["sqlite-lite" "oldffi"]}

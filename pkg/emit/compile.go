@@ -36,6 +36,11 @@ func CompileFile(path string) ([]*ast.Node, error) {
 // dep without capturing its forms would emit a binary missing it.
 func CompileReader(r io.Reader, filename string) ([]*ast.Node, error) {
 	ev := eval.New()
+	// ADR 0049 dec 2: this single-file AOT compile evaluates member-access
+	// forms through the interpreter for discovery, but the emitted binary
+	// links any third-party require-go module for real — so tolerate an
+	// unlinked member here rather than hard-erroring as `cljgo run` does.
+	ev.HostUnlinkedTolerant = true
 	ev.LibLoader = func(_ *eval.Evaluator, lib *lang.Symbol, path string) {
 		panic(fmt.Errorf("namespace %s resolves to source file %s — single-file compilation cannot emit it (multi-namespace programs compile via CompileProgram / `cljgo build`)", lib.FullName(), path))
 	}

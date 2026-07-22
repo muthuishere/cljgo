@@ -1,0 +1,31 @@
+
+### E1a  machine A: cold cache, no lock -> resolve -update
+  fetched    acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+  fetched    acme-crypt@750035182e3f
+  resolved   acme-crypt ref=v1.0.0 sha=750035182e3f tree=sha256:e4a0eaf9bd19…
+  path       local-lib -> local-lib (unlocked by design)
+  fetched    acme-util@c3820883df60
+  resolved   acme-util ref=v1.0.0 sha=c3820883df60 tree=sha256:bd710db3debb…
+wrote /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/proj/build.lock.edn (4 deps)
+cache: /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/cacheA
+
+### E1b  machine B: DIFFERENT project dir, DIFFERENT cache root, cold
+  fetched    acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+  fetched    acme-crypt@750035182e3f
+  resolved   acme-crypt ref=v1.0.0 sha=750035182e3f tree=sha256:e4a0eaf9bd19…
+  path       local-lib -> local-lib (unlocked by design)
+  fetched    acme-util@c3820883df60
+  resolved   acme-util ref=v1.0.0 sha=c3820883df60 tree=sha256:bd710db3debb…
+wrote /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/projB/build.lock.edn (4 deps)
+cache: /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/cacheB
+
+### E1c  the two lockfiles, byte-compared
+cmp: IDENTICAL (exit 0)
+
+### E1d  the two materialized trees, content-hash compared
+sha256:0dd0875fa335fa294b5790cb54798634afb2366d1fd7e9d73a68ec3a4d6d1ad0 1821cad30fb7d11225f53d3d245d8026/src	sha256:0dd0875fa335fa294b5790cb54798634afb2366d1fd7e9d73a68ec3a4d6d1ad0 1821cad30fb7d11225f53d3d245d8026/src
+sha256:9e8d49412ac9754669c1fb4ec2d75c3a9c0dcbb85e57e4e746c38a939b4b2d2b fc16fa6cec4a6ebb8f5a7de174b67f12/src	sha256:9e8d49412ac9754669c1fb4ec2d75c3a9c0dcbb85e57e4e746c38a939b4b2d2b fc16fa6cec4a6ebb8f5a7de174b67f12/src
+sha256:a2d502d5f7871c7d08b64c70267a2094b38e8baae44a4c9a43ae63bf4fa2a27d b9d18f1bcfd01aa2f6ada44e15074568/src	sha256:a2d502d5f7871c7d08b64c70267a2094b38e8baae44a4c9a43ae63bf4fa2a27d b9d18f1bcfd01aa2f6ada44e15074568/src
+diff: IDENTICAL DEPENDENCY TREES

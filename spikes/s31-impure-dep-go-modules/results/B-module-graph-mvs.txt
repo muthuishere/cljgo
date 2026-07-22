@@ -1,0 +1,38 @@
+### EXPERIMENT B — a REAL Go module graph disagrees (depa wants go-cmp v0.6.0, depb v0.7.0)
+This is the shape cljgo does NOT produce (cljgo flattens), shown for contrast.
+$ go mod tidy
+exit=0
+$ go build -o app . && ./app
+depa: true depb: true
+exit=0
+
+$ go list -m github.com/google/go-cmp    <- MVS result
+github.com/google/go-cmp v0.7.0
+
+$ go mod graph | grep go-cmp             <- the graph is PRESERVED and inspectable
+example.test/consumer github.com/google/go-cmp@v0.7.0
+example.test/depa@v0.0.0 github.com/google/go-cmp@v0.6.0
+example.test/depb@v0.0.0 github.com/google/go-cmp@v0.7.0
+github.com/google/go-cmp@v0.7.0 go@1.21
+
+$ go mod why -m github.com/google/go-cmp
+# github.com/google/go-cmp
+example.test/consumer
+example.test/depa
+github.com/google/go-cmp/cmp
+
+$ cat go.mod
+module example.test/consumer
+
+go 1.26
+
+require (
+	example.test/depa v0.0.0
+	example.test/depb v0.0.0
+)
+
+require github.com/google/go-cmp v0.7.0 // indirect
+
+replace example.test/depa => ../depa
+
+replace example.test/depb => ../depb

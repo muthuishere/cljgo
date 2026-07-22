@@ -1,0 +1,6 @@
+;; A genuinely PURE cljgo library — the control.
+{:name    "edn-plus"
+ :version "0.3.1"
+ :capabilities #{}
+ :cljgo-requires []
+ :go-requires []}

@@ -1,0 +1,71 @@
+
+### E3a  locked sha for acme-util, before
+         :git/sha "c3820883df6041abb3055c7ff6ed3d9050c4c620"
+
+### E3b  ATTACK: force-move tag v1.0.0 in the remote to a new commit
+remote v1.0.0 now: f8518c1d7368f36ff0919da5acbe87652cb65116
+
+### E3c  LOCKED resolve (warm cache) — must be unaffected
+  cache hit  acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+  cache hit  acme-crypt@750035182e3f
+  resolved   acme-crypt ref=v1.0.0 sha=750035182e3f tree=sha256:e4a0eaf9bd19…
+  path       local-lib -> local-lib (unlocked by design)
+  cache hit  acme-util@c3820883df60
+  resolved   acme-util ref=v1.0.0 sha=c3820883df60 tree=sha256:bd710db3debb…
+ok: 4 deps resolved from build.lock.edn
+cache: /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/cacheA
+exit=0
+
+### E3d  LOCKED resolve on a COLD cache — must still fetch the OLD sha
+  fetched    acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+  fetched    acme-crypt@750035182e3f
+  resolved   acme-crypt ref=v1.0.0 sha=750035182e3f tree=sha256:e4a0eaf9bd19…
+  path       local-lib -> local-lib (unlocked by design)
+  fetched    acme-util@c3820883df60
+  resolved   acme-util ref=v1.0.0 sha=c3820883df60 tree=sha256:bd710db3debb…
+ok: 4 deps resolved from build.lock.edn
+cache: /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/cacheD
+exit=0
+
+### E3e  explicit -update — the move is REPORTED, not silent
+  cache hit  acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+  cache hit  acme-crypt@750035182e3f
+  resolved   acme-crypt ref=v1.0.0 sha=750035182e3f tree=sha256:e4a0eaf9bd19…
+  path       local-lib -> local-lib (unlocked by design)
+  REF MOVED  acme-util: ref "v1.0.0" was c3820883df60, remote now f8518c1d7368
+  fetched    acme-util@f8518c1d7368
+  resolved   acme-util ref=v1.0.0 sha=f8518c1d7368 tree=sha256:bd710db3debb…
+wrote /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/proj/build.lock.edn (4 deps)
+cache: /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/cacheA
+--- lock diff:
+22c22
+<          :git/sha "c3820883df6041abb3055c7ff6ed3d9050c4c620"
+---
+>          :git/sha "f8518c1d7368f36ff0919da5acbe87652cb65116"
+
+### E3g  second attack: force-move the tag onto a commit that CHANGES CONTENT
+-- locked resolve is STILL unaffected (identity is the sha, not the tag):
+  resolved   acme-util ref=v1.0.0 sha=c3820883df60 tree=sha256:bd710db3debb…
+ok: 4 deps resolved from build.lock.edn
+cache: $W/cacheA
+-- and under -update BOTH fields move, so the diff is reviewable:
+22c22
+<          :git/sha "c3820883df6041abb3055c7ff6ed3d9050c4c620"
+---
+>          :git/sha "31e44bf4ce2754cb322acfe95be75325fd572414"
+28c28
+<          :tree/hash "sha256:bd710db3debb61ebec76e6a3e533c8c48e1b0b00296daaa46f550dcd3647cd61"}
+---
+>          :tree/hash "sha256:501e38b077a31959b59eb3715734d2febdbb26a572654c84e49f114bef1ab7df"}
+
+### E3f  build.cljgo asks for a ref the lock does not pin -> legible divergence
+  cache hit  acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+error: lock/build divergence for "acme-crypt":
+  build.cljgo asks for ref "v2.0.0"
+  build.lock.edn pins ref "v1.0.0" (sha 750035182e3f)
+  run `cljgo resolve -update` to re-pin
+exit=1

@@ -1,0 +1,5 @@
+(ns a.core)
+(println "before a.util")
+(require 'a.util)
+(println "after a.util")
+(defn greet [n] (str "a.core sees " (a.util/twice n)))

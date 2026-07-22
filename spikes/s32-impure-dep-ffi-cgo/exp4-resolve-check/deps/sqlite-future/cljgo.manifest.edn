@@ -1,0 +1,11 @@
+{:name    "sqlite-future"
+ :version "9.0.0"
+ :capabilities #{:ffi}
+ :cljgo-requires []
+ :go-requires [{:path "github.com/ebitengine/purego" :version "v0.10.1"}]
+ :ffi [{:lib     "sqlite3"
+        :soname  {:darwin  "libsqlite3.dylib"
+                  :linux   "libsqlite3.so.0"
+                  :windows "sqlite3.dll"}
+        :min-version "99.0.0"
+        :symbols ["sqlite3_libversion" "sqlite3_from_the_future_s27"]}]}

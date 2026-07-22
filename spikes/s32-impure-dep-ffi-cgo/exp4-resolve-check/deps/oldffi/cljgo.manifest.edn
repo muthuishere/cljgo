@@ -1,0 +1,7 @@
+{:name "oldffi" :version "0.1.0"
+ :capabilities #{:ffi}
+ :cljgo-requires []
+ :go-requires [{:path "github.com/ebitengine/purego" :version "v0.9.0"}]
+ :ffi [{:lib "sqlite3"
+        :soname {:darwin "libsqlite3.dylib" :linux "libsqlite3.so.0"}
+        :min-version "3.0.0" :symbols ["sqlite3_libversion"]}]}

@@ -1,0 +1,14 @@
+### DIVERGENCE — the SAME file, interpreted vs AOT, with an impure (third-party) go-require
+$ cljgo run src/main.cljg     (interpreter)
+consumer reached a dep's third-party Go module; uuid: nil
+exit=0
+
+$ ./consumerapp               (AOT binary from the same source)
+consumer reached a dep's third-party Go module; uuid: 3d91365f-c353-436e-be9f-6c01c60f719a
+exit=0
+
+-- control: the same shape with a STDLIB package --
+$ cljgo run src/main.cljg
+control: stdlib require-go works: OK
+$ ./ctlapp
+control: stdlib require-go works: OK

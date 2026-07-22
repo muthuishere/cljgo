@@ -24,7 +24,8 @@
 (defn make-builder
   "Returns a fresh builder: an atom over an empty build plan."
   []
-  (atom {:artifacts [] :go-requires [] :steps [] :default nil}))
+  (atom {:artifacts [] :go-requires [] :deps []
+         :accept-versions {} :allow-caps [] :steps [] :default nil}))
 
 (defn exe
   "Declares an executable artifact from spec {:name … :main \"path.cljg\" …}
@@ -32,6 +33,19 @@
   take. :target/:optimize are carried through untouched (minimal for B1)."
   [b spec]
   (let [art (assoc spec :kind "exe")]
+    (swap! b (fn [m] (assoc m :artifacts (conj (get m :artifacts) art))))
+    {:builder b :name (get spec :name)}))
+
+(defn lib
+  "Declares a publishable library artifact from spec
+  {:name … :main \"path.cljg\" :module \"github.com/you/lib\"} — the producer
+  side of ADR 0013 / ADR 0050. ONE library, both ecosystems: `cljgo publish go`
+  emits a go-gettable module and `cljgo publish clojars` emits pure Clojure
+  source, from this one declaration. :kind is stamped \"lib\"; the target
+  (go|clojars) is chosen at publish time. :module is the library's module path /
+  coordinate. Returns an artifact handle {:builder b :name …}."
+  [b spec]
+  (let [art (assoc spec :kind "lib")]
     (swap! b (fn [m] (assoc m :artifacts (conj (get m :artifacts) art))))
     {:builder b :name (get spec :name)}))
 
@@ -46,6 +60,40 @@
                       (conj (get m :go-requires)
                             {:path path :version version}))))
     art))
+
+(defn dep
+  "Declares a dependency (ADR 0048). `name` is the dependency name; `opts` is
+  a map of fetch coordinates — {:git url :ref \"v1.2.0\" :subdir \"…\"} for a
+  git dep, or {:path \"../local\"} for a local one. Accumulated project-wide
+  onto :deps (the emitted binary bakes one dependency graph). Returns b."
+  [b name opts]
+  (swap! b (fn [m]
+             (assoc m :deps
+                    (conj (get m :deps)
+                          (assoc opts :name name)))))
+  b)
+
+(defn accept-version
+  "Consumer-side version override (ADR 0048 decision 4): accept `version` for
+  Go module `module` when two dependencies pin it at different versions,
+  instead of the hard conflict error. Accumulated onto the :accept-versions
+  map. Returns b."
+  [b module version]
+  (swap! b (fn [m]
+             (assoc m :accept-versions
+                    (assoc (get m :accept-versions) module version))))
+  b)
+
+(defn allow-capability
+  "Acknowledges a dependency's impure capability (ADR 0048 decision 6,
+  default-deny): `cap` is a capability keyword — :ffi, :cgo, or :go-require.
+  Unacknowledged impurity is refused at resolve time. Accumulated onto
+  :allow-caps. Returns b."
+  [b cap]
+  (swap! b (fn [m]
+             (assoc m :allow-caps
+                    (conj (get m :allow-caps) cap))))
+  b)
 
 (defn install
   "Adds an install step for an artifact and makes it the default step

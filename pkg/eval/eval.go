@@ -39,6 +39,16 @@ type Evaluator struct {
 	// forms for emission; the single-file AOT path substitutes one
 	// that refuses.
 	LibLoader func(e *Evaluator, lib *lang.Symbol, path string)
+
+	// HostUnlinkedTolerant (ADR 0049 decision 2): when true, accessing a
+	// member of an UNLINKED third-party require-go module is TOLERATED
+	// (no-op nil) — the mode the AOT emitter's namespace-discovery pass
+	// runs in, because the emitted binary links the module for real. When
+	// false (the default, i.e. `cljgo run` / the REPL), such an access is a
+	// HARD ERROR rather than a silent nil (the unforgivable REPL-vs-binary
+	// divergence). Only the emitter sets this true; the self-rebuild flow
+	// (design/05 §1) later clears the error by linking the project's Go deps.
+	HostUnlinkedTolerant bool
 }
 
 // New returns an evaluator with the boot sequence of design/00 §6 (M1)

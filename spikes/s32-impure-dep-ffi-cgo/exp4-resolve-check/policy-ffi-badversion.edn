@@ -1,0 +1,7 @@
+;; Same opt-in, but against a dependency declaring a symbol the installed
+;; system library does not export — the "library present but too old" case,
+;; which exp3 measured as an init()-time PANIC at run time.
+{:project "consumer-app"
+ :allow   [:ffi]
+ :require-cross-compile false
+ :deps ["sqlite-future"]}

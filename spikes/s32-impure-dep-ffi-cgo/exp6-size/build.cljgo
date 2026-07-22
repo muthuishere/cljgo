@@ -1,0 +1,4 @@
+;; Size control: identical program shape, NO impure dependency.
+(defn build [b]
+  (let [app (exe b {:name "pureconsumer" :main "src/main.cljg"})]
+    (install b app)))

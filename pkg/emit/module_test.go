@@ -202,7 +202,10 @@ func TestWriteProgramSingleFileDelegates(t *testing.T) {
 		t.Fatal(err)
 	}
 	gen2 := t.TempDir()
-	if err := WriteModule(gen2, prog.Entry.Forms, Options{PrintLastValue: true}); err != nil {
+	// WriteProgram threads the entry's logical source path into the delegated
+	// WriteModule call (ADR 0049 dec 3: entry *file*), so the byte-for-byte
+	// delegation comparison must pass the same EntrySrcFile.
+	if err := WriteModule(gen2, prog.Entry.Forms, Options{PrintLastValue: true, EntrySrcFile: prog.Entry.Path}); err != nil {
 		t.Fatalf("WriteModule: %v", err)
 	}
 	fromModule, err := os.ReadFile(filepath.Join(gen2, "main.go"))
@@ -237,6 +240,82 @@ func TestRequireCycleFailsCompile(t *testing.T) {
 	_, err := CompileProgram(filepath.Join(dir, "entry.clj"))
 	if err == nil || !strings.Contains(err.Error(), "cyclic load dependency") {
 		t.Fatalf("expected cyclic load dependency error, got %v", err)
+	}
+}
+
+// TestThirdPartyDiscoveryTolerates is the emitter half of ADR 0049 dec 2:
+// the namespace-discovery pass sets HostUnlinkedTolerant=true, so compiling
+// a program that require-go's a third-party (domain-dotted) module and
+// references an unlinked member SUCCEEDS (the emitted binary links it for
+// real) — rather than hard-erroring as `cljgo run` now does. Deterministic
+// and offline: this exercises only the compile-time discovery pass, no `go
+// get` / link. (The full build+link is TestBuildWebsocketBinary /
+// TestParityThirdPartyGoRequire, network-gated.)
+func TestThirdPartyDiscoveryTolerates(t *testing.T) {
+	dir := t.TempDir()
+	entry := filepath.Join(dir, "entry.clj")
+	src := "(require-go '[\"example.com/foo/bar\" :as fk])\n" +
+		"(def code fk/CloseNormalClosure)\n" +
+		"(def frame (fk/FormatCloseMessage 1 \"x\"))\n:done\n"
+	if err := os.WriteFile(entry, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	snap := namespaceSnapshot()
+	defer removeNewNamespaces(snap)
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
+	_, err := CompileProgram(entry)
+	corelib.Out = oldOut
+	if err != nil {
+		t.Fatalf("CompileProgram of a third-party program must tolerate the unlinked "+
+			"member during discovery, got: %v", err)
+	}
+}
+
+// TestBinaryUncompiledRequireHardErrors is ADR 0049 dec 3: a binary that
+// evaluates (require 'some.ns) for a namespace NOT compiled into it must
+// hard-error naming the namespace, rather than silently no-op'ing behind the
+// provider registry. The require is deferred inside -main, so the build-time
+// discovery pass never resolves it (nothing to compile in) — only the binary,
+// invoking -main at runtime, reaches it. Offline: no third-party module.
+func TestBinaryUncompiledRequireHardErrors(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping go-build in -short mode")
+	}
+	dir := t.TempDir()
+	entry := filepath.Join(dir, "entry.clj")
+	// -main is defined but not called at top level → foo.bar is invisible to
+	// discovery; the binary's main() calls -main and hits it at runtime.
+	src := "(ns app)\n(defn -main [& _]\n  (require 'foo.bar)\n  (println \"unreached\"))\n"
+	if err := os.WriteFile(entry, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	snap := namespaceSnapshot()
+	defer removeNewNamespaces(snap)
+	lang.RemoveNamespace(lang.NewSymbol("user"))
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
+	prog, err := CompileProgram(entry)
+	corelib.Out = oldOut
+	if err != nil {
+		t.Fatalf("CompileProgram (deferred require must compile): %v", err)
+	}
+	gen := t.TempDir()
+	if err := WriteProgram(gen, prog, Options{}); err != nil {
+		t.Fatalf("WriteProgram: %v", err)
+	}
+	bin := filepath.Join(gen, "prog"+ExeSuffix)
+	if err := GoBuild(gen, bin); err != nil {
+		t.Fatalf("go build: %v", err)
+	}
+	out, err := exec.Command(bin).CombinedOutput()
+	if err == nil {
+		t.Fatalf("binary must hard-error on the uncompiled require, exited 0: %q", out)
+	}
+	for _, want := range []string{"foo.bar", "was not compiled into this binary"} {
+		if !strings.Contains(string(out), want) {
+			t.Fatalf("binary error %q missing %q", out, want)
+		}
 	}
 }
 

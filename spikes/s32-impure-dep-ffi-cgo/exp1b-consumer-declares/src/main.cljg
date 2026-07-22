@@ -1,0 +1,4 @@
+;; The CONSUMER. Pure Clojure — no require-go, no ffi, nothing impure.
+;; It only requires a library namespace that happens to be impure.
+(require 'depffi.core)
+(println "consumer says:" (depffi.core/describe))

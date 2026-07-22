@@ -1,0 +1,5 @@
+(ns jf.core)
+(defn kind [x] (instance? String x))
+(defn safe [x] (try (inc x) (catch Exception e -1)))
+(def klass String)
+(defn pure-add [a b] (+ a b))

@@ -1,0 +1,9 @@
+### END-TO-END — real cljgo build, real go-require (github.com/google/uuid v1.6.0)
+cljgo: cljgo CLI version 0.1.0-dev (Go 1.26.3, Clojure 1.12.5)   CLJGO_SRC set to the repo (dev binary, ADR 0028 replace path)
+
+$ cljgo build
+consumer reached a dep's third-party Go module; uuid: nil
+cljgo build: installed /tmp/s26-e2e-impure/consumerapp
+
+$ ./consumerapp
+consumer reached a dep's third-party Go module; uuid: 544b1de0-6a63-4d84-a684-47b65f2747a4

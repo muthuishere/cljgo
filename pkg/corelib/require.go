@@ -172,10 +172,13 @@ func loadLib(libSym *lang.Symbol, opts lang.ISeq) {
 	target := lang.FindNamespace(libSym)
 	if target == nil {
 		if libFileLoader == nil {
-			// A compiled binary: no reader, no analyzer, no evaluator.
-			// Say so, rather than failing as an obscure nil map lookup.
-			panic(fmt.Errorf("could not locate namespace %s: no registered provider, and this is an AOT-compiled binary — it has no interpreter to load %s from source (compile the namespace in, or run it with the cljgo interpreter)",
-				libSym.FullName(), libSym.FullName()))
+			// A compiled binary: no reader, no analyzer, no evaluator. The
+			// namespace was not compiled in and no provider serves it, so
+			// hard-error naming it (ADR 0049 dec 3) rather than silently
+			// no-op'ing or failing as an obscure nil map lookup. A static
+			// binary legitimately cannot load un-compiled source at runtime.
+			panic(fmt.Errorf("namespace %s was not compiled into this binary: no registered provider, and an AOT-compiled binary has no interpreter to load it from source (compile the namespace in, or run it with the cljgo interpreter)",
+				libSym.FullName()))
 		}
 		libFileLoader(libSym)
 		target = lang.FindNamespace(libSym)

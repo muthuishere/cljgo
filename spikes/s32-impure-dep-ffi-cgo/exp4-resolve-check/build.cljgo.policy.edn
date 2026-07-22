@@ -1,0 +1,7 @@
+;; The CONSUMER's declared purity policy. In the real design this is a
+;; build.cljgo form — (purity b {:allow [] :require-cross-compile true}) —
+;; extracted here as data so the prototype checker can read it standalone.
+{:project "consumer-app"
+ :allow   []                       ; capabilities the consumer accepts. [] = pure only.
+ :require-cross-compile true        ; the project ships linux/amd64 release binaries
+ :deps ["sqlite-lite" "fastjson-cgo"]}

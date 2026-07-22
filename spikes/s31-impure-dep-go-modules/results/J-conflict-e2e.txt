@@ -1,0 +1,14 @@
+### THE CONFLICT, END TO END through the REAL cljgo pipeline
+dep A pins go-cmp v0.6.0, dep B pins v0.7.0, one build.
+
+$ cljgo build
+go-cmp linked; Diff(1,1) empty = false
+cljgo build: installed /tmp/s26-conflict-e2e/conflictapp
+exit=0
+
+$ ./conflictapp
+go-cmp linked; Diff(1,1) empty = true
+exit=0
+
+-- which version actually got linked? --
+	dep	github.com/google/go-cmp	v0.7.0	h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=

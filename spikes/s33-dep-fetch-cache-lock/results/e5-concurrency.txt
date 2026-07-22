@@ -1,0 +1,18 @@
+
+### E5  CONCURRENCY: 8 resolvers, one shared COLD cache
+exit codes: 0 0 0 0 0 0 0 0 
+distinct outputs:
+  cache: /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/cacheC
+  ok: 4 deps resolved from build.lock.edn
+cache src entries: 3
+leftover temp dirs: 0
+verification pass after the storm:
+  cache hit  acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+  cache hit  acme-crypt@750035182e3f
+  resolved   acme-crypt ref=v1.0.0 sha=750035182e3f tree=sha256:e4a0eaf9bd19…
+  path       local-lib -> local-lib (unlocked by design)
+  cache hit  acme-util@c3820883df60
+  resolved   acme-util ref=v1.0.0 sha=c3820883df60 tree=sha256:bd710db3debb…
+ok: 4 deps resolved from build.lock.edn
+cache: /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/cacheC

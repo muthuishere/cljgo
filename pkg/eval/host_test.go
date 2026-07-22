@@ -141,6 +141,82 @@ func TestHostStringPath(t *testing.T) {
 	}
 }
 
+// TestHostUnlinkedThirdPartyErrors is the ADR 0049 dec 2 invariant: under
+// `cljgo run`/the REPL (HostUnlinkedTolerant=false, the default) accessing a
+// member of a third-party (domain-dotted) require-go module that is NOT
+// linked into the interpreter HARD-ERRORS naming the module and member —
+// never the silent nil that shipped on main. Both a value-position ref
+// (OpHostRef) and a call (OpHostCall) are covered.
+func TestHostUnlinkedThirdPartyErrors(t *testing.T) {
+	e := eval.New()
+	requireGo(t, e, vec("example.com/foo/bar", kw("as"), sym("fk")))
+
+	// OpHostRef: value position.
+	refErr := mustErr(t, e, sym("fk/CloseNormalClosure"))
+	for _, want := range []string{
+		"not linked into the interpreter", "example.com/foo/bar", "CloseNormalClosure",
+	} {
+		if !strings.Contains(refErr.Error(), want) {
+			t.Errorf("ref error %q missing %q", refErr.Error(), want)
+		}
+	}
+
+	// OpHostCall: call position names the called member.
+	callErr := mustErr(t, e, list(sym("fk/FormatCloseMessage"), int64(1), "x"))
+	for _, want := range []string{
+		"not linked into the interpreter", "example.com/foo/bar", "FormatCloseMessage",
+	} {
+		if !strings.Contains(callErr.Error(), want) {
+			t.Errorf("call error %q missing %q", callErr.Error(), want)
+		}
+	}
+}
+
+// TestHostUnlinkedToleratedUnderFlag is the AOT-discovery half of ADR 0049
+// dec 2: with HostUnlinkedTolerant=true (the mode the emitter's
+// namespace-discovery pass runs in), the same unlinked access is a no-op nil
+// rather than an error — because the emitted binary links the module for
+// real. This is what keeps `cljgo build` of a third-party program working.
+func TestHostUnlinkedToleratedUnderFlag(t *testing.T) {
+	e := eval.New()
+	e.HostUnlinkedTolerant = true
+	requireGo(t, e, vec("example.com/foo/bar", kw("as"), sym("fk")))
+
+	if got := evalAll(t, e, sym("fk/CloseNormalClosure")); got != nil {
+		t.Errorf("tolerated ref = %v, want nil (no-op)", got)
+	}
+	if got := evalAll(t, e, list(sym("fk/FormatCloseMessage"), int64(1), "x")); got != nil {
+		t.Errorf("tolerated call = %v, want nil (no-op)", got)
+	}
+}
+
+// TestHostStdlibUnaffectedByUnlinkedError guards against a false positive:
+// a stdlib require-go member (registry HIT) still resolves to its real value
+// with HostUnlinkedTolerant=false, because the unlinked branch is reached
+// only on a registry miss for a domain-dotted path — never for stdlib.
+func TestHostStdlibUnaffectedByUnlinkedError(t *testing.T) {
+	e := eval.New() // HostUnlinkedTolerant defaults false
+	requireGo(t, e, vec(sym("strings")))
+	if got := evalAll(t, e, list(sym("strings/ToUpper"), "hi")); got != "HI" {
+		t.Errorf("(strings/ToUpper \"hi\") = %v, want HI (stdlib must not false-error)", got)
+	}
+}
+
+// TestGenuineNilNotMistakenForUnlinked guards the other false positive: a
+// legitimately-nil Clojure value is minted by ordinary ops (never routed
+// through evalHost), so it returns nil with no error even under the strict
+// default flag — the detection keys off a registry miss, not the nil value.
+func TestGenuineNilNotMistakenForUnlinked(t *testing.T) {
+	e := eval.New() // HostUnlinkedTolerant defaults false
+	if got := evalAll(t, e, list(sym("get"), vec(), kw("x"))); got != nil {
+		t.Errorf("(get [] :x) = %v, want nil", got)
+	}
+	evalAll(t, e, list(sym("def"), sym("z"), nil))
+	if got := evalAll(t, e, sym("z")); got != nil {
+		t.Errorf("z (bound nil) = %v, want nil", got)
+	}
+}
+
 // TestHostPrecedenceClojureWins is the CLAUDE.md non-negotiable: a
 // require-go alias never shadows a Clojure namespace or ns-alias.
 func TestHostPrecedenceClojureWins(t *testing.T) {
