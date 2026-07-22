@@ -86,11 +86,19 @@
         branch  (fn [c]
                   (let [ops  (first c)
                         expr (second c)
+                        ;; clojure.core/map is QUALIFIED: clojure.core.async
+                        ;; now interns its own `map` (the T2 channel combiner,
+                        ;; ADR 0040 — arglists [f chs] [f chs buf-or-n]), which
+                        ;; shadows the clojure.core refer inside this namespace
+                        ;; — exactly as JVM core.async excludes and redefines
+                        ;; it. This macro helper wants the seq map, so it names
+                        ;; clojure.core/map explicitly (cf. the reduce note).
                         test (cons 'clojure.core/or
-                                   (map (fn [p]
-                                          (list 'clojure.core/= gch
-                                                (if (vector? p) (first p) p)))
-                                        ops))
+                                   (clojure.core/map
+                                    (fn [p]
+                                      (list 'clojure.core/= gch
+                                            (if (vector? p) (first p) p)))
+                                    ops))
                         body (if (and (seq? expr) (vector? (first expr)))
                                (list 'clojure.core/let
                                      (vector (first expr) gret)
