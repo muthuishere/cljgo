@@ -285,7 +285,7 @@
         static native binary, with <b>byte-identical output</b> on both paths.
       </p>
       <div class="cta">
-        <a href="#quickstart" class="btn btn-primary">Get started →</a>
+        <a href="#quickstart" class="btn btn-primary">Install &amp; get started →</a>
         <a href="https://github.com/muthuishere/cljgo" class="btn btn-ghost">View source</a>
       </div>
 
@@ -638,30 +638,47 @@ error: cannot publish to the JVM — greet.core
       <div class="sec-head">
         <span class="eyebrow">Get started</span>
         <h2>Quickstart</h2>
-        <p>Build from source is the known-good path — it needs a Go 1.26 toolchain (and a C toolchain with <code>CGO_ENABLED=1</code> for cgo interop features).</p>
+        <p>Install once, then: a REPL, run a Clojure file, or build a whole <code>build.cljgo</code> project.
+           Needs a Go 1.26 toolchain (and a C toolchain with <code>CGO_ENABLED=1</code> for cgo interop features).</p>
       </div>
 
       <div class="stack">
         <div>
-          <p class="label">1 · Build the CLI from source</p>
+          <p class="label">1 · Install cljgo</p>
           <div class="codecard">
             <button class="copy" data-copy>Copy</button>
-            <pre><span class="c"># requires Go 1.26+</span>
-git clone https://github.com/muthuishere/cljgo
-<span class="k">cd</span> cljgo
-go build <span class="go">-o</span> cljgo ./cmd/cljgo   <span class="c"># → ./cljgo</span></pre>
+            <pre><span class="c"># Homebrew — macOS &amp; Linux</span>
+brew install muthuishere/tap/cljgo
+
+<span class="c"># …or with a Go 1.26+ toolchain</span>
+go install github.com/muthuishere/cljgo/cmd/cljgo@latest</pre>
           </div>
           <div class="note">
-            <code>go install github.com/muthuishere/cljgo/cmd/cljgo@latest</code> installs the binary too.
-            Note that <code>cljgo build</code> currently needs the cljgo source tree available for its
-            generated <code>go.mod</code> replace directive (via <code>-runtime</code> or <code>$CLJGO_SRC</code>),
-            so clone-and-build is the safe default.
+            That gets you the REPL and <code>cljgo run</code> straight away. Compiling to a native binary
+            (<code>cljgo build</code>) additionally needs the cljgo source tree today for its generated
+            <code>go.mod</code> — clone the repo and point <code>$CLJGO_SRC</code> at it.
+          </div>
+        </div>
+
+        <div>
+          <p class="label">2 · Start a REPL</p>
+          <div class="codecard">
+            <button class="copy" data-copy>Copy</button>
+            <pre><span class="p">$</span> cljgo repl
+cljgo 0.1.0-dev
+user=&gt; (<span class="k">defn</span> square [x] (* x x))
+#'user/square
+user=&gt; (<span class="k">map</span> square [1 2 3 4])
+(1 4 9 16)
+user=&gt; (<span class="k">require-go</span> '[strings])   <span class="c">;; call Go, live</span>
+user=&gt; (<span class="go">strings/ToUpper</span> <span class="s">"hi"</span>)
+<span class="s">"HI"</span></pre>
           </div>
         </div>
 
         <div class="two">
           <div>
-            <p class="label">2 · hello.clj</p>
+            <p class="label">3 · A Clojure file — hello.clj</p>
             <div class="codecard">
               <button class="copy" data-copy>Copy</button>
               <pre><span class="c">;; hello.clj</span>
@@ -675,7 +692,7 @@ go build <span class="go">-o</span> cljgo ./cmd/cljgo   <span class="c"># → ./
             </div>
           </div>
           <div>
-            <p class="label">3 · interpret, then compile</p>
+            <p class="label">4 · Run it, then compile it</p>
             <div class="codecard">
               <button class="copy" data-copy>Copy</button>
               <pre><span class="p">$</span> cljgo run hello.clj
@@ -686,6 +703,34 @@ hello from cljgo
 <span class="p">$</span> ./hello
 hello from cljgo
 (fact 10) = 3628800          <span class="c"># byte-identical</span></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="two">
+          <div>
+            <p class="label">5 · Or a whole project — build.cljgo</p>
+            <div class="codecard">
+              <button class="copy" data-copy>Copy</button>
+              <pre><span class="c">;; build.cljgo — the build is a program (ADR 0021)</span>
+(<span class="k">defn</span> build [b]
+  (<span class="k">let</span> [app (<span class="go">exe</span> b {<span class="k">:name</span> <span class="s">"app"</span>
+                    <span class="k">:main</span> <span class="s">"src/app/core.cljg"</span>})]
+    (<span class="go">install</span> b app)
+    (<span class="go">run</span> b app)))</pre>
+            </div>
+          </div>
+          <div>
+            <p class="label">Build &amp; run the project</p>
+            <div class="codecard">
+              <button class="copy" data-copy>Copy</button>
+              <pre><span class="p">$</span> cljgo build        <span class="c"># → installs ./app</span>
+<span class="p">$</span> cljgo build run    <span class="c"># build it, then run it</span>
+hello from the project
+
+<span class="c"># declare deps + third-party Go right in build.cljgo:</span>
+<span class="c">#   (dep b "greetlib" {:path "../greetlib"})</span>
+<span class="c">#   (go-require app "github.com/gorilla/websocket" "v1.5.3")</span></pre>
             </div>
           </div>
         </div>
