@@ -208,7 +208,7 @@ func RegisterAll() {
 	def("println", func(args ...any) any {
 		parts := make([]string, len(args))
 		for i, a := range args {
-			parts[i] = lang.ToString(a)
+			parts[i] = lang.PrintStringReadably(a, false)
 		}
 		fmt.Fprintln(outWriter(), strings.Join(parts, " "))
 		return nil
@@ -224,7 +224,7 @@ func RegisterAll() {
 	def("print", func(args ...any) any {
 		parts := make([]string, len(args))
 		for i, a := range args {
-			parts[i] = lang.ToString(a)
+			parts[i] = lang.PrintStringReadably(a, false)
 		}
 		fmt.Fprint(outWriter(), strings.Join(parts, " "))
 		return nil
