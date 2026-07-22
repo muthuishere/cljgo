@@ -74,22 +74,13 @@ func (d *Driver) printHelp() {
 	}
 }
 
-// reportEvalError reports an eval error and, for unresolved-symbol
-// errors, appends a did-you-mean line with the nearest candidates from
-// the current namespace's mappings (ADR 0018 §3).
+// reportEvalError reports an eval error. Since spike s28 the did-you-mean
+// suggestion for unresolved symbols is folded into the shared render path
+// (Driver.RenderError → a did-you-mean `help:` line), so REPL and `cljgo
+// run` surface it identically; this stays a thin alias for call-site
+// clarity in evalAndPrint.
 func (d *Driver) reportEvalError(err error) {
 	d.reportError(err)
-	name, ok := unresolvedName(err)
-	if !ok {
-		return
-	}
-	cands := d.nearbySymbols(name)
-	if len(cands) == 0 {
-		return
-	}
-	d.outMu.Lock()
-	fmt.Fprintf(d.errOut, "did you mean %s?\n", strings.Join(cands, ", "))
-	d.outMu.Unlock()
 }
 
 // unresolvedName extracts the symbol name from an "unable to resolve

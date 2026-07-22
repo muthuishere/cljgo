@@ -39,55 +39,53 @@ All green, no exceptions. `refs/` is fenced with a stub go.mod — leave it.
 
 ## How to write error messages
 
-Binding doctrine (owner: *"very detailed error messages like rust and very
-llm friendly"*). The bar is Rust's diagnostic anatomy; the data model is
-`pkg/diag.Diagnostic` (ADR 0015). Full map + plan:
-`docs/error-messages-audit-2026-07.md`. The overhaul itself is **ADR 0048**
-(reserved) + **spike s28** (reserved) — until it lands, follow these rules
-for any *new* error and do not add bare `fmt.Errorf`/`panic` strings to the
-user-facing path.
+Binding doctrine (owner, rescoped 2026-07-22: *"no need exactly like rust,
+just some more details, that's enough."*). The target is ONE richer error
+line — named, located, expected-vs-found, with a cheap `help:` pointer — NOT
+Rust's full snippet+caret block. The data model is `pkg/diag.Diagnostic`
+(ADR 0015). Full map: `docs/error-messages-audit-2026-07.md`. The overhaul is
+**ADR 0048** (reserved) + **spike s28** (`spikes/s28-rust-diagnostics/`,
+prototype + VERDICT) — until it lands, follow these rules for any *new* error
+and do not add bare `fmt.Errorf`/`panic` strings to the user-facing path.
 
-- **Every user-facing error carries a registered code** from the banded
-  registry (`pkg/diag/registry.go`: R1xxx reader · A2xxx analyzer · E3xxx
-  emitter · I4xxx interop · G5xxx general). Codes are append-only; each gets
-  an explain page `docs/diagnostics/<CODE>.md`. Attach the code **at the
-  raise site**, never by prose-matching after the fact.
-- **If the error has a source position, it carries `Location`** (with the
-  end-span) and renders as the Rust-style block: `error[CODE]: message`, the
-  `--> file:line:col` locus, the **source snippet with line numbers**, and a
-  `^^^^` **caret on the exact span** with an inline label. No snippet-less
-  positioned error.
-- **State expected vs found** (`Expected`/`Found`) whenever the shape is
-  expected-vs-actual (arity, type, arg count).
-- **Where a fix is knowable, attach a concrete `Fix`** — the *replacement
-  text* + `ByteRange`, not prose. did-you-mean is a `Fix`
-  (`Replacement: "X"`), not a `did you mean …?` string, and it fires in
-  every context, not just the REPL.
 - **Name the thing.** Arity errors name the fn like the JVM — `passed to:
-  user/f`, never `passed to: fn`. Same for vars, namespaces, protocols.
+  user/f`, never `passed to: fn`. Same for vars, namespaces, protocols. This
+  is the #1 win.
+- **Location when known.** If the error has a source position, append the
+  locus: ` at file:line:col`. No source snippet, no `^^^^` caret (owner
+  rescope — those are *optional, future*, not required).
+- **State expected vs found** (`Expected`/`Found`) whenever the shape is
+  expected-vs-actual (arity, type, arg count): `(expects 1: [x])`.
+- **Carry a registered code + explain pointer where it's cheap.** Codes come
+  from the banded registry (`pkg/diag/registry.go`: R1xxx reader · A2xxx
+  analyzer · E3xxx emitter · I4xxx interop · G5xxx general), append-only, each
+  with an explain page `docs/diagnostics/<CODE>.md`. Prefer attaching the code
+  **at the raise site**; the renderer appends `help: run \`cljgo explain
+  <CODE>\``.
+- **Suggestions are `Fix`es, not prose.** did-you-mean is a
+  `Fix{Title: "did you mean X?", Replacement: "X"}` rendered as a `help:`
+  line, firing in every context, not just the REPL.
 - **Read the same in REPL, `cljgo run`, and compiled binaries** (and as the
   nREPL `err` string). One renderer (`diag.Render`), every context calls it;
-  the emitted `func main()` recovers and routes through it too. REPL-vs-
-  binary error divergence is the unforgivable failure mode (same bar as
-  conformance). No raw Go panic + stack trace ever reaches a user.
+  the emitted `func main()` recovers and routes through it too. **No raw Go
+  panic + goroutine stack trace ever reaches a user** — that is the
+  unforgivable failure mode (same bar as conformance).
 - **The `--json` `diag.Envelope` carries every field** (code, location,
   expected/found, fixes, related, explain URL) so agents consume errors
   without parsing prose.
 
-Before → after (the arity error, the canonical case):
+Before → after (the arity error, the canonical case — the lighter one-line
+target, not a Rust block):
 
 ```
 error: wrong number of args (3) passed to: fn          ← today (bare, unnamed)
 
-error[A2004]: wrong number of args (3) passed to: user/f
-  --> demo.clj:4:1
-   |
- 4 | (f 1 2 3)
-   | ^^^^^^^^^ user/f is defined with 1 arg [x], got 3
-   |
-help: user/f takes 1 argument — call it as (f 1)
-for more information, run `cljgo explain A2004`
+error: wrong number of args (3) passed to: user/f (expects 1: [x]) at demo.clj:2:1
+help: run `cljgo explain A2004`
 ```
+
+The rendered `.Error()` string stays byte-stable (conformance freezes it);
+the extra detail is added at the render layer by `diag.Render`.
 
 ## Hard rules
 

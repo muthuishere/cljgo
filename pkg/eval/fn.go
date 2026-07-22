@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/muthuishere/cljgo/pkg/ast"
+	"github.com/muthuishere/cljgo/pkg/diag"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
@@ -27,10 +28,27 @@ var _ lang.IFn = (*evalFn)(nil)
 type arityError struct {
 	actual int
 	name   string
+
+	// diag is the enriched, positioned diagnostic (spike s28). It is nil at
+	// the throw site inside Invoke (which has no call-site position or Var
+	// name) and set at the OpInvoke call site, which does. Error() is left
+	// UNCHANGED whether or not it is set — conformance freezes that string
+	// via strings.Contains, so all new detail lives on the diagnostic and
+	// surfaces only through diag.Render.
+	diag *diag.Diagnostic
 }
 
 func (e *arityError) Error() string {
 	return fmt.Sprintf("wrong number of args (%d) passed to: %s", e.actual, e.name)
+}
+
+// Diagnostic implements diag.Carrier: FromError picks up the enriched
+// (named + located + expected/found) diagnostic when the call site set one.
+func (e *arityError) Diagnostic() (diag.Diagnostic, bool) {
+	if e.diag == nil {
+		return diag.Diagnostic{}, false
+	}
+	return *e.diag, true
 }
 
 // Invoke picks the method (exact fixed arity wins, else the variadic

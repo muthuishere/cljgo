@@ -119,7 +119,9 @@ func runFile(path string) int {
 	defer f.Close()
 	d := repl.New(nil, os.Stdout, os.Stderr)
 	if _, err := d.EvalReader(f, path); err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+		// Same renderer as the REPL (spike s28): named + located + expected/
+		// found detail and did-you-mean, so `cljgo run` reads identically.
+		fmt.Fprintf(os.Stderr, "error: %s\n", d.RenderError(err))
 		return 1
 	}
 	return 0

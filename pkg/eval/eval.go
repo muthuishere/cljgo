@@ -317,8 +317,9 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 		}
 		// lang.Apply dispatches IFn / keywords / colls; errors surface as
 		// panics per the IFn-boundary convention and are recovered at the
-		// top level.
-		return lang.Apply(fnVal, args), nil
+		// top level. invokeAt enriches an arity error unwinding through this
+		// call site with the callee name + call-site position (spike s28).
+		return e.invokeAt(fnVal, args, n, sub.Fn), nil
 
 	case ast.OpLoop:
 		sub := n.Sub.(*ast.LetNode)
