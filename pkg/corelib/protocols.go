@@ -2,6 +2,7 @@ package corelib
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -98,6 +99,47 @@ type TypeMarker struct {
 
 func (t *TypeMarker) String() string { return "#type[" + t.name + "]" }
 
+// ReifyInstance is an anonymous protocol-satisfying value produced by
+// `(reify P (m [this] ..) ..)` (ADR 0049). Unlike a deftype/defrecord it has
+// NO named type and NO fields — its method bodies are plain `fn` closures that
+// capture the enclosing lexical environment, and its impl table is
+// PER-INSTANCE (keyed by protocol identity → method → fn), not per-type. So it
+// never touches the type-keyed registry: dispatch (-invoke-method) and
+// satisfies? check for a *ReifyInstance receiver first and consult its own
+// table. The method's first param is `this`, bound to the instance itself.
+type ReifyInstance struct {
+	protos []*Protocol // declared protocols, declaration order (printing)
+	impls  map[*Protocol]map[string]lang.IFn
+}
+
+func (r *ReifyInstance) String() string {
+	var b strings.Builder
+	b.WriteString("#reify[")
+	for i, p := range r.protos {
+		if i > 0 {
+			b.WriteString(" ")
+		}
+		b.WriteString(p.name)
+	}
+	b.WriteString("]")
+	return b.String()
+}
+
+// lookup finds this instance's impl fn for a protocol method, if any.
+func (r *ReifyInstance) lookup(p *Protocol, method string) (lang.IFn, bool) {
+	if byM, ok := r.impls[p]; ok {
+		fn, ok := byM[method]
+		return fn, ok
+	}
+	return nil, false
+}
+
+// satisfies reports whether this instance was declared with the protocol.
+func (r *ReifyInstance) satisfies(p *Protocol) bool {
+	_, ok := r.impls[p]
+	return ok
+}
+
 // interned interface ClassRefs shared by every record/type marker's
 // ancestry (ADR 0039). Each entry is real: the named Go interface is
 // genuinely implemented by pkg/lang's *Record (instance.go) — see the
@@ -176,6 +218,10 @@ func dispatchKey(v any) string {
 	switch x := v.(type) {
 	case nil:
 		return "nil"
+	case *ReifyInstance:
+		// A reify never uses the type-keyed registry; this synthetic key
+		// keeps it out of that map when dispatch falls through to it.
+		return "reify"
 	case *lang.Record:
 		return x.TypeName()
 	case *lang.DType:
@@ -357,6 +403,14 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 		if len(callArgs) == 0 {
 			panic(fmt.Errorf("wrong number of args (0) passed to protocol method: %s", method))
 		}
+		// A reify carries its OWN per-instance impls; its table wins over the
+		// type-keyed registry (ADR 0049). A miss falls through to the standard
+		// "No implementation" error via the synthetic "reify" dispatch key.
+		if ri, ok := callArgs[0].(*ReifyInstance); ok {
+			if fn, ok := ri.lookup(p, method); ok {
+				return lang.Apply(fn, callArgs)
+			}
+		}
 		key := dispatchKey(callArgs[0])
 		fn, ok := p.lookup(key, method)
 		if !ok {
@@ -368,8 +422,39 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 
 	// (-satisfies? protocol value) -> bool.
 	defPrivate("-satisfies?", func(args ...any) any {
-		p := asProtocol(args[0], "satisfies?")
-		return p.satisfies(dispatchKey(args[1]))
+		return protocolSatisfiedBy(asProtocol(args[0], "satisfies?"), args[1])
+	})
+
+	// (-reify [P Q] P method-name-string fn ...) -> a *ReifyInstance. args[0]
+	// is the declared-protocol vector (for satisfies?); the rest are
+	// (protocol method-name fn) triples. The fns are `fn` closures that
+	// captured the enclosing locals in whichever mode built them (ADR 0049).
+	defPrivate("-reify", func(args ...any) any {
+		ri := &ReifyInstance{impls: map[*Protocol]map[string]lang.IFn{}}
+		for _, pv := range seqSlice(args[0]) {
+			if p, ok := pv.(*Protocol); ok {
+				ri.protos = append(ri.protos, p)
+				if _, seen := ri.impls[p]; !seen {
+					ri.impls[p] = map[string]lang.IFn{}
+				}
+			}
+		}
+		rest := args[1:]
+		for i := 0; i+2 < len(rest); i += 3 {
+			p := asProtocol(rest[i], "reify")
+			method := lang.ToString(rest[i+1])
+			fn, ok := rest[i+2].(lang.IFn)
+			if !ok {
+				panic(fmt.Errorf("reify: method impl is not a function: %s", lang.PrintString(rest[i+2])))
+			}
+			byM, seen := ri.impls[p]
+			if !seen {
+				byM = map[string]lang.IFn{}
+				ri.impls[p] = byM
+			}
+			byM[method] = fn
+		}
+		return ri
 	})
 
 	// (-instance? type-marker value) -> bool: value's type IS the marked
@@ -426,9 +511,18 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 
 	// Public: (satisfies? protocol x).
 	def("satisfies?", func(args ...any) any {
-		p := asProtocol(args[0], "satisfies?")
-		return p.satisfies(dispatchKey(args[1]))
+		return protocolSatisfiedBy(asProtocol(args[0], "satisfies?"), args[1])
 	})
+}
+
+// protocolSatisfiedBy reports whether v satisfies p — an anonymous reify
+// answers from its own declared-protocol set (ADR 0049), everything else from
+// the type-keyed registry.
+func protocolSatisfiedBy(p *Protocol, v any) bool {
+	if ri, ok := v.(*ReifyInstance); ok {
+		return ri.satisfies(p)
+	}
+	return p.satisfies(dispatchKey(v))
 }
 
 // seqSlice realizes any seqable into a Go slice.
