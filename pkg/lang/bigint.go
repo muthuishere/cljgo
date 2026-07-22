@@ -122,7 +122,7 @@ var (
 
 func (n *BigInt) Divide(other *BigInt) any {
 	if other.val.Sign() == 0 {
-		panic(NewArithmeticError("divide by zero"))
+		panic(NewArithmeticError("Divide by zero"))
 	}
 	gcd := new(big.Int).GCD(nil, nil, n.val, other.val)
 	if gcd.Sign() == 0 {
@@ -141,10 +141,19 @@ func (n *BigInt) Divide(other *BigInt) any {
 }
 
 func (n *BigInt) Quotient(other *BigInt) *BigInt {
+	// Guard before math/big's Quo panics with its own "division by zero";
+	// JVM Clojure throws "Divide by zero" for BigInteger quot/rem (oracle
+	// 1.12.5 — unlike fixnum quot/rem's "/ by zero").
+	if other.val.Sign() == 0 {
+		panic(NewArithmeticError("Divide by zero"))
+	}
 	return &BigInt{val: new(big.Int).Quo(n.val, other.val)}
 }
 
 func (n *BigInt) Remainder(other *BigInt) *BigInt {
+	if other.val.Sign() == 0 {
+		panic(NewArithmeticError("Divide by zero"))
+	}
 	return &BigInt{val: new(big.Int).Rem(n.val, other.val)}
 }
 
