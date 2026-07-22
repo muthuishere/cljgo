@@ -22,6 +22,15 @@ type Ref struct {
 	state     any
 	watches   IPersistentMap
 	validator IFn
+
+	// minHistory/maxHistory are the JVM's MVCC history-tuning knobs
+	// (ref-min-history / ref-max-history). cljgo's STM-lite keeps no
+	// snapshot history at all (single global lock, no MVCC — ADR 0038), so
+	// these are stored-and-read but never consulted; ref-history-count is
+	// therefore always 0, which happens to match a fresh JVM ref's count
+	// (oracle 1.12.5, 2026-07-21). Defaults mirror the JVM: min 0, max 10.
+	minHistory int64
+	maxHistory int64
 }
 
 var (
@@ -38,7 +47,39 @@ var (
 )
 
 func NewRef(val any) *Ref {
-	return &Ref{state: val, watches: emptyMap}
+	return &Ref{state: val, watches: emptyMap, minHistory: 0, maxHistory: 10}
+}
+
+// TxEnsure backs ensure: protect the ref against modification by another
+// transaction for the duration of the current one, returning its in-
+// transaction value. cljgo's single global transaction lock already gives
+// that protection, so ensure is a transaction-gated deref — outside a
+// transaction it throws "No transaction running", exactly like alter/
+// ref-set (oracle 1.12.5, 2026-07-21).
+func (r *Ref) TxEnsure() any {
+	if !InTransaction() {
+		panic(NewIllegalStateError("No transaction running"))
+	}
+	return r.Deref()
+}
+
+// HistoryCount backs ref-history-count: cljgo keeps no history, always 0.
+func (r *Ref) HistoryCount() int64 { return 0 }
+
+// MinHistory / SetMinHistory back ref-min-history's getter / 2-arity setter.
+func (r *Ref) MinHistory() int64 { return r.minHistory }
+func (r *Ref) SetMinHistory(n int64) {
+	r.mtx.Lock()
+	r.minHistory = n
+	r.mtx.Unlock()
+}
+
+// MaxHistory / SetMaxHistory back ref-max-history's getter / 2-arity setter.
+func (r *Ref) MaxHistory() int64 { return r.maxHistory }
+func (r *Ref) SetMaxHistory(n int64) {
+	r.mtx.Lock()
+	r.maxHistory = n
+	r.mtx.Unlock()
 }
 
 // RunInTransaction backs dosync: nested transactions join the outer one;
