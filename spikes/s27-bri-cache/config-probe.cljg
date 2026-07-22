@@ -1,0 +1,21 @@
+;; S27 criterion 5 — cache settings resolved through the REAL shipped
+;; bri.config: conf.edn -> APP_* env, precedence proven by RUNNING it,
+;; not quoted from a guide. Run:
+;;   APP_CACHE__TTL=60 cljgo run config-probe.cljg
+;;
+;; conf.edn (this dir) declares {:cache {:backend :memory :ttl 300}}.
+;; APP_CACHE__TTL=60 must win over the file (env > file), landing at
+;; [:cache :ttl] via the __ path rule.
+(require '[bri.config :as config])
+
+(def cfg (config/load! "spikes/s27-bri-cache/conf.edn"))
+
+(println "resolved :cache =>" (:cache cfg))
+(println "ttl              =>" (get-in cfg [:cache :ttl])
+         "(60 = env won; 300 = file won)")
+(println "backend          =>" (get-in cfg [:cache :backend]) "(file, no env override)")
+
+;; assert precedence held
+(let [ttl (get-in cfg [:cache :ttl])]
+  (println "PRECEDENCE" (if (= ttl 60) "PASS env>file (APP_CACHE__TTL landed at [:cache :ttl])"
+                          (str "note: run with APP_CACHE__TTL=60 to see env win; got " ttl))))

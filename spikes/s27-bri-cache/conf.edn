@@ -1,0 +1,3 @@
+{:cache {:backend :memory
+         :ttl 300}
+ :profiles {:dev {} :test {}}}

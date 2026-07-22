@@ -1,0 +1,84 @@
+;; S26 criterion 1 — "the free part": a worker pool built PURELY on
+;; clojure.core.async, in interpreted cljgo. Enqueue, dispatch, per-type
+;; concurrency, retry-with-backoff. Run: `cljgo run chan-queue.cljg`.
+;;
+;; This is the honest "what you get for free now that ADR 0040 is merged"
+;; artifact. It also demonstrates criterion 2's gap: everything here lives
+;; in process memory and dies with it.
+(require '[clojure.core.async :as a])
+
+;; --- the whole queue is a channel + a registry map -----------------------
+
+(def handlers
+  ;; job-type -> handler fn. Vars would make these live (like http
+  ;; handlers); plain fns here keep the probe self-contained.
+  {:email   (fn [job] {:sent (:to job)})
+   :flaky   (fn [job]
+              ;; fails the first 2 attempts, succeeds the 3rd — exercises retry.
+              (when (< (:attempt job) 3)
+                (throw (ex-info "transient" {:type :flaky})))
+              {:ok true})})
+
+(def q (a/chan 1024))
+
+(def completed (atom 0))
+(def failed-terminal (atom 0))
+(def attempts (atom 0))
+
+(def max-attempts 3)
+
+(defn backoff-ms [attempt]
+  ;; exponential: 1, 2, 4 ... (scaled tiny for the probe)
+  (* 1 (bit-shift-left 1 (dec attempt))))
+
+(defn run-job [job]
+  (swap! attempts inc)
+  (let [h (get handlers (:type job))]
+    (try
+      (h (assoc job :attempt (inc (:tries job))))
+      (swap! completed inc)
+      :done
+      (catch Throwable e
+        (if (< (:tries job) (dec max-attempts))
+          ;; retry: re-enqueue after a backoff, on a goroutine so the
+          ;; worker is not blocked holding the slot.
+          (let [next (update job :tries inc)]
+            (a/go (a/<! (a/timeout (backoff-ms (inc (:tries next)))))
+                  (a/>! q next))
+            :retry)
+          (do (swap! failed-terminal inc) :dead))))))
+
+;; --- per-type concurrency: N workers draining the one channel ------------
+
+(defn worker [id done]
+  (a/go-loop []
+    (if-let [job (a/<! q)]
+      (do (run-job job) (recur))
+      (a/>! done id))))
+
+(def n-workers 4)
+
+(defn -run []
+  (let [done (a/chan n-workers)
+        n-email 500
+        n-flaky 50]
+    ;; enqueue work
+    (dotimes [i n-email] (a/>!! q {:type :email :to (str "u" i) :tries 0}))
+    (dotimes [i n-flaky] (a/>!! q {:type :flaky :tries 0}))
+    ;; start workers
+    (dotimes [i n-workers] (worker i done))
+    ;; let it drain, then close + join
+    (a/<!! (a/timeout 500))
+    (a/close! q)
+    (dotimes [_ n-workers] (a/<!! done))
+    (println "enqueued " (+ n-email n-flaky) " jobs")
+    (println "completed " @completed)
+    (println "failed-terminal " @failed-terminal)
+    (println "total-attempts " @attempts
+             " (retries visible: attempts > completed by"
+             (- @attempts @completed) ")")
+    (println "LOC: this file is the entire in-memory job system")))
+
+(-run)
+;; expected: enqueued 550, completed 550 (500 email + 50 flaky-eventually),
+;; failed-terminal 0, total-attempts = 550 + 2*50 = 650 (each flaky tried 3x).
