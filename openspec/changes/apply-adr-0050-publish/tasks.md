@@ -1,43 +1,51 @@
 ## 1. Go-interop taint classifier — `pkg/emit/purity.go` (decision 3, from S29)
 
-- [ ] 1.1 New `pkg/emit/purity.go` in `package emit`: `type Taint struct { Class, NS, Path string; Line int; Detail string }` and `func ClassifyGoInterop(p *Program) map[string]*Taint` — one pass over `Program.Entry`+`Deps`, walking each `CompiledNS.Forms` via the existing `eachChild` (`emit.go:313`), switching on the five host ops `OpHostRef/OpHostCall/OpHostMethod/OpHostField/OpHostNew`, recording the first offending `file:line` per namespace
-- [ ] 1.2 Recover the entry namespace's name textually (its `CompiledNS.Name` is `""`) so it is addressable in the taint map/gate output
-- [ ] 1.3 Reserve a pluggable `type Predicate func(*CompiledNS) *Taint` slot (S29 proved N predicates compose) so `ffi`/`c-link` taint can be added without touching the traversal
-- [ ] 1.4 Expose `WholeLibPure(map) (bool, *Taint)` (OR / first-offender) and `NamespacePure(map, ns) bool` (lookup); assert `whole-lib == AND(per-ns over all reachable)`
-- [ ] 1.5 Tests (port S29 fixtures): buried `require-go` (`core→mid→leaf`) caught + cited at leaf `file:line` while pure ancestors pass per-ns; pure fixture zero false positives; mixed fixture; whole-lib == AND(per-ns)
+- [x] 1.1 `pkg/emit/purity.go`: `Taint` + `ClassifyGoInterop` — one pass over `Program.Entry`+`Deps`, walking `CompiledNS.Forms` via the real `eachChild`, switching on the five host ops, first offending `file:line` per namespace
+- [x] 1.2 Entry namespace name (`""`) recovered textually (`readNSName`)
+- [x] 1.3 Pluggable `Predicate` slot — used for a **second** shipping predicate `RequireGoPredicate` (a bare `(require-go …)` with no member access is taint too; ADR 0050 dec 2/3 name require-go itself as disqualifying — adversarial-review fix)
+- [x] 1.4 `WholeLibPure` (OR/first-offender) + `NamespacePure` (lookup); `whole-lib == AND(per-ns)`
+- [x] 1.5 Tests: buried require-go caught at leaf `file:line`; pure fixture zero-FP; mixed; invariant; **bare-require-go tainted** (regression)
 
-## 2. `certain-java?` courtesy predicate — `pkg/publish` (decision 2, from S30)
+## 2. `certain-java?` courtesy predicate — `pkg/publish/java.go` (decision 2, from S30)
 
-- [ ] 2.1 New `pkg/publish` package: `func CertainJava(forms []any) []Diag` (reader-level, from S30 `javaSyntactic`) — flags `import`/`new` heads, `java.*`/`javax.*` + `clojure.java.*` in **call-namespace** position, and the bare-JVM-class table (`System Math Thread Integer …`) in call-ns position; each with `file:line`
-- [ ] 2.2 Zero-FP guarantee: MUST NOT flag bare dot-forms `(.method obj)`, `(instance? String x)`, `(catch Exception e)`, or bare class-ref values; it is never a gate
-- [ ] 2.3 Tests: port S30's 30-form corpus labels — precision must be 10/10 (zero FP); the accepted misses (bare dot-forms) stay unflagged
+- [x] 2.1 `pkg/publish/java.go`: `CertainJava`/`CertainJavaFile` (reader-level) — `import`/`new` heads, `java.*`/`javax.*`/`clojure.java.*` + bare-JVM-class table in call-ns position
+- [x] 2.2 Zero-FP: never flags bare dot-forms, `instance?`, `catch`, class-ref values; never a gate
+- [x] 2.3 Tests: S30 corpus — precision 10/10, zero FP
 
 ## 3. `publish clojars` producer + CLI + surface (decisions 1, 3)
 
-- [ ] 3.1 `pkg/publish`: `PublishClojars(entrySrc, outDir, opts)` — `emit.CompileProgram` → `emit.ClassifyGoInterop` → if any NS tainted, FAIL naming the `file:line` ("uses Go interop, cannot run on the JVM"); else copy every `CompiledNS.Path` into a source-tree layout and write a git-coordinate `deps.edn` stub. Java is allowed (not a gate)
-- [ ] 3.2 `core/build.cljg`: add a publish/lib target verb mirroring `(exe …)` that stamps `Artifact.Kind` (`"clojars"`/`"go"`); regenerate the AOT mirror `pkg/coreaot/cljgobuild/cljgobuild.go` via `go generate` (parity by construction); add minimal `Plan`/`Artifact` fields for a library module path
-- [ ] 3.3 `cmd/cljgo/main.go`: `case "publish"` → `runPublish(args)` dispatching `go`/`clojars` (+ usage/`--help`)
-- [ ] 3.4 Tests: a pure library publishes to clojars (source tree + deps.edn present); a `require-go` library is refused at the offending `file:line`; a Java-using-but-pure-of-Go library still publishes
+- [x] 3.1 `pkg/publish/clojars.go`: compile → `ClassifyGoInterop` → `WholeLibPure`; refuse-before-write naming `file:line`; else copy every `CompiledNS.Path` into `src/<ns>.clj` + `deps.edn` git-coord + pure `cljgo.manifest.edn`. Java allowed
+- [x] 3.2 `core/build.cljg` `(lib b spec)` verb (`:kind "lib"` + `:module`); AOT mirror regenerated via `go generate` (byte-identical, parity by construction); `Artifact.Module` + `Plan.LibArtifact`
+- [x] 3.3 `cmd/cljgo/main.go` `case "publish"` → `runPublish` (`go`/`clojars`, `-o -name -module -runtime`, usage)
+- [x] 3.4 Tests: pure → clojars ok; require-go buried → refused at `file:line`; **bare require-go → refused, no leaked tree** (regression); Java-flavored-but-Go-free → publishes
 
 ## 4. `publish go` producer (decisions 1, 2 of the target table)
 
-- [ ] 4.1 `pkg/publish`: `PublishGo(entrySrc, outDir, opts)` — `CompileProgram` → validate the exported surface is Go-expressible (reuse `hostfacts.go` signature resolution; fail `file:line` on an inexpressible export) → emit a go-gettable **library** package: per-namespace layout (from `WriteProgram`), library-shaped (named packages, exported Go wrappers for exported defns, a `go.mod` with the library module path, no `main()`). Go-interop is allowed
-- [ ] 4.2 Scope honestly: support pure + go-interop libraries for the common export shapes `hostfacts.go` already resolves; `log()`/report which export shapes are deferred rather than silently dropping them
-- [ ] 4.3 Tests: a pure library `publish go` produces a package that `go build`s; a go-interop library publishes; the emitted signatures match type hints (`any` where absent)
+- [x] 4.1 `pkg/publish/go.go` + `pkg/emit/library.go WriteLibrary`: library-shaped emission (per-ns `Load` packages, `wrappers.go`, `go.mod` with the lib module path, no `main()`); Go-interop allowed
+- [x] 4.2 Scope reported honestly (see follow-ups): compiling go-gettable module for pure + stdlib-go-interop libs; exported wrappers exclude `^:private`/`-main`; `Load`-collision reserved (adversarial-review fix); `outDir` created before go/packages chdir (adversarial-review fix)
+- [x] 4.3 Tests: pure → `go build ./...` passes; stdlib go-interop → builds; **missing-outDir go-interop → builds** (regression); **public `load` defn → module compiles** (regression)
 
 ## 5. Decision 4 — loud per-namespace Java failure (verify + strict hook)
 
-- [ ] 5.1 Verify the existing analyzer errors for static Java (`(System/…)`, `(Math/…)`, `import`, `new`, `java.*`, `clojure.java.*`) fire with `file:line` and never `nil` (S30 measured they do); add a conformance case pinning it
-- [ ] 5.2 Pure siblings of a Java-tainted namespace stay usable (per-namespace granularity); cover with a test
-- [ ] 5.3 Optional strict resolve-time rejection: a dependency manifest declaring Java taint is default-denied unless acknowledged (reuse the ADR 0048 `pkg/deps` `checkPurity` shape); wire the publish-time manifest emission the resolve side (`pkg/deps/manifest.go:6`) already expects
+- [x] 5.1 Static Java surfaces hard-error at analysis with `file:line`, never nil — pinned by conformance `java-static-loud-error` / `java-import-loud-error` (eval-only)
+- [x] 5.2 Pure sibling of a Java-tainted namespace stays usable — `TestJavaStaticFailsLoudPerNamespace`
+- [ ] 5.3 Optional strict resolve-time Java rejection hook in `pkg/deps` — **deferred** (touches lock schema + `checkPurity` across files; ADR marks it optional). The publish-side pure manifest emission the resolve side expects IS wired
 
 ## 6. Dual-harness parity + gates
 
-- [ ] 6.1 Conformance: the taint classifier and Java-failure cases run in the dual harness where applicable; `publish` output is deterministic
-- [ ] 6.2 Full gates green: `go build ./... && go vet ./... && gofmt -l pkg cmd conformance templates && go test ./...`
+- [x] 6.1 Conformance eval-only Java cases; `publish` output deterministic; classifier/gate covered by unit tests
+- [x] 6.2 Full gates green: `go build ./... && go vet ./... && gofmt -l pkg cmd conformance templates && go test ./...` (compiled conformance harness 337s, independently re-run green after the adversarial-review fixes)
 
 ## 7. Close-out
 
-- [ ] 7.1 Verify no spike code merged verbatim into `pkg/`; S29/S30 stay reference-only (ADR 0027)
-- [ ] 7.2 Update ADR 0050 status proposed → accepted (implemented); record ADR 0013 producer-side follow-ups (`c-shared`/`c-archive`) and the deferred import/Clojars-coordinate scoping
+- [x] 7.1 No spike code merged verbatim into `pkg/`; S29/S30 reference-only (ADR 0027)
+- [x] 7.2 Update ADR 0050 status proposed → accepted (implemented); record ADR 0013 producer-side follow-ups
 - [ ] 7.3 `/opsx:archive` this change
+
+## Deferred follow-ups (tracked, not blocking)
+
+- **Decision 5.3** strict resolve-time Java hook — own change (lock-schema surface).
+- **`publish go` typed signatures** — wrappers are uniformly `func(args ...any) any`; resolving typed Go signatures from `^long`/hint metadata is deferred (no export dropped, only signatures widened).
+- **`publish go` third-party go-require** — the `go get`/tidy wiring `pkg/build` does is not yet in `publish go`; a third-party require currently fails with a raw go/packages message rather than a purpose-built one.
+- **`publish clojars` Clojars coordinate / source-jar** — git-coordinate `deps.edn` only (ADR 0050 scoping); a Clojars coordinate step is later.
+- **Test nit** — `go_test.go` `^:private` exclusion is exercised only via a dependency ns; add an entry-ns private defn to test that branch directly.

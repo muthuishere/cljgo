@@ -36,6 +36,19 @@
     (swap! b (fn [m] (assoc m :artifacts (conj (get m :artifacts) art))))
     {:builder b :name (get spec :name)}))
 
+(defn lib
+  "Declares a publishable library artifact from spec
+  {:name … :main \"path.cljg\" :module \"github.com/you/lib\"} — the producer
+  side of ADR 0013 / ADR 0050. ONE library, both ecosystems: `cljgo publish go`
+  emits a go-gettable module and `cljgo publish clojars` emits pure Clojure
+  source, from this one declaration. :kind is stamped \"lib\"; the target
+  (go|clojars) is chosen at publish time. :module is the library's module path /
+  coordinate. Returns an artifact handle {:builder b :name …}."
+  [b spec]
+  (let [art (assoc spec :kind "lib")]
+    (swap! b (fn [m] (assoc m :artifacts (conj (get m :artifacts) art))))
+    {:builder b :name (get spec :name)}))
+
 (defn go-require
   "Records a pinned third-party Go module requirement (ADR 0021 — this
   REPLACES deps.edn). art is an artifact handle from exe; the pin is

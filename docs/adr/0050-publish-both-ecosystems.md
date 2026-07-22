@@ -1,9 +1,22 @@
 # ADR 0050 — `publish`: one library, both ecosystems, purity-gated
 
-Date: 2026-07-22 · Status: **proposed** (evidence: spikes S29, S30 — both
-closed) · Extends the producer side of **ADR 0013** (every project is a
-library); rides the purity axis of **ADR 0048** §6, and depends on the
-now-`proposed` **ADR 0049** for its "never silent `nil`" guarantee.
+Date: 2026-07-22 · Status: **accepted** — implemented (OpenSpec change
+`apply-adr-0050-publish`; `cljgo publish go|clojars`, the Go-interop taint
+classifier, and `certain-java?`). Evidence: spikes S29, S30 — both closed.
+Extends the producer side of **ADR 0013** (every project is a library); rides
+the purity axis of **ADR 0048** §6 (accepted), and depended on **ADR 0049**
+(accepted) for its "never silent `nil`" guarantee — both landed before this.
+
+**Implemented scope + owed follow-ups (recorded, not silently dropped):**
+`publish clojars` (validate → pure Clojure source tree + git-coord `deps.edn` +
+pure manifest) and `publish go` (library-shaped go-gettable module) both ship,
+gated by the transitive `uses-go-interop?` classifier (which flags host-op
+access AND a bare `require-go` form). Deferred, each tracked in the change's
+`tasks.md`: `publish go` typed signatures (wrappers are `…any`) and third-party
+`require-go` wiring; the Clojars coordinate / source-jar step (git-coord only);
+and decision 4's optional strict resolve-time Java-rejection hook (its own
+change — it touches the `pkg/deps` lock schema). `c-shared`/`c-archive`
+producers remain ADR 0013's later work.
 
 ## Context
 

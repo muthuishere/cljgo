@@ -138,9 +138,60 @@ func Classify(p *Program, preds ...Predicate) map[string]*Taint {
 	return out
 }
 
-// ClassifyGoInterop is Classify with the shipping Go-interop predicate.
+// RequireGoPredicate flags a namespace that DECLARES a Go dependency via
+// (require-go …), even when no member is ever dereferenced. The five OpHost*
+// ops fire only on member ACCESS; a bare `(require-go '[strconv :as sc])` with
+// no `sc/…` use produces no host-op node, yet the form itself is not valid
+// Clojure and cannot load on the JVM. ADR 0050 dec 2/3 name require-go/ffi
+// itself as the disqualifying surface — so this predicate closes that gap. It
+// is the second composed predicate over the one walk (the slot S29 reserved).
+func RequireGoPredicate(ns *CompiledNS) *Taint {
+	name := nsRealName(ns)
+	for _, form := range ns.Forms {
+		if line, ok := firstRequireGo(form); ok {
+			return &Taint{
+				Class:  TaintGoInterop,
+				NS:     name,
+				Path:   ns.Path,
+				Line:   line,
+				Detail: "require-go declaration (a Go dependency; not loadable on the JVM)",
+			}
+		}
+	}
+	return nil
+}
+
+// firstRequireGo returns the line of the first (require-go …) invocation in n's
+// subtree (pre-order), detecting an OpInvoke whose callee is the require-go var.
+func firstRequireGo(n *ast.Node) (int, bool) {
+	if n == nil {
+		return 0, false
+	}
+	if n.Op == ast.OpInvoke {
+		if iv, ok := n.Sub.(*ast.InvokeNode); ok && iv.Fn != nil && iv.Fn.Op == ast.OpVar {
+			if vn, ok := iv.Fn.Sub.(*ast.VarNode); ok && vn.Var != nil &&
+				vn.Var.Symbol() != nil && vn.Var.Symbol().Name() == "require-go" {
+				return nodeLine(n), true
+			}
+		}
+	}
+	var line int
+	var found bool
+	eachChild(n, func(c *ast.Node, _ bool) {
+		if found {
+			return
+		}
+		if l, ok := firstRequireGo(c); ok {
+			line, found = l, true
+		}
+	})
+	return line, found
+}
+
+// ClassifyGoInterop is Classify with the shipping Go-interop predicates: host-op
+// member access AND a bare require-go declaration (both are Go-interop taint).
 func ClassifyGoInterop(p *Program) map[string]*Taint {
-	return Classify(p, GoInteropPredicate)
+	return Classify(p, GoInteropPredicate, RequireGoPredicate)
 }
 
 // WholeLibPure reports whether NO namespace is tainted. When tainted it also

@@ -56,6 +56,9 @@ type Artifact struct {
 	Name string
 	Main string
 	Kind string
+	// Module is a library artifact's Go module path / Clojure coordinate
+	// (ADR 0050 `lib`), used by `cljgo publish`. Empty for exe artifacts.
+	Module string
 }
 
 // GoRequire is a pinned third-party Go module from (go-require art …) —
@@ -136,9 +139,10 @@ func planFromValue(v any) (*Plan, error) {
 	p := &Plan{Default: str(lang.Get(m, kw("default")))}
 	for _, a := range lang.ToSlice(lang.Get(m, kw("artifacts"))) {
 		p.Artifacts = append(p.Artifacts, Artifact{
-			Name: str(lang.Get(a, kw("name"))),
-			Main: str(lang.Get(a, kw("main"))),
-			Kind: str(lang.Get(a, kw("kind"))),
+			Name:   str(lang.Get(a, kw("name"))),
+			Main:   str(lang.Get(a, kw("main"))),
+			Kind:   str(lang.Get(a, kw("kind"))),
+			Module: str(lang.Get(a, kw("module"))),
 		})
 	}
 	for _, r := range lang.ToSlice(lang.Get(m, kw("go-requires"))) {
@@ -184,6 +188,37 @@ func planFromValue(v any) (*Plan, error) {
 		})
 	}
 	return p, nil
+}
+
+// LibArtifact returns the library artifact (ADR 0050 `lib`) to publish: the one
+// named, or — when name is "" — the sole lib artifact. It errors when there is
+// no lib, or when name is "" and more than one lib is declared (ambiguous).
+func (p *Plan) LibArtifact(name string) (Artifact, error) {
+	var libs []Artifact
+	for _, a := range p.Artifacts {
+		if a.Kind == "lib" {
+			libs = append(libs, a)
+		}
+	}
+	if len(libs) == 0 {
+		return Artifact{}, fmt.Errorf("no library artifact in %s — declare one with (lib b {:name … :main … :module …}) to publish", BuildFileName)
+	}
+	if name == "" {
+		if len(libs) == 1 {
+			return libs[0], nil
+		}
+		names := make([]string, len(libs))
+		for i, a := range libs {
+			names[i] = a.Name
+		}
+		return Artifact{}, fmt.Errorf("%s declares %d library artifacts (%s); name which to publish", BuildFileName, len(libs), strings.Join(names, ", "))
+	}
+	for _, a := range libs {
+		if a.Name == name {
+			return a, nil
+		}
+	}
+	return Artifact{}, fmt.Errorf("no library artifact named %q in %s", name, BuildFileName)
 }
 
 // artifact returns the named artifact, or an error naming the miss.
