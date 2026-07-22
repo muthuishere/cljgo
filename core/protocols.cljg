@@ -139,6 +139,43 @@
                        (list (quote -map->record) qn fstrs (quote m))))
            (concat extends (list tname)))))
 
+;; ---- reify -----------------------------------------------------------------
+
+;; -reify-arity turns one method form (m [params] body...) into an fn arity
+;; clause ([params] body...).
+(defn ^:private -reify-arity [mform]
+  (list* (second mform) (drop 2 mform)))
+
+;; -reify-method-fn turns one or more method forms of the SAME name into a
+;; single (possibly multi-arity) fn. `this` is the first param.
+(defn ^:private -reify-method-fn [mforms]
+  (if (= 1 (count mforms))
+    (list* (quote fn) (second (first mforms)) (drop 2 (first mforms)))
+    (list* (quote fn) (map -reify-arity mforms))))
+
+;; (reify P (m [this] body) (m [this x] body) Q (n [this] body))
+;; An anonymous value satisfying the named protocols; its method bodies close
+;; over the enclosing lexical environment (no named type, no fields). `this` is
+;; the first parameter, bound to the value itself. Same-named method forms
+;; under one protocol collapse into one multi-arity fn. Expands to a -reify
+;; call over `fn` closures — so it captures locals and dispatches identically
+;; interpreted and compiled (ADR 0049).
+(defmacro reify [& specs]
+  (let [protos (-decl-protocols specs)
+        pairs (-group-impls specs)
+        grouped (reduce (fn [m pr]
+                          (let [proto (first pr)
+                                mform (second pr)
+                                k [proto (name (first mform))]]
+                            (assoc m k (conj (get m k []) mform))))
+                        {} pairs)
+        triples (mapcat (fn [e]
+                          (let [k (first e)
+                                mforms (second e)]
+                            (list (first k) (second k) (-reify-method-fn mforms))))
+                        grouped)]
+    (list* (quote -reify) protos triples)))
+
 ;; ---- extend-type / extend-protocol -----------------------------------------
 
 ;; (extend-type T P (m [this] body) Q (n [this] body))
