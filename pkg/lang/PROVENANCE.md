@@ -406,3 +406,24 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   under-locks); non-comparable lock objects throw. Covered by
   `monitor_test.go` + conformance/tests/locking-reentrant-exclusion.clj
   (JVM oracle 1.12.5).
+
+## JVM-compatible hasheq (ADR 0051, fundamentals/jvm-compatible-hashing, 2026-07-22)
+
+- `hashes.go`: the leaf hasheqs now reproduce clojure.lang.Util.hasheq
+  byte-for-byte (verified vs Clojure 1.12.5), replacing the S4 stand-ins
+  that were only internally consistent. Integers → `Murmur3.hashLong`
+  (`mix64to32` DELETED — was the pcastools fold); doubles →
+  `Double.hashCode` = `(int)(bits ^ (bits>>>32))`; new `hashCombine`
+  (Util.hashCombine) + `symbolHashEq`; new `javaBigIntegerHashCode`
+  (java.math.BigInteger.hashCode) drives Ratio/large-BigInt hasheq; new
+  exported `HashOrderedColl`/`HashUnorderedColl`/`MixCollectionHash`/
+  `HashCombine` back the clojure.core surface.
+- `internal/murmur3/murmur3.go`: added `HashUnencodedChars` (Clojure's
+  Murmur3.hashUnencodedChars, char-pair mix) — the basis of Symbol hasheq.
+- `keyword.go` / `symbol.go`: gained `HashEq()` (Keyword.hasheq =
+  Symbol.hasheq + 0x9e3779b9; Symbol.hasheq =
+  hashCombine(hashUnencodedChars(name), hash(ns))). The old XOR-mask
+  `Hash()` (hashCode path) is unchanged. Re-buckets every hash-map/set —
+  invariant (equal ⇒ equal hash) preserved, whole suite green; the
+  rehash also aligned set print order with the JVM (seq-coll-batch1.clj
+  re-oracled).

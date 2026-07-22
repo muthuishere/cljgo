@@ -379,6 +379,48 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 		return nil
 	})
+
+	// --- hashing (ADR 0051) -------------------------------------------------
+	//
+	// The clojure.core hash surface, over lang.HashEq — which now matches
+	// JVM Clojure 1.12.5's clojure.lang.Util.hasheq byte-for-byte (ADR
+	// 0051), so these return REAL Clojure hash values, not an internal
+	// dialect. `hash` folds the uint32 hasheq to a signed 32-bit int (the
+	// JVM's int-width `hash`); the collection fns wrap Murmur3 directly.
+
+	// hash: clojure.core/hash — Util.hasheq folded to a 32-bit int.
+	def("hash", func(args ...any) any {
+		return int64(int32(lang.HashEq(oneArg("hash", args))))
+	})
+	// hash-ordered-coll: order-sensitive Murmur3 mix over element hasheqs
+	// (what vectors/lists hash to).
+	def("hash-ordered-coll", func(args ...any) any {
+		return int64(int32(lang.HashOrderedColl(oneArg("hash-ordered-coll", args))))
+	})
+	// hash-unordered-coll: order-independent Murmur3 mix over element
+	// hasheqs (what maps/sets hash to).
+	def("hash-unordered-coll", func(args ...any) any {
+		return int64(int32(lang.HashUnorderedColl(oneArg("hash-unordered-coll", args))))
+	})
+	// mix-collection-hash: Murmur3.mixCollHash(hash-basis, count) — the
+	// finalizer both collection fns above apply.
+	def("mix-collection-hash", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: mix-collection-hash", len(args)))
+		}
+		basis := uint32(int32(lang.AsInt64(args[0])))
+		count := uint32(int32(lang.AsInt64(args[1])))
+		return int64(int32(lang.MixCollectionHash(basis, count)))
+	})
+	// hash-combine: clojure.lang.Util.hashCombine over two ints.
+	def("hash-combine", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: hash-combine", len(args)))
+		}
+		seed := uint32(int32(lang.AsInt64(args[0])))
+		h := uint32(int32(lang.AsInt64(args[1])))
+		return int64(int32(lang.HashCombine(seed, h)))
+	})
 }
 
 // ednOptsMap coerces a clojure.edn opts argument (nil or a map) into an

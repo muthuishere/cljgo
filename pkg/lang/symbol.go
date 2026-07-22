@@ -176,6 +176,13 @@ func (s *Symbol) Hash() uint32 {
 	return h.Sum32() ^ symbolHashMask
 }
 
+// HashEq is clojure.lang.Symbol.hasheq — the value clojure.core's `hash`
+// and hash-map/set bucketing use. Matches JVM 1.12.5 byte-for-byte:
+// hashCombine(Murmur3.hashUnencodedChars(name), hash(ns)).
+func (s *Symbol) HashEq() uint32 {
+	return symbolHashEq(s.ns, s.name)
+}
+
 func (s *Symbol) Invoke(args ...any) any {
 	switch len(args) {
 	case 1:
