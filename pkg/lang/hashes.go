@@ -41,6 +41,33 @@ func HashEq(x any) uint32 {
 	return Hash(x)
 }
 
+// HashOrderedColl is clojure.core/hash-ordered-coll: the ordered
+// Murmur3 mix (seed 1, then MixCollHash with count) over the element
+// hasheqs of a sequence. It is exactly what vectors and lists use for
+// their own hasheq, exposed as a standalone fn.
+func HashOrderedColl(coll any) uint32 {
+	return murmur3.HashOrdered(seqToInternalSeq(Seq(coll)), HashEq)
+}
+
+// HashUnorderedColl is clojure.core/hash-unordered-coll: the
+// order-independent Murmur3 mix (sum of element hasheqs, then
+// MixCollHash) — what maps and sets use for their own hasheq.
+func HashUnorderedColl(coll any) uint32 {
+	return murmur3.HashUnordered(seqToInternalSeq(Seq(coll)), HashEq)
+}
+
+// MixCollectionHash is clojure.core/mix-collection-hash:
+// Murmur3.mixCollHash(hashBasis, count).
+func MixCollectionHash(hashBasis, count uint32) uint32 {
+	return murmur3.MixCollHash(hashBasis, count)
+}
+
+// HashCombine is clojure.core/hash-combine == clojure.lang.Util.hashCombine
+// over the two int arguments directly.
+func HashCombine(seed, hash uint32) uint32 {
+	return hashCombine(seed, hash)
+}
+
 func Hash(x interface{}) uint32 {
 	if IsNil(x) {
 		return 0
@@ -139,24 +166,61 @@ func hashString(s string) uint32 {
 	return h
 }
 
-// mix64to32 is the murmur3 fmix64 finalizer folded to 32 bits — a
-// stand-in for bitbucket.org/pcastools/hash's integer hashes.
-// (cljgo S4 surgery: removes the pcastools dependency. The only
-// invariants required are stability within a process and agreement
-// across numeric categories that Equiv treats as equal; int64/uint64/
-// big.Int of the same magnitude all funnel through the same function.)
-func mix64to32(v uint64) uint32 {
-	v ^= v >> 33
-	v *= 0xff51afd7ed558ccd
-	v ^= v >> 33
-	v *= 0xc4ceb9fe1a85ec53
-	v ^= v >> 33
-	return uint32(v) ^ uint32(v>>32)
+// hashInt64 is the JVM Clojure hasheq for a Long: Murmur3.hashLong(v)
+// (clojure.lang.Numbers.hasheq). NOT the raw long. This is what makes
+// (hash 1) == 1392991556, matching JVM 1.12.5 byte-for-byte.
+func hashInt64(x int64) uint32 { return murmur3.HashLong(x) }
+
+// hashUint64 routes unsigned Go-interop integers through the same
+// Murmur3.hashLong path so that a uint64 and an int64 of equal magnitude
+// (which Equiv treats as equal) still hash equal. Values above MaxInt64
+// wrap on the int64 cast — a Go-interop-only edge JVM never sees, since
+// on the JVM such a value would be a BigInt.
+func hashUint64(x uint64) uint32 { return murmur3.HashLong(int64(x)) }
+
+// hashFloat64 is the JVM Clojure hasheq for a Double: Double.hashCode,
+// i.e. (int)(bits ^ (bits >>> 32)) over the IEEE-754 bit pattern
+// (clojure.lang.Numbers.hasheq). Callers special-case 0.0/-0.0 to 0.
+func hashFloat64(x float64) uint32 {
+	b := math.Float64bits(x)
+	return uint32(b ^ (b >> 32))
 }
 
-func hashInt64(x int64) uint32     { return mix64to32(uint64(x)) }
-func hashUint64(x uint64) uint32   { return mix64to32(x) }
-func hashFloat64(x float64) uint32 { return mix64to32(math.Float64bits(x)) }
+// hashCombine is clojure.lang.Util.hashCombine (a la boost):
+// seed ^ (hash + 0x9e3779b9 + (seed << 6) + (seed >> 2)), all 32-bit,
+// with an ARITHMETIC (signed) right shift on seed to mirror Java's `>>`.
+func hashCombine(seed, hash uint32) uint32 {
+	return seed ^ (hash + 0x9e3779b9 + (seed << 6) + uint32(int32(seed)>>2))
+}
+
+// symbolHashEq is clojure.lang.Symbol.hasheq:
+// hashCombine(Murmur3.hashUnencodedChars(name), hash(ns)), where a
+// missing namespace contributes hash 0 (String.hashCode("") == 0, the
+// same value as JVM's Util.hash(null) for a null ns).
+func symbolHashEq(ns, name string) uint32 {
+	return hashCombine(murmur3.HashUnencodedChars(name), hashString(ns))
+}
+
+// javaBigIntegerHashCode reproduces java.math.BigInteger.hashCode:
+// fold the big-endian 32-bit magnitude words with h = 31*h + word, then
+// multiply by the sign. Clojure's hasheq for a Ratio XORs the two
+// components' BigInteger.hashCode (clojure.lang.Ratio.hashCode), and a
+// too-big Long/BigInt falls back to this, so it must match the JVM.
+func javaBigIntegerHashCode(x *big.Int) uint32 {
+	mag := x.Bytes() // big-endian magnitude, minimal length
+	pad := (4 - len(mag)%4) % 4
+	buf := make([]byte, pad+len(mag))
+	copy(buf[pad:], mag)
+	var h uint32
+	for i := 0; i < len(buf); i += 4 {
+		word := uint32(buf[i])<<24 | uint32(buf[i+1])<<16 | uint32(buf[i+2])<<8 | uint32(buf[i+3])
+		h = 31*h + word
+	}
+	if x.Sign() < 0 {
+		return uint32(-int32(h))
+	}
+	return h
+}
 
 func hashByteSlice(b []byte) uint32 {
 	h := fnv.New32a()
@@ -216,12 +280,21 @@ func hashNumber(x any) uint32 {
 		// values hash identically.
 		return hashFloat64(float64(x))
 	case *Ratio:
-		return hashNumber(x.Numerator()) ^ hashNumber(x.Denominator())
+		// clojure.lang.Ratio.hasheq == numerator.hashCode() ^
+		// denominator.hashCode() over the two BigIntegers.
+		return javaBigIntegerHashCode(x.Numerator()) ^ javaBigIntegerHashCode(x.Denominator())
+	case *BigInt:
+		// clojure.lang.Numbers.hasheq for a BigInt: Murmur3.hashLong when
+		// it fits a Long, otherwise BigInteger.hashCode.
+		if x.IsInt64() {
+			return hashInt64(x.Int64())
+		}
+		return javaBigIntegerHashCode(x.ToBigInteger())
 	case *big.Int:
 		if x.IsInt64() {
-			return hashNumber(x.Int64())
+			return hashInt64(x.Int64())
 		}
-		return hashNumber(hashByteSlice(x.Bytes()))
+		return javaBigIntegerHashCode(x)
 	case Hasher:
 		return x.Hash()
 	}

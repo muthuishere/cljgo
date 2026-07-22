@@ -2,6 +2,7 @@ package murmur3
 
 import (
 	"math/bits"
+	"unicode/utf16"
 
 	"github.com/muthuishere/cljgo/pkg/lang/internal/seq"
 )
@@ -36,6 +37,27 @@ func HashLong(input int64) uint32 {
 	h1 = mixH1(h1, k1)
 
 	return fmix(h1, 8)
+}
+
+// HashUnencodedChars is Clojure's Murmur3.hashUnencodedChars — a murmur3
+// over the UTF-16 code units of a string, consumed two-at-a-time. It is
+// the basis of Symbol/Keyword hasheq (clojure.lang.Symbol.hasheq feeds a
+// symbol's name through it), so it must match the JVM byte-for-byte.
+func HashUnencodedChars(s string) uint32 {
+	units := utf16.Encode([]rune(s))
+	h1 := uint32(seed)
+	// step through the code units two at a time
+	for i := 1; i < len(units); i += 2 {
+		k1 := uint32(units[i-1]) | (uint32(units[i]) << 16)
+		k1 = mixK1(k1)
+		h1 = mixH1(h1, k1)
+	}
+	// deal with any remaining code unit
+	if len(units)&1 == 1 {
+		k1 := mixK1(uint32(units[len(units)-1]))
+		h1 ^= k1
+	}
+	return fmix(h1, uint32(2*len(units)))
 }
 
 func HashOrdered(xs seq.Seq, elHash func(any) uint32) uint32 {

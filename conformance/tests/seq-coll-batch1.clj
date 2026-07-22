@@ -8,4 +8,4 @@
  (drop-last [1 2 3]) (take-last 2 [1 2 3 4]) (ffirst [[1 2] [3 4]])
  (fnext [1 2 3]) (nfirst [[1 2 3]]) (not= 1 2) (not= 1 1)
  (compare 1 2) (compare 2 2) (sorted-set 3 1 2 1) (identical? :a :a)]
-;; expect: [3 (1 2) 3 [1 2] 1 (2 3) [2 3] (3 2 1) [:b 2] :a 1 #{2 3 1} #{3 1} [] {} (1 2) (3 4) 1 2 (2 3) true false -1 0 #{1 2 3} true]
+;; expect: [3 (1 2) 3 [1 2] 1 (2 3) [2 3] (3 2 1) [:b 2] :a 1 #{1 3 2} #{1 3} [] {} (1 2) (3 4) 1 2 (2 3) true false -1 0 #{1 2 3} true]

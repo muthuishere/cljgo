@@ -120,6 +120,17 @@ func (k Keyword) Hash() uint32 {
 	return k.hash
 }
 
+// HashEq is clojure.lang.Keyword.hasheq — the value clojure.core's `hash`
+// and hash-map/set bucketing use. Matches JVM 1.12.5 byte-for-byte:
+// the underlying symbol's hasheq plus the golden-ratio constant.
+func (k Keyword) HashEq() uint32 {
+	ns := ""
+	if n, ok := k.Namespace().(string); ok {
+		ns = n
+	}
+	return symbolHashEq(ns, k.Name()) + 0x9e3779b9
+}
+
 func (k Keyword) Compare(other any) int {
 	if otherKw, ok := other.(Keyword); ok {
 		s := k.String()
