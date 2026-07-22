@@ -69,8 +69,13 @@ var registry = []Entry{
 	{Code: "A2007", Title: "invalid binding form", Since: "M2"},
 	{Code: "A2008", Title: "conflicting fn overloads", Since: "M2"},
 
-	// G5xxx — general
+	// G5xxx — general (runtime errors carry raise-site codes here, ADR 0048)
 	{Code: "G5000", Title: "uncategorized compiler error", Since: "M2"},
+	{Code: "G5001", Title: "value is not a number", Since: "M5"},
+	{Code: "G5002", Title: "value is not a function", Since: "M5"},
+	{Code: "G5003", Title: "value is not seqable", Since: "M5"},
+	{Code: "G5004", Title: "index out of bounds", Since: "M5"},
+	{Code: "G5005", Title: "value is not a collection", Since: "M5"},
 }
 
 // Lookup returns the registry entry for code.

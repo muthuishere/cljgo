@@ -3,7 +3,6 @@
 package cljdata
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -496,7 +495,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.data/equality-partition", "0+: [args & more]"))
 			}
 			var args207 any
 			if len(args) > 0 {
@@ -527,7 +526,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.data/diff-similar", "0+: [args & more]"))
 			}
 			var args218 any
 			if len(args) > 0 {

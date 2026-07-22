@@ -1,7 +1,5 @@
 package lang
 
-import "fmt"
-
 // FnFunc is a wrapped Go function that implements the IFn interface.
 type FnFunc func(args ...any) any
 
@@ -42,7 +40,7 @@ func NewFnFunc0(fn func() any) FnFunc0 { return FnFunc0(fn) }
 
 func (f FnFunc0) Invoke(args ...any) any {
 	if len(args) != 0 {
-		panic(NewIllegalArgumentError(fmt.Sprintf("wrong number of arguments: expected 0, got %d", len(args))))
+		panic(&ArityError{Actual: len(args), Expected: "0"})
 	}
 	return f()
 }
@@ -61,7 +59,7 @@ func NewFnFunc1(fn func(any) any) FnFunc1 { return FnFunc1(fn) }
 
 func (f FnFunc1) Invoke(args ...any) any {
 	if len(args) != 1 {
-		panic(NewIllegalArgumentError(fmt.Sprintf("wrong number of arguments: expected 1, got %d", len(args))))
+		panic(&ArityError{Actual: len(args), Expected: "1"})
 	}
 	return f(args[0])
 }
@@ -80,7 +78,7 @@ func NewFnFunc2(fn func(any, any) any) FnFunc2 { return FnFunc2(fn) }
 
 func (f FnFunc2) Invoke(args ...any) any {
 	if len(args) != 2 {
-		panic(NewIllegalArgumentError(fmt.Sprintf("wrong number of arguments: expected 2, got %d", len(args))))
+		panic(&ArityError{Actual: len(args), Expected: "2"})
 	}
 	return f(args[0], args[1])
 }
@@ -99,7 +97,7 @@ func NewFnFunc3(fn func(any, any, any) any) FnFunc3 { return FnFunc3(fn) }
 
 func (f FnFunc3) Invoke(args ...any) any {
 	if len(args) != 3 {
-		panic(NewIllegalArgumentError(fmt.Sprintf("wrong number of arguments: expected 3, got %d", len(args))))
+		panic(&ArityError{Actual: len(args), Expected: "3"})
 	}
 	return f(args[0], args[1], args[2])
 }
@@ -118,7 +116,7 @@ func NewFnFunc4(fn func(any, any, any, any) any) FnFunc4 { return FnFunc4(fn) }
 
 func (f FnFunc4) Invoke(args ...any) any {
 	if len(args) != 4 {
-		panic(NewIllegalArgumentError(fmt.Sprintf("wrong number of arguments: expected 4, got %d", len(args))))
+		panic(&ArityError{Actual: len(args), Expected: "4"})
 	}
 	return f(args[0], args[1], args[2], args[3])
 }

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
@@ -49,6 +50,41 @@ func FromError(err error) Diagnostic {
 	var c Carrier
 	if errors.As(err, &c) {
 		if d, ok := c.Diagnostic(); ok {
+			return d
+		}
+	}
+
+	// A compiled binary's arity error (lang.ArityError) is not a Carrier —
+	// lang cannot import diag (cycle) — so map it here. It gives the compiled
+	// binary the same named + expected/found A2004 line the interpreter's
+	// *arityError Carrier produces (ADR 0048 batch 1). With a Name the
+	// message reads "…passed to: user/f" and Expected renders the arity
+	// label; the un-named FnFuncN fast path renders its coded message alone.
+	var ae *lang.ArityError
+	if errors.As(err, &ae) {
+		d := Diagnostic{
+			Severity:   SeverityError,
+			Message:    ae.Error(),
+			ErrorCode:  "A2004",
+			ExplainURL: ExplainURL("A2004"),
+		}
+		if ae.Name != "" && ae.Expected != "" {
+			d.Expected = ae.Expected
+		}
+		return d
+	}
+
+	// A runtime error that attached a registered code at its raise site
+	// (lang.CodedError, lang.IndexOutOfBoundsError, …) via the DiagCode seam
+	// (ADR 0048 batch 1). This is the append-only replacement for prose-
+	// matching runtime errors: the raise site names its own code, so the
+	// rendered line carries the real code + explain pointer, not G5000. The
+	// message stays exactly err.Error() (byte-stable).
+	var dc interface{ DiagCode() string }
+	if errors.As(err, &dc) {
+		if code := dc.DiagCode(); code != "" {
+			d := Diagnostic{Severity: SeverityError, Message: err.Error(), ErrorCode: code}
+			setExplainURL(&d)
 			return d
 		}
 	}

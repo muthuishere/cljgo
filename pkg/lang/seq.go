@@ -98,7 +98,7 @@ func Seq(x interface{}) ISeq {
 		return NewGoMapSeq(x)
 	}
 
-	panic(fmt.Errorf("can't convert %T to ISeq", x))
+	panic(NewCodedError("G5003", fmt.Sprintf("can't convert %T to ISeq", x)))
 }
 
 func seqToSlice(s ISeq) []interface{} {

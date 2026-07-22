@@ -3,7 +3,6 @@
 package predicates
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -490,7 +489,7 @@ func Load() {
 			tmp172 := lang.Apply3(tmp166, tmp167, coll165, tmp171)
 			return tmp172
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/drop-last", "1: [coll] or 2: [n coll]"))
 		}
 	})
 	v_clojure_DOT_core_drop_last.BindRoot(tmp160)
@@ -593,7 +592,7 @@ func Load() {
 			return tmp218
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/concat", "0: [] or 1: [x] or 2: [x y] or 2+: [x y zs & more]"))
 			}
 			x219 := args[0]
 			_ = x219
@@ -684,7 +683,7 @@ func Load() {
 			return tmp258
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.core/not=", "1: [x] or 2: [x y] or 2+: [x y more & more]"))
 			}
 			x259 := args[0]
 			_ = x259

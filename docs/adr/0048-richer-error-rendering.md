@@ -86,6 +86,22 @@ snippet-and-caret block.
   still lacks name/location — its panic is a separate bare `fmt.Errorf` in
   the emitter, not the interpreter's Carrier. Making compiled == interpreted
   for arity (and the other enriched errors) is the first follow-up batch.
+- **Batch 1 (landed):** compiled arity errors route through `lang.ArityError`
+  (mapped by `diag.FromError`; `lang` cannot be a `Carrier` — it may not
+  import `diag`). Multi-arity/variadic compiled fns now render the full
+  interpreted line — `wrong number of args (4) passed to: user/g (expects 1:
+  [x] or 2: [x y])` + A2004 — with the Var name threaded from the `def` site,
+  so anonymous `(defn g …)` fns and core macros name themselves. *Limitation:*
+  a single-fixed-arity fn of ≤4 params uses the zero-alloc `lang.FnFuncN` fast
+  path, whose bare-func representation carries no name; its error gains the
+  code + expected/found but stays un-named (naming it would force the generic
+  `Invoke(args…)` path and regress the call hot path — deferred). *Location*
+  is carried in neither compiled path: the panic fires inside dispatch, which
+  has no call-site position (the JVM has none here either); the interpreter
+  still locates it by enriching at the `OpInvoke` call site. Batch 1 also gave
+  five high-frequency runtime errors raise-site codes via a `DiagCode()` seam
+  (`G5001`–`G5005`: not-a-number, not-a-function, not-seqable, index-out-of-
+  bounds, not-a-collection), each with an explain page; `.Error()` unchanged.
 - **Surprise the spike found:** `cljgo build` evaluates top-level forms, so
   a top-level runtime error dies at *build* time — which narrows what the
   compiled `main()` boundary actually guards (in-function runtime throws).

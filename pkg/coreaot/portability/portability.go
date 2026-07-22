@@ -3,7 +3,6 @@
 package portability
 
 import (
-	"fmt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
 
@@ -58,7 +57,7 @@ func Load() {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "when-var-exists"))
+				panic(lang.NewArityError(len(args), "clojure.core-test.portability/when-var-exists", "3+: [&form &env var-sym body & more]"))
 			}
 			X_AMP_form7 := args[0]
 			_ = X_AMP_form7

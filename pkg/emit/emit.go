@@ -77,6 +77,8 @@ type generator struct {
 	usesMath   bool
 	usesReader bool
 	mainVar    string // hoisted Go name of a def'd -main, if any
+	defName    string // qualified name of the Var an fn is being def'd into,
+	// so an anonymous (defn f …)'s fn* names its arity error user/f (ADR 0048)
 
 	host        *hostFacts        // loaded go/packages type facts (nil = no interop)
 	hostImports map[string]string // import path → package name, for interop
@@ -615,7 +617,15 @@ func (g *generator) gen(n *ast.Node) string {
 			g.wf("%s.SetMeta(%s)\n", gv, mrv)
 		}
 		if s.Init != nil {
+			// Thread the Var's qualified name onto an fn* init so its arity
+			// error names the fn (user/f) like the interpreter, not "fn"
+			// (ADR 0048): (defn f …) builds an anonymous fn* whose own self-
+			// name is "fn". Consumed and cleared by genFn.
+			if s.Init.Op == ast.OpFn && s.Var != nil {
+				g.defName = s.Var.ToSymbol().String()
+			}
 			rv := g.gen(s.Init)
+			g.defName = ""
 			g.wf("%s.BindRoot(%s)\n", gv, rv)
 		}
 		return gv // def's value is the Var itself
@@ -959,13 +969,25 @@ func (g *generator) genTry(s *ast.TryNode) string {
 // A self-name binds via a pre-declared Go var captured by the closure
 // and assigned right after construction — calls can only happen later.
 func (g *generator) genFn(fn *ast.FnNode) string {
+	// The display name for an arity error: the Var this fn is being def'd
+	// into (user/f, matching the interpreter) wins over the fn*'s own self-
+	// name; an anonymous fn with neither stays "fn". Consume g.defName here
+	// so a nested fn literal in the body does not inherit it (ADR 0048).
+	displayName := "fn"
+	defName := g.defName
+	g.defName = ""
+
 	name := "fn"
 	selfGo := ""
 	if fn.Local != nil {
 		b := fn.Local.Sub.(*ast.BindingNode)
 		name = b.Name.Name()
+		displayName = name
 		selfGo = g.bindLocal(b)
 		g.wf("var %s any\n_ = %s\n", selfGo, selfGo)
+	}
+	if defName != "" {
+		displayName = defName
 	}
 
 	t := g.temp()
@@ -982,7 +1004,7 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 		g.genMethodBody(m, gnames)
 		g.wf("})\n")
 	} else {
-		g.usesFmt = true
+		expects := fnArityLabel(fn)
 		g.wf("%s := lang.FnFunc(func(args ...any) any {\n", t)
 		g.wf("switch len(args) {\n")
 		var variadic *ast.FnMethodNode
@@ -1003,11 +1025,11 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 		g.wf("default:\n")
 		if variadic != nil {
 			g.wf("if len(args) < %d {\n", variadic.FixedArity)
-			g.wf("panic(fmt.Errorf(\"wrong number of args (%%d) passed to: %%s\", len(args), %q))\n", name)
+			g.wf("panic(lang.NewArityError(len(args), %q, %q))\n", displayName, expects)
 			g.wf("}\n")
 			g.genArgsBinding(variadic)
 		} else {
-			g.wf("panic(fmt.Errorf(\"wrong number of args (%%d) passed to: %%s\", len(args), %q))\n", name)
+			g.wf("panic(lang.NewArityError(len(args), %q, %q))\n", displayName, expects)
 		}
 		g.wf("}\n")
 		g.wf("})\n")
@@ -1017,6 +1039,28 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 		g.wf("%s = %s\n", selfGo, t)
 	}
 	return t
+}
+
+// fnArityLabel renders a fn's accepted arities as the "expects" label the
+// arity-error line shows — "1: [x]", "1: [x] or 2: [x y]", with a variadic
+// method as "N+: [a & more]". It mirrors pkg/eval.arityExpects byte-for-byte
+// so the compiled arity error reads identically to the interpreted one
+// (ADR 0048).
+func fnArityLabel(fn *ast.FnNode) string {
+	parts := make([]string, 0, len(fn.Methods))
+	for _, mn := range fn.Methods {
+		m := mn.Sub.(*ast.FnMethodNode)
+		names := make([]string, 0, len(m.Params))
+		for _, pn := range m.Params {
+			names = append(names, pn.Sub.(*ast.BindingNode).Name.Name())
+		}
+		label := fmt.Sprintf("%d: [%s]", m.FixedArity, strings.Join(names, " "))
+		if m.IsVariadic {
+			label = fmt.Sprintf("%d+: [%s & more]", m.FixedArity, strings.Join(names, " "))
+		}
+		parts = append(parts, label)
+	}
+	return strings.Join(parts, " or ")
 }
 
 // singleFixedMethod returns the sole method when the fn qualifies for

@@ -3,7 +3,6 @@
 package cljset
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -151,7 +150,7 @@ func Load() {
 			return tmp31
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.set/union", "0: [] or 1: [s1] or 2: [s1 s2] or 2+: [s1 s2 sets & more]"))
 			}
 			s138 := args[0]
 			_ = s138
@@ -232,7 +231,7 @@ func Load() {
 			return tmp64
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.set/intersection", "1: [s1] or 2: [s1 s2] or 2+: [s1 s2 sets & more]"))
 			}
 			s177 := args[0]
 			_ = s177
@@ -320,7 +319,7 @@ func Load() {
 			return tmp108
 		default:
 			if len(args) < 2 {
-				panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+				panic(lang.NewArityError(len(args), "clojure.set/difference", "1: [s1] or 2: [s1 s2] or 2+: [s1 s2 sets & more]"))
 			}
 			s1122 := args[0]
 			_ = s1122
@@ -701,7 +700,7 @@ func Load() {
 			}
 			return tmp306
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.set/join", "2: [xrel yrel] or 3: [xrel yrel km]"))
 		}
 	})
 	v_clojure_DOT_set_join.BindRoot(tmp235)

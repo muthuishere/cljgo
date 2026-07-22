@@ -3,7 +3,6 @@
 package cljrepl
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 	reader "github.com/muthuishere/cljgo/pkg/reader"
@@ -1018,7 +1017,7 @@ func Load() {
 			_ = tmp467
 			return nil
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.repl/pst", "0: [] or 1: [e-or-depth] or 2: [e depth]"))
 		}
 	})
 	v_clojure_DOT_repl_pst.BindRoot(tmp427)
@@ -1063,7 +1062,7 @@ func Load() {
 			}
 			return tmp488
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.repl/set-break-handler!", "0: [] or 1: [f]"))
 		}
 	})
 	v_clojure_DOT_repl_set_break_handler_BANG_.BindRoot(tmp484)
@@ -1091,7 +1090,7 @@ func Load() {
 			}
 			return tmp496
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.repl/thread-stopper", "0: [] or 1: [thread]"))
 		}
 	})
 	v_clojure_DOT_repl_thread_stopper.BindRoot(tmp492)

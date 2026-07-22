@@ -3,7 +3,6 @@
 package numeric
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -67,7 +66,7 @@ func Load() {
 			tmp20 := lang.Apply2(tmp14, tmp15, coll13)
 			return tmp20
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/random-sample", "1: [prob] or 2: [prob coll]"))
 		}
 	})
 	v_clojure_DOT_core_random_sample.BindRoot(tmp3)

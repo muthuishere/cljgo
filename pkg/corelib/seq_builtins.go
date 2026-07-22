@@ -49,7 +49,7 @@ func internSeqBuiltins(def func(string, func(...any) any) *lang.Var) {
 		if len(args) == 3 {
 			return args[2]
 		}
-		panic(fmt.Errorf("index %d out of bounds", idx))
+		panic(lang.NewCodedError("G5004", fmt.Sprintf("index %d out of bounds", idx)))
 	})
 
 	// nthnext: (nthnext coll n) — the seq after n calls of next, or nil.
@@ -122,7 +122,7 @@ func internSeqBuiltins(def func(string, func(...any) any) *lang.Var) {
 			}
 			c, ok := acc.(lang.Conser)
 			if !ok {
-				panic(fmt.Errorf("conj: cannot conj onto %s", lang.PrintString(acc)))
+				panic(lang.NewCodedError("G5005", fmt.Sprintf("conj: cannot conj onto %s", lang.PrintString(acc))))
 			}
 			acc = lang.Conj(c, x)
 		}

@@ -3,7 +3,6 @@
 package hierarchies
 
 import (
-	"fmt"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 	lang "github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -327,7 +326,7 @@ func Load() {
 			}
 			return tmp19
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/isa?", "2: [child parent] or 3: [h child parent]"))
 		}
 	})
 	v_clojure_DOT_core_isa_QMARK_.BindRoot(tmp10)
@@ -391,7 +390,7 @@ func Load() {
 			tmp121 := lang.Apply1(tmp103, tmp104)
 			return tmp121
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/parents", "1: [tag] or 2: [h tag]"))
 		}
 	})
 	v_clojure_DOT_core_parents.BindRoot(tmp96)
@@ -477,7 +476,7 @@ func Load() {
 			tmp163 := lang.Apply1(tmp129, tmp130)
 			return tmp163
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/ancestors", "1: [tag] or 2: [h tag]"))
 		}
 	})
 	v_clojure_DOT_core_ancestors.BindRoot(tmp122)
@@ -517,7 +516,7 @@ func Load() {
 			}
 			return tmp173
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/descendants", "1: [tag] or 2: [h tag]"))
 		}
 	})
 	v_clojure_DOT_core_descendants.BindRoot(tmp164)
@@ -771,7 +770,7 @@ func Load() {
 						tmp303 := lang.Apply3(tmp285, tmp286, m280, tmp302)
 						return tmp303
 					default:
-						panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+						panic(lang.NewArityError(len(args), "fn", "5: [m source sources target targets]"))
 					}
 				})
 				var tf304 any = tmp279
@@ -849,7 +848,7 @@ func Load() {
 			}
 			return tmp272
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/derive", "2: [tag parent] or 3: [h tag parent]"))
 		}
 	})
 	v_clojure_DOT_core_derive.BindRoot(tmp182)
@@ -955,7 +954,7 @@ func Load() {
 			}
 			return tmp352
 		default:
-			panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), "fn"))
+			panic(lang.NewArityError(len(args), "clojure.core/underive", "2: [tag parent] or 3: [h tag parent]"))
 		}
 	})
 	v_clojure_DOT_core_underive.BindRoot(tmp343)

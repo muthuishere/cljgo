@@ -108,7 +108,7 @@ func Ops(x any) ops {
 		case reflect.Float32, reflect.Float64:
 			return float64Ops{}
 		}
-		panic(fmt.Sprintf("cannot convert %T to Ops", x))
+		panic(NewCodedError("G5001", fmt.Sprintf("cannot convert %T to Ops", x)))
 	}
 }
 

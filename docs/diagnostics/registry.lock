@@ -7,6 +7,11 @@ A2006 malformed binding vector
 A2007 invalid binding form
 A2008 conflicting fn overloads
 G5000 uncategorized compiler error
+G5001 value is not a number
+G5002 value is not a function
+G5003 value is not seqable
+G5004 index out of bounds
+G5005 value is not a collection
 R1001 unterminated form
 R1002 unmatched delimiter
 R1003 map literal with odd number of forms
