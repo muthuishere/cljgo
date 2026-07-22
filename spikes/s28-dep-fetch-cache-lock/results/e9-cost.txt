@@ -1,0 +1,12 @@
+### E9  resolve cost (median, M-series darwin/arm64, go1.26.3, 3 deps, LOCAL bare remotes)
+(the earlier shell-timed run was harness noise; these are subprocess-timed medians)
+
+process baseline (bad args, exits immediately): 3.3 ms
++ treehash of one dep entry:                    3.2 ms
+warm resolve (lock + 3 cache hits + full verify):3.5 ms
+offline resolve:                                3.3 ms
+cold resolve (3 bare clones + archive + verify): 163.2 ms
+
+### E10  cache size on disk
+ 52K	$W/cacheA/src
+324K	$W/cacheA/dl

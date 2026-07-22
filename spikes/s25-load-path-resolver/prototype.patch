@@ -1,0 +1,19 @@
+diff --git a/pkg/eval/libload.go b/pkg/eval/libload.go
+index e8f0702..d0a06a0 100644
+--- a/pkg/eval/libload.go
++++ b/pkg/eval/libload.go
+@@ -85,6 +85,14 @@ func ResolveLibPath(libSym *lang.Symbol) string {
+ 	}
+ 	roots = append(roots, dir)
+ 
++	// S25 PROTOTYPE (spike only — revert): load-path roots, consulted
++	// AFTER the requiring-file-relative roots.
++	for _, p := range filepath.SplitList(os.Getenv("CLJGO_PATH")) {
++		if p != "" {
++			roots = append(roots, p)
++		}
++	}
++
+ 	stem := libPathStem(libSym)
+ 	for _, root := range roots {
+ 		for _, ext := range []string{".clj", ".cljg"} {

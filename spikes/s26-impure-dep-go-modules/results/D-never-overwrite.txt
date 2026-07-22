@@ -1,0 +1,38 @@
+
+=== CASE 2 — NEVER-OVERWRITE: re-resolution after a dep's requires change ===
+
+gen dir: /var/folders/cb/fw9_2_fd39n1jn_xm5r7q1dh0000gn/T/s26-overwrite-1773889023
+
+>> build #1, require set: github.com/google/uuid@v1.6.0
+
+--- go.mod after build #1 ---
+module cljgo.gen/main
+
+go 1.26
+
+require (
+github.com/muthuishere/cljgo v0.0.0
+github.com/google/uuid v1.6.0
+)
+
+replace github.com/muthuishere/cljgo => /Users/muthuishere/muthu/gitworkspace/clojure-workspace/worktrees/wrktree0/
+---
+
+>> build #2, require set: github.com/google/uuid@v1.6.0, github.com/google/go-cmp@v0.7.0
+SynthGoMod returned: <nil>
+
+--- go.mod after build #2 ---
+module cljgo.gen/main
+
+go 1.26
+
+require (
+github.com/muthuishere/cljgo v0.0.0
+github.com/google/uuid v1.6.0
+)
+
+replace github.com/muthuishere/cljgo => /Users/muthuishere/muthu/gitworkspace/clojure-workspace/worktrees/wrktree0/
+---
+
+RESULT: the new require DID NOT reach go.mod — SILENT NO-OP CONFIRMED.
+        SynthGoMod returned nil, so pkg/build proceeds as if it had written.

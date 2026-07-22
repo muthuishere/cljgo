@@ -1,0 +1,12 @@
+;; A cgo/c-link dependency: needs a HOST TOOLCHAIN and a system library at
+;; BUILD time, not just at run time — the case that flips CGO_ENABLED=1 and
+;; (exp2) destroys cross-compilation and the static-binary property.
+{:name    "fastjson-cgo"
+ :version "0.4.0"
+ :capabilities #{:cgo}
+ :cljgo-requires []
+ :go-requires []
+ :c-link [{:pkg-config  "nosuchlib_s27"
+           :libs        ["nosuchlib_s27"]
+           :headers     ["nosuchlib_s27.h"]
+           :min-version "2.0.0"}]}

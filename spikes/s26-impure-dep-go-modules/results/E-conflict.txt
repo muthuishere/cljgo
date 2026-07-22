@@ -1,0 +1,54 @@
+
+=== CASE 3 — CONFLICT: dep A wants go-cmp v0.6.0, dep B wants go-cmp v0.7.0 ===
+
+gen dir: /var/folders/cb/fw9_2_fd39n1jn_xm5r7q1dh0000gn/T/s26-conflict-632532746
+merged (naive append, today's semantics): github.com/google/go-cmp@v0.6.0, github.com/google/go-cmp@v0.7.0
+
+--- go.mod as SynthGoMod wrote it (NOTE the duplicate) ---
+module cljgo.gen/main
+
+go 1.26
+
+require (
+github.com/muthuishere/cljgo v0.0.0
+github.com/google/go-cmp v0.6.0
+github.com/google/go-cmp v0.7.0
+)
+
+replace github.com/muthuishere/cljgo => /Users/muthuishere/muthu/gitworkspace/clojure-workspace/worktrees/wrktree0/
+---
+
+-- pkg/build then runs goGet + goModTidy + go build --
+
+$ go mod tidy
+exit err: <nil>
+
+--- go.mod after `go mod tidy` ---
+module cljgo.gen/main
+
+go 1.26
+
+require github.com/google/go-cmp v0.7.0
+
+replace github.com/muthuishere/cljgo => /Users/muthuishere/muthu/gitworkspace/clojure-workspace/worktrees/wrktree0/
+---
+
+$ go build -o app .
+exit err: <nil>
+
+$ ./app
+consumer ran; go-cmp linked, Diff(1,1) empty = true
+exit err: <nil>
+
+$ go list -m github.com/google/go-cmp
+github.com/google/go-cmp v0.7.0
+exit err: <nil>
+
+-- who asked for what? the flattened module cannot say: --
+
+$ go mod graph
+cljgo.gen/main github.com/google/go-cmp@v0.7.0
+cljgo.gen/main go@1.26
+github.com/google/go-cmp@v0.7.0 go@1.21
+go@1.26 toolchain@go1.26
+exit err: <nil>

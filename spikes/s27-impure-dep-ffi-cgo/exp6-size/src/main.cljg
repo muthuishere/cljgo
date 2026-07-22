@@ -1,0 +1,2 @@
+(require 'depffi.core)
+(println "consumer says:" (depffi.core/describe))

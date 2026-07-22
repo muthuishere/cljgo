@@ -1,0 +1,8 @@
+;; S27 exp1 — the consumer's OWN build description. It declares NO purego.
+;; The consumer's own source (src/main.cljg) contains no FFI whatsoever.
+;; The impurity lives entirely in the DEPENDENCY namespace depffi.core,
+;; which is what ADR 0044 decision 2's conditional-inclusion rule must see.
+(defn build [b]
+  (let [app (exe b {:name "consumer" :main "src/main.cljg"})]
+    (install b app)
+    (run b app)))

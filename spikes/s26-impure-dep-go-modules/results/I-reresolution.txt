@@ -1,0 +1,25 @@
+### RE-RESOLUTION — falsifiable test of ADR 0048 lines 48-56
+Build #1 pins a REAL version; build #2 pins a NONEXISTENT one in the same
+project dir. If re-resolution takes effect, build #2 MUST fail.
+
+-- build #1: uuid v1.6.0 (real) --
+uuid: nil
+cljgo build: installed /tmp/s26-rr/rrapp
+exit=0
+$ ./rrapp
+uuid: 7a534ef0-3521-4b42-9e9a-d83c09456553
+
+-- build #2: uuid v9.9.9 (does not exist) --
+uuid: nil
+error: go get github.com/google/uuid@v9.9.9: exit status 1
+go: errors parsing go.mod:
+go.mod:7: require github.com/google/uuid: version "v9.9.9" invalid: should be v0 or v1, not v9
+
+exit=0
+
+-- build #3: back to v1.6.0 --
+uuid: nil
+cljgo build: installed /tmp/s26-rr/rrapp
+exit=0
+$ ./rrapp
+uuid: 8f5a8712-23bc-4b08-9f2b-956e74dcee77

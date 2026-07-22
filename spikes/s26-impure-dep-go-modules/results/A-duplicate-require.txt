@@ -1,0 +1,61 @@
+### EXPERIMENT A — ONE go.mod, SAME module path listed TWICE at different versions
+go version: go version go1.26.3 darwin/arm64
+
+--- listed order: v0.7.0 then v0.6.0 ---
+$ go build -o app ./...
+exit=0
+$ go list -m github.com/google/go-cmp
+github.com/google/go-cmp v0.7.0
+exit=0
+$ ./app
+built ok; cmp.Diff(1,1) empty = true
+$ cat go.mod  (after build)
+module s26.dup/main
+
+go 1.26
+
+require github.com/google/go-cmp v0.7.0
+
+--- listed order: v0.6.0 then v0.7.0 ---
+$ go build -o app ./...
+exit=0
+$ go list -m github.com/google/go-cmp
+github.com/google/go-cmp v0.7.0
+exit=0
+$ ./app
+built ok; cmp.Diff(1,1) empty = true
+$ cat go.mod  (after build)
+module s26.dup/main
+
+go 1.26
+
+require github.com/google/go-cmp v0.7.0
+
+### EXPERIMENT A2 — same, but with the DEFAULT -mod=readonly (what cljgo actually runs)
+$ go mod tidy   (cljgo runs this: pkg/build goModTidy)
+exit=0
+$ cat go.mod
+module s26.dup/main
+
+go 1.26
+
+require github.com/google/go-cmp v0.7.0
+$ go build -o app ./...  (default -mod=readonly)
+exit=0
+$ ./app
+built ok; v = true
+$ go list -m github.com/google/go-cmp
+github.com/google/go-cmp v0.7.0
+
+-- and WITHOUT tidy first, straight readonly build on the duplicate go.mod --
+$ go build -o app ./...
+exit=1
+$ cat go.mod (unchanged?)
+module s26.dup/main
+
+go 1.26
+
+require (
+	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
+)

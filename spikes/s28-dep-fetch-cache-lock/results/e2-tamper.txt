@@ -1,0 +1,43 @@
+
+### E2a  warm-cache resolve from the lock (baseline: must pass)
+  cache hit  acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+  cache hit  acme-crypt@750035182e3f
+  resolved   acme-crypt ref=v1.0.0 sha=750035182e3f tree=sha256:e4a0eaf9bd19…
+  path       local-lib -> local-lib (unlocked by design)
+  cache hit  acme-util@c3820883df60
+  resolved   acme-util ref=v1.0.0 sha=c3820883df60 tree=sha256:bd710db3debb…
+ok: 4 deps resolved from build.lock.edn
+cache: /private/tmp/claude-501/-Users-muthuishere-muthu-gitworkspace-clojure-workspace-worktrees-wrktree0/769b1125-7225-48f7-a2ee-cf4e40dd5459/scratchpad/s28w/cacheA
+
+### E2b  tamper: append to one file inside a published cache entry
+victim entry: $W/cacheA/src/b9d18f1bcfd01aa2f6ada44e15074568
+perms before tamper: -r--r--r--
+appended 13 bytes to $V/src/acme/util.clj
+
+### E2c  next resolve
+  cache hit  acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+  cache hit  acme-crypt@750035182e3f
+  resolved   acme-crypt ref=v1.0.0 sha=750035182e3f tree=sha256:e4a0eaf9bd19…
+  path       local-lib -> local-lib (unlocked by design)
+  cache hit  acme-util@c3820883df60
+error: INTEGRITY FAILURE for "acme-util" @ c3820883df60
+  expected tree/hash sha256:bd710db3debb61ebec76e6a3e533c8c48e1b0b00296daaa46f550dcd3647cd61
+  got      tree/hash sha256:5a89f8d298d88f43046c87040f87cf8668984c37d4904892174ceffbde92ff17
+  cache entry: $W/cacheA/src/b9d18f1bcfd01aa2f6ada44e15074568
+  the cache entry does not match the lock — it was modified after it was
+  written. Remove that directory and re-resolve.
+exit=1
+
+### E2d  repair (drop the corrupt entry) and re-resolve
+  cache hit  acme-http@724b2d1a606a
+  resolved   acme-http ref=v1.0.0 sha=724b2d1a606a tree=sha256:26b79cb65e15…
+  cache hit  acme-crypt@750035182e3f
+  resolved   acme-crypt ref=v1.0.0 sha=750035182e3f tree=sha256:e4a0eaf9bd19…
+  path       local-lib -> local-lib (unlocked by design)
+  fetched    acme-util@c3820883df60
+  resolved   acme-util ref=v1.0.0 sha=c3820883df60 tree=sha256:bd710db3debb…
+ok: 4 deps resolved from build.lock.edn
+cache: $W/cacheA
+exit=0
