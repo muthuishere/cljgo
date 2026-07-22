@@ -60,7 +60,14 @@ jobs:
           fi
 
       - name: go test
-        run: go test ./...
+        # -timeout is per-package (default 10m). The conformance package
+        # compiles a fresh binary per test file across the dual harness
+        # (~390 files, ~350s isolated) and creeps toward that default as the
+        # suite grows; 30m gives headroom on a slow/contended runner without
+        # masking a real hang. (The compiled harness is being restructured to
+        # run its go-build/run subprocess phase in parallel — until then the
+        # timeout is the safety net.)
+        run: go test -timeout 30m ./...
         env:
           # The boot budget is host-relative (ADR 0024). ADR 0019's 250ms was
           # calibrated on the owner's machine; the same code boots in 181ms
