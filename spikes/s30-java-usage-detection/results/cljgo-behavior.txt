@@ -1,0 +1,71 @@
+=== java.util.UUID/randomUUID ===
+error: compiler error at /dev/stdin:1:11: no such namespace: java.util.UUID
+[exit 1]
+
+=== System/currentTimeMillis ===
+error: compiler error at /dev/stdin:1:11: no such namespace: System
+[exit 1]
+
+=== Math/sqrt ===
+error: compiler error at /dev/stdin:1:11: no such namespace: Math
+[exit 1]
+
+=== Integer/parseInt ===
+error: compiler error at /dev/stdin:1:11: no such namespace: Integer
+[exit 1]
+
+=== String/valueOf ===
+error: compiler error at /dev/stdin:1:11: no such namespace: String
+[exit 1]
+
+=== new java.io.File ===
+error: compiler error at /dev/stdin:1:11: unable to resolve symbol: new in this context
+[exit 1]
+
+=== import + Date. ===
+error: compiler error at /dev/stdin:1:2: unable to resolve symbol: import in this context
+[exit 1]
+
+=== clojure.java.io/file ===
+error: compiler error at /dev/stdin:1:11: no such namespace: clojure.java.io
+[exit 1]
+
+=== .toUpperCase (runtime miss) ===
+error: no method toUpperCase on string
+[exit 1]
+
+=== .getBytes (runtime miss) ===
+error: no method getBytes on string
+[exit 1]
+
+=== .toUpperCase uncalled (SILENT ok) ===
+defined, not called
+[exit 0]
+
+=== .Close uncalled (analysis silent) ===
+not called
+[exit 0]
+
+=== .Replace on GO value (works) ===
+b
+[exit 0]
+
+=== .Replace on string (runtime miss) ===
+error: no method Replace on string
+[exit 1]
+
+=== .Error on cljgo value (works) ===
+x
+[exit 0]
+
+=== TRAP instance? String ===
+true
+[exit 0]
+
+=== TRAP catch Exception ===
+[exit 0]
+
+=== TRAP java.util.UUID ClassRef value ===
+java.util.UUID
+[exit 0]
+

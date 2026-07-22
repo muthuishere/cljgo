@@ -1,0 +1,45 @@
+S31 — measured results (real cljgo built from this worktree at specs/toolkit).
+Host: darwin/arm64, go1.26.3. Patched binary: /tmp/cljgo-s31 (lazy prototype),
+/tmp/cljgo-s31-eager (eager variant). NOT committed.
+
+Baseline binary = ~/.local/bin/cljgo builds from the MAIN checkout, not this
+worktree — so the prototype was exercised via a worktree-built binary.
+
+================================================================================
+BEFORE FIX (baseline-*.out) — the divergence, reproduced
+================================================================================
+ c-stdlib          EXIT 0  ToUpper: HELLO / Itoa: 42 / Pi: 3.14159...   (correct)
+ b-real-nil        EXIT 0  all four nils print as nil                    (correct)
+ a-thirdparty      EXIT 0  gorilla/websocket close-normal code: nil      <-- BUG
+ a2-thirdparty-call EXIT 0 call result: nil                              <-- BUG
+   AOT binary of the same source -> close-normal code: 1000  (real value)
+   => silent REPL(nil) vs binary(1000), both exit 0 = the unforgivable divergence
+
+================================================================================
+AFTER FIX — LAZY prototype (fixed-*.out), error at member access
+================================================================================
+ c-stdlib          EXIT 0  identical to baseline (NO false error)        (c) OK
+ b-real-nil        EXIT 0  identical to baseline (NO false error)        (b) OK
+ a-thirdparty      EXIT 1  error: go module github.com/gorilla/websocket is not
+                           linked into the interpreter (accessing member
+                           CloseNormalClosure) (at .../a-thirdparty.clj); build
+                           it (cljgo build), or use the self-rebuild flow
+                           (design/05 §1)                                 (a) OK
+ a2-thirdparty-call EXIT 1 ...(accessing member FormatCloseMessage)...    (a) OK
+ cljgo build (websocket) EXIT 0  installed wsclient  (tolerant discovery) (4) OK
+   installed binary               EXIT 0  close-normal code: 1000  (real value)
+   => interpreter honestly errors; binary produces the real value; NO silent
+      wrong value. ADR 0049 invariant satisfied.
+
+================================================================================
+AFTER FIX — EAGER variant (eager-*.out), error at require-go
+================================================================================
+ c-stdlib          EXIT 0  no error                                      OK
+ a-thirdparty      EXIT !0 error: go module github.com/gorilla/websocket is not
+                           linked into the interpreter; build it ...
+                           (names MODULE, not member; fires before the ref line)
+ cljgo build       EXIT 0  installed (tolerant)                          OK
+
+Lazy names module+member+file and fires at the exact divergence point; eager
+names only the module and fires as soon as require-go runs. Both are mode-aware
+(the emitter's discovery pass tolerates). Lazy recommended.

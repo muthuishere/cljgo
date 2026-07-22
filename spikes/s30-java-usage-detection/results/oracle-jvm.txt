@@ -1,0 +1,31 @@
+# JVM oracle (clojure CLI 1.12.5.1645) — confirms each java-interop snippet is REAL, working JVM interop.
+
+=== java.util.UUID/randomUUID ===
+#uuid "ba1126b4-09f9-4fdb-829c-da0fe709bc7a"
+[exit 0]
+
+=== System/currentTimeMillis ===
+1784694347147
+[exit 0]
+
+=== Math/sqrt ===
+1.4142135623730951
+[exit 0]
+
+=== Integer/parseInt ===
+42
+[exit 0]
+
+=== .toUpperCase ===
+HELLO
+[exit 0]
+
+=== .length ===
+5
+[exit 0]
+
+=== import + Date. ===
+java.util.Date
+#inst "2026-07-22T04:25:48.910-00:00"
+[exit 0]
+

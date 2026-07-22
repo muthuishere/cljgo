@@ -1,0 +1,57 @@
+========== fixture: pure ==========
+  ONE walk, per-namespace class map (dependency-first):
+    pure.util              pure
+    pure.core              pure
+  [publish clojars] whole-lib gate: PASS (want PASS)
+  [use <ns>] per-namespace gate (same map):
+    use pure.core              PASS
+    use pure.util              PASS
+  consistency: whole-lib == AND(per-ns over all reachable) == true
+  RESULT: MET
+
+========== fixture: go-buried ==========
+  ONE walk, per-namespace class map (dependency-first):
+    gob.leaf               go-interop
+        · require-go call strconv/Itoa  [spikes/s29-transitive-purity-validator/fixtures/go-buried/src/gob/leaf.clj:3]
+    gob.mid                pure
+    gob.core               pure
+  [publish clojars] whole-lib gate: FAIL (want FAIL)
+        refuse: gob.leaf uses go-interop (require-go call strconv/Itoa) at spikes/s29-transitive-purity-validator/fixtures/go-buried/src/gob/leaf.clj:3
+  [use <ns>] per-namespace gate (same map):
+    use gob.core               PASS
+    use gob.leaf               FAIL (require-go call strconv/Itoa at spikes/s29-transitive-purity-validator/fixtures/go-buried/src/gob/leaf.clj:3)
+    use gob.mid                PASS
+  consistency: whole-lib == AND(per-ns over all reachable) == false
+  RESULT: MET
+
+========== fixture: mixed ==========
+  ONE walk, per-namespace class map (dependency-first):
+    mix.pureside           pure
+    mix.goside             go-interop
+        · require-go call strings/ToUpper  [spikes/s29-transitive-purity-validator/fixtures/mixed/src/mix/goside.clj:3]
+    mix.core               pure
+  [publish clojars] whole-lib gate: FAIL (want FAIL)
+        refuse: mix.goside uses go-interop (require-go call strings/ToUpper) at spikes/s29-transitive-purity-validator/fixtures/mixed/src/mix/goside.clj:3
+  [use <ns>] per-namespace gate (same map):
+    use mix.goside             FAIL (require-go call strings/ToUpper at spikes/s29-transitive-purity-validator/fixtures/mixed/src/mix/goside.clj:3)
+    use mix.pureside           PASS
+  consistency: whole-lib == AND(per-ns over all reachable) == false
+  RESULT: MET
+
+========== fixture: java-abstract ==========
+  ONE walk, per-namespace class map (dependency-first):
+    jav.leaf               java
+        · flagged by external uses-java? predicate (S30)  [spikes/s29-transitive-purity-validator/fixtures/java-abstract/src/jav/leaf.clj:1]
+    jav.mid                pure
+    jav.core               pure
+  [publish clojars] whole-lib gate: FAIL (want FAIL)
+        refuse: jav.leaf uses java (flagged by external uses-java? predicate (S30)) at spikes/s29-transitive-purity-validator/fixtures/java-abstract/src/jav/leaf.clj:1
+  [use <ns>] per-namespace gate (same map):
+    use jav.core               PASS
+    use jav.leaf               FAIL (flagged by external uses-java? predicate (S30) at spikes/s29-transitive-purity-validator/fixtures/java-abstract/src/jav/leaf.clj:1)
+    use jav.mid                PASS
+  consistency: whole-lib == AND(per-ns over all reachable) == false
+  RESULT: MET
+
+
+All fixtures met the exit criterion.

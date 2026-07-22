@@ -1,0 +1,104 @@
+diff --git a/pkg/emit/compile.go b/pkg/emit/compile.go
+index b7ce742..f0cd4c6 100644
+--- a/pkg/emit/compile.go
++++ b/pkg/emit/compile.go
+@@ -36,6 +36,7 @@ func CompileFile(path string) ([]*ast.Node, error) {
+ // dep without capturing its forms would emit a binary missing it.
+ func CompileReader(r io.Reader, filename string) ([]*ast.Node, error) {
+ 	ev := eval.New()
++	ev.HostUnlinkedTolerant = true // S31: single-file AOT compile; binary links third-party
+ 	ev.LibLoader = func(_ *eval.Evaluator, lib *lang.Symbol, path string) {
+ 		panic(fmt.Errorf("namespace %s resolves to source file %s — single-file compilation cannot emit it (multi-namespace programs compile via CompileProgram / `cljgo build`)", lib.FullName(), path))
+ 	}
+diff --git a/pkg/emit/module.go b/pkg/emit/module.go
+index de1938c..30caf79 100644
+--- a/pkg/emit/module.go
++++ b/pkg/emit/module.go
+@@ -91,6 +91,7 @@ func CompileProgram(srcPath string) (p *Program, err error) {
+ 	// convention); compileStream's evalNode recovers those raised while
+ 	// evaluating a require form into errors, so nothing extra here.
+ 	ev := eval.New()
++	ev.HostUnlinkedTolerant = true // S31: discovery pass; binary links third-party modules
+ 	mc := &moduleCompiler{done: map[string]*CompiledNS{}}
+ 	ev.LibLoader = mc.load
+ 
+diff --git a/pkg/eval/eval.go b/pkg/eval/eval.go
+index 3d1257a..ff80051 100644
+--- a/pkg/eval/eval.go
++++ b/pkg/eval/eval.go
+@@ -39,6 +39,15 @@ type Evaluator struct {
+ 	// forms for emission; the single-file AOT path substitutes one
+ 	// that refuses.
+ 	LibLoader func(e *Evaluator, lib *lang.Symbol, path string)
++
++	// S31 PROTOTYPE (ADR 0049 dec 2): when true, accessing a member of an
++	// UNLINKED third-party require-go module is TOLERATED (no-op nil) —
++	// the mode the AOT emitter's discovery pass runs in, because the
++	// emitted binary links the module for real. When false (the default,
++	// i.e. `cljgo run` / the REPL), such an access is a HARD ERROR rather
++	// than a silent nil (the unforgivable divergence). The emitter sets
++	// this true; nothing else does.
++	HostUnlinkedTolerant bool
+ }
+ 
+ // New returns an evaluator with the boot sequence of design/00 §6 (M1)
+diff --git a/pkg/eval/host.go b/pkg/eval/host.go
+index 73e5d79..bc0c0a0 100644
+--- a/pkg/eval/host.go
++++ b/pkg/eval/host.go
+@@ -24,7 +24,10 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
+ 		rv, ok := corelib.LookupHostMember(r.Pkg, r.Member)
+ 		if !ok {
+ 			if isThirdPartyGoPath(r.Pkg) {
+-				return nil, nil // AOT-only member (ADR 0021 B2): compile-time no-op
++				if e.HostUnlinkedTolerant {
++					return nil, nil // AOT discovery pass: binary links it for real
++				}
++				return nil, e.unlinkedGoError(r.Pkg, r.Member) // S31 / ADR 0049 dec 2
+ 			}
+ 			return nil, fmt.Errorf("unable to resolve Go member: %s.%s", r.Pkg, r.Member)
+ 		}
+@@ -56,10 +59,13 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
+ 		}
+ 		if !ok {
+ 			if isThirdPartyGoPath(c.Pkg) {
+-				// AOT-only member (ADR 0021 B2): args are evaluated for their
+-				// side effects, but the unlinked call is a compile-time no-op —
+-				// the emitted binary makes the real, non-reflective call.
+-				return nil, nil
++				if e.HostUnlinkedTolerant {
++					// AOT discovery pass: args ran for side effects; the
++					// unlinked call is a compile-time no-op — the emitted
++					// binary makes the real, non-reflective call.
++					return nil, nil
++				}
++				return nil, e.unlinkedGoError(c.Pkg, c.Member) // S31 / ADR 0049 dec 2
+ 			}
+ 			return nil, fmt.Errorf("unable to resolve Go member: %s.%s", c.Pkg, c.Member)
+ 		}
+@@ -177,6 +183,25 @@ func isThirdPartyGoPath(path string) bool {
+ 	return strings.Contains(first, ".")
+ }
+ 
++// unlinkedGoError builds the hard error for an access to a member of a
++// third-party require-go module that is NOT linked into the interpreter
++// (S31 / ADR 0049 dec 2). It names the module path and the member, and —
++// when *file* is bound — the source file, so the message is actionable
++// rather than a silent nil. (v0 AST nodes carry no line/col, so no line
++// is shown; *file* is the finest position available at this layer.)
++func (e *Evaluator) unlinkedGoError(pkg, member string) error {
++	loc := ""
++	if fv := lang.VarFile.Deref(); fv != nil {
++		if s, ok := fv.(string); ok && s != "" && s != "NO_SOURCE_FILE" {
++			loc = fmt.Sprintf(" (at %s)", s)
++		}
++	}
++	return fmt.Errorf(
++		"go module %s is not linked into the interpreter (accessing member %s)%s; "+
++			"build it (cljgo build), or use the self-rebuild flow (design/05 §1)",
++		pkg, member, loc)
++}
++
+ // registerRequireGo backs the `require-go` builtin: it records an
+ // alias→import-path mapping scoped to the current namespace (ADR 0010,
+ // design/05 §1). Each libspec is a vector: a path (a symbol — one segment,
