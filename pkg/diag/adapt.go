@@ -83,7 +83,7 @@ func FromError(err error) Diagnostic {
 	var dc interface{ DiagCode() string }
 	if errors.As(err, &dc) {
 		if code := dc.DiagCode(); code != "" {
-			d := Diagnostic{Severity: SeverityError, Message: err.Error(), ErrorCode: code}
+			d := Diagnostic{Severity: SeverityError, Message: humanizeGoTypes(err.Error()), ErrorCode: code}
 			setExplainURL(&d)
 			return d
 		}
@@ -120,10 +120,74 @@ func FromError(err error) Diagnostic {
 		return d
 	}
 
-	// Anything else: an unlocated, uncategorized diagnostic.
-	d := Diagnostic{Severity: SeverityError, Message: err.Error(), ErrorCode: "G5000"}
+	// Anything else: an unlocated, uncategorized diagnostic. This is the
+	// fallback for bare runtime `fmt.Errorf`/`panic` values that never went
+	// through the reader or analyzer (those returned above), so it is the
+	// last place a raw Go type name (`int64`, `Ops`) could still reach a
+	// user — humanize it here too. Reader/analyzer messages, which legitimately
+	// contain words like "string" ("EOF while reading string"), are already
+	// handled by their own branches above and never reach this line.
+	d := Diagnostic{Severity: SeverityError, Message: humanizeGoTypes(err.Error()), ErrorCode: "G5000"}
 	setExplainURL(&d)
 	return d
+}
+
+// goTypeWordRe matches the whole-word Go type tokens a `%T` verb leaks into a
+// runtime error message. Qualified/pointer types (which contain `.`/`*` and so
+// have no word boundary) are handled by plain replacement in humanizeGoTypes
+// before this runs.
+var goTypeWordRe = regexp.MustCompile(`\b(?:int64|int32|int16|int8|uint64|uint32|uint16|uint8|float64|float32|string|bool|Ops)\b`)
+
+// goTypeWord maps a leaked Go type token to the Clojure/JVM-facing name a
+// Clojure programmer expects to read. cljgo runs on Go, so this is "as close
+// as is honest" — the JVM would say `class java.lang.String cannot be cast to
+// class java.lang.Number` for `(inc "x")`; we keep cljgo's own phrasing but
+// stop surfacing the raw Go type (`string`/`Ops`). `Ops` is the internal
+// arithmetic-dispatch interface whose real-world meaning is "a Number".
+var goTypeWord = map[string]string{
+	"int64":   "Long",
+	"int32":   "Integer",
+	"int16":   "Short",
+	"int8":    "Byte",
+	"uint64":  "Long",
+	"uint32":  "Integer",
+	"uint16":  "Short",
+	"uint8":   "Byte",
+	"float64": "Double",
+	"float32": "Float",
+	"string":  "String",
+	"bool":    "Boolean",
+	"Ops":     "Number",
+}
+
+// humanizeGoTypes rewrites raw Go type names that a `%T` verb leaked into a
+// runtime error message into the Clojure/JVM-facing names a Clojure programmer
+// reads (int64→Long, float64→Double, string→String, Ops→Number, big.Int→BigInt,
+// …). It runs ONLY at the render layer (on Diagnostic.Message), so `err.Error()`
+// stays byte-stable and conformance — which matches the raw error string — is
+// unaffected. Clojure-facing type names already in messages (`ISeq`, keyword/
+// symbol values) are left untouched. It is deliberately conservative: it never
+// touches the ambiguous bare token `int`, and qualified/pointer types are matched
+// literally, so ordinary prose in a message is not disturbed.
+func humanizeGoTypes(msg string) string {
+	// Qualified/pointer types first — these have no `\b` boundary, so a plain
+	// replace is both simpler and unambiguous. Pointer forms before value forms.
+	for _, r := range []struct{ from, to string }{
+		{"*big.Int", "BigInt"},
+		{"big.Int", "BigInt"},
+		{"*big.Rat", "Ratio"},
+		{"big.Rat", "Ratio"},
+		{"*big.Float", "BigDecimal"},
+		{"big.Float", "BigDecimal"},
+	} {
+		msg = strings.ReplaceAll(msg, r.from, r.to)
+	}
+	return goTypeWordRe.ReplaceAllStringFunc(msg, func(m string) string {
+		if name, ok := goTypeWord[m]; ok {
+			return name
+		}
+		return m
+	})
 }
 
 // assignCode classifies d.Message within band, falling back to the

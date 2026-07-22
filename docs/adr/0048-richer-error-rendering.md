@@ -102,6 +102,31 @@ snippet-and-caret block.
   five high-frequency runtime errors raise-site codes via a `DiagCode()` seam
   (`G5001`–`G5005`: not-a-number, not-a-function, not-seqable, index-out-of-
   bounds, not-a-collection), each with an explain page; `.Error()` unchanged.
+- **Batch 2 (landed):** three enrichments, all render-layer only —
+  `.Error()` stays byte-stable, conformance unchanged. (1) *Name the type like
+  the JVM:* a render-layer `humanizeGoTypes` maps the raw Go type names a `%T`
+  leaked into runtime messages to their Clojure/JVM-facing names
+  (`string`→`String`, `int64`→`Long`, `float64`→`Double`, `*big.Int`→`BigInt`,
+  and the internal arithmetic-dispatch `Ops`→`Number`), applied only when
+  building `Diagnostic.Message` for coded/general runtime errors — reader and
+  analyzer messages (which legitimately say "string", e.g. "EOF while reading
+  string") keep their own branches and are never touched. So `(inc "x")` now
+  renders `cannot convert String to Number` while `err.Error()` still reads
+  `…string…Ops`. (2) *G5006 divide-by-zero:* `lang.ArithmeticError` gains a
+  `DiagCode()` that returns `G5006` only for the two oracle-frozen texts
+  ("Divide by zero" / "/ by zero"); other ArithmeticErrors (overflow,
+  non-terminating decimal) stay G5000. (3) *G5007 no-value-for-key:* the odd-arg
+  map-constructor raise sites (`NewMap`, struct-map, array-map/sorted-map/
+  sorted-map-by) now throw `lang.CodedError` carrying `G5007`, text unchanged.
+  Each new code has an explain page + golden render test. *Skipped:* the interop
+  `!` unwrap-or-throw boundary — there is no such `!` construct in the tree, and
+  the nearest unwrap-or-throw (the Result/Option `unwrap` bridge) *intentionally*
+  throws a catchable `ex-info` as railway→exception control flow, not a
+  diagnostic error; coding it would mislabel intended control flow, so it was
+  skipped rather than prose-matched (per the batch mandate). The bare
+  `fmt.Errorf("cannot convert %T to int64/BigInt/Ratio")` coercion helpers in
+  numberops.go remain uncoded (internal, rarely user-reachable) but are covered
+  by the render-layer humanizer, so they never surface a raw Go type either.
 - **Surprise the spike found:** `cljgo build` evaluates top-level forms, so
   a top-level runtime error dies at *build* time — which narrows what the
   compiled `main()` boundary actually guards (in-function runtime throws).

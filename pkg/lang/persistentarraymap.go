@@ -71,7 +71,10 @@ func NewMap(keyVals ...any) IPersistentMap {
 	}
 
 	if len(keyVals)%2 != 0 {
-		panic("invalid map. must have even number of inputs")
+		// An odd arg count means the trailing key has no value — the JVM's
+		// "No value supplied for key". Coded G5007 at the raise site (ADR 0048
+		// batch 2); the message text is unchanged (byte-stable).
+		panic(NewCodedError("G5007", "invalid map. must have even number of inputs"))
 	}
 
 	if len(keyVals) >= hashmapThreshold {

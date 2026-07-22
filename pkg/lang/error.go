@@ -217,6 +217,21 @@ func (e *ArithmeticError) Is(other error) bool {
 	return ok
 }
 
+// DiagCode gives divide-by-zero ArithmeticErrors the G5006 code via the
+// raise-site seam diag.FromError reads (ADR 0048 batch 2). Only the two
+// divide-by-zero messages ("Divide by zero" from `/`, mod and bigint quot/rem;
+// "/ by zero" from fixnum quot/rem — both oracle-frozen in
+// conformance/tests/divide-by-zero-messages.clj) map to G5006; other
+// ArithmeticErrors ("integer overflow", "Non-terminating decimal expansion",
+// …) return "" and fall through to the general G5000 code unchanged. The
+// message text is never touched — Error() stays byte-stable.
+func (e *ArithmeticError) DiagCode() string {
+	if e.msg == "Divide by zero" || e.msg == "/ by zero" {
+		return "G5006"
+	}
+	return ""
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func NewIllegalStateError(msg string) error {
