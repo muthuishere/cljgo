@@ -92,6 +92,22 @@ faithfully:
 - Acceptance: `conformance/tests/print-length.clj` (dual-harness,
   oracle-verified).
 
+## TaggedLiteral / ReaderConditional print cases (ADR 0050, 2026-07-22)
+
+- `taggedliteral.go` (new, cljgo extension — NOT vendored, no EPL header):
+  the `*TaggedLiteral` and `*ReaderConditional` value types + `ILookup`
+  (`:tag`/`:form`, `:form`/`:splicing?`) + `Equiv` value equality, backing
+  clojure.core's `tagged-literal`/`tagged-literal?`/`reader-conditional`/
+  `reader-conditional?`.
+- `strconv.go` `Print`: two new cases (placed after the `*regexp.Regexp`
+  case, before the ToString fallback) — a `*TaggedLiteral` prints `#tag form`
+  and a `*ReaderConditional` prints `#?(...)` / `#?@(...)` (oracle 1.12.5:
+  `(pr-str (tagged-literal 'foo 42))` => `"#foo 42"`;
+  `(pr-str (reader-conditional '(:clj 1) false))` => `"#?(:clj 1)"`). The
+  live path is this Go switch (`pr-on`/`print-initialized` are never bound).
+- Acceptance: `conformance/tests/tagged-literal.clj` +
+  `conformance/tests/reader-conditional.clj` (dual-harness, oracle-verified).
+
 ## Numeric tower fidelity (ADR 0029, 2026-07-16, `numberops.go` + `numbers.go`)
 
 Ground truth: real Clojure 1.12.5 CLI (spike S13,

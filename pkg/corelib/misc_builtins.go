@@ -256,6 +256,45 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 		return form
 	})
 
+	// --- tagged literals & reader conditionals (ADR 0050) --------------------
+	//
+	// The four reader-data publics the fundamentals audit deferred. These are
+	// DATA constructors + predicates over the value types clojure's data
+	// readers and `read`/`read-string` with {:read-cond :preserve} yield
+	// (clojure.lang.TaggedLiteral / ReaderConditional). cljgo's reader does
+	// not currently expose a :read-cond :preserve mode (it always selects or
+	// elides conditionals — ADR 0036), so these constructors are the sole way
+	// to build the values today; reader :preserve integration is scoped to a
+	// follow-up (ADR 0050). Oracle 1.12.5, conformance/tests/
+	// tagged-literal.clj + reader-conditional.clj.
+
+	// tagged-literal: (tag form) -> a TaggedLiteral with :tag and :form,
+	// printing as `#tag form` (oracle: (pr-str (tagged-literal 'foo 42))
+	// => "#foo 42"; (:tag ..) => foo; (:form ..) => 42).
+	def("tagged-literal", func(args ...any) any {
+		tag, form := twoArgs("tagged-literal", args)
+		return lang.NewTaggedLiteral(tag, form)
+	})
+
+	// tagged-literal?: true for a TaggedLiteral value.
+	def("tagged-literal?", func(args ...any) any {
+		return lang.IsTaggedLiteral(oneArg("tagged-literal?", args))
+	})
+
+	// reader-conditional: (form splicing?) -> a ReaderConditional with :form
+	// and :splicing?, printing as `#?(...)` or `#?@(...)`. splicing? is
+	// coerced to boolean (oracle: (:splicing? (reader-conditional '(:clj 1)
+	// false)) => false).
+	def("reader-conditional", func(args ...any) any {
+		form, splicing := twoArgs("reader-conditional", args)
+		return lang.NewReaderConditional(form, lang.BooleanCast(splicing))
+	})
+
+	// reader-conditional?: true for a ReaderConditional value.
+	def("reader-conditional?", func(args ...any) any {
+		return lang.IsReaderConditional(oneArg("reader-conditional?", args))
+	})
+
 	// --- map entries (clojure.walk substrate) --------------------------------
 	//
 	// map-entry? itself lives in predicate_builtins.go with the other type

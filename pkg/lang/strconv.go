@@ -323,6 +323,24 @@ func Print(x interface{}, w io.Writer) {
 		io.WriteString(w, "#=(var "+v.Namespace().Name().Name()+"/"+v.Symbol().Name()+")")
 	} else if v, ok := x.(*regexp.Regexp); ok {
 		io.WriteString(w, "#\""+v.String()+"\"")
+	} else if t, ok := x.(*TaggedLiteral); ok {
+		// #tag form (oracle 1.12.5: (pr-str (tagged-literal 'foo 42))
+		// => "#foo 42"). The tag prints the same readable or not (a symbol),
+		// the form honors *print-readably*.
+		io.WriteString(w, "#")
+		Print(t.Tag, w)
+		io.WriteString(w, " ")
+		Print(t.Form, w)
+	} else if rc, ok := x.(*ReaderConditional); ok {
+		// #?(...) or #?@(...) (oracle 1.12.5:
+		// (pr-str (reader-conditional '(:clj 1) false)) => "#?(:clj 1)";
+		// splicing? true => "#?@(...)"). The form is the body list, which
+		// prints with its own parens.
+		io.WriteString(w, "#?")
+		if rc.Splicing {
+			io.WriteString(w, "@")
+		}
+		Print(rc.Form, w)
 	} else {
 		io.WriteString(w, ToString(x))
 	}
