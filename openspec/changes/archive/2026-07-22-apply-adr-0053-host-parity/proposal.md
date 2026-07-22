@@ -5,8 +5,8 @@ member returns `nil` under `cljgo run` but the real value from the compiled
 binary (both exit 0), and an entry namespace's `*file*` reads `NO_SOURCE_FILE`
 in an AOT binary but the real path in the interpreter. Silent REPL-vs-binary
 divergence is the failure mode CLAUDE.md calls unforgivable, and it gates ADR
-0048 (dependency resolution) and ADR 0050 (publish), whose "never silent `nil`"
-guarantees are exactly this invariant. ADR 0049 decides the fix; spikes S30/S31/
+0048 (dependency resolution) and ADR 0054 (publish), whose "never silent `nil`"
+guarantees are exactly this invariant. ADR 0053 decides the fix; spikes S30/S31/
 S32 diagnosed it and S36 proved the mechanism.
 
 ## What Changes
@@ -47,4 +47,4 @@ S32 diagnosed it and S36 proved the mechanism.
 - New conformance harness assertion supporting the three-outcome parity check
   (extends the ADR 0007 dual harness).
 - Frozen reference: `spikes/s36-unlinked-goref-detection/prototype.patch`.
-- Unblocks ADR 0048 and 0050 implementation.
+- Unblocks ADR 0052 and 0050 implementation.

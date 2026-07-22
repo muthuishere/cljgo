@@ -141,7 +141,7 @@ func TestHostStringPath(t *testing.T) {
 	}
 }
 
-// TestHostUnlinkedThirdPartyErrors is the ADR 0049 dec 2 invariant: under
+// TestHostUnlinkedThirdPartyErrors is the ADR 0053 dec 2 invariant: under
 // `cljgo run`/the REPL (HostUnlinkedTolerant=false, the default) accessing a
 // member of a third-party (domain-dotted) require-go module that is NOT
 // linked into the interpreter HARD-ERRORS naming the module and member —
@@ -172,7 +172,7 @@ func TestHostUnlinkedThirdPartyErrors(t *testing.T) {
 	}
 }
 
-// TestHostUnlinkedToleratedUnderFlag is the AOT-discovery half of ADR 0049
+// TestHostUnlinkedToleratedUnderFlag is the AOT-discovery half of ADR 0053
 // dec 2: with HostUnlinkedTolerant=true (the mode the emitter's
 // namespace-discovery pass runs in), the same unlinked access is a no-op nil
 // rather than an error — because the emitted binary links the module for

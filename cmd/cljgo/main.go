@@ -122,7 +122,7 @@ func runFile(path string) int {
 		return 1
 	}
 	defer f.Close()
-	// ADR 0048: if the project is locked (build.lock.edn present), resolve its
+	// ADR 0052: if the project is locked (build.lock.edn present), resolve its
 	// dependencies and publish their roots before evaluating, so a `cljgo run`
 	// of a project with deps resolves them the same way `cljgo build` does.
 	if err := resolveRunDeps(path); err != nil {
@@ -140,7 +140,7 @@ func runFile(path string) int {
 }
 
 // resolveRunDeps wires dependency resolution into the `cljgo run` bootstrap
-// (ADR 0048 decision 2). It looks for a project build file next to the source
+// (ADR 0052 decision 2). It looks for a project build file next to the source
 // file, then in the current directory; if that project is already locked
 // (build.lock.edn present), it resolves the declared deps and publishes their
 // roots for the interpreter load path. No lock means nothing has been resolved
@@ -160,7 +160,7 @@ func resolveRunDeps(file string) error {
 	return nil
 }
 
-// runCache implements `cljgo cache <subcommand>` (ADR 0048 decision 1). The
+// runCache implements `cljgo cache <subcommand>` (ADR 0052 decision 1). The
 // global dependency cache holds immutable 0555 source trees, so a plain
 // `rm -rf` cannot remove them cleanly — `cljgo cache clean` is required.
 func runCache(args []string) int {
@@ -303,8 +303,8 @@ usage:
   cljgo nrepl [--port N]           start an nREPL server for editors (writes .nrepl-port; ADR 0031)
   cljgo run <file.clj>             evaluate a file
   cljgo build [-o out] <file.clj>  compile a file to a native binary
-  cljgo publish <go|clojars>       publish the project library to Go or Clojars (ADR 0050)
-  cljgo cache clean                remove the global dependency cache (ADR 0048)
+  cljgo publish <go|clojars>       publish the project library to Go or Clojars (ADR 0054)
+  cljgo cache clean                remove the global dependency cache (ADR 0052)
   cljgo new [--template T] <name>  generate a project: T = lib (default) | cli | web | <path>
   cljgo dev                        run a bri app: server + nREPL + dev warnings
   cljgo test                       run the app's tests (test/ via clojure.test)

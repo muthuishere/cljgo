@@ -1,9 +1,9 @@
 package deps
 
-// EDN reading via cljgo's own pkg/reader — no second parser (ADR 0048). The
+// EDN reading via cljgo's own pkg/reader — no second parser (ADR 0052). The
 // lock and dependency manifests are ordinary EDN data; we read them as cljgo
 // values and navigate with the lang data interfaces. Crucially this is DATA
-// only: a dependency's (defn build …) is never evaluated (ADR 0048 decision 5).
+// only: a dependency's (defn build …) is never evaluated (ADR 0052 decision 5).
 
 import (
 	"fmt"

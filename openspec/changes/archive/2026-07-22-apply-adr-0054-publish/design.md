@@ -1,7 +1,7 @@
 ## Context
 
-ADR 0050 is the authority; this is its implementation design. Its dependencies
-have both landed: ADR 0049 (never silent `nil`) and ADR 0048 §6 (purity walk).
+ADR 0054 is the authority; this is its implementation design. Its dependencies
+have both landed: ADR 0053 (never silent `nil`) and ADR 0052 §6 (purity walk).
 The producer side of ADR 0013 is unbuilt except `exe`. Spikes S34 (transitive
 purity/taint classifier) and S35 (`certain-java?`) are closed, MET, and read-only
 against `pkg/` — their `driver.go`/`proto/main.go` are re-authored here, not
@@ -34,7 +34,7 @@ Verified reuse points (Explore pass, at `d522d8a`):
   `import`/`new` → `unable to resolve symbol`. The undecidable bare dot-form
   `(.method obj)` consults no resolver (`analyzer.go:985-986`) — `certain-java?`
   must never flag it.
-- **`pkg/deps/manifest.go:6` already cites ADR 0050** as the publish-time emitter
+- **`pkg/deps/manifest.go:6` already cites ADR 0054** as the publish-time emitter
   of the impurity manifest `pkg/deps` reads at resolve time — the two sides meet
   there.
 
@@ -49,10 +49,10 @@ Verified reuse points (Explore pass, at `d522d8a`):
 - `cljgo publish go` and `cljgo publish clojars` producers, gated by the
   classifier, with a `publish`/lib verb in `build.cljgo`.
 - Decision 4: a Java-tainted namespace fails loud + per-namespace (mostly already
-  true via analyzer errors + ADR 0049 — verify and close any gap), never `nil`.
+  true via analyzer errors + ADR 0053 — verify and close any gap), never `nil`.
 
 **Non-Goals:**
-- Consuming Maven/Clojars libraries (deferred import — ADR 0050 out of scope).
+- Consuming Maven/Clojars libraries (deferred import — ADR 0054 out of scope).
 - A JVM bytecode backend (explicitly never).
 - `c-shared`/`c-archive` producers (ADR 0013's later work).
 - A *total* `uses-java?` predicate (S35: not achievable, not needed — the gate is
@@ -93,7 +93,7 @@ Verified reuse points (Explore pass, at `d522d8a`):
 4. **CLI + surface**: `cmd/cljgo/main.go` gains `case "publish": runPublish`;
    `core/build.cljg` gains a target verb (mirroring `exe`) that stamps
    `Artifact.Kind` (`"go"`/`"clojars"`) — with its AOT mirror regenerated via
-   `go generate` (parity by construction, as ADR 0048 did). A library needs a
+   `go generate` (parity by construction, as ADR 0052 did). A library needs a
    **module path** and optionally an **exports** list — add the minimal plan
    fields (`Artifact` gains what's needed; keep it small).
 
@@ -101,8 +101,8 @@ Verified reuse points (Explore pass, at `d522d8a`):
    analyzer errors (`no such namespace`/`unable to resolve symbol`) already fire
    with `file:line` and never `nil` (S35 measured they do); add a conformance
    case pinning it, and the optional strict resolve-time rejection hook in
-   `pkg/deps` (a manifest `Java` taint → default-deny), reusing the ADR 0048
-   `checkPurity` shape. No new interpreter divergence surface (ADR 0049 covers Go;
+   `pkg/deps` (a manifest `Java` taint → default-deny), reusing the ADR 0052
+   `checkPurity` shape. No new interpreter divergence surface (ADR 0053 covers Go;
    this extends the same guarantee to Java, which already holds for statics).
 
 ## Risks / Trade-offs
@@ -120,7 +120,7 @@ Verified reuse points (Explore pass, at `d522d8a`):
   measurement. It only ever *upgrades* an error message; correctness never
   depends on it.
 - **No gold-plated clojars coordinate** → git-coord `deps.edn` first; a
-  Clojars-coordinate/source-jar step is explicitly deferred (ADR 0050 scoping).
+  Clojars-coordinate/source-jar step is explicitly deferred (ADR 0054 scoping).
 
 ## Open Questions
 

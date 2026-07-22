@@ -1,4 +1,4 @@
-// parity.go — the ADR 0049 decision 4 dual-mode host-resolution parity
+// parity.go — the ADR 0053 decision 4 dual-mode host-resolution parity
 // comparator, extending the ADR 0007 dual harness (conformance_test.go +
 // compiled_test.go). The two-outcome rule the plain dual harness enforces
 // ("identical output OR the file is eval-only") is too strict for a
@@ -18,7 +18,7 @@ type ParityLeg struct {
 }
 
 // capabilityMarkers are the substrings that identify an HONEST interpreter
-// capability-gap error (ADR 0049): the interpreter genuinely cannot satisfy
+// capability-gap error (ADR 0053): the interpreter genuinely cannot satisfy
 // a reference the AOT binary can. Only such an error may pair with an AOT
 // success under accepted outcome 3 — any other interpreter error paired
 // with AOT success is a real divergence.
@@ -43,7 +43,7 @@ func IsCapabilityError(err error) bool {
 	return false
 }
 
-// ClassifyParity applies the ADR 0049 decision 4 three-outcome rule to a
+// ClassifyParity applies the ADR 0053 decision 4 three-outcome rule to a
 // parity case run under the interpreter leg and the AOT leg. It returns
 // ok=true for exactly one of the three ACCEPTED outcomes:
 //

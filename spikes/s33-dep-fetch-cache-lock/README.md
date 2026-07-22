@@ -1,6 +1,6 @@
 # Spike S33 — What is the smallest fetch + cache + lock that makes `(dep b …)` reproducible?
 
-Opened 2026-07-22. Feeds **ADR 0048** decisions **1** (cache) and **3**
+Opened 2026-07-22. Feeds **ADR 0052** decisions **1** (cache) and **3**
 (lockfile). Runs in parallel with S30 (load path), S31 (version conflict),
 S32 (purity/manifest).
 
@@ -11,7 +11,7 @@ ADR 0021 decision 3 gives cljgo-package deps the surface
 expressed in the same file". That settled the surface and none of the
 mechanics.
 
-ADR 0048's verified current state is blunt: **the cljgo-library lane does
+ADR 0052's verified current state is blunt: **the cljgo-library lane does
 not exist.** `ResolveLibPath` (`pkg/eval/libload.go:65`) resolves only
 relative to `dir(*file*)`. There is no load path, no dependency root, no
 cache, no lock. A fetched dependency has nowhere to be put.
@@ -22,7 +22,7 @@ The division: S30 answers "how does `a.core` resolve"; S33 answers "is the
 `a.core` you resolved the same bytes I resolved, on a different machine,
 with a cold cache, offline, and can we prove it if someone tampers".
 
-Two constraints from ADR 0048 shape the lock schema before any code:
+Two constraints from ADR 0052 shape the lock schema before any code:
 
 - **Decision 5 forbids executing a dep's `build` fn at resolve time.** A
   dep's transitive requirements therefore cannot be discovered by running
@@ -64,26 +64,26 @@ backed by captured real command output in `results/`:
    completes with **no network and no access to the fixture remote at all**
    (the bare repo is renamed away for the duration). Any attempt to reach a
    remote is a failure of this criterion.
-5. **Concurrency safety** (ADR 0048 §1's explicit ask). N concurrent
+5. **Concurrency safety** (ADR 0052 §1's explicit ask). N concurrent
    resolvers against one shared cold cache produce one correct cache entry,
    no partial/corrupt entries, no error — proven by running N processes and
    hashing the result.
 
-Anything less closes S33 **no** for the mechanism tested, and ADR 0048
+Anything less closes S33 **no** for the mechanism tested, and ADR 0052
 decision 1 or 3 changes accordingly.
 
 ## What must additionally be investigated and reported
 
 1. **Cache layout.** Exact path. The repo already has user-level state
    precedent — `pkg/repl/session.go:57` hardcodes
-   `~/.config/cljgo/sessions`, **not** XDG-aware. ADR 0048 §1 proposes
+   `~/.config/cljgo/sessions`, **not** XDG-aware. ADR 0052 §1 proposes
    `$XDG_CACHE_HOME/cljgo/` with `~/.cache/cljgo/` fallback. Report the
    inconsistency and recommend. Content-addressed **by what** — the git SHA,
    or a hash of tree contents? Compare against Go's module cache
    (`$GOMODCACHE`, `lock`/`.info`/`.ziphash`, `GONOSUMDB`/`go.sum`) and say
    what each choice buys.
 2. **Vendor escape hatch.** Project-local `vendor/` for air-gapped builds.
-   Does it interact cleanly with S30's load path ordering (ADR 0048 §2), or
+   Does it interact cleanly with S30's load path ordering (ADR 0052 §2), or
    does it need its own precedence slot?
 3. **Lockfile schema.** Propose it, prototype it, and argue every field —
    including which candidate fields were considered and **rejected**.
@@ -92,7 +92,7 @@ decision 1 or 3 changes accordingly.
 5. **Failure legibility.** Every failure mode above must produce an error a
    human can act on without reading the resolver's source.
 
-## Deliberately NOT built (per ADR 0048 "out of scope")
+## Deliberately NOT built (per ADR 0052 "out of scope")
 
 No registry, no index, no publishing, no semver ranges, no constraint
 solver, no authenticated/private sources, no vulnerability scanning. Version

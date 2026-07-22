@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// ADR 0048 decision 4: a consumer's own go-requires must be conflict-checked
+// ADR 0052 decision 4: a consumer's own go-requires must be conflict-checked
 // even with no (dep …) declarations, so a self-conflict (same module pinned at
 // two versions in one build.cljgo) hard-errors here rather than being silently
 // MVS-collapsed by `go mod tidy`. This covers the no-deps branch of

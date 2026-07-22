@@ -4,7 +4,7 @@ package deps
 //
 // This is the ONLY hand-written EDN code in the package: reading EDN (the lock
 // and dependency manifests) goes through cljgo's own pkg/reader (see
-// edn_read.go), per ADR 0048's mandate not to hand-roll a second parser. The
+// edn_read.go), per ADR 0052's mandate not to hand-roll a second parser. The
 // emitter exists so two machines resolving the same graph produce byte-identical
 // lockfiles — maps emit with keys sorted by printed form, vectors in order.
 

@@ -1,6 +1,6 @@
 # Spike S32 — What does an FFI/cgo-carrying dependency do to its consumer's build?
 
-Opened 2026-07-22. Feeds **ADR 0048 decision 6** (dependency purity —
+Opened 2026-07-22. Feeds **ADR 0052 decision 6** (dependency purity —
 currently UNRESOLVED) and touches **decision 5** (transitive requirements
 recoverable as data). Prior art: **ADR 0011** (purego primary door, cgo
 ecosystem door), **ADR 0044** (`proposed` — purego dependency placement),
@@ -11,7 +11,7 @@ purego marshaling — it asks what *consuming* such a library costs.
 
 ## Context — the verified state of the ground
 
-Much of ADR 0048's decision-6 question is **prospective**, and this README
+Much of ADR 0052's decision-6 question is **prospective**, and this README
 says so up front so the VERDICT's claims can be read at the right weight.
 
 Verified in-tree at the time of opening:
@@ -74,7 +74,7 @@ command output:
    executed, and the verdict states whether it returns an error or panics
    — the input ADR 0015 structured diagnostics needs.
 
-Anything less closes the spike **no** for that sub-question, and ADR 0048
+Anything less closes the spike **no** for that sub-question, and ADR 0052
 decision 6 must be written narrower.
 
 ## Additionally to be investigated and reported

@@ -1,6 +1,6 @@
 ## Context
 
-ADR 0048 is the authority; this is its implementation design. The §6a blocker
+ADR 0052 is the authority; this is its implementation design. The §6a blocker
 (third-party `go-require` REPL-vs-binary divergence) is fixed and archived (ADR
 0049), so decisions 1–6 are unblocked. This is **greenfield in `pkg/`**: no
 `pkg/deps` package exists, and all cache/lock/CAS/flock/git-archive machinery
@@ -19,7 +19,7 @@ Verified touch-points (Explore pass, at `8d97431`):
   `goModTidy` `:314-321`, invoked `:282`. `(dep …)` is **entirely
   unimplemented** — no `dep` in `core/build.cljg`, no `:deps` key read.
 - **`cmd/cljgo/main.go:50-96`** — `switch args[0]` dispatch; `runCache` attaches
-  as a new `case "cache"`. (No `publish` verb today — that's ADR 0050.)
+  as a new `case "cache"`. (No `publish` verb today — that's ADR 0054.)
 - **`pkg/reader`** — `ReadString`, `Reader.ReadAll()` parse EDN into cljgo data;
   `evalLibFile` (`libload.go:106-133`) and S32 exp4 are working templates.
 
@@ -36,12 +36,12 @@ Verified touch-points (Explore pass, at `8d97431`):
 - A `cljgo cache clean` verb (decision 1).
 
 **Non-Goals:**
-- A package registry/index, publishing (ADR 0050), semver ranges / a constraint
+- A package registry/index, publishing (ADR 0054), semver ranges / a constraint
   solver, private/authenticated sources, vulnerability scanning — all explicitly
-  out of scope per ADR 0048.
+  out of scope per ADR 0052.
 - Any `pkg/` change lifted verbatim from a spike — spikes are reference; code is
   re-authored with tests (ADR 0027).
-- Re-litigating §6a — done in ADR 0049.
+- Re-litigating §6a — done in ADR 0053.
 
 ## Decisions
 
@@ -103,16 +103,16 @@ Verified touch-points (Explore pass, at `8d97431`):
   `t.TempDir()` and use `file://` transports (S33 did exactly this; darwin-only
   `flock` is already how S33 ran). No network in the test suite.
 - **`flock` is POSIX; Windows CI** → guard the lock behind a build-tag or a
-  portable fallback; ADR 0048 §1 flagged the Windows equivalent as owed. Keep the
+  portable fallback; ADR 0052 §1 flagged the Windows equivalent as owed. Keep the
   POSIX path working; stub/skip on Windows with a `//go:build` split so CI stays
   green (the fundamentals batch already fixed Windows CI once — don't re-break).
 - **Threading resolved-deps into `ResolveLibPath` without a global** → a
   process-scoped handle set once at bootstrap, not a package var mutated per call;
   both legs set it at the same seam so they cannot diverge. Covered by a
-  dual-harness parity case (ADR 0007/0049).
+  dual-harness parity case (ADR 0007/0053).
 - **Scope creep** → strictly decisions 1–6 + cache-clean. No registry, no
-  publish, no solver. Each is ADR 0048 "out of scope".
-- **`SynthGoMod` write-once is load-bearing** (ADR 0048 consequences): the
+  publish, no solver. Each is ADR 0052 "out of scope".
+- **`SynthGoMod` write-once is load-bearing** (ADR 0052 consequences): the
   dep-aware go.mod must still be written once, fully-formed, into a fresh temp
   `genDir`. Preserve `buildArtifact`'s `os.MkdirTemp` discipline (`build.go:225`).
 

@@ -8,7 +8,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/emit"
 )
 
-// TestJavaStaticFailsLoudPerNamespace — ADR 0050 decision 4: purity is a
+// TestJavaStaticFailsLoudPerNamespace — ADR 0054 decision 4: purity is a
 // per-namespace property. A namespace using a static Java surface
 // (System/currentTimeMillis) hard-errors LOUD at analysis with file:line and
 // never a silent nil; a pure namespace stays independently usable (compiles).
@@ -36,7 +36,7 @@ func TestJavaStaticFailsLoudPerNamespace(t *testing.T) {
 // TestCertainJavaFlagsStaticNotAmbiguous — the certain-java? courtesy diagnostic
 // flags the self-identifying static Java surface (System/…) but NOT the pure,
 // Java-flavored surfaces (instance?/catch/class-ref) — zero false positives
-// (ADR 0050 decision 4; S35). It only ever upgrades an error message; it is
+// (ADR 0054 decision 4; S35). It only ever upgrades an error message; it is
 // never a gate.
 func TestCertainJavaFlagsStaticNotAmbiguous(t *testing.T) {
 	static, err := CertainJavaFile(filepath.FromSlash("testdata/javastatic/js/core.clj"))

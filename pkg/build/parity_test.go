@@ -16,7 +16,7 @@ import (
 )
 
 // TestParityThirdPartyGoRequire is the S31/S32 third-party go-require repro,
-// run live through both legs and asserted with the ADR 0049 dec 4 parity
+// run live through both legs and asserted with the ADR 0053 dec 4 parity
 // comparator (conformance.ClassifyParity). The interpreter cannot link a
 // third-party Go module (gorilla/websocket), so it MUST hard-error naming it
 // ("not linked into the interpreter"); the AOT binary links it and prints the

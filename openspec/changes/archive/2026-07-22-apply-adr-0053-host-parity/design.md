@@ -1,6 +1,6 @@
 ## Context
 
-ADR 0049 is the authority; this is its implementation design. Spike S36
+ADR 0053 is the authority; this is its implementation design. Spike S36
 (`spikes/s36-unlinked-goref-detection/`, PASS) established the mechanism and
 froze a working `prototype.patch`; S30/S31/S32 diagnosed the divergences. The
 silent `nil` is an explicit `return nil, nil` at two sites in

@@ -27,7 +27,7 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 				if e.HostUnlinkedTolerant {
 					return nil, nil // AOT discovery pass: the binary links it for real
 				}
-				return nil, e.unlinkedGoError(r.Pkg, r.Member) // ADR 0049 dec 2
+				return nil, e.unlinkedGoError(r.Pkg, r.Member) // ADR 0053 dec 2
 			}
 			return nil, fmt.Errorf("unable to resolve Go member: %s.%s", r.Pkg, r.Member)
 		}
@@ -65,7 +65,7 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 					// binary makes the real, non-reflective call.
 					return nil, nil
 				}
-				return nil, e.unlinkedGoError(c.Pkg, c.Member) // ADR 0049 dec 2
+				return nil, e.unlinkedGoError(c.Pkg, c.Member) // ADR 0053 dec 2
 			}
 			return nil, fmt.Errorf("unable to resolve Go member: %s.%s", c.Pkg, c.Member)
 		}
@@ -185,7 +185,7 @@ func isThirdPartyGoPath(path string) bool {
 
 // unlinkedGoError builds the hard error for an access to a member of a
 // third-party require-go module that is NOT linked into the interpreter
-// (ADR 0049 decision 2). It names the module path and the member, and —
+// (ADR 0053 decision 2). It names the module path and the member, and —
 // when *file* is bound to a real source path — the file, so the message is
 // actionable rather than a silent nil. (v0 AST nodes carry no line/col, so
 // no line is shown; *file* is the finest position available at this layer.)

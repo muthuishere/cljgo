@@ -1,9 +1,9 @@
 package deps
 
 // A dependency's declarative manifest (cljgo.manifest.edn), read as DATA at
-// resolve time — never by evaluating its build fn (ADR 0048 decision 5). It is
+// resolve time — never by evaluating its build fn (ADR 0052 decision 5). It is
 // what makes transitivity and impurity recoverable without running foreign
-// code. Emitted at publish time from the library's own build.cljgo (ADR 0050
+// code. Emitted at publish time from the library's own build.cljgo (ADR 0054
 // territory); here we only consume it.
 
 import (

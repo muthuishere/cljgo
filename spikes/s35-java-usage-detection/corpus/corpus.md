@@ -22,7 +22,7 @@ is the human index. cljgo's per-snippet behavior is in
 | `(def x String)` | **TRAP** — bare ClassRef value (ADR 0036) |
 | `(pr-str java.util.UUID)` | **TRAP** — `java.*` ClassRef value, still pure |
 
-## go-interop (5) — impure by ADR 0048 §6, but NOT Java
+## go-interop (5) — impure by ADR 0052 §6, but NOT Java
 | snippet | note |
 |---|---|
 | `(require-go '[strings :as strs]) (strs/ToUpper "hi")` | Go ns call |

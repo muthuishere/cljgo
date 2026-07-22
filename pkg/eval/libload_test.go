@@ -8,7 +8,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
-// ADR 0051: ResolveLibPath accepts .clj, .cljg, and .cljgo, most-specific-first
+// ADR 0055: ResolveLibPath accepts .clj, .cljg, and .cljgo, most-specific-first
 // (.cljgo > .cljg > .clj). This is the single shared resolver, so both legs
 // inherit the order identically.
 func TestResolveLibPathExtensionPrecedence(t *testing.T) {

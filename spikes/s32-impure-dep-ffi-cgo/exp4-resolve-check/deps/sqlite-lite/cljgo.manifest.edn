@@ -1,5 +1,5 @@
 ;; PROPOSED manifest shape (S32). Emitted at PUBLISH time from the library's
-;; own build.cljgo; read as DATA at resolve time. ADR 0048 decision 5 forbids
+;; own build.cljgo; read as DATA at resolve time. ADR 0052 decision 5 forbids
 ;; evaluating a dependency's (defn build [b] ...) — this file is what makes
 ;; that possible for the impure cases.
 {:name    "sqlite-lite"

@@ -4,9 +4,9 @@
 dependency has **nowhere to be put and no way to announce itself to the
 resolver** — `ResolveLibPath` resolves only relative to the requiring file.
 There is no load path, no cache, no lockfile, and no policy for impure
-(Go/FFI/cgo) dependencies. ADR 0048 decides the mechanics; its §6a blocker
+(Go/FFI/cgo) dependencies. ADR 0052 decides the mechanics; its §6a blocker
 (third-party `go-require` silently diverging REPL from binary) is now fixed and
-archived (ADR 0049), so decisions 1–6 are unblocked.
+archived (ADR 0053), so decisions 1–6 are unblocked.
 
 ## What Changes
 
@@ -54,7 +54,7 @@ archived (ADR 0049), so decisions 1–6 are unblocked.
 
 ### Modified Capabilities
 <!-- No existing OpenSpec capability's requirements change. host-resolution-parity
-     (ADR 0049) is a prerequisite, already satisfied, not modified here. -->
+     (ADR 0053) is a prerequisite, already satisfied, not modified here. -->
 
 ## Impact
 

@@ -1,11 +1,11 @@
-# ADR 0048 — Dependency resolution: load path, lock, and the purity question
+# ADR 0052 — Dependency resolution: load path, lock, and the purity question
 
 Date: 2026-07-22 · Status: **accepted** — implemented (OpenSpec change
-`apply-adr-0048-deps`; the `pkg/deps` resolver + load-path/build/CLI
+`apply-adr-0052-deps`; the `pkg/deps` resolver + load-path/build/CLI
 integration). Evidence: spikes S30–S33, all closed. Ratifies the dependency
 clauses of **ADR 0021** (`build.cljgo`, itself still `proposed`), on the rails
 of **ADR 0042** (multi-namespace emission) and **ADR 0013** (every project is a
-library). Its §6a blocker was fixed and archived as **ADR 0049** before this
+library). Its §6a blocker was fixed and archived as **ADR 0053** before this
 landed.
 
 **Amendments this ADR leaves owed (recorded, not silently done):** ADR 0044

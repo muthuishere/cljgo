@@ -16,7 +16,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/repl"
 )
 
-// TestClassifyParity unit-tests the ADR 0049 dec 4 three-outcome comparator
+// TestClassifyParity unit-tests the ADR 0053 dec 4 three-outcome comparator
 // itself — the reusable gate. Synthetic legs, no build, so the gate's
 // classification is pinned deterministically and offline.
 func TestClassifyParity(t *testing.T) {
@@ -57,7 +57,7 @@ func TestClassifyParity(t *testing.T) {
 }
 
 // TestParityEntryFile is the S30 entry-*file* repro, run live through both
-// legs and asserted with the parity comparator. Pre-fix (ADR 0049 dec 3) the
+// legs and asserted with the parity comparator. Pre-fix (ADR 0053 dec 3) the
 // binary bound *file* to NO_SOURCE_FILE while the interpreter bound the real
 // path — a silent divergence. Now both bind the logical source path, so the
 // property-based fixture yields identical output. No network.
@@ -75,7 +75,7 @@ func TestParityEntryFile(t *testing.T) {
 }
 
 // TestParityUncompiledRequire seeds the uncompiled-require behavior into the
-// parity gate (ADR 0049 dec 3). A top-level (require 'no.such.ns) for a
+// parity gate (ADR 0053 dec 3). A top-level (require 'no.such.ns) for a
 // namespace with no source file and no provider must never SILENTLY succeed
 // in either leg: the interpreter errors locating it, and the AOT
 // discovery/compile leg errors too (the build refuses). Both legs refuse —
@@ -106,7 +106,7 @@ func TestParityUncompiledRequire(t *testing.T) {
 	}
 }
 
-// TestParityDependencyNamespace is the ADR 0048 dual-harness case: a program
+// TestParityDependencyNamespace is the ADR 0052 dual-harness case: a program
 // that requires a DEPENDENCY namespace — one living entirely outside the
 // consumer's own source tree, reachable only through load-path slot 3 (the
 // resolved dependency roots) — must resolve identically under `cljgo run` (the

@@ -1,6 +1,6 @@
 # S34 VERDICT — one transitive walk yields both purity granularities
 
-Closed 2026-07-22. Exit criterion **MET** (all four fixtures). Feeds **ADR 0050**
+Closed 2026-07-22. Exit criterion **MET** (all four fixtures). Feeds **ADR 0054**
 decisions 3 (whole-lib `publish clojars` gate) and 4 (per-namespace `use` gate).
 
 ## The question
@@ -61,7 +61,7 @@ SAME classification rather than diverging.
    `gob.leaf`'s `require-go` sits 2 requires below the entry (`core→mid→leaf`)
    and the walk flagged it. `CompileProgram` already captures every transitive
    file-backed namespace with its analyzed `Forms` — purity needs **no new
-   walk**, only a pass over `Program.Deps + Program.Entry`. The central ADR 0048
+   walk**, only a pass over `Program.Deps + Program.Entry`. The central ADR 0052
    de-risk claim ("one traversal serves both legs") holds for purity too: the
    emitter's own traversal is the purity traversal.
 
@@ -78,7 +78,7 @@ SAME classification rather than diverging.
    an error with **file:line** (`compiler error at …:1:11: no such namespace:
    java.util.UUID`), observed empirically; (b) a namespace that analyzes but is
    classified `go-interop`/`java` carries a `Finding` with `path:line`, which is
-   exactly the datum a require-time gate raises instead of ADR 0048 §6a's silent
+   exactly the datum a require-time gate raises instead of ADR 0052 §6a's silent
    `nil`. S34 does not fix §6a; it confirms the validator produces the
    file:line classification a hard-error would key off.
 
@@ -89,7 +89,7 @@ SAME classification rather than diverging.
 ## Empirical Java observations (handed to S35, not S34's verdict)
 
 Recorded in passing (`cljgo run` on scratch fixtures), because they shape the
-S35 predicate and ADR 0050 decision 4:
+S35 predicate and ADR 0054 decision 4:
 
 - `(java.util.UUID/randomUUID)` → **analysis error, file:line** (`no such
   namespace: java.util.UUID`, exit 1). A Java *static* call already hard-errors
@@ -105,7 +105,7 @@ S35 predicate and ADR 0050 decision 4:
   clojars gate this ambiguity is harmless** — both are non-pure and refused. It
   matters only for `publish go`, which must still reject the Java one.
 
-## Recommendation for ADR 0050
+## Recommendation for ADR 0054
 
 - **Decision 3 (whole-lib clojars gate): adopt.** Refuse `publish clojars` if
   any reachable namespace is non-pure. Implement it as a predicate pass over the

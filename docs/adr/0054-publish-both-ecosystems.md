@@ -1,10 +1,10 @@
-# ADR 0050 — `publish`: one library, both ecosystems, purity-gated
+# ADR 0054 — `publish`: one library, both ecosystems, purity-gated
 
 Date: 2026-07-22 · Status: **accepted** — implemented (OpenSpec change
-`apply-adr-0050-publish`; `cljgo publish go|clojars`, the Go-interop taint
+`apply-adr-0054-publish`; `cljgo publish go|clojars`, the Go-interop taint
 classifier, and `certain-java?`). Evidence: spikes S34, S35 — both closed.
 Extends the producer side of **ADR 0013** (every project is a library); rides
-the purity axis of **ADR 0048** §6 (accepted), and depended on **ADR 0049**
+the purity axis of **ADR 0052** §6 (accepted), and depended on **ADR 0053**
 (accepted) for its "never silent `nil`" guarantee — both landed before this.
 
 **Implemented scope + owed follow-ups (recorded, not silently dropped):**
@@ -43,7 +43,7 @@ Two hard constraints, both owner-stated (2026-07-22), settle the shape:
 
 **Consume-side interop is deferred, not designed here.** Importing
 Clojure-ecosystem libraries is mechanically nearly free (a pure git Clojure dep
-is just a source root on ADR 0048 / S30's load path), but almost every real
+is just a source root on ADR 0052 / S30's load path), but almost every real
 Clojure library carries Java, so the consumable pure subset is thin. Sequenced
 after publish; not foreclosed. This ADR still fixes the **policy** for how a
 Java-carrying import must *fail*, because the same purity walk governs it
@@ -121,12 +121,12 @@ Purity is a **per-namespace** property, not a per-library one. So when a
   usable.
 - **Hard-error at the point a Java-tainted namespace is required,** with
   `file:line` and "Java interop is unsupported on cljgo's Go host".
-- **Never return `nil`/`""`.** That is ADR 0048 §6a's unforgivable
-  REPL-vs-binary divergence (ADR 0049). A Java form must fail exactly as loudly
+- **Never return `nil`/`""`.** That is ADR 0052 §6a's unforgivable
+  REPL-vs-binary divergence (ADR 0053). A Java form must fail exactly as loudly
   as an unlinked Go module.
 - **Optional strict mode:** a project may opt to reject at *resolve* time any
   dependency whose manifest declares Java taint anywhere, for a portability
-  guarantee (mirrors ADR 0048 §6 default-deny).
+  guarantee (mirrors ADR 0052 §6 default-deny).
 
 **Granularity differs by purpose, deliberately:** to *publish* to clojars the
 whole transitive surface must be pure (decision 3, whole-library gate); to
@@ -154,7 +154,7 @@ downstream net always catches a missed Java form *loudly*:
 
 - **`build exe` / `publish go`** — the Go compiler rejects an unresolvable
   method at build.
-- **`cljgo run`** — ADR 0049 makes the interpreter hard-error (never `nil`).
+- **`cljgo run`** — ADR 0053 makes the interpreter hard-error (never `nil`).
 - **`publish clojars`** — emits pure source; Java runs on the JVM anyway.
 
 Because a **false positive** (wrongly flagging valid Go/pure code) *rejects
@@ -175,9 +175,9 @@ So the two gates are opposite-polarity and both zero-FP:
 
 - **ADR 0013's producer side gets built** — `go` and `clojars` first;
   `c-shared`/`c-archive` remain its later work.
-- **No new resolution machinery.** The validator is the ADR 0048 §6 / S32
+- **No new resolution machinery.** The validator is the ADR 0052 §6 / S32
   purity walk, reused; the load path (S30) is what a later *import* would ride.
-- **Depends on ADR 0049.** Decision 4's "never silent nil" guarantee is only
+- **Depends on ADR 0053.** Decision 4's "never silent nil" guarantee is only
   true once the interpreter hard-errors on an unlinked/unsupported host call.
   0049 fixes it for the Go case; this extends the same guarantee to Java. **0050
   cannot ship decision 4 before 0049 lands.**
@@ -196,5 +196,5 @@ So the two gates are opposite-polarity and both zero-FP:
 | **S35** | Is there a sound low-false-positive `uses-java?` predicate, or is Java indistinguishable from Go interop? | **MET** — no *total* predicate (bare dot-form undecidable), and none needed; the clojars gate is `uses-go-interop?` not "no Java"; the Java diagnostic is certain-only, precision 10/10 |
 
 Both closed with `VERDICT.md` per ADR 0027 §2; this ADR is now `proposed`.
-Implementation follows `/opsx:propose`, **after ADR 0049 lands** (decision 4's
+Implementation follows `/opsx:propose`, **after ADR 0053 lands** (decision 4's
 "never silent `nil`" is 0049's guarantee).

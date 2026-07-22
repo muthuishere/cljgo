@@ -7,7 +7,7 @@ import (
 
 // TestBareRequireGoIsTainted — a namespace that DECLARES (require-go …) but
 // never dereferences a member produces no OpHost* node, yet must still be
-// classified Go-interop (ADR 0050 dec 2/3: require-go itself is the
+// classified Go-interop (ADR 0054 dec 2/3: require-go itself is the
 // disqualifying surface). Regression for the clojars purity-gate bypass where a
 // bare require-go slipped through as "pure" and its invalid form was copied into
 // the JVM source tree.

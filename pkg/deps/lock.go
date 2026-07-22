@@ -1,6 +1,6 @@
 package deps
 
-// The committed lockfile, build.lock.edn (ADR 0048 decision 3). It is the only
+// The committed lockfile, build.lock.edn (ADR 0052 decision 3). It is the only
 // dependency artifact that can be READ rather than RUN (build.cljgo is code),
 // and it is where transitivity lives (decision 5). Deterministic: deps are
 // name-sorted and map keys sorted, so the file is byte-identical across

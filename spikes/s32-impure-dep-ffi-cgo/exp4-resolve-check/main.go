@@ -1,6 +1,6 @@
 // S32 exp4 — a RESOLVE-TIME impurity check.
 //
-// The claim under test (ADR 0048 decision 6, third bullet): impurity can be
+// The claim under test (ADR 0052 decision 6, third bullet): impurity can be
 // determined from a declarative manifest, before fetching or building, and
 // reported better than the link-time / init-time failures exp2 and exp3
 // measured.
@@ -8,7 +8,7 @@
 // Deliberate properties:
 //   - the manifest is read with cljgo's OWN reader (pkg/reader) — no new
 //     parser, and it proves the shape is ordinary EDN;
-//   - a dependency's (defn build [b] ...) is NEVER evaluated (ADR 0048 §5);
+//   - a dependency's (defn build [b] ...) is NEVER evaluated (ADR 0052 §5);
 //   - the host probe for an :ffi soname is a real purego Dlopen, i.e. the
 //     exact call the program would make at run time, executed now instead;
 //   - the c-link probe deliberately does NOT shell out to a compiler: it
@@ -255,7 +255,7 @@ func main() {
 		}
 	}
 
-	// Go-module merge conflicts (ADR 0048 decision 6, first bullet).
+	// Go-module merge conflicts (ADR 0052 decision 6, first bullet).
 	for path, vs := range goMerge {
 		if len(uniq(vs)) > 1 {
 			findings = append(findings, finding{"<graph>", "go-require",

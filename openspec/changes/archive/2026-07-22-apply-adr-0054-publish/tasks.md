@@ -2,7 +2,7 @@
 
 - [x] 1.1 `pkg/emit/purity.go`: `Taint` + `ClassifyGoInterop` — one pass over `Program.Entry`+`Deps`, walking `CompiledNS.Forms` via the real `eachChild`, switching on the five host ops, first offending `file:line` per namespace
 - [x] 1.2 Entry namespace name (`""`) recovered textually (`readNSName`)
-- [x] 1.3 Pluggable `Predicate` slot — used for a **second** shipping predicate `RequireGoPredicate` (a bare `(require-go …)` with no member access is taint too; ADR 0050 dec 2/3 name require-go itself as disqualifying — adversarial-review fix)
+- [x] 1.3 Pluggable `Predicate` slot — used for a **second** shipping predicate `RequireGoPredicate` (a bare `(require-go …)` with no member access is taint too; ADR 0054 dec 2/3 name require-go itself as disqualifying — adversarial-review fix)
 - [x] 1.4 `WholeLibPure` (OR/first-offender) + `NamespacePure` (lookup); `whole-lib == AND(per-ns)`
 - [x] 1.5 Tests: buried require-go caught at leaf `file:line`; pure fixture zero-FP; mixed; invariant; **bare-require-go tainted** (regression)
 
@@ -39,7 +39,7 @@
 ## 7. Close-out
 
 - [x] 7.1 No spike code merged verbatim into `pkg/`; S34/S35 reference-only (ADR 0027)
-- [x] 7.2 Update ADR 0050 status proposed → accepted (implemented); record ADR 0013 producer-side follow-ups
+- [x] 7.2 Update ADR 0054 status proposed → accepted (implemented); record ADR 0013 producer-side follow-ups
 - [ ] 7.3 `/opsx:archive` this change
 
 ## Deferred follow-ups (tracked, not blocking)
@@ -47,5 +47,5 @@
 - **Decision 5.3** strict resolve-time Java hook — own change (lock-schema surface).
 - **`publish go` typed signatures** — wrappers are uniformly `func(args ...any) any`; resolving typed Go signatures from `^long`/hint metadata is deferred (no export dropped, only signatures widened).
 - **`publish go` third-party go-require** — the `go get`/tidy wiring `pkg/build` does is not yet in `publish go`; a third-party require currently fails with a raw go/packages message rather than a purpose-built one.
-- **`publish clojars` Clojars coordinate / source-jar** — git-coordinate `deps.edn` only (ADR 0050 scoping); a Clojars coordinate step is later.
+- **`publish clojars` Clojars coordinate / source-jar** — git-coordinate `deps.edn` only (ADR 0054 scoping); a Clojars coordinate step is later.
 - **Test nit** — `go_test.go` `^:private` exclusion is exercised only via a dependency ns; add an entry-ns private defn to test that branch directly.

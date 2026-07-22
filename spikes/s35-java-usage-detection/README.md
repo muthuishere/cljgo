@@ -1,9 +1,9 @@
 # Spike S35 — Can cljgo reliably detect that Clojure source uses JAVA interop?
 
-Opened 2026-07-22. Feeds **ADR 0050** (purity validation — not yet
+Opened 2026-07-22. Feeds **ADR 0054** (purity validation — not yet
 written). Follows ADR 0010 (Go interop surface), ADR 0026 (`instance?`
 class position is syntax), ADR 0036 (reader features + interned class
-refs), ADR 0048 §6/§6a (dependency purity + the unforgivable
+refs), ADR 0052 §6/§6a (dependency purity + the unforgivable
 silent-`nil` host divergence).
 
 ## Context — the verified current state
@@ -34,13 +34,13 @@ cljgo runs Clojure on a Go host with **no JVM**. Its host-interop surface
 
 So on a Go host there is no Java. The question is whether cljgo can *tell*
 that a given form was *written for* the JVM, so a purity validator can
-reject it up front instead of letting it fail late (or worse — ADR 0048
+reject it up front instead of letting it fail late (or worse — ADR 0052
 §6a — return `nil` silently).
 
 ## The one question
 
 **Given Clojure source, is there a sound, low-false-positive predicate
-`uses-java?(form | namespace)` that a purity validator (ADR 0050) can call
+`uses-java?(form | namespace)` that a purity validator (ADR 0054) can call
 at analysis time on a Go host that has no Java — reliably distinguishing
 JAVA interop from GO interop and from pure Clojure?**
 
@@ -69,14 +69,14 @@ Java"). The criterion is met iff:
 3. The **residual ambiguous set** — host-neutral interop that pure syntax
    cannot classify (chiefly bare `(.method recv)` and `(.-field recv)`) —
    is enumerated, with *how each is resolved* (resolution-based fallback,
-   or declared genuinely undecidable), and the consequence for ADR 0050
+   or declared genuinely undecidable), and the consequence for ADR 0054
    stated plainly.
 4. For every corpus snippet, MEASURE what cljgo actually does today
    (reads / analyzes / errors / silently returns nil / panics), captured
    as real output, so the ADR knows what signal exists.
 
 Closing "no" is a legitimate outcome: if reliable Java detection is NOT
-achievable on a Go host, that changes ADR 0050 and must be surfaced.
+achievable on a Go host, that changes ADR 0054 and must be surfaced.
 
 ## Method
 

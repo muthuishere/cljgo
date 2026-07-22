@@ -22,7 +22,7 @@ func git(dir string, args ...string) (string, error) {
 
 // resolveRef turns a ref (tag/branch/HEAD) into an immutable SHA by asking the
 // remote. This is the ONLY step that needs the network; a locked build skips it
-// entirely (ADR 0048 §1). A 40-hex ref is already an identity.
+// entirely (ADR 0052 §1). A 40-hex ref is already an identity.
 func resolveRef(url, ref string) (string, error) {
 	out, err := git("", "ls-remote", url, ref)
 	if err != nil {

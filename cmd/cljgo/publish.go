@@ -10,14 +10,14 @@ import (
 	"github.com/muthuishere/cljgo/pkg/publish"
 )
 
-// runPublish implements `cljgo publish <go|clojars>` (ADR 0050). It loads the
+// runPublish implements `cljgo publish <go|clojars>` (ADR 0054). It loads the
 // project build file, finds the declared library artifact ((lib b …)), and
 // emits the requested target:
 //
 //   - go       a go-gettable Go module (Go interop allowed)
 //   - clojars  pure Clojure source (refused if any namespace uses Go interop)
 //
-// One build.cljgo, both ecosystems (ADR 0050 decision 2): the SAME lib
+// One build.cljgo, both ecosystems (ADR 0054 decision 2): the SAME lib
 // declaration publishes to either target; the target is chosen here, not in the
 // build file.
 func runPublish(args []string) int {

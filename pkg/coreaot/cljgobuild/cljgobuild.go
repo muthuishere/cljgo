@@ -116,7 +116,7 @@ func Load() {
 	v_cljgo_DOT_build_exe.BindRoot(tmp15)
 	_ = v_cljgo_DOT_build_exe
 	// (def lib "Declares a publishable library artifact from spec\n  {:name … :main \"path.clj…
-	v_cljgo_DOT_build_lib.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(39), kw_column, int64(7), kw_end_line, int64(39), kw_end_column, int64(10), kw_doc, "Declares a publishable library artifact from spec\n  {:name … :main \"path.cljg\" :module \"github.com/you/lib\"} — the producer\n  side of ADR 0013 / ADR 0050. ONE library, both ecosystems: `cljgo publish go`\n  emits a go-gettable module and `cljgo publish clojars` emits pure Clojure\n  source, from this one declaration. :kind is stamped \"lib\"; the target\n  (go|clojars) is chosen at publish time. :module is the library's module path /\n  coordinate. Returns an artifact handle {:builder b :name …}."))
+	v_cljgo_DOT_build_lib.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(39), kw_column, int64(7), kw_end_line, int64(39), kw_end_column, int64(10), kw_doc, "Declares a publishable library artifact from spec\n  {:name … :main \"path.cljg\" :module \"github.com/you/lib\"} — the producer\n  side of ADR 0013 / ADR 0054. ONE library, both ecosystems: `cljgo publish go`\n  emits a go-gettable module and `cljgo publish clojars` emits pure Clojure\n  source, from this one declaration. :kind is stamped \"lib\"; the target\n  (go|clojars) is chosen at publish time. :module is the library's module path /\n  coordinate. Returns an artifact handle {:builder b :name …}."))
 	tmp35 := lang.FnFunc2(func(b36, spec37 any) any {
 		var tmp38 any
 		_ = tmp38
@@ -175,8 +175,8 @@ func Load() {
 	})
 	v_cljgo_DOT_build_go_require.BindRoot(tmp55)
 	_ = v_cljgo_DOT_build_go_require
-	// (def dep "Declares a dependency (ADR 0048). `name` is the dependency name; `opts` is\n  a …
-	v_cljgo_DOT_build_dep.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(10), kw_doc, "Declares a dependency (ADR 0048). `name` is the dependency name; `opts` is\n  a map of fetch coordinates — {:git url :ref \"v1.2.0\" :subdir \"…\"} for a\n  git dep, or {:path \"../local\"} for a local one. Accumulated project-wide\n  onto :deps (the emitted binary bakes one dependency graph). Returns b."))
+	// (def dep "Declares a dependency (ADR 0052). `name` is the dependency name; `opts` is\n  a …
+	v_cljgo_DOT_build_dep.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(10), kw_doc, "Declares a dependency (ADR 0052). `name` is the dependency name; `opts` is\n  a map of fetch coordinates — {:git url :ref \"v1.2.0\" :subdir \"…\"} for a\n  git dep, or {:path \"../local\"} for a local one. Accumulated project-wide\n  onto :deps (the emitted binary bakes one dependency graph). Returns b."))
 	tmp74 := lang.FnFunc3(func(b75, name76, opts77 any) any {
 		tmp78 := v_clojure_DOT_core_swap_BANG_.Get()
 		tmp79 := lang.FnFunc1(func(m80 any) any {
@@ -196,8 +196,8 @@ func Load() {
 	})
 	v_cljgo_DOT_build_dep.BindRoot(tmp74)
 	_ = v_cljgo_DOT_build_dep
-	// (def accept-version "Consumer-side version override (ADR 0048 decision 4): accept `version…
-	v_cljgo_DOT_build_accept_version.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(21), kw_doc, "Consumer-side version override (ADR 0048 decision 4): accept `version` for\n  Go module `module` when two dependencies pin it at different versions,\n  instead of the hard conflict error. Accumulated onto the :accept-versions\n  map. Returns b."))
+	// (def accept-version "Consumer-side version override (ADR 0052 decision 4): accept `version…
+	v_cljgo_DOT_build_accept_version.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(21), kw_doc, "Consumer-side version override (ADR 0052 decision 4): accept `version` for\n  Go module `module` when two dependencies pin it at different versions,\n  instead of the hard conflict error. Accumulated onto the :accept-versions\n  map. Returns b."))
 	tmp90 := lang.FnFunc3(func(b91, module92, version93 any) any {
 		tmp94 := v_clojure_DOT_core_swap_BANG_.Get()
 		tmp95 := lang.FnFunc1(func(m96 any) any {
@@ -215,8 +215,8 @@ func Load() {
 	})
 	v_cljgo_DOT_build_accept_version.BindRoot(tmp90)
 	_ = v_cljgo_DOT_build_accept_version
-	// (def allow-capability "Acknowledges a dependency's impure capability (ADR 0048 decision 6,…
-	v_cljgo_DOT_build_allow_capability.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(87), kw_column, int64(7), kw_end_line, int64(87), kw_end_column, int64(23), kw_doc, "Acknowledges a dependency's impure capability (ADR 0048 decision 6,\n  default-deny): `cap` is a capability keyword — :ffi, :cgo, or :go-require.\n  Unacknowledged impurity is refused at resolve time. Accumulated onto\n  :allow-caps. Returns b."))
+	// (def allow-capability "Acknowledges a dependency's impure capability (ADR 0052 decision 6,…
+	v_cljgo_DOT_build_allow_capability.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(87), kw_column, int64(7), kw_end_line, int64(87), kw_end_column, int64(23), kw_doc, "Acknowledges a dependency's impure capability (ADR 0052 decision 6,\n  default-deny): `cap` is a capability keyword — :ffi, :cgo, or :go-require.\n  Unacknowledged impurity is refused at resolve time. Accumulated onto\n  :allow-caps. Returns b."))
 	tmp104 := lang.FnFunc2(func(b105, cap_106 any) any {
 		tmp107 := v_clojure_DOT_core_swap_BANG_.Get()
 		tmp108 := lang.FnFunc1(func(m109 any) any {

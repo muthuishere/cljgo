@@ -73,7 +73,7 @@ func TestPublishClojarsRefusesGoInterop(t *testing.T) {
 
 // TestPublishClojarsJavaFlavoredButGoFree — a library using Java-flavored but
 // cljgo-analyzable, Go-interop-free surfaces (instance?/catch/class-ref) still
-// publishes: the clojars gate is uses-go-interop?, not uses-java? (ADR 0050
+// publishes: the clojars gate is uses-go-interop?, not uses-java? (ADR 0054
 // decision 3/4). Java runs on the JVM, so it does not disqualify.
 func TestPublishClojarsJavaFlavoredButGoFree(t *testing.T) {
 	out := t.TempDir()

@@ -1,4 +1,4 @@
-// purity.go — the transitive Go-interop taint classifier (ADR 0050 dec 3).
+// purity.go — the transitive Go-interop taint classifier (ADR 0054 dec 3).
 //
 // ONE pass, no new walk: it iterates the namespaces CompileProgram already
 // captured (Entry + Deps, ADR 0042's transitive-require traversal) and walks
@@ -142,7 +142,7 @@ func Classify(p *Program, preds ...Predicate) map[string]*Taint {
 // (require-go …), even when no member is ever dereferenced. The five OpHost*
 // ops fire only on member ACCESS; a bare `(require-go '[strconv :as sc])` with
 // no `sc/…` use produces no host-op node, yet the form itself is not valid
-// Clojure and cannot load on the JVM. ADR 0050 dec 2/3 name require-go/ffi
+// Clojure and cannot load on the JVM. ADR 0054 dec 2/3 name require-go/ffi
 // itself as the disqualifying surface — so this predicate closes that gap. It
 // is the second composed predicate over the one walk (the slot S34 reserved).
 func RequireGoPredicate(ns *CompiledNS) *Taint {

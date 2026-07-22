@@ -31,14 +31,14 @@ func contended(err error) bool {
 }
 
 // withLock is the Windows fallback for the POSIX flock in lock_unix.go. Windows
-// has no flock; ADR 0048 §1 flags a Windows equivalent as owed. This is an
+// has no flock; ADR 0052 §1 flags a Windows equivalent as owed. This is an
 // advisory create-exclusive lockfile spin: O_CREATE|O_EXCL is atomic on
 // Windows, so at most one process holds the lock at a time. Correctness of the
 // cache does not depend on the lock alone — materialization publishes via
 // atomic rename into an immutable slot, so a losing racer only ever discards
 // duplicate work.
 //
-// TODO(deps, ADR 0048): a robust Windows equivalent (LockFileEx) if contention
+// TODO(deps, ADR 0052): a robust Windows equivalent (LockFileEx) if contention
 // or crash-during-hold ever proves this spin insufficient. A stale lockfile
 // from a crashed holder is reclaimed after staleLock.
 func withLock(root, key string, fn func() error) error {

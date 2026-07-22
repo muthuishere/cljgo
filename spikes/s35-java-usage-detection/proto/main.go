@@ -71,7 +71,7 @@ var corpus = []sample{
 	{`(def x String)`, pure, "TRAP: bare class ref value (ADR 0036 ClassRef)"},
 	{`(pr-str java.util.UUID)`, pure, "TRAP: java.* ClassRef as value (ADR 0036)"},
 
-	// ---- Go interop (cljgo-only; impure by ADR 0048 §6, but NOT java) ----
+	// ---- Go interop (cljgo-only; impure by ADR 0052 §6, but NOT java) ----
 	{`(require-go '[strings :as strs]) (strs/ToUpper "hi")`, goInterop, "go ns call"},
 	{`(require-go '[strconv :as sc]) (sc/Itoa 42)`, goInterop, "go ns call"},
 	{`(require-go '[strings]) (def r (strings/NewReplacer "a" "1")) (.Replace r "abc")`, goInterop, "go dot-method (host-neutral shape)"},

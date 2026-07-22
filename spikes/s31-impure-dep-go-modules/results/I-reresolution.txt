@@ -1,4 +1,4 @@
-### RE-RESOLUTION — falsifiable test of ADR 0048 lines 48-56
+### RE-RESOLUTION — falsifiable test of ADR 0052 lines 48-56
 Build #1 pins a REAL version; build #2 pins a NONEXISTENT one in the same
 project dir. If re-resolution takes effect, build #2 MUST fail.
 

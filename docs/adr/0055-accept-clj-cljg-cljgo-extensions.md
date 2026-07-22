@@ -1,4 +1,4 @@
-# ADR 0051 — Source and build files accept `.clj`, `.cljg`, and `.cljgo`
+# ADR 0055 — Source and build files accept `.clj`, `.cljg`, and `.cljgo`
 
 Date: 2026-07-22 · Status: accepted (owner-directed, 2026-07-22) · Refines the
 resolver contract of **ADR 0042** / **ADR 0036** and the single-name build-file
@@ -17,7 +17,7 @@ Owner decision (2026-07-22): rather than force one extension or rename the
 build file, **accept all three — `.clj`, `.cljg`, `.cljgo` — everywhere**, for
 both source namespaces and the build file. `.cljg`/`.cljgo` are cljgo-native
 source; `.clj` is the portable extension JVM Clojure also reads, which matters
-for `publish clojars` (ADR 0050). Being permissive costs nothing and removes a
+for `publish clojars` (ADR 0054). Being permissive costs nothing and removes a
 naming decision users would otherwise trip on.
 
 This supersedes an in-flight idea to *drop* `.cljgo` and rename the build file
@@ -32,7 +32,7 @@ remains the canonical default.
    host prefers `.clj` over `.cljc`, ClojureScript prefers `.cljs`). This
    reverses the prior `.clj`-first order. Because `ResolveLibPath` is the
    single shared resolver (S30), both execution legs inherit this identically —
-   dual-mode parity by construction (ADR 0049 invariant), no second resolver.
+   dual-mode parity by construction (ADR 0053 invariant), no second resolver.
 
 2. **The build file is probed, not fixed:** `cljgo build` looks for
    `build.cljgo`, then `build.cljg`, then `build.clj` (same precedence),
@@ -40,7 +40,7 @@ remains the canonical default.
    emits and the canonical default in error messages.
 
 3. **Ambiguity is most-specific-wins, silently** — consistent with the
-   load-path first-wins of the ADR 0048 / S30 design. A shadowing diagnostic
+   load-path first-wins of the ADR 0052 / S30 design. A shadowing diagnostic
    may be added later; it is not a semantic change.
 
 ## Consequences
@@ -49,7 +49,7 @@ remains the canonical default.
   resolved before still resolves; `.cljgo` source and `build.cljg`/`build.clj`
   now also resolve. The one behavior change is precedence when a name exists in
   two extensions at once (now most-specific wins, was `.clj`).
-- **`.clj` acceptance aligns the ecosystem-bridge story** (ADR 0050): the same
+- **`.clj` acceptance aligns the ecosystem-bridge story** (ADR 0054): the same
   library's `.clj` files are what JVM Clojure reads, while cljgo prefers its
   native `.cljg`/`.cljgo` — the `.cljc`-style split, for free.
 - **Templates are unchanged** — `build.cljgo` + `.cljg` sources keep working;

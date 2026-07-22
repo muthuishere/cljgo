@@ -1,6 +1,6 @@
 # Spike S36 — Can the interpreter tell an UNLINKED third-party `require-go` member from a legitimate `nil`?
 
-Opened 2026-07-22. Validates **ADR 0049 decision 2** (the one uncertain
+Opened 2026-07-22. Validates **ADR 0053 decision 2** (the one uncertain
 mechanism keeping that ADR at `draft`). Follows the diagnosis spikes
 S31 / S32, which **already measured** that the divergence exists — this
 spike does NOT re-litigate that; it proves whether the FIX's detection
@@ -15,7 +15,7 @@ When `(some.pkg/Member)` is evaluated after
 - **(a) unlinked third-party member** — a member of a third-party Go
   package that is NOT linked into the running `cljgo` binary. Today this
   returns `nil` silently while the compiled binary returns the real value
-  (the unforgivable REPL-vs-binary divergence). ADR 0049 dec. 2 says this
+  (the unforgivable REPL-vs-binary divergence). ADR 0053 dec. 2 says this
   must become a **hard error**.
 - **(b) a legitimately-`nil` Clojure value** — must NOT error.
 - **(c) a stdlib or cljgo-own Go symbol that resolves fine** — must NOT
@@ -47,7 +47,7 @@ Plus the build-parity guard:
    mode-aware, not a blanket hard error.
 
 Anything less — the predicate false-errors on (b)/(c), or the hard error
-breaks `cljgo build` — closes this spike **no**, and ADR 0049 dec. 2 must
+breaks `cljgo build` — closes this spike **no**, and ADR 0053 dec. 2 must
 find a different mechanism.
 
 ## What must additionally be investigated and reported

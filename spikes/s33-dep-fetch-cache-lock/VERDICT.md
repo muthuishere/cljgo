@@ -1,6 +1,6 @@
 # Spike S33 verdict — SHA pins identity, tree hash pins content; the lock needs both, plus transitivity and impurity
 
-Closed 2026-07-22. Recommendation feeds **ADR 0048 decisions 1 and 3**.
+Closed 2026-07-22. Recommendation feeds **ADR 0052 decisions 1 and 3**.
 
 **Exit criterion: MET, all five clauses.** Two clean-cache resolutions in
 different project dirs against different cache roots produced
@@ -21,7 +21,7 @@ core proof touches no network.
 
 ## 1. The headline finding: a git SHA is not a content hash, and you need both
 
-This is the finding that most changes ADR 0048's decision 1, which currently
+This is the finding that most changes ADR 0052's decision 1, which currently
 says "content-addressed … keyed by resolved identity (git SHA)". Those are
 two different things and the spike separated them empirically.
 
@@ -53,7 +53,7 @@ version (identity), and `.ziphash` / `go.sum` verify the bytes. The
 duplication is not redundancy; it is what makes "the cache is immutable and
 safely shared across projects" a checkable claim rather than an assertion.
 
-Consequence for ADR 0048 §1's wording: **"content-addressed" is the wrong
+Consequence for ADR 0052 §1's wording: **"content-addressed" is the wrong
 term for the key and the right term for the verification.** Say so
 explicitly, or implementers will build one and think they have both.
 
@@ -63,7 +63,7 @@ The prototype's `CacheRoot()` (`prototype/cas.go:17`):
 
 ```
 $CLJGO_CACHE            explicit override (used here as the "other machine")
-$XDG_CACHE_HOME/cljgo   ADR 0048 §1
+$XDG_CACHE_HOME/cljgo   ADR 0052 §1
 ~/.cache/cljgo          fallback
 ```
 
@@ -73,7 +73,7 @@ user-level state in the tree is `pkg/repl/session.go:57`, which hardcodes
 and `.config` rather than `.cache`**. There is no other cache/config-dir
 handling anywhere in `pkg/`, `cmd/`, or `core/`.
 
-Recommendation: keep ADR 0048's `$XDG_CACHE_HOME/cljgo` for the dep cache
+Recommendation: keep ADR 0052's `$XDG_CACHE_HOME/cljgo` for the dep cache
 (it is genuinely regenerable cache data, so `.cache` is correct and
 `.config` would be wrong), and land a **separate** trivial fix making
 `sessionsDir()` honour `$XDG_CONFIG_HOME` so the two agree on the pattern.
@@ -104,7 +104,7 @@ Three sub-findings:
   makes a second version of the same dep cheap (incremental fetch) and is
   what let E3d re-fetch an old SHA after the tag had already moved.
 
-## 3. Concurrency (ADR 0048 §1's explicit ask): flock + atomic rename, nothing more
+## 3. Concurrency (ADR 0052 §1's explicit ask): flock + atomic rename, nothing more
 
 **E5**: 8 resolvers, one cold cache, all exit 0, identical output, 3 src
 entries, **0 leftover `.tmp-` dirs**, and a verification pass after the
@@ -142,7 +142,7 @@ $W/proj/vendor/acme-util/src
 backends. This is the strongest argument for the schema: the hash is a
 property of the dependency, not of where it happens to sit.
 
-Interaction with **ADR 0048 decision 2** (S30's load path): vendoring does
+Interaction with **ADR 0052 decision 2** (S30's load path): vendoring does
 **not** need a new slot in the resolution order. It resolves *within* slot 3
 ("resolved dependency roots, in lock order") — the resolver simply hands
 S30 a different base directory for the same dep, in the same lock order.
@@ -209,7 +209,7 @@ written after verification, with the full hash recomputed on demand
 building it — a premature stamp is a correctness hole, and the spike's job
 was to prove the check works.
 
-## 7. Transitivity without executing anything (ADR 0048 decision 5)
+## 7. Transitivity without executing anything (ADR 0052 decision 5)
 
 Decision 5 forbids evaluating a dep's `(defn build [b] …)` at resolve time,
 which means transitive requirements must be *data*. The prototype reads
@@ -244,7 +244,7 @@ design presumes a resolution algorithm, so S31 can choose hard-error (ADR
 
 No registry, no index, no publishing, no semver ranges, no constraint
 solver, no private/authenticated sources, no vulnerability scanning — per
-ADR 0048's out-of-scope list. Also not built: cache GC/eviction, a
+ADR 0052's out-of-scope list. Also not built: cache GC/eviction, a
 `.ok`-stamp fast path (§6), and cross-filesystem rename fallback (the temp
 dir is created *inside* `<root>/src` precisely so rename stays atomic).
 
@@ -267,7 +267,7 @@ dir is created *inside* `<root>/src` precisely so rename stays atomic).
 
 ## Recommendation
 
-**Ratify ADR 0048 decisions 1 and 3, with decision 1 reworded.** The
+**Ratify ADR 0052 decisions 1 and 3, with decision 1 reworded.** The
 mechanism is small — flock, atomic rename, `git archive`, one merkle hash,
 one EDN file — and every clause of the exit criterion held. Specifically:
 

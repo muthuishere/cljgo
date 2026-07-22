@@ -24,7 +24,7 @@ mkrepo() { # mkrepo <name> ; expects $W/src/<name> populated
 # --- acme-util: pure leaf --------------------------------------------------
 mkdir -p "$W/src/acme-util/src/acme"
 cat > "$W/src/acme-util/cljgo.manifest.edn" <<'EOF'
-;; Declarative manifest (ADR 0048 decision 5): resolution reads THIS,
+;; Declarative manifest (ADR 0052 decision 5): resolution reads THIS,
 ;; it never evaluates build.cljgo's (defn build [b] ...).
 {:name "acme-util"
  :paths ["src"]

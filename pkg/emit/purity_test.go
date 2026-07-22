@@ -101,7 +101,7 @@ func TestMixedFixture(t *testing.T) {
 	}
 }
 
-// TestWholeLibEqualsAndOfPerNS — the invariant ADR 0050 §3 asserts:
+// TestWholeLibEqualsAndOfPerNS — the invariant ADR 0054 §3 asserts:
 // WholeLibPure == AND(NamespacePure over every reachable namespace). Checked
 // across all fixtures via the captured Program's full namespace set.
 func TestWholeLibEqualsAndOfPerNS(t *testing.T) {

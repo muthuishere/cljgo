@@ -1,4 +1,4 @@
-// Package deps implements ADR 0048 dependency resolution for cljgo: a global
+// Package deps implements ADR 0052 dependency resolution for cljgo: a global
 // content-addressed cache (keyed by identity, verified by content), a
 // deterministic committed lockfile (build.lock.edn), a resolver that reads the
 // lock and a dependency's declarative manifest as DATA (never evaluating a
@@ -26,7 +26,7 @@ import (
 // CacheRoot resolves the global cache root, in precedence order:
 //
 //	$CLJGO_CACHE           explicit override (also S33's "different machine" proxy)
-//	$XDG_CACHE_HOME/cljgo   ADR 0048 §1
+//	$XDG_CACHE_HOME/cljgo   ADR 0052 §1
 //	~/.cache/cljgo          fallback
 //
 // It errors only when no override is set and the user's home directory cannot
@@ -46,7 +46,7 @@ func CacheRoot() (string, error) {
 }
 
 // IdentityKey is the cache-slot key for a dependency: sha256 hex of
-// url‖sha‖subdir, computable BEFORE the fetch (ADR 0048 §1 "key by identity").
+// url‖sha‖subdir, computable BEFORE the fetch (ADR 0052 §1 "key by identity").
 // The content is what VERIFIES the entry (TreeHash); the key only locates it.
 func IdentityKey(url, sha, subdir string) string {
 	h := sha256.Sum256([]byte(url + "\x00" + sha + "\x00" + subdir))
@@ -68,7 +68,7 @@ func mirrorDir(root, url string) string {
 // sorted relative-path order, its slash-path, mode (regular / executable /
 // symlink), and the sha256 of its bytes (symlinks hash their target). `.git` is
 // excluded so a tree hashes identically with or without a repo. It is
-// recomputed on EVERY read (ADR 0048 §1 "verify by content"): a git SHA alone
+// recomputed on EVERY read (ADR 0052 §1 "verify by content"): a git SHA alone
 // is not a content guarantee.
 func TreeHash(dir string) (string, error) {
 	h := sha256.New()
@@ -179,7 +179,7 @@ func makeWritable(dir string) error {
 
 // CacheClean removes the global cache, first restoring write bits so the 0555
 // immutable trees delete cleanly (a plain `rm -rf` cannot). Absent cache is a
-// no-op. Required by ADR 0048 §1: a user cannot rm a read-only tree cleanly.
+// no-op. Required by ADR 0052 §1: a user cannot rm a read-only tree cleanly.
 func CacheClean() error {
 	root, err := CacheRoot()
 	if err != nil {
