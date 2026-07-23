@@ -1550,6 +1550,8 @@ func Load() {
 	v_clojure_DOT_pprint_pp.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(314), kw_column, int64(11), kw_end_line, int64(314), kw_end_column, int64(13)))
 	var pp625 any
 	_ = pp625
+	var pp625d lang.FnFunc2
+	_ = pp625d
 	tmp626 := lang.FnFunc2(func(X_AMP_form627, X_AMP_env628 any) any {
 		tmp629 := v_clojure_DOT_core_seq.Get()
 		tmp630 := v_clojure_DOT_core_concat.Get()
@@ -1562,6 +1564,7 @@ func Load() {
 		return tmp636
 	})
 	pp625 = tmp626
+	pp625d = tmp626
 	v_clojure_DOT_pprint_pp.BindRoot(tmp626)
 	_ = v_clojure_DOT_pprint_pp
 	tmp637 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -1667,13 +1670,13 @@ func Load() {
 					tmp715 := v_clojure_DOT_core_println_.Get()
 					tmp716 := v_clojure_DOT_core_zipmap.Get()
 					tmp717 := lang.Apply2(tmp716, ks647, ks647)
-					tmp718 := lang.Apply4(fmt_row712, "| ", " | ", " |", tmp717)
+					tmp718 := tmp692("| ", " | ", " |", tmp717)
 					tmp719 := lang.Apply1(tmp715, tmp718)
 					_ = tmp719
 					tmp720 := v_clojure_DOT_core_println_.Get()
 					tmp721 := v_clojure_DOT_core_zipmap.Get()
 					tmp722 := lang.Apply2(tmp721, ks647, spacers684)
-					tmp723 := lang.Apply4(fmt_row712, "|-", "-+-", "-|", tmp722)
+					tmp723 := tmp692("|-", "-+-", "-|", tmp722)
 					tmp724 := lang.Apply1(tmp720, tmp723)
 					_ = tmp724
 					var tmp725 any
@@ -1696,7 +1699,7 @@ func Load() {
 									var row734 any = tmp733
 									_ = row734
 									tmp735 := v_clojure_DOT_core_println_.Get()
-									tmp736 := lang.Apply4(fmt_row712, "| ", " | ", " |", row734)
+									tmp736 := tmp692("| ", " | ", " |", row734)
 									tmp737 := lang.Apply1(tmp735, tmp736)
 									_ = tmp737
 									var tmp738 any
@@ -1780,6 +1783,8 @@ func Load() {
 	v_clojure_DOT_pprint_formatter.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(363), kw_column, int64(11), kw_end_line, int64(363), kw_end_column, int64(20)))
 	var formatter756 any
 	_ = formatter756
+	var formatter756d lang.FnFunc3
+	_ = formatter756d
 	tmp757 := lang.FnFunc3(func(X_AMP_form758, X_AMP_env759, format_in760 any) any {
 		tmp761 := v_clojure_DOT_core_seq.Get()
 		tmp762 := v_clojure_DOT_core_concat.Get()
@@ -1792,6 +1797,7 @@ func Load() {
 		return tmp768
 	})
 	formatter756 = tmp757
+	formatter756d = tmp757
 	v_clojure_DOT_pprint_formatter.BindRoot(tmp757)
 	_ = v_clojure_DOT_pprint_formatter
 	tmp769 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -1802,6 +1808,8 @@ func Load() {
 	v_clojure_DOT_pprint_formatter_out.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(366), kw_column, int64(11), kw_end_line, int64(366), kw_end_column, int64(24)))
 	var formatter_out771 any
 	_ = formatter_out771
+	var formatter_out771d lang.FnFunc3
+	_ = formatter_out771d
 	tmp772 := lang.FnFunc3(func(X_AMP_form773, X_AMP_env774, format_in775 any) any {
 		tmp776 := v_clojure_DOT_core_seq.Get()
 		tmp777 := v_clojure_DOT_core_concat.Get()
@@ -1814,6 +1822,7 @@ func Load() {
 		return tmp783
 	})
 	formatter_out771 = tmp772
+	formatter_out771d = tmp772
 	v_clojure_DOT_pprint_formatter_out.BindRoot(tmp772)
 	_ = v_clojure_DOT_pprint_formatter_out
 	tmp784 := v_clojure_DOT_core_X_set_macro_BANG_.Get()

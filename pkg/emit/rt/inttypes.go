@@ -29,14 +29,16 @@ import (
 // tests byte-for-byte, so the emitted error string stays conformance-frozen
 // identical.
 //
-// REDEFINITION. Unlike Add2/Sub2/Mul2 these do NOT deref the operator var
-// per call, so they do not observe a runtime redefinition of clojure.core/+
-// et al. This is the design/04 §5 rung-4 primitive-intrinsic contract
-// (JVM Clojure's MaybePrimitiveExpr inlines the same way and also ignores
-// redefinition); the emitter only takes this path where it proved int64,
-// which is exactly where JVM would emit the primitive intrinsic. The boxed
-// Add2/Sub2/Mul2 path (still used everywhere the type is not proven) keeps
-// the liveness guard.
+// REDEFINITION. These ops themselves do not consult the operator var —
+// but every emitted region that reaches them sits behind an
+// `if !rt.CoreDirty()` entry guard (the ADR 0066 sealed-core flag): a
+// redefinition of clojure.core/+ et al trips lang.CoreArithDirty, the
+// guard fails, and execution falls through to the boxed emission whose
+// Add2/Sub2/Mul2 helpers re-check the flag per call and take the derefed
+// redefined value. So with-redefs of core arithmetic is honored at typed
+// call sites too, at region granularity (checked on entry to each fn
+// call / loop; a redefinition landing MID-flight inside one region
+// activation is seen from the next activation on — see ADR 0067).
 
 // IAdd is (+ x y) on proven int64 operands: checked, panics "integer
 // overflow" identically to lang int64Ops.Add.

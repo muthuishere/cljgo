@@ -68,16 +68,43 @@ var symFnStar = lang.NewSymbol("fn*")
 
 // nativeFn wraps a Go function as a lang.IFn (the pre-interned builtins of
 // design/03 §8 v0). Errors panic, per the IFn-boundary convention.
+//
+// fn2 is an OPTIONAL non-variadic 2-arg fast path (lang.IFn2): when set,
+// a 2-arg call (reduce/HOF inner loop) runs it directly, skipping the
+// []any{a, b} slice a variadic fn(a, b) heap-allocates every step. It
+// MUST be observably identical to fn(a, b) — a perf seam only. Attach it
+// with attachFast2; fns without one still work through the fn path.
 type nativeFn struct {
-	nm string
-	fn func(args ...any) any
+	nm  string
+	fn  func(args ...any) any
+	fn2 func(a, b any) any
 }
 
-var _ lang.IFn = (*nativeFn)(nil)
+var (
+	_ lang.IFn  = (*nativeFn)(nil)
+	_ lang.IFn2 = (*nativeFn)(nil)
+)
 
-func (n *nativeFn) Invoke(args ...any) any     { return n.fn(args...) }
+func (n *nativeFn) Invoke(args ...any) any { return n.fn(args...) }
+func (n *nativeFn) Invoke2(a, b any) any {
+	if n.fn2 != nil {
+		return n.fn2(a, b)
+	}
+	return n.fn(a, b)
+}
 func (n *nativeFn) ApplyTo(args lang.ISeq) any { return n.Invoke(lang.ToSlice(args)...) }
 func (n *nativeFn) String() string             { return "#object[" + n.nm + "]" }
+
+// attachFast2 wires a non-variadic 2-arg fast path onto a builtin var
+// interned by Def, so Apply2 can call it without the variadic []any box.
+// fn2 MUST be observably identical to calling the builtin with two args.
+// No-op if the var's root is not a *nativeFn (defensive).
+func attachFast2(v *lang.Var, fn2 func(a, b any) any) *lang.Var {
+	if nf, ok := v.Deref().(*nativeFn); ok {
+		nf.fn2 = fn2
+	}
+	return v
+}
 
 // Def interns a Go builtin into clojure.core: the native IFn wrapper
 // keeps the exact `#object[name]` printing and error→panic boundary the
@@ -133,7 +160,7 @@ func RegisterAll() {
 	// all four through this same seam when an Evaluator is constructed.
 	registerAOTStubs(def)
 
-	def("+", func(args ...any) any {
+	attachFast2(def("+", func(args ...any) any {
 		var acc any = int64(0)
 		for i, a := range args {
 			if i == 0 {
@@ -143,8 +170,8 @@ func RegisterAll() {
 			acc = lang.Add(acc, a)
 		}
 		return acc
-	})
-	def("-", func(args ...any) any {
+	}), func(a, b any) any { return lang.Add(a, b) })
+	attachFast2(def("-", func(args ...any) any {
 		if len(args) == 0 {
 			panic(fmt.Errorf("wrong number of args (0) passed to: -"))
 		}
@@ -156,8 +183,8 @@ func RegisterAll() {
 			acc = lang.Sub(acc, a)
 		}
 		return acc
-	})
-	def("*", func(args ...any) any {
+	}), func(a, b any) any { return lang.Sub(a, b) })
+	attachFast2(def("*", func(args ...any) any {
 		var acc any = int64(1)
 		for i, a := range args {
 			if i == 0 {
@@ -170,7 +197,7 @@ func RegisterAll() {
 			return int64(1)
 		}
 		return acc
-	})
+	}), func(a, b any) any { return lang.Multiply(a, b) })
 	def("/", func(args ...any) any {
 		if len(args) == 0 {
 			panic(fmt.Errorf("wrong number of args (0) passed to: /"))

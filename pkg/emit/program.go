@@ -147,15 +147,13 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 
 	printLast := opts.PrintLastValue && spec.isMain
 	for i, n := range forms {
-		// Numeric type inference for this top-level form (spike s42 / ADR
-		// 0067): proves int64 loop/let carriers so the emitter unboxes them.
-		// Runs at top level with no params/self; nested fns swap in their own
-		// per-method inference in genFn. gen always consults g.ni.
-		saveNi := g.ni
-		g.ni = inferNumeric(n, nil, nil, "", nil, nil)
+		// Numeric emission (spike s42 / ADR 0067) starts from the boxed
+		// default here: g.ni is emptyInfer. Typed regions open lazily and
+		// guarded — genFn specializes int64-provable fn bodies behind an
+		// `if !rt.CoreDirty()` entry, and genLoop dual-emits a numeric
+		// loop met in unguarded context under the same flag.
 		g.wf("// %s\n", provenance(n))
 		rv := g.gen(n)
-		g.ni = saveNi
 		if printLast && i == len(forms)-1 {
 			if rv == "" {
 				rv = "nil"

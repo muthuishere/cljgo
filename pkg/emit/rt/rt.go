@@ -8,16 +8,25 @@
 // linked — that is the whole point of AOT core (ADR 0023 / 0037).
 //
 // Guarded intrinsics: a 2-argument call to a core arithmetic builtin
-// (`+ - * / < > =`) emits as rt.Add2(v, x, y) etc. Each helper derefs
-// the var PER CALL (one atomic load — ADR 0004 liveness) and compares
-// the value against the boot-time builtin: pristine → open-coded int64
-// fast path (or the lang numeric tower), redefined → the normal
-// lang.Apply2 through the new value. Semantics are those of the
-// evaluator's builtins for every input; the only deviation from strict
-// evaluation order is that the operator deref happens after the
-// argument expressions (observable only when an argument's side effect
-// re-defs the operator var mid-call — JVM Clojure's :inline arithmetic
-// doesn't even deref).
+// (`+ - * / < > =`) emits as rt.Add2(v, x, y) etc. Since ADR 0066 (spike
+// s43) the seven core arithmetic vars are SEALED by Boot after the
+// pristine snapshot, and each helper checks the process-global
+// lang.CoreArithDirty ONCE per call (a single relaxed atomic.Bool load)
+// instead of the ADR 0004 per-call var deref + interface-compare:
+//   - dirty == false (the common case): no deref, no compare — open-code
+//     the int64 fast path (or the lang numeric tower) directly. The
+//     pprof-measured efaceeq (~8%) and Var.Get (~10%) frames vanish here.
+//   - dirty == true: a (with-redefs [+ …]) / (alter-var-root #'+ …) /
+//     (def + …) has tripped the flag, so the helper takes the original
+//     guarded path — deref the var, compare against the boot-time
+//     builtin, and route a redefined value through lang.Apply2. This is
+//     the ADR 0004 liveness escape hatch, preserved not reversed.
+//
+// Semantics are those of the evaluator's builtins for every input. Note
+// cljgo is deliberately MORE live than JVM Clojure here: JVM's :inline on
+// + emits Numbers.add at compile time and never sees a runtime redefinition
+// at a direct 2-arg call site, whereas the dirty-flag fallback does (see
+// ADR 0066 for the tradeoff and the hard-seal alternative).
 package rt
 
 import (
@@ -36,6 +45,28 @@ var (
 	origLT, origGT, origEQ             any
 )
 
+// coreArithDirty reports whether any sealed core arithmetic var has been
+// redefined since boot (spike s43 / ADR 0066). While false — the
+// overwhelmingly common case — the intrinsics below skip BOTH the per-call
+// var deref (lang.Var.Get, an atomic.Value load + Box unwrap) AND the
+// interface-compare against the pristine builtin (the efaceeq the pprof
+// decomposition put at ~8% of arithmetic CPU) and open-code the int64 op
+// directly. The single relaxed atomic.Bool load here branch-predicts to
+// false and is far cheaper than the guard it replaces. Once a (with-redefs
+// [+ …]) / (alter-var-root #'+ …) / (def + …) trips it, the intrinsics take
+// the guarded path again so the redefinition is still seen — the ADR 0004
+// liveness escape hatch is preserved, not reversed.
+func coreArithDirty() bool { return lang.CoreArithDirty.Load() }
+
+// CoreDirty is the exported form of the same flag load, for the ADR 0067
+// unboxed-region entry guards: the emitter wraps every typed int64 region
+// (a specialized fn's fast path, a lifted typed func's call guard, a
+// dual-emitted typed loop) in `if !rt.CoreDirty() { … }`, falling through
+// to the boxed emission — whose Add2/Sub2/… helpers re-check the flag per
+// call — when core arithmetic has been redefined. One relaxed atomic.Bool
+// load, the same near-free cost ADR 0066 measured.
+func CoreDirty() bool { return lang.CoreArithDirty.Load() }
+
 // Boot initializes the runtime exactly once: the Go builtins into
 // clojure.core (corelib.RegisterAll), then the AOT-compiled core — the
 // same sources in the same order as the interpreter's boot, as compiled
@@ -52,20 +83,36 @@ func Boot() {
 	}
 	booted = true
 	corelib.RegisterAll()
-	get := func(name string) any {
-		return lang.NSCore.FindInternedVar(lang.NewSymbol(name)).Get()
+	findVar := func(name string) *lang.Var {
+		return lang.NSCore.FindInternedVar(lang.NewSymbol(name))
 	}
-	origAdd = get("+")
-	origSub = get("-")
-	origMul = get("*")
-	origDiv = get("/")
-	origLT = get("<")
-	origGT = get(">")
-	origEQ = get("=")
+	vAdd, vSub, vMul, vDiv := findVar("+"), findVar("-"), findVar("*"), findVar("/")
+	vLT, vGT, vEQ := findVar("<"), findVar(">"), findVar("=")
+	origAdd = vAdd.Get()
+	origSub = vSub.Get()
+	origMul = vMul.Get()
+	origDiv = vDiv.Get()
+	origLT = vLT.Get()
+	origGT = vGT.Get()
+	origEQ = vEQ.Get()
 	if coreLoader == nil {
 		panic("rt.Boot: no AOT core linked — a cljgo binary must blank-import github.com/muthuishere/cljgo/pkg/coreaot (the emitter does this; see ADR 0046)")
 	}
 	coreLoader()
+	// Seal AFTER compiled core has loaded (ADR 0066 / spike s43): the
+	// builtin installs and every core BindRoot ran above with the vars
+	// unsealed, so none of them tripped CoreArithDirty. From here on, only
+	// a user redefinition of one of these seven trips the flag and sends the
+	// intrinsics back to the guarded liveness path. core.clj never re-defs
+	// +/-/*///</>/= (see Boot's contract comment); if it ever did, the flag
+	// would simply trip and cost the fast path — never correctness.
+	vAdd.Seal()
+	vSub.Seal()
+	vMul.Seal()
+	vDiv.Seal()
+	vLT.Seal()
+	vGT.Seal()
+	vEQ.Seal()
 }
 
 // RegisterCoreLoader receives pkg/coreaot's Load from its init(). rt
@@ -84,10 +131,14 @@ func RegisterLib(name string, load func()) { corelib.RegisterLibProvider(name, l
 // The helpers keep their hot bodies small (slow tails split out) so the
 // Go inliner can fuse the int64 fast path into emitted call sites.
 
-// Add2 is (+ x y) with per-call deref and guarded open-coding.
+// Add2 is (+ x y). Fast path (coreArithDirty false): no var deref, no
+// interface-compare — open-code int64 directly. Guarded path (dirty): the
+// ADR 0004 per-call deref + compare, so a live redefinition is seen.
 func Add2(v *lang.Var, x, y any) any {
-	if f := v.Get(); f != origAdd {
-		return lang.Apply2(f, x, y)
+	if coreArithDirty() {
+		if f := v.Get(); f != origAdd {
+			return lang.Apply2(f, x, y)
+		}
 	}
 	xi, xok := x.(int64)
 	yi, yok := y.(int64)
@@ -102,8 +153,10 @@ func Add2(v *lang.Var, x, y any) any {
 
 // Sub2 is (- x y).
 func Sub2(v *lang.Var, x, y any) any {
-	if f := v.Get(); f != origSub {
-		return lang.Apply2(f, x, y)
+	if coreArithDirty() {
+		if f := v.Get(); f != origSub {
+			return lang.Apply2(f, x, y)
+		}
 	}
 	xi, xok := x.(int64)
 	yi, yok := y.(int64)
@@ -118,8 +171,10 @@ func Sub2(v *lang.Var, x, y any) any {
 
 // Mul2 is (* x y).
 func Mul2(v *lang.Var, x, y any) any {
-	if f := v.Get(); f != origMul {
-		return lang.Apply2(f, x, y)
+	if coreArithDirty() {
+		if f := v.Get(); f != origMul {
+			return lang.Apply2(f, x, y)
+		}
 	}
 	xi, xok := x.(int64)
 	yi, yok := y.(int64)
@@ -147,16 +202,20 @@ func mulChecked(xi, yi int64) any {
 // Div2 is (/ x y) — no open-coded path (ratio semantics live in the
 // tower); the guard still skips the variadic builtin's []any.
 func Div2(v *lang.Var, x, y any) any {
-	if f := v.Get(); f != origDiv {
-		return lang.Apply2(f, x, y)
+	if coreArithDirty() {
+		if f := v.Get(); f != origDiv {
+			return lang.Apply2(f, x, y)
+		}
 	}
 	return lang.Divide(x, y)
 }
 
 // LT2 is (< x y).
 func LT2(v *lang.Var, x, y any) any {
-	if f := v.Get(); f != origLT {
-		return lang.Apply2(f, x, y)
+	if coreArithDirty() {
+		if f := v.Get(); f != origLT {
+			return lang.Apply2(f, x, y)
+		}
 	}
 	xi, xok := x.(int64)
 	yi, yok := y.(int64)
@@ -168,8 +227,10 @@ func LT2(v *lang.Var, x, y any) any {
 
 // GT2 is (> x y).
 func GT2(v *lang.Var, x, y any) any {
-	if f := v.Get(); f != origGT {
-		return lang.Apply2(f, x, y)
+	if coreArithDirty() {
+		if f := v.Get(); f != origGT {
+			return lang.Apply2(f, x, y)
+		}
 	}
 	xi, xok := x.(int64)
 	yi, yok := y.(int64)
@@ -181,8 +242,10 @@ func GT2(v *lang.Var, x, y any) any {
 
 // EQ2 is (= x y).
 func EQ2(v *lang.Var, x, y any) any {
-	if f := v.Get(); f != origEQ {
-		return lang.Apply2(f, x, y)
+	if coreArithDirty() {
+		if f := v.Get(); f != origEQ {
+			return lang.Apply2(f, x, y)
+		}
 	}
 	return lang.Equiv(x, y)
 }
@@ -191,8 +254,10 @@ func EQ2(v *lang.Var, x, y any) any {
 // directly in `if` tests (no interface boxing, no IsTruthy).
 
 func LTBool(v *lang.Var, x, y any) bool {
-	if f := v.Get(); f != origLT {
-		return lang.IsTruthy(lang.Apply2(f, x, y))
+	if coreArithDirty() {
+		if f := v.Get(); f != origLT {
+			return lang.IsTruthy(lang.Apply2(f, x, y))
+		}
 	}
 	xi, xok := x.(int64)
 	yi, yok := y.(int64)
@@ -203,8 +268,10 @@ func LTBool(v *lang.Var, x, y any) bool {
 }
 
 func GTBool(v *lang.Var, x, y any) bool {
-	if f := v.Get(); f != origGT {
-		return lang.IsTruthy(lang.Apply2(f, x, y))
+	if coreArithDirty() {
+		if f := v.Get(); f != origGT {
+			return lang.IsTruthy(lang.Apply2(f, x, y))
+		}
 	}
 	xi, xok := x.(int64)
 	yi, yok := y.(int64)
@@ -215,8 +282,10 @@ func GTBool(v *lang.Var, x, y any) bool {
 }
 
 func EQBool(v *lang.Var, x, y any) bool {
-	if f := v.Get(); f != origEQ {
-		return lang.IsTruthy(lang.Apply2(f, x, y))
+	if coreArithDirty() {
+		if f := v.Get(); f != origEQ {
+			return lang.IsTruthy(lang.Apply2(f, x, y))
+		}
 	}
 	return lang.Equiv(x, y)
 }

@@ -1396,6 +1396,8 @@ func Load() {
 	v_clojure_DOT_test_try_expr.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(247), kw_column, int64(11), kw_end_line, int64(247), kw_end_column, int64(19), kw_doc, "Used by the 'is' macro to catch unexpected exceptions.\n  You don't call this."))
 	var try_expr935 any
 	_ = try_expr935
+	var try_expr935d lang.FnFunc4
+	_ = try_expr935d
 	tmp936 := lang.FnFunc4(func(X_AMP_form937, X_AMP_env938, msg939, form940 any) any {
 		tmp941 := v_clojure_DOT_core_seq.Get()
 		tmp942 := v_clojure_DOT_core_concat.Get()
@@ -1463,6 +1465,7 @@ func Load() {
 		return tmp1003
 	})
 	try_expr935 = tmp936
+	try_expr935d = tmp936
 	v_clojure_DOT_test_try_expr.BindRoot(tmp936)
 	_ = v_clojure_DOT_test_try_expr
 	tmp1004 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -2861,6 +2864,8 @@ func Load() {
 	v_clojure_DOT_test_run_test.SetMeta(lang.NewMap(kw_file, "test.cljg", kw_line, int64(527), kw_column, int64(11), kw_end_line, int64(527), kw_end_column, int64(19), kw_doc, "Runs a single test — (run-test test-name), the var is taken for you."))
 	var run_test1736 any
 	_ = run_test1736
+	var run_test1736d lang.FnFunc3
+	_ = run_test1736d
 	tmp1737 := lang.FnFunc3(func(X_AMP_form1738, X_AMP_env1739, test_symbol1740 any) any {
 		tmp1741 := v_clojure_DOT_core_seq.Get()
 		tmp1742 := v_clojure_DOT_core_concat.Get()
@@ -2881,6 +2886,7 @@ func Load() {
 		return tmp1756
 	})
 	run_test1736 = tmp1737
+	run_test1736d = tmp1737
 	v_clojure_DOT_test_run_test.BindRoot(tmp1737)
 	_ = v_clojure_DOT_test_run_test
 	tmp1757 := v_clojure_DOT_core_X_set_macro_BANG_.Get()

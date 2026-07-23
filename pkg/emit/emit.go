@@ -56,6 +56,17 @@ type hoistDecl struct {
 	init   string
 }
 
+// directFn records a local binding whose value is a statically-known,
+// single-fixed-arity fn* (≤ 4 params, non-variadic) reachable through a
+// TYPED Go handle (a lang.FnFuncN-typed variable or temp holding that
+// exact closure). A call to such a binding of matching arity can bypass
+// lang.ApplyN's type-switch dispatch and invoke the closure value
+// directly (ADR 0064). goName is the typed handle; arity its fixed arity.
+type directFn struct {
+	goName string
+	arity  int
+}
+
 type generator struct {
 	buf bytes.Buffer
 	id  int // monotonic: temps, locals, loop labels
@@ -65,6 +76,13 @@ type generator struct {
 	// replaces S5's name/shadow bookkeeping entirely.
 	locals map[*ast.BindingNode]string
 	frames map[string]*recurFrame // LoopID → active frame
+
+	// directFns maps a local fn binding (a named fn's self-name, or a
+	// let-bound single-fixed-arity fn) to its typed Go handle, so a call
+	// of matching arity emits a direct closure invocation instead of
+	// lang.ApplyN (ADR 0064). Keyed by binding pointer identity, so
+	// shadowing never mis-resolves.
+	directFns map[*ast.BindingNode]directFn
 
 	vars    map[*lang.Var]string // hoisted var interns
 	dynVars map[*lang.Var]bool   // emitted with .SetDynamic()
@@ -97,22 +115,33 @@ type generator struct {
 
 	// ni is the ACTIVE numeric type-inference scope (spike s42 / ADR 0067):
 	// gen consults it for every node/binding to decide int64 vs boxed. It is
-	// swapped (save/restore) at each top-level form and each fn method body
-	// so the node/binding types in view are exactly the enclosing scope's —
-	// a dual-body specialized fn even emits its typed and boxed halves under
-	// two different scopes. emptyInfer() (types nothing) is the default.
+	// swapped (save/restore) per region — a dual-body specialized fn emits
+	// its typed and boxed halves under two different scopes. emptyInfer()
+	// (types nothing) is the default, so everything outside a guarded
+	// region stays boxed.
 	ni *numInfer
+	// guarded is true while emitting inside an `if !rt.CoreDirty()` typed
+	// region (a specialized fn fast path, a lifted typed func, or the typed
+	// arm of a dual-emitted loop). Unboxed emission only ever happens with
+	// guarded set — that is the ADR 0066/0067 redefinition contract — and a
+	// loop met while unguarded starts its own guarded dual emission.
+	guarded bool
+	// boxedForced is true in the else-arm of a dual-emitted loop: the dirty
+	// flag is sticky (never cleared), so nested loops there must not emit
+	// their own dead `if !rt.CoreDirty()` arms.
+	boxedForced bool
 }
 
 func newGenerator() *generator {
 	return &generator{
-		locals:  map[*ast.BindingNode]string{},
-		frames:  map[string]*recurFrame{},
-		vars:    map[*lang.Var]string{},
-		dynVars: map[*lang.Var]bool{},
-		kws:     map[lang.Keyword]string{},
-		syms:    map[string]string{},
-		taken:   map[string]bool{},
+		locals:    map[*ast.BindingNode]string{},
+		frames:    map[string]*recurFrame{},
+		directFns: map[*ast.BindingNode]directFn{},
+		vars:      map[*lang.Var]string{},
+		dynVars:   map[*lang.Var]bool{},
+		kws:       map[lang.Keyword]string{},
+		syms:      map[string]string{},
+		taken:     map[string]bool{},
 
 		hostImports: map[string]string{},
 		ni:          emptyInfer(),
@@ -677,7 +706,23 @@ func (g *generator) gen(n *ast.Node) string {
 			b := bn.Sub.(*ast.BindingNode)
 			rv := g.gen(b.Init) // sequential: init sees earlier bindings
 			gn := g.bindLocal(b)
+			// ADR 0067: an int64-proven binding declares as a raw Go int64;
+			// an fn-valued binding is never int64, so this composes with the
+			// ADR 0064 direct-call registration below.
 			g.wf("var %s %s = %s\n_ = %s\n", gn, g.bindGoType(b), rv, gn)
+			// A let-bound single-fixed-arity fn* can be called directly
+			// through its typed temp (ADR 0064). let bindings are
+			// immutable, so the temp holds this exact closure for the whole
+			// block (and any nested closure that captures it); rv is the
+			// lang.FnFuncN-typed temp genFn returned. Registered after this
+			// binding so later inits and the body resolve it, but not this
+			// init (a self-recursive call there is the fn's own self-name,
+			// handled inside genFn).
+			if b.Init.Op == ast.OpFn {
+				if m := singleFixedMethod(b.Init.Sub.(*ast.FnNode)); m != nil {
+					g.directFns[b] = directFn{goName: rv, arity: m.FixedArity}
+				}
+			}
 		}
 		bodyRv := g.gen(s.Body)
 		if bodyRv != "" {
@@ -702,6 +747,26 @@ func (g *generator) gen(n *ast.Node) string {
 		}
 		if t, ok := g.genIntrinsic(n, s); ok {
 			return t
+		}
+		// Direct-call fast path (ADR 0064): the callee is a local binding
+		// known to hold a specific single-fixed-arity closure (a named
+		// fn's self-name, or a let-bound fn) AND the call arity matches.
+		// Invoke the typed closure handle directly, skipping ApplyN's
+		// type-switch dispatch. The fn position is a side-effect-free
+		// local read, so evaluating the args first is order-preserving.
+		// Any mismatch (wrong arity, non-local, reassigned carrier) simply
+		// isn't registered and falls through to the ApplyN path below,
+		// which keeps exact arity-error semantics.
+		if s.Fn.Op == ast.OpLocal {
+			if df, ok := g.directFns[s.Fn.Sub.(*ast.LocalNode).Binding]; ok && df.arity == len(s.Args) {
+				rvs := make([]string, len(s.Args))
+				for i, a := range s.Args {
+					rvs[i] = g.gen(a)
+				}
+				t := g.temp()
+				g.wf("%s := %s(%s)\n", t, df.goName, strings.Join(rvs, ", "))
+				return t
+			}
 		}
 		frv := g.gen(s.Fn) // fn position evaluates first
 		rvs := make([]string, len(s.Args))
@@ -814,9 +879,11 @@ func (g *generator) gen(n *ast.Node) string {
 }
 
 // intrinsic2 maps 2-argument clojure.core arithmetic builtins to their
-// pkg/emit/rt guarded helpers. Each helper still derefs the var per
-// call and falls back through the current value on redefinition (ADR
-// 0004 liveness); pristine builtins open-code the int64 fast path —
+// pkg/emit/rt guarded helpers. Each helper checks the sealed-core dirty
+// flag once (ADR 0066 / spike s43) and only derefs the var + falls back
+// through the current value when a redefinition has tripped it (ADR
+// 0004 liveness, preserved via the escape hatch); pristine builtins
+// open-code the int64 fast path —
 // without this, every arithmetic op pays the variadic nativeFn's []any
 // allocation and the M2 factorial budget (design/00 §1.4) is blown by
 // an order of magnitude (measured: 168× raw; see perf_test.go).
@@ -984,11 +1051,67 @@ func (g *generator) callsSelf(s *ast.InvokeNode) bool {
 	return false
 }
 
-// genLoop emits loop* — S5's proven shape: binding vars (never
+// genLoop emits loop*. A numeric loop met in UNGUARDED context (no
+// enclosing `!rt.CoreDirty()` typed region) opens its own: the loop is
+// dual-emitted — a typed arm with int64 carriers behind the dirty check,
+// and a fully boxed arm honoring redefined core arithmetic (ADR 0066/
+// 0067). Inside an already-guarded region, or when nothing numeric was
+// proven, it emits once under the active inference scope.
+func (g *generator) genLoop(n *ast.Node) string {
+	if !g.guarded && !g.boxedForced && numInferEnabled {
+		if ni := inferNumeric(n, nil, nil, "", nil, nil); loopWin(ni, n) {
+			return g.genLoopDual(n, ni)
+		}
+	}
+	return g.genLoopEmit(n)
+}
+
+// loopWin reports whether the loop-scope inference proved at least one of
+// THIS loop's carriers int64 and the typed emission would actually differ
+// (some arithmetic call unboxes) — the bar for paying dual emission.
+func loopWin(ni *numInfer, n *ast.Node) bool {
+	s := n.Sub.(*ast.LetNode)
+	anyCarrier := false
+	for _, bn := range s.Bindings {
+		if ni.bindInt64(bn.Sub.(*ast.BindingNode)) {
+			anyCarrier = true
+			break
+		}
+	}
+	return anyCarrier && ni.hasArithWin()
+}
+
+// genLoopDual wraps the two arms: `if !rt.CoreDirty() { typed } else
+// { boxed }`, both assigning one shared any temp (the loop value boxes at
+// this boundary either way — it flows on into boxed context). boxedForced
+// marks the else-arm so nested loops skip their own (dead — the flag is
+// sticky) dirty checks.
+func (g *generator) genLoopDual(n *ast.Node, ni *numInfer) string {
+	t := g.temp()
+	g.wf("var %s any\n_ = %s\n", t, t)
+	g.wf("if !rt.CoreDirty() {\n")
+	save, saveG := g.ni, g.guarded
+	g.ni, g.guarded = ni, true
+	if rv := g.genLoopEmit(n); rv != "" {
+		g.wf("%s = %s\n", t, rv)
+	}
+	g.ni, g.guarded = save, saveG
+	g.wf("} else {\n")
+	saveF := g.boxedForced
+	g.boxedForced = true
+	if rv := g.genLoopEmit(n); rv != "" {
+		g.wf("%s = %s\n", t, rv)
+	}
+	g.boxedForced = saveF
+	g.wf("}\n")
+	return t
+}
+
+// genLoopEmit is the S5-proven loop* emission: binding vars (never
 // reassigned), separate carriers for captured bindings, labeled `for {}`
 // (label only when a recur targets it), per-iteration copies at the top
 // of the body for captured carriers, break out with the result.
-func (g *generator) genLoop(n *ast.Node) string {
+func (g *generator) genLoopEmit(n *ast.Node) string {
 	s := n.Sub.(*ast.LetNode)
 	t := g.temp()
 	g.wf("var %s %s\n_ = %s\n", t, g.ni.goType(n), t)
@@ -1127,12 +1250,24 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 
 	name := "fn"
 	selfGo := ""
+	selfTyped := "" // typed FnFuncN handle for direct self-calls (ADR 0064)
+	var selfBind *ast.BindingNode
 	if fn.Local != nil {
 		b := fn.Local.Sub.(*ast.BindingNode)
+		selfBind = b
 		name = b.Name.Name()
 		displayName = name
 		selfGo = g.bindLocal(b)
 		g.wf("var %s any\n_ = %s\n", selfGo, selfGo)
+		// When the fn is a single fixed-arity method, also pre-declare a
+		// typed handle the closure captures, so its own self-recursive
+		// calls bypass lang.ApplyN (ADR 0064). Assigned alongside selfGo
+		// after construction; direct calls can only fire once it is set.
+		if m := singleFixedMethod(fn); m != nil {
+			selfTyped = selfGo + "d"
+			g.wf("var %s lang.FnFunc%d\n_ = %s\n", selfTyped, m.FixedArity, selfTyped)
+			g.directFns[b] = directFn{goName: selfTyped, arity: m.FixedArity}
+		}
 	}
 	if defName != "" {
 		displayName = defName
@@ -1151,21 +1286,20 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 		g.wf("%s := lang.FnFunc%d(func(%s) any {\n", t, m.FixedArity, params)
 		// Numeric parameter specialization (ADR 0067): if the body is
 		// int64-provable with every param assumed int64, emit an int64
-		// fast path guarded by entry type-assertions, then the boxed body
-		// as the fallback for non-int64 (float/BigInt/redefined) callers.
-		if spec := g.specializeInt(fn, m, defVar); spec != nil {
-			var selfBind *ast.BindingNode
-			if fn.Local != nil {
-				selfBind = fn.Local.Sub.(*ast.BindingNode)
-			}
-			if canLift(m, selfBind) {
+		// fast path behind `if !rt.CoreDirty()` (ADR 0066) + entry
+		// type-assertions, then the boxed body as the fallback for
+		// non-int64 (float/BigInt) callers and redefined core arithmetic.
+		if spec, lift := g.specializeInt(fn, m, defVar); spec != nil {
+			if lift {
 				// Rung 3: lift to a package-level typed func with direct
-				// int64 recursion; the guard just delegates to it.
-				fnL := g.emitTypedFunc(m, spec, name, selfBind, defVar)
+				// int64 recursion; the guard just delegates to it. Named
+				// from the def target (user/add1 → fnL_user_add1) when the
+				// fn* has no self-name, so the generated source is legible.
+				fnL := g.emitTypedFunc(m, spec, displayName, liftSelfBind(fn), defVar)
 				g.emitLiftGuard(m, gnames, fnL)
 			} else {
-				// Inline typed body (recursion still crosses the any
-				// boundary; wins on per-op cost, not on boxing).
+				// Inline typed body (self-calls stay boxed — spec was
+				// re-derived without self-typing; wins on per-op cost).
 				g.emitTypedGuard(m, gnames, spec)
 			}
 		}
@@ -1205,6 +1339,18 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 
 	if selfGo != "" {
 		g.wf("%s = %s\n", selfGo, t)
+	}
+	if selfTyped != "" {
+		// t is a lang.FnFuncN-typed temp; assign the same closure into the
+		// typed handle the body captured for direct self-calls.
+		g.wf("%s = %s\n", selfTyped, t)
+	}
+	if selfBind != nil {
+		// The self-name is only in scope within this fn's own body; drop
+		// the direct-call registration so no later binding-pointer reuse
+		// (arena/GC) could alias it. Keyed by pointer, this is belt-and-
+		// suspenders — but cheap and unambiguous.
+		delete(g.directFns, selfBind)
 	}
 	return t
 }
@@ -1264,66 +1410,98 @@ func (g *generator) genArgsBinding(m *ast.FnMethodNode) {
 	g.emitBoxedMethod(m, gnames)
 }
 
-// emitBoxedMethod emits a method body on `any` params, with Tier-A numeric
-// inference active (int64 loop/let carriers unbox; params stay boxed). It
-// (re)maps the params to gnames so a preceding typed guard's rebinding
-// does not leak, then swaps the active inference for the duration.
+// emitBoxedMethod emits a method body on `any` params, fully boxed
+// (emptyInfer): the fallback arm every caller can rely on — non-int64
+// args, redefined core arithmetic (rt.CoreDirty), variadic/multi-arity
+// fns. It (re)maps the params to gnames so a preceding typed guard's
+// rebinding does not leak, then swaps the active inference for the
+// duration. A numeric loop inside still gets its own guarded dual
+// emission via genLoop (g.guarded is false here).
 func (g *generator) emitBoxedMethod(m *ast.FnMethodNode, gnames []string) {
 	for i, pn := range m.Params {
 		g.locals[pn.Sub.(*ast.BindingNode)] = gnames[i]
 	}
-	save := g.ni
-	g.ni = inferNumeric(m.Body, nil, nil, "", nil, nil)
+	save, saveG := g.ni, g.guarded
+	g.ni, g.guarded = emptyInfer(), false
 	g.genMethodBody(m, gnames)
-	g.ni = save
+	g.ni, g.guarded = save, saveG
+}
+
+// liftSelfBind extracts the fn* self-name binding, or nil.
+func liftSelfBind(fn *ast.FnNode) *ast.BindingNode {
+	if fn.Local == nil {
+		return nil
+	}
+	return fn.Local.Sub.(*ast.BindingNode)
 }
 
 // specializeInt attempts int64 parameter specialization for a single
 // fixed-arity method (ADR 0067). It seeds every param int64, registers
-// them as recur carriers of the method loop, enables self-call typing,
-// and runs the fixpoint. It returns the inference only when the proof
-// holds — the body returns int64 and every param stayed int64 — else nil
-// (no specialization; the boxed body alone is emitted). Params captured by
-// a nested closure, and variadic params, are never specialized.
-func (g *generator) specializeInt(fn *ast.FnNode, m *ast.FnMethodNode, defVar *lang.Var) *numInfer {
-	if len(m.Params) == 0 {
-		return nil
-	}
+// them as recur carriers of the method loop, and runs the fixpoint —
+// twice if need be:
+//
+//	pass 1 WITH self-call typing; if the proof holds AND the body is
+//	liftable (canLift: no free locals, no nested fn, every self-reference
+//	an int64-proven arity-matching call), return (spec, lift=true) — the
+//	rung-3 typed-func path, where self-calls compile to direct int64 calls.
+//
+//	otherwise pass 2 WITHOUT self-call typing; if the body still proves
+//	int64, return (spec, lift=false) — the inline typed body, where any
+//	self-call stays fully boxed (it flows through the untyped path, so no
+//	int64 re-typing of a boxed result is ever needed).
+//
+// The proof is: body returns int64 and every param stayed int64, and the
+// typed emission would actually differ (hasArithWin). Params captured by
+// a nested closure, and variadic params, are never specialized. Returns
+// (nil, false) when nothing holds — the boxed body alone is emitted.
+func (g *generator) specializeInt(fn *ast.FnNode, m *ast.FnMethodNode, defVar *lang.Var) (*numInfer, bool) {
 	captured := capturedParams(m.Params, m.Body)
 	seed := map[*ast.BindingNode]numType{}
 	carriers := make([]*ast.BindingNode, len(m.Params))
 	for i, pn := range m.Params {
 		b := pn.Sub.(*ast.BindingNode)
 		if b.IsVariadic || captured[b] {
-			return nil
+			return nil, false
 		}
 		seed[b] = ntInt64
 		carriers[i] = b
 	}
-	var selfBind *ast.BindingNode
-	if fn.Local != nil {
-		selfBind = fn.Local.Sub.(*ast.BindingNode)
+	selfBind := liftSelfBind(fn)
+	proves := func(spec *numInfer) bool {
+		if spec.node[m.Body] != ntInt64 {
+			return false
+		}
+		for _, b := range carriers {
+			if spec.bind[b] != ntInt64 {
+				return false
+			}
+		}
+		return spec.hasArithWin()
 	}
 	spec := inferNumeric(m.Body, seed, carriers, m.LoopID, selfBind, defVar)
-	if spec.node[m.Body] != ntInt64 {
-		return nil
+	if proves(spec) && canLift(m, selfBind, defVar, spec) {
+		return spec, true
 	}
-	for _, b := range carriers {
-		if spec.bind[b] != ntInt64 {
-			return nil
-		}
+	// Pass 2: no self typing — self-calls become ntUnknown and stay boxed,
+	// so the inline typed body never re-types a boxed self-call result.
+	spec = inferNumeric(m.Body, seed, carriers, m.LoopID, nil, nil)
+	if proves(spec) {
+		return spec, false
 	}
-	return spec
+	return nil, false
 }
 
-// emitTypedGuard emits the int64 fast path of a specialized method: one
-// nested `if pI, ok := p.(int64); ok {` per param binding a fresh int64
-// local, then the method body under the specialized inference (so its
-// arithmetic emits raw checked int64 ops), then the closing braces. On a
-// non-int64 arg the guard falls through to the boxed body that follows.
+// emitTypedGuard emits the int64 fast path of a specialized method: the
+// `!rt.CoreDirty()` region entry (ADR 0066 — redefined core arithmetic
+// falls through to the boxed body, which honors it per call), one nested
+// `if pI, ok := p.(int64); ok {` per param binding a fresh int64 local,
+// then the method body under the specialized inference (so its arithmetic
+// emits raw checked int64 ops), then the closing braces. On a dirty flag
+// or a non-int64 arg the guard falls through to the boxed body below.
 func (g *generator) emitTypedGuard(m *ast.FnMethodNode, outer []string, spec *numInfer) {
-	save := g.ni
-	g.ni = spec
+	save, saveG := g.ni, g.guarded
+	g.ni, g.guarded = spec, true
+	g.wf("if !rt.CoreDirty() {\n")
 	inner := make([]string, len(m.Params))
 	for i, pn := range m.Params {
 		gn := g.bindLocal(pn.Sub.(*ast.BindingNode))
@@ -1334,7 +1512,8 @@ func (g *generator) emitTypedGuard(m *ast.FnMethodNode, outer []string, spec *nu
 	for range m.Params {
 		g.wf("}\n")
 	}
-	g.ni = save
+	g.wf("}\n")
+	g.ni, g.guarded = save, saveG
 }
 
 // selfFn identifies a lifted typed function so a self-recursive call
@@ -1347,12 +1526,24 @@ type selfFn struct {
 }
 
 // canLift reports whether a specialized method can be lifted to a
-// package-level typed func (ADR 0067 rung 3): its body must reference no
-// free locals (nothing lexically outside {params, self-name}) and contain
-// no nested fn — both would need a closure, which a package func is not.
-// fact/fib qualify; a capturing closure does not (it keeps the inline
-// typed body / boxed path).
-func canLift(m *ast.FnMethodNode, selfBind *ast.BindingNode) bool {
+// package-level typed func (ADR 0067 rung 3):
+//
+//  1. the body references no free locals (nothing lexically outside
+//     {params, self-name}) and contains no nested fn — both would need a
+//     closure, which a package func is not; and
+//  2. EVERY reference to the fn* self-name is the callee of an
+//     int64-proven, arity-matching self-call (which emitTypedFunc turns
+//     into a direct int64 call). Any other self-reference — value
+//     position, wrong arity, non-int64 args — would emit the closure-
+//     scoped selfGo/selfTyped handles, which do not exist at package
+//     level. Such bodies keep the inline typed body / boxed path.
+//
+// Self-reference through the def'd VAR (an fn* with no self-name calling
+// itself by name) is exempt from rule 2's scope concern — the hoisted var
+// is package-level — but a non-int64/wrong-arity var self-call inside the
+// lifted body is still fine: it emits v.Get() + ApplyN, both package-safe.
+// fact/fib qualify; a capturing closure does not.
+func canLift(m *ast.FnMethodNode, selfBind *ast.BindingNode, defVar *lang.Var, spec *numInfer) bool {
 	bound := map[*ast.BindingNode]bool{}
 	for _, pn := range m.Params {
 		bound[pn.Sub.(*ast.BindingNode)] = true
@@ -1364,7 +1555,47 @@ func canLift(m *ast.FnMethodNode, selfBind *ast.BindingNode) bool {
 	// unique per site, so a free var (introduced OUTSIDE this body) is
 	// exactly one whose binding is absent from this set.
 	collectBindings(m.Body, bound)
-	return !hasFreeOrNestedFn(m.Body, bound)
+	if hasFreeOrNestedFn(m.Body, bound) {
+		return false
+	}
+	if selfBind != nil && !selfRefsAllDirect(m.Body, selfBind, spec, len(m.Params)) {
+		return false
+	}
+	return true
+}
+
+// selfRefsAllDirect verifies rule 2 of canLift: every OpLocal reference to
+// the self-name binding is the Fn of an OpInvoke that inference proved
+// int64 with matching arity — exactly the calls genSelfCallInt emits as
+// direct typed calls inside the lifted func.
+func selfRefsAllDirect(root *ast.Node, selfBind *ast.BindingNode, spec *numInfer, arity int) bool {
+	ok := true
+	var walk func(n *ast.Node)
+	walk = func(n *ast.Node) {
+		if !ok {
+			return
+		}
+		if n.Op == ast.OpInvoke {
+			s := n.Sub.(*ast.InvokeNode)
+			if s.Fn.Op == ast.OpLocal && s.Fn.Sub.(*ast.LocalNode).Binding == selfBind {
+				if !spec.isInt64(n) || len(s.Args) != arity {
+					ok = false
+					return
+				}
+				for _, a := range s.Args { // the Fn ref itself is sanctioned
+					walk(a)
+				}
+				return
+			}
+		}
+		if n.Op == ast.OpLocal && n.Sub.(*ast.LocalNode).Binding == selfBind {
+			ok = false // bare self-reference in value position
+			return
+		}
+		eachChild(n, func(c *ast.Node, _ bool) { walk(c) })
+	}
+	walk(root)
+	return ok
 }
 
 func collectBindings(n *ast.Node, bound map[*ast.BindingNode]bool) {
@@ -1417,11 +1648,21 @@ func (g *generator) emitTypedFunc(m *ast.FnMethodNode, spec *numInfer, name stri
 	goName := g.uniqueGlobal("fnL_" + munge(name))
 
 	saveBuf := g.buf
-	saveNi := g.ni
+	saveNi, saveG := g.ni, g.guarded
 	saveSelf := g.selfDirect
 	g.buf = bytes.Buffer{}
-	g.ni = spec
+	g.ni, g.guarded = spec, true
 	g.selfDirect = &selfFn{goName: goName, bind: selfBind, vr: defVar, arity: len(m.Params)}
+	// The ADR 0064 typed self-handle (selfGo+"d") is a closure-scope local;
+	// it must never be referenced from this package-level func. canLift
+	// already guarantees every self-call goes through genSelfCallInt's
+	// direct path, but drop the registration for the duration anyway.
+	var savedDF directFn
+	var hadDF bool
+	if selfBind != nil {
+		savedDF, hadDF = g.directFns[selfBind]
+		delete(g.directFns, selfBind)
+	}
 
 	inner := make([]string, len(m.Params))
 	decls := make([]string, len(m.Params))
@@ -1430,7 +1671,11 @@ func (g *generator) emitTypedFunc(m *ast.FnMethodNode, spec *numInfer, name stri
 		inner[i] = gn
 		decls[i] = gn + " int64"
 	}
-	g.wf("func %s(%s) int64 {\n", goName, strings.Join(decls, ", "))
+	sig := ""
+	if len(decls) > 0 {
+		sig = strings.Join(decls, ", ")
+	}
+	g.wf("func %s(%s) int64 {\n", goName, sig)
 	// Every param is a real Go param; silence unused (a fn may ignore one).
 	for _, gn := range inner {
 		g.wf("_ = %s\n", gn)
@@ -1440,15 +1685,21 @@ func (g *generator) emitTypedFunc(m *ast.FnMethodNode, spec *numInfer, name stri
 
 	g.funcs = append(g.funcs, g.buf.String())
 	g.buf = saveBuf
-	g.ni = saveNi
+	g.ni, g.guarded = saveNi, saveG
 	g.selfDirect = saveSelf
+	if hadDF {
+		g.directFns[selfBind] = savedDF
+	}
 	return goName
 }
 
 // emitLiftGuard emits the fast-path guard that delegates to a lifted typed
-// func: `if pI, ok := p.(int64); ok { return <name>L(pI…) }`, nesting one
-// assertion per param. A non-int64 arg falls through to the boxed body.
+// func: `if !rt.CoreDirty() { if pI, ok := p.(int64); ok { return
+// <name>L(pI…) } }`. The dirty check is the ADR 0066 region entry — a
+// redefined core arithmetic op falls through to the boxed body, which
+// honors it per call; a non-int64 arg falls through the same way.
 func (g *generator) emitLiftGuard(m *ast.FnMethodNode, outer []string, fnL string) {
+	g.wf("if !rt.CoreDirty() {\n")
 	inner := make([]string, len(m.Params))
 	for i := range m.Params {
 		gn := fmt.Sprintf("a%d_%d", i, g.next())
@@ -1459,6 +1710,7 @@ func (g *generator) emitLiftGuard(m *ast.FnMethodNode, outer []string, fnL strin
 	for range m.Params {
 		g.wf("}\n")
 	}
+	g.wf("}\n")
 }
 
 // genMethodBody emits a method body whose params (gnames) are the recur

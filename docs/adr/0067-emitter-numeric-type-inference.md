@@ -1,12 +1,17 @@
 # ADR 0067 — Emitter numeric type inference (unboxed int64)
 
-Date: 2026-07-23 · Status: **proposed** (spike s42 prototype; owner review gate)
+Date: 2026-07-23 · Status: **accepted** (owner-directed 2026-07-23: *"i will
+take whatever makes high performance assuming its not breaking"* — the same
+directive that ratified ADR 0066; the redefinition question §"Redefinition"
+below is resolved by the ADR 0066 `CoreArithDirty` entry guard, so the
+feature is non-breaking by construction) · Spike: s42
+(`spikes/s42-emitter-type-inference/VERDICT.md`)
 
-Prototype: `spikes/s42-emitter-type-inference/VERDICT.md`; working code on the
-spike branch (`pkg/emit/numtype.go`, `pkg/emit/rt/inttypes.go`, the emission
-changes in `pkg/emit/emit.go` / `program.go`). Complements design/04 §5
-(the primitive-hints / open-coded-intrinsics rung) and ADR 0045 (hot core
-fns are native Go — the same "stop boxing everything" campaign, one rung up).
+Complements design/04 §5 (the primitive-hints / open-coded-intrinsics rungs
+3–4), ADR 0045 (native hot core fns — the same "stop boxing everything"
+campaign one rung down), ADR 0064 (direct-call emission — the boxed local-fn
+counterpart of this ADR's typed lift), and ADR 0066 (sealed-core dirty flag —
+this ADR's redefinition-liveness mechanism).
 
 ## Context
 
@@ -20,9 +25,8 @@ and 100% of the 12M heap allocations** on the benchmark. Because values flow
 as `any`, Go's inliner and escape analysis are blind to the arithmetic.
 
 design/04 §5 already names the fix as the endgame ladder's rungs 3–4
-(primitive signatures + open-coded intrinsics), deferred past M2. This ADR
-prototypes it: an emitter pass that carries provable `int64` through locals
-and emits **raw Go arithmetic**, boxing only at boundaries.
+(primitive signatures + open-coded intrinsics), deferred past M2. Spike s42
+prototyped it; this ADR ships it.
 
 A load-bearing fact makes this tower-safe: cljgo's pristine `+ - *` on two
 int64 **throw** on overflow (`pkg/lang/numberops.go` `int64Ops.Add/Sub/
@@ -31,106 +35,111 @@ int64 result is ALWAYS an int64 or the very same `ArithmeticException`;
 there is no third "the result became a BigInt" outcome that an int64 Go local
 could not hold. That is exactly what lets the value stay unboxed.
 
-## Decision (what the prototype does)
+## Decision
 
-A conservative, bottom-up inference (`inferNumeric`) proves a node/binding is
-`int64` and the emitter then emits unboxed Go. **When unsure it stays boxed —
-correctness first.**
+A conservative, bottom-up inference (`pkg/emit/numtype.go` `inferNumeric`)
+proves a node/binding is `int64`; the emitter then emits unboxed Go inside
+**dirty-guarded regions**. **When unsure it stays boxed — correctness first.**
 
-**Inference rules (int64 only in v1).** A node is `int64` when it is:
+### Inference rules (int64 only in v1)
+
+A node is `int64` when it is:
 - an integer literal;
 - a reference to a binding proven `int64`;
 - `(+ a b)` / `(- a b)` / `(* a b)` / `(inc a)` / `(dec a)` on `int64`
   operands, where the op is the pristine `clojure.core` var (`/` never —
   ratio lives in the tower);
-- a self-recursive call, with all-int64 args, of the fn currently being
+- a self-recursive call, with all-int64 args, of the fn being lift-
   specialized (greatest-fixpoint: assume int64 return, validate the body).
 
 A binding is `int64` when it is a `let`/`loop`/method-recur **carrier** whose
-init AND every `recur` value are `int64` (a monotone fixpoint that demotes on
-the first non-int64 flow), or a **specialized fn parameter** (below). Captured
-carriers (closed over by a nested fn) and variadic params stay boxed.
+init AND every `recur` value are `int64` (a monotone fixpoint demoting on the
+first non-int64 flow), or a specialized fn parameter. Captured carriers
+(closed over by a nested fn) and variadic params stay boxed. The inference
+zero value is `ntUnknown` so an untyped lookup can never masquerade as the
+meet-identity (a real miscompile the spike caught regenerating core).
 
-**Three emission tiers.**
-1. **Loop/let carriers** → `var i int64`, raw `rt.IAdd/ISub/IMul/IInc/IDec`
-   (checked; panic-identical to the tower) and raw `< > ==` in `if` tests.
-   The accumulator never leaves a register across iterations.
-2. **Parameter specialization** — a single-fixed-arity fn whose body is
-   int64-provable with every param assumed int64 gets a **dual body**: an
-   entry guard `if pI, ok := p.(int64); ok { …raw int64… }` and, falling
-   through for a non-int64 (float / BigInt / redefined-op) caller, the
-   original boxed body. The external `any → any` calling convention is
-   unchanged, so every existing/dynamic/higher-order caller still works.
-3. **Rung 3 — typed-func lift** for a self-recursive, capture-free
-   specialized fn: lift it to a package-level `func factL(n int64) int64`
-   with **direct int64 recursion**. This is what makes fib/fact's recursive
-   returns alloc-free — without it, body specialization alone still boxes at
-   every recursion level (the return crosses the `any` FnFunc boundary).
+### Emission tiers — every one behind `if !rt.CoreDirty()`
 
-**Tower preservation.** The unboxed ops reproduce `int64Ops`' overflow tests
-byte-for-byte and panic the same `ArithmeticException("integer overflow")`;
-`/`, ratios, int/float contagion and BigInt all reach the boxed path (a float
-or BigInt operand makes the node non-int64; a runtime float/BigInt arg fails
-the entry guard). The conformance overflow/promotion tests
-(`numeric-overflow-throws`, `numeric-promotion`) now run THROUGH `rt.IAdd`
-and stay green.
+1. **Typed loop/let carriers** → `var i int64`, checked `rt.IAdd/ISub/IMul/
+   IInc/IDec` (panic-identical to the tower) and raw `< > ==` in tests.
+2. **Parameter specialization** — a single-fixed-arity fn (0–4 params) whose
+   body proves int64 with every param seeded int64 gets a **dual body**:
+   `if !rt.CoreDirty() { if nI, ok := n.(int64); ok { …typed… } }` falling
+   through to the original boxed body for non-int64 callers and redefined
+   core arithmetic. The external `any → any` calling convention is
+   unchanged.
+3. **Rung-3 typed-func lift** — a specialized fn that is capture-free, has
+   no nested fn, and whose EVERY self-reference is an int64-proven
+   arity-matching call lifts to a package-level `func fnL_ns_name(n int64)
+   int64` with **direct int64 recursion** (self-call typing applies only
+   here; the inline tier-2 path re-infers without it so a boxed self-call
+   result is never re-typed). This is what makes fact/fib recursion
+   alloc-free — body specialization alone still boxes every recursive
+   return across the `any` FnFunc boundary (~2× instead of ~5–9×).
+4. **Dual-emitted loops** — a numeric loop met OUTSIDE any guarded region
+   (top-level, or inside an unspecializable fn body) opens its own:
+   `if !rt.CoreDirty() { typed loop } else { boxed loop }`.
 
-**Conservative line (what v1 does NOT infer).** float64 (all floats stay
-boxed); multi-arity / variadic / >4-arity fn specialization; cross-fn return
-typing (only *self* calls type); capturing closures for the rung-3 lift; any
-op beyond `+ - * inc dec < > =`. All of these fall back to the existing boxed
-emission, unchanged.
+Composition with ADR 0064: where both apply to a self-recursive fn, the
+typed lift wins (`genSelfCallInt` runs before the direct-call registry);
+the ADR 0064 typed handle keeps the boxed local-fn case fast. The lifted
+package func never references the closure-scoped ADR 0064 handles
+(`canLift` rule 2 + the registration is masked during lifted-body emission).
 
-**Redefinition — the one semantic decision for the owner.** The unboxed ops
-do NOT deref the operator var per call, so they do not observe a runtime
-`(with-redefs [+ …])` of a core arithmetic op — matching JVM Clojure's
-`MaybePrimitiveExpr` intrinsics, which also ignore redefinition, and
-design/04 §5 rung 4. This is STRICTER than cljgo's existing boxed intrinsic,
-which keeps the ADR-0004 liveness guard. No conformance test redefines core
-arithmetic, so the dual harness stays byte-identical — but this is a real,
-narrow divergence from the boxed path and must be **ratified here** before
-apply. If the owner wants full liveness, the fallback is a once-per-call
-`rt.ArithPristine()` entry guard (cheap; keeps the boxing win, costs the
-redefinition-ignoring speed on the arithmetic).
+### Redefinition — resolved via ADR 0066 (owner-ratified)
+
+The unboxed ops do not deref the operator var. Liveness is preserved by the
+ADR 0066 sealed-core flag instead: redefining `+ - * / < > =` (with-redefs,
+alter-var-root, def) trips `lang.CoreArithDirty`; every typed region checks
+it at entry (one relaxed atomic.Bool load — the cost ADR 0066 measured as
+near-free, and re-measured here: ≤2 ms across the 2M-iteration kernels) and
+falls through to the boxed emission, whose `Add2/…` helpers re-check per
+call and take the redefined value. So **with-redefs of core arithmetic is
+honored through every unboxed path** — semantics identical to what ADR 0066
+shipped for the boxed intrinsics. Conformance
+`numeric-redefs-unboxed-paths.clj` proves it through the lifted, the
+specialized, and the dual-loop shapes, REPL == compiled byte-identical.
+
+Granularity note: the check is per region ENTRY (each fn call, each loop
+start). A redefinition landing MID-flight inside one region activation
+(another thread, or a call made from inside the loop body) is seen from the
+next activation on. JVM 1.12.5 never sees such redefs at `:inline`
+arithmetic sites at all (measured, ADR 0066 §context — the conformance file
+documents JVM's diverging output), so cljgo remains strictly more live than
+the JVM here.
 
 ## Consequences
 
-**Measured win** (darwin/arm64; `TestS42Measure`, boxed-baseline vs unboxed,
-best-of-3 wall + total process mallocs):
+**Measured** (darwin/arm64, post-integration with #90–#93 merged, guards on;
+`TestS42Measure` boxed-baseline vs unboxed, best-of-3 wall + process
+mallocs):
 
-| kernel            | wall off→on | speedup | mallocs off→on |
-|-------------------|-------------|---------|----------------|
-| loop/recur sum ×10M | 190→14 ms | **13.9×** | 20.2M → 0.16M |
-| `(fact 15)` ×2M   | 472→69 ms   | **6.8×**  | 24.2M → 4.2M  |
-| `fib 35`          | 281→30 ms   | **9.3×**  | (already low)  |
+| kernel              | wall off→on | speedup | mallocs off→on |
+|---------------------|-------------|---------|----------------|
+| loop/recur sum ×10M | 144→16 ms   | 8.8×    | 20.2M → 0.16M  |
+| `(fact 15)` ×2M     | 314→68 ms   | 4.6×    | 24.2M → 4.2M   |
+| `fib 35`            | 148→32 ms   | 4.7×    | (already low)  |
 
-The canonical `TestFactorialPerfBudget` fell from **~35× to 5.1×**
-handwritten Go. The `convT64` allocations fall exactly as the pprof
-decomposition predicted (loop: −20M; fact: −20M).
+The dirty guard costs ≤2 ms vs the unguarded spike numbers (68 vs 69 ms
+fact, 16 vs 14 ms loop-sum — noise-level). `TestFactorialPerfBudget` fell
+**~35× → 4.8×**, under the ~10× M2 budget for the first time; the local
+gate tightened 60→15 and CI 120→60 to lock it in. The `convT64` allocations
+fall exactly as the pprof decomposition predicted (−20M on loop and fact).
 
-**Regenerated AOT core.** The pass also fires inside `core.clj`, so
-`pkg/coreaot/*` was regenerated (the generated-up-to-date gate enforces it);
-core numeric fns unbox too. This surfaced — and the prototype fixed — one
-real miscompile: the inference's zero value had to be `ntUnknown`, so an
-untyped param read never masquerades as the meet-identity and wrongly types
-a loop carrier seeded from it.
+**AOT core**: the pass runs on `core.clj` too (regenerated `pkg/coreaot/*`,
+drift-gated); core's few int64 loops (destructure's arity counter et al)
+unbox behind the same guards.
 
 **Ceiling honesty.** The honest floor of the whole CLJS/`any`-calling-
-convention model on such kernels is ~2–3×; these numbers reach it because the
-kernels are monomorphic and either loop-local (accumulator in a register) or
-lifted to a typed Go func (direct recursion). A kernel that stays inside the
-boxed calling convention (e.g. a specialized-but-capturing recursion) lands
-at ~2× — real, but not the headline.
+convention model on such kernels is ~2–3×; the kernels above reach ~5×
+against raw Go because they are monomorphic and either loop-local or lifted
+to a typed Go func. A kernel that stays inside the boxed calling convention
+(a specialized-but-capturing recursion, tier 2 without the lift) lands at
+~2× — real, but not the headline.
 
-**What's NOT yet proven / risks.** (1) The redefinition divergence above.
-(2) float64 is unhandled — a large class of numeric code sees nothing.
-(3) `rt.MustInt64` on the inline-Tier-2 self-call is an inference invariant
-(unreachable if inference is sound) that panics through the normal error
-channel rather than a bare crash if ever violated. (4) The rung-3 lift is
-gated to capture-free, nested-fn-free bodies; broadening it needs closure
-handling.
-
-**Apply scope recommendation (v1):** ship tiers 1–3 for `int64` behind this
-ADR, with the redefinition semantics ratified (or the `ArithPristine` guard
-added if the owner wants strict liveness). Add float64 and multi-arity
-specialization as follow-ups. Keep the `CLJGO_NUMINFER_OFF` kill switch.
+**Not yet inferred (follow-ups):** float64 (all floats stay boxed);
+multi-arity / variadic / >4-arity specialization; cross-fn (non-self)
+return typing; broadening the lift to capturing closures; `<=`/`>=`
+comparisons. `CLJGO_NUMINFER_OFF=1` remains the kill switch and the A/B
+measurement lever.

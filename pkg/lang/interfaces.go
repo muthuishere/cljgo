@@ -45,6 +45,17 @@ type (
 		ApplyTo(args ISeq) any
 	}
 
+	// IFn2 is an optional fast-path seam an IFn may also implement: a
+	// non-variadic 2-arg entry that Apply2 calls directly, bypassing the
+	// []any box that a variadic Invoke(a, b) allocates on every call.
+	// This is what makes the reduce/HOF inner loop (2M steps over a big
+	// range) alloc-free for the core reducing fns. Invoke2 MUST be
+	// observably identical to Invoke(a, b); it is a performance seam
+	// only, never a semantic one.
+	IFn2 interface {
+		Invoke2(a, b any) any
+	}
+
 	IReduce interface {
 		Reduce(f IFn) any
 	}
@@ -485,8 +496,21 @@ func Count(coll any) int {
 	}
 	seq := Seq(coll)
 	count := 0
-	for ; seq != nil; seq = seq.Next() {
+	for seq != nil {
+		// Chunked fast path (JVM parity, mirrors clojure.lang.RT.count's
+		// chunked branch): when the seq hands out chunks (range, vector seqs,
+		// chunk-aware map/filter/keep — ADR 0063), add the whole chunk's Count
+		// and advance a chunk at a time. The plain Next() walk below allocates
+		// one seq node PER ELEMENT, which is what makes `count` over a long
+		// chunked pipeline the residual cost; a chunk is up to 32, so this is
+		// ~1/32nd the seq churn for an identical result.
+		if cs, ok := seq.(IChunkedSeq); ok {
+			count += cs.ChunkedFirst().Count()
+			seq = cs.ChunkedNext()
+			continue
+		}
 		count++
+		seq = seq.Next()
 	}
 	return count
 }

@@ -86,6 +86,19 @@ type numInfer struct {
 func (ni *numInfer) isInt64(n *ast.Node) bool          { return ni != nil && ni.node[n] == ntInt64 }
 func (ni *numInfer) bindInt64(b *ast.BindingNode) bool { return ni != nil && ni.bind[b] == ntInt64 }
 
+// hasArithWin reports whether the run proved at least one CALL int64 —
+// i.e. some arithmetic (or direct self-call) will actually emit unboxed.
+// Guarded regions cost a dual body; a region whose typed emission would be
+// byte-equivalent boxed work (e.g. `(fn [n] n)`) is not worth opening.
+func (ni *numInfer) hasArithWin() bool {
+	for n, t := range ni.node {
+		if t == ntInt64 && n.Op == ast.OpInvoke {
+			return true
+		}
+	}
+	return false
+}
+
 // goType is "int64" for a proven-int64 node, else "any".
 func (ni *numInfer) goType(n *ast.Node) string {
 	if ni.isInt64(n) {

@@ -1,5 +1,13 @@
 # Spike s42 — emitter numeric type inference (unboxed int64)
 
+> **Outcome (closing note, 2026-07-23):** shipped as **ADR 0067 (accepted,
+> owner-directed)** on this branch, integrated with main's #90–#93. The
+> open risk below (core-arithmetic redefinition) was resolved by wiring
+> every typed region behind the ADR 0066 `rt.CoreDirty()` entry guard —
+> proven by `conformance/tests/numeric-redefs-unboxed-paths.clj` (dual
+> harness, REPL == compiled). Post-integration numbers and the final rules
+> live in the ADR; the text below is the frozen spike record.
+
 **Verdict: WORTH BUILDING.** A conservative int64 inference pass in the
 emitter turns the ~35× factorial gap into **5.1×** and removes the 12M
 `convT64` allocations the pprof decomposition blamed for ~23% CPU. The
