@@ -25,33 +25,28 @@ import (
 
 // --- print-method / print-dup dispatch seam ------------------------------
 
-// printMFs lazily resolves and caches the clojure.core/print-method and
-// print-dup MultiFn values (they are defined by core.clj, which loads
-// after these builtins are interned).
-var printMFs struct {
-	mu     sync.Mutex
-	method *MultiFn
-	dup    *MultiFn
-}
-
+// resolvePrintMFs resolves the clojure.core/print-method and print-dup
+// MultiFn values LIVE, on every dispatch — they are defined by core.clj
+// (which loads after these builtins are interned) with plain def, so a
+// core reload rebinds the vars to fresh MultiFns; a cached pointer would
+// keep consulting the abandoned one while defmethod registers into the
+// new (seen for real when the compiled + eval conformance harnesses share
+// one process). Cost lands only on the active path — lang.Print reaches
+// here at all only after PrintDispatchActive flips — so the native fast
+// path stays untouched (perf budgets, design/00 §1.4).
 func resolvePrintMFs() (*MultiFn, *MultiFn) {
-	printMFs.mu.Lock()
-	defer printMFs.mu.Unlock()
-	if printMFs.method == nil {
-		if v := coreFnVar("print-method"); v != nil && v.IsBound() {
-			if m, ok := v.Get().(*MultiFn); ok {
-				printMFs.method = m
-			}
+	var pm, pd *MultiFn
+	if v := coreFnVar("print-method"); v != nil && v.IsBound() {
+		if m, ok := v.Get().(*MultiFn); ok {
+			pm = m
 		}
 	}
-	if printMFs.dup == nil {
-		if v := coreFnVar("print-dup"); v != nil && v.IsBound() {
-			if m, ok := v.Get().(*MultiFn); ok {
-				printMFs.dup = m
-			}
+	if v := coreFnVar("print-dup"); v != nil && v.IsBound() {
+		if m, ok := v.Get().(*MultiFn); ok {
+			pd = m
 		}
 	}
-	return printMFs.method, printMFs.dup
+	return pm, pd
 }
 
 // nonDefaultMethod is methodFor WITHOUT the :default fallback: exact =
@@ -287,14 +282,40 @@ var (
 )
 
 // throwableTypeSym names an error value's "class" the way the JVM map
-// does: clojure.lang.ExceptionInfo for an ex-info, java.lang.Exception for
-// everything else — the same catch-class family cljgo maps arbitrary Go
-// errors to (exceptions.go). DEVIATION (documented in
-// conformance/tests/throwable-map.clj): non-ex-info errors don't carry a
-// finer JVM class name, because there is none on the Go host.
+// does: clojure.lang.ExceptionInfo for an ex-info, and for the typed
+// builtin exception values of ADR 0039's addendum (#99, exceptions.go /
+// lang/error.go) the matching JVM class name — probed with the SAME
+// errors.Is targets CatchMatches uses, most-specific first (ArityException
+// and NumberFormatException before their IllegalArgumentException parent),
+// so Throwable->map's :via :type agrees with what `catch` and `instance?`
+// say about the same value. DEVIATION (documented in
+// conformance/tests/throwable-map.clj): errors outside that family fall
+// back to java.lang.Exception, because there is no finer JVM class on the
+// Go host.
 func throwableTypeSym(err error) *lang.Symbol {
-	if _, ok := err.(*lang.ExceptionInfo); ok {
+	var ei lang.IExceptionInfo
+	if errors.As(err, &ei) {
 		return lang.NewSymbol("clojure.lang.ExceptionInfo")
+	}
+	switch {
+	case errors.Is(err, arithmeticTarget):
+		return lang.NewSymbol("java.lang.ArithmeticException")
+	case errors.Is(err, arityTarget):
+		return lang.NewSymbol("clojure.lang.ArityException")
+	case errors.Is(err, numberFormatT):
+		return lang.NewSymbol("java.lang.NumberFormatException")
+	case errors.Is(err, illegalArgTarget):
+		return lang.NewSymbol("java.lang.IllegalArgumentException")
+	case errors.Is(err, illegalStateT):
+		return lang.NewSymbol("java.lang.IllegalStateException")
+	case errors.Is(err, unsupportedOpT):
+		return lang.NewSymbol("java.lang.UnsupportedOperationException")
+	case errors.Is(err, indexOOBTarget):
+		return lang.NewSymbol("java.lang.IndexOutOfBoundsException")
+	case errors.Is(err, classCastTarget):
+		return lang.NewSymbol("java.lang.ClassCastException")
+	case errors.Is(err, nullPointerTarget):
+		return lang.NewSymbol("java.lang.NullPointerException")
 	}
 	return lang.NewSymbol("java.lang.Exception")
 }
