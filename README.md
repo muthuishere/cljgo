@@ -129,10 +129,13 @@ get from the suite as it ships (analysis: `docs/suite-upstream.md`).
 | **Perf campaign** | ✅ | ADRs 0063–0067: chunk-aware seq ops, IFn2 reduce seam, direct-call emission, sealed-core guard elision, int64 numeric inference — emitted factorial ~35× → **4.8×** handwritten Go ([details](#performance)) |
 | Next | ◦ | ADR 0067 follow-ups (float64, multi-arity/variadic specialization, capturing-closure lift); `reduce`/`transducers` vs babashka's core (the two rows still lost); app framework T2 (ADR 0041); C FFI purego (ADR 0044, proposed, spike S21); batteries direction (ADRs 0056–0062, ratified on `feat/batteries` — decisions recorded, **not shipped**) |
 
-`clojure.core` itself is not yet complete — the honest per-namespace ledger
-is `docs/fundamentals-audit-2026-07.md` (its clojure.core headline predates
-the 2026-07 fundamentals batches; the satellite-namespace rows above were
-re-verified against the oracle counts on 2026-07-23). Early, moving fast.
+`clojure.core` is **complete** as of 2026-07-23: **632 of 679** oracle vars
+(93%) implemented with oracle-exact, conformance-frozen semantics; the other
+47 are JVM bytecode/classloader machinery (`proxy`, `gen-class`,
+`java.util.stream`, compiler knobs) each documented with a one-line reason —
+no third bucket. Every satellite namespace (string/set/edn/walk/zip/data/
+repl/pprint/test) is 100%. The per-var ledger is
+`docs/fundamentals-audit-2026-07.md`.
 
 ## Performance
 
