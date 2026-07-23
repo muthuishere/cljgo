@@ -1,32 +1,46 @@
 # cljgo site
 
-The project landing + getting-started page for **cljgo** (Clojure hosted on Go).
+The public site at https://muthuishere.github.io/cljgo/ — two parts, one deploy:
 
-- `index.html` — a single, self-contained, responsive, dark/light-aware page.
-  No external assets, no CDN, no JavaScript dependencies, no trackers — all CSS
-  is inlined so it renders anywhere (including offline).
+- **Landing page** — `public/index.html`, hand-written, self-contained. Served at
+  the site root exactly as authored (Astro copies `public/` verbatim).
+- **Docs** — Astro + [Starlight](https://starlight.astro.build/) pages in
+  `src/content/docs/`, themed to match the landing page
+  (`src/styles/theme.css`: Go-cyan + Clojure-green on charcoal, Inter +
+  JetBrains Mono). Search (Pagefind) and `llms.txt` / `llms-full.txt`
+  (via `starlight-llms-txt`) come out of the build automatically.
 
-Content is derived from and kept consistent with the repo: `README.md`,
-`cmd/cljgo/main.go` (the real CLI surface), `go.mod` (module path + Go 1.26),
-`design/00-architecture.md`, `design/08-build-comptime-compat.md`, and the
-snippets in `examples/`.
+## Comments
 
-## Preview locally
+Every docs page ends with a public comment box
+(`src/components/Footer.astro`) — [giscus](https://giscus.app) backed by
+GitHub Discussions on `muthuishere/cljgo` (category **Announcements**,
+mapped by pathname). Readers sign in with GitHub; threads are visible to
+everyone under the repo's Discussions tab.
+
+One-time setup (already done unless recreating the repo): enable
+Discussions in repo settings and install the giscus GitHub App on the repo
+(https://github.com/apps/giscus).
+
+## Develop
 
 ```sh
 cd site
-python3 -m http.server 8000
-# open http://localhost:8000
+npm install
+npm run dev      # http://localhost:4321/cljgo/
+npm run build    # writes dist/
 ```
-
-(Append `?theme=dark` or `?theme=light` to force a theme when previewing.)
 
 ## Deploy
 
-Deployment is automated by `.github/workflows/pages.yml` (modern
-Pages-via-Actions flow) on every push to `main` that touches `site/`, and via
-manual `workflow_dispatch`. It publishes **only** this `site/` directory, so it
-never clobbers the `docs/` ADR folder.
+`.github/workflows/pages.yml` builds the site and publishes `site/dist` to
+GitHub Pages on every push to `main` touching `site/**`. One-time repo
+setting: Settings → Pages → Source = "GitHub Actions".
 
-**One-time setup:** repo **Settings → Pages → Source: "GitHub Actions"**. After
-that the workflow builds and deploys automatically.
+## Conventions
+
+- Internal doc links use the base-absolute form `/cljgo/<slug>/`.
+- Numbers and claims in docs are copied from repo sources (README,
+  conformance, benchmarks) — never invented. Keep it that way.
+- Adding a page: create it under `src/content/docs/` and add its slug to
+  the sidebar in `astro.config.mjs`.
