@@ -1897,7 +1897,6 @@
          (recur (inc ~idx) ~expr)
          ~ret))))
 
-<<<<<<< HEAD
 ;; --- batch A3: 1.11/1.12 sequence & value fns -------------------------------
 
 ;; comparator : turn a 2-arg predicate into a -1/1/0 comparator fn.
@@ -2010,8 +2009,6 @@
    (complement string?)
    (comp seq :content)
    root))
-||||||| abf781e
-=======
 ;; --- fundamentals batch A4: namespaces, concurrency, bindings (2026-07-23) --
 ;; refer-clojure / use (Go builtin) / with-bindings / with-local-vars /
 ;; pmap / pcalls / pvalues / seque (Go builtin) / chunk API (Go builtins).
@@ -2123,4 +2120,3 @@
   evaluated in parallel"
   [& exprs]
   `(pcalls ~@(map (fn [e] (list 'fn* [] e)) exprs)))
->>>>>>> origin/main
