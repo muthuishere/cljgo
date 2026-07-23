@@ -116,6 +116,28 @@ func (ns *Namespace) Mappings() IPersistentMap {
 	return ns.mappingsBox().val.(IPersistentMap)
 }
 
+// CompareAndSetMappings swaps this namespace's whole mapping table from
+// old to new in one CAS, returning false (installing nothing) when the
+// table has moved past `old` — callers must then take the per-symbol
+// reference path. (cljgo boot-refer surgery, see PROVENANCE.md: boot
+// refers all of clojure.core into each fresh lib namespace; overlaying the
+// namespace's few own vars onto one prebuilt, structurally shared snapshot
+// beats ~900 per-symbol path-copying Assocs per namespace.)
+func (ns *Namespace) CompareAndSetMappings(old, new IPersistentMap) bool {
+	mb := ns.mappingsBox()
+	if mb.val.(IPersistentMap) != old {
+		return false
+	}
+	return ns.mappings.CompareAndSwap(mb, NewBox(new))
+}
+
+// OwnsInternedVar reports whether v is a Var interned in this namespace
+// under sym — the isInternedMapping test, exported for the boot-refer fast
+// path (cljgo surgery, see PROVENANCE.md).
+func (ns *Namespace) OwnsInternedVar(sym *Symbol, v interface{}) bool {
+	return ns.isInternedMapping(sym, v)
+}
+
 func (ns *Namespace) aliasesBox() *Box {
 	return ns.aliases.Load().(*Box)
 }

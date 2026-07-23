@@ -342,3 +342,75 @@ func corePipelineBudget(t *testing.T) time.Duration {
 	}
 	return d
 }
+
+// TestBootStartupBudget guards AOT-binary startup — rt.Boot plus the Go
+// runtime's own init, i.e. the fixed cost every compiled program pays
+// before its first form runs. The 2026-07-23 startup investigation found
+// this cost had drifted from ~6.5ms to ~9ms with nothing gating it: each
+// of the 13 boot-time (refer clojure.core …) calls path-copied ~900
+// mappings, and the GC cycled through the boot allocation burst. The bulk
+// refer (corelib.referBulk) + boot GC deferral clawed it back to ~4.4ms
+// (ADR 0067 addendum). Like the gates above it is a WALL-CLOCK TOTAL
+// regression gate, not a target — lower the budget as boot gets cheaper.
+func TestBootStartupBudget(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping perf measurement in -short mode")
+	}
+
+	lang.RemoveNamespace(lang.NewSymbol("user"))
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
+	forms, err := CompileReader(strings.NewReader("nil\n"), "bootidle.clj")
+	corelib.Out = oldOut
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	dir := t.TempDir()
+	if err := WriteModule(dir, forms, Options{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	bin := filepath.Join(dir, "bootidle"+ExeSuffix)
+	if err := GoBuild(dir, bin); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+
+	best := time.Duration(1<<62 - 1)
+	for i := 0; i < 5; i++ {
+		start := time.Now()
+		if err := exec.Command(bin).Run(); err != nil {
+			t.Fatalf("run: %v", err)
+		}
+		if d := time.Since(start); d < best {
+			best = d
+		}
+	}
+
+	budget := bootStartupBudget(t)
+	t.Logf("empty AOT binary: %v total wall clock (budget %v)", best, budget)
+	if best > budget {
+		t.Fatalf("AOT-binary startup took %v, past the %v budget — a boot-path regression (ADR 0067 startup addendum)", best, budget)
+	}
+}
+
+// defaultBootStartupBudget locks in today's measured cost with headroom,
+// NOT a target: ~4.4ms measured (2026-07-23, darwin/arm64) for an empty
+// compiled program, wall clock. 25ms is ~5.5x headroom for exec+fork noise
+// while still firing on a regression back to the ~9ms pre-clawback boot
+// (which would land near or past it on a slower runner) and outright on
+// anything re-adding per-symbol boot refers or boot-time GC churn.
+const defaultBootStartupBudget = 25 * time.Millisecond
+
+// bootStartupBudget mirrors coreReduceBudget: host-relative (ADR 0024),
+// overridable via CLJGO_BOOT_STARTUP_BUDGET for slower/noisier CI runners.
+func bootStartupBudget(t *testing.T) time.Duration {
+	t.Helper()
+	s := os.Getenv("CLJGO_BOOT_STARTUP_BUDGET")
+	if s == "" {
+		return defaultBootStartupBudget
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		t.Fatalf("CLJGO_BOOT_STARTUP_BUDGET=%q is not a duration: %v", s, err)
+	}
+	return d
+}

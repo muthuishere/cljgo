@@ -32,6 +32,7 @@ package rt
 import (
 	"fmt"
 	"reflect"
+	"runtime/debug"
 
 	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -83,6 +84,15 @@ func Boot() {
 		return
 	}
 	booted = true
+	// Boot is one short allocation burst (interning ~2k vars + replaying
+	// core's top-level forms); letting the collector cycle inside it only
+	// adds pause + madvise churn to every binary's startup (measured
+	// ~1.4 ms wall on the empty program). Disable GC for the burst and
+	// restore the caller's setting (GOGC env included — SetGCPercent
+	// returns it) right after; the deferred restore triggers at most one
+	// cycle over the few MB boot leaves live.
+	gcPct := debug.SetGCPercent(-1)
+	defer debug.SetGCPercent(gcPct)
 	corelib.RegisterAll()
 	findVar := func(name string) *lang.Var {
 		return lang.NSCore.FindInternedVar(lang.NewSymbol(name))

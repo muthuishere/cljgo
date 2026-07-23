@@ -434,3 +434,13 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   two-line wrappers over `Ops(x).Combine(Ops(y)).LTE/GTE`, mirroring the
   existing `LT`/`GT` exactly. They back the new rt.LE2/GE2/LEBool/GEBool
   guarded comparison intrinsics (pkg/emit/rt); no vendored logic changed.
+||||||| 24b7505
+## Boot-refer bulk install (perf/startup clawback, 2026-07-23)
+
+- `namespace.go`: added `CompareAndSetMappings` (swap the whole mapping
+  table in one CAS, caller-verified base) and `OwnsInternedVar` (exported
+  isInternedMapping) — the seam for corelib's boot-refer fast path, which
+  overlays a namespace's own vars onto a cached structurally-shared
+  snapshot of clojure.core's public vars instead of ~900 per-symbol
+  path-copying Assocs per boot namespace. Per-symbol `reference()`
+  semantics are unchanged and remain the fallback on any conflict.

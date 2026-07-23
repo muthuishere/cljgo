@@ -134,3 +134,13 @@ is relaxed.
    nothing here.
 4. **Do nothing.** Leaves ~8%+10% of arithmetic CPU on a guard that answers "no"
    every time, for liveness the JVM does not even offer at these sites.
+
+## Startup cost note (2026-07-23)
+
+The benchmark re-run's AOT-startup regression (6.5 → 9.5 ms) initially
+pointed here; measurement acquitted the seal — Boot's snapshot + seven
+`Seal()` calls are sub-microsecond, and a bisected build at the pre-campaign
+commit showed the identical 9.0 ms. The real costs (boot-time whole-namespace
+refers + GC cycling through the boot burst) and the clawback (bulk refer +
+boot GC deferral, landing startup at 4.4 ms) are documented in ADR 0067's
+"Startup cost + clawback" addendum.
