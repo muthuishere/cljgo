@@ -8,7 +8,7 @@
 //	a source file resolved relative to the REQUIRING file: root =
 //	dir(*file*) minus the requiring ns's own directory suffix when it
 //	matches (src/my_app/core.clj in ns my-app.core → src/), else
-//	dir(*file*); candidates <root>/<lib path>.clj then .cljg, path
+//	dir(*file*); candidates <root>/<lib path>.cljgo/.cljg/.clj/.cljc, path
 //	segments munged - → _ as on the JVM. The file loads through the
 //	Evaluator's LibLoader — by default read + EvalForm under a pushed
 //	*ns*/*file* frame (the interpreter); pkg/emit's module compiler
@@ -51,7 +51,7 @@ func loadLibFile(e *Evaluator, libSym *lang.Symbol) {
 	name := libSym.FullName()
 	path := ResolveLibPath(libSym)
 	if path == "" {
-		panic(fmt.Errorf("could not locate namespace %s (no registered provider, and no %s.clj/.cljg relative to the requiring file)",
+		panic(fmt.Errorf("could not locate namespace %s (no registered provider, and no %s.clj/.cljg/.cljc relative to the requiring file)",
 			name, filepath.ToSlash(libPathStem(libSym))))
 	}
 	corelib.PushLibLoading(name)
@@ -77,26 +77,30 @@ func libPathStem(libSym *lang.Symbol) string {
 // relative to the requiring file (ADR 0042 §4), or "" when none exists.
 func ResolveLibPath(libSym *lang.Symbol) string {
 	file, _ := lang.VarFile.Deref().(string)
-	if file == "" || file == "NO_SOURCE_FILE" || file == "NO_SOURCE_PATH" {
-		return ""
-	}
-	dir := filepath.Dir(file)
-
-	// Candidate roots: dir(*file*) stripped of the requiring ns's own
-	// directory suffix (so sibling namespaces under one source root
-	// resolve), then dir(*file*) itself.
 	roots := []string{}
-	if ns, ok := lang.VarCurrentNS.Deref().(*lang.Namespace); ok {
-		if nsDir := filepath.Dir(libPathStem(ns.Name())); nsDir != "." {
-			suffix := string(filepath.Separator) + nsDir
-			if strings.HasSuffix(dir, suffix) {
-				roots = append(roots, strings.TrimSuffix(dir, suffix))
-			} else if dir == nsDir {
-				roots = append(roots, ".")
+	if file == "" || file == "NO_SOURCE_FILE" || file == "NO_SOURCE_PATH" || file == "REPL" {
+		// No requiring file (the interactive REPL): resolve against the
+		// process cwd — the same place `clj` finds cwd-classpath namespaces.
+		// Dependency roots and $CLJGO_PATH below still apply.
+		roots = append(roots, ".")
+	} else {
+		dir := filepath.Dir(file)
+
+		// Candidate roots: dir(*file*) stripped of the requiring ns's own
+		// directory suffix (so sibling namespaces under one source root
+		// resolve), then dir(*file*) itself.
+		if ns, ok := lang.VarCurrentNS.Deref().(*lang.Namespace); ok {
+			if nsDir := filepath.Dir(libPathStem(ns.Name())); nsDir != "." {
+				suffix := string(filepath.Separator) + nsDir
+				if strings.HasSuffix(dir, suffix) {
+					roots = append(roots, strings.TrimSuffix(dir, suffix))
+				} else if dir == nsDir {
+					roots = append(roots, ".")
+				}
 			}
 		}
+		roots = append(roots, dir)
 	}
-	roots = append(roots, dir)
 
 	// ADR 0052 §2 slot 3: resolved dependency roots, in lock order, APPENDED
 	// after the requiring-file roots (never replacing them — "append, never
@@ -122,7 +126,7 @@ func ResolveLibPath(libSym *lang.Symbol) string {
 	for _, root := range roots {
 		// Most-specific-first: cljgo-native extensions win over the portable
 		// `.clj` fallback (ADR 0055), mirroring Clojure's host-extension order.
-		for _, ext := range []string{".cljgo", ".cljg", ".clj"} {
+		for _, ext := range []string{".cljgo", ".cljg", ".clj", ".cljc"} {
 			cand := filepath.Join(root, stem+ext)
 			if fi, err := os.Stat(cand); err == nil && !fi.IsDir() {
 				return cand

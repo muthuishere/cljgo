@@ -271,7 +271,11 @@ func runProjectBuild(step, runtimeDir string, keepGen bool) int {
 // isSourceFile reports whether arg names a cljgo source file (the
 // single-file build path) rather than a build step name.
 func isSourceFile(arg string) bool {
-	return strings.HasSuffix(arg, ".clj") || strings.HasSuffix(arg, ".cljg")
+	switch filepath.Ext(arg) {
+	case ".clj", ".cljc", ".cljg", ".cljgo":
+		return true
+	}
+	return false
 }
 
 // defaultBinaryName derives the output name: the parent directory for a
@@ -281,7 +285,10 @@ func isSourceFile(arg string) bool {
 // Windows produces hello.exe rather than a file the OS refuses to run. An
 // explicit -o is honored verbatim — same rule as `go build -o`.
 func defaultBinaryName(src string) string {
-	base := strings.TrimSuffix(filepath.Base(src), ".clj")
+	base := filepath.Base(src)
+	if isSourceFile(base) {
+		base = strings.TrimSuffix(base, filepath.Ext(base))
+	}
 	if base == "core" {
 		if dir := filepath.Base(filepath.Dir(src)); dir != "." && dir != string(filepath.Separator) {
 			return dir + emit.ExeSuffix
