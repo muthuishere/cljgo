@@ -9,6 +9,41 @@
       "name": "keyword.control.cljgo"
     },
     {
+      "comment": "core.async control forms (ADR 0040): go bodies are real goroutines",
+      "match": "(?<=\\()(go-loop|go\\*|go|thread|alt!!|alt!)(?=[\\s)])",
+      "name": "keyword.control.async.cljgo"
+    },
+    {
+      "comment": "core.async channel/buffer/pipeline surface (ADR 0040). Excludes map/merge/reduce/take/into/transduce — those async names shadow clojure.core and the Clojure grammar already colors them.",
+      "match": "(?<=\\()(<!!|<!|>!!|>!|alts!!|alts!|put!|take!|poll!|offer!|close!|chan|timeout|thread-call|promise-chan|buffer|dropping-buffer|sliding-buffer|unblocking-buffer\\?|pipeline-async|pipeline-blocking|pipeline|pipe|split|mult|tap|untap-all|untap|mix|admix|unmix-all|unmix|solo-mode|toggle|pub|sub|unsub-all|unsub|to-chan!!|to-chan!|to-chan|onto-chan!!|onto-chan!|onto-chan)(?=[\\s)])",
+      "name": "support.function.async.cljgo"
+    },
+    {
+      "comment": "Result/Option track (ADR 0014). `some` stays Clojure's — the Option side is just/none (precedence principle).",
+      "match": "(?<=\\()(ok\\?|err\\?|just\\?|none\\?|result\\?|option\\?|ok|err|just|unwrap)(?=[\\s)])",
+      "name": "support.function.result.cljgo"
+    },
+    {
+      "comment": "`none` is a value, not a call (ADR 0014)",
+      "match": "(?<=[\\s(\\[{])none(?=[\\s)\\]}])",
+      "name": "constant.language.result.cljgo"
+    },
+    {
+      "comment": "bri routing (ADR 0069): Compojure-style route macros",
+      "match": "(?<=\\()(defroutes|defroute)(?=[\\s)])",
+      "name": "keyword.control.routing.cljgo"
+    },
+    {
+      "comment": "bri HTTP methods (ADR 0069)",
+      "match": "(?<=\\()(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|ANY)(?=[\\s)])",
+      "name": "support.function.routing.cljgo"
+    },
+    {
+      "comment": "Reader-conditional selectors (ADR 0036/0050). cljgo is its own platform: its feature is :cljgo, never :clj.",
+      "match": "(?<=[\\s(])(:cljgo|:default)(?=[\\s)])",
+      "name": "keyword.control.readcond.cljgo"
+    },
+    {
       "comment": "go/ reserved pseudo-namespace operators (ADR 0010)",
       "match": "(?<=[\\s(\\[{])go/[a-zA-Z*+!_?<>=-]+",
       "name": "support.function.interop.cljgo"

@@ -95,9 +95,10 @@ options:
 ## VS Code
 
 See `../editors/vscode/` — VS Code uses TextMate scopes, not tree-sitter, so
-the extension there maps the Clojure grammar instead. Note that the
-`../editors/` packs (VS Code, Emacs, `REGISTRATION.md`) still register only
-`.cljg`; widening them to `.cljgo` is tracked separately from this pack.
+the extension there maps the Clojure grammar instead. Its overlay is kept in
+step with `highlights.scm`, and it claims `.cljgo` / `.cljg` (see
+`../editors/REGISTRATION.md` for why `.clj` / `.cljc` are deliberately not
+claimed).
 
 ## Verifying changes to this pack
 

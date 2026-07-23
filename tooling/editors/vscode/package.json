@@ -1,7 +1,7 @@
 {
   "name": "cljgo",
   "displayName": "cljgo",
-  "description": "File type support for cljgo (.cljg) — Clojure hosted on Go. Syntax reuses the Clojure grammar (cljgo adds zero new syntax); LSP client pointing at `cljgo lsp` lands with M3 (ADR 0017 §5).",
+  "description": "File type support for cljgo (.cljgo / .cljg) — Clojure hosted on Go. Syntax reuses the Clojure grammar (cljgo adds zero new syntax); LSP client pointing at `cljgo lsp` lands with M3 (ADR 0017 §5).",
   "version": "0.0.1",
   "publisher": "cljgo",
   "private": true,
@@ -22,6 +22,7 @@
           "Clojure (Go)"
         ],
         "extensions": [
+          ".cljgo",
           ".cljg"
         ],
         "configuration": "./language-configuration.json",
