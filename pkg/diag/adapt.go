@@ -241,6 +241,10 @@ func classify(band Band, msg string) string {
 			return "R1008"
 		case has("metadata"):
 			return "R1009"
+		case has("splicing not allowed at the top level"):
+			return "R1010"
+		case has("conditional read not allowed"):
+			return "R1011"
 		}
 	case BandAnalyzer:
 		switch {

@@ -155,6 +155,9 @@ func RegisterAll() {
 	// compiled binary replays every (require …) form, so this belongs in
 	// the interpreter-free half.
 	registerRequire(def)
+	registerUse(def)
+	internChunkBuiltins(def)
+	internParallelBuiltins(def)
 	// What eval / macroexpand / macroexpand-1 / require-go do when there
 	// is no interpreter (aot_stubs.go, ADR 0046 §5). pkg/eval overwrites
 	// all four through this same seam when an Evaluator is constructed.

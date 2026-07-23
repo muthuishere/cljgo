@@ -146,4 +146,58 @@ func internNamespaceBuiltins(def func(name string, fn func(args ...any) any) *la
 			return !isVar
 		})
 	})
+
+	// --- namespace mutation (fundamentals batch A4, 2026-07-23) ----------
+	// ns-unmap / ns-unalias / remove-ns over the new pkg/lang primitives
+	// (Namespace.Unmap / Namespace.RemoveAlias / RemoveNamespace-returning,
+	// see pkg/lang/PROVENANCE.md). Each oracle-verified vs JVM 1.12.5;
+	// frozen evidence in conformance/tests/ns-unmap-*.clj,
+	// ns-unalias-*.clj, remove-ns-*.clj.
+
+	// (ns-unmap ns sym) -> nil; removes sym's mapping from ns (interned or
+	// referred alike). oracle: (ns-unmap *ns* 'map) => nil, then
+	// (resolve 'map) => nil; a qualified symbol throws "Can't unintern
+	// namespace-qualified symbol"; unmapping an absent name is a no-op.
+	def("ns-unmap", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: ns-unmap", len(args)))
+		}
+		ns := coerceNS("ns-unmap", args[0])
+		sym, ok := args[1].(*lang.Symbol)
+		if !ok {
+			panic(fmt.Errorf("ns-unmap expects a symbol, got: %s", lang.PrintString(args[1])))
+		}
+		ns.Unmap(sym)
+		return nil
+	})
+
+	// (ns-unalias ns sym) -> nil; removes the alias, absent alias = no-op.
+	// oracle: after (alias 'so 'scratch.one), (ns-unalias *ns* 'so) => nil
+	// and (contains? (ns-aliases *ns*) 'so) => false;
+	// (ns-unalias *ns* 'never-existed) => nil.
+	def("ns-unalias", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: ns-unalias", len(args)))
+		}
+		ns := coerceNS("ns-unalias", args[0])
+		sym, ok := args[1].(*lang.Symbol)
+		if !ok {
+			panic(fmt.Errorf("ns-unalias expects a symbol, got: %s", lang.PrintString(args[1])))
+		}
+		ns.RemoveAlias(sym)
+		return nil
+	})
+
+	// (remove-ns sym) -> the removed Namespace, or nil when no such
+	// namespace exists. oracle: (remove-ns 'scratch.one) => the namespace
+	// object; (remove-ns 'scratch.never) => nil; (remove-ns 'clojure.core)
+	// throws "Cannot remove clojure namespace".
+	def("remove-ns", func(args ...any) any {
+		sym := symbolArg("remove-ns", args)
+		ns := lang.RemoveNamespace(sym)
+		if ns == nil {
+			return nil
+		}
+		return ns
+	})
 }

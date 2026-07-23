@@ -58,6 +58,8 @@ var registry = []Entry{
 	{Code: "R1007", Title: "invalid escape sequence in string", Since: "M2"},
 	{Code: "R1008", Title: "invalid character literal", Since: "M2"},
 	{Code: "R1009", Title: "invalid metadata", Since: "M2"},
+	{Code: "R1010", Title: "reader conditional splicing at top level", Since: "M5"},
+	{Code: "R1011", Title: "conditional read not allowed", Since: "M5"},
 
 	// A2xxx — analyzer
 	{Code: "A2001", Title: "unable to resolve symbol", Since: "M2"},

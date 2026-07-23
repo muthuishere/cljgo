@@ -56,6 +56,26 @@ type Reader struct {
 	// unselected branches. See readConditional / readTaggedLiteral.
 	tagSuppress int
 
+	// condMode is the reader-conditional policy (readcond.go). File loads
+	// and the REPL keep the zero value condAllow — cljgo processes
+	// conditionals in normal reading, a documented divergence from the
+	// JVM's .cljc-only gate (ADR 0068 addendum). clojure.core/read-string
+	// mirrors the JVM's opts protocol: condForbid without {:read-cond
+	// :allow/:preserve}, condPreserve for {:read-cond :preserve}.
+	condMode int
+	// condFeatures holds extra feature keywords a caller supplied via
+	// WithFeatures ({:features #{...}}); the platform feature :cljgo and
+	// :default always match regardless (mirroring the JVM, which always
+	// includes its :clj — oracle 1.12.5: (read-string {:read-cond :allow
+	// :features #{:cljs}} "#?(:clj 2)") => 2).
+	condFeatures map[lang.Keyword]bool
+	// tagPreserve > 0 while reading the body of a PRESERVED conditional:
+	// every tagged literal — even a known one like #inst — reads as a
+	// lang.TaggedLiteral value instead of resolving (oracle 1.12.5:
+	// (read-string {:read-cond :preserve} "#?(:clj #inst \"...\")") keeps
+	// a TaggedLiteral in :form). See readConditional / readTaggedLiteral.
+	tagPreserve int
+
 	// ednStrict enables clojure.edn's tighter reader rules (WithEDNStrict):
 	// real JVM clojure.edn is a RESTRICTED reader, stricter than
 	// clojure.core's LispReader in a few specific spots (oracle-verified,
@@ -104,6 +124,36 @@ func WithResolver(res Resolver) Option {
 // Reader.ednStrict field doc). Used only by clojure.edn/read-string.
 func WithEDNStrict() Option {
 	return func(r *Reader) { r.ednStrict = true }
+}
+
+// WithReadCondForbid makes a reader conditional a read error
+// ("Conditional read not allowed"), the JVM's default outside .cljc
+// files and read-string {:read-cond :allow/:preserve}. Used by
+// clojure.core/read-string when opts carry no :read-cond permission.
+func WithReadCondForbid() Option {
+	return func(r *Reader) { r.condMode = condForbid }
+}
+
+// WithReadCondPreserve makes a reader conditional read as a
+// lang.ReaderConditional data value instead of selecting a branch
+// (read-string {:read-cond :preserve}, ADR 0050). Tagged literals
+// inside the preserved body read as lang.TaggedLiteral values.
+func WithReadCondPreserve() Option {
+	return func(r *Reader) { r.condMode = condPreserve }
+}
+
+// WithFeatures adds feature keywords a matching branch may select, on
+// top of the always-present platform feature :cljgo and :default
+// (read-string's {:features #{...}} option).
+func WithFeatures(feats ...lang.Keyword) Option {
+	return func(r *Reader) {
+		if r.condFeatures == nil {
+			r.condFeatures = make(map[lang.Keyword]bool, len(feats))
+		}
+		for _, f := range feats {
+			r.condFeatures[f] = true
+		}
+	}
 }
 
 // WithTagReaders installs a tag -> reader-fn table backing
@@ -491,6 +541,14 @@ func (r *Reader) readTaggedLiteral(start Position) (any, error) {
 			return nil, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w tagged literal %s", ErrIncomplete, sym.FullName())}
 		}
 		return nil, err
+	}
+	// Inside a PRESERVED reader conditional ({:read-cond :preserve}),
+	// every tagged literal — even a known #uuid/#inst — reads as a
+	// lang.TaggedLiteral data value instead of resolving (oracle 1.12.5:
+	// (read-string {:read-cond :preserve} "#?(:clj #inst \"...\")") keeps
+	// a TaggedLiteral in :form). See readConditional.
+	if r.tagPreserve > 0 {
+		return lang.NewTaggedLiteral(sym, val), nil
 	}
 	// clojure.edn/read-string's `:readers` option (WithTagReaders) takes
 	// priority over EVERYTHING below, including the built-in #uuid/#inst

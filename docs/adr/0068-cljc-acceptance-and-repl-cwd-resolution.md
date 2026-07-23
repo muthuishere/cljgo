@@ -58,3 +58,40 @@ a user question, 2026-07-23):
   access to dependency roots and `$CLJGO_PATH` when no file context exists.
 - Conformance: a dual-harness test freezes `.cljc` require + reader-
   conditional selection so REPL and compiled binaries cannot diverge here.
+
+## Addendum (2026-07-23) — reader conditionals are NOT gated to `.cljc`
+
+Systematic verification against the official Reader Conditionals guide
+surfaced the one place cljgo deliberately diverges from the JVM here: on
+the JVM, `#?`/`#?@` in a plain `.clj` file is a reader error
+("Conditional read not allowed"); conditionals are permitted only in
+`.cljc` files (and via `read-string` with `{:read-cond :allow}`).
+
+**cljgo processes reader conditionals in ALL file and REPL reading,
+regardless of source extension** (`.clj`, `.cljg`, `.cljgo`, `.cljc`).
+This was already the shipped ADR 0036/0050 behavior; it is now RATIFIED
+as a deliberate divergence rather than tightened to JVM parity, because:
+
+1. The existing conformance suite itself uses `#?` in `.clj` files
+   (`conformance/tests/reader-conditionals.clj` and others) — the
+   harness only globs `tests/*.clj`, so `.cljc`-only enforcement would
+   break the suite's ability to freeze conditional semantics at all.
+2. cljgo has four source extensions, three of them host-specific;
+   restricting conditionals to `.cljc` buys no safety on a
+   single-host-per-binary platform.
+3. Enforcement would break any existing cljgo code using `#?` in
+   `.clj`/`.cljg` — a compatibility cost with no offsetting benefit.
+
+`clojure.core/read-string`, by contrast, follows the JVM opts protocol
+EXACTLY (verified against clojure 1.12.5, frozen in
+`conformance/tests/read-string-read-cond.clj`): a bare `read-string`
+refuses conditionals ("Conditional read not allowed", diagnostic R1011),
+`{:read-cond :allow}` selects, `{:features #{…}}` adds selectable
+features on top of the always-present platform feature `:cljgo`
+(mirroring the JVM's always-present `:clj`), and `{:read-cond
+:preserve}` reads the conditional as a `ReaderConditional` data value
+with tagged literals inside preserved (closing ADR 0050's deferred
+reader-wiring follow-up). Top-level `#?@` splicing is rejected in file
+reading and under `:allow` ("Reader conditional splicing not allowed at
+the top level.", diagnostic R1010) but is one whole data value under
+`:preserve`, as on the JVM.
