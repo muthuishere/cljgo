@@ -128,29 +128,6 @@ func Load() {
 	_ = v_clojure_DOT_data_atom_diff
 	// (def vectorize "Convert an associative-by-numeric-index collection into\n  an equivalent v…
 	v_clojure_DOT_data_vectorize.SetMeta(lang.NewMap(kw_file, "data.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(26), kw_private, true, kw_doc, "Convert an associative-by-numeric-index collection into\n  an equivalent vector, with nil for any missing keys."))
-<<<<<<< HEAD
-	tmp12 := lang.FnFunc1(func(m13 any) any {
-		tmp14 := v_clojure_DOT_core_seq.Get()
-		tmp15 := lang.Apply1(tmp14, m13)
-		var tmp16 any
-		_ = tmp16
-		if lang.IsTruthy(tmp15) {
-			tmp17 := v_clojure_DOT_core_reduce.Get()
-			tmp18 := lang.FnFunc2(func(result19, p__9420 any) any {
-				var tmp21 any
-				_ = tmp21
-||||||| 4746b4d
-	tmp12 := lang.FnFunc1(func(m13 any) any {
-		tmp14 := v_clojure_DOT_core_seq.Get()
-		tmp15 := lang.Apply1(tmp14, m13)
-		var tmp16 any
-		_ = tmp16
-		if lang.IsTruthy(tmp15) {
-			tmp17 := v_clojure_DOT_core_reduce.Get()
-			tmp18 := lang.FnFunc2(func(result19, p__9020 any) any {
-				var tmp21 any
-				_ = tmp21
-=======
 	tmp13 := lang.FnFunc1(func(m14 any) any {
 		tmp15 := v_clojure_DOT_core_seq.Get()
 		tmp16 := lang.Apply1(tmp15, m14)
@@ -158,58 +135,27 @@ func Load() {
 		_ = tmp17
 		if lang.IsTruthy(tmp16) {
 			tmp18 := v_clojure_DOT_core_reduce.Get()
-			tmp19 := lang.FnFunc2(func(result20, p__9021 any) any {
+			tmp19 := lang.FnFunc2(func(result20, p__9421 any) any {
 				var tmp22 any
 				_ = tmp22
->>>>>>> origin/main
 				{
-<<<<<<< HEAD
-					var vec__9522 any = p__9420
-					_ = vec__9522
-					tmp23 := v_clojure_DOT_core_nth.Get()
-					tmp24 := lang.Apply3(tmp23, vec__9522, int64(0), nil)
-					var k25 any = tmp24
-					_ = k25
-					tmp26 := v_clojure_DOT_core_nth.Get()
-					tmp27 := lang.Apply3(tmp26, vec__9522, int64(1), nil)
-					var v28 any = tmp27
-					_ = v28
-					tmp29 := v_clojure_DOT_core_assoc.Get()
-					tmp30 := lang.Apply3(tmp29, result19, k25, v28)
-					tmp21 = tmp30
-||||||| 4746b4d
-					var vec__9122 any = p__9020
-					_ = vec__9122
-					tmp23 := v_clojure_DOT_core_nth.Get()
-					tmp24 := lang.Apply3(tmp23, vec__9122, int64(0), nil)
-					var k25 any = tmp24
-					_ = k25
-					tmp26 := v_clojure_DOT_core_nth.Get()
-					tmp27 := lang.Apply3(tmp26, vec__9122, int64(1), nil)
-					var v28 any = tmp27
-					_ = v28
-					tmp29 := v_clojure_DOT_core_assoc.Get()
-					tmp30 := lang.Apply3(tmp29, result19, k25, v28)
-					tmp21 = tmp30
-=======
-					var vec__9123 any = p__9021
-					_ = vec__9123
+					var vec__9523 any = p__9421
+					_ = vec__9523
 					tmp24 := v_clojure_DOT_core_nth.Get()
-					tmp25 := lang.Apply3(tmp24, vec__9123, int64(0), nil)
+					tmp25 := lang.Apply3(tmp24, vec__9523, int64(0), nil)
 					var k26 any = tmp25
 					_ = k26
 					tmp27 := v_clojure_DOT_core_nth.Get()
-					tmp28 := lang.Apply3(tmp27, vec__9123, int64(1), nil)
+					tmp28 := lang.Apply3(tmp27, vec__9523, int64(1), nil)
 					var v29 any = tmp28
 					_ = v29
 					tmp30 := v_clojure_DOT_core_assoc.Get()
 					tmp31 := lang.Apply3(tmp30, result20, k26, v29)
 					tmp22 = tmp31
->>>>>>> origin/main
 				}
 				return tmp22
 			})
-			tmp32 := &lang.NamedFn2{Name: "fn", Expects: "2: [result p__90]", F: tmp19}
+			tmp32 := &lang.NamedFn2{Name: "fn", Expects: "2: [result p__94]", F: tmp19}
 			tmp33 := v_clojure_DOT_core_vec.Get()
 			tmp34 := v_clojure_DOT_core_repeat.Get()
 			tmp35 := v_clojure_DOT_core_apply.Get()
@@ -236,31 +182,6 @@ func Load() {
 		_ = tmp48
 		{
 			tmp49 := v_clojure_DOT_core_get.Get()
-<<<<<<< HEAD
-			tmp50 := lang.Apply2(tmp49, b43, k44)
-			var vb51 any = tmp50
-			_ = vb51
-			tmp52 := v_clojure_DOT_data_diff.Get()
-			tmp53 := lang.Apply2(tmp52, va48, vb51)
-			var vec__9854 any = tmp53
-			_ = vec__9854
-			tmp55 := v_clojure_DOT_core_nth.Get()
-			tmp56 := lang.Apply3(tmp55, vec__9854, int64(0), nil)
-			var a_STAR_57 any = tmp56
-			_ = a_STAR_57
-||||||| 4746b4d
-			tmp50 := lang.Apply2(tmp49, b43, k44)
-			var vb51 any = tmp50
-			_ = vb51
-			tmp52 := v_clojure_DOT_data_diff.Get()
-			tmp53 := lang.Apply2(tmp52, va48, vb51)
-			var vec__9454 any = tmp53
-			_ = vec__9454
-			tmp55 := v_clojure_DOT_core_nth.Get()
-			tmp56 := lang.Apply3(tmp55, vec__9454, int64(0), nil)
-			var a_STAR_57 any = tmp56
-			_ = a_STAR_57
-=======
 			tmp50 := lang.Apply2(tmp49, a45, k47)
 			var va51 any = tmp50
 			_ = va51
@@ -270,49 +191,20 @@ func Load() {
 			_ = vb54
 			tmp55 := v_clojure_DOT_data_diff.Get()
 			tmp56 := lang.Apply2(tmp55, va51, vb54)
-			var vec__9457 any = tmp56
-			_ = vec__9457
->>>>>>> origin/main
+			var vec__9857 any = tmp56
+			_ = vec__9857
 			tmp58 := v_clojure_DOT_core_nth.Get()
-<<<<<<< HEAD
-			tmp59 := lang.Apply3(tmp58, vec__9854, int64(1), nil)
-			var b_STAR_60 any = tmp59
-			_ = b_STAR_60
-||||||| 4746b4d
-			tmp59 := lang.Apply3(tmp58, vec__9454, int64(1), nil)
-			var b_STAR_60 any = tmp59
-			_ = b_STAR_60
-=======
-			tmp59 := lang.Apply3(tmp58, vec__9457, int64(0), nil)
+			tmp59 := lang.Apply3(tmp58, vec__9857, int64(0), nil)
 			var a_STAR_60 any = tmp59
 			_ = a_STAR_60
->>>>>>> origin/main
 			tmp61 := v_clojure_DOT_core_nth.Get()
-<<<<<<< HEAD
-			tmp62 := lang.Apply3(tmp61, vec__9854, int64(2), nil)
-			var ab63 any = tmp62
-			_ = ab63
-			tmp64 := v_clojure_DOT_core_contains_QMARK_.Get()
-			tmp65 := lang.Apply2(tmp64, a42, k44)
-			var in_a66 any = tmp65
-			_ = in_a66
-||||||| 4746b4d
-			tmp62 := lang.Apply3(tmp61, vec__9454, int64(2), nil)
-			var ab63 any = tmp62
-			_ = ab63
-			tmp64 := v_clojure_DOT_core_contains_QMARK_.Get()
-			tmp65 := lang.Apply2(tmp64, a42, k44)
-			var in_a66 any = tmp65
-			_ = in_a66
-=======
-			tmp62 := lang.Apply3(tmp61, vec__9457, int64(1), nil)
+			tmp62 := lang.Apply3(tmp61, vec__9857, int64(1), nil)
 			var b_STAR_63 any = tmp62
 			_ = b_STAR_63
 			tmp64 := v_clojure_DOT_core_nth.Get()
-			tmp65 := lang.Apply3(tmp64, vec__9457, int64(2), nil)
+			tmp65 := lang.Apply3(tmp64, vec__9857, int64(2), nil)
 			var ab66 any = tmp65
 			_ = ab66
->>>>>>> origin/main
 			tmp67 := v_clojure_DOT_core_contains_QMARK_.Get()
 			tmp68 := lang.Apply2(tmp67, a45, k47)
 			var in_a69 any = tmp68
@@ -1018,95 +910,33 @@ func Load() {
 			var tmp507 any
 			_ = tmp507
 			{
-<<<<<<< HEAD
-				tmp472 := v_clojure_DOT_data_partition_of.Get()
-				tmp473 := lang.Apply1(tmp472, a463)
-				var case__101474 any = tmp473
-				_ = case__101474
-				tmp475 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__101474, kw_map_)
-				var tmp476 any
-				_ = tmp476
-				if tmp475 {
-					tmp477 := v_clojure_DOT_data_diff_map.Get()
-					tmp478 := lang.Apply2(tmp477, a463, b464)
-					tmp476 = tmp478
-||||||| 4746b4d
-				tmp472 := v_clojure_DOT_data_partition_of.Get()
-				tmp473 := lang.Apply1(tmp472, a463)
-				var case__97474 any = tmp473
-				_ = case__97474
-				tmp475 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__97474, kw_map_)
-				var tmp476 any
-				_ = tmp476
-				if tmp475 {
-					tmp477 := v_clojure_DOT_data_diff_map.Get()
-					tmp478 := lang.Apply2(tmp477, a463, b464)
-					tmp476 = tmp478
-=======
 				tmp508 := v_clojure_DOT_data_partition_of.Get()
 				tmp509 := lang.Apply1(tmp508, a499)
-				var case__97510 any = tmp509
-				_ = case__97510
-				tmp511 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__97510, kw_map_)
+				var case__101510 any = tmp509
+				_ = case__101510
+				tmp511 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__101510, kw_map_)
 				var tmp512 any
 				_ = tmp512
 				if tmp511 {
 					tmp513 := v_clojure_DOT_data_diff_map.Get()
 					tmp514 := lang.Apply2(tmp513, a499, b500)
 					tmp512 = tmp514
->>>>>>> origin/main
 				} else {
-<<<<<<< HEAD
-					tmp479 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__101474, kw_set)
-					var tmp480 any
-					_ = tmp480
-					if tmp479 {
-						tmp481 := v_clojure_DOT_data_diff_set.Get()
-						tmp482 := lang.Apply2(tmp481, a463, b464)
-						tmp480 = tmp482
-||||||| 4746b4d
-					tmp479 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__97474, kw_set)
-					var tmp480 any
-					_ = tmp480
-					if tmp479 {
-						tmp481 := v_clojure_DOT_data_diff_set.Get()
-						tmp482 := lang.Apply2(tmp481, a463, b464)
-						tmp480 = tmp482
-=======
-					tmp515 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__97510, kw_set)
+					tmp515 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__101510, kw_set)
 					var tmp516 any
 					_ = tmp516
 					if tmp515 {
 						tmp517 := v_clojure_DOT_data_diff_set.Get()
 						tmp518 := lang.Apply2(tmp517, a499, b500)
 						tmp516 = tmp518
->>>>>>> origin/main
 					} else {
-<<<<<<< HEAD
-						tmp483 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__101474, kw_sequential)
-						var tmp484 any
-						_ = tmp484
-						if tmp483 {
-							tmp485 := v_clojure_DOT_data_diff_sequential.Get()
-							tmp486 := lang.Apply2(tmp485, a463, b464)
-							tmp484 = tmp486
-||||||| 4746b4d
-						tmp483 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__97474, kw_sequential)
-						var tmp484 any
-						_ = tmp484
-						if tmp483 {
-							tmp485 := v_clojure_DOT_data_diff_sequential.Get()
-							tmp486 := lang.Apply2(tmp485, a463, b464)
-							tmp484 = tmp486
-=======
-						tmp519 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__97510, kw_sequential)
+						tmp519 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__101510, kw_sequential)
 						var tmp520 any
 						_ = tmp520
 						if tmp519 {
 							tmp521 := v_clojure_DOT_data_diff_sequential.Get()
 							tmp522 := lang.Apply2(tmp521, a499, b500)
 							tmp520 = tmp522
->>>>>>> origin/main
 						} else {
 							tmp523 := v_clojure_DOT_data_atom_diff.Get()
 							tmp524 := lang.Apply2(tmp523, a499, b500)

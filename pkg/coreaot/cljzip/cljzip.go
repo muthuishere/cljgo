@@ -307,128 +307,37 @@ func Load() {
 			var tmp129 any
 			_ = tmp129
 			{
-<<<<<<< HEAD
-				var vec__42116 any = loc111
-				_ = vec__42116
-				tmp117 := v_clojure_DOT_core_nth.Get()
-				tmp118 := lang.Apply3(tmp117, vec__42116, int64(0), nil)
-				var node119 any = tmp118
-				_ = node119
-				tmp120 := v_clojure_DOT_core_nth.Get()
-				tmp121 := lang.Apply3(tmp120, vec__42116, int64(1), nil)
-				var path122 any = tmp121
-				_ = path122
-				tmp123 := v_clojure_DOT_zip_children.Get()
-				tmp124 := lang.Apply1(tmp123, loc111)
-				var vec__45125 any = tmp124
-				_ = vec__45125
-				tmp126 := v_clojure_DOT_core_seq.Get()
-				tmp127 := lang.Apply1(tmp126, vec__45125)
-				var seq__46128 any = tmp127
-				_ = seq__46128
-				tmp129 := v_clojure_DOT_core_first.Get()
-				tmp130 := lang.Apply1(tmp129, seq__46128)
-				var first__47131 any = tmp130
-				_ = first__47131
-				tmp132 := v_clojure_DOT_core_next.Get()
-				tmp133 := lang.Apply1(tmp132, seq__46128)
-				var seq__46134 any = tmp133
-				_ = seq__46134
-				var c135 any = first__47131
-				_ = c135
-				var cnext136 any = seq__46134
-				_ = cnext136
-				var cs137 any = vec__45125
-				_ = cs137
-				var tmp138 any
-				_ = tmp138
-				if lang.IsTruthy(cs137) {
-					tmp139 := v_clojure_DOT_core_with_meta.Get()
-					tmp140 := lang.NewVector()
-					var tmp141 any
-					_ = tmp141
-					if lang.IsTruthy(path122) {
-						tmp142 := v_clojure_DOT_core_conj.Get()
-						tmp143 := lang.Apply1(kw_pnodes, path122)
-						tmp144 := lang.Apply2(tmp142, tmp143, node119)
-						tmp141 = tmp144
-||||||| 4746b4d
-				var vec__38116 any = loc111
-				_ = vec__38116
-				tmp117 := v_clojure_DOT_core_nth.Get()
-				tmp118 := lang.Apply3(tmp117, vec__38116, int64(0), nil)
-				var node119 any = tmp118
-				_ = node119
-				tmp120 := v_clojure_DOT_core_nth.Get()
-				tmp121 := lang.Apply3(tmp120, vec__38116, int64(1), nil)
-				var path122 any = tmp121
-				_ = path122
-				tmp123 := v_clojure_DOT_zip_children.Get()
-				tmp124 := lang.Apply1(tmp123, loc111)
-				var vec__41125 any = tmp124
-				_ = vec__41125
-				tmp126 := v_clojure_DOT_core_seq.Get()
-				tmp127 := lang.Apply1(tmp126, vec__41125)
-				var seq__42128 any = tmp127
-				_ = seq__42128
-				tmp129 := v_clojure_DOT_core_first.Get()
-				tmp130 := lang.Apply1(tmp129, seq__42128)
-				var first__43131 any = tmp130
-				_ = first__43131
-				tmp132 := v_clojure_DOT_core_next.Get()
-				tmp133 := lang.Apply1(tmp132, seq__42128)
-				var seq__42134 any = tmp133
-				_ = seq__42134
-				var c135 any = first__43131
-				_ = c135
-				var cnext136 any = seq__42134
-				_ = cnext136
-				var cs137 any = vec__41125
-				_ = cs137
-				var tmp138 any
-				_ = tmp138
-				if lang.IsTruthy(cs137) {
-					tmp139 := v_clojure_DOT_core_with_meta.Get()
-					tmp140 := lang.NewVector()
-					var tmp141 any
-					_ = tmp141
-					if lang.IsTruthy(path122) {
-						tmp142 := v_clojure_DOT_core_conj.Get()
-						tmp143 := lang.Apply1(kw_pnodes, path122)
-						tmp144 := lang.Apply2(tmp142, tmp143, node119)
-						tmp141 = tmp144
-=======
-				var vec__38130 any = loc125
-				_ = vec__38130
+				var vec__42130 any = loc125
+				_ = vec__42130
 				tmp131 := v_clojure_DOT_core_nth.Get()
-				tmp132 := lang.Apply3(tmp131, vec__38130, int64(0), nil)
+				tmp132 := lang.Apply3(tmp131, vec__42130, int64(0), nil)
 				var node133 any = tmp132
 				_ = node133
 				tmp134 := v_clojure_DOT_core_nth.Get()
-				tmp135 := lang.Apply3(tmp134, vec__38130, int64(1), nil)
+				tmp135 := lang.Apply3(tmp134, vec__42130, int64(1), nil)
 				var path136 any = tmp135
 				_ = path136
 				tmp137 := v_clojure_DOT_zip_children.Get()
 				tmp138 := lang.Apply1(tmp137, loc125)
-				var vec__41139 any = tmp138
-				_ = vec__41139
+				var vec__45139 any = tmp138
+				_ = vec__45139
 				tmp140 := v_clojure_DOT_core_seq.Get()
-				tmp141 := lang.Apply1(tmp140, vec__41139)
-				var seq__42142 any = tmp141
-				_ = seq__42142
+				tmp141 := lang.Apply1(tmp140, vec__45139)
+				var seq__46142 any = tmp141
+				_ = seq__46142
 				tmp143 := v_clojure_DOT_core_first.Get()
-				tmp144 := lang.Apply1(tmp143, seq__42142)
-				var first__43145 any = tmp144
-				_ = first__43145
+				tmp144 := lang.Apply1(tmp143, seq__46142)
+				var first__47145 any = tmp144
+				_ = first__47145
 				tmp146 := v_clojure_DOT_core_next.Get()
-				tmp147 := lang.Apply1(tmp146, seq__42142)
-				var seq__42148 any = tmp147
-				_ = seq__42148
-				var c149 any = first__43145
+				tmp147 := lang.Apply1(tmp146, seq__46142)
+				var seq__46148 any = tmp147
+				_ = seq__46148
+				var c149 any = first__47145
 				_ = c149
-				var cnext150 any = seq__42148
+				var cnext150 any = seq__46148
 				_ = cnext150
-				var cs151 any = vec__41139
+				var cs151 any = vec__45139
 				_ = cs151
 				var tmp152 any
 				_ = tmp152
@@ -442,7 +351,6 @@ func Load() {
 						tmp157 := lang.Apply1(kw_pnodes, path136)
 						tmp158 := lang.Apply2(tmp156, tmp157, node133)
 						tmp155 = tmp158
->>>>>>> origin/main
 					} else {
 						tmp159 := lang.NewVector(node133)
 						tmp155 = tmp159
@@ -473,113 +381,36 @@ func Load() {
 		var tmp168 any
 		_ = tmp168
 		{
-<<<<<<< HEAD
-			var vec__48154 any = loc152
-			_ = vec__48154
-			tmp155 := v_clojure_DOT_core_nth.Get()
-			tmp156 := lang.Apply3(tmp155, vec__48154, int64(0), nil)
-			var node157 any = tmp156
-			_ = node157
-			tmp158 := v_clojure_DOT_core_nth.Get()
-			tmp159 := lang.Apply3(tmp158, vec__48154, int64(1), nil)
-			var map__51160 any = tmp159
-			_ = map__51160
-			var path161 any = map__51160
-			_ = path161
-			tmp162 := v_clojure_DOT_core_get.Get()
-			tmp163 := lang.Apply2(tmp162, map__51160, kw_l)
-			var l164 any = tmp163
-			_ = l164
-			tmp165 := v_clojure_DOT_core_get.Get()
-			tmp166 := lang.Apply2(tmp165, map__51160, kw_ppath)
-			var ppath167 any = tmp166
-			_ = ppath167
-			tmp168 := v_clojure_DOT_core_get.Get()
-			tmp169 := lang.Apply2(tmp168, map__51160, kw_pnodes)
-			var pnodes170 any = tmp169
-			_ = pnodes170
-			tmp171 := v_clojure_DOT_core_get.Get()
-			tmp172 := lang.Apply2(tmp171, map__51160, kw_r)
-			var r173 any = tmp172
-			_ = r173
-			tmp174 := v_clojure_DOT_core_get.Get()
-			tmp175 := lang.Apply2(tmp174, map__51160, kw_changed_QMARK_)
-			var changed_QMARK_176 any = tmp175
-			_ = changed_QMARK_176
-			var tmp177 any
-			_ = tmp177
-			if lang.IsTruthy(pnodes170) {
-				var tmp178 any
-				_ = tmp178
-||||||| 4746b4d
-			var vec__44154 any = loc152
-			_ = vec__44154
-			tmp155 := v_clojure_DOT_core_nth.Get()
-			tmp156 := lang.Apply3(tmp155, vec__44154, int64(0), nil)
-			var node157 any = tmp156
-			_ = node157
-			tmp158 := v_clojure_DOT_core_nth.Get()
-			tmp159 := lang.Apply3(tmp158, vec__44154, int64(1), nil)
-			var map__47160 any = tmp159
-			_ = map__47160
-			var path161 any = map__47160
-			_ = path161
-			tmp162 := v_clojure_DOT_core_get.Get()
-			tmp163 := lang.Apply2(tmp162, map__47160, kw_l)
-			var l164 any = tmp163
-			_ = l164
-			tmp165 := v_clojure_DOT_core_get.Get()
-			tmp166 := lang.Apply2(tmp165, map__47160, kw_ppath)
-			var ppath167 any = tmp166
-			_ = ppath167
-			tmp168 := v_clojure_DOT_core_get.Get()
-			tmp169 := lang.Apply2(tmp168, map__47160, kw_pnodes)
-			var pnodes170 any = tmp169
-			_ = pnodes170
-			tmp171 := v_clojure_DOT_core_get.Get()
-			tmp172 := lang.Apply2(tmp171, map__47160, kw_r)
-			var r173 any = tmp172
-			_ = r173
-			tmp174 := v_clojure_DOT_core_get.Get()
-			tmp175 := lang.Apply2(tmp174, map__47160, kw_changed_QMARK_)
-			var changed_QMARK_176 any = tmp175
-			_ = changed_QMARK_176
-			var tmp177 any
-			_ = tmp177
-			if lang.IsTruthy(pnodes170) {
-				var tmp178 any
-				_ = tmp178
-=======
-			var vec__44169 any = loc167
-			_ = vec__44169
+			var vec__48169 any = loc167
+			_ = vec__48169
 			tmp170 := v_clojure_DOT_core_nth.Get()
-			tmp171 := lang.Apply3(tmp170, vec__44169, int64(0), nil)
+			tmp171 := lang.Apply3(tmp170, vec__48169, int64(0), nil)
 			var node172 any = tmp171
 			_ = node172
 			tmp173 := v_clojure_DOT_core_nth.Get()
-			tmp174 := lang.Apply3(tmp173, vec__44169, int64(1), nil)
-			var map__47175 any = tmp174
-			_ = map__47175
-			var path176 any = map__47175
+			tmp174 := lang.Apply3(tmp173, vec__48169, int64(1), nil)
+			var map__51175 any = tmp174
+			_ = map__51175
+			var path176 any = map__51175
 			_ = path176
 			tmp177 := v_clojure_DOT_core_get.Get()
-			tmp178 := lang.Apply2(tmp177, map__47175, kw_l)
+			tmp178 := lang.Apply2(tmp177, map__51175, kw_l)
 			var l179 any = tmp178
 			_ = l179
 			tmp180 := v_clojure_DOT_core_get.Get()
-			tmp181 := lang.Apply2(tmp180, map__47175, kw_ppath)
+			tmp181 := lang.Apply2(tmp180, map__51175, kw_ppath)
 			var ppath182 any = tmp181
 			_ = ppath182
 			tmp183 := v_clojure_DOT_core_get.Get()
-			tmp184 := lang.Apply2(tmp183, map__47175, kw_pnodes)
+			tmp184 := lang.Apply2(tmp183, map__51175, kw_pnodes)
 			var pnodes185 any = tmp184
 			_ = pnodes185
 			tmp186 := v_clojure_DOT_core_get.Get()
-			tmp187 := lang.Apply2(tmp186, map__47175, kw_r)
+			tmp187 := lang.Apply2(tmp186, map__51175, kw_r)
 			var r188 any = tmp187
 			_ = r188
 			tmp189 := v_clojure_DOT_core_get.Get()
-			tmp190 := lang.Apply2(tmp189, map__47175, kw_changed_QMARK_)
+			tmp190 := lang.Apply2(tmp189, map__51175, kw_changed_QMARK_)
 			var changed_QMARK_191 any = tmp190
 			_ = changed_QMARK_191
 			var tmp192 any
@@ -587,7 +418,6 @@ func Load() {
 			if lang.IsTruthy(pnodes185) {
 				var tmp193 any
 				_ = tmp193
->>>>>>> origin/main
 				{
 					tmp194 := v_clojure_DOT_core_peek.Get()
 					tmp195 := lang.Apply1(tmp194, pnodes185)
@@ -689,130 +519,46 @@ func Load() {
 		var tmp235 any
 		_ = tmp235
 		{
-<<<<<<< HEAD
-			var vec__52219 any = loc217
-			_ = vec__52219
-			tmp220 := v_clojure_DOT_core_nth.Get()
-			tmp221 := lang.Apply3(tmp220, vec__52219, int64(0), nil)
-			var node222 any = tmp221
-			_ = node222
-			tmp223 := v_clojure_DOT_core_nth.Get()
-			tmp224 := lang.Apply3(tmp223, vec__52219, int64(1), nil)
-			var map__55225 any = tmp224
-			_ = map__55225
-			var path226 any = map__55225
-			_ = path226
-			tmp227 := v_clojure_DOT_core_get.Get()
-			tmp228 := lang.Apply2(tmp227, map__55225, kw_l)
-			var l229 any = tmp228
-			_ = l229
-			tmp230 := v_clojure_DOT_core_get.Get()
-			tmp231 := lang.Apply2(tmp230, map__55225, kw_r)
-			var vec__56232 any = tmp231
-			_ = vec__56232
-			tmp233 := v_clojure_DOT_core_seq.Get()
-			tmp234 := lang.Apply1(tmp233, vec__56232)
-			var seq__57235 any = tmp234
-			_ = seq__57235
-			tmp236 := v_clojure_DOT_core_first.Get()
-			tmp237 := lang.Apply1(tmp236, seq__57235)
-			var first__58238 any = tmp237
-			_ = first__58238
-			tmp239 := v_clojure_DOT_core_next.Get()
-			tmp240 := lang.Apply1(tmp239, seq__57235)
-			var seq__57241 any = tmp240
-			_ = seq__57241
-			var r242 any = first__58238
-			_ = r242
-			var rnext243 any = seq__57241
-			_ = rnext243
-			var rs244 any = vec__56232
-			_ = rs244
-			var tmp245 any
-			_ = tmp245
-||||||| 4746b4d
-			var vec__48219 any = loc217
-			_ = vec__48219
-			tmp220 := v_clojure_DOT_core_nth.Get()
-			tmp221 := lang.Apply3(tmp220, vec__48219, int64(0), nil)
-			var node222 any = tmp221
-			_ = node222
-			tmp223 := v_clojure_DOT_core_nth.Get()
-			tmp224 := lang.Apply3(tmp223, vec__48219, int64(1), nil)
-			var map__51225 any = tmp224
-			_ = map__51225
-			var path226 any = map__51225
-			_ = path226
-			tmp227 := v_clojure_DOT_core_get.Get()
-			tmp228 := lang.Apply2(tmp227, map__51225, kw_l)
-			var l229 any = tmp228
-			_ = l229
-			tmp230 := v_clojure_DOT_core_get.Get()
-			tmp231 := lang.Apply2(tmp230, map__51225, kw_r)
-			var vec__52232 any = tmp231
-			_ = vec__52232
-			tmp233 := v_clojure_DOT_core_seq.Get()
-			tmp234 := lang.Apply1(tmp233, vec__52232)
-			var seq__53235 any = tmp234
-			_ = seq__53235
-			tmp236 := v_clojure_DOT_core_first.Get()
-			tmp237 := lang.Apply1(tmp236, seq__53235)
-			var first__54238 any = tmp237
-			_ = first__54238
-			tmp239 := v_clojure_DOT_core_next.Get()
-			tmp240 := lang.Apply1(tmp239, seq__53235)
-			var seq__53241 any = tmp240
-			_ = seq__53241
-			var r242 any = first__54238
-			_ = r242
-			var rnext243 any = seq__53241
-			_ = rnext243
-			var rs244 any = vec__52232
-			_ = rs244
-			var tmp245 any
-			_ = tmp245
-=======
-			var vec__48236 any = loc234
-			_ = vec__48236
+			var vec__52236 any = loc234
+			_ = vec__52236
 			tmp237 := v_clojure_DOT_core_nth.Get()
-			tmp238 := lang.Apply3(tmp237, vec__48236, int64(0), nil)
+			tmp238 := lang.Apply3(tmp237, vec__52236, int64(0), nil)
 			var node239 any = tmp238
 			_ = node239
 			tmp240 := v_clojure_DOT_core_nth.Get()
-			tmp241 := lang.Apply3(tmp240, vec__48236, int64(1), nil)
-			var map__51242 any = tmp241
-			_ = map__51242
-			var path243 any = map__51242
+			tmp241 := lang.Apply3(tmp240, vec__52236, int64(1), nil)
+			var map__55242 any = tmp241
+			_ = map__55242
+			var path243 any = map__55242
 			_ = path243
 			tmp244 := v_clojure_DOT_core_get.Get()
-			tmp245 := lang.Apply2(tmp244, map__51242, kw_l)
+			tmp245 := lang.Apply2(tmp244, map__55242, kw_l)
 			var l246 any = tmp245
 			_ = l246
 			tmp247 := v_clojure_DOT_core_get.Get()
-			tmp248 := lang.Apply2(tmp247, map__51242, kw_r)
-			var vec__52249 any = tmp248
-			_ = vec__52249
+			tmp248 := lang.Apply2(tmp247, map__55242, kw_r)
+			var vec__56249 any = tmp248
+			_ = vec__56249
 			tmp250 := v_clojure_DOT_core_seq.Get()
-			tmp251 := lang.Apply1(tmp250, vec__52249)
-			var seq__53252 any = tmp251
-			_ = seq__53252
+			tmp251 := lang.Apply1(tmp250, vec__56249)
+			var seq__57252 any = tmp251
+			_ = seq__57252
 			tmp253 := v_clojure_DOT_core_first.Get()
-			tmp254 := lang.Apply1(tmp253, seq__53252)
-			var first__54255 any = tmp254
-			_ = first__54255
+			tmp254 := lang.Apply1(tmp253, seq__57252)
+			var first__58255 any = tmp254
+			_ = first__58255
 			tmp256 := v_clojure_DOT_core_next.Get()
-			tmp257 := lang.Apply1(tmp256, seq__53252)
-			var seq__53258 any = tmp257
-			_ = seq__53258
-			var r259 any = first__54255
+			tmp257 := lang.Apply1(tmp256, seq__57252)
+			var seq__57258 any = tmp257
+			_ = seq__57258
+			var r259 any = first__58255
 			_ = r259
-			var rnext260 any = seq__53258
+			var rnext260 any = seq__57258
 			_ = rnext260
-			var rs261 any = vec__52249
+			var rs261 any = vec__56249
 			_ = rs261
 			var tmp262 any
 			_ = tmp262
->>>>>>> origin/main
 			{
 				var and__1__auto__263 any = path243
 				_ = and__1__auto__263
@@ -854,76 +600,28 @@ func Load() {
 		var tmp278 any
 		_ = tmp278
 		{
-<<<<<<< HEAD
-			var vec__59261 any = loc259
-			_ = vec__59261
-			tmp262 := v_clojure_DOT_core_nth.Get()
-			tmp263 := lang.Apply3(tmp262, vec__59261, int64(0), nil)
-			var node264 any = tmp263
-			_ = node264
-			tmp265 := v_clojure_DOT_core_nth.Get()
-			tmp266 := lang.Apply3(tmp265, vec__59261, int64(1), nil)
-			var map__62267 any = tmp266
-			_ = map__62267
-			var path268 any = map__62267
-			_ = path268
-			tmp269 := v_clojure_DOT_core_get.Get()
-			tmp270 := lang.Apply2(tmp269, map__62267, kw_l)
-			var l271 any = tmp270
-			_ = l271
-			tmp272 := v_clojure_DOT_core_get.Get()
-			tmp273 := lang.Apply2(tmp272, map__62267, kw_r)
-			var r274 any = tmp273
-			_ = r274
-			var tmp275 any
-			_ = tmp275
-||||||| 4746b4d
-			var vec__55261 any = loc259
-			_ = vec__55261
-			tmp262 := v_clojure_DOT_core_nth.Get()
-			tmp263 := lang.Apply3(tmp262, vec__55261, int64(0), nil)
-			var node264 any = tmp263
-			_ = node264
-			tmp265 := v_clojure_DOT_core_nth.Get()
-			tmp266 := lang.Apply3(tmp265, vec__55261, int64(1), nil)
-			var map__58267 any = tmp266
-			_ = map__58267
-			var path268 any = map__58267
-			_ = path268
-			tmp269 := v_clojure_DOT_core_get.Get()
-			tmp270 := lang.Apply2(tmp269, map__58267, kw_l)
-			var l271 any = tmp270
-			_ = l271
-			tmp272 := v_clojure_DOT_core_get.Get()
-			tmp273 := lang.Apply2(tmp272, map__58267, kw_r)
-			var r274 any = tmp273
-			_ = r274
-			var tmp275 any
-			_ = tmp275
-=======
-			var vec__55279 any = loc277
-			_ = vec__55279
+			var vec__59279 any = loc277
+			_ = vec__59279
 			tmp280 := v_clojure_DOT_core_nth.Get()
-			tmp281 := lang.Apply3(tmp280, vec__55279, int64(0), nil)
+			tmp281 := lang.Apply3(tmp280, vec__59279, int64(0), nil)
 			var node282 any = tmp281
 			_ = node282
 			tmp283 := v_clojure_DOT_core_nth.Get()
-			tmp284 := lang.Apply3(tmp283, vec__55279, int64(1), nil)
-			var map__58285 any = tmp284
-			_ = map__58285
-			var path286 any = map__58285
+			tmp284 := lang.Apply3(tmp283, vec__59279, int64(1), nil)
+			var map__62285 any = tmp284
+			_ = map__62285
+			var path286 any = map__62285
 			_ = path286
 			tmp287 := v_clojure_DOT_core_get.Get()
-			tmp288 := lang.Apply2(tmp287, map__58285, kw_l)
+			tmp288 := lang.Apply2(tmp287, map__62285, kw_l)
 			var l289 any = tmp288
 			_ = l289
 			tmp290 := v_clojure_DOT_core_get.Get()
-			tmp291 := lang.Apply2(tmp290, map__58285, kw_r)
+			tmp291 := lang.Apply2(tmp290, map__62285, kw_r)
 			var r292 any = tmp291
 			_ = r292
 			var tmp293 any
 			_ = tmp293
->>>>>>> origin/main
 			{
 				var and__1__auto__294 any = path286
 				_ = and__1__auto__294
@@ -970,76 +668,28 @@ func Load() {
 		var tmp314 any
 		_ = tmp314
 		{
-<<<<<<< HEAD
-			var vec__63296 any = loc294
-			_ = vec__63296
-			tmp297 := v_clojure_DOT_core_nth.Get()
-			tmp298 := lang.Apply3(tmp297, vec__63296, int64(0), nil)
-			var node299 any = tmp298
-			_ = node299
-			tmp300 := v_clojure_DOT_core_nth.Get()
-			tmp301 := lang.Apply3(tmp300, vec__63296, int64(1), nil)
-			var map__66302 any = tmp301
-			_ = map__66302
-			var path303 any = map__66302
-			_ = path303
-			tmp304 := v_clojure_DOT_core_get.Get()
-			tmp305 := lang.Apply2(tmp304, map__66302, kw_l)
-			var l306 any = tmp305
-			_ = l306
-			tmp307 := v_clojure_DOT_core_get.Get()
-			tmp308 := lang.Apply2(tmp307, map__66302, kw_r)
-			var r309 any = tmp308
-			_ = r309
-			var tmp310 any
-			_ = tmp310
-||||||| 4746b4d
-			var vec__59296 any = loc294
-			_ = vec__59296
-			tmp297 := v_clojure_DOT_core_nth.Get()
-			tmp298 := lang.Apply3(tmp297, vec__59296, int64(0), nil)
-			var node299 any = tmp298
-			_ = node299
-			tmp300 := v_clojure_DOT_core_nth.Get()
-			tmp301 := lang.Apply3(tmp300, vec__59296, int64(1), nil)
-			var map__62302 any = tmp301
-			_ = map__62302
-			var path303 any = map__62302
-			_ = path303
-			tmp304 := v_clojure_DOT_core_get.Get()
-			tmp305 := lang.Apply2(tmp304, map__62302, kw_l)
-			var l306 any = tmp305
-			_ = l306
-			tmp307 := v_clojure_DOT_core_get.Get()
-			tmp308 := lang.Apply2(tmp307, map__62302, kw_r)
-			var r309 any = tmp308
-			_ = r309
-			var tmp310 any
-			_ = tmp310
-=======
-			var vec__59315 any = loc313
-			_ = vec__59315
+			var vec__63315 any = loc313
+			_ = vec__63315
 			tmp316 := v_clojure_DOT_core_nth.Get()
-			tmp317 := lang.Apply3(tmp316, vec__59315, int64(0), nil)
+			tmp317 := lang.Apply3(tmp316, vec__63315, int64(0), nil)
 			var node318 any = tmp317
 			_ = node318
 			tmp319 := v_clojure_DOT_core_nth.Get()
-			tmp320 := lang.Apply3(tmp319, vec__59315, int64(1), nil)
-			var map__62321 any = tmp320
-			_ = map__62321
-			var path322 any = map__62321
+			tmp320 := lang.Apply3(tmp319, vec__63315, int64(1), nil)
+			var map__66321 any = tmp320
+			_ = map__66321
+			var path322 any = map__66321
 			_ = path322
 			tmp323 := v_clojure_DOT_core_get.Get()
-			tmp324 := lang.Apply2(tmp323, map__62321, kw_l)
+			tmp324 := lang.Apply2(tmp323, map__66321, kw_l)
 			var l325 any = tmp324
 			_ = l325
 			tmp326 := v_clojure_DOT_core_get.Get()
-			tmp327 := lang.Apply2(tmp326, map__62321, kw_r)
+			tmp327 := lang.Apply2(tmp326, map__66321, kw_r)
 			var r328 any = tmp327
 			_ = r328
 			var tmp329 any
 			_ = tmp329
->>>>>>> origin/main
 			{
 				var and__1__auto__330 any = path322
 				_ = and__1__auto__330
@@ -1087,76 +737,28 @@ func Load() {
 		var tmp351 any
 		_ = tmp351
 		{
-<<<<<<< HEAD
-			var vec__67332 any = loc330
-			_ = vec__67332
-			tmp333 := v_clojure_DOT_core_nth.Get()
-			tmp334 := lang.Apply3(tmp333, vec__67332, int64(0), nil)
-			var node335 any = tmp334
-			_ = node335
-			tmp336 := v_clojure_DOT_core_nth.Get()
-			tmp337 := lang.Apply3(tmp336, vec__67332, int64(1), nil)
-			var map__70338 any = tmp337
-			_ = map__70338
-			var path339 any = map__70338
-			_ = path339
-			tmp340 := v_clojure_DOT_core_get.Get()
-			tmp341 := lang.Apply2(tmp340, map__70338, kw_l)
-			var l342 any = tmp341
-			_ = l342
-			tmp343 := v_clojure_DOT_core_get.Get()
-			tmp344 := lang.Apply2(tmp343, map__70338, kw_r)
-			var r345 any = tmp344
-			_ = r345
-			var tmp346 any
-			_ = tmp346
-||||||| 4746b4d
-			var vec__63332 any = loc330
-			_ = vec__63332
-			tmp333 := v_clojure_DOT_core_nth.Get()
-			tmp334 := lang.Apply3(tmp333, vec__63332, int64(0), nil)
-			var node335 any = tmp334
-			_ = node335
-			tmp336 := v_clojure_DOT_core_nth.Get()
-			tmp337 := lang.Apply3(tmp336, vec__63332, int64(1), nil)
-			var map__66338 any = tmp337
-			_ = map__66338
-			var path339 any = map__66338
-			_ = path339
-			tmp340 := v_clojure_DOT_core_get.Get()
-			tmp341 := lang.Apply2(tmp340, map__66338, kw_l)
-			var l342 any = tmp341
-			_ = l342
-			tmp343 := v_clojure_DOT_core_get.Get()
-			tmp344 := lang.Apply2(tmp343, map__66338, kw_r)
-			var r345 any = tmp344
-			_ = r345
-			var tmp346 any
-			_ = tmp346
-=======
-			var vec__63352 any = loc350
-			_ = vec__63352
+			var vec__67352 any = loc350
+			_ = vec__67352
 			tmp353 := v_clojure_DOT_core_nth.Get()
-			tmp354 := lang.Apply3(tmp353, vec__63352, int64(0), nil)
+			tmp354 := lang.Apply3(tmp353, vec__67352, int64(0), nil)
 			var node355 any = tmp354
 			_ = node355
 			tmp356 := v_clojure_DOT_core_nth.Get()
-			tmp357 := lang.Apply3(tmp356, vec__63352, int64(1), nil)
-			var map__66358 any = tmp357
-			_ = map__66358
-			var path359 any = map__66358
+			tmp357 := lang.Apply3(tmp356, vec__67352, int64(1), nil)
+			var map__70358 any = tmp357
+			_ = map__70358
+			var path359 any = map__70358
 			_ = path359
 			tmp360 := v_clojure_DOT_core_get.Get()
-			tmp361 := lang.Apply2(tmp360, map__66358, kw_l)
+			tmp361 := lang.Apply2(tmp360, map__70358, kw_l)
 			var l362 any = tmp361
 			_ = l362
 			tmp363 := v_clojure_DOT_core_get.Get()
-			tmp364 := lang.Apply2(tmp363, map__66358, kw_r)
+			tmp364 := lang.Apply2(tmp363, map__70358, kw_r)
 			var r365 any = tmp364
 			_ = r365
 			var tmp366 any
 			_ = tmp366
->>>>>>> origin/main
 			{
 				var and__1__auto__367 any = path359
 				_ = and__1__auto__367
@@ -1206,73 +808,20 @@ func Load() {
 		var tmp391 any
 		_ = tmp391
 		{
-<<<<<<< HEAD
-			var vec__71371 any = loc368
-			_ = vec__71371
-			tmp372 := v_clojure_DOT_core_nth.Get()
-			tmp373 := lang.Apply3(tmp372, vec__71371, int64(0), nil)
-			var node374 any = tmp373
-			_ = node374
-			tmp375 := v_clojure_DOT_core_nth.Get()
-			tmp376 := lang.Apply3(tmp375, vec__71371, int64(1), nil)
-			var map__74377 any = tmp376
-			_ = map__74377
-			var path378 any = map__74377
-			_ = path378
-			tmp379 := v_clojure_DOT_core_get.Get()
-			tmp380 := lang.Apply2(tmp379, map__74377, kw_l)
-			var l381 any = tmp380
-			_ = l381
-			tmp382 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp383 := lang.Apply1(tmp382, path378)
-			var tmp384 any
-			_ = tmp384
-			if lang.IsTruthy(tmp383) {
-				tmp385 := v_clojure_DOT_core_ex_info.Get()
-				tmp386 := lang.NewMap()
-				tmp387 := lang.Apply2(tmp385, "Insert at top", tmp386)
-				panic(rt.Throw(tmp387))
-||||||| 4746b4d
-			var vec__67371 any = loc368
-			_ = vec__67371
-			tmp372 := v_clojure_DOT_core_nth.Get()
-			tmp373 := lang.Apply3(tmp372, vec__67371, int64(0), nil)
-			var node374 any = tmp373
-			_ = node374
-			tmp375 := v_clojure_DOT_core_nth.Get()
-			tmp376 := lang.Apply3(tmp375, vec__67371, int64(1), nil)
-			var map__70377 any = tmp376
-			_ = map__70377
-			var path378 any = map__70377
-			_ = path378
-			tmp379 := v_clojure_DOT_core_get.Get()
-			tmp380 := lang.Apply2(tmp379, map__70377, kw_l)
-			var l381 any = tmp380
-			_ = l381
-			tmp382 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp383 := lang.Apply1(tmp382, path378)
-			var tmp384 any
-			_ = tmp384
-			if lang.IsTruthy(tmp383) {
-				tmp385 := v_clojure_DOT_core_ex_info.Get()
-				tmp386 := lang.NewMap()
-				tmp387 := lang.Apply2(tmp385, "Insert at top", tmp386)
-				panic(rt.Throw(tmp387))
-=======
-			var vec__67392 any = loc389
-			_ = vec__67392
+			var vec__71392 any = loc389
+			_ = vec__71392
 			tmp393 := v_clojure_DOT_core_nth.Get()
-			tmp394 := lang.Apply3(tmp393, vec__67392, int64(0), nil)
+			tmp394 := lang.Apply3(tmp393, vec__71392, int64(0), nil)
 			var node395 any = tmp394
 			_ = node395
 			tmp396 := v_clojure_DOT_core_nth.Get()
-			tmp397 := lang.Apply3(tmp396, vec__67392, int64(1), nil)
-			var map__70398 any = tmp397
-			_ = map__70398
-			var path399 any = map__70398
+			tmp397 := lang.Apply3(tmp396, vec__71392, int64(1), nil)
+			var map__74398 any = tmp397
+			_ = map__74398
+			var path399 any = map__74398
 			_ = path399
 			tmp400 := v_clojure_DOT_core_get.Get()
-			tmp401 := lang.Apply2(tmp400, map__70398, kw_l)
+			tmp401 := lang.Apply2(tmp400, map__74398, kw_l)
 			var l402 any = tmp401
 			_ = l402
 			tmp403 := v_clojure_DOT_core_nil_QMARK_.Get()
@@ -1284,7 +833,6 @@ func Load() {
 				tmp407 := lang.NewMap()
 				tmp408 := lang.Apply2(tmp406, "Insert at top", tmp407)
 				panic(rt.Throw(tmp408))
->>>>>>> origin/main
 			} else {
 				tmp409 := v_clojure_DOT_core_with_meta.Get()
 				tmp410 := v_clojure_DOT_core_assoc.Get()
@@ -1310,73 +858,20 @@ func Load() {
 		var tmp422 any
 		_ = tmp422
 		{
-<<<<<<< HEAD
-			var vec__75401 any = loc398
-			_ = vec__75401
-			tmp402 := v_clojure_DOT_core_nth.Get()
-			tmp403 := lang.Apply3(tmp402, vec__75401, int64(0), nil)
-			var node404 any = tmp403
-			_ = node404
-			tmp405 := v_clojure_DOT_core_nth.Get()
-			tmp406 := lang.Apply3(tmp405, vec__75401, int64(1), nil)
-			var map__78407 any = tmp406
-			_ = map__78407
-			var path408 any = map__78407
-			_ = path408
-			tmp409 := v_clojure_DOT_core_get.Get()
-			tmp410 := lang.Apply2(tmp409, map__78407, kw_r)
-			var r411 any = tmp410
-			_ = r411
-			tmp412 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp413 := lang.Apply1(tmp412, path408)
-			var tmp414 any
-			_ = tmp414
-			if lang.IsTruthy(tmp413) {
-				tmp415 := v_clojure_DOT_core_ex_info.Get()
-				tmp416 := lang.NewMap()
-				tmp417 := lang.Apply2(tmp415, "Insert at top", tmp416)
-				panic(rt.Throw(tmp417))
-||||||| 4746b4d
-			var vec__71401 any = loc398
-			_ = vec__71401
-			tmp402 := v_clojure_DOT_core_nth.Get()
-			tmp403 := lang.Apply3(tmp402, vec__71401, int64(0), nil)
-			var node404 any = tmp403
-			_ = node404
-			tmp405 := v_clojure_DOT_core_nth.Get()
-			tmp406 := lang.Apply3(tmp405, vec__71401, int64(1), nil)
-			var map__74407 any = tmp406
-			_ = map__74407
-			var path408 any = map__74407
-			_ = path408
-			tmp409 := v_clojure_DOT_core_get.Get()
-			tmp410 := lang.Apply2(tmp409, map__74407, kw_r)
-			var r411 any = tmp410
-			_ = r411
-			tmp412 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp413 := lang.Apply1(tmp412, path408)
-			var tmp414 any
-			_ = tmp414
-			if lang.IsTruthy(tmp413) {
-				tmp415 := v_clojure_DOT_core_ex_info.Get()
-				tmp416 := lang.NewMap()
-				tmp417 := lang.Apply2(tmp415, "Insert at top", tmp416)
-				panic(rt.Throw(tmp417))
-=======
-			var vec__71423 any = loc420
-			_ = vec__71423
+			var vec__75423 any = loc420
+			_ = vec__75423
 			tmp424 := v_clojure_DOT_core_nth.Get()
-			tmp425 := lang.Apply3(tmp424, vec__71423, int64(0), nil)
+			tmp425 := lang.Apply3(tmp424, vec__75423, int64(0), nil)
 			var node426 any = tmp425
 			_ = node426
 			tmp427 := v_clojure_DOT_core_nth.Get()
-			tmp428 := lang.Apply3(tmp427, vec__71423, int64(1), nil)
-			var map__74429 any = tmp428
-			_ = map__74429
-			var path430 any = map__74429
+			tmp428 := lang.Apply3(tmp427, vec__75423, int64(1), nil)
+			var map__78429 any = tmp428
+			_ = map__78429
+			var path430 any = map__78429
 			_ = path430
 			tmp431 := v_clojure_DOT_core_get.Get()
-			tmp432 := lang.Apply2(tmp431, map__74429, kw_r)
+			tmp432 := lang.Apply2(tmp431, map__78429, kw_r)
 			var r433 any = tmp432
 			_ = r433
 			tmp434 := v_clojure_DOT_core_nil_QMARK_.Get()
@@ -1388,7 +883,6 @@ func Load() {
 				tmp438 := lang.NewMap()
 				tmp439 := lang.Apply2(tmp437, "Insert at top", tmp438)
 				panic(rt.Throw(tmp439))
->>>>>>> origin/main
 			} else {
 				tmp440 := v_clojure_DOT_core_with_meta.Get()
 				tmp441 := v_clojure_DOT_core_assoc.Get()
@@ -1414,53 +908,14 @@ func Load() {
 		var tmp453 any
 		_ = tmp453
 		{
-<<<<<<< HEAD
-			var vec__79431 any = loc428
-			_ = vec__79431
-			tmp432 := v_clojure_DOT_core_nth.Get()
-			tmp433 := lang.Apply3(tmp432, vec__79431, int64(0), nil)
-			var X_434 any = tmp433
-			_ = X_434
-			tmp435 := v_clojure_DOT_core_nth.Get()
-			tmp436 := lang.Apply3(tmp435, vec__79431, int64(1), nil)
-			var path437 any = tmp436
-			_ = path437
-			tmp438 := v_clojure_DOT_core_with_meta.Get()
-			tmp439 := v_clojure_DOT_core_assoc.Get()
-			tmp440 := lang.Apply3(tmp439, path437, kw_changed_QMARK_, true)
-			tmp441 := lang.NewVector(node429, tmp440)
-			tmp442 := v_clojure_DOT_core_meta.Get()
-			tmp443 := lang.Apply1(tmp442, loc428)
-			tmp444 := lang.Apply2(tmp438, tmp441, tmp443)
-			tmp430 = tmp444
-||||||| 4746b4d
-			var vec__75431 any = loc428
-			_ = vec__75431
-			tmp432 := v_clojure_DOT_core_nth.Get()
-			tmp433 := lang.Apply3(tmp432, vec__75431, int64(0), nil)
-			var X_434 any = tmp433
-			_ = X_434
-			tmp435 := v_clojure_DOT_core_nth.Get()
-			tmp436 := lang.Apply3(tmp435, vec__75431, int64(1), nil)
-			var path437 any = tmp436
-			_ = path437
-			tmp438 := v_clojure_DOT_core_with_meta.Get()
-			tmp439 := v_clojure_DOT_core_assoc.Get()
-			tmp440 := lang.Apply3(tmp439, path437, kw_changed_QMARK_, true)
-			tmp441 := lang.NewVector(node429, tmp440)
-			tmp442 := v_clojure_DOT_core_meta.Get()
-			tmp443 := lang.Apply1(tmp442, loc428)
-			tmp444 := lang.Apply2(tmp438, tmp441, tmp443)
-			tmp430 = tmp444
-=======
-			var vec__75454 any = loc451
-			_ = vec__75454
+			var vec__79454 any = loc451
+			_ = vec__79454
 			tmp455 := v_clojure_DOT_core_nth.Get()
-			tmp456 := lang.Apply3(tmp455, vec__75454, int64(0), nil)
+			tmp456 := lang.Apply3(tmp455, vec__79454, int64(0), nil)
 			var X_457 any = tmp456
 			_ = X_457
 			tmp458 := v_clojure_DOT_core_nth.Get()
-			tmp459 := lang.Apply3(tmp458, vec__75454, int64(1), nil)
+			tmp459 := lang.Apply3(tmp458, vec__79454, int64(1), nil)
 			var path460 any = tmp459
 			_ = path460
 			tmp461 := v_clojure_DOT_core_with_meta.Get()
@@ -1471,7 +926,6 @@ func Load() {
 			tmp466 := lang.Apply1(tmp465, loc451)
 			tmp467 := lang.Apply2(tmp461, tmp464, tmp466)
 			tmp453 = tmp467
->>>>>>> origin/main
 		}
 		return tmp453
 	})
@@ -1755,109 +1209,32 @@ func Load() {
 		var tmp585 any
 		_ = tmp585
 		{
-<<<<<<< HEAD
-			var vec__82557 any = loc555
-			_ = vec__82557
-			tmp558 := v_clojure_DOT_core_nth.Get()
-			tmp559 := lang.Apply3(tmp558, vec__82557, int64(0), nil)
-			var node560 any = tmp559
-			_ = node560
-			tmp561 := v_clojure_DOT_core_nth.Get()
-			tmp562 := lang.Apply3(tmp561, vec__82557, int64(1), nil)
-			var map__85563 any = tmp562
-			_ = map__85563
-			var path564 any = map__85563
-			_ = path564
-			tmp565 := v_clojure_DOT_core_get.Get()
-			tmp566 := lang.Apply2(tmp565, map__85563, kw_l)
-			var l567 any = tmp566
-			_ = l567
-			tmp568 := v_clojure_DOT_core_get.Get()
-			tmp569 := lang.Apply2(tmp568, map__85563, kw_ppath)
-			var ppath570 any = tmp569
-			_ = ppath570
-			tmp571 := v_clojure_DOT_core_get.Get()
-			tmp572 := lang.Apply2(tmp571, map__85563, kw_pnodes)
-			var pnodes573 any = tmp572
-			_ = pnodes573
-			tmp574 := v_clojure_DOT_core_get.Get()
-			tmp575 := lang.Apply2(tmp574, map__85563, kw_r)
-			var rs576 any = tmp575
-			_ = rs576
-			tmp577 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp578 := lang.Apply1(tmp577, path564)
-			var tmp579 any
-			_ = tmp579
-			if lang.IsTruthy(tmp578) {
-				tmp580 := v_clojure_DOT_core_ex_info.Get()
-				tmp581 := lang.NewMap()
-				tmp582 := lang.Apply2(tmp580, "Remove at top", tmp581)
-				panic(rt.Throw(tmp582))
-||||||| 4746b4d
-			var vec__78557 any = loc555
-			_ = vec__78557
-			tmp558 := v_clojure_DOT_core_nth.Get()
-			tmp559 := lang.Apply3(tmp558, vec__78557, int64(0), nil)
-			var node560 any = tmp559
-			_ = node560
-			tmp561 := v_clojure_DOT_core_nth.Get()
-			tmp562 := lang.Apply3(tmp561, vec__78557, int64(1), nil)
-			var map__81563 any = tmp562
-			_ = map__81563
-			var path564 any = map__81563
-			_ = path564
-			tmp565 := v_clojure_DOT_core_get.Get()
-			tmp566 := lang.Apply2(tmp565, map__81563, kw_l)
-			var l567 any = tmp566
-			_ = l567
-			tmp568 := v_clojure_DOT_core_get.Get()
-			tmp569 := lang.Apply2(tmp568, map__81563, kw_ppath)
-			var ppath570 any = tmp569
-			_ = ppath570
-			tmp571 := v_clojure_DOT_core_get.Get()
-			tmp572 := lang.Apply2(tmp571, map__81563, kw_pnodes)
-			var pnodes573 any = tmp572
-			_ = pnodes573
-			tmp574 := v_clojure_DOT_core_get.Get()
-			tmp575 := lang.Apply2(tmp574, map__81563, kw_r)
-			var rs576 any = tmp575
-			_ = rs576
-			tmp577 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp578 := lang.Apply1(tmp577, path564)
-			var tmp579 any
-			_ = tmp579
-			if lang.IsTruthy(tmp578) {
-				tmp580 := v_clojure_DOT_core_ex_info.Get()
-				tmp581 := lang.NewMap()
-				tmp582 := lang.Apply2(tmp580, "Remove at top", tmp581)
-				panic(rt.Throw(tmp582))
-=======
-			var vec__78586 any = loc584
-			_ = vec__78586
+			var vec__82586 any = loc584
+			_ = vec__82586
 			tmp587 := v_clojure_DOT_core_nth.Get()
-			tmp588 := lang.Apply3(tmp587, vec__78586, int64(0), nil)
+			tmp588 := lang.Apply3(tmp587, vec__82586, int64(0), nil)
 			var node589 any = tmp588
 			_ = node589
 			tmp590 := v_clojure_DOT_core_nth.Get()
-			tmp591 := lang.Apply3(tmp590, vec__78586, int64(1), nil)
-			var map__81592 any = tmp591
-			_ = map__81592
-			var path593 any = map__81592
+			tmp591 := lang.Apply3(tmp590, vec__82586, int64(1), nil)
+			var map__85592 any = tmp591
+			_ = map__85592
+			var path593 any = map__85592
 			_ = path593
 			tmp594 := v_clojure_DOT_core_get.Get()
-			tmp595 := lang.Apply2(tmp594, map__81592, kw_l)
+			tmp595 := lang.Apply2(tmp594, map__85592, kw_l)
 			var l596 any = tmp595
 			_ = l596
 			tmp597 := v_clojure_DOT_core_get.Get()
-			tmp598 := lang.Apply2(tmp597, map__81592, kw_ppath)
+			tmp598 := lang.Apply2(tmp597, map__85592, kw_ppath)
 			var ppath599 any = tmp598
 			_ = ppath599
 			tmp600 := v_clojure_DOT_core_get.Get()
-			tmp601 := lang.Apply2(tmp600, map__81592, kw_pnodes)
+			tmp601 := lang.Apply2(tmp600, map__85592, kw_pnodes)
 			var pnodes602 any = tmp601
 			_ = pnodes602
 			tmp603 := v_clojure_DOT_core_get.Get()
-			tmp604 := lang.Apply2(tmp603, map__81592, kw_r)
+			tmp604 := lang.Apply2(tmp603, map__85592, kw_r)
 			var rs605 any = tmp604
 			_ = rs605
 			tmp606 := v_clojure_DOT_core_nil_QMARK_.Get()
@@ -1869,7 +1246,6 @@ func Load() {
 				tmp610 := lang.NewMap()
 				tmp611 := lang.Apply2(tmp609, "Remove at top", tmp610)
 				panic(rt.Throw(tmp611))
->>>>>>> origin/main
 			} else {
 				tmp612 := v_clojure_DOT_core_pos_QMARK_.Get()
 				tmp613 := v_clojure_DOT_core_count.Get()

@@ -246,69 +246,18 @@ func Load() {
 		var tmp109 any
 		_ = tmp109
 		{
-<<<<<<< HEAD
-			tmp102 := lang.FnFunc1(func(p__86103 any) any {
-				var tmp104 any
-				_ = tmp104
-||||||| 4746b4d
-			tmp102 := lang.FnFunc1(func(p__82103 any) any {
-				var tmp104 any
-				_ = tmp104
-=======
-			tmp110 := lang.FnFunc1(func(p__82111 any) any {
+			tmp110 := lang.FnFunc1(func(p__86111 any) any {
 				var tmp112 any
 				_ = tmp112
->>>>>>> origin/main
 				{
-<<<<<<< HEAD
-					var vec__87105 any = p__86103
-					_ = vec__87105
-					tmp106 := v_clojure_DOT_core_nth.Get()
-					tmp107 := lang.Apply3(tmp106, vec__87105, int64(0), nil)
-					var k108 any = tmp107
-					_ = k108
-					tmp109 := v_clojure_DOT_core_nth.Get()
-					tmp110 := lang.Apply3(tmp109, vec__87105, int64(1), nil)
-					var v111 any = tmp110
-					_ = v111
-					tmp112 := v_clojure_DOT_core_string_QMARK_.Get()
-					tmp113 := lang.Apply1(tmp112, k108)
-					var tmp114 any
-					_ = tmp114
-					if lang.IsTruthy(tmp113) {
-						tmp115 := v_clojure_DOT_core_keyword.Get()
-						tmp116 := lang.Apply1(tmp115, k108)
-						tmp117 := lang.NewVector(tmp116, v111)
-						tmp114 = tmp117
-||||||| 4746b4d
-					var vec__83105 any = p__82103
-					_ = vec__83105
-					tmp106 := v_clojure_DOT_core_nth.Get()
-					tmp107 := lang.Apply3(tmp106, vec__83105, int64(0), nil)
-					var k108 any = tmp107
-					_ = k108
-					tmp109 := v_clojure_DOT_core_nth.Get()
-					tmp110 := lang.Apply3(tmp109, vec__83105, int64(1), nil)
-					var v111 any = tmp110
-					_ = v111
-					tmp112 := v_clojure_DOT_core_string_QMARK_.Get()
-					tmp113 := lang.Apply1(tmp112, k108)
-					var tmp114 any
-					_ = tmp114
-					if lang.IsTruthy(tmp113) {
-						tmp115 := v_clojure_DOT_core_keyword.Get()
-						tmp116 := lang.Apply1(tmp115, k108)
-						tmp117 := lang.NewVector(tmp116, v111)
-						tmp114 = tmp117
-=======
-					var vec__83113 any = p__82111
-					_ = vec__83113
+					var vec__87113 any = p__86111
+					_ = vec__87113
 					tmp114 := v_clojure_DOT_core_nth.Get()
-					tmp115 := lang.Apply3(tmp114, vec__83113, int64(0), nil)
+					tmp115 := lang.Apply3(tmp114, vec__87113, int64(0), nil)
 					var k116 any = tmp115
 					_ = k116
 					tmp117 := v_clojure_DOT_core_nth.Get()
-					tmp118 := lang.Apply3(tmp117, vec__83113, int64(1), nil)
+					tmp118 := lang.Apply3(tmp117, vec__87113, int64(1), nil)
 					var v119 any = tmp118
 					_ = v119
 					tmp120 := v_clojure_DOT_core_string_QMARK_.Get()
@@ -320,7 +269,6 @@ func Load() {
 						tmp124 := lang.Apply1(tmp123, k116)
 						tmp125 := lang.NewVector(tmp124, v119)
 						tmp122 = tmp125
->>>>>>> origin/main
 					} else {
 						tmp126 := lang.NewVector(k116, v119)
 						tmp122 = tmp126
@@ -329,7 +277,7 @@ func Load() {
 				}
 				return tmp112
 			})
-			tmp127 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__82]", F: tmp110}
+			tmp127 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__86]", F: tmp110}
 			var f128 any = tmp127
 			_ = f128
 			tmp129 := v_clojure_DOT_walk_postwalk.Get()
@@ -365,69 +313,18 @@ func Load() {
 		var tmp145 any
 		_ = tmp145
 		{
-<<<<<<< HEAD
-			tmp135 := lang.FnFunc1(func(p__90136 any) any {
-				var tmp137 any
-				_ = tmp137
-||||||| 4746b4d
-			tmp135 := lang.FnFunc1(func(p__86136 any) any {
-				var tmp137 any
-				_ = tmp137
-=======
-			tmp146 := lang.FnFunc1(func(p__86147 any) any {
+			tmp146 := lang.FnFunc1(func(p__90147 any) any {
 				var tmp148 any
 				_ = tmp148
->>>>>>> origin/main
 				{
-<<<<<<< HEAD
-					var vec__91138 any = p__90136
-					_ = vec__91138
-					tmp139 := v_clojure_DOT_core_nth.Get()
-					tmp140 := lang.Apply3(tmp139, vec__91138, int64(0), nil)
-					var k141 any = tmp140
-					_ = k141
-					tmp142 := v_clojure_DOT_core_nth.Get()
-					tmp143 := lang.Apply3(tmp142, vec__91138, int64(1), nil)
-					var v144 any = tmp143
-					_ = v144
-					tmp145 := v_clojure_DOT_core_keyword_QMARK_.Get()
-					tmp146 := lang.Apply1(tmp145, k141)
-					var tmp147 any
-					_ = tmp147
-					if lang.IsTruthy(tmp146) {
-						tmp148 := v_clojure_DOT_core_name.Get()
-						tmp149 := lang.Apply1(tmp148, k141)
-						tmp150 := lang.NewVector(tmp149, v144)
-						tmp147 = tmp150
-||||||| 4746b4d
-					var vec__87138 any = p__86136
-					_ = vec__87138
-					tmp139 := v_clojure_DOT_core_nth.Get()
-					tmp140 := lang.Apply3(tmp139, vec__87138, int64(0), nil)
-					var k141 any = tmp140
-					_ = k141
-					tmp142 := v_clojure_DOT_core_nth.Get()
-					tmp143 := lang.Apply3(tmp142, vec__87138, int64(1), nil)
-					var v144 any = tmp143
-					_ = v144
-					tmp145 := v_clojure_DOT_core_keyword_QMARK_.Get()
-					tmp146 := lang.Apply1(tmp145, k141)
-					var tmp147 any
-					_ = tmp147
-					if lang.IsTruthy(tmp146) {
-						tmp148 := v_clojure_DOT_core_name.Get()
-						tmp149 := lang.Apply1(tmp148, k141)
-						tmp150 := lang.NewVector(tmp149, v144)
-						tmp147 = tmp150
-=======
-					var vec__87149 any = p__86147
-					_ = vec__87149
+					var vec__91149 any = p__90147
+					_ = vec__91149
 					tmp150 := v_clojure_DOT_core_nth.Get()
-					tmp151 := lang.Apply3(tmp150, vec__87149, int64(0), nil)
+					tmp151 := lang.Apply3(tmp150, vec__91149, int64(0), nil)
 					var k152 any = tmp151
 					_ = k152
 					tmp153 := v_clojure_DOT_core_nth.Get()
-					tmp154 := lang.Apply3(tmp153, vec__87149, int64(1), nil)
+					tmp154 := lang.Apply3(tmp153, vec__91149, int64(1), nil)
 					var v155 any = tmp154
 					_ = v155
 					tmp156 := v_clojure_DOT_core_keyword_QMARK_.Get()
@@ -439,7 +336,6 @@ func Load() {
 						tmp160 := lang.Apply1(tmp159, k152)
 						tmp161 := lang.NewVector(tmp160, v155)
 						tmp158 = tmp161
->>>>>>> origin/main
 					} else {
 						tmp162 := lang.NewVector(k152, v155)
 						tmp158 = tmp162
@@ -448,7 +344,7 @@ func Load() {
 				}
 				return tmp148
 			})
-			tmp163 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__86]", F: tmp146}
+			tmp163 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__90]", F: tmp146}
 			var f164 any = tmp163
 			_ = f164
 			tmp165 := v_clojure_DOT_walk_postwalk.Get()

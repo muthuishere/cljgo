@@ -2312,52 +2312,20 @@ func Load() {
 					var tmp1473 any
 					_ = tmp1473
 					{
-<<<<<<< HEAD
-						tmp1442 := v_clojure_DOT_core_first.Get()
-						tmp1443 := lang.Apply1(tmp1442, s__9__auto__1438)
-						var vec__1021444 any = tmp1443
-						_ = vec__1021444
-						tmp1445 := v_clojure_DOT_core_nth.Get()
-						tmp1446 := lang.Apply3(tmp1445, vec__1021444, int64(0), nil)
-						var ns1447 any = tmp1446
-						_ = ns1447
-						tmp1448 := v_clojure_DOT_core_nth.Get()
-						tmp1449 := lang.Apply3(tmp1448, vec__1021444, int64(1), nil)
-						var vs1450 any = tmp1449
-						_ = vs1450
-						var tmp1451 any
-						_ = tmp1451
-||||||| 4746b4d
-						tmp1442 := v_clojure_DOT_core_first.Get()
-						tmp1443 := lang.Apply1(tmp1442, s__9__auto__1438)
-						var vec__981444 any = tmp1443
-						_ = vec__981444
-						tmp1445 := v_clojure_DOT_core_nth.Get()
-						tmp1446 := lang.Apply3(tmp1445, vec__981444, int64(0), nil)
-						var ns1447 any = tmp1446
-						_ = ns1447
-						tmp1448 := v_clojure_DOT_core_nth.Get()
-						tmp1449 := lang.Apply3(tmp1448, vec__981444, int64(1), nil)
-						var vs1450 any = tmp1449
-						_ = vs1450
-						var tmp1451 any
-						_ = tmp1451
-=======
 						tmp1474 := v_clojure_DOT_core_first.Get()
 						tmp1475 := lang.Apply1(tmp1474, s__9__auto__1470)
-						var vec__981476 any = tmp1475
-						_ = vec__981476
+						var vec__1021476 any = tmp1475
+						_ = vec__1021476
 						tmp1477 := v_clojure_DOT_core_nth.Get()
-						tmp1478 := lang.Apply3(tmp1477, vec__981476, int64(0), nil)
+						tmp1478 := lang.Apply3(tmp1477, vec__1021476, int64(0), nil)
 						var ns1479 any = tmp1478
 						_ = ns1479
 						tmp1480 := v_clojure_DOT_core_nth.Get()
-						tmp1481 := lang.Apply3(tmp1480, vec__981476, int64(1), nil)
+						tmp1481 := lang.Apply3(tmp1480, vec__1021476, int64(1), nil)
 						var vs1482 any = tmp1481
 						_ = vs1482
 						var tmp1483 any
 						_ = tmp1483
->>>>>>> origin/main
 						{
 							tmp1484 := v_clojure_DOT_test_join_fixtures.Get()
 							tmp1485 := v_clojure_DOT_core_meta.Get()
