@@ -147,6 +147,11 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 
 	printLast := opts.PrintLastValue && spec.isMain
 	for i, n := range forms {
+		// Numeric emission (spike s42 / ADR 0067) starts from the boxed
+		// default here: g.ni is emptyInfer. Typed regions open lazily and
+		// guarded — genFn specializes int64-provable fn bodies behind an
+		// `if !rt.CoreDirty()` entry, and genLoop dual-emits a numeric
+		// loop met in unguarded context under the same flag.
 		g.wf("// %s\n", provenance(n))
 		rv := g.gen(n)
 		if printLast && i == len(forms)-1 {
@@ -170,6 +175,10 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	// Imports: lang only when referenced (a constants-only program may
 	// not touch it); fmt/os per usage flags; the eval bootstrap always.
 	body := g.buf.String()
+	// Lifted typed funcs (g.funcs) sit outside g.buf; scan them too for the
+	// lang./rt. import decisions (but they are emitted separately, not into
+	// Load's body).
+	scanText := body + strings.Join(g.funcs, "")
 	var declText bytes.Buffer
 	if len(g.decls) > 0 {
 		decls := make([]hoistDecl, len(g.decls))
@@ -181,7 +190,7 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		}
 		declText.WriteString(")\n\n")
 	}
-	usesLang := strings.Contains(body, "lang.") || strings.Contains(declText.String(), "lang.") ||
+	usesLang := strings.Contains(scanText, "lang.") || strings.Contains(declText.String(), "lang.") ||
 		printLast || mainVar != "" || spec.srcFile != ""
 
 	out.WriteString("import (\n")
@@ -196,12 +205,19 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	if mainVar != "" || spec.isMain {
 		out.WriteString("\"os\"\n")
 	}
+	// runtime: the env-gated alloc report (spike s42) main() emits below.
+	// Inert unless CLJGO_ALLOC_REPORT is set, so it never affects a user
+	// or a conformance run — it exists to measure the boxing-elimination
+	// win (ADR 0067). Only main packages reference it.
+	if spec.isMain {
+		out.WriteString("\"runtime\"\n")
+	}
 	// rt: the bootstrap (main), the RegisterLib init (dependency
 	// packages), and the intrinsic/interop/exception helpers. A package
 	// that reaches for none of them must not import it (Go rejects an
 	// unused import) — pkg/coreaot's pure-Clojure packages are exactly
 	// that case.
-	if strings.Contains(body, "rt.") || spec.isMain || spec.nsName != "" {
+	if strings.Contains(scanText, "rt.") || spec.isMain || spec.nsName != "" {
 		fmt.Fprintf(&out, "rt %q\n", runtimeModule+"/pkg/emit/rt")
 	}
 	if usesLang {
@@ -241,6 +257,12 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	out.WriteString(")\n\n")
 
 	out.Write(declText.Bytes())
+	// Lifted typed funcs (ADR 0067 rung 3): package-level `func nameL(…
+	// int64) int64` with direct int64 recursion, emitted before Load.
+	for _, fn := range g.funcs {
+		out.WriteString(fn)
+		out.WriteString("\n")
+	}
 	if printLast {
 		out.WriteString("var lastVal any\n\n")
 	}
@@ -280,6 +302,9 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 			out.WriteString("args := make([]any, 0, len(os.Args)-1)\nfor _, a := range os.Args[1:] {\nargs = append(args, a)\n}\n")
 			fmt.Fprintf(&out, "_ = lang.Apply(%s.Get(), args)\n", mainVar)
 		}
+		// Env-gated alloc report (spike s42 / ADR 0067): total mallocs since
+		// process start, for the boxing-elimination A/B. Inert by default.
+		out.WriteString("if os.Getenv(\"CLJGO_ALLOC_REPORT\") != \"\" {\nvar ms runtime.MemStats\nruntime.ReadMemStats(&ms)\nfmt.Fprintf(os.Stderr, \"CLJGO_MALLOCS=%d\\n\", ms.Mallocs)\n}\n")
 		if printLast {
 			out.WriteString("fmt.Println(lang.PrintString(lastVal))\n")
 		}

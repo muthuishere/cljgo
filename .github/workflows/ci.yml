@@ -78,10 +78,13 @@ jobs:
           CLJGO_BOOT_BUDGET: 5s
           # Same reasoning for the emitted-vs-raw-Go ratio (ADR 0024): it
           # divides two independently measured net times, so a contended
-          # runner swings the quotient (63.2x observed vs ~35x local, passing
-          # on rerun). 120 stays far under the ~168x naive-emission regression
-          # the gate exists to catch.
-          CLJGO_PERF_RATIO_MAX: "120"
+          # runner swings the quotient (63.2x once observed vs the then-35x
+          # local, passing on rerun). ADR 0067 numeric inference dropped the
+          # local measure to ~4.8x (local gate 15x); 60 leaves >10x noise
+          # headroom yet still catches the pass silently dying (boxed
+          # emission measures ~35x local, worse contended) and the ~168x
+          # naive emission outright.
+          CLJGO_PERF_RATIO_MAX: "60"
           # The clojure.core-mediated gate (ADR 0037 #5): a wall-clock total,
           # ~110ms locally, 350ms local budget, 3s here for slower/contended
           # runners. Still tight enough to catch the class of core-path

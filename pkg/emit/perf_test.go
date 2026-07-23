@@ -31,11 +31,19 @@ import (
 // helpers being over the inline budget. (a) is pkg/lang work, (b)/(c)
 // are the design/04 §5 primitive-hints/intrinsics rungs — post-M2 by
 // design. S6's 7.8× modeled arithmetic as raw Go ops, i.e. it already
-// assumed those rungs for the arithmetic; the honest v0 number is ~35×.
+// assumed those rungs for the arithmetic; the honest v0 number was ~35×.
 //
-// The hard limit below (60× locally, CLJGO_PERF_RATIO_MAX elsewhere — ADR
-// 0024) is a regression guard against the naive emission, not the budget;
-// tightening it to ~10× tracks the ladder.
+// ADR 0067 (emitter numeric type inference, 2026-07-23) landed exactly
+// those rungs for int64: fact's recursion now runs as a lifted
+// `func fnL_…(int64) int64` behind a `!rt.CoreDirty()` guard, and the
+// measured ratio fell to ~4.8×on darwin/arm64 — UNDER the ~10× M2 budget
+// for the first time.
+//
+// The hard limit below (15× locally, CLJGO_PERF_RATIO_MAX elsewhere — ADR
+// 0024) is a regression guard, not a target: ~3× headroom over the ~5×
+// measured, far under the ~35× boxed emission it would catch a regression
+// to, and generous against this gate's known denominator noise (see
+// perfRatioMax).
 func TestFactorialPerfBudget(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping perf measurement in -short mode")
@@ -136,13 +144,15 @@ func main() {
 	t.Logf("fact(15) x %d: emitted %v (startup %v), raw Go %v (startup %v) — ratio %.1fx (max %.0fx; see doc comment)",
 		iters, cljNet, cljIdle, rawNet, rawIdle, ratio, maxRatio)
 	if ratio > maxRatio {
-		t.Fatalf("emitted factorial is %.1fx handwritten Go — regression past the v0 floor (~35x measured; naive emission was ~168x)", ratio)
+		t.Fatalf("emitted factorial is %.1fx handwritten Go — regression past the ADR 0067 floor (~4.8x measured; boxed emission was ~35x, naive ~168x)", ratio)
 	}
 }
 
-// defaultPerfRatioMax is the local ceiling: ~35x is measured on the owner's
-// machine, so 60x leaves real headroom before the gate fires.
-const defaultPerfRatioMax = 60
+// defaultPerfRatioMax is the local ceiling: ~4.8x is measured on the
+// owner's machine with ADR 0067 numeric inference, so 15x leaves ~3x
+// headroom before the gate fires while still catching a regression to the
+// ~35x boxed emission (or the ~168x naive one) outright.
+const defaultPerfRatioMax = 15
 
 // perfRatioMax is the emitted-vs-handwritten-Go ceiling, overridable via
 // CLJGO_PERF_RATIO_MAX.

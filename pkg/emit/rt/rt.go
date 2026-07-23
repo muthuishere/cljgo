@@ -58,6 +58,15 @@ var (
 // liveness escape hatch is preserved, not reversed.
 func coreArithDirty() bool { return lang.CoreArithDirty.Load() }
 
+// CoreDirty is the exported form of the same flag load, for the ADR 0067
+// unboxed-region entry guards: the emitter wraps every typed int64 region
+// (a specialized fn's fast path, a lifted typed func's call guard, a
+// dual-emitted typed loop) in `if !rt.CoreDirty() { … }`, falling through
+// to the boxed emission — whose Add2/Sub2/… helpers re-check the flag per
+// call — when core arithmetic has been redefined. One relaxed atomic.Bool
+// load, the same near-free cost ADR 0066 measured.
+func CoreDirty() bool { return lang.CoreArithDirty.Load() }
+
 // Boot initializes the runtime exactly once: the Go builtins into
 // clojure.core (corelib.RegisterAll), then the AOT-compiled core — the
 // same sources in the same order as the interpreter's boot, as compiled
