@@ -4,7 +4,7 @@
 (ns conf.hostdemo)
 
 (def platform
-  #?(:clj "jvm" :cljs "cljs" :cljgo "cljgo" :default "other"))
+  #?(:clj "jvm" :cljs "cljs" :cljr "clr" :cljgo "cljgo" :default "other"))
 
 (def fallback
   #?(:clj "jvm-only" :default "fallback"))
