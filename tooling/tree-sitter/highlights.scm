@@ -70,6 +70,95 @@
   (#match? @function.method "^[A-Za-z_].*\\.$"))
 
 ;; ---------------------------------------------------------------------------
+;; Result / Option track (ADR 0014). Per the precedence principle these are
+;; NEW names chosen to avoid shadowing clojure.core (`some` stays Clojure's,
+;; hence `just`/`none`). Constructors, predicates and the unwrapper are
+;; ordinary core vars (pkg/corelib/builtins.go).
+;; ---------------------------------------------------------------------------
+(list_lit
+  .
+  (sym_lit
+    !namespace
+    name: (sym_name) @function.builtin
+    (#match? @function.builtin "^(ok|err|just|unwrap|ok\\?|err\\?|just\\?|none\\?|result\\?|option\\?)$")))
+
+;; `none` is a value, not a call, so it is matched as a bare symbol. Caveat:
+;; a local binding named `none` is captured too — acceptable, and shadowing a
+;; core var is discouraged by the precedence principle anyway.
+((sym_lit
+   !namespace
+   name: (sym_name) @constant.builtin)
+  (#eq? @constant.builtin "none"))
+
+;; ---------------------------------------------------------------------------
+;; Reader conditionals (ADR 0036 / 0050). cljgo is its OWN platform: its
+;; reader feature is `:cljgo`, never `:clj` (pkg/reader/readcond.go) —
+;; `:default` is the always-matching fallback. Highlighting the branch
+;; selectors makes it obvious which arm cljgo takes in a `.cljc` file.
+;; ---------------------------------------------------------------------------
+;; Selecting form #?(…) and the splicing form #?@(…) are separate nodes in
+;; tree-sitter-clojure, so both need a pattern.
+(read_cond_lit
+  (kwd_lit
+    name: (kwd_name) @keyword
+    (#match? @keyword "^(cljgo|default)$")))
+
+(splicing_read_cond_lit
+  (kwd_lit
+    name: (kwd_name) @keyword
+    (#match? @keyword "^(cljgo|default)$")))
+
+;; ---------------------------------------------------------------------------
+;; core.async on Go channels (ADR 0040). `go` bodies are real goroutines (no
+;; IOC transform), and the M4-v0 surface is refer'd into clojure.core, so
+;; these read as builtins in ordinary code.
+;;
+;; `go` / `go-loop` and the alt macros are control flow -> @keyword.
+;; ---------------------------------------------------------------------------
+(list_lit
+  .
+  (sym_lit
+    !namespace
+    name: (sym_name) @keyword
+    (#match? @keyword "^(go|go\\*|go-loop|thread|alt!|alt!!)$")))
+
+;; Channel ops, buffers, and the pipeline/mult/mix/pub families.
+;;
+;; DELIBERATELY EXCLUDED: map, merge, reduce, take, into, transduce. Those
+;; are clojure.core.async names that shadow clojure.core, and the stock
+;; Clojure queries already color them — matching here would fight upstream.
+(list_lit
+  .
+  (sym_lit
+    !namespace
+    name: (sym_name) @function.builtin
+    (#match? @function.builtin "^(<!|<!!|>!|>!!|alts!|alts!!|put!|take!|poll!|offer!|close!|chan|timeout|thread-call|promise-chan|buffer|dropping-buffer|sliding-buffer|unblocking-buffer\\?|pipe|pipeline|pipeline-async|pipeline-blocking|split|mult|tap|untap|untap-all|mix|admix|unmix|unmix-all|solo-mode|toggle|pub|sub|unsub|unsub-all|to-chan|to-chan!|to-chan!!|onto-chan|onto-chan!|onto-chan!!)$")))
+
+;; Namespaced use of the same surface: (async/<! c), (a/chan 8), (async/go …)
+(sym_lit
+  namespace: (sym_ns) @_async_ns
+  name: (sym_name) @function.builtin
+  (#match? @_async_ns "^(async|a|clojure\\.core\\.async)$"))
+
+;; ---------------------------------------------------------------------------
+;; bri routing (ADR 0069): Compojure-style routes. `defroute`/`defroutes` are
+;; macros; the all-caps method names are ordinary fns in head position
+;; (core/bri/http.cljg).
+;; ---------------------------------------------------------------------------
+(list_lit
+  .
+  (sym_lit
+    !namespace
+    name: (sym_name) @keyword
+    (#match? @keyword "^defroutes?$")))
+
+(list_lit
+  .
+  (sym_lit
+    name: (sym_name) @function.builtin
+    (#match? @function.builtin "^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|ANY)$")))
+
+;; ---------------------------------------------------------------------------
 ;; #"" regex literals are RE2 in cljgo (not java.util.regex)
 ;; ---------------------------------------------------------------------------
 (regex_lit) @string.regexp

@@ -1,0 +1,74 @@
+(ns examples.async
+  "ADR 0040 — clojure.core.async on real Go channels."
+  (:require [clojure.core.async :as async]))
+
+;; Channel construction and buffers.
+(def events (chan 16))
+(def latest (chan (sliding-buffer 1)))
+(def lossy (chan (dropping-buffer 32)))
+(def once (promise-chan))
+
+;; go bodies are real goroutines — no IOC transform, so <! / >! are legal
+;; on any goroutine (ADR 0040 #5).
+(go
+  (>! events {:kind :started})
+  (let [v (<! events)]
+    (println "got" v)))
+
+(go-loop [n 0]
+  (when-let [v (<! events)]
+    (println n v)
+    (recur (inc n))))
+
+;; Blocking variants are aliases of the parking ones here.
+(defn drain! []
+  (loop [acc []]
+    (if-let [v (<!! events)]
+      (recur (conj acc v))
+      acc)))
+
+;; alts! / alt! with a timeout.
+(defn recv-or-timeout [c ms]
+  (let [[v port] (alts! [c (timeout ms)])]
+    (if (= port c) [:ok v] [:timeout nil])))
+
+(defn select-one [a b]
+  (alt!
+    a ([v] [:a v])
+    b ([v] [:b v])
+    (timeout 1000) [:timeout nil]))
+
+;; Non-blocking ops.
+(defn try-send! [c v]
+  (offer! c v))
+
+(defn try-recv! [c]
+  (poll! c))
+
+(put! events {:kind :async} (fn [ok?] (println "delivered" ok?)))
+(take! events (fn [v] (println "took" v)))
+
+;; Pipelines, mult/tap, mix, pub/sub.
+(def out (chan 8))
+(pipeline 4 out (map inc) events)
+(pipeline-blocking 2 out (map slurp) events)
+
+(def m (mult events))
+(tap m out)
+(untap m out)
+
+(def mx (mix out))
+(admix mx events)
+(toggle mx {events {:mute true}})
+(solo-mode mx :pause)
+
+(def p (pub events :kind))
+(sub p :started out)
+(unsub p :started out)
+
+(thread (Thread/sleep 10))
+(close! events)
+
+;; Namespaced use resolves the same vars.
+(defn ns-qualified []
+  (async/go (async/<! (async/timeout 5))))

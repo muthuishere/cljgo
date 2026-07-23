@@ -1,0 +1,35 @@
+(ns examples.routes
+  "ADR 0069 — bri's Compojure-style routing and reader conditionals."
+  (:require [bri.http :as http])
+  (:require-go [net/http :as nethttp]))
+
+;; Route table. defroutes is a macro; the all-caps method names are fns.
+(defroutes api
+  (GET "/health" [] (http/ok {:ok true}))
+  (GET "/users/:id" [id] (http/ok (find-user id)))
+  (POST "/users" {body :body} (http/created (create-user body)))
+  (PUT "/users/:id" [id body] (http/ok (replace-user id body)))
+  (PATCH "/users/:id" [id body] (http/ok (update-user id body)))
+  (DELETE "/users/:id" [id] (http/no-content))
+  (HEAD "/health" [] (http/ok nil))
+  (OPTIONS "/users" [] (http/ok nil))
+  (ANY "/*" [] (http/not-found)))
+
+;; A single route, defined on its own.
+(defroute metrics
+  (GET "/metrics" [] (http/ok (collect-metrics))))
+
+;; Reader conditionals: cljgo's platform feature is :cljgo, never :clj.
+;; :default is the always-matching fallback.
+(def platform
+  #?(:cljgo :go
+     :clj   :jvm
+     :cljs  :browser
+     :default :unknown))
+
+;; Splicing form.
+(def middleware
+  [#?@(:cljgo [http/cors http/rate-limit])])
+
+;; #"" is RE2 in cljgo — linear time, no backtracking.
+(def id-pattern #"^[0-9a-f]{8}$")

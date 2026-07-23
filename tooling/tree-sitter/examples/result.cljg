@@ -1,0 +1,29 @@
+(ns examples.result
+  "ADR 0014 — the Result/Option track and its railway binding form.")
+
+;; Constructors. Per the precedence principle the Option side is just/none,
+;; NOT some/none — `some` stays clojure.core's.
+(def found (just 42))
+(def missing none)
+(def happy (ok {:status 200}))
+(def sad (err "upstream timed out"))
+
+;; Predicates over both tracks.
+(defn describe [x]
+  (cond
+    (ok? x) [:ok (unwrap x)]
+    (err? x) [:err (unwrap x)]
+    (just? x) [:just (unwrap x)]
+    (none? x) [:none nil]
+    :else [:plain x]))
+
+(defn tracked? [x]
+  (or (result? x) (option? x)))
+
+;; let? is the railway binding form: an err/none value short-circuits the
+;; WHOLE form to that value; ok/just values arrive unwrapped.
+(defn user-city [db id]
+  (let? [u (fetch-user db id)
+         addr (:address u)
+         city (:city addr)]
+    (ok city)))
