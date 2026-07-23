@@ -176,3 +176,33 @@ func TestResumeRoundTrip(t *testing.T) {
 		t.Fatalf("replay did not restore x (want 100), out=%q errOut=%q", out.String(), errOut.String())
 	}
 }
+
+// The command-line form: `cljgo repl :resume <id>` sets ResumeID, and Run
+// must replay the journal on boot — before the first prompt — exactly as
+// typing `:resume <id>` would. This is the fix for the goodbye line
+// promising a shell command the CLI used to drop on the floor.
+func TestResumeIDReplaysOnBoot(t *testing.T) {
+	home := t.TempDir()
+	setHome(t, home)
+	t.Setenv("CLJGO_SESSION", "1")
+
+	a, _, _ := newSession("(def y 41)\n")
+	if err := a.Run(); err != nil {
+		t.Fatalf("Run A: %v", err)
+	}
+	id := a.SessionID()
+
+	// Session B never types :resume — it is set as ResumeID, the way the
+	// CLI wires `cljgo repl :resume <id>`.
+	b, out, errOut := newSession("(+ y 1)\n")
+	b.ResumeID = id
+	if err := b.Run(); err != nil {
+		t.Fatalf("Run B: %v", err)
+	}
+	if !strings.Contains(out.String(), "resumed session "+id) {
+		t.Fatalf("ResumeID did not replay on boot, out=%q", out.String())
+	}
+	if !strings.Contains(out.String(), "42") {
+		t.Fatalf("boot replay did not restore y (want 42), out=%q errOut=%q", out.String(), errOut.String())
+	}
+}

@@ -48,7 +48,11 @@ func (d *Driver) farewell() {
 	d.outMu.Lock()
 	defer d.outMu.Unlock()
 	if d.journalFile != nil {
-		fmt.Fprintf(d.out, "Goodbye! Resume this session with :resume %s\n", d.sessionID)
+		// Show the exact shell command (it works as a CLI arg now) plus the
+		// in-REPL form — the old wording read as a shell command the CLI
+		// used to ignore.
+		fmt.Fprintf(d.out, "Goodbye! Resume this session with:  cljgo repl :resume %s\n", d.sessionID)
+		fmt.Fprintf(d.out, "  (or type  :resume %s  at the prompt)\n", d.sessionID)
 		return
 	}
 	fmt.Fprintln(d.out, "Goodbye!")

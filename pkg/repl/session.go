@@ -9,6 +9,7 @@
 package repl
 
 import (
+	"bufio"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -17,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -86,9 +88,52 @@ func (d *Driver) journalWriter() io.Writer {
 			d.reportError(fmt.Errorf("session journal disabled: %v", err))
 			return nil
 		}
+		// A fresh journal records the working directory as a header comment
+		// (ADR 0070): `:sessions` shows which folder a session belongs to,
+		// and :resume cds back into it so requires/loads resolve as they did.
+		// A comment, so the reader skips it on replay.
+		if fi, _ := f.Stat(); fi != nil && fi.Size() == 0 {
+			if wd, err := os.Getwd(); err == nil {
+				fmt.Fprintf(f, ";; cljgo session %s dir=%s\n\n", d.sessionID, wd)
+			}
+		}
 		d.journalFile = f
 	}
 	return d.journalFile
+}
+
+// journalDir extracts the working directory recorded in a journal's header
+// (ADR 0070), or "" for a journal written before headers existed.
+func journalDir(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	sc := bufio.NewScanner(f)
+	for i := 0; sc.Scan() && i < 5; i++ { // the header is line 1
+		line := sc.Text()
+		if idx := strings.Index(line, " dir="); strings.HasPrefix(line, ";;") && idx >= 0 {
+			return strings.TrimSpace(line[idx+len(" dir="):])
+		}
+	}
+	return ""
+}
+
+// prettyPath abbreviates $HOME to ~ for display.
+func prettyPath(p string) string {
+	if p == "" {
+		return "(unknown)"
+	}
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		if p == home {
+			return "~"
+		}
+		if strings.HasPrefix(p, home+string(os.PathSeparator)) {
+			return "~" + p[len(home):]
+		}
+	}
+	return p
 }
 
 // journalSuccess appends one successful top-level form. Written BEFORE
@@ -151,43 +196,97 @@ func (d *Driver) sessionCommand(line string) bool {
 		d.listSessions()
 		return true
 	case ":resume":
-		if len(fields) != 2 {
-			d.reportError(errors.New("usage: :resume <id>"))
-			return true
+		switch len(fields) {
+		case 1:
+			d.listSessions() // no id → show the table (same as :sessions)
+		case 2:
+			d.resumeSession(fields[1]) // an id or a listing index
+		default:
+			d.reportError(errors.New("usage: :resume [<#-or-id>]"))
 		}
-		d.resumeSession(fields[1])
 		return true
 	}
 	return false
 }
 
-// listSessions prints id, last-active and form count for every saved
-// journal, oldest first (ids are sortable by construction).
-func (d *Driver) listSessions() {
-	entries, err := os.ReadDir(sessionsDir())
-	var ids []string
+// ListSessions is the exported entry point for `cljgo repl :resume` /
+// `:sessions` with no id — print the saved-session table and return.
+func (d *Driver) ListSessions() { d.listSessions() }
+
+// sessionIDs returns every saved session id ordered NEWEST-FIRST by
+// last-active (file mtime) — the order the listing prints and the order
+// `:resume <#>` indexes, so what you see is what you resume. mtime beats
+// id-sorting because two sessions in the same second get random id
+// suffixes; recency is the honest "newest".
+func sessionIDs() []string {
+	entries, _ := os.ReadDir(sessionsDir())
+	type sess struct {
+		id  string
+		mod time.Time
+	}
+	var ss []sess
 	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".journal") {
-			ids = append(ids, strings.TrimSuffix(e.Name(), ".journal"))
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".journal") {
+			continue
 		}
+		var mod time.Time
+		if info, err := e.Info(); err == nil {
+			mod = info.ModTime()
+		}
+		ss = append(ss, sess{strings.TrimSuffix(e.Name(), ".journal"), mod})
 	}
-	if err != nil || len(ids) == 0 {
-		d.outMu.Lock()
-		fmt.Fprintln(d.out, "no saved sessions")
-		d.outMu.Unlock()
-		return
+	sort.Slice(ss, func(i, j int) bool {
+		if ss[i].mod.Equal(ss[j].mod) {
+			return ss[i].id > ss[j].id // stable tiebreak: newer id first
+		}
+		return ss[i].mod.After(ss[j].mod)
+	})
+	ids := make([]string, len(ss))
+	for i, s := range ss {
+		ids[i] = s.id
 	}
-	sort.Strings(ids)
+	return ids
+}
+
+// resolveSessionRef turns a user reference into a session id: a small
+// all-digit ref (1..9999) is a 1-based index into the newest-first list the
+// listing prints; anything else is treated as a literal id. Returns "" when
+// an index is out of range (a literal id is returned as-is and validated by
+// the caller opening its journal).
+func resolveSessionRef(ref string) string {
+	if n, err := strconv.Atoi(ref); err == nil && len(ref) <= 4 {
+		ids := sessionIDs() // newest-first
+		if n >= 1 && n <= len(ids) {
+			return ids[n-1]
+		}
+		return ""
+	}
+	return ref
+}
+
+// listSessions prints a numbered, newest-first table — index, id, folder,
+// last-active, form count — plus a resume hint. The index means you resume
+// with `:resume 1` instead of copying a long id (ADR 0070 UX).
+func (d *Driver) listSessions() {
+	ids := sessionIDs()
 	d.outMu.Lock()
 	defer d.outMu.Unlock()
-	for _, id := range ids {
+	if len(ids) == 0 {
+		fmt.Fprintln(d.out, "no saved sessions yet — start a REPL and define something.")
+		return
+	}
+	fmt.Fprintln(d.out, "sessions (newest first):")
+	fmt.Fprintf(d.out, "  %-3s %-22s %-30s %-16s %s\n", "#", "id", "folder", "last active", "forms")
+	for i, id := range ids {
 		path := d.journalPath(id)
 		lastActive := "?"
 		if fi, err := os.Stat(path); err == nil {
 			lastActive = fi.ModTime().Format("2006-01-02 15:04")
 		}
-		fmt.Fprintf(d.out, "%s  last-active %s  %d forms\n", id, lastActive, d.countJournalForms(path))
+		fmt.Fprintf(d.out, "  %-3d %-22s %-30s %-16s %d\n",
+			i+1, id, prettyPath(journalDir(path)), lastActive, d.countJournalForms(path))
 	}
+	fmt.Fprintln(d.out, "resume with:  cljgo repl :resume <#>   (or the id)")
 }
 
 // countJournalForms counts the replayable forms in a journal by reading
@@ -215,12 +314,32 @@ func (d *Driver) countJournalForms(path string) int {
 // session's journaling to that id. Replay results are not printed and
 // replayed forms are not re-journaled. Runs on Run's goroutine, under
 // the session frame, so in-ns during replay moves the prompt as usual.
-func (d *Driver) resumeSession(id string) {
+func (d *Driver) resumeSession(ref string) {
+	id := resolveSessionRef(ref)
+	if id == "" {
+		d.reportError(fmt.Errorf("no session %q — run `cljgo repl :resume` to list them", ref))
+		return
+	}
 	path := d.journalPath(id)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		d.reportError(fmt.Errorf("no session %s (%v)", id, err))
 		return
+	}
+	// "Come back as it is" (ADR 0070): cd into the folder the session was
+	// started in BEFORE replay, so requires/loads and relative paths resolve
+	// exactly as they did. Done before reading forms; a missing folder is a
+	// note, not a failure (the vars still replay).
+	dir := journalDir(path)
+	movedTo := ""
+	if dir != "" {
+		if err := os.Chdir(dir); err == nil {
+			movedTo = dir
+		} else {
+			d.outMu.Lock()
+			fmt.Fprintf(d.out, "note: session folder %s is gone (%v); resuming in place.\n", prettyPath(dir), err)
+			d.outMu.Unlock()
+		}
 	}
 	rd := reader.New(strings.NewReader(string(data)), reader.WithFilename(path),
 		reader.WithResolver(d.ev.ReaderResolver()))
@@ -249,6 +368,9 @@ func (d *Driver) resumeSession(id string) {
 	fmt.Fprintf(d.out, "resumed session %s: %d forms replayed", id, replayed)
 	if failed > 0 {
 		fmt.Fprintf(d.out, " (%d failed)", failed)
+	}
+	if movedTo != "" {
+		fmt.Fprintf(d.out, " — in %s", prettyPath(movedTo))
 	}
 	fmt.Fprintln(d.out)
 	fmt.Fprintln(d.out, "note: running goroutines, open channels and native handles do not survive resume; re-run the forms that created them.")

@@ -51,7 +51,7 @@ func run(args []string) int {
 	}
 	switch args[0] {
 	case "repl":
-		return runREPL()
+		return runREPL(args[1:])
 	case "nrepl":
 		return runNREPL(args[1:])
 	case "run":
@@ -102,10 +102,48 @@ func run(args []string) int {
 	}
 }
 
-func runREPL() int {
+// replAction is the parsed intent of `cljgo repl`'s arguments: resume a
+// session (resumeID set), just list the saved sessions (list), or start a
+// plain REPL (both zero). Pure so it is unit-testable without a stdin loop.
+type replAction struct {
+	resumeID string // a session id or listing index to resume on boot
+	list     bool   // print the sessions table and exit
+}
+
+// parseReplArgs maps `cljgo repl [args]` to an action. exit >= 0 means print
+// the usage error and return that code; exit == -1 means proceed.
+func parseReplArgs(args []string) (act replAction, exit int) {
+	switch {
+	case len(args) == 0:
+		return replAction{}, -1
+	case len(args) == 1 && (args[0] == ":resume" || args[0] == ":sessions"):
+		return replAction{list: true}, -1
+	case len(args) == 2 && args[0] == ":resume":
+		return replAction{resumeID: args[1]}, -1
+	case len(args) == 1 && args[0] != ":resume":
+		return replAction{resumeID: args[0]}, -1
+	default:
+		return replAction{}, 2
+	}
+}
+
+func runREPL(args []string) int {
+	// `cljgo repl :resume <id-or-#>` (or a bare `cljgo repl <id-or-#>`)
+	// resumes a saved session on boot; `:resume` / `:sessions` with no id
+	// lists the saved sessions and exits. See parseReplArgs.
+	act, exit := parseReplArgs(args)
+	if exit >= 0 {
+		fmt.Fprintln(os.Stderr, "usage: cljgo repl [:resume [<#-or-id>]]")
+		return exit
+	}
 	d := repl.New(os.Stdin, os.Stdout, os.Stderr)
 	d.Prompts = isTerminal(os.Stdin)
 	d.Interactive = d.Prompts
+	if act.list {
+		d.ListSessions()
+		return 0
+	}
+	d.ResumeID = act.resumeID
 	if d.Prompts {
 		fmt.Println(banner())
 	}
