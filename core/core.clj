@@ -1946,20 +1946,3 @@
         (do (require (symbol (namespace sym)))
             (resolve sym)))
     (throw (ex-info (str "Not a qualified symbol: " sym) {:sym sym}))))
-
-;; .. : chained member access — (.. x f (g a) h) threads x through each
-;; member form left to right. The JVM macro expands to the bare `.`
-;; special form ((. (. (. x f) (g a)) h)); cljgo has no bare `.`, so each
-;; step expands directly to the dot-method/dot-field operator form the
-;; analyzer DOES implement ((.f x) / (.-fld x), ADR 0010) — same
-;; semantics, cljgo's interop spelling. A `-fld` member symbol becomes
-;; field access (.-fld x), as on the JVM.
-;; oracle (clojure 1.12.5, 2026-07-23):
-;; (.. "abc" toUpperCase (substring 1) length) => 2
-(defmacro .. [x form & more]
-  (let [call (if (seq? form)
-               (cons (symbol (str "." (name (first form)))) (cons x (next form)))
-               (list (symbol (str "." (name form))) x))]
-    (if more
-      (list* 'clojure.core/.. call more)
-      call)))
