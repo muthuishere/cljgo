@@ -1,5 +1,8 @@
 # ADR 0071 — bri apps AOT-compile to a single static binary, deployable as a minimal Docker image
-Date: 2026-07-24 · Status: proposed (owner-directed; spike s45 gates it)
+Date: 2026-07-24 · Status: accepted (spike s45 VERDICT ratified — compiled
+bri.http ~78k req/s / 15.5 MB / ~30 ms cold-start dominates JVM Clojure web:
+~55× smaller image, ~40–55× faster start, ~22–30× less memory; dual-mode
+parity byte-identical, full conformance green. Shipped in v0.4.0.)
 
 ## Context
 cljgo's identity is a **single, static, CGO_ENABLED=0 native binary** — ~5 MB,

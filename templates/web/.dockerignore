@@ -1,0 +1,8 @@
+# Keep the build context (and the final image) small.
+.git
+.gitignore
+/newapp
+*.log
+.nrepl-port
+Dockerfile
+.dockerignore
