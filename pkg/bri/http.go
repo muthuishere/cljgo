@@ -57,6 +57,8 @@ var (
 	kwMethod        = lang.NewKeyword("method")
 	kwPath          = lang.NewKeyword("path")
 	kwDirMarker     = lang.NewKeyword("bri.http/dir")
+	kwPathParams    = lang.NewKeyword("path-params")
+	kwRoutePattern  = lang.NewKeyword("bri.http/route")
 )
 
 // installHTTPShims interns bri.http's private Go primitives.
@@ -94,7 +96,30 @@ func installHTTPShims(def func(name string, fn func(args ...any) any)) {
 	def("-now-millis", func(args ...any) any { return time.Now().UnixMilli() })
 	def("-getenv", getenvShim)
 	def("-result-payload", func(args ...any) any { return lang.ResultPayload(one("-result-payload", args)) })
+	// observability: metrics registry (observability.go)
+	def("-metrics-observe", func(args ...any) any {
+		if len(args) != 3 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -metrics-observe", len(args)))
+		}
+		metricsObserve(asString(args[0]), asInt(args[1]), asFloat(args[2]))
+		return nil
+	})
+	def("-metrics-render", func(args ...any) any { return metricsRender() })
+	def("-metrics-reset", func(args ...any) any { metricsReset(); return nil })
+	// client identity: proxy-aware IP resolver (client-ip.go)
+	def("-client-ip", func(args ...any) any {
+		if len(args) != 4 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -client-ip", len(args)))
+		}
+		return clientIP(asString(args[0]), asString(args[1]), asString(args[2]), args[3])
+	})
+	// reverse routing (path-for / url-for)
+	def("-url-encode", func(args ...any) any { return url.QueryEscape(asString(one("-url-encode", args))) })
+	def("-path-escape", func(args ...any) any { return url.PathEscape(asString(one("-path-escape", args))) })
 }
+
+// nowMillis is the shared clock the observability shims read.
+func nowMillis() int64 { return time.Now().UnixMilli() }
 
 // installConfigShims interns bri.config's private Go primitives.
 func installConfigShims(def func(name string, fn func(args ...any) any)) {
@@ -211,12 +236,12 @@ func adapt(pattern string, ifn lang.IFn) http.HandlerFunc {
 				io.WriteString(w, "internal error")
 			}
 		}()
-		res := lang.Apply(ifn, []any{requestMap(r, names)})
+		res := lang.Apply(ifn, []any{requestMap(r, names, pattern)})
 		writeResponse(w, res)
 	}
 }
 
-func requestMap(r *http.Request, paramNames []string) any {
+func requestMap(r *http.Request, paramNames []string, pattern string) any {
 	params := []any{}
 	for _, p := range paramNames {
 		params = append(params, lang.NewKeyword(p), r.PathValue(p))
@@ -236,15 +261,18 @@ func requestMap(r *http.Request, paramNames []string) any {
 		b, _ := io.ReadAll(io.LimitReader(r.Body, 10<<20)) // 10 MiB request cap
 		body = string(b)
 	}
+	pm := lang.NewMap(params...)
 	return lang.NewMap(
 		kwRequestMethod, lang.NewKeyword(strings.ToLower(r.Method)),
 		kwURI, r.URL.Path,
 		kwQueryString, r.URL.RawQuery,
 		kwHeaders, lang.NewMap(headers...),
-		kwParams, lang.NewMap(params...),
+		kwParams, pm,
+		kwPathParams, pm, // Compojure-ish alias; :params kept for back-compat
 		kwQueryParams, lang.NewMap(query...),
 		kwBody, body,
 		kwRemoteAddr, r.RemoteAddr,
+		kwRoutePattern, pattern, // low-cardinality label for metrics/logging
 	)
 }
 
@@ -381,6 +409,9 @@ func requestShim(args ...any) any {
 		body = strings.NewReader(b)
 	}
 	req := httptest.NewRequest(method, path, body)
+	if ra, ok := lang.Get(reqMap, kwRemoteAddr).(string); ok && ra != "" {
+		req.RemoteAddr = ra // let tests drive client-ip / rate-limit / auto-ban keying
+	}
 	for s := lang.Seq(lang.Get(reqMap, kwHeaders)); s != nil; s = lang.Next(s) {
 		entry := lang.First(s)
 		k, kok := lang.First(entry).(string)

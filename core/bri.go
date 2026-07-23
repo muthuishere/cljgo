@@ -27,3 +27,18 @@ var BriHTMLSource string
 //
 //go:embed bri/config.cljg
 var BriConfigSource string
+
+// BriAuditSource is core/bri/audit.cljg — bri.audit: the security
+// audit trail (actor/action/target/ts/severity), structured-stderr
+// sink v1 with a clean one-fn seam (ADR 0069).
+//
+//go:embed bri/audit.cljg
+var BriAuditSource string
+
+// BriAuthSource is core/bri/auth.cljg — bri.auth: HS256 JWT (sign/
+// verify/issue, alg pinned), argon2id passwords, the composable guard
+// family (guard/logged-in-only/role-only/user-only/admin-only) and
+// abuse protection (auto-ban), all Ring middleware (ADR 0069).
+//
+//go:embed bri/auth.cljg
+var BriAuthSource string

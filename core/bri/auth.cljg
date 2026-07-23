@@ -1,0 +1,219 @@
+;; bri.auth — API-first security in ONE blessed way (ADR 0069). JWT
+;; HS256 (algorithm PINNED server-side — the token's own alg header is
+;; never trusted), argon2id passwords (bcrypt-verify for legacy), a
+;; composable guard family that is plain Ring middleware (handler ->
+;; handler, so `->` composes them), and abuse protection (auto-ban).
+;; Every security decision (401/403/ban/token-issued) is audited.
+;;
+;; Perf (spike s44, Apple M5 Pro): sign ~350 ns, verify ~760 ns (both
+;; 2-3x faster + a third of the allocs vs golang-jwt/v5); the guard
+;; chain composes in ~10 ns/0-alloc, one token verify (~900 ns) per
+;; request. argon2id is DELIBERATELY ~16 ms — slow is correct for
+;; passwords; never SIMD-fast.
+;;
+;; Private Go shims interned before this loads: -jwt-sign -jwt-verify
+;; -argon2-hash -argon2-verify -bcrypt-verify -rand-token -now-millis
+;; -getenv.
+(clojure.core/in-ns 'bri.auth)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+(require '[bri.audit :as audit])
+(require '[bri.http :as http])
+
+;; --- secret resolution -------------------------------------------------
+;; APP_AUTH__SECRET is the one knob (secrets-are-env doctrine). With none
+;; set, a per-process random key: sign+verify agree within a run, but
+;; tokens do not survive a restart — dev-grade, and prod MUST set it.
+(def ^:private process-secret (delay (or (-getenv "APP_AUTH__SECRET") (-rand-token))))
+
+(defn ^:private resolve-secret [opts]
+  (or (:secret opts) @process-secret))
+
+(defn ^:private now-seconds [opts]
+  (or (:now opts) (quot (-now-millis) 1000)))
+
+;; --- JWT sign / verify -------------------------------------------------
+(defn sign
+  "Sign claims into an HS256 token. iat and exp are injected (exp =
+  iat + :exp-seconds, default 3600). Options: :exp-seconds, :secret
+  (defaults from APP_AUTH__SECRET), :now (epoch seconds, for tests).
+  One call is the common case: (sign {:sub \"u\" :role \"admin\"})."
+  ([claims] (sign claims {}))
+  ([claims opts]
+   (let [now (now-seconds opts)
+         body (assoc claims :iat now :exp (+ now (or (:exp-seconds opts) 3600)))]
+     (-jwt-sign (resolve-secret opts) body))))
+
+(defn verify
+  "Verify an HS256 token: returns the claims map, or nil on a bad
+  signature, wrong algorithm, malformed token, or expiry. The algorithm
+  is pinned in the Go verifier; exp is checked here against :now (epoch
+  seconds, default wall-clock) so tests freeze the clock."
+  ([token] (verify token {}))
+  ([token opts]
+   (let [claims (and (string? token) (-jwt-verify (resolve-secret opts) token))]
+     (when (map? claims)
+       (let [exp (:exp claims)]
+         (when (or (nil? exp) (< (now-seconds opts) exp))
+           claims))))))
+
+(defn verify!
+  "Like verify, but throws :auth/unauthorized (funnels to 401) instead of
+  returning nil (the ADR 0014 ! convention)."
+  ([token] (verify! token {}))
+  ([token opts]
+   (or (verify token opts)
+       (throw (ex-info "invalid or expired token" {:bri/error :auth/unauthorized})))))
+
+(defn subject
+  "The token subject (:sub) — the audit actor."
+  [claims]
+  (:sub claims))
+
+(defn issue
+  "Sign a token for a subject and AUDIT the issuance (login success).
+  (issue \"user-42\" {:role \"admin\"} {:exp-seconds 900})."
+  ([sub] (issue sub {} {}))
+  ([sub claims] (issue sub claims {}))
+  ([sub claims opts]
+   (let [tok (sign (assoc claims :sub sub) opts)]
+     (audit/record {:action :auth/token-issued :actor sub :severity :info})
+     tok)))
+
+;; --- password hashing (argon2id default, bcrypt compat) ----------------
+(defn hash-password
+  "argon2id hash (OWASP params) as a self-describing PHC string.
+  DELIBERATELY slow (~16 ms) — that is the anti-brute-force feature."
+  [pw]
+  (-argon2-hash pw))
+
+(defn check-password
+  "Verify a password against an argon2id ($argon2id$…) or legacy bcrypt
+  ($2a$/$2b$…) hash. Constant-time; false on any mismatch or unknown
+  format."
+  [pw hash]
+  (cond
+    (not (string? hash)) false
+    (str/starts-with? hash "$argon2") (-argon2-verify pw hash)
+    (str/starts-with? hash "$2")      (-bcrypt-verify pw hash)
+    :else false))
+
+;; --- guards (composable Ring middleware) -------------------------------
+(defn ^:private bearer [req]
+  (let [h (get (:headers req) "authorization")]
+    (when (and (string? h) (str/starts-with? h "Bearer "))
+      (subs h 7))))
+
+(defn ^:private authenticate
+  "Claims from the request: an already-populated :auth/claims, else the
+  Bearer token verified."
+  [req]
+  (or (:auth/claims req) (some-> (bearer req) verify)))
+
+(defn ^:private deny-401 [req]
+  (audit/record {:action :auth/denied :severity :warning :reason :unauthenticated
+                 :target (:uri req) :request/id (:request/id req)})
+  {:status 401 :body {:error "unauthorized"}})
+
+(defn ^:private deny-403 [req claims]
+  (audit/record {:action :auth/forbidden :severity :warning :reason :not-authorized
+                 :actor (subject claims) :target (:uri req) :request/id (:request/id req)})
+  {:status 403 :body {:error "forbidden"}})
+
+(defn ^:private wrap-guard [req-pred handler]
+  (fn [req]
+    (let [claims (authenticate req)]
+      (if (nil? claims)
+        (deny-401 req)
+        (let [req' (assoc req :auth/claims claims)]
+          (http/mark-subject! req' (subject claims))
+          (if (try (boolean (req-pred req')) (catch Throwable _ false))
+            (handler req')
+            (deny-403 req' claims)))))))
+
+(defn guard
+  "The GENERAL authorization guard and the framework's authz seam:
+  (guard req-pred) → middleware; (guard req-pred handler) → wrapped
+  handler. req-pred is (req -> boolean) with :auth/claims populated. No/
+  invalid token → 401; authenticated but pred false → 403 (RFC 6750).
+  logged-in-only / role-only / user-only / admin-only are all thin
+  specializations of this. Tenant check in one line:
+  (guard #(= (get-in % [:auth/claims :org]) (get-in % [:path-params :org])))."
+  ([req-pred] {:name :guard :wrap (fn [h] (wrap-guard req-pred h))})
+  ([req-pred handler] (wrap-guard req-pred handler)))
+
+(defn guard-claims
+  "guard whose predicate sees the CLAIMS map directly (the common case)."
+  ([claims-pred] (guard (fn [req] (claims-pred (:auth/claims req)))))
+  ([claims-pred handler] (guard (fn [req] (claims-pred (:auth/claims req))) handler)))
+
+(defn logged-in-only
+  "Require a valid token (any claims). 401 otherwise."
+  ([] (guard (fn [_] true)))
+  ([handler] (guard (fn [_] true) handler)))
+
+(defn role-only
+  "Require the token's :role to equal role. 401 (no token) or 403 (wrong
+  role)."
+  ([role] (guard-claims (fn [c] (= (name role) (str (:role c))))))
+  ([role handler] (guard-claims (fn [c] (= (name role) (str (:role c)))) handler)))
+
+(defn user-only
+  "Sugar: (role-only :user)."
+  ([] (role-only "user"))
+  ([handler] (role-only "user" handler)))
+
+(defn admin-only
+  "Sugar: (role-only :admin)."
+  ([] (role-only "admin"))
+  ([handler] (role-only "admin" handler)))
+
+;; --- abuse protection: auto-ban ----------------------------------------
+;; Escalating denial-abuse guard (distinct from http/rate-limit's plain
+;; throughput cap): after :threshold denials (401/403) inside :window-ms
+;; a client is BANNED for :cooldown-ms — banned requests short-circuit
+;; 429 + Retry-After BEFORE the handler runs, and every ban is audited.
+;; In-process TTL store (SINGLE-INSTANCE — behind a load balancer each
+;; node counts independently; swap :store for a shared bri.cache/Redis
+;; backing to make it cluster-wide). Keys on client IP by default
+;; (http/client-ip, proxy-aware) — pass {:key :subject} or a custom fn.
+(def ^:private ban-store (atom {}))
+
+(defn auto-ban
+  "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),
+  :cooldown-ms (300000), :key (:ip | :subject | (fn [req] key)),
+  :should-ban? ((fn [denial-count req] boolean) — custom ban policy),
+  :clock ((fn [] millis), for tests), :store (atom, for test isolation)."
+  ([] (auto-ban {}))
+  ([opts]
+   (let [threshold  (or (:threshold opts) 5)
+         window     (or (:window-ms opts) 60000)
+         cooldown   (or (:cooldown-ms opts) 300000)
+         clock      (or (:clock opts) (fn [] (-now-millis)))
+         store      (or (:store opts) ban-store)
+         key-opts   {:key (or (:key opts) :ip)}
+         should-ban? (or (:should-ban? opts) (fn [n _req] (>= n threshold)))]
+     {:name :auto-ban
+      :wrap (fn [handler]
+              (fn [req]
+                (let [ck  (http/client-key req key-opts)
+                      now (clock)
+                      st  (get @store ck)]
+                  (if (and st (:banned-until st) (< now (:banned-until st)))
+                    (do (audit/record {:action :auth/banned-request :actor ck :severity :warning
+                                       :cooldown-ms (- (:banned-until st) now)
+                                       :request/id (:request/id req)})
+                        {:status 429
+                         :headers {"retry-after" (str (max 1 (quot (- (:banned-until st) now) 1000)))}
+                         :body {:error "too many requests"}})
+                    (let [res (handler req)]
+                      (when (contains? #{401 403} (:status res))
+                        (let [recent (conj (filterv #(> % (- now window)) (:denials st []))
+                                           now)]
+                          (if (should-ban? (count recent) req)
+                            (do (reset! store (assoc @store ck {:denials [] :banned-until (+ now cooldown)}))
+                                (audit/record {:action :auth/auto-banned :actor ck :count (count recent)
+                                               :cooldown-ms cooldown :severity :warning
+                                               :request/id (:request/id req)}))
+                            (reset! store (assoc @store ck (assoc (or st {}) :denials recent))))))
+                      res)))))})))

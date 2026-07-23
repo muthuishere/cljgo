@@ -1,0 +1,55 @@
+;; bri.audit — the security-relevant trail, DISTINCT from access logs
+;; (ADR 0069 §Observability & audit). Grounded in the owner's reqsume
+;; kernel convention (ch04 runtime-config-and-notifications): an
+;; audience-aware, severity-driven event with an actor/action/target/ts
+;; shape and ONE fan-out seam. v1 sink is a structured line to stderr;
+;; the bri.db-backed audit table + SRE fan-out (notify.Send) is a T2
+;; follow-on — `set-sink!` is that seam, so app code and later tiers
+;; swap the destination without touching call sites.
+;;
+;; Private Go shims interned before this loads: -eprintln -json-encode
+;; -now-millis -getenv.
+(clojure.core/in-ns 'bri.audit)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+
+(defn ^:private dev? [] (= "1" (-getenv "BRI_DEV")))
+
+;; --- the sink seam (swap for DB + notify.Send fan-out in T2) ----------
+(def ^:dynamic *sink*
+  "When thread-bound, receives every event map (used by tests to capture
+  deterministically). nil = fall through to the process sink."
+  nil)
+
+(def ^:private process-sink (atom nil))
+
+(defn set-sink!
+  "Install the process-wide audit sink: a fn of the event map. The T2
+  seam — point it at bri.db + notify.Send. Passing nil restores the
+  default structured-stderr sink."
+  [f]
+  (reset! process-sink f))
+
+(defn ^:private default-sink [ev]
+  ;; dev: the readable map; prod: one JSON line (log-shipper friendly).
+  (if (dev?)
+    (-eprintln (pr-str ev))
+    (-eprintln (-json-encode ev))))
+
+;; --- record -----------------------------------------------------------
+(defn record
+  "Record ONE audit event. Merges a :ts (epoch millis), :kind :audit and
+  a default :severity :info; the caller supplies :action (required by
+  convention), :actor (subject or client key), :target, and any extra
+  keys. Returns the completed event. Routing: a thread-bound *sink* wins
+  (tests), else the process sink, else structured stderr."
+  [ev]
+  (let [event (merge {:ts (-now-millis) :kind :audit :severity :info} ev)
+        sink  (or *sink* @process-sink default-sink)]
+    (sink event)
+    event))
+
+(defn subject
+  "The audit actor for a claims map — the JWT subject."
+  [claims]
+  (:sub claims))
