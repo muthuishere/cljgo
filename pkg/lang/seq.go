@@ -98,7 +98,9 @@ func Seq(x interface{}) ISeq {
 		return NewGoMapSeq(x)
 	}
 
-	panic(NewCodedError("G5003", fmt.Sprintf("can't convert %T to ISeq", x)))
+	// Typed as the JVM's IllegalArgumentException ("Don't know how to
+	// create ISeq from: ...", oracle 1.12.5); message + G5003 unchanged.
+	panic(NewCodedIllegalArgumentError("G5003", fmt.Sprintf("can't convert %T to ISeq", x)))
 }
 
 func seqToSlice(s ISeq) []interface{} {

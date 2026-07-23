@@ -49,7 +49,10 @@ func internSeqBuiltins(def func(string, func(...any) any) *lang.Var) {
 		if len(args) == 3 {
 			return args[2]
 		}
-		panic(lang.NewCodedError("G5004", fmt.Sprintf("index %d out of bounds", idx)))
+		// Typed IndexOutOfBoundsError (JVM: IndexOutOfBoundsException,
+		// oracle 1.12.5); message stays byte-stable and the type's
+		// DiagCode keeps G5004.
+		panic(lang.NewIndexOutOfBoundsErrorMsg(fmt.Sprintf("index %d out of bounds", idx)))
 	})
 
 	// nthnext: (nthnext coll n) — the seq after n calls of next, or nil.
