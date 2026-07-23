@@ -93,8 +93,9 @@ func Compare(x, y any) int {
 		}
 	}
 
-	// Default error - cannot compare
-	panic(NewIllegalArgumentError(fmt.Sprintf("%T cannot be cast to Comparable", x)))
+	// Default error - cannot compare. Typed as the JVM's
+	// ClassCastException ((compare 1 :a) throws CCE, oracle 1.12.5).
+	panic(NewClassCastError("", fmt.Sprintf("%T cannot be cast to Comparable", x)))
 }
 
 // LenientCompare is like Compare but falls back to string comparison

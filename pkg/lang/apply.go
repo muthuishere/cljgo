@@ -99,6 +99,8 @@ func Apply0(fn interface{}) any {
 	switch f := fn.(type) {
 	case FnFunc0:
 		return f()
+	case *NamedFn0:
+		return f.F()
 	case FnFunc:
 		return f()
 	case IFn:
@@ -113,6 +115,8 @@ func Apply1(fn interface{}, a0 any) any {
 	switch f := fn.(type) {
 	case FnFunc1:
 		return f(a0)
+	case *NamedFn1:
+		return f.F(a0)
 	case FnFunc:
 		return f(a0)
 	case IFn:
@@ -127,6 +131,8 @@ func Apply2(fn interface{}, a0, a1 any) any {
 	switch f := fn.(type) {
 	case FnFunc2:
 		return f(a0, a1)
+	case *NamedFn2:
+		return f.F(a0, a1)
 	case FnFunc:
 		return f(a0, a1)
 	case IFn2:
@@ -145,6 +151,8 @@ func Apply3(fn interface{}, a0, a1, a2 any) any {
 	switch f := fn.(type) {
 	case FnFunc3:
 		return f(a0, a1, a2)
+	case *NamedFn3:
+		return f.F(a0, a1, a2)
 	case FnFunc:
 		return f(a0, a1, a2)
 	case IFn:
@@ -159,6 +167,8 @@ func Apply4(fn interface{}, a0, a1, a2, a3 any) any {
 	switch f := fn.(type) {
 	case FnFunc4:
 		return f(a0, a1, a2, a3)
+	case *NamedFn4:
+		return f.F(a0, a1, a2, a3)
 	case FnFunc:
 		return f(a0, a1, a2, a3)
 	case IFn:

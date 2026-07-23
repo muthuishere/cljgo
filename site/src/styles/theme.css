@@ -1,0 +1,107 @@
+/* ───────────────────────────────────────────────────────────────
+   cljgo docs theme — matches the hand-written landing page
+   (site/public/index.html): Go-cyan primary accent, Clojure-green
+   secondary, near-black charcoal dark / soft-neutral light,
+   Inter + JetBrains Mono.
+   ─────────────────────────────────────────────────────────────── */
+
+:root {
+	--sl-font: 'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+		'Segoe UI', Roboto, sans-serif;
+	--sl-font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular,
+		'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+	/* Wider content column — the right-hand ToC is disabled site-wide. */
+	--sl-content-width: 60rem;
+	/* Landing-page accents, exposed for reuse below. */
+	--cljgo-cyan: #22c3d6;
+	--cljgo-green: #5fc13b;
+}
+
+/* ── Dark theme (default): charcoal + Go-cyan ── */
+:root {
+	--sl-color-accent-low: #0d3a41;
+	--sl-color-accent: #22c3d6;
+	--sl-color-accent-high: #a7e9f1;
+
+	--sl-color-white: #f2f3f5;
+	--sl-color-gray-1: #e5e7eb;
+	--sl-color-gray-2: #c2c5cc;
+	--sl-color-gray-3: #a6a9b2;
+	--sl-color-gray-4: #71747d;
+	--sl-color-gray-5: #2a2c31;
+	--sl-color-gray-6: #17181c;
+	--sl-color-black: #121212;
+
+	--sl-color-bg: #121212;
+	--sl-color-bg-nav: #16171a;
+	--sl-color-bg-sidebar: #16171a;
+	--sl-color-bg-inline-code: #1c1e23;
+	--sl-color-hairline: #2a2c31;
+	--sl-color-hairline-light: #34373e;
+	--sl-color-text-accent: #57d7e6;
+}
+
+/* ── Light theme: soft neutral + deeper cyan ── */
+:root[data-theme='light'] {
+	--cljgo-cyan: #0b93a4;
+	--cljgo-green: #3f9e25;
+
+	--sl-color-accent-low: #cdeef3;
+	--sl-color-accent: #0b93a4;
+	--sl-color-accent-high: #06525c;
+
+	--sl-color-white: #14161b;
+	--sl-color-gray-1: #24272f;
+	--sl-color-gray-2: #4c5059;
+	--sl-color-gray-3: #7c808a;
+	--sl-color-gray-4: #8b8e96;
+	--sl-color-gray-5: #d5d9df;
+	--sl-color-gray-6: #f3f5f7;
+	--sl-color-gray-7: #f6f7f9;
+	--sl-color-black: #ffffff;
+
+	--sl-color-bg: #f6f7f9;
+	--sl-color-bg-nav: #ffffff;
+	--sl-color-bg-sidebar: #ffffff;
+	--sl-color-bg-inline-code: #eaebef;
+	--sl-color-hairline: #e3e6ea;
+	--sl-color-hairline-light: #d5d9df;
+	--sl-color-text-accent: #077a89;
+}
+
+/* Tighter, more confident headings — matches the landing page. */
+.sl-markdown-content h1,
+.content-panel h1 {
+	letter-spacing: -0.02em;
+}
+
+/* Active tab picks up the accent. */
+starlight-tabs [role='tab'][aria-selected='true'] {
+	color: var(--sl-color-text-accent);
+	border-color: var(--sl-color-accent);
+}
+
+/* ── Wide markdown tables — fit more before scrolling, then scroll ── */
+.sl-markdown-content table {
+	display: block;
+	width: max-content;
+	max-width: 100%;
+	overflow-x: auto;
+	font-size: 0.85rem;
+}
+.sl-markdown-content table :is(th, td) {
+	padding-block: 0.4rem;
+	padding-inline: 0.6rem;
+}
+
+/* ── Comments block under each page ── */
+.cljgo-comments {
+	margin-top: 3rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--sl-color-hairline);
+}
+.cljgo-comments .cljgo-comments-hint {
+	font-size: 0.85rem;
+	color: var(--sl-color-gray-3);
+	margin-bottom: 1rem;
+}

@@ -15,7 +15,32 @@ type (
 		msg string
 	}
 
-	IndexOutOfBoundsError struct{}
+	// IndexOutOfBoundsError is Java's IndexOutOfBoundsException (which on
+	// the JVM extends RuntimeException). msg == "" keeps the historical
+	// fixed wording; raise sites with a richer message set it.
+	IndexOutOfBoundsError struct{ msg string }
+
+	// ClassCastError is Java's ClassCastException (extends
+	// RuntimeException): a value used where another type was required —
+	// e.g. arithmetic on a non-number, compare on incomparables. Code
+	// carries an optional registered diagnostic code from the raise site.
+	ClassCastError struct {
+		Msg  string
+		Code string
+	}
+
+	// NullPointerError is Java's NullPointerException (extends
+	// RuntimeException): nil where a value was required — e.g. (inc nil).
+	NullPointerError struct {
+		Msg  string
+		Code string
+	}
+
+	// NumberFormatError is Java's NumberFormatException, which on the JVM
+	// extends IllegalArgumentException — its Is matches both, so a catch
+	// of IllegalArgumentException catches it (oracle 1.12.5, ADR 0039
+	// addendum).
+	NumberFormatError struct{ Msg string }
 
 	// CodedError is a runtime error that carries a registered diagnostic
 	// code chosen at the raise site (ADR 0048 batch 1). diag.FromError reads
@@ -29,7 +54,8 @@ type (
 	}
 
 	IllegalArgumentError struct {
-		msg string
+		msg  string
+		code string // optional registered diagnostic code ("" = none)
 	}
 
 	// ArityError is a wrong-number-of-args mismatch — Clojure's
@@ -119,7 +145,17 @@ func NewIndexOutOfBoundsError() error {
 	return &IndexOutOfBoundsError{}
 }
 
+// NewIndexOutOfBoundsErrorMsg builds an IndexOutOfBoundsError carrying a
+// raise-site message (e.g. "index 5 out of bounds"), typed so a
+// (catch IndexOutOfBoundsException e) clause matches it.
+func NewIndexOutOfBoundsErrorMsg(msg string) error {
+	return &IndexOutOfBoundsError{msg: msg}
+}
+
 func (e *IndexOutOfBoundsError) Error() string {
+	if e.msg != "" {
+		return e.msg
+	}
 	return "index out of bounds"
 }
 
@@ -146,13 +182,77 @@ func (e *CodedError) DiagCode() string { return e.Code }
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// NewClassCastError builds a ClassCastError; code may be "" when the raise
+// site has no registered diagnostic code.
+func NewClassCastError(code, msg string) error {
+	return &ClassCastError{Msg: msg, Code: code}
+}
+
+func (e *ClassCastError) Error() string { return e.Msg }
+
+// DiagCode implements the raise-site code seam diag.FromError reads.
+func (e *ClassCastError) DiagCode() string { return e.Code }
+
+func (e *ClassCastError) Is(other error) bool {
+	_, ok := other.(*ClassCastError)
+	return ok
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// NewNullPointerError builds a NullPointerError; code may be "".
+func NewNullPointerError(code, msg string) error {
+	return &NullPointerError{Msg: msg, Code: code}
+}
+
+func (e *NullPointerError) Error() string { return e.Msg }
+
+// DiagCode implements the raise-site code seam diag.FromError reads.
+func (e *NullPointerError) DiagCode() string { return e.Code }
+
+func (e *NullPointerError) Is(other error) bool {
+	_, ok := other.(*NullPointerError)
+	return ok
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func NewNumberFormatError(msg string) error {
+	return &NumberFormatError{Msg: msg}
+}
+
+func (e *NumberFormatError) Error() string { return e.Msg }
+
+// Is matches both *NumberFormatError and *IllegalArgumentError, mirroring
+// the JVM hierarchy (NumberFormatException extends IllegalArgumentException,
+// oracle 1.12.5): a catch of IllegalArgumentException catches this.
+func (e *NumberFormatError) Is(other error) bool {
+	switch other.(type) {
+	case *NumberFormatError, *IllegalArgumentError:
+		return true
+	}
+	return false
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 func NewIllegalArgumentError(msg string) error {
 	return &IllegalArgumentError{msg: msg}
+}
+
+// NewCodedIllegalArgumentError builds an IllegalArgumentError carrying a
+// registered diagnostic code (e.g. the ISeq-conversion G5003 site), so the
+// error is BOTH typed for catch matching and coded for diag rendering.
+func NewCodedIllegalArgumentError(code, msg string) error {
+	return &IllegalArgumentError{msg: msg, code: code}
 }
 
 func (e *IllegalArgumentError) Error() string {
 	return e.msg
 }
+
+// DiagCode implements the raise-site code seam diag.FromError reads.
+func (e *IllegalArgumentError) DiagCode() string { return e.code }
 
 func (e *IllegalArgumentError) Is(other error) bool {
 	_, ok := other.(*IllegalArgumentError)
