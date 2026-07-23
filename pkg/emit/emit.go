@@ -825,9 +825,11 @@ func (g *generator) gen(n *ast.Node) string {
 }
 
 // intrinsic2 maps 2-argument clojure.core arithmetic builtins to their
-// pkg/emit/rt guarded helpers. Each helper still derefs the var per
-// call and falls back through the current value on redefinition (ADR
-// 0004 liveness); pristine builtins open-code the int64 fast path —
+// pkg/emit/rt guarded helpers. Each helper checks the sealed-core dirty
+// flag once (ADR 0066 / spike s43) and only derefs the var + falls back
+// through the current value when a redefinition has tripped it (ADR
+// 0004 liveness, preserved via the escape hatch); pristine builtins
+// open-code the int64 fast path —
 // without this, every arithmetic op pays the variadic nativeFn's []any
 // allocation and the M2 factorial budget (design/00 §1.4) is blown by
 // an order of magnitude (measured: 168× raw; see perf_test.go).
