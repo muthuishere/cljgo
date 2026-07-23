@@ -94,7 +94,14 @@ for e in "${ENTRIES[@]}"; do
   [ -d "$dir" ] || { echo ">> skip $name (no $dir yet)"; continue; }
   echo ">> $name — building"
   img="s45-$name"
-  if ! docker build -q -t "$img" "$dir" >/dev/null 2>&1; then
+  # bri's Dockerfile compiles cljgo+app, so its build context is the REPO
+  # ROOT (four levels up from bench/), not the app dir.
+  if [ "$name" = "bri" ]; then
+    build_ok() { docker build -q -f "$dir/Dockerfile" -t "$img" "$(cd "$ROOT/../.." && pwd)" >/dev/null 2>&1; }
+  else
+    build_ok() { docker build -q -t "$img" "$dir" >/dev/null 2>&1; }
+  fi
+  if ! build_ok; then
     echo "   BUILD FAILED"; echo "| $name | BUILD FAILED | | | | | | |" >> "$OUT"; continue
   fi
   size=$(docker images "$img" --format '{{.Size}}' | head -1)
