@@ -25,6 +25,14 @@ type (
 		// isMacroCached: 0=unknown, 1=false, 2=true
 		isMacroCached atomic.Int32
 
+		// sealed marks a var whose root mutation must flip CoreArithDirty
+		// (spike s43 / ADR 0066). rt.Boot seals the seven core arithmetic
+		// vars (+ - * / < > =) after the pristine snapshot; a later
+		// BindRoot/AlterRoot on any of them (def redefinition,
+		// alter-var-root, with-redefs) trips the global dirty flag so the
+		// emitted intrinsics drop their per-call guard until then.
+		sealed atomic.Bool
+
 		watches IPersistentMap
 
 		syncLock sync.Mutex
@@ -45,6 +53,22 @@ type (
 func (uv *UnboundVar) String() string {
 	return "Unbound: " + uv.v.String()
 }
+
+// CoreArithDirty is the process-global "a sealed core arithmetic var has
+// been redefined" flag (spike s43 / ADR 0066). It starts false and is
+// tripped — monotonically — the first time BindRoot/AlterRoot mutates a
+// sealed var (see Var.Seal). The emitted arithmetic intrinsics in
+// pkg/emit/rt read it ONCE per call (a single relaxed atomic.Bool load
+// that branch-predicts to false) instead of the per-call var deref +
+// interface-compare the ADR 0004 guard used to do. While it is false the
+// intrinsic open-codes the int64 op directly; once it is true the
+// intrinsic falls back to the guarded (deref-and-compare) path, so a live
+// redefinition is still seen — the ADR 0004 liveness escape hatch. It is
+// deliberately never reset to false: correctness only requires that a
+// currently-redefined var take the guarded path, and a monotonic flag
+// avoids any reset race across goroutines for a one-line, worst-case-slow
+// but always-correct outcome.
+var CoreArithDirty atomic.Bool
 
 var (
 	NSCore = FindOrCreateNamespace(SymbolCoreNamespace)
@@ -148,9 +172,30 @@ func (v *Var) HasRoot() bool {
 	return !ok
 }
 
+// Seal marks the var so that any future root mutation trips CoreArithDirty
+// (spike s43 / ADR 0066). rt.Boot calls it on the seven core arithmetic
+// vars after the pristine builtin snapshot, so the boot-time BindRoots that
+// install the builtins and load compiled core do NOT trip the flag — only a
+// user/core redefinition after boot does. Returns the var for chaining.
+func (v *Var) Seal() *Var {
+	v.sealed.Store(true)
+	return v
+}
+
+// tripIfSealed flips the global dirty flag when a sealed var's root moves.
+// A plain load-then-maybe-store: the common case (unsealed var) is a single
+// predictable bool load, and the rare sealed case only ever stores true, so
+// no CAS or lock is needed.
+func (v *Var) tripIfSealed() {
+	if v.sealed.Load() {
+		CoreArithDirty.Store(true)
+	}
+}
+
 func (v *Var) BindRoot(root interface{}) {
 	// TODO: handle metadata correctly
 	old := v.root.Swap(Box{val: root})
+	v.tripIfSealed()
 	v.notifyWatches(old.(Box).val, root)
 }
 
@@ -281,6 +326,7 @@ func (v *Var) AlterRoot(alter IFn, args ISeq) interface{} {
 	newRoot := alter.ApplyTo(NewCons(oldRoot, args))
 	// TODO: validate, ++rev
 	v.root.Store(Box{val: newRoot})
+	v.tripIfSealed()
 	v.notifyWatches(oldRoot, newRoot)
 	return newRoot
 }
