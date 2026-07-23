@@ -219,7 +219,8 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	// that reaches for none of them must not import it (Go rejects an
 	// unused import) — pkg/coreaot's pure-Clojure packages are exactly
 	// that case.
-	if strings.Contains(scanText, "rt.") || spec.isMain || spec.nsName != "" {
+	if strings.Contains(scanText, "rt.") || strings.Contains(declText.String(), "rt.") ||
+		spec.isMain || spec.nsName != "" {
 		fmt.Fprintf(&out, "rt %q\n", runtimeModule+"/pkg/emit/rt")
 	}
 	if usesLang {

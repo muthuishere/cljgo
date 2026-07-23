@@ -203,3 +203,31 @@
                              (-plain-fn (second pair))))
                      pairs)]
     (list* (quote do) (concat extends (list nil)))))
+
+;; ---- Inst (batch A3): the 1.9 inst protocol over cljgo's #inst type --------
+;;
+;; cljgo's #inst literal reads to reader.Inst (pkg/reader/tagged.go, ADR
+;; 0050), the cljgo-owned type standing in for java.util.Date; `.getTime`
+;; is its epoch-millis bridge (pkg/corelib/host.go CallGoMethod). The type
+;; designator `reader.Inst` is the value's dispatch key (%T — see
+;; corelib's dispatchKey default), exactly what -type-key yields for a
+;; symbol that resolves to no var.
+;; oracle 1.12.5: (inst-ms #inst "2020-01-01") => 1577836800000
+;; oracle: [(inst? #inst "2020-01-01") (inst? 5) (inst? nil)
+;;          (inst-ms* #inst "1970-01-01T00:00:01Z")] => [true false false 1000]
+(defprotocol Inst
+  (inst-ms* [inst]))
+
+(extend-protocol Inst
+  reader.Inst
+  (inst-ms* [inst] (.getTime inst)))
+
+(defn inst-ms
+  "Number of milliseconds since January 1, 1970, 00:00:00 GMT"
+  [inst]
+  (inst-ms* inst))
+
+(defn inst?
+  "Return true if x satisfies Inst"
+  [x]
+  (satisfies? Inst x))

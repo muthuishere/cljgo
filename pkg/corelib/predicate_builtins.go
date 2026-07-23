@@ -3,6 +3,7 @@ package corelib
 import (
 	"fmt"
 	"math/big"
+	"net/url"
 	"reflect"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -115,6 +116,23 @@ func internPredicateBuiltins(def func(string, func(...any) any) *lang.Var) {
 	def("uuid?", func(args ...any) any {
 		_, ok := oneArg("uuid?", args).(*reader.UUID)
 		return ok
+	})
+
+	// uri?: true for the URI type cljgo's ecosystem produces — net/url's
+	// URL ((url/Parse! "...") returns *url.URL; (url/URL. {...}) constructs
+	// one — pkg/corelib/host.go's seed registry). The JVM's uri? tests
+	// java.net.URI; on this host the honest equivalent is net/url.URL
+	// (batch A3 backing-type decision, documented here). Both the pointer
+	// (what url/Parse returns) and the bare struct are accepted.
+	// oracle 1.12.5 (java.net.URI standing in):
+	// [(uri? (java.net.URI. "http://example.com")) (uri? "http://example.com") (uri? nil)]
+	// => [true false false]
+	def("uri?", func(args ...any) any {
+		switch oneArg("uri?", args).(type) {
+		case *url.URL, url.URL:
+			return true
+		}
+		return false
 	})
 
 	// map-entry?: a map entry (IMapEntry) — only *lang.MapEntry implements
