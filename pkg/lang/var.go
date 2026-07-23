@@ -129,13 +129,7 @@ var (
 	VarDefaultDataReaderFn = InternVarReplaceRoot(NSCore, NewSymbol("*default-data-reader-fn*"), nil).SetDynamic()
 	VarOut                 = InternVarReplaceRoot(NSCore, NewSymbol("*out*"), os.Stdout).SetDynamic()
 	VarIn                  = InternVarReplaceRoot(NSCore, NewSymbol("*in*"), os.Stdin).SetDynamic()
-	VarAssert              = InternVarReplaceRoot(NSCore, NewSymbol("*assert*"), false).SetDynamic()
-	VarCompileFiles        = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
-	VarFile                = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
-	VarDataReaders         = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
-	VarOut         = InternVarReplaceRoot(NSCore, NewSymbol("*out*"), os.Stdout).SetDynamic()
-	VarIn          = InternVarReplaceRoot(NSCore, NewSymbol("*in*"), os.Stdin).SetDynamic()
-	VarErr         = InternVarReplaceRoot(NSCore, NewSymbol("*err*"), os.Stderr).SetDynamic()
+	VarErr                 = InternVarReplaceRoot(NSCore, NewSymbol("*err*"), os.Stderr).SetDynamic()
 	// VarFlushOnNewline backs *flush-on-newline* (root true, the JVM
 	// default). Go's os.Stdout writes are unbuffered so the print family
 	// has nothing to flush; the var exists so (binding [*flush-on-newline*
