@@ -17,6 +17,13 @@ type evalFn struct {
 	form any // original fn* form, for error messages
 	env  *Scope
 	eval *Evaluator
+
+	// defName is the qualified name of the Var this fn was def'd into
+	// ("user/f"), set by OpDef when the def's init is DIRECTLY this fn*
+	// (the same rule the emitter applies, so the two legs name arity
+	// errors byte-identically, ADR 0048). It wins over the fn*'s own
+	// self-name; an anonymous fn with neither stays "fn".
+	defName string
 }
 
 var _ lang.IFn = (*evalFn)(nil)
@@ -30,11 +37,12 @@ type arityError struct {
 	name   string
 
 	// diag is the enriched, positioned diagnostic (spike s28). It is nil at
-	// the throw site inside Invoke (which has no call-site position or Var
-	// name) and set at the OpInvoke call site, which does. Error() is left
-	// UNCHANGED whether or not it is set — conformance freezes that string
-	// via strings.Contains, so all new detail lives on the diagnostic and
-	// surfaces only through diag.Render.
+	// the throw site inside Invoke (which has no call-site position) and
+	// set at the OpInvoke call site, which does. Error() carries the fn's
+	// own name (def name > self-name > "fn", same as the emitter — the
+	// conformance-frozen string, byte-identical across legs); the extra
+	// call-site detail (location, expected/found) lives on the diagnostic
+	// and surfaces only through diag.Render.
 	diag *diag.Diagnostic
 }
 
@@ -139,6 +147,9 @@ func (f *evalFn) pickMethod(nargs int) *ast.FnMethodNode {
 }
 
 func (f *evalFn) name() string {
+	if f.defName != "" {
+		return f.defName
+	}
 	if f.node.Local != nil {
 		return f.node.Local.Sub.(*ast.BindingNode).Name.Name()
 	}
