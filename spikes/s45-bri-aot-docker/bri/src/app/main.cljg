@@ -1,0 +1,22 @@
+;; app.main — the real bri hello server. AOT-compiles to ONE static
+;; CGO_ENABLED=0 binary that serves real HTTP (ADR 0071):
+;;
+;;   cljgo dev             # interpreted: server + nREPL (the dev loop)
+;;   cljgo build run       # compiled: one static binary, then run it
+;;
+;;   GET /            -> text  "hello\n"
+;;   GET /api/hello   -> JSON  {"msg":"hello from bri"}
+;;   GET /api/secret  -> JWT-guarded (401 without a token, 200 with one)
+(ns app.main
+  (:require [bri.http :as http]
+            [bri.config :as config]
+            [app.routes :as routes]))
+
+(def cfg (config/load!))
+
+(defn -main [& _args]
+  (let [port (:port cfg)]
+    (println "bri hello server on :" port)
+    ;; listen = the API-first entry: real net/http, production timeouts,
+    ;; graceful SIGTERM drain. Same lang.IFn handler seam in both modes.
+    (http/listen #'routes/routes port)))

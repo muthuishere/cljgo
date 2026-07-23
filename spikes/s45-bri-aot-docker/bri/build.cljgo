@@ -1,0 +1,10 @@
+;; build.cljgo — the bri hello app's build plan (ADR 0021, ADR 0071).
+;; bri apps now AOT-compile (ADR 0071): `cljgo build run` turns this app
+;; into ONE static CGO_ENABLED=0 binary and runs it. The dev loop stays
+;; `cljgo dev` (interpreted, nREPL); both modes serve byte-identical
+;; responses (parity/run.sh proves it).
+(defn build [b]
+  (let [app (exe b {:name "bri-hello"
+                    :main "src/app/main.cljg"})]
+    (install b app)
+    (run b app)))
