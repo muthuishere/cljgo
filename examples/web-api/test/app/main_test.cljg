@@ -1,0 +1,114 @@
+;; The suite for the notes API — bri's IN-PROCESS http test client (no
+;; socket): every request runs through the same mount + middleware path
+;; as the real server. Run it with `cljgo test`.
+(ns app.main-test
+  (:require [clojure.test :refer [deftest is testing]]
+            [clojure.string :as str]
+            [bri.http :as http]
+            [bri.auth :as auth]
+            [app.main :as main]))
+
+;; The API-first stack (request-ids, logging, recover, CORS, metrics,
+;; auto-ban, JSON) — the same one -main runs under.
+(def stack (http/api-defaults))
+
+;; A tiny JSON encoder for the flat string-valued bodies these tests
+;; post ({"user":"ada",...}) — dependency-free on purpose.
+(defn pr-str-json [m]
+  (str "{"
+       (str/join ","
+                 (map (fn [[k v]] (str \" (name k) "\":\"" v \")) m))
+       "}"))
+
+(defn req
+  "One request through the app under the API stack. :json is encoded and
+  the content-type set for you."
+  [m]
+  (let [m (if (contains? m :json)
+            (-> m
+                (assoc :body (pr-str-json (:json m)))
+                (assoc-in [:headers "content-type"] "application/json")
+                (dissoc :json))
+            m)]
+    (http/request main/routes m {:middleware stack})))
+
+(defn login-token [user pass]
+  (let [res (req {:method "POST" :path "/login" :json {:user user :pass pass}})]
+    (is (= 200 (:status res)) "login should succeed")
+    ;; the body is JSON text: {"token":"..."} — pull the value out
+    (second (re-find #"\"token\":\"([^\"]+)\"" (:body res)))))
+
+(defn auth-header [tok] {"authorization" (str "Bearer " tok)})
+
+;; --- login + JWT ----------------------------------------------------------
+(deftest login-issues-a-token
+  (is (string? (login-token "ada" "s3cret")))
+  (testing "bad credentials are 401, not a token"
+    (is (= 401 (:status (req {:method "POST" :path "/login"
+                              :json {:user "ada" :pass "wrong"}}))))))
+
+;; --- guards: 401 without a token, 200 with one ----------------------------
+(deftest logged-in-routes-need-a-token
+  (is (= 401 (:status (req {:method "GET" :path "/api/notes"}))))
+  (let [tok (login-token "grace" "hopper")
+        res (req {:method "GET" :path "/api/notes" :headers (auth-header tok)})]
+    (is (= 200 (:status res)))
+    (is (str/includes? (:body res) "ship cljgo"))))
+
+(deftest whoami-reads-the-token
+  (let [tok (login-token "grace" "hopper")
+        res (req {:method "GET" :path "/api/me" :headers (auth-header tok)})]
+    (is (= 200 (:status res)))
+    (is (str/includes? (:body res) "grace"))
+    (is (str/includes? (:body res) "user"))))
+
+;; --- role guards: user can't delete, admin can ----------------------------
+(deftest delete-is-admin-only
+  (testing "a plain user is authenticated but not authorized -> 403"
+    (let [tok (login-token "grace" "hopper")]
+      (is (= 403 (:status (req {:method "DELETE" :path "/api/notes/2"
+                                :headers (auth-header tok)}))))))
+  (testing "an admin gets 204 and the note is gone"
+    (let [tok (login-token "ada" "s3cret")]
+      (is (= 204 (:status (req {:method "DELETE" :path "/api/notes/1"
+                                :headers (auth-header tok)}))))
+      (is (= 404 (:status (req {:method "GET" :path "/api/notes/1"
+                                :headers (auth-header tok)})))))))
+
+;; --- typed path params: a non-int id is a 400, no handler code ------------
+(deftest bad-id-is-a-400
+  (let [tok (login-token "ada" "s3cret")]
+    (is (= 400 (:status (req {:method "GET" :path "/api/notes/not-a-number"
+                              :headers (auth-header tok)}))))))
+
+;; --- create returns 201 + a Location built by reverse routing -------------
+(deftest create-returns-a-location
+  (let [tok (login-token "grace" "hopper")
+        res (req {:method "POST" :path "/api/notes"
+                  :headers (auth-header tok) :json {:text "learn go"}})]
+    (is (= 201 (:status res)))
+    ;; Location came from (path-for :note {:id …}) — not a hardcoded string
+    (is (re-find #"^/api/notes/\d+$" (get-in res [:headers "location"])))))
+
+;; --- reverse routing resolves against the served table --------------------
+(deftest path-for-names-the-route
+  ;; a request registers the table; path-for then resolves the named route
+  (req {:method "GET" :path "/api/notes" :headers (auth-header (login-token "ada" "s3cret"))})
+  (is (= "/api/notes/7" (http/path-for :note {:id 7}))))
+
+;; --- ops endpoints are default-on -----------------------------------------
+(deftest health-and-metrics-are-on
+  (is (= 200 (:status (http/request main/routes {:method "GET" :path "/healthz"}
+                                    {:middleware stack}))))
+  (let [m (http/request main/routes {:method "GET" :path "/metrics"} {:middleware stack})]
+    (is (= 200 (:status m)))))
+
+;; --- routes are DATA: add/remove at runtime, no restart -------------------
+(deftest routes-compose-and-mutate
+  (let [ping (fn [_] {:status 200 :body {:pong true}})
+        with (http/add-route main/routes (http/GET "/ping" (http/managed ping)))]
+    (is (= 200 (:status (http/request with {:method "GET" :path "/ping"} {:middleware stack}))))
+    ;; and it's gone again once removed
+    (let [without (http/remove-route with "/ping")]
+      (is (= 404 (:status (http/request without {:method "GET" :path "/ping"}
+                                        {:middleware stack})))))))

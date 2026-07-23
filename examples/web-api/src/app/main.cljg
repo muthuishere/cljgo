@@ -1,0 +1,106 @@
+;; app.main — a REAL web API in cljgo: a JSON "notes" service with JWT
+;; login, role guards, typed path params, a rate limit, reverse routing,
+;; data-generated routes, and runtime add/remove — every piece is plain
+;; Clojure and every route is a VALUE. Nothing scans or wires anything
+;; behind your back; bri is called from here, visibly.
+;;
+;;   cljgo test              # the in-process suite (test/app/main_test.cljg)
+;;   cljgo dev               # boot with an nREPL; re-def a handler, refresh
+;;   cljgo build run         # compile to ONE static binary and run it
+;;
+;; The API surface (all JSON):
+;;   POST /login             {"user":"ada","pass":"s3cret"} -> {"token": "..."}
+;;   GET  /api/notes                                     (any logged-in user)
+;;   GET  /api/notes/{id}
+;;   POST /api/notes         {"text":"..."}               (any logged-in user)
+;;   DELETE /api/notes/{id}                               (admin only)
+;;   GET  /api/me                                         (whoami, from the token)
+;;   GET  /api/admin/stats                                (admin only)
+(ns app.main
+  (:require [bri.http :as http :refer [GET POST DELETE]]
+            [bri.auth :as auth]
+            [bri.config :as config]))
+
+(def cfg (config/load!))   ; conf.edn (+ :profiles by APP_PROFILE) + APP_* env.
+
+;; --- a demo user store ----------------------------------------------------
+;; Real apps look users up in a DB and store (auth/hash-password pw) at
+;; signup. Passwords are argon2id — deliberately slow to hash, never SIMD.
+(def users
+  {"ada"  {:pass (auth/hash-password "s3cret") :role "admin"}
+   "grace"{:pass (auth/hash-password "hopper") :role "user"}})
+
+;; --- the "database": an in-memory atom of notes (pure Clojure) ------------
+(def notes (atom {1 {:id 1 :by "ada"   :text "buy milk"}
+                  2 {:id 2 :by "grace" :text "ship cljgo"}}))
+(def next-id (atom 3))
+
+;; --- handlers: Ring (request -> response); a map/vector body auto-encodes
+;; as JSON. Path params come typed through (param! …); JSON bodies parse
+;; into :json; the authenticated subject is on :auth/claims. ----------------
+
+(defn login [req]
+  (let [{:keys [user pass]} (:json req)
+        u (get users user)]
+    (if (and u (auth/check-password pass (:pass u)))
+      {:status 200 :body {:token (auth/issue user {:role (:role u)})}}  ; a JWT
+      {:status 401 :body {:error "bad credentials"}})))
+
+(defn whoami [req]
+  (let [c (:auth/claims req)]
+    {:status 200 :body {:user (:sub c) :role (:role c)}}))
+
+(defn list-notes [_req]
+  {:status 200 :body {:notes (vec (vals @notes))}})
+
+(defn get-note [req]
+  (let [id (http/param! req :id :int)]              ; non-int id -> 400, no code
+    (if-let [n (get @notes id)]
+      {:status 200 :body n}
+      {:status 404 :body {:error "no such note"}})))
+
+(defn create-note [req]
+  (let [text (get-in req [:json :text])
+        by   (get-in req [:auth/claims :sub])
+        id   (swap! next-id inc)
+        note {:id id :by by :text text}]
+    (swap! notes assoc id note)
+    ;; reverse routing: the URL of the thing we just made — no hardcoded path
+    {:status 201
+     :headers {"location" (http/path-for :note {:id id})}
+     :body note}))
+
+(defn delete-note [req]
+  (let [id (http/param! req :id :int)]
+    (swap! notes dissoc id)
+    {:status 204 :body ""}))
+
+(defn admin-stats [_req]
+  {:status 200 :body {:notes (count @notes) :users (count users)}})
+
+;; --- routes: the whole (secured) API reads as a flat column ---------------
+;; Each verb form is a VALUE. (auth/…-only) guards are plain middleware, so
+;; they compose with `->` and stack in any order. `:as :note` names the
+;; route for reverse routing. A missing/invalid token is 401; a valid token
+;; with the wrong role is 403 — you write zero security code here.
+(def routes
+  (http/routes
+    (POST   "/login"            #'login)                       ; issues a JWT
+    (GET    "/api/me"           (auth/logged-in-only) #'whoami)
+    (GET    "/api/notes"        (auth/logged-in-only) #'list-notes)
+    (GET    "/api/notes/{id}"   {:name :note}
+            (auth/logged-in-only) #'get-note)                  ; named -> path-for
+    (POST   "/api/notes"        (auth/logged-in-only) #'create-note)
+    (DELETE "/api/notes/{id}"   (auth/admin-only) #'delete-note)  ; admin only
+    ;; a whole guarded group under one prefix + one middleware (Compojure
+    ;; `context`); rate-limit is composed on top of the admin guard.
+    (http/context "/api/admin" [(auth/admin-only) (http/rate-limit 30)]
+      (GET "/stats" #'admin-stats))))
+
+(defn -main [& _args]
+  ;; (api-defaults) is default-on: request-ids, structured logging, the
+  ;; error funnel, CORS, metrics (GET /metrics), abuse protection (auto-ban),
+  ;; and JSON negotiation — plus /healthz + /readyz. Zero security plumbing
+  ;; in the app; the safe stack is what you didn't type.
+  (println "notes API on :" (:port cfg))
+  (http/listen #'routes (:port cfg)))

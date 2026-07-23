@@ -138,6 +138,26 @@ func runIn(dir, bin string, args ...string) (string, error) {
 	return string(out), err
 }
 
+// The shipped examples/web-api project (a JWT-secured JSON notes API) is
+// REAL source, and it stays that way: every gate run compiles the binary
+// and runs the example's own in-process suite through it. The example is
+// the thing people copy to get a web API, so a rot in it — a renamed bri
+// fn, a broken guard, a dropped reverse-route — turns this red instead of
+// greeting the next reader.
+func TestExampleWebApiSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+	dir, err := filepath.Abs(filepath.Join("..", "..", "examples", "web-api"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out, err := runIn(dir, bin, "test"); err != nil {
+		t.Fatalf("cljgo test (examples/web-api): %v\n%s", err, out)
+	}
+}
+
 func TestBriNewDevTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping binary build in -short mode")
