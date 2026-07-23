@@ -56,6 +56,17 @@ type hoistDecl struct {
 	init   string
 }
 
+// directFn records a local binding whose value is a statically-known,
+// single-fixed-arity fn* (≤ 4 params, non-variadic) reachable through a
+// TYPED Go handle (a lang.FnFuncN-typed variable or temp holding that
+// exact closure). A call to such a binding of matching arity can bypass
+// lang.ApplyN's type-switch dispatch and invoke the closure value
+// directly (ADR 0064). goName is the typed handle; arity its fixed arity.
+type directFn struct {
+	goName string
+	arity  int
+}
+
 type generator struct {
 	buf bytes.Buffer
 	id  int // monotonic: temps, locals, loop labels
@@ -65,6 +76,13 @@ type generator struct {
 	// replaces S5's name/shadow bookkeeping entirely.
 	locals map[*ast.BindingNode]string
 	frames map[string]*recurFrame // LoopID → active frame
+
+	// directFns maps a local fn binding (a named fn's self-name, or a
+	// let-bound single-fixed-arity fn) to its typed Go handle, so a call
+	// of matching arity emits a direct closure invocation instead of
+	// lang.ApplyN (ADR 0064). Keyed by binding pointer identity, so
+	// shadowing never mis-resolves.
+	directFns map[*ast.BindingNode]directFn
 
 	vars    map[*lang.Var]string // hoisted var interns
 	dynVars map[*lang.Var]bool   // emitted with .SetDynamic()
@@ -86,13 +104,14 @@ type generator struct {
 
 func newGenerator() *generator {
 	return &generator{
-		locals:  map[*ast.BindingNode]string{},
-		frames:  map[string]*recurFrame{},
-		vars:    map[*lang.Var]string{},
-		dynVars: map[*lang.Var]bool{},
-		kws:     map[lang.Keyword]string{},
-		syms:    map[string]string{},
-		taken:   map[string]bool{},
+		locals:    map[*ast.BindingNode]string{},
+		frames:    map[string]*recurFrame{},
+		directFns: map[*ast.BindingNode]directFn{},
+		vars:      map[*lang.Var]string{},
+		dynVars:   map[*lang.Var]bool{},
+		kws:       map[lang.Keyword]string{},
+		syms:      map[string]string{},
+		taken:     map[string]bool{},
 
 		hostImports: map[string]string{},
 	}
@@ -640,6 +659,19 @@ func (g *generator) gen(n *ast.Node) string {
 			rv := g.gen(b.Init) // sequential: init sees earlier bindings
 			gn := g.bindLocal(b)
 			g.wf("var %s any = %s\n_ = %s\n", gn, rv, gn)
+			// A let-bound single-fixed-arity fn* can be called directly
+			// through its typed temp (ADR 0064). let bindings are
+			// immutable, so the temp holds this exact closure for the whole
+			// block (and any nested closure that captures it); rv is the
+			// lang.FnFuncN-typed temp genFn returned. Registered after this
+			// binding so later inits and the body resolve it, but not this
+			// init (a self-recursive call there is the fn's own self-name,
+			// handled inside genFn).
+			if b.Init.Op == ast.OpFn {
+				if m := singleFixedMethod(b.Init.Sub.(*ast.FnNode)); m != nil {
+					g.directFns[b] = directFn{goName: rv, arity: m.FixedArity}
+				}
+			}
 		}
 		bodyRv := g.gen(s.Body)
 		if bodyRv != "" {
@@ -661,6 +693,26 @@ func (g *generator) gen(n *ast.Node) string {
 		s := n.Sub.(*ast.InvokeNode)
 		if t, ok := g.genIntrinsic(s); ok {
 			return t
+		}
+		// Direct-call fast path (ADR 0064): the callee is a local binding
+		// known to hold a specific single-fixed-arity closure (a named
+		// fn's self-name, or a let-bound fn) AND the call arity matches.
+		// Invoke the typed closure handle directly, skipping ApplyN's
+		// type-switch dispatch. The fn position is a side-effect-free
+		// local read, so evaluating the args first is order-preserving.
+		// Any mismatch (wrong arity, non-local, reassigned carrier) simply
+		// isn't registered and falls through to the ApplyN path below,
+		// which keeps exact arity-error semantics.
+		if s.Fn.Op == ast.OpLocal {
+			if df, ok := g.directFns[s.Fn.Sub.(*ast.LocalNode).Binding]; ok && df.arity == len(s.Args) {
+				rvs := make([]string, len(s.Args))
+				for i, a := range s.Args {
+					rvs[i] = g.gen(a)
+				}
+				t := g.temp()
+				g.wf("%s := %s(%s)\n", t, df.goName, strings.Join(rvs, ", "))
+				return t
+			}
 		}
 		frv := g.gen(s.Fn) // fn position evaluates first
 		rvs := make([]string, len(s.Args))
@@ -979,12 +1031,24 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 
 	name := "fn"
 	selfGo := ""
+	selfTyped := "" // typed FnFuncN handle for direct self-calls (ADR 0064)
+	var selfBind *ast.BindingNode
 	if fn.Local != nil {
 		b := fn.Local.Sub.(*ast.BindingNode)
+		selfBind = b
 		name = b.Name.Name()
 		displayName = name
 		selfGo = g.bindLocal(b)
 		g.wf("var %s any\n_ = %s\n", selfGo, selfGo)
+		// When the fn is a single fixed-arity method, also pre-declare a
+		// typed handle the closure captures, so its own self-recursive
+		// calls bypass lang.ApplyN (ADR 0064). Assigned alongside selfGo
+		// after construction; direct calls can only fire once it is set.
+		if m := singleFixedMethod(fn); m != nil {
+			selfTyped = selfGo + "d"
+			g.wf("var %s lang.FnFunc%d\n_ = %s\n", selfTyped, m.FixedArity, selfTyped)
+			g.directFns[b] = directFn{goName: selfTyped, arity: m.FixedArity}
+		}
 	}
 	if defName != "" {
 		displayName = defName
@@ -1037,6 +1101,18 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 
 	if selfGo != "" {
 		g.wf("%s = %s\n", selfGo, t)
+	}
+	if selfTyped != "" {
+		// t is a lang.FnFuncN-typed temp; assign the same closure into the
+		// typed handle the body captured for direct self-calls.
+		g.wf("%s = %s\n", selfTyped, t)
+	}
+	if selfBind != nil {
+		// The self-name is only in scope within this fn's own body; drop
+		// the direct-call registration so no later binding-pointer reuse
+		// (arena/GC) could alias it. Keyed by pointer, this is belt-and-
+		// suspenders — but cheap and unambiguous.
+		delete(g.directFns, selfBind)
 	}
 	return t
 }
