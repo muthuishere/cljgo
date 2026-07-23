@@ -1,6 +1,6 @@
 # ADR 0066 — Sealed core arithmetic: dirty-flag guard elision
 
-Date: 2026-07-23 · Status: **proposed** (refines/conditions ADR 0004) · Spike: s43
+Date: 2026-07-23 · Status: **accepted — dirty-flag variant** (owner-directed 2026-07-23: "highest performance, non-breaking"; refines/conditions ADR 0004; the hard-seal variant below remains a separate owner-gated question) · Spike: s43
 
 ## Context
 
