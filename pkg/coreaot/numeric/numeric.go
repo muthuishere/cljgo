@@ -49,22 +49,24 @@ func Load() {
 				tmp10 := rt.LT2(v_clojure_DOT_core_X_LT_, tmp9, prob4)
 				return tmp10
 			})
-			tmp11 := lang.Apply1(tmp5, tmp6)
-			return tmp11
+			tmp11 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp6}
+			tmp12 := lang.Apply1(tmp5, tmp11)
+			return tmp12
 		case 2:
-			prob12 := args[0]
-			_ = prob12
-			coll13 := args[1]
-			_ = coll13
-			tmp14 := v_clojure_DOT_core_filter.Get()
-			tmp15 := lang.FnFunc1(func(X_16 any) any {
-				tmp17 := v_clojure_DOT_core_rand.Get()
-				tmp18 := lang.Apply0(tmp17)
-				tmp19 := rt.LT2(v_clojure_DOT_core_X_LT_, tmp18, prob12)
-				return tmp19
+			prob13 := args[0]
+			_ = prob13
+			coll14 := args[1]
+			_ = coll14
+			tmp15 := v_clojure_DOT_core_filter.Get()
+			tmp16 := lang.FnFunc1(func(X_17 any) any {
+				tmp18 := v_clojure_DOT_core_rand.Get()
+				tmp19 := lang.Apply0(tmp18)
+				tmp20 := rt.LT2(v_clojure_DOT_core_X_LT_, tmp19, prob13)
+				return tmp20
 			})
-			tmp20 := lang.Apply2(tmp14, tmp15, coll13)
-			return tmp20
+			tmp21 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp16}
+			tmp22 := lang.Apply2(tmp15, tmp21, coll14)
+			return tmp22
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/random-sample", "1: [prob] or 2: [prob coll]"))
 		}

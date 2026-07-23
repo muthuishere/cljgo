@@ -7,4 +7,4 @@
 (defmacro mm [a b] 1)
 (mm 1)
 ;; harness: eval — expects an error: cljgo build fails at compile/eval time; v0 has no compiled error-output contract
-;; expect-error: wrong number of args (1) passed to: mm
+;; expect-error: wrong number of args (1) passed to: user/mm
