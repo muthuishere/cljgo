@@ -10,6 +10,7 @@ package corelib
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -42,20 +43,75 @@ func Recover(r any) error {
 	return fmt.Errorf("%v", r)
 }
 
-// CatchMatches reports whether a catch clause's class symbol matches the
-// thrown value (design/03 §6). v0 mapping (faithful-ish): the catch-all
-// classes match any thrown value; ExceptionInfo matches only an ex-info
-// (anything that is/wraps a lang.IExceptionInfo). Unknown class names never
-// match, so the throw propagates — as an unmatched Clojure catch would.
-func CatchMatches(className string, thrown error) bool {
-	switch className {
-	case "Throwable", "Exception", "RuntimeException",
-		"java.lang.Throwable", "java.lang.Exception", "java.lang.RuntimeException":
-		return true
-	case "ExceptionInfo", "clojure.lang.ExceptionInfo":
-		var ei lang.IExceptionInfo
-		return errors.As(thrown, &ei)
-	default:
-		return false
+// Interned targets for the errors.Is probes below. errors.Is(thrown, t)
+// unwraps thrown (through lang.EvalError etc.) and consults each layer's
+// Is method, so the JVM subclass edges encoded there (ArityError →
+// IllegalArgumentError, NumberFormatError → IllegalArgumentError) hold for
+// every catch and instance? check without re-stating them here.
+var (
+	arithmeticTarget  = &lang.ArithmeticError{}
+	arityTarget       = &lang.ArityError{}
+	illegalArgTarget  = &lang.IllegalArgumentError{}
+	illegalStateT     = &lang.IllegalStateError{}
+	unsupportedOpT    = &lang.UnsupportedOperationError{}
+	indexOOBTarget    = &lang.IndexOutOfBoundsError{}
+	classCastTarget   = &lang.ClassCastError{}
+	nullPointerTarget = &lang.NullPointerError{}
+	numberFormatT     = &lang.NumberFormatError{}
+)
+
+// throwableMatches maps a JVM exception-class name (simple or fully
+// qualified) to the cljgo error values it catches, honoring the real JVM
+// ancestry (oracle-verified against clojure 1.12.5, 2026-07-23; ADR 0039
+// addendum): ArithmeticException / ClassCastException /
+// NullPointerException / IndexOutOfBoundsException /
+// IllegalArgumentException / IllegalStateException /
+// UnsupportedOperationException / ExceptionInfo all extend
+// RuntimeException < Exception < Throwable; NumberFormatException and
+// clojure.lang.ArityException extend IllegalArgumentException. cljgo v0
+// treats every thrown value as unchecked, so the three catch-all names
+// match anything. Returns (matched, known): known=false means the name is
+// outside the table entirely.
+func throwableMatches(className string, thrown error) (bool, bool) {
+	simple := className
+	if i := strings.LastIndex(className, "."); i >= 0 {
+		simple = className[i+1:]
 	}
+	switch simple {
+	case "Throwable", "Exception", "RuntimeException":
+		return true, true
+	case "ExceptionInfo":
+		var ei lang.IExceptionInfo
+		return errors.As(thrown, &ei), true
+	case "ArithmeticException":
+		return errors.Is(thrown, arithmeticTarget), true
+	case "ArityException":
+		return errors.Is(thrown, arityTarget), true
+	case "IllegalArgumentException":
+		return errors.Is(thrown, illegalArgTarget), true
+	case "NumberFormatException":
+		return errors.Is(thrown, numberFormatT), true
+	case "IllegalStateException":
+		return errors.Is(thrown, illegalStateT), true
+	case "UnsupportedOperationException":
+		return errors.Is(thrown, unsupportedOpT), true
+	case "IndexOutOfBoundsException", "StringIndexOutOfBoundsException":
+		return errors.Is(thrown, indexOOBTarget), true
+	case "ClassCastException":
+		return errors.Is(thrown, classCastTarget), true
+	case "NullPointerException":
+		return errors.Is(thrown, nullPointerTarget), true
+	}
+	return false, false
+}
+
+// CatchMatches reports whether a catch clause's class symbol matches the
+// thrown value (design/03 §6). The catch-all classes match any thrown
+// value; the standard typed JVM exception names match the cljgo error
+// values that correspond semantically, with the JVM ancestry honored
+// (throwableMatches, ADR 0039 addendum). Unknown class names never match,
+// so the throw propagates — as an unmatched Clojure catch would.
+func CatchMatches(className string, thrown error) bool {
+	matched, _ := throwableMatches(className, thrown)
+	return matched
 }

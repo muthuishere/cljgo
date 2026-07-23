@@ -245,6 +245,58 @@ func internNumericBuiltins(def func(name string, fn func(args ...any) any) *lang
 		x, y := twoArgs("unchecked-remainder-int", args)
 		return lang.AsInt64(x) % lang.AsInt64(y)
 	})
+	// unchecked-inc-int / unchecked-dec-int / unchecked-negate-int
+	// (fundamentals batch A4): same documented cljgo stance as the other
+	// -int arithmetic above — they operate on int64 (no boxed Integer
+	// type), so results wrap at 64 bits, not the JVM's 32.
+	def("unchecked-inc-int", func(args ...any) any {
+		return lang.UncheckedAdd(oneArg("unchecked-inc-int", args), int64(1))
+	})
+	def("unchecked-dec-int", func(args ...any) any {
+		return lang.UncheckedSubtract(oneArg("unchecked-dec-int", args), int64(1))
+	})
+	def("unchecked-negate-int", func(args ...any) any {
+		return lang.UncheckedNegate(oneArg("unchecked-negate-int", args))
+	})
+
+	// --- Unchecked coercions (fundamentals batch A4) ---------------------
+	//
+	// The truncating casts, oracle-verified vs JVM 1.12.5 (2026-07-23) —
+	// unlike the checked byte/short/int/... coercions above these never
+	// range-check, they truncate like Java primitive casts. byte/short/int
+	// truncate to their true JVM widths (8/16/32 bits) and come back as
+	// cljgo's int64 numbers; char masks to 16 bits like Java's (char)
+	// cast. Frozen evidence in conformance/tests/unchecked-coercions.clj.
+	// oracle: (unchecked-byte 300) => 44; (unchecked-byte -300) => -44;
+	// (unchecked-short 70000) => 4464; (unchecked-char 97) => \a;
+	// (unchecked-int 4294967296) => 0;
+	// (unchecked-int 2147483648) => -2147483648; (unchecked-long 1.9) => 1;
+	// (unchecked-float 1.5) => 1.5; (unchecked-double 3) => 3.0.
+	def("unchecked-byte", func(args ...any) any {
+		return int64(int8(lang.AsInt64(oneArg("unchecked-byte", args))))
+	})
+	def("unchecked-short", func(args ...any) any {
+		return int64(int16(lang.AsInt64(oneArg("unchecked-short", args))))
+	})
+	def("unchecked-char", func(args ...any) any {
+		x := oneArg("unchecked-char", args)
+		if c, ok := x.(lang.Char); ok {
+			return c
+		}
+		return lang.Char(rune(uint16(lang.AsInt64(x))))
+	})
+	def("unchecked-int", func(args ...any) any {
+		return int64(int32(lang.AsInt64(oneArg("unchecked-int", args))))
+	})
+	def("unchecked-long", func(args ...any) any {
+		return lang.UncheckedLongCast(oneArg("unchecked-long", args))
+	})
+	def("unchecked-float", func(args ...any) any {
+		return lang.UncheckedFloatCast(oneArg("unchecked-float", args))
+	})
+	def("unchecked-double", func(args ...any) any {
+		return lang.AsFloat64(oneArg("unchecked-double", args))
+	})
 
 	// --- Bit operations (all over 64-bit longs) --------------------------
 	//

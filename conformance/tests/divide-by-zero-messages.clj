@@ -19,7 +19,11 @@
 ;; inlines to primitive lrem ("/ by zero") — a JIT inlining artifact, not a
 ;; semantic difference. cljgo's mod faithfully propagates rem's message. The
 ;; bigint mod path matches the JVM exactly.
-(let [msg (fn [f] (try (f) :NO-THROW (catch Exception e (ex-message e))))]
+;; Tightened 2026-07-23 (ADR 0039 addendum): the catch is now the TYPED
+;; ArithmeticException, exactly what the JVM throws for every case below
+;; (oracle 1.12.5, run file-for-file) — previously Exception, a workaround
+;; from before typed builtin exception classes were catchable.
+(let [msg (fn [f] (try (f) :NO-THROW (catch ArithmeticException e (ex-message e))))]
   [(msg #(/ 1 0)) (msg #(/ 0 0)) (msg #(/ 5 0)) (msg #(/ 10N 0N)) (msg #(/ 1/2 0))
    (msg #(quot 1 0)) (msg #(rem 1 0)) (msg #(quot 10N 0N)) (msg #(rem 10N 0N))
    (msg #(mod 10N 0N))

@@ -714,13 +714,16 @@ func (g *generator) gen(n *ast.Node) string {
 			// through its typed temp (ADR 0064). let bindings are
 			// immutable, so the temp holds this exact closure for the whole
 			// block (and any nested closure that captures it); rv is the
-			// lang.FnFuncN-typed temp genFn returned. Registered after this
+			// *lang.NamedFnN temp genFn returned. Registered after this
 			// binding so later inits and the body resolve it, but not this
 			// init (a self-recursive call there is the fn's own self-name,
 			// handled inside genFn).
 			if b.Init.Op == ast.OpFn {
 				if m := singleFixedMethod(b.Init.Sub.(*ast.FnNode)); m != nil {
-					g.directFns[b] = directFn{goName: rv, arity: m.FixedArity}
+					// rv is the *lang.NamedFnN temp genFn returned; its F
+					// field is the raw FnFuncN closure the direct call
+					// invokes (ADR 0048 named wrapper + ADR 0064).
+					g.directFns[b] = directFn{goName: rv + ".F", arity: m.FixedArity}
 				}
 			}
 		}
@@ -1276,6 +1279,7 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 	}
 
 	t := g.temp()
+	typedT := "" // raw FnFuncN closure temp (the ADR 0064 direct-call handle)
 	if m := singleFixedMethod(fn); m != nil {
 		gnames := make([]string, len(m.Params))
 		for i, pn := range m.Params {
@@ -1307,6 +1311,18 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 		}
 		g.emitBoxedMethod(m, gnames)
 		g.wf("})\n")
+		// Wrap the raw closure with its display name + expects label so an
+		// arity mismatch (which bypasses the direct-call path and lands in
+		// Invoke) panics the same NAMED ArityError the interpreter raises —
+		// "passed to: user/f", never an unnamed count-only message
+		// (ADR 0048; REPL-vs-binary parity). Matching-arity calls stay
+		// direct: lang.Apply0..4 dispatch *NamedFnN through F, and the
+		// ADR 0064 typed handle keeps holding the raw FnFuncN closure.
+		typedT = t
+		named := g.temp()
+		g.wf("%s := &lang.NamedFn%d{Name: %q, Expects: %q, F: %s}\n",
+			named, m.FixedArity, displayName, fnArityLabel(fn), typedT)
+		t = named
 	} else {
 		expects := fnArityLabel(fn)
 		g.wf("%s := lang.FnFunc(func(args ...any) any {\n", t)
@@ -1343,9 +1359,10 @@ func (g *generator) genFn(fn *ast.FnNode) string {
 		g.wf("%s = %s\n", selfGo, t)
 	}
 	if selfTyped != "" {
-		// t is a lang.FnFuncN-typed temp; assign the same closure into the
-		// typed handle the body captured for direct self-calls.
-		g.wf("%s = %s\n", selfTyped, t)
+		// typedT is the raw lang.FnFuncN-typed temp; assign the same
+		// closure into the typed handle the body captured for direct
+		// self-calls.
+		g.wf("%s = %s\n", selfTyped, typedT)
 	}
 	if selfBind != nil {
 		// The self-name is only in scope within this fn's own body; drop
