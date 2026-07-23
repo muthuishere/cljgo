@@ -73,8 +73,8 @@ deployables). Measured stripped, Apple M5 Pro, go1.26.3, at HEAD:
 
 | artifact | size | what it is |
 |---|---|---|
-| **compiled cljgo program** (`cljgo build`) | **~4.6 MB** | what you actually ship — smallest runtime in the field |
-| cljgo tool binary | ~12 MB | the `cljgo` CLI itself (grew from the 8.3 MB in the root README as keel + `cljgo new` templates + `pkg/coreaot` landed — worth re-checking on release) |
+| **compiled cljgo program** (`cljgo build`) | **~5.3 MB** | what you actually ship — smallest runtime in the field (was ~4.6 MB pre-ADR-0067; dual-body emission grew it, re-measured 2026-07-23) |
+| cljgo tool binary | ~12.7 MB | the `cljgo` CLI itself (grew from the 8.3 MB in the root README as keel + `cljgo new` templates + `pkg/coreaot` landed — worth re-checking on release) |
 | let-go (stripped) | ~13 MB | bytecode VM |
 | babashka | ~68 MB | GraalVM native image |
 | joker | ~27 MB | Go tree-walk interpreter |
