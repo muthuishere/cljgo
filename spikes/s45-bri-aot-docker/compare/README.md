@@ -96,3 +96,55 @@ load test at all). Exit code 0 = all six passed.
 - Base image tags are pinned to major where practical (`node:24-alpine`,
   `golang:1.26-alpine`, `clojure:temurin-26-tools-deps`, `oven/bun:1`) but
   `denoland/deno:latest` floats — pin it if reproducibility matters to the run.
+
+## Additional languages (measured 2026-07-24, docker 29 / OrbStack, arm64)
+
+Four more runtimes added on top of the original six, same contract exactly
+(`GET /` → `hello\n` text/plain; `GET /api/hello` →
+`{"msg":"hello from <runtime>"}` application/json, byte-exact). Built and
+smoke-tested identically to the six above, on distinct host ports (8101..8104)
+via `smoke-extra.sh` so they never collide with `smoke.sh`. The existing dirs
+were not touched.
+
+| runtime     | image size | smoke pass | base image                                    | notes |
+|-------------|-----------:|:----------:|-----------------------------------------------|-------|
+| rust-axum   |   140 MB   | yes        | `debian:stable-slim` (from `rust:1-slim` build) | axum 0.7 + tokio; explicit `Content-Type` headers; the top-performance reference. LTO + `strip` release build. Final image is `debian-slim` (not scratch/musl) for the simplest reliable dynamic-linked build. |
+| fastapi     |   220 MB   | yes        | `python:3.13-slim`                            | uvicorn, **workers=1** for a fair single-process baseline. Both routes return a hand-built `Response(content=..., media_type=...)` so the bytes are exact (FastAPI never re-serializes / reorders / whitespaces the JSON). |
+| dotnet      |   359 MB   | yes        | `mcr.microsoft.com/dotnet/aspnet:9.0` (from `sdk:9.0` build) | ASP.NET Core minimal API, `net9.0`. `Results.Text(literal, media-type)` for exact bodies. Built cleanly first try — did not fight. |
+| spring-boot |   512 MB   | yes        | `eclipse-temurin:21-jre` (from `maven:3.9-eclipse-temurin-21` build) | Spring Boot 3.4.1 `@RestController`, embedded Tomcat, fat jar. `produces=` sets the media types; returns the exact `String`. Largest image + JVM cold-start (expected) — the orchestrator should warm up before measuring. `PORT` mapped via `server.port=${PORT:8080}`. |
+
+All four build cleanly and pass the exact status / Content-Type / body
+assertion on both routes.
+
+### Notes / honest caveats (additional languages)
+
+- **fastapi single-process** — deliberately `uvicorn ... workers=1`, matching
+  the other single-process baselines here (node/deno/bun/go are one process).
+  A production FastAPI deploy would run multiple workers; that would be a
+  different, unfair comparison, so it's pinned to one on purpose.
+- **spring-boot cold start** — JVM boot + Spring context init + first-request
+  JIT. The 512 MB image is the temurin JRE + fat jar (Tomcat, Spring, Jackson).
+  Both the size and the cold-start are the expected data point, not a defect.
+  Slimming (jlink / distroless / layered jar) was intentionally skipped in
+  favor of the simplest reliable boot, consistent with the JVM Clojure servers.
+- **rust-axum image = 140 MB** — dominated by `debian:stable-slim`; the binary
+  itself is a few MB. A `scratch` + musl-static final stage would cut this
+  dramatically but the dynamic debian build is the simplest reliable path
+  (glibc, no musl target juggling). Pin `rust:1-slim` if reproducibility
+  matters.
+- **dotnet** — built without a fight; kept on the standard `aspnet:9.0` runtime
+  (not distroless/AOT) for the simplest reliable boot. `InvariantGlobalization`
+  is on to avoid ICU bloat.
+- **Content-Type charset** — as with the JVM servers, some of these frameworks
+  may append `; charset=...`; `smoke-extra.sh` compares the media type only
+  (strips `;...`), exactly like `smoke.sh`.
+
+### Rebuild + smoke-test just the additional four
+
+```bash
+./smoke-extra.sh
+```
+
+Same idempotent, serial behavior as `smoke.sh` (ports 8101..8104, never runs
+two at once, never leaves a container running, runs no load test). Exit code
+0 = all four passed.
