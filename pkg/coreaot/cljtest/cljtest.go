@@ -2282,14 +2282,14 @@ func Load() {
 					{
 						tmp1442 := v_clojure_DOT_core_first.Get()
 						tmp1443 := lang.Apply1(tmp1442, s__9__auto__1438)
-						var vec__981444 any = tmp1443
-						_ = vec__981444
+						var vec__1021444 any = tmp1443
+						_ = vec__1021444
 						tmp1445 := v_clojure_DOT_core_nth.Get()
-						tmp1446 := lang.Apply3(tmp1445, vec__981444, int64(0), nil)
+						tmp1446 := lang.Apply3(tmp1445, vec__1021444, int64(0), nil)
 						var ns1447 any = tmp1446
 						_ = ns1447
 						tmp1448 := v_clojure_DOT_core_nth.Get()
-						tmp1449 := lang.Apply3(tmp1448, vec__981444, int64(1), nil)
+						tmp1449 := lang.Apply3(tmp1448, vec__1021444, int64(1), nil)
 						var vs1450 any = tmp1449
 						_ = vs1450
 						var tmp1451 any

@@ -386,18 +386,18 @@ func Load() {
 	v_clojure_DOT_set_rename_keys.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(18)))
 	tmp157 := lang.FnFunc2(func(m158, kmap159 any) any {
 		tmp160 := v_clojure_DOT_core_reduce.Get()
-		tmp161 := lang.FnFunc2(func(acc162, p__28163 any) any {
+		tmp161 := lang.FnFunc2(func(acc162, p__32163 any) any {
 			var tmp164 any
 			_ = tmp164
 			{
-				var vec__29165 any = p__28163
-				_ = vec__29165
+				var vec__33165 any = p__32163
+				_ = vec__33165
 				tmp166 := v_clojure_DOT_core_nth.Get()
-				tmp167 := lang.Apply3(tmp166, vec__29165, int64(0), nil)
+				tmp167 := lang.Apply3(tmp166, vec__33165, int64(0), nil)
 				var old168 any = tmp167
 				_ = old168
 				tmp169 := v_clojure_DOT_core_nth.Get()
-				tmp170 := lang.Apply3(tmp169, vec__29165, int64(1), nil)
+				tmp170 := lang.Apply3(tmp169, vec__33165, int64(1), nil)
 				var newk171 any = tmp170
 				_ = newk171
 				tmp172 := v_clojure_DOT_core_contains_QMARK_.Get()
@@ -558,14 +558,14 @@ func Load() {
 						tmp269 := lang.NewVector(yrel237, xrel236)
 						tmp267 = tmp269
 					}
-					var vec__32270 any = tmp267
-					_ = vec__32270
+					var vec__36270 any = tmp267
+					_ = vec__36270
 					tmp271 := v_clojure_DOT_core_nth.Get()
-					tmp272 := lang.Apply3(tmp271, vec__32270, int64(0), nil)
+					tmp272 := lang.Apply3(tmp271, vec__36270, int64(0), nil)
 					var r273 any = tmp272
 					_ = r273
 					tmp274 := v_clojure_DOT_core_nth.Get()
-					tmp275 := lang.Apply3(tmp274, vec__32270, int64(1), nil)
+					tmp275 := lang.Apply3(tmp274, vec__36270, int64(1), nil)
 					var s276 any = tmp275
 					_ = s276
 					tmp277 := v_clojure_DOT_set_index.Get()
@@ -638,18 +638,18 @@ func Load() {
 					tmp315 := lang.NewVector(yrel303, xrel302, km304)
 					tmp311 = tmp315
 				}
-				var vec__35316 any = tmp311
-				_ = vec__35316
+				var vec__39316 any = tmp311
+				_ = vec__39316
 				tmp317 := v_clojure_DOT_core_nth.Get()
-				tmp318 := lang.Apply3(tmp317, vec__35316, int64(0), nil)
+				tmp318 := lang.Apply3(tmp317, vec__39316, int64(0), nil)
 				var r319 any = tmp318
 				_ = r319
 				tmp320 := v_clojure_DOT_core_nth.Get()
-				tmp321 := lang.Apply3(tmp320, vec__35316, int64(1), nil)
+				tmp321 := lang.Apply3(tmp320, vec__39316, int64(1), nil)
 				var s322 any = tmp321
 				_ = s322
 				tmp323 := v_clojure_DOT_core_nth.Get()
-				tmp324 := lang.Apply3(tmp323, vec__35316, int64(2), nil)
+				tmp324 := lang.Apply3(tmp323, vec__39316, int64(2), nil)
 				var k325 any = tmp324
 				_ = k325
 				tmp326 := v_clojure_DOT_set_index.Get()

@@ -1876,3 +1876,115 @@
        (if (< ~idx l#)
          (recur (inc ~idx) ~expr)
          ~ret))))
+
+;; --- fundamentals batch A4: namespaces, concurrency, bindings (2026-07-23) --
+;; refer-clojure / use (Go builtin) / with-bindings / with-local-vars /
+;; pmap / pcalls / pvalues / seque (Go builtin) / chunk API (Go builtins).
+;; Every behavior oracle-verified vs JVM Clojure 1.12.5 (clojure CLI);
+;; frozen evidence in conformance/tests/ (see each fn's oracle note).
+
+;; refer-clojure : (refer 'clojure.core & filters), the standalone macro.
+;; oracle: (macroexpand '(refer-clojure :exclude [map])) =>
+;; (clojure.core/refer (quote clojure.core) :exclude [map]);
+;; (refer-clojure :exclude '[str]) => nil
+(defmacro refer-clojure
+  "Same as (refer 'clojure.core <filters>)"
+  [& filters]
+  (list* 'clojure.core/refer (list 'quote 'clojure.core) filters))
+
+;; with-bindings* / with-bindings : run a thunk (or body) with a map of
+;; Var/value thread bindings pushed — the fn/macro faces of the
+;; push/pop-thread-bindings primitives (var_builtins.go), exactly
+;; clojure.core's own definitions.
+;; oracle: (def ^:dynamic *dv* 1) (with-bindings {#'*dv* 42} *dv*) => 42;
+;; (with-bindings* {#'*dv* 7} (fn [] *dv*)) => 7
+(defn with-bindings*
+  "Takes a map of Var/value pairs. Installs for the given Vars the
+  associated values as thread-local bindings. Then calls f with the
+  supplied arguments. Pops the installed bindings after f returned.
+  Returns whatever f returns."
+  [binding-map f & args]
+  (push-thread-bindings binding-map)
+  (try
+    (apply f args)
+    (finally
+      (pop-thread-bindings))))
+
+(defmacro with-bindings
+  "Takes a map of Var/value pairs. Installs for the given Vars the
+  associated values as thread-local bindings. Then executes body. Pops
+  the installed bindings after body was evaluated. Returns the value of
+  body."
+  [binding-map & body]
+  `(with-bindings* ~binding-map (fn [] ~@body)))
+
+;; with-local-vars : names bound to fresh, un-interned dynamic Vars
+;; (-create-local-var, parallel_builtins.go), each thread-bound to its
+;; init value for the dynamic extent of the body — set with var-set,
+;; read with deref/@.
+;; oracle: (with-local-vars [x 1 y 2] (var-set x (+ @x @y)) [@x @y]) =>
+;; [3 2]; (with-local-vars [x 1] (var? x)) => true
+(defmacro with-local-vars
+  "varbinding=> symbol init-expr
+
+  Executes the exprs in a context in which the symbols are bound to
+  vars with per-thread bindings to the init-exprs. The symbols refer
+  to the var objects themselves, and must be accessed with var-get and
+  var-set"
+  [name-vals-vec & body]
+  `(let [~@(interleave (take-nth 2 name-vals-vec)
+                       (repeat '(clojure.core/-create-local-var)))]
+     (push-thread-bindings (hash-map ~@name-vals-vec))
+     (try
+       ~@body
+       (finally (pop-thread-bindings)))))
+
+;; pmap : like map but f runs in parallel — each element's (f x) is a
+;; future (a real goroutine, future-call/lang.AgentSubmit), and the
+;; result seq derefs them IN ORDER, so results are deterministic.
+;; PARALLELISM MODEL (goroutine-natural, documented honestly): the JVM
+;; keeps (+ 2 processors) futures ahead of consumption on its thread
+;; pool; cljgo keeps the same lookahead window ((+ 2 (-num-cpus)),
+;; parallel_builtins.go) of goroutine futures in flight — semi-lazy,
+;; ordered, only useful for non-trivial f. This IS clojure.core's own
+;; pmap algorithm, with goroutines under the futures.
+;; oracle: (pmap inc (range 10)) => (1 2 3 4 5 6 7 8 9 10);
+;; (pmap + [1 2 3] [10 20 30]) => (11 22 33); result is a lazy seq
+(defn pmap
+  "Like map, except f is applied in parallel. Semi-lazy in that the
+  parallel computation stays ahead of the consumption, but doesn't
+  realize the entire result unless required. Only useful for
+  computationally intensive functions where the time of f dominates
+  the coordination overhead."
+  ([f coll]
+   (let [n (+ 2 (-num-cpus))
+         rets (map (fn [x] (future-call (fn [] (f x)))) coll)
+         step (fn step [[x & xs :as vs] fs]
+                (lazy-seq
+                 (if-let [s (seq fs)]
+                   (cons (deref x) (step xs (rest s)))
+                   (map deref vs))))]
+     (step rets (drop n rets))))
+  ([f coll & colls]
+   (let [step (fn step [cs]
+                (lazy-seq
+                 (let [ss (map seq cs)]
+                   (when (every? identity ss)
+                     (cons (map first ss) (step (map rest ss)))))))]
+     (pmap (fn [xs] (apply f xs)) (step (cons coll colls))))))
+
+;; pcalls / pvalues : n thunks (or exprs) evaluated in parallel via pmap,
+;; results in order.
+;; oracle: (pcalls (fn [] 1) (fn [] 2) (fn [] 3)) => (1 2 3);
+;; (pvalues (+ 1 2) (* 3 4)) => (3 12)
+(defn pcalls
+  "Executes the no-arg fns in parallel, returning a lazy sequence of
+  their values"
+  [& fns]
+  (pmap (fn [f] (f)) fns))
+
+(defmacro pvalues
+  "Returns a lazy sequence of the values of the exprs, which are
+  evaluated in parallel"
+  [& exprs]
+  `(pcalls ~@(map (fn [e] (list 'fn* [] e)) exprs)))

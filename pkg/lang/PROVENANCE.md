@@ -434,7 +434,7 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   two-line wrappers over `Ops(x).Combine(Ops(y)).LTE/GTE`, mirroring the
   existing `LT`/`GT` exactly. They back the new rt.LE2/GE2/LEBool/GEBool
   guarded comparison intrinsics (pkg/emit/rt); no vendored logic changed.
-||||||| 24b7505
+
 ## Boot-refer bulk install (perf/startup clawback, 2026-07-23)
 
 - `namespace.go`: added `CompareAndSetMappings` (swap the whole mapping
@@ -444,3 +444,18 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   snapshot of clojure.core's public vars instead of ~900 per-symbol
   path-copying Assocs per boot namespace. Per-symbol `reference()`
   semantics are unchanged and remain the fallback on any conflict.
+
+## Namespace mutation surface (fundamentals batch A4, 2026-07-23)
+
+- `namespace.go`: added `Unmap` (clojure.core/ns-unmap's remove-a-mapping
+  primitive; throws the JVM's "Can't unintern namespace-qualified symbol"
+  on a qualified name) and `RemoveAlias` (ns-unalias) — both CAS-retry
+  loops on the same mappings/aliases Boxes the existing mutators swing,
+  so they compose with the boot-refer `CompareAndSetMappings` bulk path
+  (a bulk install that loses the race falls back to per-symbol
+  reference; a completed unmap is never resurrected by a stale
+  snapshot). `RemoveNamespace` now RETURNS the removed *Namespace (nil
+  when absent) for clojure.core/remove-ns, and its clojure.core refusal
+  message is the oracle-exact "Cannot remove clojure namespace"
+  (was "cannot remove clojure.core namespace"). No vendored logic
+  changed otherwise.
