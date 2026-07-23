@@ -1,0 +1,7 @@
+;; greet.core — a tiny pure-Clojure library, consumed by ../app as a (dep …).
+;; It lives entirely outside the consumer's tree; the consumer reaches it only
+;; through the resolved dependency load path (ADR 0052, load-path slot 3).
+(ns greet.core)
+
+(defn hello [who]
+  (str "Hello, " who ", from greetlib!"))
