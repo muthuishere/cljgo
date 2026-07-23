@@ -26,7 +26,7 @@ type (
 		isMacroCached atomic.Int32
 
 		// sealed marks a var whose root mutation must flip CoreArithDirty
-		// (spike s43 / ADR 0066). rt.Boot seals the seven core arithmetic
+		// (spike s43 / ADR 0066). rt.Boot seals the nine core arithmetic
 		// vars (+ - * / < > =) after the pristine snapshot; a later
 		// BindRoot/AlterRoot on any of them (def redefinition,
 		// alter-var-root, with-redefs) trips the global dirty flag so the
@@ -173,7 +173,7 @@ func (v *Var) HasRoot() bool {
 }
 
 // Seal marks the var so that any future root mutation trips CoreArithDirty
-// (spike s43 / ADR 0066). rt.Boot calls it on the seven core arithmetic
+// (spike s43 / ADR 0066). rt.Boot calls it on the nine core arithmetic
 // vars after the pristine builtin snapshot, so the boot-time BindRoots that
 // install the builtins and load compiled core do NOT trip the flag — only a
 // user/core redefinition after boot does. Returns the var for chaining.

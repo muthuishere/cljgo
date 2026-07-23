@@ -153,6 +153,12 @@ func GT(x, y any) bool {
 func LT(x, y any) bool {
 	return Ops(x).Combine(Ops(y)).LT(x, y)
 }
+func GTE(x, y any) bool {
+	return Ops(x).Combine(Ops(y)).GTE(x, y)
+}
+func LTE(x, y any) bool {
+	return Ops(x).Combine(Ops(y)).LTE(x, y)
+}
 func NumbersEqual(x, y any) bool {
 	return category(x) == category(y) &&
 		Ops(x).Combine(Ops(y)).Equiv(x, y)

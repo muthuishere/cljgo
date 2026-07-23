@@ -428,6 +428,13 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   rehash also aligned set print order with the JVM (seq-coll-batch1.clj
   re-oracled).
 
+## LTE/GTE tower wrappers (ADR 0067 <=/>= follow-up, 2026-07-23)
+
+- `numberops.go`: added `LTE(x, y any) bool` / `GTE(x, y any) bool` —
+  two-line wrappers over `Ops(x).Combine(Ops(y)).LTE/GTE`, mirroring the
+  existing `LT`/`GT` exactly. They back the new rt.LE2/GE2/LEBool/GEBool
+  guarded comparison intrinsics (pkg/emit/rt); no vendored logic changed.
+||||||| 24b7505
 ## Boot-refer bulk install (perf/startup clawback, 2026-07-23)
 
 - `namespace.go`: added `CompareAndSetMappings` (swap the whole mapping

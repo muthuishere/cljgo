@@ -9,7 +9,7 @@
 //
 // Guarded intrinsics: a 2-argument call to a core arithmetic builtin
 // (`+ - * / < > =`) emits as rt.Add2(v, x, y) etc. Since ADR 0066 (spike
-// s43) the seven core arithmetic vars are SEALED by Boot after the
+// s43) the nine core arithmetic vars are SEALED by Boot after the
 // pristine snapshot, and each helper checks the process-global
 // lang.CoreArithDirty ONCE per call (a single relaxed atomic.Bool load)
 // instead of the ADR 0004 per-call var deref + interface-compare:
@@ -44,6 +44,7 @@ var (
 
 	origAdd, origSub, origMul, origDiv any
 	origLT, origGT, origEQ             any
+	origLTE, origGTE                   any
 )
 
 // coreArithDirty reports whether any sealed core arithmetic var has been
@@ -98,6 +99,7 @@ func Boot() {
 	}
 	vAdd, vSub, vMul, vDiv := findVar("+"), findVar("-"), findVar("*"), findVar("/")
 	vLT, vGT, vEQ := findVar("<"), findVar(">"), findVar("=")
+	vLTE, vGTE := findVar("<="), findVar(">=")
 	origAdd = vAdd.Get()
 	origSub = vSub.Get()
 	origMul = vMul.Get()
@@ -105,6 +107,8 @@ func Boot() {
 	origLT = vLT.Get()
 	origGT = vGT.Get()
 	origEQ = vEQ.Get()
+	origLTE = vLTE.Get()
+	origGTE = vGTE.Get()
 	if coreLoader == nil {
 		panic("rt.Boot: no AOT core linked — a cljgo binary must blank-import github.com/muthuishere/cljgo/pkg/coreaot (the emitter does this; see ADR 0046)")
 	}
@@ -112,9 +116,9 @@ func Boot() {
 	// Seal AFTER compiled core has loaded (ADR 0066 / spike s43): the
 	// builtin installs and every core BindRoot ran above with the vars
 	// unsealed, so none of them tripped CoreArithDirty. From here on, only
-	// a user redefinition of one of these seven trips the flag and sends the
+	// a user redefinition of one of these nine trips the flag and sends the
 	// intrinsics back to the guarded liveness path. core.clj never re-defs
-	// +/-/*///</>/= (see Boot's contract comment); if it ever did, the flag
+	// +/-/*///</>/=/<=/>= (see Boot's contract comment); if it ever did, the flag
 	// would simply trip and cost the fast path — never correctness.
 	vAdd.Seal()
 	vSub.Seal()
@@ -123,6 +127,8 @@ func Boot() {
 	vLT.Seal()
 	vGT.Seal()
 	vEQ.Seal()
+	vLTE.Seal()
+	vGTE.Seal()
 }
 
 // RegisterCoreLoader receives pkg/coreaot's Load from its init(). rt
@@ -250,6 +256,36 @@ func GT2(v *lang.Var, x, y any) any {
 	return lang.GT(x, y)
 }
 
+// LE2 is (<= x y).
+func LE2(v *lang.Var, x, y any) any {
+	if coreArithDirty() {
+		if f := v.Get(); f != origLTE {
+			return lang.Apply2(f, x, y)
+		}
+	}
+	xi, xok := x.(int64)
+	yi, yok := y.(int64)
+	if xok && yok {
+		return xi <= yi
+	}
+	return lang.LTE(x, y)
+}
+
+// GE2 is (>= x y).
+func GE2(v *lang.Var, x, y any) any {
+	if coreArithDirty() {
+		if f := v.Get(); f != origGTE {
+			return lang.Apply2(f, x, y)
+		}
+	}
+	xi, xok := x.(int64)
+	yi, yok := y.(int64)
+	if xok && yok {
+		return xi >= yi
+	}
+	return lang.GTE(x, y)
+}
+
 // EQ2 is (= x y).
 func EQ2(v *lang.Var, x, y any) any {
 	if coreArithDirty() {
@@ -289,6 +325,34 @@ func GTBool(v *lang.Var, x, y any) bool {
 		return xi > yi
 	}
 	return lang.GT(x, y)
+}
+
+func LEBool(v *lang.Var, x, y any) bool {
+	if coreArithDirty() {
+		if f := v.Get(); f != origLTE {
+			return lang.IsTruthy(lang.Apply2(f, x, y))
+		}
+	}
+	xi, xok := x.(int64)
+	yi, yok := y.(int64)
+	if xok && yok {
+		return xi <= yi
+	}
+	return lang.LTE(x, y)
+}
+
+func GEBool(v *lang.Var, x, y any) bool {
+	if coreArithDirty() {
+		if f := v.Get(); f != origGTE {
+			return lang.IsTruthy(lang.Apply2(f, x, y))
+		}
+	}
+	xi, xok := x.(int64)
+	yi, yok := y.(int64)
+	if xok && yok {
+		return xi >= yi
+	}
+	return lang.GTE(x, y)
 }
 
 func EQBool(v *lang.Var, x, y any) bool {
