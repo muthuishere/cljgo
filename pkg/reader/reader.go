@@ -512,6 +512,19 @@ func (r *Reader) readTaggedLiteral(start Position) (any, error) {
 		// The following form is ignored by convention (none is the
 		// nullary sentinel; it also prints simply as `none`).
 		return lang.None, nil
+	}
+	// A program-registered *data-readers* entry overrides even the built-in
+	// #uuid/#inst tags (oracle 1.12.5: (binding [*data-readers* {'inst (fn
+	// [v] [:inst v])}] (read-string "#inst \"2020-01-01\"")) => [:inst
+	// "2020-01-01"]) — but only for the CORE reader: clojure.edn never
+	// consults *data-readers* on the JVM, so the edn-strict mode skips it.
+	// The cljgo-owned cljgo/* tags above stay ours (ADR 0014).
+	if !r.ednStrict {
+		if fn, ok := dataReaderFor(sym); ok {
+			return fn.Invoke(val), nil
+		}
+	}
+	switch sym.FullName() {
 	case "uuid":
 		s, ok := val.(string)
 		if !ok {
@@ -533,10 +546,6 @@ func (r *Reader) readTaggedLiteral(start Position) (any, error) {
 		}
 		return inst, nil
 	}
-	// Extension point: a program-registered *data-readers* function.
-	if fn, ok := dataReaderFor(sym); ok {
-		return fn.Invoke(val), nil
-	}
 	// clojure.edn/read-string's `:default` option: an (fn [tag value])
 	// invoked for a tag with no built-in handler and no *data-readers*
 	// entry (oracle: (edn/read-string {:default (fn [_tag v] [:unknown
@@ -551,6 +560,17 @@ func (r *Reader) readTaggedLiteral(start Position) (any, error) {
 	// read of unselected branches). Only the value is consumed above.
 	if r.tagSuppress > 0 {
 		return nil, nil
+	}
+	// *default-data-reader-fn* — the LAST resort before the error, exactly
+	// clojure.core (oracle 1.12.5: (binding [*default-data-reader-fn* (fn
+	// [t v] [t v])] (read-string "#foo/bar 1")) => [foo/bar 1]; a KNOWN tag
+	// like #inst never reaches it). Core reads only: clojure.edn has its
+	// own :default option (defaultReader, above) and ignores this var, as
+	// on the JVM.
+	if !r.ednStrict {
+		if fn, ok := defaultDataReaderFn(); ok {
+			return fn.Invoke(sym, val), nil
+		}
 	}
 	return nil, r.errAt(start, "No reader function for tag #%s", sym.FullName())
 }

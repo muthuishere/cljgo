@@ -461,6 +461,11 @@ func RegisterAll() {
 	// slurp/spit file convenience over the Go host (io_builtins.go).
 	internIOBuiltins(def)
 
+	// print-method/print-dup substrate, print-simple, Throwable->map,
+	// default-data-readers, stream read/read+string (batch A2,
+	// printread_builtins.go).
+	internPrintReadBuiltins(def, defPrivate)
+
 	// atom / swap! / reset! / deref: the minimal mutable-cell set
 	// (clojure.core). test.cljg holds its report counters in an atom.
 	// atom: (atom x) / (atom x & {:validator vf :meta m}), the trailing

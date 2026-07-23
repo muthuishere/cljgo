@@ -288,6 +288,17 @@ func internMultimethodBuiltins(def func(string, func(...any) any) *lang.Var) {
 			panic(fmt.Errorf("defmethod: method impl is not a function: %s", lang.PrintString(args[2])))
 		}
 		m.addMethod(args[1], fn)
+		// The first NON-:default method registered on print-method or
+		// print-dup activates the printer's multimethod seam (batch A2,
+		// printread_builtins.go); until then lang.Print pays one atomic
+		// bool load and never dispatches. Name-keyed on purpose: the two
+		// core multimethods are resolved by var when the seam fires, so a
+		// same-named user defmulti can only cost a redundant lookup, never
+		// hijack printing.
+		if (m.name == "print-method" || m.name == "print-dup") &&
+			!lang.Equiv(args[1], lang.InternKeywordString("default")) {
+			lang.PrintDispatchActive.Store(true)
+		}
 		return m
 	})
 

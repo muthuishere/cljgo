@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 // formatFloat renders a float64 exactly like Java's Double.toString
@@ -161,6 +162,97 @@ func printLength() (int, bool) {
 	return 0, false
 }
 
+// PrintDispatch / PrintDispatchActive are the print-method seam (batch A2,
+// printing): pkg/corelib installs PrintDispatch (it owns the print-method /
+// print-dup multimethods, which live in core.clj), and flips
+// PrintDispatchActive the first time a NON-:default method is registered on
+// either. Until then the printer pays exactly one predictable atomic bool
+// load per Print call — the native fast path is untouched (perf budgets,
+// design/00 §1.4). When active, PrintDispatch returns the user's method for
+// x's dispatch value (nil when only :default would match, which routes back
+// here to the native path).
+var (
+	PrintDispatch       func(x any) IFn
+	PrintDispatchActive atomic.Bool
+)
+
+// printLevelStep implements *print-level* for one collection print (oracle
+// 1.12.5: (binding [*print-level* 2] (pr-str [1 [2 [3 [4]]]])) => "[1 [2
+// #]]"): when the var is bound to an int and the level is exhausted the
+// whole collection prints as "#" (done=true); otherwise a decremented
+// level is pushed for the collection's contents and pop undoes it. The
+// unbound (nil) case — clojure.core's default — costs one root load.
+func printLevelStep(w io.Writer) (done bool, pop func()) {
+	v := VarPrintLevel.Deref()
+	if v == nil {
+		return false, nil
+	}
+	n, ok := AsNumber(v)
+	if !ok {
+		return false, nil
+	}
+	if AsInt64(n) <= 0 {
+		io.WriteString(w, "#")
+		return true, nil
+	}
+	PushThreadBindings(NewMap(VarPrintLevel, AsInt64(n)-1))
+	return false, PopThreadBindings
+}
+
+// printMetaPrefix implements *print-meta* (oracle 1.12.5: (binding
+// [*print-meta* true] (pr-str (with-meta [1] {:a 1}))) => "^{:a 1} [1]"; a
+// single-:tag meta prints short-form "^Long x"; println — readably false —
+// never prints meta). Shared by the native printer and print-simple.
+func printMetaPrefix(x any, w io.Writer, readably bool) {
+	if !readably || !BooleanCast(VarPrintMeta.Deref()) {
+		return
+	}
+	im, ok := x.(IMeta)
+	if !ok {
+		return
+	}
+	m := im.Meta()
+	if m == nil || m.Count() == 0 {
+		return
+	}
+	io.WriteString(w, "^")
+	if tag := m.ValAt(KWTag); m.Count() == 1 && IsTruthy(tag) {
+		Print(tag, w)
+	} else {
+		Print(m, w)
+	}
+	io.WriteString(w, " ")
+}
+
+// liftableMapNS implements *print-namespace-maps*'s key scan: the shared
+// namespace when EVERY key is a namespace-qualified keyword or symbol with
+// the SAME namespace (oracle 1.12.5: {:foo/a 1 :foo/b 2} => #:foo{:a 1, :b
+// 2}; {'foo/a 1} => #:foo{a 1}; a mixed or unqualified key => plain map),
+// else "".
+func liftableMapNS(m IPersistentMap) string {
+	if m.Count() == 0 {
+		return ""
+	}
+	ns := ""
+	for seq := m.Seq(); seq != nil; seq = seq.Next() {
+		var kns string
+		switch k := seq.First().(IMapEntry).Key().(type) {
+		case Keyword:
+			s, _ := k.Namespace().(string)
+			kns = s
+		case *Symbol:
+			kns = k.Namespace()
+		default:
+			return ""
+		}
+		if kns == "" || (ns != "" && kns != ns) {
+			return ""
+		}
+		ns = kns
+	}
+	return ns
+}
+
 // RTPrintString corresponds to Clojure's RT.printString.
 func PrintString(v interface{}) string {
 	sb := strings.Builder{}
@@ -191,13 +283,41 @@ func PrintStringReadably(v interface{}, readably bool) string {
 }
 
 // Print prints a value to the given io.Writer. Corresponds to
-// Clojure's RT.print.
+// Clojure's RT.print. Routes through the print-method / print-dup
+// multimethods (PrintDispatch) for values that HAVE a user extension —
+// exactly one atomic bool load when none exists — and through the native
+// fast path (PrintNative) otherwise.
 func Print(x interface{}, w io.Writer) {
 	if VarPrintInitialized.IsBound() && BooleanCast(VarPrintInitialized.Deref()) {
 		VarPrOn.Invoke(x, w)
 		return
 	}
+	if PrintDispatchActive.Load() && PrintDispatch != nil && x != nil {
+		if fn := PrintDispatch(x); fn != nil {
+			fn.Invoke(x, w)
+			return
+		}
+	}
+	PrintNative(x, w)
+}
+
+// PrintSimple is clojure.core/print-simple: the ^meta prefix (when
+// *print-meta*), then the value's plain ToString — no readable quoting
+// (oracle 1.12.5: (print-simple [1 2] *out*) prints [1 2]; (print-simple
+// "str" *out*) prints str, unquoted).
+func PrintSimple(x interface{}, w io.Writer) {
+	printMetaPrefix(x, w, BooleanCast(VarPrintReadably.Deref()))
+	io.WriteString(w, ToString(x))
+}
+
+// PrintNative is the built-in printer for every value without a
+// print-method extension — the pre-multimethod Print body. The :default
+// print-method method (core.clj) lands here via the -print-native builtin,
+// so (print-method x w) on an unextended value and plain pr print
+// byte-identically.
+func PrintNative(x interface{}, w io.Writer) {
 	readably := BooleanCast(VarPrintReadably.Deref())
+	printMetaPrefix(x, w, readably)
 
 	if IsNil(x) {
 		io.WriteString(w, "nil")
@@ -225,6 +345,11 @@ func Print(x interface{}, w io.Writer) {
 		// elements then "..." (oracle 1.12.5: (binding [*print-length* 3]
 		// (pr-str (range 10))) => "(0 1 2 ...)"). Without the bound an
 		// infinite lazy seq would print forever.
+		if done, pop := printLevelStep(w); done {
+			return
+		} else if pop != nil {
+			defer pop()
+		}
 		limit, limited := printLength()
 		io.WriteString(w, "(")
 		n := 0
@@ -249,12 +374,33 @@ func Print(x interface{}, w io.Writer) {
 	} else if r, ok := x.(*Record); ok {
 		// A defrecord prints as `#ns.Name{:a 1, :b 2}` — checked before the
 		// generic IPersistentMap branch (a record IS an IPersistentMap).
+		if done, pop := printLevelStep(w); done {
+			return
+		} else if pop != nil {
+			defer pop()
+		}
 		printRecord(r, w)
 	} else if m, ok := x.(IPersistentMap); ok {
 		// *print-length* bounds entries (oracle 1.12.5:
 		// (binding [*print-length* 1] (pr-str {:a 1 :b 2})) => "{:a 1, ...}").
+		if done, pop := printLevelStep(w); done {
+			return
+		} else if pop != nil {
+			defer pop()
+		}
+		// *print-namespace-maps* lifts a shared key namespace to a #:ns{}
+		// prefix (oracle 1.12.5: {:foo/a 1 :foo/b 2} => #:foo{:a 1, :b 2};
+		// see liftableMapNS). Only for readable printing.
+		liftedNS := ""
+		if readably && BooleanCast(VarPrintNamespaceMaps.Deref()) {
+			liftedNS = liftableMapNS(m)
+		}
 		limit, limited := printLength()
-		io.WriteString(w, "{")
+		if liftedNS != "" {
+			io.WriteString(w, "#:"+liftedNS+"{")
+		} else {
+			io.WriteString(w, "{")
+		}
 		n := 0
 		for seq := m.Seq(); seq != nil; seq = seq.Next() {
 			if limited && n >= limit {
@@ -262,7 +408,17 @@ func Print(x interface{}, w io.Writer) {
 				break
 			}
 			e := seq.First().(IMapEntry)
-			Print(e.Key(), w)
+			if liftedNS != "" {
+				// The namespace moved to the #:ns prefix; print the bare name.
+				switch k := e.Key().(type) {
+				case Keyword:
+					io.WriteString(w, ":"+k.Name())
+				case *Symbol:
+					io.WriteString(w, k.Name())
+				}
+			} else {
+				Print(e.Key(), w)
+			}
 			io.WriteString(w, " ")
 			Print(e.Val(), w)
 			n++
@@ -274,6 +430,11 @@ func Print(x interface{}, w io.Writer) {
 	} else if v, ok := x.(IPersistentVector); ok {
 		// *print-length* bounds elements (oracle 1.12.5:
 		// (binding [*print-length* 3] (pr-str [1 2 3 4 5])) => "[1 2 3 ...]").
+		if done, pop := printLevelStep(w); done {
+			return
+		} else if pop != nil {
+			defer pop()
+		}
 		limit, limited := printLength()
 		io.WriteString(w, "[")
 		for i := 0; i < v.Count(); i++ {
@@ -290,6 +451,11 @@ func Print(x interface{}, w io.Writer) {
 	} else if s, ok := x.(IPersistentSet); ok {
 		// *print-length* bounds elements (oracle 1.12.5:
 		// (binding [*print-length* 1] (pr-str #{1 2 3})) => "#{1 ...}").
+		if done, pop := printLevelStep(w); done {
+			return
+		} else if pop != nil {
+			defer pop()
+		}
 		limit, limited := printLength()
 		io.WriteString(w, "#{")
 		n := 0

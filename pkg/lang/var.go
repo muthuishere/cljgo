@@ -89,13 +89,50 @@ var (
 	// the vendored printer (PROVENANCE.md): without it, printing an
 	// infinite lazy seq (e.g. a failing clojure.test assertion whose actual
 	// value is unbounded) never terminates.
-	VarPrintLength  = InternVarReplaceRoot(NSCore, NewSymbol("*print-length*"), nil).SetDynamic()
-	VarOut          = InternVarReplaceRoot(NSCore, NewSymbol("*out*"), os.Stdout).SetDynamic()
-	VarIn           = InternVarReplaceRoot(NSCore, NewSymbol("*in*"), os.Stdin).SetDynamic()
-	VarAssert       = InternVarReplaceRoot(NSCore, NewSymbol("*assert*"), false).SetDynamic()
-	VarCompileFiles = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
-	VarFile         = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
-	VarDataReaders  = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
+	VarPrintLength = InternVarReplaceRoot(NSCore, NewSymbol("*print-length*"), nil).SetDynamic()
+	// VarPrintLevel backs *print-level* (root nil = unlimited, exactly
+	// clojure.core): when bound to an int, a collection nested deeper than
+	// that many levels prints as `#` (oracle 1.12.5: (binding [*print-level*
+	// 2] (pr-str [1 [2 [3 [4]]]])) => "[1 [2 #]]"). Batch A2 (printing).
+	VarPrintLevel = InternVarReplaceRoot(NSCore, NewSymbol("*print-level*"), nil).SetDynamic()
+	// VarPrintMeta backs *print-meta* (root false, exactly clojure.core):
+	// when truthy AND *print-readably* is truthy, a value with non-empty
+	// metadata prints with a ^meta prefix (oracle 1.12.5: (binding
+	// [*print-meta* true] (pr-str (with-meta [1] {:a 1}))) => "^{:a 1} [1]";
+	// a lone :tag prints short-form: ^Long x).
+	VarPrintMeta = InternVarReplaceRoot(NSCore, NewSymbol("*print-meta*"), false).SetDynamic()
+	// VarPrintNamespaceMaps backs *print-namespace-maps* (root true — the
+	// value clojure.main binds for a `clojure -M script.clj` run, which is
+	// cljgo's oracle context; the JVM's raw root is false but no cljgo
+	// entry point runs outside "main"): a map whose keys are all
+	// keywords/symbols sharing one namespace prints as #:ns{...} (oracle
+	// 1.12.5: (pr-str {:foo/a 1 :foo/b 2}) => "#:foo{:a 1, :b 2}").
+	VarPrintNamespaceMaps = InternVarReplaceRoot(NSCore, NewSymbol("*print-namespace-maps*"), true).SetDynamic()
+	// VarPrintDup backs *print-dup* (root false). cljgo's printer consults
+	// the print-dup multimethod (core.clj) when it is truthy; the JVM's
+	// #=(...) constructor forms for built-in types are NOT emitted (cljgo's
+	// reader has no #= at all) — a documented deviation, see
+	// conformance/tests/print-method.clj.
+	VarPrintDup = InternVarReplaceRoot(NSCore, NewSymbol("*print-dup*"), false).SetDynamic()
+	// VarReadEval backs *read-eval* (root true, exactly clojure.core).
+	// cljgo's reader has no #= eval-on-read AT ALL (it always throws), the
+	// safe subset of every *read-eval* setting; the var exists so code that
+	// binds/reads it ports (batch A2, reading surface).
+	VarReadEval = InternVarReplaceRoot(NSCore, NewSymbol("*read-eval*"), true).SetDynamic()
+	// VarDefaultDataReaderFn backs *default-data-reader-fn* (root nil,
+	// exactly clojure.core): when bound to an (fn [tag value]), the reader
+	// calls it for a tagged literal whose tag has no built-in handler and
+	// no *data-readers* entry (oracle 1.12.5: (binding
+	// [*default-data-reader-fn* (fn [t v] [t v])] (read-string
+	// "#foo/bar 1")) => [foo/bar 1]). Consulted by pkg/reader (core reads
+	// only — clojure.edn ignores it, as on the JVM).
+	VarDefaultDataReaderFn = InternVarReplaceRoot(NSCore, NewSymbol("*default-data-reader-fn*"), nil).SetDynamic()
+	VarOut                 = InternVarReplaceRoot(NSCore, NewSymbol("*out*"), os.Stdout).SetDynamic()
+	VarIn                  = InternVarReplaceRoot(NSCore, NewSymbol("*in*"), os.Stdin).SetDynamic()
+	VarAssert              = InternVarReplaceRoot(NSCore, NewSymbol("*assert*"), false).SetDynamic()
+	VarCompileFiles        = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
+	VarFile                = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
+	VarDataReaders         = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
 	// VarMathContext backs *math-context* (ADR 0032 follow-on): root nil =
 	// unbound = unlimited-precision BigDecimal arithmetic (today's default:
 	// exact add/sub/mul, divide throws on non-termination). `with-precision`

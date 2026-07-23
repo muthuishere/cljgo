@@ -1876,3 +1876,127 @@
        (if (< ~idx l#)
          (recur (inc ~idx) ~expr)
          ~ret))))
+
+;; ===========================================================================
+;; --- batch A2 (2026-07-23): printing + reading extension surface ----------
+;;
+;; print-method / print-dup / print-simple, char print maps, munge,
+;; with-in-str. Oracle: JVM Clojure 1.12.5 via the `clojure` CLI; frozen in
+;; conformance/tests/print-method.clj, print-knobs.clj, char-print-maps.clj,
+;; munge.clj, read-core-stream.clj. Everything here is a precedence-safe
+;; ADDITION (clojure.core names, JVM semantics — never a rename).
+
+;; char-escape-string: char -> its escape inside a readably-printed string
+;; literal, nil for anything unescaped. oracle: (char-escape-string
+;; \newline) => "\\n"; (char-escape-string \a) => nil; the full map has
+;; exactly these 7 entries.
+(def char-escape-string
+  {\newline "\\n"
+   \tab "\\t"
+   \return "\\r"
+   \" "\\\""
+   \\ "\\\\"
+   \formfeed "\\f"
+   \backspace "\\b"})
+
+;; char-name-string: char -> the name a \-literal prints with, nil
+;; otherwise. oracle: (char-name-string \newline) => "newline";
+;; (char-name-string \space) => "space"; exactly these 6 entries.
+(def char-name-string
+  {\newline "newline"
+   \tab "tab"
+   \space "space"
+   \backspace "backspace"
+   \formfeed "formfeed"
+   \return "return"})
+
+;; -munge-char-map is the Compiler/CHAR_MAP (the inverse of clojure.repl's
+;; -demunge-pairs, core/repl.cljg — keep the two in sync). '.' is NOT
+;; munged; '-' munges to a bare underscore.
+(def ^:private -munge-char-map
+  {\- "_"
+   \: "_COLON_"
+   \+ "_PLUS_"
+   \> "_GT_"
+   \< "_LT_"
+   \= "_EQ_"
+   \~ "_TILDE_"
+   \! "_BANG_"
+   \@ "_CIRCA_"
+   \# "_SHARP_"
+   \' "_SINGLEQUOTE_"
+   \" "_DOUBLEQUOTE_"
+   \% "_PERCENT_"
+   \^ "_CARET_"
+   \& "_AMPERSAND_"
+   \* "_STAR_"
+   \| "_BAR_"
+   \{ "_LBRACE_"
+   \} "_RBRACE_"
+   \[ "_LBRACK_"
+   \] "_RBRACK_"
+   \/ "_SLASH_"
+   \\ "_BSLASH_"
+   \? "_QMARK_"})
+
+;; munge: Compiler/munge over (str s); a symbol in, a symbol out —
+;; anything else (string, keyword) becomes a munged string. oracle:
+;; (munge "foo-bar?") => "foo_bar_QMARK_"; (munge 'foo-bar?) =>
+;; foo_bar_QMARK_ (a symbol); (munge :kw) => "_COLON_kw"; (munge "a.b") =>
+;; "a.b" ('.' survives).
+(defn munge
+  "Munges a Clojure name into a legal host identifier the way the JVM
+  Compiler does. Symbols stay symbols; everything else becomes a string."
+  [s]
+  ((if (symbol? s) symbol str)
+   (apply str (map (fn [c] (get -munge-char-map c c)) (str s)))))
+
+;; namespace-munge: only '-' -> '_' (the JVM's .replace \- \_), always a
+;; string. oracle: (namespace-munge "my-ns.core") => "my_ns.core";
+;; (namespace-munge 'my-ns.core) => "my_ns.core".
+(defn namespace-munge
+  "Convert a Clojure namespace name to a legal host package name by
+  replacing hyphens with underscores. Returns a string."
+  [ns]
+  (apply str (map (fn [c] (if (= c \-) \_ c)) (str ns))))
+
+;; with-in-str: body with *in* bound to a fresh string-backed reader —
+;; the enabler for stream `read` code (JVM: a LineNumberingPushbackReader
+;; over a StringReader; cljgo: the -string-pushback-reader builtin,
+;; printread_builtins.go). oracle: (with-in-str "[:a :b] rest" (read)) =>
+;; [:a :b]. `binding` is a cljgo special form, forced bare with ~' exactly
+;; as in with-out-str above.
+(defmacro with-in-str
+  "Evaluates body in a context in which *in* is bound to a fresh
+  reader initialized with the string s."
+  [s & body]
+  `(~'binding [*in* (clojure.core/-string-pushback-reader ~s)]
+     ~@body))
+
+;; --- print-method / print-dup : the printer's extension points -----------
+;;
+;; JVM-faithful dispatch: keyword :type metadata wins, else the value's
+;; class (-print-class, printread_builtins.go — the *TypeMarker for
+;; deftype/defrecord instances, an interned ClassRef for well-known scalar
+;; classes, a stable reflect.Type otherwise). The :default method is the
+;; native Go printer, so an unextended value prints byte-identically with
+;; or without the multimethod in the loop — and lang.Print only consults
+;; the multimethod at all once a non-:default method exists
+;; (PrintDispatchActive), keeping the common path on the native fast path.
+;; oracle 1.12.5 (conformance/tests/print-method.clj):
+;;   (defmethod print-method Pt [p w] (.write w ...)) makes (pr-str (Pt. 1
+;;   2)) => the custom form, at every nesting depth, for pr AND println;
+;;   (defmethod print-method ::kw ...) fires for (with-meta x {:type ::kw}).
+(defmulti print-method (fn [x writer]
+                         (let [t (get (meta x) :type)]
+                           (if (keyword? t) t (-print-class x)))))
+
+(defmethod print-method :default [o w] (-print-native o w))
+
+;; print-dup: the *print-dup* variant. cljgo consults it (before
+;; print-method) only while *print-dup* is truthy. DEVIATION (documented):
+;; the JVM's built-in #=(...) print-dup constructor forms are NOT emitted —
+;; cljgo's reader has no #= — so built-in types print their ordinary
+;; readable form under *print-dup*; only user-registered print-dup methods
+;; change output.
+(defmulti print-dup (fn [x writer] (-print-class x)))
