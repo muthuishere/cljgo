@@ -95,6 +95,26 @@
         (recur threaded (next forms)))
       x)))
 
+;; `..` — chained member access, clojure.core surface (same shape upstream:
+;;   (defmacro .. ([x form] `(. ~x ~form))
+;;                ([x form & more] `(.. (. ~x ~form) ~@more)))).
+;; cljgo has no bare `.` host special — member access is the `.member` /
+;; `.-Field` sugar (ADR 0010, design/05 §1) — so the single-form arm
+;; normalizes `(m arg...)` / `m` / `-Field` to that sugar; the chaining arm
+;; is upstream's recursion verbatim. Semantics identical: left-to-right
+;; member chaining, each result the next receiver.
+;; oracle (clojure 1.12.5, 2026-07-23):
+;;   (.. "abc" (length))                    => 3
+;;   (.. "ab" (toUpperCase) (charAt 1))     => \B
+;;   (.. "ab" toUpperCase (charAt 0))       => \A   ; bare-symbol member
+(defmacro ..
+  ([x form]
+   (if (seq? form)
+     `(~(symbol (str "." (name (first form)))) ~x ~@(next form))
+     `(~(symbol (str "." (name form))) ~x)))
+  ([x form & more]
+   `(.. (.. ~x ~form) ~@more)))
+
 ;; oracle: (macroexpand-1 '(cond a 1 b 2)) => (if a 1 (clojure.core/cond b 2))
 ;; oracle: (macroexpand-1 '(cond))         => nil
 ;; oracle: (macroexpand-1 '(cond a))       => Syntax error macroexpanding cond
