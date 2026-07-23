@@ -133,6 +133,23 @@ var (
 	VarCompileFiles        = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
 	VarFile                = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
 	VarDataReaders         = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
+	VarOut         = InternVarReplaceRoot(NSCore, NewSymbol("*out*"), os.Stdout).SetDynamic()
+	VarIn          = InternVarReplaceRoot(NSCore, NewSymbol("*in*"), os.Stdin).SetDynamic()
+	VarErr         = InternVarReplaceRoot(NSCore, NewSymbol("*err*"), os.Stderr).SetDynamic()
+	// VarFlushOnNewline backs *flush-on-newline* (root true, the JVM
+	// default). Go's os.Stdout writes are unbuffered so the print family
+	// has nothing to flush; the var exists so (binding [*flush-on-newline*
+	// …]) and reads of it behave as on the JVM (fundamentals batch A1).
+	VarFlushOnNewline = InternVarReplaceRoot(NSCore, NewSymbol("*flush-on-newline*"), true).SetDynamic()
+	// VarCommandLineArgs backs *command-line-args* (root nil = none, the
+	// JVM contract): cmd/cljgo's `run` binds it from the args after the
+	// file, and the emitted func main() binds it from os.Args[1:], so the
+	// REPL/run and a compiled binary read identically (fundamentals A1).
+	VarCommandLineArgs = InternVarReplaceRoot(NSCore, NewSymbol("*command-line-args*"), nil).SetDynamic()
+	VarAssert          = InternVarReplaceRoot(NSCore, NewSymbol("*assert*"), false).SetDynamic()
+	VarCompileFiles    = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
+	VarFile            = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
+	VarDataReaders     = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
 	// VarMathContext backs *math-context* (ADR 0032 follow-on): root nil =
 	// unbound = unlimited-precision BigDecimal arithmetic (today's default:
 	// exact add/sub/mul, divide throws on non-termination). `with-precision`
@@ -238,6 +255,13 @@ func (v *Var) BindRoot(root interface{}) {
 
 func (v *Var) IsBound() bool {
 	return v.HasRoot() || v.dynamicBound.Load() && v.getDynamicBinding() != nil
+}
+
+// HasThreadBinding reports whether the calling goroutine has a thread
+// binding in effect for this var — the JVM's getThreadBinding() != null,
+// backing clojure.core/thread-bound? (fundamentals batch A1).
+func (v *Var) HasThreadBinding() bool {
+	return v.getDynamicBinding() != nil
 }
 
 func (v *Var) getRoot() interface{} {

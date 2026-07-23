@@ -69,9 +69,38 @@
                (do (reset! s-atom (next ss)) (recur))))
            (do (reset! done true) (rf nil) (recur))))))))
 
+;; -sequence-lazy-multi is -sequence-lazy's multi-coll cousin (the JVM's
+;; TransformerIterator.createMulti): each step pulls the FIRST of every
+;; source and feeds them to the xform's step as one multi-input call —
+;; (rf nil x1 x2 ...) — stopping when ANY source is exhausted (or the
+;; xform signals `reduced`), then flushing the completion arity once.
+(defn -sequence-lazy-multi [rf ss-atom buf done]
+  (lazy-seq
+   (loop []
+     (cond
+       (seq @buf)
+       (let [x (first @buf)]
+         (swap! buf subvec 1)
+         (cons x (-sequence-lazy-multi rf ss-atom buf done)))
+
+       @done
+       nil
+
+       :else
+       (let [ss (map seq @ss-atom)]
+         (if (some nil? ss)
+           (do (reset! done true) (rf nil) (recur))
+           (let [ret (apply rf nil (map first ss))]
+             (if (reduced? ret)
+               (do (reset! done true) (rf nil) (recur))
+               (do (reset! ss-atom (doall (map next ss))) (recur))))))))))
+
 ;; oracle: (sequence (take 2) (range 9)) => (0 1)
 ;; oracle: (sequence (comp (map inc) (take 3)) (range)) => (1 2 3)
 ;; oracle: (sequence [1 2 3]) => (1 2 3); (sequence nil) => ()
+;; oracle: (sequence (map +) [1 2] [10 20]) => (11 22)
+;; oracle: (sequence (map +) [1 2 3] [10 20] [100 200 300]) => (111 222)
+;; oracle: (sequence (comp (map +) (take 2)) [1 2 3] [10 20 30]) => (11 22)
 (defn sequence
   ([coll] (if (seq? coll) coll (or (seq coll) ())))
   ([xform coll]
@@ -81,7 +110,15 @@
                    ([result] result)
                    ([result input] (swap! buf conj input) result))
          rf (xform collect)]
-     (or (seq (-sequence-lazy rf (atom coll) buf (atom false))) ()))))
+     (or (seq (-sequence-lazy rf (atom coll) buf (atom false))) ())))
+  ([xform coll & colls]
+   (let [buf (atom [])
+         collect (fn
+                   ([] nil)
+                   ([result] result)
+                   ([result input] (swap! buf conj input) result))
+         rf (xform collect)]
+     (or (seq (-sequence-lazy-multi rf (atom (cons coll colls)) buf (atom false))) ()))))
 
 ;; --- into (extended with the xform arity) ------------------------------
 

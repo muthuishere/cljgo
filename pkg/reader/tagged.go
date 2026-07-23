@@ -179,6 +179,19 @@ func NewInst(s string) (Inst, error) {
 	return Inst{s: s, millis: t.UnixMilli()}, nil
 }
 
+// MustInst is NewInst for timestamp text already validated by a
+// successful read — compiled binaries reconstruct #inst constants
+// through it (pkg/emit constExpr), so it can only be reached with text
+// the compile-time reader accepted. Panics on invalid text (a build
+// bug, never user input).
+func MustInst(s string) Inst {
+	i, err := NewInst(s)
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
 // leapYear mirrors clojure.instant's leap-year? predicate.
 func leapYear(year int) bool {
 	return year%4 == 0 && (year%100 != 0 || year%400 == 0)

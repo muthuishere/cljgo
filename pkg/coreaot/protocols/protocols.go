@@ -9,6 +9,7 @@ import (
 
 var (
 	kw_column                            = lang.InternKeywordString("column")
+	kw_doc                               = lang.InternKeywordString("doc")
 	kw_end_column                        = lang.InternKeywordString("end-column")
 	kw_end_line                          = lang.InternKeywordString("end-line")
 	kw_file                              = lang.InternKeywordString("file")
@@ -34,15 +35,22 @@ var (
 	sym_let                              = lang.NewSymbol("let")
 	sym_m                                = lang.NewSymbol("m")
 	sym_quote                            = lang.NewSymbol("quote")
+	sym_reader_DOT_Inst                  = lang.NewSymbol("reader.Inst")
+	v_clojure_DOT_core_Inst              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("Inst"))
 	v_clojure_DOT_core_X_EQ_             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
 	v_clojure_DOT_core_X_decl_protocols  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-decl-protocols")).SetPrivate()
+	v_clojure_DOT_core_X_extend_key      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-extend-key"))
 	v_clojure_DOT_core_X_field_lets      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-field-lets")).SetPrivate()
 	v_clojure_DOT_core_X_group_impls     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-group-impls")).SetPrivate()
+	v_clojure_DOT_core_X_invoke_method   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-invoke-method"))
 	v_clojure_DOT_core_X_method_specs    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-method-specs")).SetPrivate()
 	v_clojure_DOT_core_X_plain_fn        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-plain-fn")).SetPrivate()
+	v_clojure_DOT_core_X_protocol        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-protocol"))
+	v_clojure_DOT_core_X_qualified_name  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-qualified-name"))
 	v_clojure_DOT_core_X_reify_arity     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-reify-arity")).SetPrivate()
 	v_clojure_DOT_core_X_reify_method_fn = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-reify-method-fn")).SetPrivate()
 	v_clojure_DOT_core_X_set_macro_BANG_ = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-set-macro!")).SetPrivate()
+	v_clojure_DOT_core_X_type_key        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-type-key"))
 	v_clojure_DOT_core_X_typed_fn        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-typed-fn")).SetPrivate()
 	v_clojure_DOT_core_apply             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
 	v_clojure_DOT_core_assoc             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
@@ -63,6 +71,9 @@ var (
 	v_clojure_DOT_core_get               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
 	v_clojure_DOT_core_hash_set          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("hash-set"))
 	v_clojure_DOT_core_in_ns             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_inst_QMARK_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("inst?"))
+	v_clojure_DOT_core_inst_ms           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("inst-ms"))
+	v_clojure_DOT_core_inst_ms_STAR_     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("inst-ms*"))
 	v_clojure_DOT_core_list              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("list"))
 	v_clojure_DOT_core_list_STAR_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("list*"))
 	v_clojure_DOT_core_map_              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map"))
@@ -73,6 +84,7 @@ var (
 	v_clojure_DOT_core_reduce            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("reduce"))
 	v_clojure_DOT_core_reify             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("reify"))
 	v_clojure_DOT_core_remove            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("remove"))
+	v_clojure_DOT_core_satisfies_QMARK_  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("satisfies?"))
 	v_clojure_DOT_core_second            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("second"))
 	v_clojure_DOT_core_seq               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("seq"))
 	v_clojure_DOT_core_seq_QMARK_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("seq?"))
@@ -916,4 +928,69 @@ func Load() {
 	tmp505 := lang.Apply1(tmp504, v_clojure_DOT_core_extend_protocol)
 	_ = tmp505
 	_ = v_clojure_DOT_core_extend_protocol
+	// (do (def Inst (-protocol (-qualified-name "Inst") ["inst-ms*"])) (def inst-ms* (fn [& args…
+	v_clojure_DOT_core_Inst.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(218), kw_column, int64(14), kw_end_line, int64(218), kw_end_column, int64(18)))
+	tmp506 := v_clojure_DOT_core_X_protocol.Get()
+	tmp507 := v_clojure_DOT_core_X_qualified_name.Get()
+	tmp508 := lang.Apply1(tmp507, "Inst")
+	tmp509 := lang.NewVector("inst-ms*")
+	tmp510 := lang.Apply2(tmp506, tmp508, tmp509)
+	v_clojure_DOT_core_Inst.BindRoot(tmp510)
+	_ = v_clojure_DOT_core_Inst
+	v_clojure_DOT_core_inst_ms_STAR_.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(219), kw_column, int64(4), kw_end_line, int64(219), kw_end_column, int64(12)))
+	tmp511 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		default:
+			if len(args) < 0 {
+				panic(lang.NewArityError(len(args), "clojure.core/inst-ms*", "0+: [args & more]"))
+			}
+			var args512 any
+			if len(args) > 0 {
+				args512 = lang.NewList(args[0:]...)
+			}
+			_ = args512
+			tmp513 := v_clojure_DOT_core_X_invoke_method.Get()
+			tmp514 := v_clojure_DOT_core_Inst.Get()
+			tmp515 := lang.Apply3(tmp513, tmp514, "inst-ms*", args512)
+			return tmp515
+		}
+	})
+	v_clojure_DOT_core_inst_ms_STAR_.BindRoot(tmp511)
+	_ = v_clojure_DOT_core_inst_ms_STAR_
+	tmp516 := v_clojure_DOT_core_Inst.Get()
+	_ = tmp516
+	// (do (-extend-key Inst (-type-key (quote reader.Inst)) "inst-ms*" (fn [inst] (.getTime inst…
+	tmp517 := v_clojure_DOT_core_X_extend_key.Get()
+	tmp518 := v_clojure_DOT_core_Inst.Get()
+	tmp519 := v_clojure_DOT_core_X_type_key.Get()
+	tmp520 := lang.Apply1(tmp519, sym_reader_DOT_Inst)
+	tmp521 := lang.FnFunc1(func(inst522 any) any {
+		var tmp523 any = inst522
+		var tmp524 any = rt.CallMethod(tmp523, "getTime", false)
+		return tmp524
+	})
+	tmp525 := &lang.NamedFn1{Name: "fn", Expects: "1: [inst]", F: tmp521}
+	tmp526 := lang.Apply4(tmp517, tmp518, tmp520, "inst-ms*", tmp525)
+	_ = tmp526
+	// (def inst-ms "Number of milliseconds since January 1, 1970, 00:00:00 GMT" (clojure.core/fn…
+	v_clojure_DOT_core_inst_ms.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(225), kw_column, int64(7), kw_end_line, int64(225), kw_end_column, int64(14), kw_doc, "Number of milliseconds since January 1, 1970, 00:00:00 GMT"))
+	tmp527 := lang.FnFunc1(func(inst528 any) any {
+		tmp529 := v_clojure_DOT_core_inst_ms_STAR_.Get()
+		tmp530 := lang.Apply1(tmp529, inst528)
+		return tmp530
+	})
+	tmp531 := &lang.NamedFn1{Name: "clojure.core/inst-ms", Expects: "1: [inst]", F: tmp527}
+	v_clojure_DOT_core_inst_ms.BindRoot(tmp531)
+	_ = v_clojure_DOT_core_inst_ms
+	// (def inst? "Return true if x satisfies Inst" (clojure.core/fn [x] (satisfies? Inst x)))
+	v_clojure_DOT_core_inst_QMARK_.SetMeta(lang.NewMap(kw_file, "protocols.cljg", kw_line, int64(230), kw_column, int64(7), kw_end_line, int64(230), kw_end_column, int64(12), kw_doc, "Return true if x satisfies Inst"))
+	tmp532 := lang.FnFunc1(func(x533 any) any {
+		tmp534 := v_clojure_DOT_core_satisfies_QMARK_.Get()
+		tmp535 := v_clojure_DOT_core_Inst.Get()
+		tmp536 := lang.Apply2(tmp534, tmp535, x533)
+		return tmp536
+	})
+	tmp537 := &lang.NamedFn1{Name: "clojure.core/inst?", Expects: "1: [x]", F: tmp532}
+	v_clojure_DOT_core_inst_QMARK_.BindRoot(tmp537)
+	_ = v_clojure_DOT_core_inst_QMARK_
 }

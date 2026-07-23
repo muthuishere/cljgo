@@ -2020,6 +2020,167 @@
 ;; readable form under *print-dup*; only user-registered print-dup methods
 ;; change output.
 (defmulti print-dup (fn [x writer] (-print-class x)))
+;; --- batch A3: 1.11/1.12 sequence & value fns -------------------------------
+
+;; comparator : turn a 2-arg predicate into a -1/1/0 comparator fn.
+;; oracle: [((comparator <) 1 2) ((comparator <) 2 1) ((comparator <) 1 1)]
+;; => [-1 1 0]; (sort (comparator >) [1 3 2]) => (3 2 1)
+(defn comparator [pred]
+  (fn [x y]
+    (cond (pred x y) -1 (pred y x) 1 :else 0)))
+
+;; partitionv : partition, but each group is a VECTOR (1.11; upstream
+;; clojure.core/partitionv, which builds groups with (into [] (take n) s) —
+;; cljgo spells that (vec (take n s)), same result).
+;; oracle: (partitionv 2 (range 5)) => ([0 1] [2 3])
+;; oracle: (partitionv 2 3 (range 10)) => ([0 1] [3 4] [6 7])
+;; oracle: (partitionv 3 3 [:pad] (range 7)) => ([0 1 2] [3 4 5] [6 :pad])
+(defn partitionv
+  ([n coll] (partitionv n n coll))
+  ([n step coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (let [p (vec (take n s))]
+        (when (= n (count p))
+          (cons p (partitionv n step (nthrest s step))))))))
+  ([n step pad coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (let [p (vec (take n s))]
+        (if (= n (count p))
+          (cons p (partitionv n step pad (nthrest s step)))
+          (list (vec (take n (concat p pad))))))))))
+
+;; partitionv-all : partition-all with vector groups (1.11). The 1-arity is
+;; the transducer form (upstream delegates to (partition-all n), whose
+;; transducer also emits vectors; cljgo's partition-all has no transducer
+;; arity yet, so the buffering step lives here — same rf contract as
+;; transducers.cljg's partition-by).
+;; oracle: (partitionv-all 2 (range 5)) => ([0 1] [2 3] [4])
+;; oracle: (partitionv-all 2 3 (range 10)) => ([0 1] [3 4] [6 7] [9])
+;; oracle: (into [] (partitionv-all 3) (range 7)) => [[0 1 2] [3 4 5] [6]]
+(defn partitionv-all
+  ([n]
+   (fn [rf]
+     (let [a (atom [])]
+       (fn
+         ([] (rf))
+         ([result]
+          (let [result (if (empty? @a)
+                         result
+                         (let [v @a]
+                           (reset! a [])
+                           (unreduced (rf result v))))]
+            (rf result)))
+         ([result input]
+          (swap! a conj input)
+          (if (= n (count @a))
+            (let [v @a]
+              (reset! a [])
+              (rf result v))
+            result))))))
+  ([n coll] (partitionv-all n n coll))
+  ([n step coll]
+   (lazy-seq
+    (when-let [s (seq coll)]
+      (let [seg (vec (take n s))]
+        (cons seg (partitionv-all n step (drop step s))))))))
+
+;; splitv-at : split-at whose first half is a VECTOR (1.11).
+;; oracle: (splitv-at 2 (range 5)) => [[0 1] (2 3 4)]
+;; oracle: (splitv-at 0 [1 2]) => [[] (1 2)]; (splitv-at 9 [1 2]) => [[1 2] ()]
+(defn splitv-at [n coll]
+  [(vec (take n coll)) (drop n coll)])
+
+;; iteration : the 1.11 paginated-API driver. (step k) produces a "ret";
+;; while (somef ret), (vf ret) is emitted and (kf ret) — when non-nil —
+;; keys the next step. cljgo returns the lazy seq directly (the JVM wraps
+;; it in an Iteration object that is Seqable + IReduceInit; seq and reduce
+;; behave identically over cljgo's lazy seq, oracle-verified both ways).
+;; Options arrive as kv pairs or one map (1.11 kwargs), parsed by hand —
+;; cljgo's map destructuring does not yet see a kv rest-seq as a map.
+;; oracle (pages {0 {:items [1 2] :next 1} 1 {:items [3 4] :next 2}
+;;                2 {:items [5] :next nil}}, fetch = (get pages (or k 0))):
+;;   (seq (iteration fetch :kf :next :vf :items)) => ([1 2] [3 4] [5])
+;;   (reduce (fn [acc v] (into acc v)) [] (iteration fetch :kf :next :vf :items))
+;;     => [1 2 3 4 5]
+;; oracle: (seq (iteration (fn [k] (when (< (or k 0) 3) (inc (or k 0))))))
+;;   => (1 2 3), and (reduce + 0 it) => 6
+(defn iteration [step & opts]
+  (let [opts (if (and (= 1 (count opts)) (map? (first opts)))
+               (first opts)
+               (apply hash-map opts))
+        somef (get opts :somef some?)
+        vf (get opts :vf identity)
+        kf (get opts :kf identity)
+        initk (get opts :initk nil)]
+    ((fn -iter-next [ret]
+       (when (somef ret)
+         (cons (vf ret)
+               (when-some [k (kf ret)]
+                 (lazy-seq (-iter-next (step k)))))))
+     (step initk))))
+
+;; xml-seq : tree-seq over xml/parse-shaped nodes ({:tag .. :attrs ..
+;; :content [..]}); strings are leaves.
+;; oracle (x = {:tag :a :attrs nil :content [{:tag :b :attrs nil :content
+;; ["hi"]} {:tag :c :attrs nil :content nil}]}):
+;;   (map #(if (string? %) % (:tag %)) (xml-seq x)) => (:a :b "hi" :c)
+;;   (xml-seq "plain") => ("plain")
+(defn xml-seq [root]
+  (tree-seq
+   (complement string?)
+   (comp seq :content)
+   root))
+;; --- fundamentals batch A1 (core gap audit 2026-07-23): stdio + runtime ---
+
+;; with-in-str: runs body with *in* bound to an in-memory reader over s
+;; (-string-reader, essentials_builtins.go — the read-side mirror of
+;; with-out-str). `binding` forced bare with ~'binding for the same
+;; special-form reason as with-out-str above.
+;; oracle (clojure 1.12.5, 2026-07-23): (with-in-str "a\nb" [(read-line)
+;; (read-line) (read-line)]) => ["a" "b" nil]; (with-in-str "" (read-line))
+;; => nil
+(defmacro with-in-str
+  [s & body]
+  `(let [r# (-string-reader ~s)]
+     (~'binding [*in* r#]
+       ~@body)))
+
+;; line-seq: lazy seq of the lines read from rdr — nil when rdr is at EOF
+;; immediately, exactly clojure.core's shape (outer when-let, inner
+;; lazy-seq: the first line reads eagerly). rdr is any Go io.Reader
+;; (-read-line-from); *in* qualifies, where the JVM needs a BufferedReader.
+;; oracle (clojure 1.12.5, 2026-07-23, via (java.io.BufferedReader. *in*)):
+;; "a\nb\nc" => ("a" "b" "c"); "" => nil; "a\n" => ("a"); "a\r\nb" => ("a" "b")
+(defn line-seq [rdr]
+  (when-let [line (-read-line-from rdr)]
+    (cons line (lazy-seq (line-seq rdr)))))
+
+;; file-seq: lazy depth-first tree of dir and everything under it, root
+;; first — clojure.core's (tree-seq isDirectory listFiles dir) over the Go
+;; host: files are PATH STRINGS (the same representation slurp/spit take;
+;; cljgo has no java.io.File), children in os.ReadDir's sorted order.
+;; oracle (clojure 1.12.5, 2026-07-23): JVM file-seq returns the java.io.File
+;; tree as a LazySeq, root (the dir itself) first, directories included.
+(defn file-seq [dir]
+  (tree-seq -directory? -dir-children dir))
+
+;; requiring-resolve: resolve a QUALIFIED sym, requiring its namespace
+;; first if it does not resolve yet; nil when the namespace loads but the
+;; var is absent. clojure.core's shape ((or (resolve sym) (do (require …)
+;; (resolve sym)))), with the qualified check inlined (predicates.cljg's
+;; qualified-symbol? loads after core.clj).
+;; oracle (clojure 1.12.5, 2026-07-23):
+;; (some? (requiring-resolve 'clojure.string/trim)) => true;
+;; (requiring-resolve 'clojure.string/nope-not-here) => nil;
+;; (requiring-resolve 'trim) throws "Not a qualified symbol: trim"
+(defn requiring-resolve [sym]
+  (if (and (symbol? sym) (namespace sym))
+    (or (resolve sym)
+        (do (require (symbol (namespace sym)))
+            (resolve sym)))
+    (throw (ex-info (str "Not a qualified symbol: " sym) {:sym sym}))))
 
 ;; --- fundamentals batch A4: namespaces, concurrency, bindings (2026-07-23) --
 ;; refer-clojure / use (Go builtin) / with-bindings / with-local-vars /
