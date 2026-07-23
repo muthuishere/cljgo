@@ -108,7 +108,13 @@ func Ops(x any) ops {
 		case reflect.Float32, reflect.Float64:
 			return float64Ops{}
 		}
-		panic(NewCodedError("G5001", fmt.Sprintf("cannot convert %T to Ops", x)))
+		// Typed per the JVM (oracle 1.12.5, ADR 0039 addendum): arithmetic
+		// on nil is a NullPointerException, on a non-number a
+		// ClassCastException. Message + G5001 code unchanged (byte-stable).
+		if x == nil {
+			panic(NewNullPointerError("G5001", fmt.Sprintf("cannot convert %T to Ops", x)))
+		}
+		panic(NewClassCastError("G5001", fmt.Sprintf("cannot convert %T to Ops", x)))
 	}
 }
 
@@ -943,11 +949,11 @@ func AsBigInt(x any) *BigInt {
 // (bigint 4.611686018427388E18) is 4611686018427388000N, not the exact
 // binary value 4611686018427387904N, and (bigint 1.7976931348623157e308)
 // is the full 309-digit integer, never a saturating int64 cast. Inf/NaN
-// throw "Infinite or NaN" (java.lang.NumberFormatException extends
-// IllegalArgumentException, hence the error type).
+// throw "Infinite or NaN" (java.lang.NumberFormatException; its Is also
+// matches IllegalArgumentException per the JVM hierarchy).
 func bigIntFromFloat64(x float64) *BigInt {
 	if math.IsInf(x, 0) || math.IsNaN(x) {
-		panic(NewIllegalArgumentError("Infinite or NaN"))
+		panic(NewNumberFormatError("Infinite or NaN"))
 	}
 	r, ok := new(big.Rat).SetString(strconv.FormatFloat(x, 'E', -1, 64))
 	if !ok {

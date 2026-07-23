@@ -70,7 +70,15 @@ var classRefNames, classRefIsInterface = func() (map[string]string, map[string]b
 		"Object", "String", "Long", "Integer", "Short", "Byte",
 		"Double", "Float", "Boolean", "Character", "Number", "Class",
 		"Exception", "Throwable", "RuntimeException", "Comparable",
-		"CharSequence")
+		"CharSequence",
+		// The standard typed exceptions (ADR 0039 addendum): resolvable as
+		// values so catch clauses and instance? checks name them the way
+		// ported JVM code does. Ancestry lives in throwableMatches.
+		"ArithmeticException", "ClassCastException",
+		"NullPointerException", "IndexOutOfBoundsException",
+		"StringIndexOutOfBoundsException", "IllegalArgumentException",
+		"NumberFormatException", "IllegalStateException",
+		"UnsupportedOperationException")
 	markIface("java.lang", "Comparable", "CharSequence")
 	add("java.math", "BigInteger", "BigDecimal")
 	addQualified("java.util", "UUID")
@@ -271,6 +279,15 @@ func classNameMatchesValue(name string, v any) bool {
 		_, ok := v.(lang.IFn)
 		return ok
 	default:
+		// Exception-class names (ADR 0039 addendum): an error VALUE is an
+		// instance of the JVM exception classes throwableMatches maps it
+		// to, ancestry included — (instance? RuntimeException e) is true
+		// for a caught arithmetic error, as on the JVM.
+		if err, ok := v.(error); ok {
+			if matched, known := throwableMatches(simple, err); known {
+				return matched
+			}
+		}
 		return dispatchKey(v) == simple
 	}
 }
