@@ -238,3 +238,85 @@ func referRequireSpec(ns, from *lang.Namespace, spec any) {
 		ns.Refer(sym, v)
 	}
 }
+
+// registerUse interns `use` into clojure.core (fundamentals batch A4):
+// require + refer in one step, exactly Clojure's compat idiom. Accepted
+// spec shapes mirror require's, with refer's filters as libspec options:
+//
+//	(use 'clojure.set)                                ; require + refer all
+//	(use '[clojure.string :only [upper-case]])        ; refer only these
+//	(use '[clojure.string :exclude [join]])           ; refer all but these
+//	(use '[clojure.string :as s :only [upper-case]])  ; alias too
+//	(use '(clojure set string))                       ; prefix list
+//
+// :rename is accepted-and-ignored (same M1 stance as refer's). Oracle
+// (JVM 1.12.5): (use 'clojure.set) => nil, then (union #{1} #{2}) =>
+// #{1 2}; (use '[clojure.string :only [upper-case] :as ss]) refers only
+// upper-case and adds the ss alias.
+func registerUse(def func(string, func(...any) any) *lang.Var) {
+	def("use", func(args ...any) any {
+		for _, a := range args {
+			useSpec(a, nil)
+		}
+		return nil
+	})
+}
+
+// useSpec processes one use spec: a bare namespace symbol (refer all
+// publics), a libspec vector `[lib & opts]` (:as/:refer handled by
+// loadLib; :only/:exclude drive the refer), or a prefix list.
+func useSpec(spec any, prefix *lang.Symbol) {
+	if sym, ok := spec.(*lang.Symbol); ok {
+		full := combinePrefix(prefix, sym)
+		loadLib(full, nil)
+		ReferAll(currentNS(), lang.FindNamespace(full))
+		return
+	}
+	seq := lang.Seq(spec)
+	if seq == nil {
+		panic(fmt.Errorf("use expects a namespace symbol or libspec, got: %s", lang.PrintString(spec)))
+	}
+	head, ok := seq.First().(*lang.Symbol)
+	if !ok {
+		panic(fmt.Errorf("use expects a libspec whose head is a symbol, got: %s", lang.PrintString(spec)))
+	}
+	rest := seq.Next()
+	// Prefix list vs libspec-with-options: same discrimination as require.
+	if rest != nil {
+		if _, isKw := rest.First().(lang.Keyword); !isKw {
+			full := combinePrefix(prefix, head)
+			for x := rest; x != nil; x = x.Next() {
+				useSpec(x.First(), full)
+			}
+			return
+		}
+	}
+	full := combinePrefix(prefix, head)
+	// loadLib handles :as (and a require-style :refer, harmless here);
+	// the refer filters are ours.
+	loadLib(full, rest)
+	target := lang.FindNamespace(full)
+	only := map[string]struct{}{}
+	exclude := map[string]struct{}{}
+	haveOnly := false
+	for s := rest; s != nil; s = s.Next() {
+		kw, ok := s.First().(lang.Keyword)
+		if !ok {
+			panic(fmt.Errorf("use libspec option must be a keyword, got: %s", lang.PrintString(s.First())))
+		}
+		s = s.Next()
+		if s == nil {
+			panic(fmt.Errorf("use libspec option %s is missing a value", kw.String()))
+		}
+		switch kw.Name() {
+		case "only":
+			haveOnly = true
+			collectSymNames(s.First(), only)
+		case "exclude":
+			collectSymNames(s.First(), exclude)
+		default:
+			// :as already handled by loadLib; :rename etc. are no-ops.
+		}
+	}
+	referSelected(currentNS(), target, only, haveOnly, exclude)
+}
