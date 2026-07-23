@@ -1408,7 +1408,19 @@ func ReferAll(ns, from *lang.Namespace) {
 // referSelected refers the public vars interned in `from` into ns, honoring
 // refer's :only / :exclude filters. When haveOnly is true, only names in
 // `only` are referred; names in `exclude` are always skipped.
+//
+// Fast path (startup): a whole-namespace refer — the boot pattern, where
+// every lib namespace and the user namespace refer all of clojure.core
+// right after in-ns — goes through referBulk: overlay the target's few
+// existing entries onto a cached, structurally shared snapshot of the
+// source's public vars and install it in one CAS, instead of ~900
+// per-symbol path-copying Assocs per namespace. Content is identical to
+// the slow loop by construction; any non-trivial conflict or CAS race
+// falls back to the per-symbol reference path below.
 func referSelected(ns, from *lang.Namespace, only map[string]struct{}, haveOnly bool, exclude map[string]struct{}) {
+	if !haveOnly && ns != from && referBulk(ns, from, exclude) {
+		return
+	}
 	for s := lang.Seq(from.Mappings()); s != nil; s = s.Next() {
 		entry := s.First().(lang.IMapEntry)
 		sym, ok := entry.Key().(*lang.Symbol)
@@ -1430,6 +1442,76 @@ func referSelected(ns, from *lang.Namespace, only map[string]struct{}, haveOnly 
 		}
 		ns.Refer(sym, v)
 	}
+}
+
+// referBulk attempts the whole-namespace refer in one CAS: start from the
+// cached snapshot of `from`'s public vars, drop the excluded names, then
+// overlay every entry the target already has (existing mappings win — the
+// same outcome as reference(), which keeps an existing mapping). Returns
+// false — having installed nothing — when a target entry conflicts with
+// the snapshot in a way whose resolution belongs to reference()'s
+// checkReplacement logic (a mapped value that is neither the target's own
+// interned var nor identical to the snapshot's), or when the CAS loses a
+// race. Boot-time targets carry only their own interned vars (the emitted
+// packages intern them from Go init), so boot always takes this path.
+func referBulk(ns, from *lang.Namespace, exclude map[string]struct{}) bool {
+	cur := ns.Mappings()
+	m := publicReferMap(from)
+	for name := range exclude {
+		m = m.Without(lang.NewSymbol(name))
+	}
+	for s := lang.Seq(cur); s != nil; s = s.Next() {
+		entry := s.First().(lang.IMapEntry)
+		k, v := entry.Key(), entry.Val()
+		if sym, ok := k.(*lang.Symbol); ok {
+			if sv := m.ValAt(sym); sv != nil {
+				if vr, isVar := v.(*lang.Var); !isVar || (vr != sv && !ns.OwnsInternedVar(sym, vr)) {
+					return false
+				}
+			}
+		}
+		m = m.Assoc(k, v).(lang.IPersistentMap)
+	}
+	return ns.CompareAndSetMappings(cur, m)
+}
+
+// referSnapshots caches, per source namespace, the map of entries a
+// whole-namespace refer would add (public vars interned in the source),
+// keyed by the identity of the source's mapping table so any change to the
+// source invalidates it. Boot hits this 13 times for clojure.core; the
+// snapshot is built once and shared structurally.
+var referSnapshots sync.Map // *lang.Namespace -> referSnapshot
+
+type referSnapshot struct {
+	src  lang.IPersistentMap // source mappings the snapshot was built from
+	snap lang.IPersistentMap // *Symbol -> *Var, refer-eligible entries only
+}
+
+// publicReferMap returns (building and caching on miss) the map of
+// mappings an unfiltered refer of `from` adds: exactly the entries the
+// referSelected loop passes through — public vars interned in `from`.
+func publicReferMap(from *lang.Namespace) lang.IPersistentMap {
+	cur := from.Mappings()
+	if e, ok := referSnapshots.Load(from); ok {
+		if s := e.(referSnapshot); s.src == cur {
+			return s.snap
+		}
+	}
+	snap := lang.IPersistentMap(lang.NewMap())
+	for s := lang.Seq(cur); s != nil; s = s.Next() {
+		entry := s.First().(lang.IMapEntry)
+		sym, ok := entry.Key().(*lang.Symbol)
+		if !ok {
+			continue
+		}
+		v, ok := entry.Val().(*lang.Var)
+		if !ok || v.Namespace() != from || !v.IsPublic() {
+			continue
+		}
+		snap = snap.Assoc(sym, v).(lang.IPersistentMap)
+	}
+	referSnapshots.Store(from, referSnapshot{src: cur, snap: snap})
+	return snap
 }
 
 // collectSymNames adds every symbol name in the seqable spec to set.

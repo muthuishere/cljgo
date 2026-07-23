@@ -427,3 +427,13 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   invariant (equal ⇒ equal hash) preserved, whole suite green; the
   rehash also aligned set print order with the JVM (seq-coll-batch1.clj
   re-oracled).
+
+## Boot-refer bulk install (perf/startup clawback, 2026-07-23)
+
+- `namespace.go`: added `CompareAndSetMappings` (swap the whole mapping
+  table in one CAS, caller-verified base) and `OwnsInternedVar` (exported
+  isInternedMapping) — the seam for corelib's boot-refer fast path, which
+  overlays a namespace's own vars onto a cached structurally-shared
+  snapshot of clojure.core's public vars instead of ~900 per-symbol
+  path-copying Assocs per boot namespace. Per-symbol `reference()`
+  semantics are unchanged and remain the fallback on any conflict.

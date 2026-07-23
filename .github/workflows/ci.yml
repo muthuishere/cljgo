@@ -97,6 +97,12 @@ jobs:
           # blind spot where the range-only reduce gate never exercised
           # map/filter.
           CLJGO_CORE_PIPELINE_BUDGET: 8s
+          # AOT-binary startup gate (ADR 0067 startup addendum): ~4.4ms
+          # locally after the boot-refer + GC-deferral clawback, 25ms local
+          # budget, 500ms here — runners fork/exec far slower and noisier
+          # than a laptop, but a regression re-adding per-symbol boot refers
+          # or boot-time interpretation lands in the seconds.
+          CLJGO_BOOT_STARTUP_BUDGET: 500ms
           # Channel-op budgets (ADR 0040 / ADR 0024, pkg/lang
           # chan_budget_test.go): local defaults are 1.5x wrapper-vs-raw
           # and 5x alts-vs-static-select (S19 measured 1.37x/1.9x). Both

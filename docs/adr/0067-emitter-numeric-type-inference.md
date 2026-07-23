@@ -143,3 +143,44 @@ multi-arity / variadic / >4-arity specialization; cross-fn (non-self)
 return typing; broadening the lift to capturing closures; `<=`/`>=`
 comparisons. `CLJGO_NUMINFER_OFF=1` remains the kill switch and the A/B
 measurement lever.
+
+## Startup cost + clawback (2026-07-23 addendum)
+
+The post-campaign benchmark re-run recorded AOT startup 6.5 → 9.5 ms and this
+ADR (with 0066) was the suspect. A measured bisection on the same machine
+acquitted both:
+
+| build | empty-binary startup (hyperfine -N) |
+|---|---|
+| 1e98cd6 (the run that recorded 6.5) | 7.4 ms |
+| 9d3db1a (pre-campaign, post-fundamentals) | 9.0 ms |
+| campaign HEAD (0063–0067) | 9.0 ms |
+| campaign HEAD, coreaot regenerated with `CLJGO_NUMINFER_OFF=1` | 9.8 ms (noise) |
+
+Attribution: **the campaign added ~0 ms** — dual-body emission left the
+empty binary's size byte-identical (5,273,154 bytes with and without; the
+whole campaign is +17 KB over pre-campaign) and the seal is seven var
+lookups; the ~1.6 ms drift came
+from the fundamentals batches landing between the two benchmark runs (one
+more boot namespace — clojure.pprint — plus growth of the existing twelve),
+and ~0.9 ms is machine-day variance (7.4 today vs the recorded 6.5 for the
+same commit).
+
+The boot-phase profile then showed where startup actually lives: each of the
+13 boot-time `(refer clojure.core …)` calls walked ~900 core mappings doing
+per-symbol path-copying Assocs (~0.4–0.5 ms each), plus GC cycling through
+the boot allocation burst (`runtime.madvise` alone was 32% of boot CPU).
+Two perf-only fixes clawed it back past the original target:
+
+- **Bulk refer** (`corelib.referBulk` + `lang.Namespace.CompareAndSetMappings`):
+  a whole-namespace refer overlays the target's few own vars onto one cached,
+  structurally shared snapshot of the source's public vars and installs it in
+  a single CAS; any non-trivial conflict falls back to the per-symbol path.
+  Boot: 13 × ~0.45 ms → one ~0.35 ms snapshot build + 13 near-free merges.
+- **GC deferral in `rt.Boot`**: `debug.SetGCPercent(-1)` for the boot burst,
+  caller's setting restored on exit (~1.4 ms).
+
+Result: empty-binary startup **9.0 → 4.4 ms** (was 6.5 pre-campaign; let-go
+5.7), with every campaign win intact or improved — tak 36.3 ms, loop-recur
+5.1 ms, map-filter 5.3 ms, persistent-map 10.7 ms; factorial gate ratio
+5.0x (max 15), reduce 47 ms (budget 175), pipeline 241 ms (budget 500).
