@@ -59,14 +59,21 @@ func FindOrCreateNamespace(sym *Symbol) *Namespace {
 	return ns
 }
 
-func RemoveNamespace(sym *Symbol) {
+// RemoveNamespace removes the named namespace from the registry,
+// returning it (nil when no such namespace existed) — the return value
+// clojure.core/remove-ns needs. The refusal message matches the JVM
+// oracle: (remove-ns 'clojure.core) => "Cannot remove clojure namespace"
+// (Clojure 1.12.5; cljgo batch A4 surgery, see PROVENANCE.md).
+func RemoveNamespace(sym *Symbol) *Namespace {
 	if sym.String() == "clojure.core" {
-		panic(errors.New("cannot remove clojure.core namespace"))
+		panic(errors.New("Cannot remove clojure namespace"))
 	}
 
 	nsMtx.Lock()
 	defer nsMtx.Unlock()
+	ns := namespaces[sym.String()]
 	delete(namespaces, sym.String())
+	return ns
 }
 
 func NamespaceFor(inns *Namespace, sym *Symbol) *Namespace {
@@ -136,6 +143,44 @@ func (ns *Namespace) CompareAndSetMappings(old, new IPersistentMap) bool {
 // path (cljgo surgery, see PROVENANCE.md).
 func (ns *Namespace) OwnsInternedVar(sym *Symbol, v interface{}) bool {
 	return ns.isInternedMapping(sym, v)
+}
+
+// Unmap removes sym's mapping from this namespace (clojure.core/
+// ns-unmap; cljgo batch A4 surgery, see PROVENANCE.md). It retries a CAS
+// on the SAME mappings Box every other mutation (Intern/reference/
+// CompareAndSetMappings) swings, so it composes with the boot-refer
+// bulk path: a concurrent CompareAndSetMappings either lands first (and
+// this unmap then removes from the installed snapshot) or observes a
+// moved table, returns false, and its caller takes the per-symbol
+// reference path — a completed unmap is never silently resurrected by a
+// stale whole-table install. Unmapping a name with no mapping is a
+// no-op, as on the JVM.
+func (ns *Namespace) Unmap(sym *Symbol) {
+	if sym.Namespace() != "" {
+		// JVM oracle (1.12.5): (ns-unmap *ns* 'clojure.core/map) =>
+		// IllegalArgumentException "Can't unintern namespace-qualified
+		// symbol".
+		panic(errors.New("Can't unintern namespace-qualified symbol"))
+	}
+	mb := ns.mappingsBox()
+	for mb.val.(IPersistentMap).ContainsKey(sym) {
+		newMap := mb.val.(IPersistentMap).Without(sym)
+		ns.mappings.CompareAndSwap(mb, NewBox(newMap))
+		mb = ns.mappingsBox()
+	}
+}
+
+// RemoveAlias removes an alias from this namespace (clojure.core/
+// ns-unalias; cljgo batch A4 surgery, see PROVENANCE.md). Same CAS-retry
+// discipline as AddAlias; removing an absent alias is a no-op (JVM
+// parity: Namespace.removeAlias dissocs without checking presence).
+func (ns *Namespace) RemoveAlias(alias *Symbol) {
+	ab := ns.aliasesBox()
+	for ab.val.(IPersistentMap).ContainsKey(alias) {
+		newAliases := ab.val.(IPersistentMap).Without(alias)
+		ns.aliases.CompareAndSwap(ab, NewBox(newAliases))
+		ab = ns.aliasesBox()
+	}
 }
 
 func (ns *Namespace) aliasesBox() *Box {

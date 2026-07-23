@@ -62,8 +62,8 @@ var (
 	taps    []lang.IFn
 )
 
-// symFnStar is the fn* special-form symbol the go/thread macros expand
-// with (pkg/eval/macro.go keeps its own copy for the macro engine).
+// symFnStar is the fn* special-form symbol the go/thread macros and the
+// bootstrap defmacro expander (defmacro.go) expand with.
 var symFnStar = lang.NewSymbol("fn*")
 
 // nativeFn wraps a Go function as a lang.IFn (the pre-interned builtins of
@@ -155,10 +155,18 @@ func RegisterAll() {
 	// compiled binary replays every (require …) form, so this belongs in
 	// the interpreter-free half.
 	registerRequire(def)
+	registerUse(def)
+	internChunkBuiltins(def)
+	internParallelBuiltins(def)
 	// What eval / macroexpand / macroexpand-1 / require-go do when there
 	// is no interpreter (aot_stubs.go, ADR 0046 §5). pkg/eval overwrites
 	// all four through this same seam when an Evaluator is constructed.
 	registerAOTStubs(def)
+	// The bootstrap defmacro (defmacro.go): interned HERE — not in
+	// pkg/eval — so a compiled binary's clojure.core carries the same
+	// defmacro mapping the interpreter's does and ns-map reads
+	// identically across legs (the refer into `user` follows from it).
+	registerDefmacro()
 
 	attachFast2(def("+", func(args ...any) any {
 		var acc any = int64(0)

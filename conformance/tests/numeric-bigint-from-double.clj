@@ -11,6 +11,10 @@
  (bigint -1.5)
  (bigint 1.5)
  (= (bigint 1.7976931348623157e+308) (biginteger 1.7976931348623157e+308))
- (try (bigint ##Inf) (catch Throwable e (ex-message e)))
- (try (bigint ##NaN) (catch Throwable e (ex-message e)))]
+ ;; Tightened 2026-07-23 (ADR 0039 addendum): catch the TYPED
+ ;; NumberFormatException the JVM actually throws here (oracle 1.12.5,
+ ;; run file-for-file) — previously Throwable, a workaround from before
+ ;; typed builtin exception classes were catchable.
+ (try (bigint ##Inf) (catch NumberFormatException e (ex-message e)))
+ (try (bigint ##NaN) (catch NumberFormatException e (ex-message e)))]
 ;; expect: [179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000N 4611686018427388000N -1N 1N true "Infinite or NaN" "Infinite or NaN"]

@@ -130,35 +130,36 @@ func Load() {
 							tmp46 := lang.Apply2(tmp44, r42, tmp45)
 							return tmp46
 						})
-						tmp47 := lang.Apply3(tmp40, tmp41, form8, form8)
-						tmp48 := lang.Apply1(outer7, tmp47)
-						tmp39 = tmp48
+						tmp47 := &lang.NamedFn2{Name: "fn", Expects: "2: [r x]", F: tmp41}
+						tmp48 := lang.Apply3(tmp40, tmp47, form8, form8)
+						tmp49 := lang.Apply1(outer7, tmp48)
+						tmp39 = tmp49
 					} else {
-						tmp49 := v_clojure_DOT_core_coll_QMARK_.Get()
-						tmp50 := lang.Apply1(tmp49, form8)
-						var tmp51 any
-						_ = tmp51
-						if lang.IsTruthy(tmp50) {
-							tmp52 := v_clojure_DOT_core_into.Get()
-							tmp53 := v_clojure_DOT_core_empty.Get()
-							tmp54 := lang.Apply1(tmp53, form8)
-							tmp55 := v_clojure_DOT_core_map_.Get()
-							tmp56 := lang.Apply2(tmp55, inner6, form8)
-							tmp57 := lang.Apply2(tmp52, tmp54, tmp56)
-							tmp58 := lang.Apply1(outer7, tmp57)
-							tmp51 = tmp58
+						tmp50 := v_clojure_DOT_core_coll_QMARK_.Get()
+						tmp51 := lang.Apply1(tmp50, form8)
+						var tmp52 any
+						_ = tmp52
+						if lang.IsTruthy(tmp51) {
+							tmp53 := v_clojure_DOT_core_into.Get()
+							tmp54 := v_clojure_DOT_core_empty.Get()
+							tmp55 := lang.Apply1(tmp54, form8)
+							tmp56 := v_clojure_DOT_core_map_.Get()
+							tmp57 := lang.Apply2(tmp56, inner6, form8)
+							tmp58 := lang.Apply2(tmp53, tmp55, tmp57)
+							tmp59 := lang.Apply1(outer7, tmp58)
+							tmp52 = tmp59
 						} else {
-							var tmp59 any
-							_ = tmp59
+							var tmp60 any
+							_ = tmp60
 							if lang.IsTruthy(kw_else_) {
-								tmp60 := lang.Apply1(outer7, form8)
-								tmp59 = tmp60
+								tmp61 := lang.Apply1(outer7, form8)
+								tmp60 = tmp61
 							} else {
-								tmp59 = nil
+								tmp60 = nil
 							}
-							tmp51 = tmp59
+							tmp52 = tmp60
 						}
-						tmp39 = tmp51
+						tmp39 = tmp52
 					}
 					tmp31 = tmp39
 				}
@@ -168,263 +169,282 @@ func Load() {
 		}
 		return tmp11
 	})
-	v_clojure_DOT_walk_walk.BindRoot(tmp5)
+	tmp62 := &lang.NamedFn3{Name: "clojure.walk/walk", Expects: "3: [inner outer form]", F: tmp5}
+	v_clojure_DOT_walk_walk.BindRoot(tmp62)
 	_ = v_clojure_DOT_walk_walk
 	// (def postwalk "Performs a depth-first, post-order traversal of form.  Calls f on\n  each s…
 	v_clojure_DOT_walk_postwalk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(15), kw_doc, "Performs a depth-first, post-order traversal of form.  Calls f on\n  each sub-form, uses f's return value in place of the original.\n  Recognizes all Clojure data structures. Consumes seqs as with doall."))
-	tmp61 := lang.FnFunc2(func(f62, form63 any) any {
-		tmp64 := v_clojure_DOT_walk_walk.Get()
-		tmp65 := v_clojure_DOT_core_partial.Get()
-		tmp66 := v_clojure_DOT_walk_postwalk.Get()
-		tmp67 := lang.Apply2(tmp65, tmp66, f62)
-		tmp68 := lang.Apply3(tmp64, tmp67, f62, form63)
-		return tmp68
+	tmp63 := lang.FnFunc2(func(f64, form65 any) any {
+		tmp66 := v_clojure_DOT_walk_walk.Get()
+		tmp67 := v_clojure_DOT_core_partial.Get()
+		tmp68 := v_clojure_DOT_walk_postwalk.Get()
+		tmp69 := lang.Apply2(tmp67, tmp68, f64)
+		tmp70 := lang.Apply3(tmp66, tmp69, f64, form65)
+		return tmp70
 	})
-	v_clojure_DOT_walk_postwalk.BindRoot(tmp61)
+	tmp71 := &lang.NamedFn2{Name: "clojure.walk/postwalk", Expects: "2: [f form]", F: tmp63}
+	v_clojure_DOT_walk_postwalk.BindRoot(tmp71)
 	_ = v_clojure_DOT_walk_postwalk
 	// (def prewalk "Like postwalk, but does pre-order traversal." (clojure.core/fn [f form] (wal…
 	v_clojure_DOT_walk_prewalk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(55), kw_column, int64(7), kw_end_line, int64(55), kw_end_column, int64(14), kw_doc, "Like postwalk, but does pre-order traversal."))
-	tmp69 := lang.FnFunc2(func(f70, form71 any) any {
-		tmp72 := v_clojure_DOT_walk_walk.Get()
-		tmp73 := v_clojure_DOT_core_partial.Get()
-		tmp74 := v_clojure_DOT_walk_prewalk.Get()
-		tmp75 := lang.Apply2(tmp73, tmp74, f70)
-		tmp76 := v_clojure_DOT_core_identity.Get()
-		tmp77 := lang.Apply1(f70, form71)
-		tmp78 := lang.Apply3(tmp72, tmp75, tmp76, tmp77)
-		return tmp78
+	tmp72 := lang.FnFunc2(func(f73, form74 any) any {
+		tmp75 := v_clojure_DOT_walk_walk.Get()
+		tmp76 := v_clojure_DOT_core_partial.Get()
+		tmp77 := v_clojure_DOT_walk_prewalk.Get()
+		tmp78 := lang.Apply2(tmp76, tmp77, f73)
+		tmp79 := v_clojure_DOT_core_identity.Get()
+		tmp80 := lang.Apply1(f73, form74)
+		tmp81 := lang.Apply3(tmp75, tmp78, tmp79, tmp80)
+		return tmp81
 	})
-	v_clojure_DOT_walk_prewalk.BindRoot(tmp69)
+	tmp82 := &lang.NamedFn2{Name: "clojure.walk/prewalk", Expects: "2: [f form]", F: tmp72}
+	v_clojure_DOT_walk_prewalk.BindRoot(tmp82)
 	_ = v_clojure_DOT_walk_prewalk
 	// (def postwalk-demo "Demonstrates the behavior of postwalk by printing each form as it is\n…
 	v_clojure_DOT_walk_postwalk_demo.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(62), kw_column, int64(7), kw_end_line, int64(62), kw_end_column, int64(20), kw_doc, "Demonstrates the behavior of postwalk by printing each form as it is\n  walked.  Returns form."))
-	tmp79 := lang.FnFunc1(func(form80 any) any {
-		tmp81 := v_clojure_DOT_walk_postwalk.Get()
-		tmp82 := lang.FnFunc1(func(x83 any) any {
-			tmp84 := v_clojure_DOT_core_print_.Get()
-			tmp85 := lang.Apply1(tmp84, "Walked: ")
-			_ = tmp85
-			tmp86 := v_clojure_DOT_core_prn.Get()
-			tmp87 := lang.Apply1(tmp86, x83)
-			_ = tmp87
-			return x83
+	tmp83 := lang.FnFunc1(func(form84 any) any {
+		tmp85 := v_clojure_DOT_walk_postwalk.Get()
+		tmp86 := lang.FnFunc1(func(x87 any) any {
+			tmp88 := v_clojure_DOT_core_print_.Get()
+			tmp89 := lang.Apply1(tmp88, "Walked: ")
+			_ = tmp89
+			tmp90 := v_clojure_DOT_core_prn.Get()
+			tmp91 := lang.Apply1(tmp90, x87)
+			_ = tmp91
+			return x87
 		})
-		tmp88 := lang.Apply2(tmp81, tmp82, form80)
-		return tmp88
+		tmp92 := &lang.NamedFn1{Name: "fn", Expects: "1: [x]", F: tmp86}
+		tmp93 := lang.Apply2(tmp85, tmp92, form84)
+		return tmp93
 	})
-	v_clojure_DOT_walk_postwalk_demo.BindRoot(tmp79)
+	tmp94 := &lang.NamedFn1{Name: "clojure.walk/postwalk-demo", Expects: "1: [form]", F: tmp83}
+	v_clojure_DOT_walk_postwalk_demo.BindRoot(tmp94)
 	_ = v_clojure_DOT_walk_postwalk_demo
 	// (def prewalk-demo "Demonstrates the behavior of prewalk by printing each form as it is\n  …
 	v_clojure_DOT_walk_prewalk_demo.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(68), kw_column, int64(7), kw_end_line, int64(68), kw_end_column, int64(19), kw_doc, "Demonstrates the behavior of prewalk by printing each form as it is\n  walked.  Returns form."))
-	tmp89 := lang.FnFunc1(func(form90 any) any {
-		tmp91 := v_clojure_DOT_walk_prewalk.Get()
-		tmp92 := lang.FnFunc1(func(x93 any) any {
-			tmp94 := v_clojure_DOT_core_print_.Get()
-			tmp95 := lang.Apply1(tmp94, "Walked: ")
-			_ = tmp95
-			tmp96 := v_clojure_DOT_core_prn.Get()
-			tmp97 := lang.Apply1(tmp96, x93)
-			_ = tmp97
-			return x93
+	tmp95 := lang.FnFunc1(func(form96 any) any {
+		tmp97 := v_clojure_DOT_walk_prewalk.Get()
+		tmp98 := lang.FnFunc1(func(x99 any) any {
+			tmp100 := v_clojure_DOT_core_print_.Get()
+			tmp101 := lang.Apply1(tmp100, "Walked: ")
+			_ = tmp101
+			tmp102 := v_clojure_DOT_core_prn.Get()
+			tmp103 := lang.Apply1(tmp102, x99)
+			_ = tmp103
+			return x99
 		})
-		tmp98 := lang.Apply2(tmp91, tmp92, form90)
-		return tmp98
+		tmp104 := &lang.NamedFn1{Name: "fn", Expects: "1: [x]", F: tmp98}
+		tmp105 := lang.Apply2(tmp97, tmp104, form96)
+		return tmp105
 	})
-	v_clojure_DOT_walk_prewalk_demo.BindRoot(tmp89)
+	tmp106 := &lang.NamedFn1{Name: "clojure.walk/prewalk-demo", Expects: "1: [form]", F: tmp95}
+	v_clojure_DOT_walk_prewalk_demo.BindRoot(tmp106)
 	_ = v_clojure_DOT_walk_prewalk_demo
 	// (def keywordize-keys "Recursively transforms all map keys from strings to keywords." (cloj…
 	v_clojure_DOT_walk_keywordize_keys.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(22), kw_doc, "Recursively transforms all map keys from strings to keywords."))
-	tmp99 := lang.FnFunc1(func(m100 any) any {
-		var tmp101 any
-		_ = tmp101
+	tmp107 := lang.FnFunc1(func(m108 any) any {
+		var tmp109 any
+		_ = tmp109
 		{
-			tmp102 := lang.FnFunc1(func(p__82103 any) any {
-				var tmp104 any
-				_ = tmp104
+			tmp110 := lang.FnFunc1(func(p__86111 any) any {
+				var tmp112 any
+				_ = tmp112
 				{
-					var vec__83105 any = p__82103
-					_ = vec__83105
-					tmp106 := v_clojure_DOT_core_nth.Get()
-					tmp107 := lang.Apply3(tmp106, vec__83105, int64(0), nil)
-					var k108 any = tmp107
-					_ = k108
-					tmp109 := v_clojure_DOT_core_nth.Get()
-					tmp110 := lang.Apply3(tmp109, vec__83105, int64(1), nil)
-					var v111 any = tmp110
-					_ = v111
-					tmp112 := v_clojure_DOT_core_string_QMARK_.Get()
-					tmp113 := lang.Apply1(tmp112, k108)
-					var tmp114 any
-					_ = tmp114
-					if lang.IsTruthy(tmp113) {
-						tmp115 := v_clojure_DOT_core_keyword.Get()
-						tmp116 := lang.Apply1(tmp115, k108)
-						tmp117 := lang.NewVector(tmp116, v111)
-						tmp114 = tmp117
+					var vec__87113 any = p__86111
+					_ = vec__87113
+					tmp114 := v_clojure_DOT_core_nth.Get()
+					tmp115 := lang.Apply3(tmp114, vec__87113, int64(0), nil)
+					var k116 any = tmp115
+					_ = k116
+					tmp117 := v_clojure_DOT_core_nth.Get()
+					tmp118 := lang.Apply3(tmp117, vec__87113, int64(1), nil)
+					var v119 any = tmp118
+					_ = v119
+					tmp120 := v_clojure_DOT_core_string_QMARK_.Get()
+					tmp121 := lang.Apply1(tmp120, k116)
+					var tmp122 any
+					_ = tmp122
+					if lang.IsTruthy(tmp121) {
+						tmp123 := v_clojure_DOT_core_keyword.Get()
+						tmp124 := lang.Apply1(tmp123, k116)
+						tmp125 := lang.NewVector(tmp124, v119)
+						tmp122 = tmp125
 					} else {
-						tmp118 := lang.NewVector(k108, v111)
-						tmp114 = tmp118
+						tmp126 := lang.NewVector(k116, v119)
+						tmp122 = tmp126
 					}
-					tmp104 = tmp114
+					tmp112 = tmp122
 				}
-				return tmp104
+				return tmp112
 			})
-			var f119 any = tmp102
-			_ = f119
-			tmp120 := v_clojure_DOT_walk_postwalk.Get()
-			tmp121 := lang.FnFunc1(func(x122 any) any {
-				tmp123 := v_clojure_DOT_core_map_QMARK_.Get()
-				tmp124 := lang.Apply1(tmp123, x122)
-				var tmp125 any
-				_ = tmp125
-				if lang.IsTruthy(tmp124) {
-					tmp126 := v_clojure_DOT_core_into.Get()
-					tmp127 := lang.NewMap()
-					tmp128 := v_clojure_DOT_core_map_.Get()
-					tmp129 := lang.Apply2(tmp128, f119, x122)
-					tmp130 := lang.Apply2(tmp126, tmp127, tmp129)
-					tmp125 = tmp130
+			tmp127 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__86]", F: tmp110}
+			var f128 any = tmp127
+			_ = f128
+			tmp129 := v_clojure_DOT_walk_postwalk.Get()
+			tmp130 := lang.FnFunc1(func(x131 any) any {
+				tmp132 := v_clojure_DOT_core_map_QMARK_.Get()
+				tmp133 := lang.Apply1(tmp132, x131)
+				var tmp134 any
+				_ = tmp134
+				if lang.IsTruthy(tmp133) {
+					tmp135 := v_clojure_DOT_core_into.Get()
+					tmp136 := lang.NewMap()
+					tmp137 := v_clojure_DOT_core_map_.Get()
+					tmp138 := lang.Apply2(tmp137, f128, x131)
+					tmp139 := lang.Apply2(tmp135, tmp136, tmp138)
+					tmp134 = tmp139
 				} else {
-					tmp125 = x122
+					tmp134 = x131
 				}
-				return tmp125
+				return tmp134
 			})
-			tmp131 := lang.Apply2(tmp120, tmp121, m100)
-			tmp101 = tmp131
+			tmp140 := &lang.NamedFn1{Name: "fn", Expects: "1: [x]", F: tmp130}
+			tmp141 := lang.Apply2(tmp129, tmp140, m108)
+			tmp109 = tmp141
 		}
-		return tmp101
+		return tmp109
 	})
-	v_clojure_DOT_walk_keywordize_keys.BindRoot(tmp99)
+	tmp142 := &lang.NamedFn1{Name: "clojure.walk/keywordize-keys", Expects: "1: [m]", F: tmp107}
+	v_clojure_DOT_walk_keywordize_keys.BindRoot(tmp142)
 	_ = v_clojure_DOT_walk_keywordize_keys
 	// (def stringify-keys "Recursively transforms all map keys from keywords to strings." (cloju…
 	v_clojure_DOT_walk_stringify_keys.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(21), kw_doc, "Recursively transforms all map keys from keywords to strings."))
-	tmp132 := lang.FnFunc1(func(m133 any) any {
-		var tmp134 any
-		_ = tmp134
+	tmp143 := lang.FnFunc1(func(m144 any) any {
+		var tmp145 any
+		_ = tmp145
 		{
-			tmp135 := lang.FnFunc1(func(p__86136 any) any {
-				var tmp137 any
-				_ = tmp137
+			tmp146 := lang.FnFunc1(func(p__90147 any) any {
+				var tmp148 any
+				_ = tmp148
 				{
-					var vec__87138 any = p__86136
-					_ = vec__87138
-					tmp139 := v_clojure_DOT_core_nth.Get()
-					tmp140 := lang.Apply3(tmp139, vec__87138, int64(0), nil)
-					var k141 any = tmp140
-					_ = k141
-					tmp142 := v_clojure_DOT_core_nth.Get()
-					tmp143 := lang.Apply3(tmp142, vec__87138, int64(1), nil)
-					var v144 any = tmp143
-					_ = v144
-					tmp145 := v_clojure_DOT_core_keyword_QMARK_.Get()
-					tmp146 := lang.Apply1(tmp145, k141)
-					var tmp147 any
-					_ = tmp147
-					if lang.IsTruthy(tmp146) {
-						tmp148 := v_clojure_DOT_core_name.Get()
-						tmp149 := lang.Apply1(tmp148, k141)
-						tmp150 := lang.NewVector(tmp149, v144)
-						tmp147 = tmp150
+					var vec__91149 any = p__90147
+					_ = vec__91149
+					tmp150 := v_clojure_DOT_core_nth.Get()
+					tmp151 := lang.Apply3(tmp150, vec__91149, int64(0), nil)
+					var k152 any = tmp151
+					_ = k152
+					tmp153 := v_clojure_DOT_core_nth.Get()
+					tmp154 := lang.Apply3(tmp153, vec__91149, int64(1), nil)
+					var v155 any = tmp154
+					_ = v155
+					tmp156 := v_clojure_DOT_core_keyword_QMARK_.Get()
+					tmp157 := lang.Apply1(tmp156, k152)
+					var tmp158 any
+					_ = tmp158
+					if lang.IsTruthy(tmp157) {
+						tmp159 := v_clojure_DOT_core_name.Get()
+						tmp160 := lang.Apply1(tmp159, k152)
+						tmp161 := lang.NewVector(tmp160, v155)
+						tmp158 = tmp161
 					} else {
-						tmp151 := lang.NewVector(k141, v144)
-						tmp147 = tmp151
+						tmp162 := lang.NewVector(k152, v155)
+						tmp158 = tmp162
 					}
-					tmp137 = tmp147
+					tmp148 = tmp158
 				}
-				return tmp137
+				return tmp148
 			})
-			var f152 any = tmp135
-			_ = f152
-			tmp153 := v_clojure_DOT_walk_postwalk.Get()
-			tmp154 := lang.FnFunc1(func(x155 any) any {
-				tmp156 := v_clojure_DOT_core_map_QMARK_.Get()
-				tmp157 := lang.Apply1(tmp156, x155)
-				var tmp158 any
-				_ = tmp158
-				if lang.IsTruthy(tmp157) {
-					tmp159 := v_clojure_DOT_core_into.Get()
-					tmp160 := lang.NewMap()
-					tmp161 := v_clojure_DOT_core_map_.Get()
-					tmp162 := lang.Apply2(tmp161, f152, x155)
-					tmp163 := lang.Apply2(tmp159, tmp160, tmp162)
-					tmp158 = tmp163
+			tmp163 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__90]", F: tmp146}
+			var f164 any = tmp163
+			_ = f164
+			tmp165 := v_clojure_DOT_walk_postwalk.Get()
+			tmp166 := lang.FnFunc1(func(x167 any) any {
+				tmp168 := v_clojure_DOT_core_map_QMARK_.Get()
+				tmp169 := lang.Apply1(tmp168, x167)
+				var tmp170 any
+				_ = tmp170
+				if lang.IsTruthy(tmp169) {
+					tmp171 := v_clojure_DOT_core_into.Get()
+					tmp172 := lang.NewMap()
+					tmp173 := v_clojure_DOT_core_map_.Get()
+					tmp174 := lang.Apply2(tmp173, f164, x167)
+					tmp175 := lang.Apply2(tmp171, tmp172, tmp174)
+					tmp170 = tmp175
 				} else {
-					tmp158 = x155
+					tmp170 = x167
 				}
-				return tmp158
+				return tmp170
 			})
-			tmp164 := lang.Apply2(tmp153, tmp154, m133)
-			tmp134 = tmp164
+			tmp176 := &lang.NamedFn1{Name: "fn", Expects: "1: [x]", F: tmp166}
+			tmp177 := lang.Apply2(tmp165, tmp176, m144)
+			tmp145 = tmp177
 		}
-		return tmp134
+		return tmp145
 	})
-	v_clojure_DOT_walk_stringify_keys.BindRoot(tmp132)
+	tmp178 := &lang.NamedFn1{Name: "clojure.walk/stringify-keys", Expects: "1: [m]", F: tmp143}
+	v_clojure_DOT_walk_stringify_keys.BindRoot(tmp178)
 	_ = v_clojure_DOT_walk_stringify_keys
 	// (def prewalk-replace "Recursively transforms form by replacing keys in smap with their\n  …
 	v_clojure_DOT_walk_prewalk_replace.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(92), kw_column, int64(7), kw_end_line, int64(92), kw_end_column, int64(22), kw_doc, "Recursively transforms form by replacing keys in smap with their\n  values.  Like clojure/replace but works on any data structure.  Does\n  replacement at the root of the tree first."))
-	tmp165 := lang.FnFunc2(func(smap166, form167 any) any {
-		tmp168 := v_clojure_DOT_walk_prewalk.Get()
-		tmp169 := lang.FnFunc1(func(x170 any) any {
-			tmp171 := v_clojure_DOT_core_contains_QMARK_.Get()
-			tmp172 := lang.Apply2(tmp171, smap166, x170)
-			var tmp173 any
-			_ = tmp173
-			if lang.IsTruthy(tmp172) {
-				tmp174 := lang.Apply1(smap166, x170)
-				tmp173 = tmp174
+	tmp179 := lang.FnFunc2(func(smap180, form181 any) any {
+		tmp182 := v_clojure_DOT_walk_prewalk.Get()
+		tmp183 := lang.FnFunc1(func(x184 any) any {
+			tmp185 := v_clojure_DOT_core_contains_QMARK_.Get()
+			tmp186 := lang.Apply2(tmp185, smap180, x184)
+			var tmp187 any
+			_ = tmp187
+			if lang.IsTruthy(tmp186) {
+				tmp188 := lang.Apply1(smap180, x184)
+				tmp187 = tmp188
 			} else {
-				tmp173 = x170
+				tmp187 = x184
 			}
-			return tmp173
+			return tmp187
 		})
-		tmp175 := lang.Apply2(tmp168, tmp169, form167)
-		return tmp175
+		tmp189 := &lang.NamedFn1{Name: "fn", Expects: "1: [x]", F: tmp183}
+		tmp190 := lang.Apply2(tmp182, tmp189, form181)
+		return tmp190
 	})
-	v_clojure_DOT_walk_prewalk_replace.BindRoot(tmp165)
+	tmp191 := &lang.NamedFn2{Name: "clojure.walk/prewalk-replace", Expects: "2: [smap form]", F: tmp179}
+	v_clojure_DOT_walk_prewalk_replace.BindRoot(tmp191)
 	_ = v_clojure_DOT_walk_prewalk_replace
 	// (def postwalk-replace "Recursively transforms form by replacing keys in smap with their\n …
 	v_clojure_DOT_walk_postwalk_replace.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(23), kw_doc, "Recursively transforms form by replacing keys in smap with their\n  values.  Like clojure/replace but works on any data structure.  Does\n  replacement at the leaves of the tree first."))
-	tmp176 := lang.FnFunc2(func(smap177, form178 any) any {
-		tmp179 := v_clojure_DOT_walk_postwalk.Get()
-		tmp180 := lang.FnFunc1(func(x181 any) any {
-			tmp182 := v_clojure_DOT_core_contains_QMARK_.Get()
-			tmp183 := lang.Apply2(tmp182, smap177, x181)
-			var tmp184 any
-			_ = tmp184
-			if lang.IsTruthy(tmp183) {
-				tmp185 := lang.Apply1(smap177, x181)
-				tmp184 = tmp185
+	tmp192 := lang.FnFunc2(func(smap193, form194 any) any {
+		tmp195 := v_clojure_DOT_walk_postwalk.Get()
+		tmp196 := lang.FnFunc1(func(x197 any) any {
+			tmp198 := v_clojure_DOT_core_contains_QMARK_.Get()
+			tmp199 := lang.Apply2(tmp198, smap193, x197)
+			var tmp200 any
+			_ = tmp200
+			if lang.IsTruthy(tmp199) {
+				tmp201 := lang.Apply1(smap193, x197)
+				tmp200 = tmp201
 			} else {
-				tmp184 = x181
+				tmp200 = x197
 			}
-			return tmp184
+			return tmp200
 		})
-		tmp186 := lang.Apply2(tmp179, tmp180, form178)
-		return tmp186
+		tmp202 := &lang.NamedFn1{Name: "fn", Expects: "1: [x]", F: tmp196}
+		tmp203 := lang.Apply2(tmp195, tmp202, form194)
+		return tmp203
 	})
-	v_clojure_DOT_walk_postwalk_replace.BindRoot(tmp176)
+	tmp204 := &lang.NamedFn2{Name: "clojure.walk/postwalk-replace", Expects: "2: [smap form]", F: tmp192}
+	v_clojure_DOT_walk_postwalk_replace.BindRoot(tmp204)
 	_ = v_clojure_DOT_walk_postwalk_replace
 	// (def macroexpand-all "Recursively performs all possible macroexpansions in form." (clojure…
 	v_clojure_DOT_walk_macroexpand_all.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(22), kw_doc, "Recursively performs all possible macroexpansions in form."))
-	tmp187 := lang.FnFunc1(func(form188 any) any {
-		tmp189 := v_clojure_DOT_walk_prewalk.Get()
-		tmp190 := lang.FnFunc1(func(x191 any) any {
-			tmp192 := v_clojure_DOT_core_seq_QMARK_.Get()
-			tmp193 := lang.Apply1(tmp192, x191)
-			var tmp194 any
-			_ = tmp194
-			if lang.IsTruthy(tmp193) {
-				tmp195 := v_clojure_DOT_core_macroexpand.Get()
-				tmp196 := lang.Apply1(tmp195, x191)
-				tmp194 = tmp196
+	tmp205 := lang.FnFunc1(func(form206 any) any {
+		tmp207 := v_clojure_DOT_walk_prewalk.Get()
+		tmp208 := lang.FnFunc1(func(x209 any) any {
+			tmp210 := v_clojure_DOT_core_seq_QMARK_.Get()
+			tmp211 := lang.Apply1(tmp210, x209)
+			var tmp212 any
+			_ = tmp212
+			if lang.IsTruthy(tmp211) {
+				tmp213 := v_clojure_DOT_core_macroexpand.Get()
+				tmp214 := lang.Apply1(tmp213, x209)
+				tmp212 = tmp214
 			} else {
-				tmp194 = x191
+				tmp212 = x209
 			}
-			return tmp194
+			return tmp212
 		})
-		tmp197 := lang.Apply2(tmp189, tmp190, form188)
-		return tmp197
+		tmp215 := &lang.NamedFn1{Name: "fn", Expects: "1: [x]", F: tmp208}
+		tmp216 := lang.Apply2(tmp207, tmp215, form206)
+		return tmp216
 	})
-	v_clojure_DOT_walk_macroexpand_all.BindRoot(tmp187)
+	tmp217 := &lang.NamedFn1{Name: "clojure.walk/macroexpand-all", Expects: "1: [form]", F: tmp205}
+	v_clojure_DOT_walk_macroexpand_all.BindRoot(tmp217)
 	_ = v_clojure_DOT_walk_macroexpand_all
 }

@@ -125,3 +125,52 @@ inexpressible (derive a ClassRef the type implements instead).
   (Exception → Throwable, Long → Number) report `#{Object}` here — the
   intermediate superclass is unencoded, so the set is flattened, not
   false: it only ever states what cljgo's own `instance?` already claims.
+
+## Addendum (2026-07-23) — typed builtin exception classes in catch and instance?
+
+Before this addendum only Throwable/Exception/RuntimeException/ExceptionInfo
+matched in catch position, so `(try (/ 1 0) (catch ArithmeticException e …))`
+let the throw escape — any ported JVM code catching a typed builtin broke.
+
+**Decision.** The standard JVM exception-class names resolve (class-ref
+table, `add("java.lang", …)`) and MATCH in catch position and in
+`instance?`, each mapped to the cljgo error value that corresponds
+semantically, with the real JVM ancestry honored as MATCHING semantics
+(oracle 1.12.5, 2026-07-23, `.getSuperclass` chain):
+
+| class name | cljgo error value (pkg/lang) | JVM superclass |
+|---|---|---|
+| ArithmeticException | `ArithmeticError` (divide by zero, overflow) | RuntimeException |
+| ClassCastException | `ClassCastError` (Ops conversion on a non-number, compare on incomparables, string casts) | RuntimeException |
+| NullPointerException | `NullPointerError` (Ops conversion on nil, nil where a string is required) | RuntimeException |
+| IndexOutOfBoundsException | `IndexOutOfBoundsError` (nth, subs — StringIndexOutOfBoundsException folds in) | RuntimeException |
+| IllegalArgumentException | `IllegalArgumentError` (ISeq conversion, assoc on a list, …) | RuntimeException |
+| NumberFormatException | `NumberFormatError` ("Infinite or NaN") | IllegalArgumentException |
+| IllegalStateException | `IllegalStateError` | RuntimeException |
+| UnsupportedOperationException | `UnsupportedOperationError` | RuntimeException |
+| clojure.lang.ArityException | `ArityError` / eval's `arityError` | IllegalArgumentException |
+| clojure.lang.ExceptionInfo | anything wrapping `lang.IExceptionInfo` | RuntimeException |
+
+One table (`throwableMatches`, pkg/corelib/exceptions.go) serves BOTH legs
+— the tree-walk evaluator and the emitted `rt.CatchMatches` — and
+`instance?` (`classNameMatchesValue` falls through to it for error
+values), so REPL/binary parity holds by construction. Subclass edges are
+encoded once, as `Is` methods on the error types themselves
+(`ArityError`/`arityError`/`NumberFormatError` → IllegalArgumentError),
+and reached through `errors.Is`, which also unwraps `EvalError`. The
+three catch-all names still match every thrown value (cljgo v0 treats all
+throws as unchecked). Raise sites were re-typed message-for-message
+(byte-stable strings, diagnostic codes G5001/G5003/G5004 preserved on the
+new types), so no frozen conformance output changed.
+
+**What this does NOT change:** `parents`/`supers` on these class refs
+still report the flattened `#{Object}` of §C — the Throwable chain is
+encoded only as catch/instance? matching semantics, not as a reified
+superclass graph. Fail-closed stands: names outside the table still never
+resolve and never match.
+
+Conformance: `catch-typed-builtins.clj`, `catch-hierarchy.clj`,
+`catch-miss-falls-through.clj`, `instance-exception-classes.clj` (all
+dual-harness, oracle-run file-for-file); `divide-by-zero-messages.clj`
+and `numeric-bigint-from-double.clj` tightened from their catch-all
+workarounds to the typed classes the JVM throws.

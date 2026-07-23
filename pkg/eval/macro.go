@@ -12,19 +12,8 @@ import (
 	"github.com/muthuishere/cljgo/core"
 	"github.com/muthuishere/cljgo/pkg/analyzer"
 	"github.com/muthuishere/cljgo/pkg/ast"
-	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
-)
-
-var (
-	symDo           = lang.NewSymbol("do")
-	symDef          = lang.NewSymbol("def")
-	symFnStar       = lang.NewSymbol("fn*")
-	symVar          = lang.NewSymbol("var")
-	symAmpForm      = lang.NewSymbol("&form")
-	symAmpEnv       = lang.NewSymbol("&env")
-	symSetMacroBang = lang.NewSymbol("clojure.core/-set-macro!")
 )
 
 // macroexpand1 expands form by one macro step, exactly Compiler.java's
@@ -134,87 +123,6 @@ func (e *Evaluator) macroexpand(form any) (any, error) {
 // maxUserMacroExpansions bounds the user-facing macroexpand loop (the
 // analyzer's own loop has its own limit).
 const maxUserMacroExpansions = 1000
-
-// installDefmacro interns the bootstrap defmacro (design/03 §4): a
-// hand-built macro fn — a Var flagged :macro whose value rewrites
-//
-//	(defmacro name doc? ([params] body...)+)   ; or single [params] body...
-//
-// into
-//
-//	(do (def name doc? (fn* name ([&form &env params...] body...)+))
-//	    (clojure.core/-set-macro! (var name))
-//	    (var name))
-//
-// JVM-style: the macro fn takes &form/&env as explicit leading params
-// on every arity (clojure/core.clj's defmacro does the same rewrite),
-// and the expansion sets the :macro flag on the var at eval time, so a
-// defmacro typed at the REPL is a macro for the very next form
-// (design/03 §7a). -set-macro! is the M1 stand-in for JVM Clojure's
-// (. (var name) (setMacro)) — host interop lands in v3.
-func (e *Evaluator) installDefmacro() {
-	v := lang.NSCore.Intern(lang.NewSymbol("defmacro"))
-	v.BindRoot(corelib.NewNativeFn("defmacro", defmacroExpand))
-	v.SetMacro()
-}
-
-// defmacroExpand is defmacro's expander. args = [&form &env name doc?
-// fdecl...]; the two hidden args are ignored.
-func defmacroExpand(args ...any) any {
-	if len(args) < 4 {
-		panic(fmt.Errorf("wrong number of args (%d) passed to: defmacro", len(args)-2))
-	}
-	name, ok := args[2].(*lang.Symbol)
-	if !ok {
-		panic(fmt.Errorf("first argument to defmacro must be a symbol, got: %s", lang.PrintString(args[2])))
-	}
-	fdecl := args[3:]
-
-	var doc any
-	if s, isStr := fdecl[0].(string); isStr && len(fdecl) > 1 {
-		doc = s
-		fdecl = fdecl[1:]
-	}
-
-	// Normalize the single-arity shorthand [params] body... to one
-	// ([params] body...) method; otherwise every element is a method.
-	var methods []any
-	if _, isVec := fdecl[0].(lang.IPersistentVector); isVec {
-		methods = []any{lang.NewList(fdecl...)}
-	} else {
-		methods = fdecl
-	}
-
-	fnParts := []any{symFnStar, name}
-	for _, m := range methods {
-		mseq, isSeq := m.(lang.ISeq)
-		if !isSeq {
-			panic(fmt.Errorf("invalid defmacro method form: %s", lang.PrintString(m)))
-		}
-		parts := lang.ToSlice(mseq)
-		pvec, isVec := parts[0].(lang.IPersistentVector)
-		if !isVec {
-			panic(fmt.Errorf("defmacro method requires a parameter vector, got: %s", lang.PrintString(parts[0])))
-		}
-		// Prepend the hidden params. A trailing "& rest" pair keeps its
-		// invariant (& stays second-to-last).
-		params := append([]any{symAmpForm, symAmpEnv}, lang.ToSlice(pvec)...)
-		method := append([]any{lang.NewVector(params...)}, parts[1:]...)
-		fnParts = append(fnParts, lang.NewList(method...))
-	}
-
-	defParts := []any{symDef, name}
-	if doc != nil {
-		defParts = append(defParts, doc)
-	}
-	defParts = append(defParts, lang.NewList(fnParts...))
-
-	theVar := lang.NewList(symVar, name)
-	return lang.NewList(symDo,
-		lang.NewList(defParts...),
-		lang.NewList(symSetMacroBang, theVar),
-		theVar)
-}
 
 // loadBootSource reads and evaluates one embedded boot source into its
 // namespace, form by form, exactly as a file load (design/03 §7a): *ns*

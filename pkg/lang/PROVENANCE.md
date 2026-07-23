@@ -434,7 +434,7 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   two-line wrappers over `Ops(x).Combine(Ops(y)).LTE/GTE`, mirroring the
   existing `LT`/`GT` exactly. They back the new rt.LE2/GE2/LEBool/GEBool
   guarded comparison intrinsics (pkg/emit/rt); no vendored logic changed.
-||||||| 24b7505
+
 ## Boot-refer bulk install (perf/startup clawback, 2026-07-23)
 
 - `namespace.go`: added `CompareAndSetMappings` (swap the whole mapping
@@ -444,3 +444,30 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   snapshot of clojure.core's public vars instead of ~900 per-symbol
   path-copying Assocs per boot namespace. Per-symbol `reference()`
   semantics are unchanged and remain the fallback on any conflict.
+
+## Namespace mutation surface (fundamentals batch A4, 2026-07-23)
+
+- `namespace.go`: added `Unmap` (clojure.core/ns-unmap's remove-a-mapping
+  primitive; throws the JVM's "Can't unintern namespace-qualified symbol"
+  on a qualified name) and `RemoveAlias` (ns-unalias) — both CAS-retry
+  loops on the same mappings/aliases Boxes the existing mutators swing,
+  so they compose with the boot-refer `CompareAndSetMappings` bulk path
+  (a bulk install that loses the race falls back to per-symbol
+  reference; a completed unmap is never resurrected by a stale
+  snapshot). `RemoveNamespace` now RETURNS the removed *Namespace (nil
+  when absent) for clojure.core/remove-ns, and its clojure.core refusal
+  message is the oracle-exact "Cannot remove clojure namespace"
+  (was "cannot remove clojure.core namespace"). No vendored logic
+  changed otherwise.
+## Named fixed-arity fn wrappers (ADR 0048 arity-error naming, 2026-07-23)
+
+- `ifn.go`: added `NamedFn0..NamedFn4` — cljgo-authored structs (not
+  vendored) wrapping the corresponding `FnFuncN` closure with the fn's
+  display name ("user/f") and expects label ("1: [x]"), so a compiled
+  binary's arity mismatch panics the same NAMED `ArityError` the
+  interpreter raises instead of the unnamed count-only message.
+  `NamedFn2` also implements the `IFn2` reduce seam. The `FnFuncN`
+  types themselves are unchanged.
+- `apply.go`: `Apply0..Apply4` each gained one `*NamedFnN` fast-path
+  case (a direct `.F` field call, placed right after the `FnFuncN`
+  case) so matching-arity dispatch of emitted fns stays alloc-free.

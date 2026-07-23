@@ -1,0 +1,65 @@
+---
+// Default Starlight footer (edit link, pagination) + giscus comments.
+// Every docs page gets a public comment thread backed by GitHub Discussions
+// (category: Announcements), mapped by pathname. Commenters sign in with
+// GitHub; threads are visible to everyone on github.com/muthuishere/cljgo/discussions.
+import Default from '@astrojs/starlight/components/Footer.astro';
+---
+
+<Default><slot /></Default>
+
+<div class="cljgo-comments">
+	<p class="cljgo-comments-hint">
+		Questions or feedback on this page? Comment below with your GitHub account — comments are
+		public and live in the project's GitHub Discussions.
+	</p>
+	<div id="giscus-container"></div>
+</div>
+
+<script>
+	const THEME_DARK = 'transparent_dark';
+	const THEME_LIGHT = 'light';
+
+	function currentGiscusTheme() {
+		return document.documentElement.dataset.theme === 'light' ? THEME_LIGHT : THEME_DARK;
+	}
+
+	function mountGiscus() {
+		const container = document.getElementById('giscus-container');
+		if (!container || container.querySelector('iframe, script')) return;
+		const s = document.createElement('script');
+		s.src = 'https://giscus.app/client.js';
+		s.async = true;
+		s.crossOrigin = 'anonymous';
+		const attrs = {
+			'data-repo': 'muthuishere/cljgo',
+			'data-repo-id': 'R_kgDOTVff_g',
+			'data-category': 'Announcements',
+			'data-category-id': 'DIC_kwDOTVff_s4DBycB',
+			'data-mapping': 'pathname',
+			'data-strict': '0',
+			'data-reactions-enabled': '1',
+			'data-emit-metadata': '0',
+			'data-input-position': 'top',
+			'data-theme': currentGiscusTheme(),
+			'data-lang': 'en',
+			'data-loading': 'lazy',
+		};
+		for (const [k, v] of Object.entries(attrs)) s.setAttribute(k, v);
+		container.appendChild(s);
+	}
+
+	// Keep the giscus iframe in sync with Starlight's theme toggle.
+	function watchTheme() {
+		new MutationObserver(() => {
+			const frame = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+			frame?.contentWindow?.postMessage(
+				{ giscus: { setConfig: { theme: currentGiscusTheme() } } },
+				'https://giscus.app'
+			);
+		}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+	}
+
+	mountGiscus();
+	watchTheme();
+</script>

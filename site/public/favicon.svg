@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#121212"/>
+  <text x="12" y="46" font-family="JetBrains Mono, ui-monospace, monospace" font-size="38" font-weight="700" fill="#5fc13b">(</text>
+  <text x="27" y="46" font-family="JetBrains Mono, ui-monospace, monospace" font-size="38" font-weight="700" fill="#22c3d6">λ</text>
+  <text x="44" y="46" font-family="JetBrains Mono, ui-monospace, monospace" font-size="38" font-weight="700" fill="#5fc13b">)</text>
+</svg>

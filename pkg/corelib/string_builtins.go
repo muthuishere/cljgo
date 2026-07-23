@@ -160,7 +160,10 @@ func internStringBuiltins(
 			}
 		}
 		if start < 0 || end > len(s) || start > end {
-			panic(fmt.Errorf("String index out of range: %d", start))
+			// JVM: StringIndexOutOfBoundsException, a subclass of
+			// IndexOutOfBoundsException (oracle 1.12.5) — typed so
+			// (catch IndexOutOfBoundsException e) matches.
+			panic(lang.NewIndexOutOfBoundsErrorMsg(fmt.Sprintf("String index out of range: %d", start)))
 		}
 		return string(s[start:end])
 	})
@@ -355,11 +358,11 @@ func csString(op string, a any) string {
 // ClassCastException. Oracle: (str/starts-with? "ab" :a) throws.
 func csRequireString(op string, a any) string {
 	if a == nil {
-		panic(fmt.Errorf("%s: Cannot invoke \"String.length()\" because the argument is null", op))
+		panic(lang.NewNullPointerError("", fmt.Sprintf("%s: Cannot invoke \"String.length()\" because the argument is null", op)))
 	}
 	s, ok := a.(string)
 	if !ok {
-		panic(fmt.Errorf("%s: class %T cannot be cast to class java.lang.String", op, a))
+		panic(lang.NewClassCastError("", fmt.Sprintf("%s: class %T cannot be cast to class java.lang.String", op, a)))
 	}
 	return s
 }
