@@ -246,18 +246,18 @@ func Load() {
 		var tmp109 any
 		_ = tmp109
 		{
-			tmp110 := lang.FnFunc1(func(p__86111 any) any {
+			tmp110 := lang.FnFunc1(func(p__92111 any) any {
 				var tmp112 any
 				_ = tmp112
 				{
-					var vec__87113 any = p__86111
-					_ = vec__87113
+					var vec__93113 any = p__92111
+					_ = vec__93113
 					tmp114 := v_clojure_DOT_core_nth.Get()
-					tmp115 := lang.Apply3(tmp114, vec__87113, int64(0), nil)
+					tmp115 := lang.Apply3(tmp114, vec__93113, int64(0), nil)
 					var k116 any = tmp115
 					_ = k116
 					tmp117 := v_clojure_DOT_core_nth.Get()
-					tmp118 := lang.Apply3(tmp117, vec__87113, int64(1), nil)
+					tmp118 := lang.Apply3(tmp117, vec__93113, int64(1), nil)
 					var v119 any = tmp118
 					_ = v119
 					tmp120 := v_clojure_DOT_core_string_QMARK_.Get()
@@ -277,7 +277,7 @@ func Load() {
 				}
 				return tmp112
 			})
-			tmp127 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__86]", F: tmp110}
+			tmp127 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__92]", F: tmp110}
 			var f128 any = tmp127
 			_ = f128
 			tmp129 := v_clojure_DOT_walk_postwalk.Get()
@@ -313,18 +313,18 @@ func Load() {
 		var tmp145 any
 		_ = tmp145
 		{
-			tmp146 := lang.FnFunc1(func(p__90147 any) any {
+			tmp146 := lang.FnFunc1(func(p__96147 any) any {
 				var tmp148 any
 				_ = tmp148
 				{
-					var vec__91149 any = p__90147
-					_ = vec__91149
+					var vec__97149 any = p__96147
+					_ = vec__97149
 					tmp150 := v_clojure_DOT_core_nth.Get()
-					tmp151 := lang.Apply3(tmp150, vec__91149, int64(0), nil)
+					tmp151 := lang.Apply3(tmp150, vec__97149, int64(0), nil)
 					var k152 any = tmp151
 					_ = k152
 					tmp153 := v_clojure_DOT_core_nth.Get()
-					tmp154 := lang.Apply3(tmp153, vec__91149, int64(1), nil)
+					tmp154 := lang.Apply3(tmp153, vec__97149, int64(1), nil)
 					var v155 any = tmp154
 					_ = v155
 					tmp156 := v_clojure_DOT_core_keyword_QMARK_.Get()
@@ -344,7 +344,7 @@ func Load() {
 				}
 				return tmp148
 			})
-			tmp163 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__90]", F: tmp146}
+			tmp163 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__96]", F: tmp146}
 			var f164 any = tmp163
 			_ = f164
 			tmp165 := v_clojure_DOT_walk_postwalk.Get()

@@ -135,6 +135,18 @@
 (defn eduction [& xforms]
   (sequence (apply comp (butlast xforms)) (last xforms)))
 
+;; ->Eduction : the Eduction constructor (tail wave, 2026-07-23). cljgo's
+;; eduction already returns its (sequence xform coll) view, so the
+;; positional ctor is the same 2-arg call. DEVIATION (documented): the
+;; JVM value is a clojure.core.Eduction object that prints as #object[..];
+;; cljgo's prints as the seq it is. Seq/reduce behavior matches:
+;; oracle 1.12.5: (vec (->Eduction (map inc) [1 2 3])) => [2 3 4];
+;; (seq (->Eduction (map inc) [1 2])) => (2 3);
+;; (reduce + 0 (->Eduction (map inc) [1 2 3])) => 9;
+;; (= (vec (eduction (map inc) [1 2])) (vec (->Eduction (map inc) [1 2]))) => true
+(defn ->Eduction [xform coll]
+  (eduction xform coll))
+
 ;; --- partition-by --------------------------------------------------------
 
 ;; oracle: (partition-by even? [1 1 2 2 3 3]) => ((1 1) (2 2) (3 3))

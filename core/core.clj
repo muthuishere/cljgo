@@ -191,6 +191,48 @@
         (recur (next ks) acc2))
       (seq acc))))
 
+;; -kv-put: append [k v] onto a flat kv vector, replacing the value IN
+;; PLACE when k is already present (first-position-wins ordering, the
+;; JVM's createAsIfByAssoc contract).
+(defn -kv-put [kvs k v]
+  (loop [i 0]
+    (if (< i (count kvs))
+      (if (= (nth kvs i) k)
+        (assoc kvs (inc i) v)
+        (recur (+ i 2)))
+      (conj kvs k v))))
+
+;; seq-to-map-for-destructuring : the 1.11 kwargs bridge — a trailing kv
+;; seq becomes the map that associative destructuring consumes, so
+;; (defn f [& {:keys [a]}] a) is callable as (f :a 1), (f {:a 1}) AND
+;; (f :a 1 {:a 1}) (a trailing map merges over the explicit pairs, its
+;; entries updating earlier keys in place). Defined BEFORE destructure —
+;; the -pb map branch expands references to it. Faithful to
+;; clojure.core/seq-to-map-for-destructuring + PersistentArrayMap/
+;; createAsIfByAssoc (which since 1.11 accepts an odd kv run whose last
+;; element is a map).
+;; oracle 1.12.5 (conformance/tests/kwargs-destructure.clj):
+;;   (seq-to-map-for-destructuring (seq [:a 1 :b 2])) => {:a 1, :b 2}
+;;   (seq-to-map-for-destructuring (seq [{:a 1}])) => {:a 1}
+;;   (seq-to-map-for-destructuring (seq [:a 1 {:b 2}])) => {:a 1, :b 2}
+;;   (seq-to-map-for-destructuring (seq [:a 1 {:a 9 :b 2}])) => {:a 9, :b 2}
+;;   (seq-to-map-for-destructuring nil) => {}
+(defn seq-to-map-for-destructuring
+  "Builds a map from a seq as described in
+  https://clojure.org/reference/special_forms#keyword-arguments"
+  [s]
+  (if (next s)
+    (loop [kvs [] xs (seq s)]
+      (cond
+        (nil? xs) (apply array-map kvs)
+        (and (nil? (next xs)) (map? (first xs)))
+        (loop [kvs kvs es (seq (first xs))]
+          (if es
+            (recur (-kv-put kvs (key (first es)) (val (first es))) (next es))
+            (apply array-map kvs)))
+        :else (recur (-kv-put kvs (first xs) (second xs)) (nnext xs))))
+    (if (seq s) (first s) {})))
+
 ;; -pb: process one binding-form b against value-expr v, appending simple
 ;; [sym expr] pairs to the accumulator vector bvec. Self-recursive for
 ;; nested forms (vector-in-vector, map-in-vector, ...).
@@ -234,7 +276,15 @@
     (map? b)
     (let [gmap (gensym "map__")
           defaults (get b :or)]
-      (loop [ret (let [r (conj bvec gmap v)]
+      ;; The kv-seq bridge (clojure.core/destructure, 1.11 shape): when
+      ;; the incoming value is a SEQ (an & rest arg), rebind gmap to
+      ;; (seq-to-map-for-destructuring gmap) so map destructuring sees a
+      ;; map — this is what makes (f :a 1), (f {:a 1}) and (f :a 1 {:b 2})
+      ;; all work against [& {:keys [...]}] (kwargs-destructure.clj).
+      (loop [ret (let [r (conj bvec gmap v
+                          gmap (list 'if (list 'clojure.core/seq? gmap)
+                                     (list 'clojure.core/seq-to-map-for-destructuring gmap)
+                                     gmap))]
                    (if (get b :as) (conj r (get b :as) gmap) r))
              bes (-map-entries b)]
         (if (seq bes)
@@ -2293,3 +2343,182 @@
   evaluated in parallel"
   [& exprs]
   `(pcalls ~@(map (fn [e] (list 'fn* [] e)) exprs)))
+
+;; ===========================================================================
+;; Tail wave (fundamentals "all complete", 2026-07-23): the deprecated/compat
+;; remainder of clojure.core. Every behavior oracle-verified against JVM
+;; Clojure 1.12.5 (scratch tailwave/o1-o3.clj); frozen in
+;; conformance/tests/structs-*.clj, extend-fn*.clj, vector-of.clj,
+;; tail-wave-misc.clj, cast-and-ancestry.clj.
+
+;; --- structs (deprecated on the JVM, still shipped — over plain maps) ------
+;;
+;; DEVIATIONS (documented): the JVM's basis is an opaque
+;; PersistentStructMap$Def and its instances a PersistentStructMap that
+;; throws on (dissoc m base-key); cljgo's basis is the plain vector of
+;; keys and its instances ordinary array-maps (basis key order preserved,
+;; extras appended), so dissoc of a base key succeeds. Everything else —
+;; construction, key order, accessor, "Too many arguments" — matches the
+;; oracle: (defstruct person :name :age) (struct person "amy" 3) =>
+;; {:name "amy", :age 3}; (struct person "amy") => {:name "amy", :age nil};
+;; (struct-map person :age 5 :name "bo" :extra 1) =>
+;; {:name "bo", :age 5, :extra 1}; ((accessor person :name) m) => "amy";
+;; (struct person 1 2 3) throws "Too many arguments to struct constructor".
+
+(defn create-struct
+  "Returns a structure basis object."
+  [& keys]
+  (vec keys))
+
+(defmacro defstruct
+  "Same as (def name (create-struct keys...))"
+  [name & keys]
+  (list 'def name (cons 'clojure.core/create-struct keys)))
+
+(defn struct-map
+  "Returns a new structmap instance with the keys of the
+  structure-basis. keyvals may contain all, some or none of the basis
+  keys - where values are not supplied they will default to nil.
+  keyvals can also contain keys not in the basis."
+  [s & inits]
+  (loop [vals {} extra [] is (seq inits)]
+    (if is
+      (if (-mem? s (first is))
+        (recur (assoc vals (first is) (second is)) extra (nnext is))
+        (recur vals (-kv-put extra (first is) (second is)) (nnext is)))
+      (apply array-map (concat (mapcat (fn [k] [k (get vals k)]) s) extra)))))
+
+(defn struct
+  "Returns a new structmap instance with the keys of the
+  structure-basis. vals must be supplied for basis keys in order -
+  where values are not supplied they will default to nil."
+  [s & vals]
+  (when (> (count vals) (count s))
+    (-illegal-argument "Too many arguments to struct constructor"))
+  (apply array-map
+         (interleave s (concat vals (repeat (- (count s) (count vals)) nil)))))
+
+(defn accessor
+  "Returns a fn that, given an instance of a structmap with the basis,
+  returns the value at the key. The key must be in the basis."
+  [s key]
+  (if (-mem? s key)
+    (fn [m] (get m key))
+    (-illegal-argument (str "Not a struct key: " key))))
+
+;; --- deprecated / small compat fns ----------------------------------------
+
+;; oracle: (replicate 3 :x) => (:x :x :x)
+(defn replicate
+  "DEPRECATED: Use 'repeat' instead. Returns a lazy seq of n xs."
+  [n x]
+  (take n (repeat x)))
+
+;; test : run the fn in a var's :test metadata.
+;; oracle: :ok when :test metadata exists (the fn is called, its value
+;; discarded), :no-test otherwise — including on #'clojure.core/map.
+(defn test
+  "test [v] finds fn at key :test in var metadata and calls it,
+  presumably to test it"
+  [v]
+  (let [f (:test (meta v))]
+    (if f (do (f) :ok) :no-test)))
+
+;; await1 : agent-await internal (one-agent await). The JVM version skips
+;; the wait when the agent's action queue is empty; cljgo's
+;; (await a) already returns immediately in that case (lang.Agent.Await
+;; flushes an empty queue without blocking), so delegating is
+;; behavior-identical. oracle: (let [a (agent 0)] (send a inc)
+;; (await1 a) @a) => 1 (await1 returns the agent).
+(defn await1 [a]
+  (await a)
+  a)
+
+;; unquote / unquote-splicing : root-unbound placeholder vars — on the
+;; JVM these exist only so ~ / ~@ outside syntax-quote resolve to a var
+;; (and then fail on deref). oracle: [(bound? #'unquote)
+;; (bound? #'unquote-splicing)] => [false false]
+(def unquote)
+(def unquote-splicing)
+
+;; print-ctor : print o as the evaluable #=(Class. args) constructor form
+;; (the JVM's print-dup building block; cljgo's reader has no #=, so this
+;; is output-only). The class-name position uses the printer's dispatch
+;; class (-print-class), which spells well-known scalars exactly like the
+;; JVM ("java.lang.Long").
+;; oracle: (with-out-str (print-ctor 5 (fn [o w] (.write w "5")) *out*))
+;; => "#=(java.lang.Long. 5)"
+(defn print-ctor [o print-args w]
+  (.write w "#=(")
+  (.write w (str (-print-class o)))
+  (.write w ". ")
+  (print-args o w)
+  (.write w ")")
+  nil)
+
+;; definline : on the JVM, a defn whose body is also stored as an :inline
+;; macro template the compiler expands at call sites. cljgo defines the
+;; SAME fn (the template applied to the arg symbols becomes the body) and
+;; stores the same :inline metadata; no call-site inlining happens —
+;; semantically identical, performance-only divergence (documented).
+;; oracle: (definline dsqr [x] `(* ~x ~x)) => (dsqr 5) => 25;
+;; (fn? dsqr) => true; (map dsqr [1 2 3]) => (1 4 9)
+(defmacro definline
+  "Experimental - like defmacro, except defines a named function whose
+  body is the expansion, calls to which may be expanded inline as if
+  it were a macro. Cannot be used with variadic (&) args."
+  [name & decl]
+  (let [[pre-args [args expr]] (split-with (comp not vector?) decl)]
+    `(do
+       (defn ~name ~@pre-args ~args ~(apply (eval (list 'clojure.core/fn args expr)) args))
+       (alter-meta! (var ~name) assoc :inline (fn ~name ~args ~expr))
+       (var ~name))))
+
+;; vector-of : the typed persistent vector. DEVIATIONS (documented): the
+;; JVM builds a clojure.core.Vec backed by a primitive array, coercing on
+;; EVERY conj; cljgo coerces the CTOR elements with the same checked
+;; casts over an ordinary persistent vector — equality, lookup and the
+;; ctor's coercion/range errors match the oracle, but a later conj does
+;; not re-coerce and the concrete type is the plain vector.
+;; oracle: (vector-of :int 1 2 3) => [1 2 3]; (= (vector-of :int 1 2)
+;; [1 2]) => true; (vector-of :int 1.5) => [1] (RT.intCast truncates);
+;; (vector-of :double 1 2) => [1.0 2.0]; (vector-of :float 1.5) => [1.5];
+;; (vector-of :boolean true) => [true]; (vector-of :char \a) => [\a];
+;; (vector-of :byte 200) throws (value out of range for byte);
+;; (get (vector-of :int 4 5) 1) => 5; (subvec (vector-of :int 1 2 3) 1)
+;; => [2 3]
+(defn vector-of
+  "Creates a new vector of a single primitive type t, where t is one
+  of :int :long :float :double :byte :short :char or :boolean."
+  [t & xs]
+  (let [c (cond (= t :int) int
+                (= t :long) long
+                (= t :float) float
+                (= t :double) double
+                (= t :byte) byte
+                (= t :short) short
+                (= t :char) char
+                (= t :boolean) boolean
+                :else (-illegal-argument (str "Unrecognized type " t)))]
+    (vec (map c xs))))
+
+;; bases / supers : the real type ancestry cljgo can vouch for (ADR 0039
+;; -type-bases/-type-supers — deftype/defrecord markers carry their
+;; protocols + genuinely-implemented interfaces + Object; well-known
+;; class refs flatten to Object). DEVIATION (documented): no JVM class
+;; hierarchy is fabricated (ADR 0036), so e.g. (supers Long) is
+;; #{java.lang.Object} here where the JVM adds Number/Comparable/...;
+;; order within bases is unspecified (a set underneath).
+;; oracle: (sort (map str (bases QQ))) for (deftype QQ []) =>
+;; ("clojure.lang.IType" "java.lang.Object"); (contains? (supers RR)
+;; clojure.lang.IRecord) for (defrecord RR []) => true; (bases Object)
+;; => nil; (supers Object) => nil
+(defn bases
+  "Returns the immediate superclass and direct interfaces of c, if any"
+  [c]
+  (seq (-type-bases c)))
+
+(defn supers
+  "Returns the immediate and indirect superclasses and interfaces of c, if any"
+  [c]
+  (-type-supers c))

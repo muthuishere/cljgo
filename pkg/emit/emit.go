@@ -353,6 +353,13 @@ func (g *generator) constExpr(v any) string {
 		// the interpreter's, epoch millis included.
 		g.usesReader = true
 		return fmt.Sprintf("reader.MustInst(%q)", x.Value())
+	case *reader.UUID:
+		// #uuid constants reconstruct the same way (reader.MustUUID over
+		// the canonical lowercase text the compile-time reader validated),
+		// so compiled and interpreted #uuid values are `=` and print
+		// identically (tail wave, 2026-07-23; the MustInst pattern).
+		g.usesReader = true
+		return fmt.Sprintf("reader.MustUUID(%q)", x.Value())
 	case lang.Keyword:
 		return g.hoistKeyword(x)
 	case *lang.Symbol:

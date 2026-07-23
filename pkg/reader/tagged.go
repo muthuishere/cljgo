@@ -192,6 +192,19 @@ func MustInst(s string) Inst {
 	return i
 }
 
+// MustUUID is NewUUID for text already validated by a successful read —
+// compiled binaries reconstruct #uuid constants through it (pkg/emit
+// constExpr, mirroring MustInst), so it can only be reached with text
+// the compile-time reader accepted. Panics on invalid text (a build
+// bug, never user input).
+func MustUUID(s string) *UUID {
+	u, ok := NewUUID(s)
+	if !ok {
+		panic(fmt.Errorf("invalid UUID string: %s", s))
+	}
+	return u
+}
+
 // leapYear mirrors clojure.instant's leap-year? predicate.
 func leapYear(year int) bool {
 	return year%4 == 0 && (year%100 != 0 || year%400 == 0)

@@ -39,6 +39,34 @@ type Protocol struct {
 
 func (p *Protocol) String() string { return "#protocol[" + p.name + "]" }
 
+// typeKeys lists every dispatch type with an impl registered (extenders).
+// Registry-map order — unspecified, like the JVM's.
+func (p *Protocol) typeKeys() []string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	out := make([]string, 0, len(p.impls))
+	for k := range p.impls {
+		out = append(out, k)
+	}
+	return out
+}
+
+// implsFor snapshots the method-name -> fn table for one dispatch type
+// (find-protocol-impl), nil when the type has no impls.
+func (p *Protocol) implsFor(typeKey string) map[string]lang.IFn {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	byType, ok := p.impls[typeKey]
+	if !ok {
+		return nil
+	}
+	out := make(map[string]lang.IFn, len(byType))
+	for m, fn := range byType {
+		out[m] = fn
+	}
+	return out
+}
+
 // register installs an impl fn for one method of one dispatch type.
 func (p *Protocol) register(typeKey, method string, fn lang.IFn) {
 	p.mu.Lock()
@@ -513,6 +541,139 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	def("satisfies?", func(args ...any) any {
 		return protocolSatisfiedBy(asProtocol(args[0], "satisfies?"), args[1])
 	})
+
+	// --- the functional protocol surface (tail wave, 2026-07-23):
+	// extend / extends? / extenders / find-protocol-impl /
+	// find-protocol-method, over the SAME registry the extend-type /
+	// extend-protocol macros feed (-extend-key), so a type extended
+	// either way dispatches, satisfies and reports identically.
+	// Oracle (JVM 1.12.5, scratch tailwave/o1.clj): (extend TT PP {:pm
+	// (fn [x] :pm-tt)}) then (pm (TT.)) => :pm-tt, (extends? PP TT) =>
+	// true, (satisfies? PP (TT.)) => true, ((find-protocol-method PP :pm
+	// x) x) => :pm-tt, (keys (find-protocol-impl PP x)) => (:pm :pn).
+
+	// (extend atype proto+mmap-pairs...): atype is a class VALUE — a
+	// deftype/defrecord's *TypeMarker or a well-known ClassRef (String,
+	// Long, ...); each method map is keyword -> fn.
+	def("extend", func(args ...any) any {
+		if len(args) < 3 || len(args)%2 == 0 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: extend", len(args)))
+		}
+		key := classDispatchKey(args[0], "extend")
+		for i := 1; i+1 < len(args); i += 2 {
+			p := asProtocol(args[i], "extend")
+			mmap, ok := args[i+1].(lang.IPersistentMap)
+			if !ok {
+				panic(fmt.Errorf("extend: method map is not a map: %s", lang.PrintString(args[i+1])))
+			}
+			for s := lang.Seq(mmap); s != nil; s = s.Next() {
+				e := s.First().(lang.IMapEntry)
+				k, ok := e.Key().(lang.Keyword)
+				if !ok {
+					panic(fmt.Errorf("extend: method key is not a keyword: %s", lang.PrintString(e.Key())))
+				}
+				fn, ok := e.Val().(lang.IFn)
+				if !ok {
+					panic(fmt.Errorf("extend: method impl is not a function: %s", lang.PrintString(e.Val())))
+				}
+				p.register(key, k.Name(), fn)
+			}
+		}
+		return nil
+	})
+
+	// (extends? protocol atype) -> does the class have any impl registered.
+	def("extends?", func(args ...any) any {
+		p := asProtocol(args[0], "extends?")
+		return p.satisfies(classDispatchKey(args[1], "extends?"))
+	})
+
+	// (extenders protocol) -> the extended types. DEVIATION (documented):
+	// the JVM returns Class objects; cljgo returns the dispatch-key
+	// SYMBOLS ('user.TT, 'String, ...) — the registry has no reverse map
+	// from a key back to its marker. Order unspecified, as on the JVM.
+	def("extenders", func(args ...any) any {
+		p := asProtocol(oneArg("extenders", args), "extenders")
+		keys := p.typeKeys()
+		if len(keys) == 0 {
+			return nil
+		}
+		out := make([]any, 0, len(keys))
+		for _, k := range keys {
+			out = append(out, lang.NewSymbol(k))
+		}
+		return lang.NewList(out...).Seq()
+	})
+
+	// (find-protocol-impl protocol x) -> x's method map for the protocol
+	// ({:method fn ...}), nil when its type has none. A reify answers
+	// from its per-instance table (ADR 0049).
+	def("find-protocol-impl", func(args ...any) any {
+		p := asProtocol(args[0], "find-protocol-impl")
+		x := args[1]
+		if ri, ok := x.(*ReifyInstance); ok {
+			byM, ok := ri.impls[p]
+			if !ok {
+				return nil
+			}
+			return methodMapValue(byM)
+		}
+		m := p.implsFor(dispatchKey(x))
+		if m == nil {
+			return nil
+		}
+		return methodMapValue(m)
+	})
+
+	// (find-protocol-method protocol methodk x) -> the impl fn, nil when
+	// unimplemented.
+	def("find-protocol-method", func(args ...any) any {
+		p := asProtocol(args[0], "find-protocol-method")
+		k, ok := args[1].(lang.Keyword)
+		if !ok {
+			panic(fmt.Errorf("find-protocol-method: method key is not a keyword: %s", lang.PrintString(args[1])))
+		}
+		x := args[2]
+		if ri, ok := x.(*ReifyInstance); ok {
+			if fn, ok := ri.lookup(p, k.Name()); ok {
+				return fn
+			}
+			return nil
+		}
+		if fn, ok := p.lookup(dispatchKey(x), k.Name()); ok {
+			return fn
+		}
+		return nil
+	})
+}
+
+// classDispatchKey is "the dispatch key of this class VALUE" — the
+// extend/extends? counterpart of -type-key's symbol resolution: a
+// *TypeMarker names itself; a well-known ClassRef maps to its simple
+// name, which IS the built-in dispatch key ("java.lang.String" ->
+// "String", exactly what dispatchKey yields for a string value).
+func classDispatchKey(c any, ctx string) string {
+	switch x := c.(type) {
+	case *TypeMarker:
+		return x.name
+	case *ClassRef:
+		name := x.Name()
+		if i := strings.LastIndex(name, "."); i >= 0 {
+			return name[i+1:]
+		}
+		return name
+	}
+	panic(fmt.Errorf("%s: not a class: %s", ctx, lang.PrintString(c)))
+}
+
+// methodMapValue turns a method-name -> fn table into the persistent map
+// find-protocol-impl returns ({:method fn ...}).
+func methodMapValue(m map[string]lang.IFn) any {
+	kvs := make([]any, 0, 2*len(m))
+	for name, fn := range m {
+		kvs = append(kvs, lang.InternKeywordString(name), fn)
+	}
+	return lang.NewMap(kvs...)
 }
 
 // protocolSatisfiedBy reports whether v satisfies p — an anonymous reify

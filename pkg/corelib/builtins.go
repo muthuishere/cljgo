@@ -671,6 +671,9 @@ func RegisterAll() {
 	// into-array/…): Batch 4 (ADR 0022, ADR 0025, array_builtins.go). A
 	// cljgo array is a native Go slice (ADR 0025).
 	internArrayBuiltins(def)
+	// --- tail-wave compat surface (aset-<type>/array casts/to-array-2d/
+	// cast/iterator-seq/enumeration-seq/bean): compat_builtins.go.
+	internCompatBuiltins(def)
 	// --- volatile!/vswap!/vreset!/volatile?: Batch 4 (ADR 0022,
 	// volatile_builtins.go). *lang.Volatile is vendored from Glojure.
 	internVolatileBuiltins(def)

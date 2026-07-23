@@ -1,8 +1,3 @@
-;; harness: eval — a bare #uuid literal in source is not yet emittable as a
-;; Go constant by the AOT compiler (pre-existing v0 gap: `#uuid "..."` as a
-;; top-level form already failed to compile on origin/main with the same
-;; "unsupported constant type" error, before this change's UUID -> *UUID).
-;;
 ;; #uuid literals are `=` by value but never `identical?` across separate
 ;; reads, matching java.util.UUID's real object identity (ADR 0022 batch/
 ;; harness-misc, pkg/reader/tagged.go's *UUID pointer type — clojure-test-
