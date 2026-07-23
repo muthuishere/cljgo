@@ -30,7 +30,7 @@ binary, with byte-identical output on both paths.
 4. **High performance in both modes** — a feature, gated in CI like tests,
    not asserted.
 5. **Single-file deployment** — `cljgo build` produces one static binary
-   (5.3 MB for hello, ~9.5 ms startup), no JVM, no runtime install.
+   (5.3 MB for hello, ~5 ms startup), no JVM, no runtime install.
 
 ## Install
 
@@ -127,7 +127,7 @@ get from the suite as it ships (analysis: `docs/suite-upstream.md`).
 | **Projects & toolkit** | ✅ | `cljgo new` (real runnable templates: lib/cli/web, ADR 0047), dependency resolution + lockfile (`build.cljgo`/`build.lock.edn`, ADRs 0052/0053), `cljgo publish go\|clojars` (0054), `.clj`/`.cljg`/`.cljgo` (0055); app scaffolding `cljgo dev`/`config`/`routes` (ADR 0041 T0/T1) |
 | **AOT core** | ✅ | Compiled binaries link the **compiled** `core.clj`, never the interpreter — `pkg/eval` 155 → **0** symbols in the link set (ADR 0046) |
 | **Perf campaign** | ✅ | ADRs 0063–0067: chunk-aware seq ops, IFn2 reduce seam, direct-call emission, sealed-core guard elision, int64 numeric inference — emitted factorial ~35× → **4.8×** handwritten Go ([details](#performance)) |
-| Next | ◦ | Startup clawback (9.5 ms → back toward 5.5, see [the bad](#performance)); ADR 0067 follow-ups (float64, multi-arity/variadic specialization, capturing-closure lift); app framework T2 (ADR 0041); C FFI purego (ADR 0044, proposed, spike S21); batteries direction (ADRs 0056–0062, ratified on `feat/batteries` — decisions recorded, **not shipped**) |
+| Next | ◦ | ADR 0067 follow-ups (float64, multi-arity/variadic specialization, capturing-closure lift); `reduce`/`transducers` vs babashka's core (the two rows still lost); app framework T2 (ADR 0041); C FFI purego (ADR 0044, proposed, spike S21); batteries direction (ADRs 0056–0062, ratified on `feat/batteries` — decisions recorded, **not shipped**) |
 
 `clojure.core` itself is not yet complete — the honest per-namespace ledger
 is `docs/fundamentals-audit-2026-07.md` (its clojure.core headline predates
@@ -144,7 +144,7 @@ Performance is priority 4 and gated like conformance, not asserted. Measured
 |---|---|---|
 | Tool binary | 12.7 MB stripped | `go build -trimpath -ldflags="-s -w" ./cmd/cljgo` |
 | Compiled binary, hello | 5.3 MB | `cljgo build hello.clj` (strips by default) |
-| Compiled startup, hello | 9.6 ms | `hyperfine -N ./hello` |
+| Compiled startup, hello | 5.0 ms | `hyperfine -N ./hello` |
 | Peak RSS, hello | 14.7 MB | `/usr/bin/time -l ./hello` |
 | Interpreter boot | 31.7 ms · 44.5 MB · 733k allocs | `go test -bench BenchmarkBoot -benchmem ./pkg/eval/` |
 | clojure-test-suite | 238/242 (98.3%) | `cljgo suite` |
@@ -202,15 +202,15 @@ what you ship, and the column to read against the field.
 
 | Benchmark | cljgo run | cljgo | let-go | babashka | joker | clojure JVM |
 |---|---|---|---|---|---|---|
-| startup | 44.3 ms | 9.5 ms | **5.7 ms** | 11.3 ms | 8.0 ms | 317.0 ms |
-| `tak` | 11.65 s | **47.3 ms** | 1.33 s | 1.14 s | — | 457.4 ms |
-| `fib` | 8.81 s | 743.6 ms | 1.25 s | 1.13 s | — | **433.3 ms** |
-| `loop-recur` | 475.1 ms | **9.8 ms** | 37.2 ms | 38.5 ms | 435.9 ms | 379.1 ms |
-| `persistent-map` | 52.5 ms | 14.5 ms | 12.8 ms | **12.1 ms** | 30.3 ms | 389.6 ms |
-| `map-filter` | 45.4 ms | 9.4 ms | **4.9 ms** | 10.3 ms | 8.9 ms | 316.3 ms |
-| `transducers` | 94.9 ms | 20.9 ms | 25.8 ms | **13.3 ms** | — | 322.8 ms |
-| `reduce` | 66.8 ms | 31.3 ms | 24.4 ms | **21.8 ms** | 1.48 s | 318.4 ms |
-| runtime size | — | **12 MB** | 13 MB | 67.9 MB | 27.4 MB | 385.0 MB |
+| startup | 38.5 ms | **5.0 ms** | **5.0 ms** | 9.7 ms | 6.7 ms | 289.2 ms |
+| `tak` | 11.47 s | **34.6 ms** | 1.33 s | 1.14 s | — | 457.9 ms |
+| `fib` | 8.79 s | **24.7 ms** | 1.25 s | 1.14 s | — | 419.1 ms |
+| `loop-recur` | 469.3 ms | **5.4 ms** | 36.6 ms | 37.8 ms | 437.8 ms | 397.5 ms |
+| `persistent-map` | 48.5 ms | **9.4 ms** | 12.9 ms | 13.0 ms | 30.5 ms | 385.2 ms |
+| `map-filter` | 39.9 ms | 5.1 ms | **4.8 ms** | 10.0 ms | 8.4 ms | 311.5 ms |
+| `transducers` | 89.0 ms | 16.4 ms | 25.4 ms | **13.0 ms** | — | 315.9 ms |
+| `reduce` | 61.4 ms | 26.0 ms | 22.8 ms | **20.0 ms** | 1.46 s | 302.5 ms |
+| runtime size | — | **12.7 MB** | 13 MB | 67.9 MB | 27.4 MB | 385.0 MB |
 
 Versions: cljgo @HEAD (post-ADR-0067), let-go v1.11.1 (tag, built from source),
 babashka v1.12.218, joker v1.9.0, Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1.
@@ -228,41 +228,43 @@ puts gloat at 12.7× let-go on `fib` and 5.4× on `reduce`.
 
 Two honest reads of that table.
 
-**The good.** `tak` is now the **fastest result in the entire field — 47.3 ms,
-9.7× faster than the JVM** and 28× faster than let-go: pure int64 recursion is
-exactly what the ADR 0067 numeric-inference pass lifts to raw Go
-(`func tak(x, y, z int64) int64`, direct typed recursion, zero boxing).
-`loop-recur` is likewise **won outright** at 9.8 ms (3.8× ahead of let-go).
-The emitted-vs-handwritten-Go factorial gate now measures **4.8×** — it was
-~35× before the 2026-07-23 campaign. `reduce` — the row the previous run called
-out as the honest embarrassment at 2.4× let-go — closed to **1.28×** (the IFn2
-seam removed the per-step `[]any` box the old analysis blamed). cljgo still
-ships the smallest runtime in the field at 12 MB; a *compiled program* is
-5.3 MB.
+**The good.** cljgo-aot now **wins every recursion and data-structure row
+outright**: `tak` 34.6 ms and `fib` 24.7 ms (13× and 17× faster than the JVM —
+pure int64 recursion is exactly what the ADR 0067 numeric-inference pass lifts
+to raw Go: `func fib(n int64) int64`, direct typed recursion, zero boxing),
+`loop-recur` 5.4 ms (6.8× ahead of let-go), and `persistent-map` 9.4 ms (ahead
+of both let-go and babashka). `startup` is a dead heat with let-go at 5.0 ms —
+the +3 ms regression the previous run reported was attributed (to boot-time
+per-symbol refer and GC churn, *not* the seal/dual-body work, which measured
++0.0 ms) and clawed back with a bulk-refer snapshot + boot GC deferral, now
+CI-gated so it cannot drift again. `map-filter` is 0.3 ms from let-go — a tie.
+The emitted-vs-handwritten-Go factorial gate measures **~5×** — it was ~35×
+before 2026-07-23.
 
-**The bad.** AOT startup grew **6.5 → 9.5 ms** (+3 ms: the ADR 0066 seal work
-at boot plus larger dual-body binaries) — that delta is the whole story of the
-short rows, where `map-filter` (9.4 vs let-go's 4.9 ms) and `persistent-map`
-(14.5 vs babashka's 12.1) are startup-dominated and now read as losses.
-Clawing that startup back (lazy boot of the seal snapshot, trimming dual-body
-bloat) is the named next step. `fib` improved only 1.3× (975 → 744 ms) and
-still trails the JVM — its shape doesn't yet clear the conservative lift rules
-— and `transducers`/`reduce` remain behind babashka's purpose-built core
-(1.6×/1.4×). Follow-ups live in ADR 0067: float64, multi-arity
-specialization, broader lift.
+**The bad.** `transducers` (16.4 vs babashka's 13.0 ms) and `reduce` (26.0 vs
+babashka's 20.0, let-go's 22.8) remain behind the two purpose-built cores —
+closer than the 2.4–2.8× of the previous run, but honestly lost. The residual
+is per-element `Apply2` dispatch on the reducing fn plus `LongChunk.Nth`
+boxing; ADR 0067's follow-ups (float64, multi-arity specialization, broader
+lift) and an unboxed internal-reduce are the named path. The interpreter leg
+(`cljgo run`) is a tree-walker and loses everywhere except against joker —
+that is what `cljgo build` is for.
 
-**What changed (2026-07-23, ADRs 0063–0067).** Chunk-aware
+**What changed (2026-07-23, ADRs 0063–0067, two rounds).** Round 1: chunk-aware
 `map`/`filter`/`count`/`keep` (JVM 32-element realization parity), the IFn2
 2-arg seam (no `[]any` box per reduce step), direct-call emission for known
 local fns, the sealed-core dirty-flag (guard elision with full `with-redefs`
-liveness), and the int64 numeric-inference pass. Same machine, before → after:
+liveness), and the int64 numeric-inference pass. Round 2: `<=`/`>=` joined the
+unboxed compare set (fib's entire remaining cost), and startup was attributed
+and clawed back. Same machine, morning → evening:
 
 | Benchmark | before | after | |
 |---|---|---|---|
-| `tak` | 858.5 ms | **47.3 ms** | 18.2× |
-| `loop-recur` | 52.1 ms | **9.8 ms** | 5.3× |
-| `reduce` | 60.8 ms | **31.3 ms** | 1.9× |
-| `fib` | 975.4 ms | **743.6 ms** | 1.3× |
+| `fib` | 975.4 ms | **24.7 ms** | 39× |
+| `tak` | 858.5 ms | **34.6 ms** | 25× |
+| `loop-recur` | 52.1 ms | **5.4 ms** | 9.6× |
+| `reduce` | 60.8 ms | **26.0 ms** | 2.3× |
+| startup | 6.5 ms | **5.0 ms** | after a mid-day 9.5 ms peak |
 
 ### Earlier campaigns, kept honest
 
@@ -271,9 +273,10 @@ sources through cljgo's own emitter (`pkg/coreaot`): a compiled binary links
 the **compiled** core and no interpreter at all (`pkg/eval` 155 → **0**
 symbols in the link set, `pkg/analyzer` 63 → 0, `pkg/ast` 14 → 0 —
 CI-enforced, `pkg/coreaot/imports_test.go`). At the time that took startup
-27.5 → 5.5 ms; the seal/dual-body work above has since spent 3–4 ms of it,
-so a hello binary starts at **~9.5 ms today**, and clawing that back is the
-named next step. It also settled the A/B that used to indict `cljgo build`:
+27.5 → 5.5 ms; boot growth from the fundamentals batches later pushed it to
+~9.5 ms, and the 2026-07-23 clawback (bulk boot refer + boot GC deferral,
+now gated by `TestBootStartupBudget`) brought a hello binary to **~5.0 ms
+today**. It also settled the A/B that used to indict `cljgo build`:
 work in user code compiles to ~9.7× its interpreted speed, and core-heavy
 programs stopped being indistinguishable between modes.
 
