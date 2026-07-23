@@ -20,17 +20,15 @@ HOSTPORT="${HOSTPORT:-8080}"     # host port mapped to the container's 8080
 WARM="${WARM:-3s}"               # warm-up before measuring (JVM JIT etc.)
 OUT="$HERE/results.md"
 
-# name:dir — bri first (the flagship). A dir that does not exist is skipped
-# (so this runs before the bri-AOT agent lands ../bri, and again after).
-ENTRIES=(
-  "bri:$ROOT/bri"
-  "go:$ROOT/compare/go"
-  "clj-ring-jetty:$ROOT/compare/clj-ring-jetty"
-  "clj-httpkit:$ROOT/compare/clj-httpkit"
-  "bun:$ROOT/compare/bun"
-  "node:$ROOT/compare/node"
-  "deno:$ROOT/compare/deno"
-)
+# Entries auto-discover: the flagship bri first (../bri, once the AOT agent
+# lands it), then every ../compare/<name> dir that has a Dockerfile. So new
+# language servers are picked up with no edit here.
+ENTRIES=()
+[ -f "$ROOT/bri/Dockerfile" ] && ENTRIES+=("bri:$ROOT/bri")
+for d in "$ROOT"/compare/*/; do
+  [ -f "$d/Dockerfile" ] || continue
+  ENTRIES+=("$(basename "$d"):${d%/}")
+done
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "missing: $1" >&2; exit 1; }; }
 need docker; need oha; need curl
