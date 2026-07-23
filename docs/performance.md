@@ -155,3 +155,38 @@ CPU with a `getg()`-based one (ADR 0034, spike S18). It has since grown with
 the core it boots — 31.7 ms today (ADR 0019 says the budget grows with the
 core, and the 250 ms gate holds). `.github/workflows/boot-bench.yml` is a
 manual ubuntu-vs-macos boot comparison kept as a permanent diagnostic.
+
+## Web framework (bri) vs the field — ADR 0071 / spike s45
+
+bri (cljgo's web framework) AOT-compiles to a single static `CGO_ENABLED=0`
+binary and deploys as a minimal Docker image, byte-identical to the
+interpreter path (dual-mode parity). Measured 2026-07-24 on Apple M-series
+arm64, Docker/OrbStack, [`oha`](https://github.com/hatoo/oha) 15 s @ 50
+connections, **one container at a time** (contention skews numbers). Every
+server answers the same two routes with byte-exact bodies (`GET /` → `hello\n`
+text/plain; `GET /api/hello` → `{"msg":"hello from <runtime>"}` JSON).
+Reproduce with `spikes/s45-bri-aot-docker/bench/run.sh` (the corpus + runner
+are committed).
+
+| runtime | image | cold-start | `/` req/s | `/api` req/s | p99 | peak RSS |
+|---|--:|--:|--:|--:|--:|--:|
+| rust-axum | 140 MB | 28 ms | 89,480 | 89,986 | ~1.0 ms | 8 MB |
+| deno | 277 MB | 146 ms | 89,316 | 89,099 | ~0.9 ms | 21 MB |
+| clj-httpkit (JVM) | 847 MB | 1277 ms | 82,837 | 83,669 | ~1.0 ms | 353 MB |
+| **bri (cljgo, compiled)** | **15.5 MB** | **~30 ms** | **78,126** | **77,788** | **1.4 ms** | **~16 MB** |
+| bun | 333 MB | 28 ms | 74,798 | 83,535 | ~1.5 ms | 50 MB |
+| clj-ring-jetty (JVM) | 858 MB | 1659 ms | 67,786 | 67,442 | ~1.5 ms | 491 MB |
+| dotnet (ASP.NET) | 359 MB | 172 ms | 62,792 | 67,451 | ~1.9 ms | 47 MB |
+| go net/http | 7.6 MB | 30 ms | 66,876 | 55,769 | ~2.6 ms | 16 MB |
+| node | 228 MB | 147 ms | 55,344 | 62,167 | ~1.8 ms | 134 MB |
+| spring-boot (JVM) | 512 MB | 858 ms | 51,002 | 55,056 | ~1.7 ms | 574 MB |
+| fastapi (python) | 220 MB | 381 ms | 8,931 | 8,948 | ~10.5 ms | 38 MB |
+
+**bri vs JVM Clojure** (the design bet): ~55× smaller image, ~40–55× faster
+cold-start, ~22–30× less memory, comparable-or-better throughput. bri also
+out-throughputs Go net/http, Node, .NET, Spring Boot, and FastAPI, sitting in
+the top tier with Rust/Deno/Bun/http-kit. Throughput has run-to-run noise on a
+single arm64 laptop (Go's `/` ranged 66–70k across runs); the image / RAM /
+cold-start figures are stable. The point is not a leaderboard crown — it is
+that a Clojure web app can ship as a ~15 MB, ~30 ms-start, ~16 MB-RAM native
+binary. Full write-up: `spikes/s45-bri-aot-docker/VERDICT.md`.

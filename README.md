@@ -159,6 +159,43 @@ campaign history: [`docs/performance.md`](docs/performance.md)** (reproduce with
 `bash benchmark/run.sh`). Building an AOT binary is one command:
 `cljgo build -o hello hello.clj`.
 
+## Web framework (bri) — one static binary, tiny Docker image
+
+bri is cljgo's batteries-included web framework (ADR 0041/0069): API-first,
+JWT auth, composable guards, CORS, metrics, audit, a Compojure-style router.
+It runs both **interpreted** (`cljgo dev`, live re-`def`, nREPL) and
+**AOT-compiled** to a single static `CGO_ENABLED=0` binary, byte-identical
+(ADR 0071) — so the dev loop is a REPL and the deploy artifact is a
+scratch-image binary. `cljgo new --template web` ships a `Dockerfile`;
+`docker build` gives you a ~15 MB image.
+
+Benchmarked against the field (Docker, [`oha`](https://github.com/hatoo/oha)
+15 s @ 50 conn, one container at a time — **reproduce it yourself** with
+[`spikes/s45-bri-aot-docker/bench/run.sh`](spikes/s45-bri-aot-docker); don't
+take our word for it):
+
+| runtime | image | cold-start | req/s | p99 | peak RSS |
+|---|--:|--:|--:|--:|--:|
+| rust-axum | 140 MB | 28 ms | ~89k | 1.0 ms | 8 MB |
+| deno | 277 MB | 146 ms | ~89k | 0.9 ms | 21 MB |
+| clojure http-kit (JVM) | 847 MB | 1277 ms | ~82k | 1.0 ms | 353 MB |
+| **bri (cljgo, compiled)** | **15.5 MB** | **~30 ms** | **~78k** | **1.4 ms** | **~16 MB** |
+| bun | 333 MB | 28 ms | ~75k | 1.5 ms | 50 MB |
+| clojure ring+jetty (JVM) | 858 MB | 1659 ms | ~67k | 1.5 ms | 491 MB |
+| .NET (ASP.NET) | 359 MB | 172 ms | ~67k | 1.9 ms | 47 MB |
+| go net/http | 7.6 MB | 30 ms | ~66k | 2.6 ms | 16 MB |
+| node | 228 MB | 147 ms | ~62k | 1.8 ms | 134 MB |
+| spring-boot (JVM) | 512 MB | 858 ms | ~55k | 1.7 ms | 574 MB |
+| fastapi (python) | 220 MB | 381 ms | ~9k | 10 ms | 38 MB |
+
+Throughput sits in the top tier (Rust/Deno/Bun/http-kit) and ahead of Go
+net/http, Node, .NET, Spring Boot, and FastAPI — while carrying a native-Go
+footprint. Against **JVM Clojure web** specifically: ~55× smaller image,
+~40–55× faster cold-start, ~22–30× less memory, at comparable-or-better
+throughput. Single-machine arm64/OrbStack, so throughput carries run-to-run
+noise (the image/RAM/startup figures are stable) — which is exactly why the
+runner is committed for you to re-run on your own hardware.
+
 ## Development
 
 Authority chain: `docs/adr/` (decisions) › `design/00-architecture.md`

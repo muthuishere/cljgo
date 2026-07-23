@@ -42,7 +42,9 @@ var templateManifests = map[string][]string{
 	},
 	// web: the bri app (the T0 manifest).
 	"web": {
+		".dockerignore",
 		".gitignore",
+		"Dockerfile",
 		"build.cljgo",
 		"conf.edn",
 		"conf.schema.edn",

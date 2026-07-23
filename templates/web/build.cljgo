@@ -1,6 +1,7 @@
 ;; build.cljgo — the project build plan (ADR 0021).
-;; NOTE: AOT compilation of bri apps lands with a later tier of the
-;; app-framework change; today the dev loop is `cljgo dev` / `cljgo test`.
+;; `cljgo build` AOT-compiles this bri app to one static CGO_ENABLED=0
+;; binary (ADR 0071); `cljgo dev` / `cljgo test` are the dev loop, and the
+;; Dockerfile ships it as a minimal (~single-digit-MB) image.
 (defn build [b]
   (let [app (exe b {:name "newapp"
                     :main "src/app/main.cljg"})]
