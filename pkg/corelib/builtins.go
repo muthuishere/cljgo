@@ -68,16 +68,43 @@ var symFnStar = lang.NewSymbol("fn*")
 
 // nativeFn wraps a Go function as a lang.IFn (the pre-interned builtins of
 // design/03 §8 v0). Errors panic, per the IFn-boundary convention.
+//
+// fn2 is an OPTIONAL non-variadic 2-arg fast path (lang.IFn2): when set,
+// a 2-arg call (reduce/HOF inner loop) runs it directly, skipping the
+// []any{a, b} slice a variadic fn(a, b) heap-allocates every step. It
+// MUST be observably identical to fn(a, b) — a perf seam only. Attach it
+// with attachFast2; fns without one still work through the fn path.
 type nativeFn struct {
-	nm string
-	fn func(args ...any) any
+	nm  string
+	fn  func(args ...any) any
+	fn2 func(a, b any) any
 }
 
-var _ lang.IFn = (*nativeFn)(nil)
+var (
+	_ lang.IFn  = (*nativeFn)(nil)
+	_ lang.IFn2 = (*nativeFn)(nil)
+)
 
-func (n *nativeFn) Invoke(args ...any) any     { return n.fn(args...) }
+func (n *nativeFn) Invoke(args ...any) any { return n.fn(args...) }
+func (n *nativeFn) Invoke2(a, b any) any {
+	if n.fn2 != nil {
+		return n.fn2(a, b)
+	}
+	return n.fn(a, b)
+}
 func (n *nativeFn) ApplyTo(args lang.ISeq) any { return n.Invoke(lang.ToSlice(args)...) }
 func (n *nativeFn) String() string             { return "#object[" + n.nm + "]" }
+
+// attachFast2 wires a non-variadic 2-arg fast path onto a builtin var
+// interned by Def, so Apply2 can call it without the variadic []any box.
+// fn2 MUST be observably identical to calling the builtin with two args.
+// No-op if the var's root is not a *nativeFn (defensive).
+func attachFast2(v *lang.Var, fn2 func(a, b any) any) *lang.Var {
+	if nf, ok := v.Deref().(*nativeFn); ok {
+		nf.fn2 = fn2
+	}
+	return v
+}
 
 // Def interns a Go builtin into clojure.core: the native IFn wrapper
 // keeps the exact `#object[name]` printing and error→panic boundary the
@@ -133,7 +160,7 @@ func RegisterAll() {
 	// all four through this same seam when an Evaluator is constructed.
 	registerAOTStubs(def)
 
-	def("+", func(args ...any) any {
+	attachFast2(def("+", func(args ...any) any {
 		var acc any = int64(0)
 		for i, a := range args {
 			if i == 0 {
@@ -143,8 +170,8 @@ func RegisterAll() {
 			acc = lang.Add(acc, a)
 		}
 		return acc
-	})
-	def("-", func(args ...any) any {
+	}), func(a, b any) any { return lang.Add(a, b) })
+	attachFast2(def("-", func(args ...any) any {
 		if len(args) == 0 {
 			panic(fmt.Errorf("wrong number of args (0) passed to: -"))
 		}
@@ -156,8 +183,8 @@ func RegisterAll() {
 			acc = lang.Sub(acc, a)
 		}
 		return acc
-	})
-	def("*", func(args ...any) any {
+	}), func(a, b any) any { return lang.Sub(a, b) })
+	attachFast2(def("*", func(args ...any) any {
 		var acc any = int64(1)
 		for i, a := range args {
 			if i == 0 {
@@ -170,7 +197,7 @@ func RegisterAll() {
 			return int64(1)
 		}
 		return acc
-	})
+	}), func(a, b any) any { return lang.Multiply(a, b) })
 	def("/", func(args ...any) any {
 		if len(args) == 0 {
 			panic(fmt.Errorf("wrong number of args (0) passed to: /"))
@@ -1381,7 +1408,19 @@ func ReferAll(ns, from *lang.Namespace) {
 // referSelected refers the public vars interned in `from` into ns, honoring
 // refer's :only / :exclude filters. When haveOnly is true, only names in
 // `only` are referred; names in `exclude` are always skipped.
+//
+// Fast path (startup): a whole-namespace refer — the boot pattern, where
+// every lib namespace and the user namespace refer all of clojure.core
+// right after in-ns — goes through referBulk: overlay the target's few
+// existing entries onto a cached, structurally shared snapshot of the
+// source's public vars and install it in one CAS, instead of ~900
+// per-symbol path-copying Assocs per namespace. Content is identical to
+// the slow loop by construction; any non-trivial conflict or CAS race
+// falls back to the per-symbol reference path below.
 func referSelected(ns, from *lang.Namespace, only map[string]struct{}, haveOnly bool, exclude map[string]struct{}) {
+	if !haveOnly && ns != from && referBulk(ns, from, exclude) {
+		return
+	}
 	for s := lang.Seq(from.Mappings()); s != nil; s = s.Next() {
 		entry := s.First().(lang.IMapEntry)
 		sym, ok := entry.Key().(*lang.Symbol)
@@ -1403,6 +1442,76 @@ func referSelected(ns, from *lang.Namespace, only map[string]struct{}, haveOnly 
 		}
 		ns.Refer(sym, v)
 	}
+}
+
+// referBulk attempts the whole-namespace refer in one CAS: start from the
+// cached snapshot of `from`'s public vars, drop the excluded names, then
+// overlay every entry the target already has (existing mappings win — the
+// same outcome as reference(), which keeps an existing mapping). Returns
+// false — having installed nothing — when a target entry conflicts with
+// the snapshot in a way whose resolution belongs to reference()'s
+// checkReplacement logic (a mapped value that is neither the target's own
+// interned var nor identical to the snapshot's), or when the CAS loses a
+// race. Boot-time targets carry only their own interned vars (the emitted
+// packages intern them from Go init), so boot always takes this path.
+func referBulk(ns, from *lang.Namespace, exclude map[string]struct{}) bool {
+	cur := ns.Mappings()
+	m := publicReferMap(from)
+	for name := range exclude {
+		m = m.Without(lang.NewSymbol(name))
+	}
+	for s := lang.Seq(cur); s != nil; s = s.Next() {
+		entry := s.First().(lang.IMapEntry)
+		k, v := entry.Key(), entry.Val()
+		if sym, ok := k.(*lang.Symbol); ok {
+			if sv := m.ValAt(sym); sv != nil {
+				if vr, isVar := v.(*lang.Var); !isVar || (vr != sv && !ns.OwnsInternedVar(sym, vr)) {
+					return false
+				}
+			}
+		}
+		m = m.Assoc(k, v).(lang.IPersistentMap)
+	}
+	return ns.CompareAndSetMappings(cur, m)
+}
+
+// referSnapshots caches, per source namespace, the map of entries a
+// whole-namespace refer would add (public vars interned in the source),
+// keyed by the identity of the source's mapping table so any change to the
+// source invalidates it. Boot hits this 13 times for clojure.core; the
+// snapshot is built once and shared structurally.
+var referSnapshots sync.Map // *lang.Namespace -> referSnapshot
+
+type referSnapshot struct {
+	src  lang.IPersistentMap // source mappings the snapshot was built from
+	snap lang.IPersistentMap // *Symbol -> *Var, refer-eligible entries only
+}
+
+// publicReferMap returns (building and caching on miss) the map of
+// mappings an unfiltered refer of `from` adds: exactly the entries the
+// referSelected loop passes through — public vars interned in `from`.
+func publicReferMap(from *lang.Namespace) lang.IPersistentMap {
+	cur := from.Mappings()
+	if e, ok := referSnapshots.Load(from); ok {
+		if s := e.(referSnapshot); s.src == cur {
+			return s.snap
+		}
+	}
+	snap := lang.IPersistentMap(lang.NewMap())
+	for s := lang.Seq(cur); s != nil; s = s.Next() {
+		entry := s.First().(lang.IMapEntry)
+		sym, ok := entry.Key().(*lang.Symbol)
+		if !ok {
+			continue
+		}
+		v, ok := entry.Val().(*lang.Var)
+		if !ok || v.Namespace() != from || !v.IsPublic() {
+			continue
+		}
+		snap = snap.Assoc(sym, v).(lang.IPersistentMap)
+	}
+	referSnapshots.Store(from, referSnapshot{src: cur, snap: snap})
+	return snap
 }
 
 // collectSymNames adds every symbol name in the seqable spec to set.

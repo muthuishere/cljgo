@@ -31,11 +31,19 @@ import (
 // helpers being over the inline budget. (a) is pkg/lang work, (b)/(c)
 // are the design/04 §5 primitive-hints/intrinsics rungs — post-M2 by
 // design. S6's 7.8× modeled arithmetic as raw Go ops, i.e. it already
-// assumed those rungs for the arithmetic; the honest v0 number is ~35×.
+// assumed those rungs for the arithmetic; the honest v0 number was ~35×.
 //
-// The hard limit below (60× locally, CLJGO_PERF_RATIO_MAX elsewhere — ADR
-// 0024) is a regression guard against the naive emission, not the budget;
-// tightening it to ~10× tracks the ladder.
+// ADR 0067 (emitter numeric type inference, 2026-07-23) landed exactly
+// those rungs for int64: fact's recursion now runs as a lifted
+// `func fnL_…(int64) int64` behind a `!rt.CoreDirty()` guard, and the
+// measured ratio fell to ~4.8×on darwin/arm64 — UNDER the ~10× M2 budget
+// for the first time.
+//
+// The hard limit below (15× locally, CLJGO_PERF_RATIO_MAX elsewhere — ADR
+// 0024) is a regression guard, not a target: ~3× headroom over the ~5×
+// measured, far under the ~35× boxed emission it would catch a regression
+// to, and generous against this gate's known denominator noise (see
+// perfRatioMax).
 func TestFactorialPerfBudget(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping perf measurement in -short mode")
@@ -136,13 +144,15 @@ func main() {
 	t.Logf("fact(15) x %d: emitted %v (startup %v), raw Go %v (startup %v) — ratio %.1fx (max %.0fx; see doc comment)",
 		iters, cljNet, cljIdle, rawNet, rawIdle, ratio, maxRatio)
 	if ratio > maxRatio {
-		t.Fatalf("emitted factorial is %.1fx handwritten Go — regression past the v0 floor (~35x measured; naive emission was ~168x)", ratio)
+		t.Fatalf("emitted factorial is %.1fx handwritten Go — regression past the ADR 0067 floor (~4.8x measured; boxed emission was ~35x, naive ~168x)", ratio)
 	}
 }
 
-// defaultPerfRatioMax is the local ceiling: ~35x is measured on the owner's
-// machine, so 60x leaves real headroom before the gate fires.
-const defaultPerfRatioMax = 60
+// defaultPerfRatioMax is the local ceiling: ~4.8x is measured on the
+// owner's machine with ADR 0067 numeric inference, so 15x leaves ~3x
+// headroom before the gate fires while still catching a regression to the
+// ~35x boxed emission (or the ~168x naive one) outright.
+const defaultPerfRatioMax = 15
 
 // perfRatioMax is the emitted-vs-handwritten-Go ceiling, overridable via
 // CLJGO_PERF_RATIO_MAX.
@@ -231,11 +241,14 @@ func TestCoreReducePerfBudget(t *testing.T) {
 }
 
 // defaultCoreReduceBudget locks in today's measured cost with headroom, NOT a
-// target: ~110ms measured on the owner's machine (2026-07-22) for
-// (reduce + (range 2e6)) including startup, so 350ms leaves ~3x before the
-// gate fires. A budget loose enough to sleep through a real regression would
-// not be a gate at all. Lower it as the IReduce/Apply2 work lands.
-const defaultCoreReduceBudget = 350 * time.Millisecond
+// target. The IFn2 2-arg fast-path seam (perf/core-followups, 2026-07-23) took
+// (reduce + (range 2e6)) from ~92ms to ~64ms including startup on the
+// development machine (~30% off) by removing the per-step []any box the
+// variadic reducing-fn call allocated — ~2M allocs / ~64MB gone. Re-baselined
+// from 350ms to 175ms, ~2x over the new cost; a budget loose enough to sleep
+// through a real regression would not be a gate at all. Lower it further as the
+// residual (int64 result-boxing + LongChunk.Nth boxing) gets attacked.
+const defaultCoreReduceBudget = 175 * time.Millisecond
 
 // coreReduceBudget is the clojure.core-mediated wall-clock budget, overridable
 // via CLJGO_CORE_REDUCE_BUDGET (ADR 0024 host-relative budgets — CI runners
@@ -250,6 +263,154 @@ func coreReduceBudget(t *testing.T) time.Duration {
 	if err != nil {
 		// Don't silently fall back: a typo'd budget must not look like a pass.
 		t.Fatalf("CLJGO_CORE_REDUCE_BUDGET=%q is not a duration: %v", s, err)
+	}
+	return d
+}
+
+// TestCorePipelinePerfBudget guards the map/filter path, which the reduce gate
+// above is structurally blind to: (reduce + (range N)) seeds only `range`, so it
+// rides the chunked-reduce fast path and never exercises `map`/`filter`. The
+// core audit (2026-07-23) found exactly this blind spot — map/filter dropped
+// chunking, degrading `range -> map/filter -> reduce` ~3.3x, and no gate caught
+// it. This one runs (count (filter odd? (map inc (range N)))): map, filter, and
+// count all over a chunked source — the pipeline the chunk-aware fast path (ADR
+// 0063) exists to keep fast. Like the reduce gate it is a WALL-CLOCK TOTAL
+// regression gate, not a target — lower the budget as the path gets faster.
+func TestCorePipelinePerfBudget(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping perf measurement in -short mode")
+	}
+	const n = 2_000_000
+
+	lang.RemoveNamespace(lang.NewSymbol("user"))
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
+	forms, err := CompileReader(strings.NewReader(fmt.Sprintf("(count (filter odd? (map inc (range %d))))\n", n)), "corepipeline.clj")
+	corelib.Out = oldOut
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	dir := t.TempDir()
+	if err := WriteModule(dir, forms, Options{PrintLastValue: true}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	bin := filepath.Join(dir, "corepipeline"+ExeSuffix)
+	if err := GoBuild(dir, bin); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+
+	best := time.Duration(1<<62 - 1)
+	for i := 0; i < 3; i++ {
+		start := time.Now()
+		if err := exec.Command(bin).Run(); err != nil {
+			t.Fatalf("run: %v", err)
+		}
+		if d := time.Since(start); d < best {
+			best = d
+		}
+	}
+
+	budget := corePipelineBudget(t)
+	t.Logf("(count (filter odd? (map inc (range %d)))) compiled: %v total wall clock (budget %v)", n, best, budget)
+	if best > budget {
+		t.Fatalf("clojure.core map/filter pipeline took %v, past the %v budget — a core-path regression (ADR 0063)", best, budget)
+	}
+}
+
+// defaultCorePipelineBudget locks in today's measured cost with headroom, NOT a
+// target: ~240ms measured (2026-07-23) for (count (filter odd? (map inc (range
+// 2e6)))) including startup, with chunk-aware map/filter AND a chunk-aware
+// `count` (the ADR 0063 follow-up — count now advances a whole chunk at a time
+// instead of one Next() node per element, ~11% off the pipeline). The IFn2
+// 2-arg fast-path seam (perf/core-followups, 2026-07-23) then took the
+// map/filter/reduce inner calls off the variadic []any box too, cutting this
+// pipeline ~20% (~317ms -> ~254ms in-harness). Re-baselined 550ms -> 500ms,
+// ~2x over the new cost. Lower it as map/filter/count get faster.
+const defaultCorePipelineBudget = 500 * time.Millisecond
+
+// corePipelineBudget mirrors coreReduceBudget: host-relative (ADR 0024),
+// overridable via CLJGO_CORE_PIPELINE_BUDGET for slower/noisier CI runners.
+func corePipelineBudget(t *testing.T) time.Duration {
+	t.Helper()
+	s := os.Getenv("CLJGO_CORE_PIPELINE_BUDGET")
+	if s == "" {
+		return defaultCorePipelineBudget
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		t.Fatalf("CLJGO_CORE_PIPELINE_BUDGET=%q is not a duration: %v", s, err)
+	}
+	return d
+}
+
+// TestBootStartupBudget guards AOT-binary startup — rt.Boot plus the Go
+// runtime's own init, i.e. the fixed cost every compiled program pays
+// before its first form runs. The 2026-07-23 startup investigation found
+// this cost had drifted from ~6.5ms to ~9ms with nothing gating it: each
+// of the 13 boot-time (refer clojure.core …) calls path-copied ~900
+// mappings, and the GC cycled through the boot allocation burst. The bulk
+// refer (corelib.referBulk) + boot GC deferral clawed it back to ~4.4ms
+// (ADR 0067 addendum). Like the gates above it is a WALL-CLOCK TOTAL
+// regression gate, not a target — lower the budget as boot gets cheaper.
+func TestBootStartupBudget(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping perf measurement in -short mode")
+	}
+
+	lang.RemoveNamespace(lang.NewSymbol("user"))
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
+	forms, err := CompileReader(strings.NewReader("nil\n"), "bootidle.clj")
+	corelib.Out = oldOut
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	dir := t.TempDir()
+	if err := WriteModule(dir, forms, Options{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	bin := filepath.Join(dir, "bootidle"+ExeSuffix)
+	if err := GoBuild(dir, bin); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+
+	best := time.Duration(1<<62 - 1)
+	for i := 0; i < 5; i++ {
+		start := time.Now()
+		if err := exec.Command(bin).Run(); err != nil {
+			t.Fatalf("run: %v", err)
+		}
+		if d := time.Since(start); d < best {
+			best = d
+		}
+	}
+
+	budget := bootStartupBudget(t)
+	t.Logf("empty AOT binary: %v total wall clock (budget %v)", best, budget)
+	if best > budget {
+		t.Fatalf("AOT-binary startup took %v, past the %v budget — a boot-path regression (ADR 0067 startup addendum)", best, budget)
+	}
+}
+
+// defaultBootStartupBudget locks in today's measured cost with headroom,
+// NOT a target: ~4.4ms measured (2026-07-23, darwin/arm64) for an empty
+// compiled program, wall clock. 25ms is ~5.5x headroom for exec+fork noise
+// while still firing on a regression back to the ~9ms pre-clawback boot
+// (which would land near or past it on a slower runner) and outright on
+// anything re-adding per-symbol boot refers or boot-time GC churn.
+const defaultBootStartupBudget = 25 * time.Millisecond
+
+// bootStartupBudget mirrors coreReduceBudget: host-relative (ADR 0024),
+// overridable via CLJGO_BOOT_STARTUP_BUDGET for slower/noisier CI runners.
+func bootStartupBudget(t *testing.T) time.Duration {
+	t.Helper()
+	s := os.Getenv("CLJGO_BOOT_STARTUP_BUDGET")
+	if s == "" {
+		return defaultBootStartupBudget
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		t.Fatalf("CLJGO_BOOT_STARTUP_BUDGET=%q is not a duration: %v", s, err)
 	}
 	return d
 }

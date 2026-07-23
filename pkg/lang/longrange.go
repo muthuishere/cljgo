@@ -115,16 +115,42 @@ func (r *LongRange) More() ISeq {
 	return nxt
 }
 
+// longRangeChunkSize matches JVM Clojure's LongRange chunk size (32). Chunking
+// in fixed 32-element blocks (rather than the whole range as one chunk) keeps
+// realization granularity identical to the JVM: a `(take 5 (map f (range n)))`
+// over a chunked source realizes exactly one chunk (32), not the entire range.
+// This matters now that map/filter preserve chunking downstream — an uncapped
+// chunk would force the whole range for any partial consumption of a mapped
+// range. reduce still walks chunk-at-a-time, so the only cost is one extra
+// LongRange+LongChunk allocation per 32 elements (measured negligible).
+const longRangeChunkSize = 32
+
 func (r *LongRange) ChunkedFirst() IChunk {
-	return NewLongChunk(r.start, r.step, r.count)
+	n := r.count
+	if n > longRangeChunkSize {
+		n = longRangeChunkSize
+	}
+	return NewLongChunk(r.start, r.step, n)
 }
 
 func (r *LongRange) ChunkedNext() ISeq {
-	return nil
+	if r.count <= longRangeChunkSize {
+		return nil
+	}
+	return &LongRange{
+		start: r.start + r.step*int64(longRangeChunkSize),
+		end:   r.end,
+		step:  r.step,
+		count: r.count - longRangeChunkSize,
+	}
 }
 
 func (r *LongRange) ChunkedMore() ISeq {
-	return emptyList
+	nxt := r.ChunkedNext()
+	if nxt == nil {
+		return emptyList
+	}
+	return nxt
 }
 
 func (r *LongRange) Cons(o any) Conser {

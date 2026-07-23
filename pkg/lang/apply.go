@@ -129,6 +129,10 @@ func Apply2(fn interface{}, a0, a1 any) any {
 		return f(a0, a1)
 	case FnFunc:
 		return f(a0, a1)
+	case IFn2:
+		// Non-variadic 2-arg seam: skips the []any box a variadic
+		// Invoke(a, b) allocates every call (the reduce/HOF hot path).
+		return f.Invoke2(a0, a1)
 	case IFn:
 		return f.Invoke(a0, a1)
 	default:

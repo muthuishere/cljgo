@@ -13,7 +13,24 @@
 
 Clojure hosted on Go: a compiler (written in Go) that AOT-emits plain Go
 source — the ClojureScript model with Go as the JavaScript — plus a
-tree-walk evaluator that is the REPL and the macro engine.
+tree-walk evaluator that is the REPL and the macro engine. The same source
+runs interpreted at the prompt and compiles to a single static native
+binary, with byte-identical output on both paths.
+
+## Why
+
+1. **Universal interop** — any Go module importable and callable with zero
+   bindings; the Go ecosystem is the standard library. C via cgo modules and
+   purego FFI.
+2. **Full REPL-driven development** — live re-`def`, `defmacro` at the
+   prompt, nREPL for CIDER/Calva.
+3. **Faithful Clojure principles** — persistent data structures, macros,
+   seqs, vars. Clojure is first-class: nothing cljgo adds may shadow or
+   change clojure.core semantics.
+4. **High performance in both modes** — a feature, gated in CI like tests,
+   not asserted.
+5. **Single-file deployment** — `cljgo build` produces one static binary
+   (5.3 MB for hello, ~5 ms startup), no JVM, no runtime install.
 
 ## Install
 
@@ -31,45 +48,57 @@ From v0.2.0, that is the whole story: a release binary pins the published
 runtime module in the generated go.mod
 (`require github.com/muthuishere/cljgo v<version>`, ADR 0028), and the first
 build fetches it from the Go module proxy once per machine (~1 MB, a few
-seconds).
+seconds). (v0.1.0 binaries predate that and need a repo checkout via
+`CLJGO_SRC`.)
 
-v0.1.0 binaries predate that and still need a checkout of this repo — their
-generated module `replace`s the runtime to a local source tree, so point
-`CLJGO_SRC` at your clone or run inside it:
+## Quickstart
 
-```bash
-git clone https://github.com/muthuishere/cljgo && export CLJGO_SRC=$PWD/cljgo
+```clojure
+;; hello.clj
+(require-go '[strings])
+(require-go '[strconv])
+
+(println (strings/ToUpper "hello from go's stdlib"))
+(println "Atoi! ->" (strconv/Atoi! "42"))   ; unwraps, or throws
+(println "Atoi  ->" (strconv/Atoi "oops"))  ; => [0 <error>], errors-as-values
 ```
 
 ```
-$ cljgo --version
-cljgo CLI version 0.1.0 (Go 1.26.3, Clojure 1.12.5)
-
-$ cljgo repl
-cljgo 0.1.0 (Go 1.26.3, Clojure 1.12.5)
-user=> (clojure-version)
-"1.12.5"
+$ cljgo run hello.clj        # interpreted
+$ cljgo build hello.clj      # -> ./hello, a static native binary
+$ ./hello                    # byte-identical output
 ```
 
-## Priorities
+The Go ecosystem is the standard library: `(require-go '[net/http :as http])`
+and call it — no bindings, no wrappers, the Go toolchain is the classpath.
 
-1. **Universal interop** — any Go module importable and callable with zero
-   bindings; the Go ecosystem is the standard library. C via cgo modules and
-   purego FFI.
-2. **Full REPL-driven development** — live re-`def`, `defmacro` at the
-   prompt, nREPL for CIDER/Calva.
-3. **Faithful Clojure principles** — persistent data structures, macros,
-   seqs, vars.
-4. **High performance in both modes** — a feature, not an option.
-5. **cgo builds are first-class** — `CGO_ENABLED=1` projects are supported,
-   not tolerated.
+Projects, dependencies, publishing:
+
+```
+$ cljgo new myapp            # generate a project: --template lib (default) | cli | web
+$ cljgo test                 # run the project's tests (clojure.test)
+$ cljgo build                # resolve declared deps (build.cljgo + build.lock.edn), compile
+$ cljgo publish go           # publish the library to the Go module ecosystem — or `clojars`
+```
+
+Sources may be `.clj`, `.cljg`, or `.cljgo` (ADR 0055); dependency
+resolution and lockfiles are ADR 0052/0053, publishing to both ecosystems is
+ADR 0054.
+
+Editor REPL: `cljgo nrepl`, then connect Calva ("Connect to a running
+REPL") or CIDER (`cider-connect-clj`) to the printed port — `.nrepl-port`
+makes it auto-discoverable.
+
+Errors carry registered codes with explain pages: `cljgo check file.clj
+--json` for structured diagnostics, `cljgo explain A2004` for the long-form
+page (ADRs 0015/0048).
 
 ## Status
 
 Working REPL **and** native compiler. The same source runs interpreted at the
 prompt and AOT-compiles to a static Go binary — byte-identical output on both
-paths (a dual-harness conformance suite enforces this on every commit; a
-REPL↔binary divergence is a release blocker).
+paths (a dual-harness conformance suite, 416 oracle-cited files, enforces
+this on every commit; a REPL↔binary divergence is a release blocker).
 
 Against the [jank clojure-test-suite](https://github.com/jank-lang/clojure-test-suite)
 (upstream @164a4b3, unmodified): **238/242 files passing (98.3%)**, with 242/242
@@ -84,76 +113,67 @@ never heard of reads them as nothing — `(instance? (short 0))` then fails with
 (`(instance? java.lang.Short (short 0))` is genuinely `true` here, as on the
 JVM). With those four branches applied the suite reads **242/242 (100%)** — but
 they are **not upstreamed yet**, so the number published above is the one you
-get from the suite as it ships. Early, moving fast.
+get from the suite as it ships (analysis: `docs/suite-upstream.md`).
 
-| Milestone | State | What landed |
+| Area | State | What landed |
 |-----------|-------|-------------|
-| **M0** | ✅ | REPL: reader (full syntax-quote), `loop*`/`recur`, dynamic vars, namespaces |
-| **M1** | ✅ | Macroexpansion, `defmacro` at the prompt, embedded `core.clj`, `clojure.test` |
-| **M2** | ✅ | `cljgo build` → native binary, fixed-arity calling convention ([perf](#performance)) |
-| **M3-v0** | ✅ | **Zero-ceremony Go interop, both modes** — `require-go`, package fns/consts, `(T,error)`→`[v err]`, `!` unwrap-or-throw |
-| **M3.1/3.2** | ✅ | Members: `(.Method r …)`, `(.-Field r)`, `(set! (.-Field r) v)`, ctors `(pkg/T. {…})`, `(go/new T)` |
-| **core.async** | ✅ | Full `clojure.core.async` over **real goroutines** — no CPS rewrite. Channels, `go`/`thread`, `alts!`/`alt!`, transducers, and the `mult`/`pub`/`mix`/`pipe` distribution surface (ADR 0040 T1+T2). Verified against JVM **core.async 1.6.681** |
+| **Language core (M0–M2)** | ✅ | Reader (full syntax-quote, tagged literals, reader conditionals — ADRs 0036/0050), macros, `defmacro` at the prompt, protocols/`deftype`/`defrecord`/`reify` (ADRs 0020/0049), numeric tower (0029/0032), JVM-compatible hashing (0051), `cljgo build` → native binary |
+| **Go interop (M3)** | ✅ | Zero-ceremony, both modes — `require-go`, package fns/consts, `(T,error)`→`[v err]`, `!` unwrap-or-throw, members `(.Method r …)` / `(.-Field r)` / `set!`, ctors `(pkg/T. {…})`, `(go/new T)` |
+| **core.async** | ✅ | Over **real goroutines** — no CPS rewrite. 55 publics = every non-deprecated, non-internal var of JVM core.async 1.6.681, including `alts!`/`alt!`, `timeout`, transducers, `mult`/`pub`/`mix`/`pipe`, `pipeline`(-`blocking`/-`async`) (ADR 0040; audit: `docs/core-async-audit-2026-07.md`) |
+| **Satellite namespaces** | ✅ | `clojure.string` · `set` · `edn` · `walk` · `zip` · `data` · `repl` · `pprint` complete against the 1.12.5 oracle; `clojure.test` complete (39 oracle vars) |
 | **Result/Option** | ✅ | `ok`/`err`/`just`/`none` + `unwrap`/`and-then`/`map-ok` + `let?`, `#cljgo/ok` literals (ADR 0014) |
-| **Diagnostics** | ✅ | `cljgo check --json` structured records, `cljgo explain <code>` (ADR 0015) |
-| **nREPL** | ✅ | `cljgo nrepl` — babashka's 13-op surface, per-session `*ns*`/`*1`/`*out*` streaming, `.nrepl-port`, `doc` (ADR 0031) |
-| **nREPL** | ✅ | `cljgo nrepl` — Calva/CIDER connect; 13-op surface, sessions on goroutine-keyed bindings (ADR 0031) |
-| **AOT core** | ✅ | Compiled binaries link the **compiled** `core.clj`, never the interpreter — `pkg/eval` 155 → **0** symbols in the link set; startup 27.5 → **5.5 ms** (ADR 0046) |
-| Next | ◦ | `with-precision`, C FFI (purego), `alts!`/`timeout`, generics, lazy core namespaces (the last ~4 ms of startup), persistent-collection aliasing fix |
+| **Diagnostics** | ✅ | Banded error codes + explain pages, `cljgo check --json`, `cljgo explain <code>` (ADRs 0015/0048) |
+| **nREPL** | ✅ | `cljgo nrepl` — Calva/CIDER connect; babashka's 13-op surface, per-session `*ns*`/`*1`/`*out*` streaming, `.nrepl-port` (ADR 0031) |
+| **Projects & toolkit** | ✅ | `cljgo new` (real runnable templates: lib/cli/web, ADR 0047), dependency resolution + lockfile (`build.cljgo`/`build.lock.edn`, ADRs 0052/0053), `cljgo publish go\|clojars` (0054), `.clj`/`.cljg`/`.cljgo` (0055); app scaffolding `cljgo dev`/`config`/`routes` (ADR 0041 T0/T1) |
+| **AOT core** | ✅ | Compiled binaries link the **compiled** `core.clj`, never the interpreter — `pkg/eval` 155 → **0** symbols in the link set (ADR 0046) |
+| **Perf campaign** | ✅ | ADRs 0063–0067: chunk-aware seq ops, IFn2 reduce seam, direct-call emission, sealed-core guard elision, int64 numeric inference — emitted factorial ~35× → **4.8×** handwritten Go ([details](#performance)) |
+| Next | ◦ | ADR 0067 follow-ups (float64, multi-arity/variadic specialization, capturing-closure lift); `reduce`/`transducers` vs babashka's core (the two rows still lost); app framework T2 (ADR 0041); C FFI purego (ADR 0044, proposed, spike S21); batteries direction (ADRs 0056–0062, ratified on `feat/batteries` — decisions recorded, **not shipped**) |
+
+`clojure.core` itself is not yet complete — the honest per-namespace ledger
+is `docs/fundamentals-audit-2026-07.md` (its clojure.core headline predates
+the 2026-07 fundamentals batches; the satellite-namespace rows above were
+re-verified against the oracle counts on 2026-07-23). Early, moving fast.
 
 ## Performance
 
 Performance is priority 4 and gated like conformance, not asserted. Measured
-on Apple M5 Pro, go1.26.3, with `hello.clj` = `(println "hi")`:
+2026-07-23 on Apple M5 Pro, go1.26.3, cljgo @HEAD, with `hello.clj` =
+`(println "hi")`:
 
 | | cljgo | reproduce |
 |---|---|---|
-| Tool binary | 12 MB stripped | `go build -trimpath -ldflags="-s -w" ./cmd/cljgo` |
-| Compiled binary, hello | 4.6 MB | `cljgo build hello.clj` (strips by default) |
-| Compiled startup, hello | 5.5 ms | `hyperfine -N ./hello` |
-| Peak RSS, hello | 11.7 MB | `/usr/bin/time -l ./hello` |
-| Interpreter boot | 22.3 ms · 28.5 MB · 459k allocs | `go test -bench=BenchmarkBoot -benchmem -run '^$' ./pkg/eval/` |
+| Tool binary | 12.7 MB stripped | `go build -trimpath -ldflags="-s -w" ./cmd/cljgo` |
+| Compiled binary, hello | 5.3 MB | `cljgo build hello.clj` (strips by default) |
+| Compiled startup, hello | 5.0 ms | `hyperfine -N ./hello` |
+| Peak RSS, hello | 14.7 MB | `/usr/bin/time -l ./hello` |
+| Interpreter boot | 31.7 ms · 44.5 MB · 733k allocs | `go test -bench BenchmarkBoot -benchmem ./pkg/eval/` |
 | clojure-test-suite | 238/242 (98.3%) | `cljgo suite` |
 
 **Building an AOT binary is one command** — `cljgo build -o hello hello.clj`.
 It emits Go and invokes `go build`, so it needs the Go toolchain on `PATH`
 (`cljgo run` / `cljgo repl` do not); it strips by default; and it links the
 **compiled** core, never the interpreter (ADR 0046), which is why a compiled
-binary starts in ~5 ms instead of the interpreter's ~22 ms boot. There is no
-separate AOT-core step for users — cljgo's core is compiled ahead of time and
-checked in, and your build just links it.
+binary starts in ~10 ms instead of the interpreter's ~32 ms boot.
 
 Two budgets run inside plain `go test ./...`, and are host-relative because a
 CI runner is not your laptop (ADR 0024) — override with `CLJGO_BOOT_BUDGET`
 and `CLJGO_PERF_RATIO_MAX`:
 
 - **Interpreter boot** — `TestBootUnderBudget`, 250 ms locally (`pkg/eval/boot_test.go`).
-- **Emitted vs handwritten Go** — `TestFactorialPerfBudget`, 60× ceiling
-  (`pkg/emit/perf_test.go`).
+- **Emitted vs handwritten Go** — `TestFactorialPerfBudget`, 15× ceiling
+  (`pkg/emit/perf_test.go`). Measured: **~4.8×** — under the ~10× target of
+  design/00 §1.4 for the first time (ADR 0067; naive emission was ~168×,
+  boxed emission ~35×). The 15× gate is a regression guard, not the target.
 
-**Where we actually stand on those two.** Emitted factorial runs at ~35×
-handwritten Go today; naive emission was ~168×, and the §1.4 target is ~10×
-via the doc 04 performance ladder. The 60× gate is a regression guard against
-sliding back to naive emission — it is not the budget, and the gap to ~10× is
-open work.
+### The 2026-07-23 campaign — ADRs 0063–0067
 
-**Where the startup goes.** 5.5 ms, of which ~1.5 ms is the floor for *any*
-Go binary on this machine. The other ~4 ms is `rt.Boot()` building
-`clojure.core` — now by running **compiled Go** (`pkg/coreaot`), not by
-tree-walking `core.clj` on every start: ADR 0046 cut the
-`main → rt.Boot → eval.New` edge, and a compiled binary no longer links the
-interpreter at all (`pkg/eval` 155 → **0** symbols, `pkg/analyzer` 63 → 0,
-`pkg/ast` 14 → 0 — CI-enforced, `pkg/coreaot/imports_test.go`). Startup went
-27.5 → 5.5 ms and RSS 23.1 → 11.7 MB.
-
-**What it did not do: binary size.** ADR 0023 §2 predicted ~2 MB once core
-was AOT-compiled. Measured: 5.3 → 4.6 MB stripped — 14%, not 60%. The
-tree-walker left, but ~13k lines of *compiled core* arrived, and what
-dominates the remainder is the runtime a compiled binary genuinely needs:
-`pkg/lang`'s data structures and numeric tower, `pkg/corelib`'s ~700 symbols,
-and the reader (`read-string` is a real core fn). Size from here is a
-dead-code problem in the runtime, not an AOT-core problem. That prediction is
-superseded by this measurement, not still pending.
+Five decisions moved emitted code from "correct but boxed" to competitive:
+chunk-aware `map`/`filter`/`count`/`keep` (JVM 32-element realization
+parity, ADR 0063), the IFn2 2-arg seam (no `[]any` box per reduce step),
+direct-call emission for statically-known local fns (0064), the sealed-core
+dirty-flag (guard elision with full `with-redefs` liveness, 0066), and an
+int64 numeric-inference pass that lifts monomorphic kernels to raw typed Go
+(`func tak(x, y, z int64) int64`, 0067). Numbers below.
 
 ### Head-to-head vs let-go
 
@@ -182,22 +202,22 @@ what you ship, and the column to read against the field.
 
 | Benchmark | cljgo run | cljgo | let-go | babashka | joker | clojure JVM |
 |---|---|---|---|---|---|---|
-| startup | 32.6 ms | 6.5 ms | **5.7 ms** | 12.5 ms | 9.1 ms | 338.0 ms |
-| `tak` | 12.10 s | 858.5 ms | 1.38 s | 1.18 s | — | **531.8 ms** |
-| `fib` | 9.32 s | 975.4 ms | 1.29 s | 1.16 s | — | **438.5 ms** |
-| `loop-recur` | 482.3 ms | 52.1 ms | 49.8 ms | **45.5 ms** | 447.3 ms | 462.0 ms |
-| `persistent-map` | 43.6 ms | **14.6 ms** | 15.7 ms | 18.9 ms | 34.8 ms | 449.1 ms |
-| `map-filter` | 32.1 ms | 7.2 ms | **5.6 ms** | 10.5 ms | 9.9 ms | 340.4 ms |
-| `transducers` | 88.5 ms | 20.9 ms | 26.7 ms | **16.2 ms** | — | 381.2 ms |
-| `reduce` | 97.5 ms | 60.8 ms | 25.4 ms | **22.1 ms** | 1.56 s | 355.2 ms |
-| runtime size | — | **12 MB** | 13 MB | 67.9 MB | 27.4 MB | 385.0 MB |
+| startup | 38.5 ms | **5.0 ms** | **5.0 ms** | 9.7 ms | 6.7 ms | 289.2 ms |
+| `tak` | 11.47 s | **34.6 ms** | 1.33 s | 1.14 s | — | 457.9 ms |
+| `fib` | 8.79 s | **24.7 ms** | 1.25 s | 1.14 s | — | 419.1 ms |
+| `loop-recur` | 469.3 ms | **5.4 ms** | 36.6 ms | 37.8 ms | 437.8 ms | 397.5 ms |
+| `persistent-map` | 48.5 ms | **9.4 ms** | 12.9 ms | 13.0 ms | 30.5 ms | 385.2 ms |
+| `map-filter` | 39.9 ms | 5.1 ms | **4.8 ms** | 10.0 ms | 8.4 ms | 311.5 ms |
+| `transducers` | 89.0 ms | 16.4 ms | 25.4 ms | **13.0 ms** | — | 315.9 ms |
+| `reduce` | 61.4 ms | 26.0 ms | 22.8 ms | **20.0 ms** | 1.46 s | 302.5 ms |
+| runtime size | — | **12.7 MB** | 13 MB | 67.9 MB | 27.4 MB | 385.0 MB |
 
-Versions: cljgo @HEAD (post-ADR-0046), let-go v1.11.1 (tag, built from source),
+Versions: cljgo @HEAD (post-ADR-0067), let-go v1.11.1 (tag, built from source),
 babashka v1.12.218, joker v1.9.0, Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1.
 `joker` has no `transducers` and is skipped on `fib`/`tak` (~13× slower there).
 Runtime size is the stripped binary for cljgo / let-go, the installed binary for
 babashka / joker, and JDK + `clojure.jar` (381.0 + 4.0 MB) for the JVM; a
-*compiled cljgo program* is 4.6 MB. Re-measured 2026-07-22 via
+*compiled cljgo program* is 5.3 MB. Re-measured 2026-07-23 via
 `bash benchmark/run.sh`; every cell above was run
 on this machine, and all seven benchmarks produce identical values across all
 five runtimes (`persistent-map` differs only in hash-map print order, so it is
@@ -208,120 +228,73 @@ puts gloat at 12.7× let-go on `fib` and 5.4× on `reduce`.
 
 Two honest reads of that table.
 
-**The good.** On `tak` and `fib` cljgo is the fastest thing here except the
-JVM — ahead of both a bytecode VM (let-go) and a GraalVM native image
-(babashka); against joker, the other Go tree-walker, the 2026-07-17 run measured
-**13.1×** (joker is skipped on those rows here for runtime). cljgo also ships
-the smallest runtime in the field at 12 MB, and a *compiled program* is 4.6 MB.
-With AOT core landed (ADR 0046) it **wins `persistent-map` outright** and beats
-let-go on `transducers` — rows it used to lose 2.7× and 4.8×. It also trades
-`map-filter` with let-go within noise (7.2 vs 5.6 ms; the 07-17 run had it the
-other way at 5.6 vs 6.3 — treat that row as a tie, not a win).
+**The good.** cljgo-aot now **wins every recursion and data-structure row
+outright**: `tak` 34.6 ms and `fib` 24.7 ms (13× and 17× faster than the JVM —
+pure int64 recursion is exactly what the ADR 0067 numeric-inference pass lifts
+to raw Go: `func fib(n int64) int64`, direct typed recursion, zero boxing),
+`loop-recur` 5.4 ms (6.8× ahead of let-go), and `persistent-map` 9.4 ms (ahead
+of both let-go and babashka). `startup` is a dead heat with let-go at 5.0 ms —
+the +3 ms regression the previous run reported was attributed (to boot-time
+per-symbol refer and GC churn, *not* the seal/dual-body work, which measured
++0.0 ms) and clawed back with a bulk-refer snapshot + boot GC deferral, now
+CI-gated so it cannot drift again. `map-filter` is 0.3 ms from let-go — a tie.
+The emitted-vs-handwritten-Go factorial gate measures **~5×** — it was ~35×
+before 2026-07-23.
 
-**The bad.** `reduce` is **2.4× let-go and 2.8× babashka**, and `transducers`
-1.3× babashka. The `clojure.core`-routed rows improved a lot,
-but the two runtimes with a purpose-built core still lead them. `reduce` is the
-one row `cljgo build` does *not* help — interpreted and compiled are both slow —
-because the fold loop is already native Go (ADR 0045); the cost is *inside* it:
-`f` is invoked per element through `lang.Apply2`'s generic `IFn` dispatch, with
-every intermediate `long` boxed as `any` and a seq node allocated per step. `fib`
-wins precisely because its `(+ a b)` compiles to a direct `rt.Add` intrinsic —
-the reducing fn in `reduce` is the case that intrinsic can't reach. The fix is
-Clojure-canonical (`IReduce`/internal-reduce on `range`/vectors for an unboxed
-node-free fold, then native `map`/`filter`/`take`); see
-[`benchmark/README.md`](benchmark/README.md) for the full analysis and plan.
+**The bad.** `transducers` (16.4 vs babashka's 13.0 ms) and `reduce` (26.0 vs
+babashka's 20.0, let-go's 22.8) remain behind the two purpose-built cores —
+closer than the 2.4–2.8× of the previous run, but honestly lost. The residual
+is per-element `Apply2` dispatch on the reducing fn plus `LongChunk.Nth`
+boxing; ADR 0067's follow-ups (float64, multi-arity specialization, broader
+lift) and an unboxed internal-reduce are the named path. The interpreter leg
+(`cljgo run`) is a tree-walker and loses everywhere except against joker —
+that is what `cljgo build` is for.
 
-**What changed.** ADR 0046 compiled `core.clj` and the 12 `.cljg` boot sources
-through cljgo's own emitter (`pkg/coreaot`) and cut `rt.Boot() → eval.New()`:
-a compiled binary now links the **compiled** core and no interpreter at all.
-Measured on this machine, same benchmarks, before (ADR 0045 HEAD) → after:
+**What changed (2026-07-23, ADRs 0063–0067, two rounds).** Round 1: chunk-aware
+`map`/`filter`/`count`/`keep` (JVM 32-element realization parity), the IFn2
+2-arg seam (no `[]any` box per reduce step), direct-call emission for known
+local fns, the sealed-core dirty-flag (guard elision with full `with-redefs`
+liveness), and the int64 numeric-inference pass. Round 2: `<=`/`>=` joined the
+unboxed compare set (fib's entire remaining cost), and startup was attributed
+and clawed back. Same machine, morning → evening:
 
 | Benchmark | before | after | |
 |---|---|---|---|
-| startup | 27.5 ms | **5.5 ms** | 5.0× |
-| `persistent-map` | 33.1 ms | **10.0 ms** | 3.3× |
-| `map-filter` | 28.0 ms | **5.6 ms** | 5.0× |
-| `transducers` | 62.8 ms | **18.9 ms** | 3.3× |
-| `loop-recur` | 64.3 ms | **40.2 ms** | 1.6× |
-| `reduce` | 82.3 ms | **54.0 ms** | 1.5× |
-| `fib` / `tak` | 947 / 905 ms | 890 / 901 ms | ~1.0× |
+| `fib` | 975.4 ms | **24.7 ms** | 39× |
+| `tak` | 858.5 ms | **34.6 ms** | 25× |
+| `loop-recur` | 52.1 ms | **5.4 ms** | 9.6× |
+| `reduce` | 60.8 ms | **26.0 ms** | 2.3× |
+| startup | 6.5 ms | **5.0 ms** | after a mid-day 9.5 ms peak |
 
-**Read that honestly: these totals include startup, and ~22 ms of every row is
-the startup delta.** On `persistent-map`, `map-filter` and `loop-recur` that is
-essentially the whole win — the *work* was already native or already compiled;
-what vanished was tree-walking `core.clj` on every start. `transducers` is the
-row where compiled core shows up beyond startup (−44 ms against a −22 ms
-startup delta), and `fib`/`tak` are flat because their work was always the
-benchmark's own arithmetic. Big, real, and not evenly distributed.
+### Earlier campaigns, kept honest
 
-The A/B that used to indict `cljgo build` has moved with it:
+**AOT core (ADR 0046, spikes S22/S23).** Compiled `core.clj` and the boot
+sources through cljgo's own emitter (`pkg/coreaot`): a compiled binary links
+the **compiled** core and no interpreter at all (`pkg/eval` 155 → **0**
+symbols in the link set, `pkg/analyzer` 63 → 0, `pkg/ast` 14 → 0 —
+CI-enforced, `pkg/coreaot/imports_test.go`). At the time that took startup
+27.5 → 5.5 ms; boot growth from the fundamentals batches later pushed it to
+~9.5 ms, and the 2026-07-23 clawback (bulk boot refer + boot GC deferral,
+now gated by `TestBootStartupBudget`) brought a hello binary to **~5.0 ms
+today**. It also settled the A/B that used to indict `cljgo build`:
+work in user code compiles to ~9.7× its interpreted speed, and core-heavy
+programs stopped being indistinguishable between modes.
 
-| | AOT binary | interpreted | speedup from compiling |
-|---|---|---|---|
-| `fib` — work in **user** code | 901.9 ms | 8770.8 ms | **9.72×** |
-| `reduce` — work in **clojure.core** | 52.8 ms | 82.9 ms | **1.57×** |
+**What AOT core did not buy: size.** ADR 0023 §2 predicted ~2 MB per
+compiled program. Measured then: 5.3 → 4.6 MB stripped — the tree-walker
+left, but ~13k lines of compiled core arrived, and what remains is the
+runtime a compiled binary genuinely needs (`pkg/lang`'s data structures and
+numeric tower, `pkg/corelib`'s ~700 symbols, the reader). Dual-body emission
+(ADR 0067) has since grown it back to **5.3 MB**. Size from here is a
+dead-code and dual-body-trimming problem, not an AOT-core problem; ADR 0046
+records the ~2 MB prediction as superseded by measurement.
 
-That second row read **1.01×** before this change, and its meaning is what
-moved: `clojure.core` is no longer interpreted in an emitted binary, so AOT and
-interpreted are no longer indistinguishable. It is 1.57× rather than S23's
-predicted ~5.8× because `reduce` itself is already native Go in **both** modes
-(ADR 0045) — what compiling bought here is the boot and the core plumbing
-around it, not the inner loop. The fns ADR 0045 did *not* hand-port are the
-ones that gained the most (see `transducers`), which is exactly the argument
-ADR 0037 made: emit core, don't hand-port it.
-
-**What AOT core did not buy: size.** ADR 0023 §2 predicted ~2 MB. Measured
-5.3 → 4.6 MB stripped. The tree-walker left the link set (`pkg/eval` 155 → 0
-symbols) and ~13k lines of compiled core arrived; what remains is the runtime a
-compiled binary genuinely needs (`pkg/lang`, `pkg/corelib`'s ~700 symbols, the
-reader). Size from here is a dead-code problem in the runtime, not an AOT-core
-problem — ADR 0046 records that prediction as superseded by measurement rather
-than still pending.
-
-**What is left.** `reduce`'s remaining gap and the `pkg/lang` costs S23
-attributed to boxing / `IFn` dispatch / seq allocation (~4% of the original
-gap, now a much larger share of what is left) are the doc 04 §5 performance
-ladder — a separate lever. Startup has ~4 ms left above the 1.5 ms Go floor,
-almost all of it `pkg/coreaot`'s eager `Load()` of all 13 boot namespaces;
-making the satellites (clojure.test, cljgo.build, …) lazy through the provider
-registry is the next obvious move, and it trades against interpreted/compiled
-parity for `(all-ns)`, so it gets its own decision.
-
-Spikes [S22](spikes/s22-aot-core-perf/VERDICT.md) and
-[S23](spikes/s23-aot-core-prize/VERDICT.md) have the evidence that motivated
-this; ADR 0037 carries the decision, ADR 0042 (multi-namespace emission),
-ADR 0043 (`pkg/corelib`) and ADR 0046 (the cutover) are how it shipped.
-
-Boot got 8.9× faster in v0.2.0 (211 ms → 23.7 ms) by replacing a
-stack-scraping goroutine-ID lookup that was burning 73% of boot CPU with a
-`getg()`-based one (ADR 0034, spike S18). `.github/workflows/boot-bench.yml`
-is a manual (`workflow_dispatch`) ubuntu-vs-macos boot comparison kept as a
-permanent diagnostic.
-
-### Try it
-
-```clojure
-;; hello.clj
-(require-go '[strings])
-(require-go '[strconv])
-
-(println (strings/ToUpper "hello from go's stdlib"))
-(println "Atoi! ->" (strconv/Atoi! "42"))   ; unwraps, or throws
-(println "Atoi  ->" (strconv/Atoi "oops"))   ; => [0 <error>], errors-as-values
-```
-
-```
-$ cljgo run hello.clj        # interpreted
-$ cljgo build hello.clj      # -> ./hello, a static native binary
-$ ./hello                    # byte-identical output
-```
-
-The Go ecosystem is the standard library: `(require-go '[net/http :as http])`
-and call it — no bindings, no wrappers, the Go toolchain is the classpath.
-
-Editor REPL: `cljgo nrepl`, then connect Calva ("Connect to a running
-REPL") or CIDER (`cider-connect-clj`) to the printed port — `.nrepl-port`
-makes it auto-discoverable.
+**Boot.** Interpreter boot got 8.9× faster in v0.2.0 (211 ms → 23.7 ms) by
+replacing a stack-scraping goroutine-ID lookup that was burning 73% of boot
+CPU with a `getg()`-based one (ADR 0034, spike S18). It has since grown with
+the core it boots — 31.7 ms today (ADR 0019 says the budget grows with the
+core, and the 250 ms gate holds). `.github/workflows/boot-bench.yml` is a
+manual ubuntu-vs-macos boot comparison kept as a permanent diagnostic.
 
 ## Development
 
@@ -333,14 +306,18 @@ ADR → OpenSpec propose/design → apply.
 Gates before every commit:
 
 ```
-go build ./... && go vet ./... && gofmt -l pkg cmd conformance && go test ./...
+go build ./... && go vet ./... && gofmt -l pkg cmd conformance templates && go test ./...
 ```
 
 ```
 pkg/lang     runtime (persistent data structures, vendored from Glojure)
+pkg/corelib  Go-native core builtins (ADR 0043)
 pkg/reader   pkg/ast   pkg/analyzer   pkg/eval   pkg/repl   pkg/emit
-cmd/cljgo    CLI (repl · nrepl · run · build · version)
-core/        core.clj — Clojure-in-Clojure
+pkg/coreaot  the compiled clojure.core a built binary links (ADR 0046)
+pkg/deps     dependency resolution + lockfile (ADR 0052)
+cmd/cljgo    CLI (repl · nrepl · run · build · new · test · publish · suite · check · explain · …)
+core/        core.clj + satellite namespaces — Clojure-in-Clojure
+templates/   real, runnable project templates `cljgo new` embeds (lib · cli · web)
 conformance/ dual-harness tests (eval + compiled), oracle-cited vs JVM Clojure
 design/      architecture + component design docs
 docs/adr/    decision log        openspec/   spec-driven change proposals

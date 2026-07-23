@@ -1,0 +1,9 @@
+;; The consumer. It requires greet.core — a namespace that does NOT live under
+;; this app's source tree — proving the dependency load path resolves it, and
+;; resolves it identically whether interpreted (cljgo run) or compiled
+;; (cljgo build): one resolver feeds both legs (ADR 0052 / 0053).
+(ns app.core
+  (:require [greet.core :as greet]))
+
+(defn -main [& args]
+  (println (greet/hello (if (seq args) (first args) "world"))))

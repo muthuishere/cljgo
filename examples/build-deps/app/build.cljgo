@@ -1,0 +1,12 @@
+;; build.cljgo — a project that DEPENDS on a local library (ADR 0052).
+;;
+;;   cljgo build run      → resolve greetlib, compile the app, run it
+;;   cljgo run src/app/core.cljg   → the interpreter leg, same dep (via the lock)
+;;
+;; The first build writes build.lock.edn (commit it). A git dependency looks the
+;; same, pinned by sha:  (dep b "greetlib" {:git "https://…" :ref "v1.2.0"})
+(defn build [b]
+  (dep b "greetlib" {:path "../greetlib"})
+  (let [app (exe b {:name "app" :main "src/app/core.cljg"})]
+    (install b app)
+    (run b app)))

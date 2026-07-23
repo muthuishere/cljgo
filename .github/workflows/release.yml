@@ -43,7 +43,11 @@ jobs:
           # runner swings the quotient (63.2x observed vs ~35x local, passing
           # on rerun). 120 stays far under the ~168x naive-emission regression
           # the gate exists to catch.
-          CLJGO_PERF_RATIO_MAX: "120"
+          CLJGO_PERF_RATIO_MAX: "60"
+          # AOT-binary startup gate: same loosened runner ceiling as ci.yml
+          # (25ms local default is a laptop property; runners fork/exec
+          # slower and noisier).
+          CLJGO_BOOT_STARTUP_BUDGET: 500ms
           # Channel-op budgets (ADR 0040 / ADR 0024): same loosened runner
           # ceilings as ci.yml — ratios of two same-host measurements.
           CLJGO_CHAN_TAX_MAX: "3"

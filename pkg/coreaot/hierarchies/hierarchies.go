@@ -247,52 +247,107 @@ func Load() {
 														if lang.IsTruthy(and__1__auto__73) {
 															var tmp75 any
 															_ = tmp75
-															{
-																var ret76 any = true
-																_ = ret76
-																var i77 any = int64(0)
-																_ = i77
-															loop78:
-																for {
-																	var tmp79 any
-																	_ = tmp79
-																	{
-																		tmp80 := v_clojure_DOT_core_not.Get()
-																		tmp81 := lang.Apply1(tmp80, ret76)
-																		var or__2__auto__82 any = tmp81
-																		_ = or__2__auto__82
-																		var tmp83 any
-																		_ = tmp83
-																		if lang.IsTruthy(or__2__auto__82) {
-																			tmp83 = or__2__auto__82
-																		} else {
-																			tmp84 := v_clojure_DOT_core_count.Get()
-																			tmp85 := lang.Apply1(tmp84, parent18)
-																			tmp86 := rt.EQ2(v_clojure_DOT_core_X_EQ_, i77, tmp85)
-																			tmp83 = tmp86
+															if !rt.CoreDirty() {
+																var tmp76 any
+																_ = tmp76
+																{
+																	var ret77 any = true
+																	_ = ret77
+																	var i78 int64 = int64(0)
+																	_ = i78
+																loop79:
+																	for {
+																		var tmp80 any
+																		_ = tmp80
+																		{
+																			tmp81 := v_clojure_DOT_core_not.Get()
+																			tmp82 := lang.Apply1(tmp81, ret77)
+																			var or__2__auto__83 any = tmp82
+																			_ = or__2__auto__83
+																			var tmp84 any
+																			_ = tmp84
+																			if lang.IsTruthy(or__2__auto__83) {
+																				tmp84 = or__2__auto__83
+																			} else {
+																				tmp85 := v_clojure_DOT_core_count.Get()
+																				tmp86 := lang.Apply1(tmp85, parent18)
+																				tmp87 := rt.EQ2(v_clojure_DOT_core_X_EQ_, i78, tmp86)
+																				tmp84 = tmp87
+																			}
+																			tmp80 = tmp84
 																		}
-																		tmp79 = tmp83
+																		var tmp88 any
+																		_ = tmp88
+																		if lang.IsTruthy(tmp80) {
+																			tmp88 = ret77
+																		} else {
+																			tmp89 := v_clojure_DOT_core_isa_QMARK_.Get()
+																			tmp90 := lang.Apply1(child17, i78)
+																			tmp91 := lang.Apply1(parent18, i78)
+																			tmp92 := lang.Apply3(tmp89, h16, tmp90, tmp91)
+																			var tmp93 any = tmp92
+																			var tmp94 int64 = rt.IInc(i78)
+																			var tmp95 int64 = tmp94
+																			ret77 = tmp93
+																			i78 = tmp95
+																			continue loop79
+																		}
+																		tmp76 = tmp88
+																		break loop79
 																	}
-																	var tmp87 any
-																	_ = tmp87
-																	if lang.IsTruthy(tmp79) {
-																		tmp87 = ret76
-																	} else {
-																		tmp88 := v_clojure_DOT_core_isa_QMARK_.Get()
-																		tmp89 := lang.Apply1(child17, i77)
-																		tmp90 := lang.Apply1(parent18, i77)
-																		tmp91 := lang.Apply3(tmp88, h16, tmp89, tmp90)
-																		var tmp92 any = tmp91
-																		tmp93 := v_clojure_DOT_core_inc.Get()
-																		tmp94 := lang.Apply1(tmp93, i77)
-																		var tmp95 any = tmp94
-																		ret76 = tmp92
-																		i77 = tmp95
-																		continue loop78
-																	}
-																	tmp75 = tmp87
-																	break loop78
 																}
+																tmp75 = tmp76
+															} else {
+																var tmp96 any
+																_ = tmp96
+																{
+																	var ret97 any = true
+																	_ = ret97
+																	var i98 any = int64(0)
+																	_ = i98
+																loop99:
+																	for {
+																		var tmp100 any
+																		_ = tmp100
+																		{
+																			tmp101 := v_clojure_DOT_core_not.Get()
+																			tmp102 := lang.Apply1(tmp101, ret97)
+																			var or__2__auto__103 any = tmp102
+																			_ = or__2__auto__103
+																			var tmp104 any
+																			_ = tmp104
+																			if lang.IsTruthy(or__2__auto__103) {
+																				tmp104 = or__2__auto__103
+																			} else {
+																				tmp105 := v_clojure_DOT_core_count.Get()
+																				tmp106 := lang.Apply1(tmp105, parent18)
+																				tmp107 := rt.EQ2(v_clojure_DOT_core_X_EQ_, i98, tmp106)
+																				tmp104 = tmp107
+																			}
+																			tmp100 = tmp104
+																		}
+																		var tmp108 any
+																		_ = tmp108
+																		if lang.IsTruthy(tmp100) {
+																			tmp108 = ret97
+																		} else {
+																			tmp109 := v_clojure_DOT_core_isa_QMARK_.Get()
+																			tmp110 := lang.Apply1(child17, i98)
+																			tmp111 := lang.Apply1(parent18, i98)
+																			tmp112 := lang.Apply3(tmp109, h16, tmp110, tmp111)
+																			var tmp113 any = tmp112
+																			tmp114 := v_clojure_DOT_core_inc.Get()
+																			tmp115 := lang.Apply1(tmp114, i98)
+																			var tmp116 any = tmp115
+																			ret97 = tmp113
+																			i98 = tmp116
+																			continue loop99
+																		}
+																		tmp96 = tmp108
+																		break loop99
+																	}
+																}
+																tmp75 = tmp96
 															}
 															tmp74 = tmp75
 														} else {
@@ -333,630 +388,630 @@ func Load() {
 	_ = v_clojure_DOT_core_isa_QMARK_
 	// (def parents "Returns the immediate parents of tag, both via a relationship\n  established…
 	v_clojure_DOT_core_parents.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(66), kw_column, int64(7), kw_end_line, int64(66), kw_end_column, int64(14), kw_doc, "Returns the immediate parents of tag, both via a relationship\n  established with derive and, for a class tag, its real direct supers\n  (ADR 0039). h must be a hierarchy obtained from make-hierarchy; if not\n  supplied defaults to the global hierarchy."))
-	tmp96 := lang.FnFunc(func(args ...any) any {
+	tmp117 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			tag97 := args[0]
-			_ = tag97
-			tmp98 := v_clojure_DOT_core_parents.Get()
-			tmp99 := v_clojure_DOT_core_global_hierarchy.Get()
-			tmp100 := lang.Apply2(tmp98, tmp99, tag97)
-			return tmp100
-		case 2:
-			h101 := args[0]
-			_ = h101
-			tag102 := args[1]
-			_ = tag102
-			tmp103 := v_clojure_DOT_core_not_empty.Get()
-			var tmp104 any
-			_ = tmp104
-			{
-				tmp105 := v_clojure_DOT_core_get.Get()
-				tmp106 := lang.Apply1(kw_parents, h101)
-				tmp107 := lang.Apply2(tmp105, tmp106, tag102)
-				var tp108 any = tmp107
-				_ = tp108
-				tmp109 := v_clojure_DOT_core_class_QMARK_.Get()
-				tmp110 := lang.Apply1(tmp109, tag102)
-				var tmp111 any
-				_ = tmp111
-				if lang.IsTruthy(tmp110) {
-					tmp112 := v_clojure_DOT_core_reduce.Get()
-					tmp113 := v_clojure_DOT_core_conj.Get()
-					var tmp114 any
-					_ = tmp114
-					{
-						tmp115 := v_clojure_DOT_core_X_type_bases.Get()
-						tmp116 := lang.Apply1(tmp115, tag102)
-						var or__2__auto__117 any = tmp116
-						_ = or__2__auto__117
-						var tmp118 any
-						_ = tmp118
-						if lang.IsTruthy(or__2__auto__117) {
-							tmp118 = or__2__auto__117
-						} else {
-							tmp119 := lang.NewSet()
-							tmp118 = tmp119
-						}
-						tmp114 = tmp118
-					}
-					tmp120 := lang.Apply3(tmp112, tmp113, tmp114, tp108)
-					tmp111 = tmp120
-				} else {
-					tmp111 = tp108
-				}
-				tmp104 = tmp111
-			}
-			tmp121 := lang.Apply1(tmp103, tmp104)
+			tag118 := args[0]
+			_ = tag118
+			tmp119 := v_clojure_DOT_core_parents.Get()
+			tmp120 := v_clojure_DOT_core_global_hierarchy.Get()
+			tmp121 := lang.Apply2(tmp119, tmp120, tag118)
 			return tmp121
+		case 2:
+			h122 := args[0]
+			_ = h122
+			tag123 := args[1]
+			_ = tag123
+			tmp124 := v_clojure_DOT_core_not_empty.Get()
+			var tmp125 any
+			_ = tmp125
+			{
+				tmp126 := v_clojure_DOT_core_get.Get()
+				tmp127 := lang.Apply1(kw_parents, h122)
+				tmp128 := lang.Apply2(tmp126, tmp127, tag123)
+				var tp129 any = tmp128
+				_ = tp129
+				tmp130 := v_clojure_DOT_core_class_QMARK_.Get()
+				tmp131 := lang.Apply1(tmp130, tag123)
+				var tmp132 any
+				_ = tmp132
+				if lang.IsTruthy(tmp131) {
+					tmp133 := v_clojure_DOT_core_reduce.Get()
+					tmp134 := v_clojure_DOT_core_conj.Get()
+					var tmp135 any
+					_ = tmp135
+					{
+						tmp136 := v_clojure_DOT_core_X_type_bases.Get()
+						tmp137 := lang.Apply1(tmp136, tag123)
+						var or__2__auto__138 any = tmp137
+						_ = or__2__auto__138
+						var tmp139 any
+						_ = tmp139
+						if lang.IsTruthy(or__2__auto__138) {
+							tmp139 = or__2__auto__138
+						} else {
+							tmp140 := lang.NewSet()
+							tmp139 = tmp140
+						}
+						tmp135 = tmp139
+					}
+					tmp141 := lang.Apply3(tmp133, tmp134, tmp135, tp129)
+					tmp132 = tmp141
+				} else {
+					tmp132 = tp129
+				}
+				tmp125 = tmp132
+			}
+			tmp142 := lang.Apply1(tmp124, tmp125)
+			return tmp142
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/parents", "1: [tag] or 2: [h tag]"))
 		}
 	})
-	v_clojure_DOT_core_parents.BindRoot(tmp96)
+	v_clojure_DOT_core_parents.BindRoot(tmp117)
 	_ = v_clojure_DOT_core_parents
 	// (def ancestors "Returns the immediate and indirect parents of tag, both via a\n  relations…
 	v_clojure_DOT_core_ancestors.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(16), kw_doc, "Returns the immediate and indirect parents of tag, both via a\n  relationship established with derive and, for a class tag, its real\n  supers (ADR 0039). h must be a hierarchy obtained from make-hierarchy;\n  if not supplied defaults to the global hierarchy."))
-	tmp122 := lang.FnFunc(func(args ...any) any {
+	tmp143 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			tag123 := args[0]
-			_ = tag123
-			tmp124 := v_clojure_DOT_core_ancestors.Get()
-			tmp125 := v_clojure_DOT_core_global_hierarchy.Get()
-			tmp126 := lang.Apply2(tmp124, tmp125, tag123)
-			return tmp126
+			tag144 := args[0]
+			_ = tag144
+			tmp145 := v_clojure_DOT_core_ancestors.Get()
+			tmp146 := v_clojure_DOT_core_global_hierarchy.Get()
+			tmp147 := lang.Apply2(tmp145, tmp146, tag144)
+			return tmp147
 		case 2:
-			h127 := args[0]
-			_ = h127
-			tag128 := args[1]
-			_ = tag128
-			tmp129 := v_clojure_DOT_core_not_empty.Get()
-			var tmp130 any
-			_ = tmp130
+			h148 := args[0]
+			_ = h148
+			tag149 := args[1]
+			_ = tag149
+			tmp150 := v_clojure_DOT_core_not_empty.Get()
+			var tmp151 any
+			_ = tmp151
 			{
-				tmp131 := v_clojure_DOT_core_get.Get()
-				tmp132 := lang.Apply1(kw_ancestors, h127)
-				tmp133 := lang.Apply2(tmp131, tmp132, tag128)
-				var ta134 any = tmp133
-				_ = ta134
-				tmp135 := v_clojure_DOT_core_class_QMARK_.Get()
-				tmp136 := lang.Apply1(tmp135, tag128)
-				var tmp137 any
-				_ = tmp137
-				if lang.IsTruthy(tmp136) {
-					var tmp138 any
-					_ = tmp138
+				tmp152 := v_clojure_DOT_core_get.Get()
+				tmp153 := lang.Apply1(kw_ancestors, h148)
+				tmp154 := lang.Apply2(tmp152, tmp153, tag149)
+				var ta155 any = tmp154
+				_ = ta155
+				tmp156 := v_clojure_DOT_core_class_QMARK_.Get()
+				tmp157 := lang.Apply1(tmp156, tag149)
+				var tmp158 any
+				_ = tmp158
+				if lang.IsTruthy(tmp157) {
+					var tmp159 any
+					_ = tmp159
 					{
-						tmp139 := v_clojure_DOT_core_X_type_supers.Get()
-						tmp140 := lang.Apply1(tmp139, tag128)
-						var superclasses141 any = tmp140
-						_ = superclasses141
-						tmp142 := v_clojure_DOT_core_reduce.Get()
-						tmp143 := lang.FnFunc2(func(acc144, xs145 any) any {
-							tmp146 := v_clojure_DOT_core_reduce.Get()
-							tmp147 := v_clojure_DOT_core_conj.Get()
-							tmp148 := lang.Apply3(tmp146, tmp147, acc144, xs145)
-							return tmp148
+						tmp160 := v_clojure_DOT_core_X_type_supers.Get()
+						tmp161 := lang.Apply1(tmp160, tag149)
+						var superclasses162 any = tmp161
+						_ = superclasses162
+						tmp163 := v_clojure_DOT_core_reduce.Get()
+						tmp164 := lang.FnFunc2(func(acc165, xs166 any) any {
+							tmp167 := v_clojure_DOT_core_reduce.Get()
+							tmp168 := v_clojure_DOT_core_conj.Get()
+							tmp169 := lang.Apply3(tmp167, tmp168, acc165, xs166)
+							return tmp169
 						})
-						var tmp149 any
-						_ = tmp149
+						var tmp170 any
+						_ = tmp170
 						{
-							var or__2__auto__150 any = superclasses141
-							_ = or__2__auto__150
-							var tmp151 any
-							_ = tmp151
-							if lang.IsTruthy(or__2__auto__150) {
-								tmp151 = or__2__auto__150
+							var or__2__auto__171 any = superclasses162
+							_ = or__2__auto__171
+							var tmp172 any
+							_ = tmp172
+							if lang.IsTruthy(or__2__auto__171) {
+								tmp172 = or__2__auto__171
 							} else {
-								tmp152 := lang.NewSet()
-								tmp151 = tmp152
+								tmp173 := lang.NewSet()
+								tmp172 = tmp173
 							}
-							tmp149 = tmp151
+							tmp170 = tmp172
 						}
-						tmp153 := v_clojure_DOT_core_cons.Get()
-						tmp154 := v_clojure_DOT_core_map_.Get()
-						tmp155 := lang.FnFunc1(func(s156 any) any {
-							tmp157 := v_clojure_DOT_core_get.Get()
-							tmp158 := lang.Apply1(kw_ancestors, h127)
-							tmp159 := lang.Apply2(tmp157, tmp158, s156)
-							return tmp159
+						tmp174 := v_clojure_DOT_core_cons.Get()
+						tmp175 := v_clojure_DOT_core_map_.Get()
+						tmp176 := lang.FnFunc1(func(s177 any) any {
+							tmp178 := v_clojure_DOT_core_get.Get()
+							tmp179 := lang.Apply1(kw_ancestors, h148)
+							tmp180 := lang.Apply2(tmp178, tmp179, s177)
+							return tmp180
 						})
-						tmp160 := lang.Apply2(tmp154, tmp155, superclasses141)
-						tmp161 := lang.Apply2(tmp153, ta134, tmp160)
-						tmp162 := lang.Apply3(tmp142, tmp143, tmp149, tmp161)
-						tmp138 = tmp162
+						tmp181 := lang.Apply2(tmp175, tmp176, superclasses162)
+						tmp182 := lang.Apply2(tmp174, ta155, tmp181)
+						tmp183 := lang.Apply3(tmp163, tmp164, tmp170, tmp182)
+						tmp159 = tmp183
 					}
-					tmp137 = tmp138
+					tmp158 = tmp159
 				} else {
-					tmp137 = ta134
+					tmp158 = ta155
 				}
-				tmp130 = tmp137
+				tmp151 = tmp158
 			}
-			tmp163 := lang.Apply1(tmp129, tmp130)
-			return tmp163
+			tmp184 := lang.Apply1(tmp150, tmp151)
+			return tmp184
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/ancestors", "1: [tag] or 2: [h tag]"))
 		}
 	})
-	v_clojure_DOT_core_ancestors.BindRoot(tmp122)
+	v_clojure_DOT_core_ancestors.BindRoot(tmp143)
 	_ = v_clojure_DOT_core_ancestors
 	// (def descendants "Returns the immediate and indirect children of tag, via a relationship\n…
 	v_clojure_DOT_core_descendants.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(105), kw_column, int64(7), kw_end_line, int64(105), kw_end_column, int64(18), kw_doc, "Returns the immediate and indirect children of tag, via a relationship\n  established with derive. h must be a hierarchy obtained from\n  make-hierarchy; if not supplied defaults to, and modifies, the global\n  hierarchy. Note: cljgo has no class inheritance to walk (design/05)."))
-	tmp164 := lang.FnFunc(func(args ...any) any {
+	tmp185 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			tag165 := args[0]
-			_ = tag165
-			tmp166 := v_clojure_DOT_core_descendants.Get()
-			tmp167 := v_clojure_DOT_core_global_hierarchy.Get()
-			tmp168 := lang.Apply2(tmp166, tmp167, tag165)
-			return tmp168
+			tag186 := args[0]
+			_ = tag186
+			tmp187 := v_clojure_DOT_core_descendants.Get()
+			tmp188 := v_clojure_DOT_core_global_hierarchy.Get()
+			tmp189 := lang.Apply2(tmp187, tmp188, tag186)
+			return tmp189
 		case 2:
-			h169 := args[0]
-			_ = h169
-			tag170 := args[1]
-			_ = tag170
-			tmp171 := v_clojure_DOT_core_class_QMARK_.Get()
-			tmp172 := lang.Apply1(tmp171, tag170)
-			var tmp173 any
-			_ = tmp173
-			if lang.IsTruthy(tmp172) {
-				tmp174 := v_clojure_DOT_core_ex_info.Get()
-				tmp175 := lang.NewMap()
-				tmp176 := lang.Apply2(tmp174, "Can't get descendants of classes", tmp175)
-				panic(rt.Throw(tmp176))
+			h190 := args[0]
+			_ = h190
+			tag191 := args[1]
+			_ = tag191
+			tmp192 := v_clojure_DOT_core_class_QMARK_.Get()
+			tmp193 := lang.Apply1(tmp192, tag191)
+			var tmp194 any
+			_ = tmp194
+			if lang.IsTruthy(tmp193) {
+				tmp195 := v_clojure_DOT_core_ex_info.Get()
+				tmp196 := lang.NewMap()
+				tmp197 := lang.Apply2(tmp195, "Can't get descendants of classes", tmp196)
+				panic(rt.Throw(tmp197))
 			} else {
-				tmp177 := v_clojure_DOT_core_not_empty.Get()
-				tmp178 := v_clojure_DOT_core_get.Get()
-				tmp179 := lang.Apply1(kw_descendants, h169)
-				tmp180 := lang.Apply2(tmp178, tmp179, tag170)
-				tmp181 := lang.Apply1(tmp177, tmp180)
-				tmp173 = tmp181
+				tmp198 := v_clojure_DOT_core_not_empty.Get()
+				tmp199 := v_clojure_DOT_core_get.Get()
+				tmp200 := lang.Apply1(kw_descendants, h190)
+				tmp201 := lang.Apply2(tmp199, tmp200, tag191)
+				tmp202 := lang.Apply1(tmp198, tmp201)
+				tmp194 = tmp202
 			}
-			return tmp173
+			return tmp194
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/descendants", "1: [tag] or 2: [h tag]"))
 		}
 	})
-	v_clojure_DOT_core_descendants.BindRoot(tmp164)
+	v_clojure_DOT_core_descendants.BindRoot(tmp185)
 	_ = v_clojure_DOT_core_descendants
 	// (def derive "Establishes a parent/child relationship between parent and tag. Parent\n  mus…
 	v_clojure_DOT_core_derive.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(124), kw_column, int64(7), kw_end_line, int64(124), kw_end_column, int64(13), kw_doc, "Establishes a parent/child relationship between parent and tag. Parent\n  must be a namespace-qualified keyword or symbol; tag may also be a\n  class (ADR 0036: a ClassRef or deftype/defrecord type). h must be a\n  hierarchy obtained from make-hierarchy; if not supplied defaults to,\n  and modifies, the global hierarchy."))
-	tmp182 := lang.FnFunc(func(args ...any) any {
+	tmp203 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
-			tag183 := args[0]
-			_ = tag183
-			parent184 := args[1]
-			_ = parent184
-			tmp185 := v_clojure_DOT_core_namespace.Get()
-			tmp186 := lang.Apply1(tmp185, parent184)
-			var tmp187 any
-			_ = tmp187
-			if lang.IsTruthy(tmp186) {
-				tmp187 = nil
+			tag204 := args[0]
+			_ = tag204
+			parent205 := args[1]
+			_ = parent205
+			tmp206 := v_clojure_DOT_core_namespace.Get()
+			tmp207 := lang.Apply1(tmp206, parent205)
+			var tmp208 any
+			_ = tmp208
+			if lang.IsTruthy(tmp207) {
+				tmp208 = nil
 			} else {
-				tmp188 := v_clojure_DOT_core_ex_info.Get()
-				tmp189 := v_clojure_DOT_core_str.Get()
-				tmp190 := v_clojure_DOT_core_pr_str.Get()
-				tmp191 := lang.Apply1(tmp190, lang.NewList(sym_namespace, sym_parent))
-				tmp192 := lang.Apply2(tmp189, "Assert failed: ", tmp191)
-				tmp193 := lang.NewMap()
-				tmp194 := lang.Apply2(tmp188, tmp192, tmp193)
-				panic(rt.Throw(tmp194))
+				tmp209 := v_clojure_DOT_core_ex_info.Get()
+				tmp210 := v_clojure_DOT_core_str.Get()
+				tmp211 := v_clojure_DOT_core_pr_str.Get()
+				tmp212 := lang.Apply1(tmp211, lang.NewList(sym_namespace, sym_parent))
+				tmp213 := lang.Apply2(tmp210, "Assert failed: ", tmp212)
+				tmp214 := lang.NewMap()
+				tmp215 := lang.Apply2(tmp209, tmp213, tmp214)
+				panic(rt.Throw(tmp215))
 			}
-			_ = tmp187
-			var tmp195 any
-			_ = tmp195
+			_ = tmp208
+			var tmp216 any
+			_ = tmp216
 			{
-				tmp196 := v_clojure_DOT_core_class_QMARK_.Get()
-				tmp197 := lang.Apply1(tmp196, tag183)
-				var or__2__auto__198 any = tmp197
-				_ = or__2__auto__198
-				var tmp199 any
-				_ = tmp199
-				if lang.IsTruthy(or__2__auto__198) {
-					tmp199 = or__2__auto__198
+				tmp217 := v_clojure_DOT_core_class_QMARK_.Get()
+				tmp218 := lang.Apply1(tmp217, tag204)
+				var or__2__auto__219 any = tmp218
+				_ = or__2__auto__219
+				var tmp220 any
+				_ = tmp220
+				if lang.IsTruthy(or__2__auto__219) {
+					tmp220 = or__2__auto__219
 				} else {
-					var tmp200 any
-					_ = tmp200
+					var tmp221 any
+					_ = tmp221
 					{
-						var tmp201 any
-						_ = tmp201
+						var tmp222 any
+						_ = tmp222
 						{
-							tmp202 := v_clojure_DOT_core_keyword_QMARK_.Get()
-							tmp203 := lang.Apply1(tmp202, tag183)
-							var or__2__auto__204 any = tmp203
-							_ = or__2__auto__204
-							var tmp205 any
-							_ = tmp205
-							if lang.IsTruthy(or__2__auto__204) {
-								tmp205 = or__2__auto__204
+							tmp223 := v_clojure_DOT_core_keyword_QMARK_.Get()
+							tmp224 := lang.Apply1(tmp223, tag204)
+							var or__2__auto__225 any = tmp224
+							_ = or__2__auto__225
+							var tmp226 any
+							_ = tmp226
+							if lang.IsTruthy(or__2__auto__225) {
+								tmp226 = or__2__auto__225
 							} else {
-								tmp206 := v_clojure_DOT_core_symbol_QMARK_.Get()
-								tmp207 := lang.Apply1(tmp206, tag183)
-								tmp205 = tmp207
+								tmp227 := v_clojure_DOT_core_symbol_QMARK_.Get()
+								tmp228 := lang.Apply1(tmp227, tag204)
+								tmp226 = tmp228
 							}
-							tmp201 = tmp205
+							tmp222 = tmp226
 						}
-						var and__1__auto__208 any = tmp201
-						_ = and__1__auto__208
-						var tmp209 any
-						_ = tmp209
-						if lang.IsTruthy(and__1__auto__208) {
-							tmp210 := v_clojure_DOT_core_namespace.Get()
-							tmp211 := lang.Apply1(tmp210, tag183)
-							tmp209 = tmp211
+						var and__1__auto__229 any = tmp222
+						_ = and__1__auto__229
+						var tmp230 any
+						_ = tmp230
+						if lang.IsTruthy(and__1__auto__229) {
+							tmp231 := v_clojure_DOT_core_namespace.Get()
+							tmp232 := lang.Apply1(tmp231, tag204)
+							tmp230 = tmp232
 						} else {
-							tmp209 = and__1__auto__208
+							tmp230 = and__1__auto__229
 						}
-						tmp200 = tmp209
+						tmp221 = tmp230
 					}
-					tmp199 = tmp200
+					tmp220 = tmp221
 				}
-				tmp195 = tmp199
+				tmp216 = tmp220
 			}
-			var tmp212 any
-			_ = tmp212
-			if lang.IsTruthy(tmp195) {
-				tmp212 = nil
+			var tmp233 any
+			_ = tmp233
+			if lang.IsTruthy(tmp216) {
+				tmp233 = nil
 			} else {
-				tmp213 := v_clojure_DOT_core_ex_info.Get()
-				tmp214 := v_clojure_DOT_core_str.Get()
-				tmp215 := v_clojure_DOT_core_pr_str.Get()
-				tmp216 := lang.Apply1(tmp215, lang.NewList(sym_or, lang.NewList(sym_class_QMARK_, sym_tag), lang.NewList(sym_and, lang.NewList(sym_or, lang.NewList(sym_keyword_QMARK_, sym_tag), lang.NewList(sym_symbol_QMARK_, sym_tag)), lang.NewList(sym_namespace, sym_tag))))
-				tmp217 := lang.Apply2(tmp214, "Assert failed: ", tmp216)
-				tmp218 := lang.NewMap()
-				tmp219 := lang.Apply2(tmp213, tmp217, tmp218)
-				panic(rt.Throw(tmp219))
+				tmp234 := v_clojure_DOT_core_ex_info.Get()
+				tmp235 := v_clojure_DOT_core_str.Get()
+				tmp236 := v_clojure_DOT_core_pr_str.Get()
+				tmp237 := lang.Apply1(tmp236, lang.NewList(sym_or, lang.NewList(sym_class_QMARK_, sym_tag), lang.NewList(sym_and, lang.NewList(sym_or, lang.NewList(sym_keyword_QMARK_, sym_tag), lang.NewList(sym_symbol_QMARK_, sym_tag)), lang.NewList(sym_namespace, sym_tag))))
+				tmp238 := lang.Apply2(tmp235, "Assert failed: ", tmp237)
+				tmp239 := lang.NewMap()
+				tmp240 := lang.Apply2(tmp234, tmp238, tmp239)
+				panic(rt.Throw(tmp240))
 			}
-			_ = tmp212
-			tmp220 := v_clojure_DOT_core_alter_var_root.Get()
-			tmp221 := v_clojure_DOT_core_derive.Get()
-			tmp222 := lang.Apply4(tmp220, v_clojure_DOT_core_global_hierarchy, tmp221, tag183, parent184)
-			_ = tmp222
+			_ = tmp233
+			tmp241 := v_clojure_DOT_core_alter_var_root.Get()
+			tmp242 := v_clojure_DOT_core_derive.Get()
+			tmp243 := lang.Apply4(tmp241, v_clojure_DOT_core_global_hierarchy, tmp242, tag204, parent205)
+			_ = tmp243
 			return nil
 		case 3:
-			h223 := args[0]
-			_ = h223
-			tag224 := args[1]
-			_ = tag224
-			parent225 := args[2]
-			_ = parent225
-			tmp226 := v_clojure_DOT_core_not.Get()
-			tmp227 := rt.EQ2(v_clojure_DOT_core_X_EQ_, tag224, parent225)
-			tmp228 := lang.Apply1(tmp226, tmp227)
-			var tmp229 any
-			_ = tmp229
-			if lang.IsTruthy(tmp228) {
-				tmp229 = nil
+			h244 := args[0]
+			_ = h244
+			tag245 := args[1]
+			_ = tag245
+			parent246 := args[2]
+			_ = parent246
+			tmp247 := v_clojure_DOT_core_not.Get()
+			tmp248 := rt.EQ2(v_clojure_DOT_core_X_EQ_, tag245, parent246)
+			tmp249 := lang.Apply1(tmp247, tmp248)
+			var tmp250 any
+			_ = tmp250
+			if lang.IsTruthy(tmp249) {
+				tmp250 = nil
 			} else {
-				tmp230 := v_clojure_DOT_core_ex_info.Get()
-				tmp231 := v_clojure_DOT_core_str.Get()
-				tmp232 := v_clojure_DOT_core_pr_str.Get()
-				tmp233 := lang.Apply1(tmp232, lang.NewList(sym_not, lang.NewList(sym_X_EQ_, sym_tag, sym_parent)))
-				tmp234 := lang.Apply2(tmp231, "Assert failed: ", tmp233)
-				tmp235 := lang.NewMap()
-				tmp236 := lang.Apply2(tmp230, tmp234, tmp235)
-				panic(rt.Throw(tmp236))
+				tmp251 := v_clojure_DOT_core_ex_info.Get()
+				tmp252 := v_clojure_DOT_core_str.Get()
+				tmp253 := v_clojure_DOT_core_pr_str.Get()
+				tmp254 := lang.Apply1(tmp253, lang.NewList(sym_not, lang.NewList(sym_X_EQ_, sym_tag, sym_parent)))
+				tmp255 := lang.Apply2(tmp252, "Assert failed: ", tmp254)
+				tmp256 := lang.NewMap()
+				tmp257 := lang.Apply2(tmp251, tmp255, tmp256)
+				panic(rt.Throw(tmp257))
 			}
-			_ = tmp229
-			var tmp237 any
-			_ = tmp237
+			_ = tmp250
+			var tmp258 any
+			_ = tmp258
 			{
-				tmp238 := v_clojure_DOT_core_class_QMARK_.Get()
-				tmp239 := lang.Apply1(tmp238, tag224)
-				var or__2__auto__240 any = tmp239
-				_ = or__2__auto__240
-				var tmp241 any
-				_ = tmp241
-				if lang.IsTruthy(or__2__auto__240) {
-					tmp241 = or__2__auto__240
+				tmp259 := v_clojure_DOT_core_class_QMARK_.Get()
+				tmp260 := lang.Apply1(tmp259, tag245)
+				var or__2__auto__261 any = tmp260
+				_ = or__2__auto__261
+				var tmp262 any
+				_ = tmp262
+				if lang.IsTruthy(or__2__auto__261) {
+					tmp262 = or__2__auto__261
 				} else {
-					var tmp242 any
-					_ = tmp242
+					var tmp263 any
+					_ = tmp263
 					{
-						tmp243 := v_clojure_DOT_core_keyword_QMARK_.Get()
-						tmp244 := lang.Apply1(tmp243, tag224)
-						var or__2__auto__245 any = tmp244
-						_ = or__2__auto__245
-						var tmp246 any
-						_ = tmp246
-						if lang.IsTruthy(or__2__auto__245) {
-							tmp246 = or__2__auto__245
+						tmp264 := v_clojure_DOT_core_keyword_QMARK_.Get()
+						tmp265 := lang.Apply1(tmp264, tag245)
+						var or__2__auto__266 any = tmp265
+						_ = or__2__auto__266
+						var tmp267 any
+						_ = tmp267
+						if lang.IsTruthy(or__2__auto__266) {
+							tmp267 = or__2__auto__266
 						} else {
-							tmp247 := v_clojure_DOT_core_symbol_QMARK_.Get()
-							tmp248 := lang.Apply1(tmp247, tag224)
-							tmp246 = tmp248
+							tmp268 := v_clojure_DOT_core_symbol_QMARK_.Get()
+							tmp269 := lang.Apply1(tmp268, tag245)
+							tmp267 = tmp269
 						}
-						tmp242 = tmp246
+						tmp263 = tmp267
 					}
-					tmp241 = tmp242
+					tmp262 = tmp263
 				}
-				tmp237 = tmp241
+				tmp258 = tmp262
 			}
-			var tmp249 any
-			_ = tmp249
-			if lang.IsTruthy(tmp237) {
-				tmp249 = nil
+			var tmp270 any
+			_ = tmp270
+			if lang.IsTruthy(tmp258) {
+				tmp270 = nil
 			} else {
-				tmp250 := v_clojure_DOT_core_ex_info.Get()
-				tmp251 := v_clojure_DOT_core_str.Get()
-				tmp252 := v_clojure_DOT_core_pr_str.Get()
-				tmp253 := lang.Apply1(tmp252, lang.NewList(sym_or, lang.NewList(sym_class_QMARK_, sym_tag), lang.NewList(sym_keyword_QMARK_, sym_tag), lang.NewList(sym_symbol_QMARK_, sym_tag)))
-				tmp254 := lang.Apply2(tmp251, "Assert failed: ", tmp253)
-				tmp255 := lang.NewMap()
-				tmp256 := lang.Apply2(tmp250, tmp254, tmp255)
-				panic(rt.Throw(tmp256))
+				tmp271 := v_clojure_DOT_core_ex_info.Get()
+				tmp272 := v_clojure_DOT_core_str.Get()
+				tmp273 := v_clojure_DOT_core_pr_str.Get()
+				tmp274 := lang.Apply1(tmp273, lang.NewList(sym_or, lang.NewList(sym_class_QMARK_, sym_tag), lang.NewList(sym_keyword_QMARK_, sym_tag), lang.NewList(sym_symbol_QMARK_, sym_tag)))
+				tmp275 := lang.Apply2(tmp272, "Assert failed: ", tmp274)
+				tmp276 := lang.NewMap()
+				tmp277 := lang.Apply2(tmp271, tmp275, tmp276)
+				panic(rt.Throw(tmp277))
 			}
-			_ = tmp249
-			var tmp257 any
-			_ = tmp257
+			_ = tmp270
+			var tmp278 any
+			_ = tmp278
 			{
-				tmp258 := v_clojure_DOT_core_keyword_QMARK_.Get()
-				tmp259 := lang.Apply1(tmp258, parent225)
-				var or__2__auto__260 any = tmp259
-				_ = or__2__auto__260
-				var tmp261 any
-				_ = tmp261
-				if lang.IsTruthy(or__2__auto__260) {
-					tmp261 = or__2__auto__260
+				tmp279 := v_clojure_DOT_core_keyword_QMARK_.Get()
+				tmp280 := lang.Apply1(tmp279, parent246)
+				var or__2__auto__281 any = tmp280
+				_ = or__2__auto__281
+				var tmp282 any
+				_ = tmp282
+				if lang.IsTruthy(or__2__auto__281) {
+					tmp282 = or__2__auto__281
 				} else {
-					tmp262 := v_clojure_DOT_core_symbol_QMARK_.Get()
-					tmp263 := lang.Apply1(tmp262, parent225)
-					tmp261 = tmp263
+					tmp283 := v_clojure_DOT_core_symbol_QMARK_.Get()
+					tmp284 := lang.Apply1(tmp283, parent246)
+					tmp282 = tmp284
 				}
-				tmp257 = tmp261
+				tmp278 = tmp282
 			}
-			var tmp264 any
-			_ = tmp264
-			if lang.IsTruthy(tmp257) {
-				tmp264 = nil
+			var tmp285 any
+			_ = tmp285
+			if lang.IsTruthy(tmp278) {
+				tmp285 = nil
 			} else {
-				tmp265 := v_clojure_DOT_core_ex_info.Get()
-				tmp266 := v_clojure_DOT_core_str.Get()
-				tmp267 := v_clojure_DOT_core_pr_str.Get()
-				tmp268 := lang.Apply1(tmp267, lang.NewList(sym_or, lang.NewList(sym_keyword_QMARK_, sym_parent), lang.NewList(sym_symbol_QMARK_, sym_parent)))
-				tmp269 := lang.Apply2(tmp266, "Assert failed: ", tmp268)
-				tmp270 := lang.NewMap()
-				tmp271 := lang.Apply2(tmp265, tmp269, tmp270)
-				panic(rt.Throw(tmp271))
+				tmp286 := v_clojure_DOT_core_ex_info.Get()
+				tmp287 := v_clojure_DOT_core_str.Get()
+				tmp288 := v_clojure_DOT_core_pr_str.Get()
+				tmp289 := lang.Apply1(tmp288, lang.NewList(sym_or, lang.NewList(sym_keyword_QMARK_, sym_parent), lang.NewList(sym_symbol_QMARK_, sym_parent)))
+				tmp290 := lang.Apply2(tmp287, "Assert failed: ", tmp289)
+				tmp291 := lang.NewMap()
+				tmp292 := lang.Apply2(tmp286, tmp290, tmp291)
+				panic(rt.Throw(tmp292))
 			}
-			_ = tmp264
-			var tmp272 any
-			_ = tmp272
+			_ = tmp285
+			var tmp293 any
+			_ = tmp293
 			{
-				tmp273 := lang.Apply1(kw_parents, h223)
-				var tp274 any = tmp273
-				_ = tp274
-				tmp275 := lang.Apply1(kw_descendants, h223)
-				var td276 any = tmp275
-				_ = td276
-				tmp277 := lang.Apply1(kw_ancestors, h223)
-				var ta278 any = tmp277
-				_ = ta278
-				tmp279 := lang.FnFunc(func(args ...any) any {
+				tmp294 := lang.Apply1(kw_parents, h244)
+				var tp295 any = tmp294
+				_ = tp295
+				tmp296 := lang.Apply1(kw_descendants, h244)
+				var td297 any = tmp296
+				_ = td297
+				tmp298 := lang.Apply1(kw_ancestors, h244)
+				var ta299 any = tmp298
+				_ = ta299
+				tmp300 := lang.FnFunc(func(args ...any) any {
 					switch len(args) {
 					case 5:
-						m280 := args[0]
-						_ = m280
-						source281 := args[1]
-						_ = source281
-						sources282 := args[2]
-						_ = sources282
-						target283 := args[3]
-						_ = target283
-						targets284 := args[4]
-						_ = targets284
-						tmp285 := v_clojure_DOT_core_reduce.Get()
-						tmp286 := lang.FnFunc2(func(ret287, k288 any) any {
-							tmp289 := v_clojure_DOT_core_assoc.Get()
-							tmp290 := v_clojure_DOT_core_reduce.Get()
-							tmp291 := v_clojure_DOT_core_conj.Get()
-							tmp292 := v_clojure_DOT_core_get.Get()
-							tmp293 := lang.NewSet()
-							tmp294 := lang.Apply3(tmp292, targets284, k288, tmp293)
-							tmp295 := v_clojure_DOT_core_cons.Get()
-							tmp296 := lang.Apply1(targets284, target283)
-							tmp297 := lang.Apply2(tmp295, target283, tmp296)
-							tmp298 := lang.Apply3(tmp290, tmp291, tmp294, tmp297)
-							tmp299 := lang.Apply3(tmp289, ret287, k288, tmp298)
-							return tmp299
+						m301 := args[0]
+						_ = m301
+						source302 := args[1]
+						_ = source302
+						sources303 := args[2]
+						_ = sources303
+						target304 := args[3]
+						_ = target304
+						targets305 := args[4]
+						_ = targets305
+						tmp306 := v_clojure_DOT_core_reduce.Get()
+						tmp307 := lang.FnFunc2(func(ret308, k309 any) any {
+							tmp310 := v_clojure_DOT_core_assoc.Get()
+							tmp311 := v_clojure_DOT_core_reduce.Get()
+							tmp312 := v_clojure_DOT_core_conj.Get()
+							tmp313 := v_clojure_DOT_core_get.Get()
+							tmp314 := lang.NewSet()
+							tmp315 := lang.Apply3(tmp313, targets305, k309, tmp314)
+							tmp316 := v_clojure_DOT_core_cons.Get()
+							tmp317 := lang.Apply1(targets305, target304)
+							tmp318 := lang.Apply2(tmp316, target304, tmp317)
+							tmp319 := lang.Apply3(tmp311, tmp312, tmp315, tmp318)
+							tmp320 := lang.Apply3(tmp310, ret308, k309, tmp319)
+							return tmp320
 						})
-						tmp300 := v_clojure_DOT_core_cons.Get()
-						tmp301 := lang.Apply1(sources282, source281)
-						tmp302 := lang.Apply2(tmp300, source281, tmp301)
-						tmp303 := lang.Apply3(tmp285, tmp286, m280, tmp302)
-						return tmp303
+						tmp321 := v_clojure_DOT_core_cons.Get()
+						tmp322 := lang.Apply1(sources303, source302)
+						tmp323 := lang.Apply2(tmp321, source302, tmp322)
+						tmp324 := lang.Apply3(tmp306, tmp307, m301, tmp323)
+						return tmp324
 					default:
 						panic(lang.NewArityError(len(args), "fn", "5: [m source sources target targets]"))
 					}
 				})
-				var tf304 any = tmp279
-				_ = tf304
-				var tmp305 any
-				_ = tmp305
+				var tf325 any = tmp300
+				_ = tf325
+				var tmp326 any
+				_ = tmp326
 				{
-					tmp306 := v_clojure_DOT_core_contains_QMARK_.Get()
-					tmp307 := lang.Apply1(tp274, tag224)
-					tmp308 := lang.Apply2(tmp306, tmp307, parent225)
-					var tmp309 any
-					_ = tmp309
-					if lang.IsTruthy(tmp308) {
-						tmp309 = nil
+					tmp327 := v_clojure_DOT_core_contains_QMARK_.Get()
+					tmp328 := lang.Apply1(tp295, tag245)
+					tmp329 := lang.Apply2(tmp327, tmp328, parent246)
+					var tmp330 any
+					_ = tmp330
+					if lang.IsTruthy(tmp329) {
+						tmp330 = nil
 					} else {
-						tmp310 := v_clojure_DOT_core_contains_QMARK_.Get()
-						tmp311 := lang.Apply1(ta278, tag224)
-						tmp312 := lang.Apply2(tmp310, tmp311, parent225)
-						var tmp313 any
-						_ = tmp313
-						if lang.IsTruthy(tmp312) {
-							tmp314 := v_clojure_DOT_core_ex_info.Get()
-							tmp315 := v_clojure_DOT_core_str.Get()
-							tmp316 := lang.Apply4(tmp315, tag224, " already has ", parent225, " as ancestor")
-							tmp317 := lang.NewMap()
-							tmp318 := lang.Apply2(tmp314, tmp316, tmp317)
-							panic(rt.Throw(tmp318))
+						tmp331 := v_clojure_DOT_core_contains_QMARK_.Get()
+						tmp332 := lang.Apply1(ta299, tag245)
+						tmp333 := lang.Apply2(tmp331, tmp332, parent246)
+						var tmp334 any
+						_ = tmp334
+						if lang.IsTruthy(tmp333) {
+							tmp335 := v_clojure_DOT_core_ex_info.Get()
+							tmp336 := v_clojure_DOT_core_str.Get()
+							tmp337 := lang.Apply4(tmp336, tag245, " already has ", parent246, " as ancestor")
+							tmp338 := lang.NewMap()
+							tmp339 := lang.Apply2(tmp335, tmp337, tmp338)
+							panic(rt.Throw(tmp339))
 						} else {
-							tmp313 = nil
+							tmp334 = nil
 						}
-						_ = tmp313
-						tmp319 := v_clojure_DOT_core_contains_QMARK_.Get()
-						tmp320 := lang.Apply1(ta278, parent225)
-						tmp321 := lang.Apply2(tmp319, tmp320, tag224)
-						var tmp322 any
-						_ = tmp322
-						if lang.IsTruthy(tmp321) {
-							tmp323 := v_clojure_DOT_core_ex_info.Get()
-							tmp324 := v_clojure_DOT_core_str.Get()
-							tmp325 := lang.Apply(tmp324, []any{"Cyclic derivation: ", parent225, " has ", tag224, " as ancestor"})
-							tmp326 := lang.NewMap()
-							tmp327 := lang.Apply2(tmp323, tmp325, tmp326)
-							panic(rt.Throw(tmp327))
+						_ = tmp334
+						tmp340 := v_clojure_DOT_core_contains_QMARK_.Get()
+						tmp341 := lang.Apply1(ta299, parent246)
+						tmp342 := lang.Apply2(tmp340, tmp341, tag245)
+						var tmp343 any
+						_ = tmp343
+						if lang.IsTruthy(tmp342) {
+							tmp344 := v_clojure_DOT_core_ex_info.Get()
+							tmp345 := v_clojure_DOT_core_str.Get()
+							tmp346 := lang.Apply(tmp345, []any{"Cyclic derivation: ", parent246, " has ", tag245, " as ancestor"})
+							tmp347 := lang.NewMap()
+							tmp348 := lang.Apply2(tmp344, tmp346, tmp347)
+							panic(rt.Throw(tmp348))
 						} else {
-							tmp322 = nil
+							tmp343 = nil
 						}
-						_ = tmp322
-						tmp328 := v_clojure_DOT_core_assoc.Get()
-						tmp329 := lang.Apply1(kw_parents, h223)
-						tmp330 := v_clojure_DOT_core_conj.Get()
-						tmp331 := v_clojure_DOT_core_get.Get()
-						tmp332 := lang.NewSet()
-						tmp333 := lang.Apply3(tmp331, tp274, tag224, tmp332)
-						tmp334 := lang.Apply2(tmp330, tmp333, parent225)
-						tmp335 := lang.Apply3(tmp328, tmp329, tag224, tmp334)
-						tmp336 := lang.Apply1(kw_ancestors, h223)
-						tmp337 := lang.Apply(tf304, []any{tmp336, tag224, td276, parent225, ta278})
-						tmp338 := lang.Apply1(kw_descendants, h223)
-						tmp339 := lang.Apply(tf304, []any{tmp338, parent225, ta278, tag224, td276})
-						tmp340 := lang.NewMap(kw_parents, tmp335, kw_ancestors, tmp337, kw_descendants, tmp339)
-						tmp309 = tmp340
+						_ = tmp343
+						tmp349 := v_clojure_DOT_core_assoc.Get()
+						tmp350 := lang.Apply1(kw_parents, h244)
+						tmp351 := v_clojure_DOT_core_conj.Get()
+						tmp352 := v_clojure_DOT_core_get.Get()
+						tmp353 := lang.NewSet()
+						tmp354 := lang.Apply3(tmp352, tp295, tag245, tmp353)
+						tmp355 := lang.Apply2(tmp351, tmp354, parent246)
+						tmp356 := lang.Apply3(tmp349, tmp350, tag245, tmp355)
+						tmp357 := lang.Apply1(kw_ancestors, h244)
+						tmp358 := lang.Apply(tf325, []any{tmp357, tag245, td297, parent246, ta299})
+						tmp359 := lang.Apply1(kw_descendants, h244)
+						tmp360 := lang.Apply(tf325, []any{tmp359, parent246, ta299, tag245, td297})
+						tmp361 := lang.NewMap(kw_parents, tmp356, kw_ancestors, tmp358, kw_descendants, tmp360)
+						tmp330 = tmp361
 					}
-					var or__2__auto__341 any = tmp309
-					_ = or__2__auto__341
-					var tmp342 any
-					_ = tmp342
-					if lang.IsTruthy(or__2__auto__341) {
-						tmp342 = or__2__auto__341
+					var or__2__auto__362 any = tmp330
+					_ = or__2__auto__362
+					var tmp363 any
+					_ = tmp363
+					if lang.IsTruthy(or__2__auto__362) {
+						tmp363 = or__2__auto__362
 					} else {
-						tmp342 = h223
+						tmp363 = h244
 					}
-					tmp305 = tmp342
+					tmp326 = tmp363
 				}
-				tmp272 = tmp305
+				tmp293 = tmp326
 			}
-			return tmp272
+			return tmp293
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/derive", "2: [tag parent] or 3: [h tag parent]"))
 		}
 	})
-	v_clojure_DOT_core_derive.BindRoot(tmp182)
+	v_clojure_DOT_core_derive.BindRoot(tmp203)
 	_ = v_clojure_DOT_core_derive
 	// (def underive "Removes a parent/child relationship between parent and tag. h must be a\n  …
 	v_clojure_DOT_core_underive.SetMeta(lang.NewMap(kw_file, "hierarchies.cljg", kw_line, int64(159), kw_column, int64(7), kw_end_line, int64(159), kw_end_column, int64(15), kw_doc, "Removes a parent/child relationship between parent and tag. h must be a\n  hierarchy obtained from make-hierarchy; if not supplied defaults to, and\n  modifies, the global hierarchy."))
-	tmp343 := lang.FnFunc(func(args ...any) any {
+	tmp364 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
-			tag344 := args[0]
-			_ = tag344
-			parent345 := args[1]
-			_ = parent345
-			tmp346 := v_clojure_DOT_core_alter_var_root.Get()
-			tmp347 := v_clojure_DOT_core_underive.Get()
-			tmp348 := lang.Apply4(tmp346, v_clojure_DOT_core_global_hierarchy, tmp347, tag344, parent345)
-			_ = tmp348
+			tag365 := args[0]
+			_ = tag365
+			parent366 := args[1]
+			_ = parent366
+			tmp367 := v_clojure_DOT_core_alter_var_root.Get()
+			tmp368 := v_clojure_DOT_core_underive.Get()
+			tmp369 := lang.Apply4(tmp367, v_clojure_DOT_core_global_hierarchy, tmp368, tag365, parent366)
+			_ = tmp369
 			return nil
 		case 3:
-			h349 := args[0]
-			_ = h349
-			tag350 := args[1]
-			_ = tag350
-			parent351 := args[2]
-			_ = parent351
-			var tmp352 any
-			_ = tmp352
+			h370 := args[0]
+			_ = h370
+			tag371 := args[1]
+			_ = tag371
+			parent372 := args[2]
+			_ = parent372
+			var tmp373 any
+			_ = tmp373
 			{
-				tmp353 := lang.Apply1(kw_parents, h349)
-				var parent_map354 any = tmp353
-				_ = parent_map354
-				tmp355 := lang.Apply1(parent_map354, tag350)
-				var tmp356 any
-				_ = tmp356
-				if lang.IsTruthy(tmp355) {
-					tmp357 := v_clojure_DOT_core_disj.Get()
-					tmp358 := lang.Apply1(parent_map354, tag350)
-					tmp359 := lang.Apply2(tmp357, tmp358, parent351)
-					tmp356 = tmp359
+				tmp374 := lang.Apply1(kw_parents, h370)
+				var parent_map375 any = tmp374
+				_ = parent_map375
+				tmp376 := lang.Apply1(parent_map375, tag371)
+				var tmp377 any
+				_ = tmp377
+				if lang.IsTruthy(tmp376) {
+					tmp378 := v_clojure_DOT_core_disj.Get()
+					tmp379 := lang.Apply1(parent_map375, tag371)
+					tmp380 := lang.Apply2(tmp378, tmp379, parent372)
+					tmp377 = tmp380
 				} else {
-					tmp360 := lang.NewSet()
-					tmp356 = tmp360
+					tmp381 := lang.NewSet()
+					tmp377 = tmp381
 				}
-				var childs_parents361 any = tmp356
-				_ = childs_parents361
-				tmp362 := v_clojure_DOT_core_not_empty.Get()
-				tmp363 := lang.Apply1(tmp362, childs_parents361)
-				var tmp364 any
-				_ = tmp364
-				if lang.IsTruthy(tmp363) {
-					tmp365 := v_clojure_DOT_core_assoc.Get()
-					tmp366 := lang.Apply3(tmp365, parent_map354, tag350, childs_parents361)
-					tmp364 = tmp366
+				var childs_parents382 any = tmp377
+				_ = childs_parents382
+				tmp383 := v_clojure_DOT_core_not_empty.Get()
+				tmp384 := lang.Apply1(tmp383, childs_parents382)
+				var tmp385 any
+				_ = tmp385
+				if lang.IsTruthy(tmp384) {
+					tmp386 := v_clojure_DOT_core_assoc.Get()
+					tmp387 := lang.Apply3(tmp386, parent_map375, tag371, childs_parents382)
+					tmp385 = tmp387
 				} else {
-					tmp367 := v_clojure_DOT_core_dissoc.Get()
-					tmp368 := lang.Apply2(tmp367, parent_map354, tag350)
-					tmp364 = tmp368
+					tmp388 := v_clojure_DOT_core_dissoc.Get()
+					tmp389 := lang.Apply2(tmp388, parent_map375, tag371)
+					tmp385 = tmp389
 				}
-				var new_parents369 any = tmp364
-				_ = new_parents369
-				tmp370 := v_clojure_DOT_core_mapcat.Get()
-				tmp371 := lang.FnFunc1(func(entry372 any) any {
-					tmp373 := v_clojure_DOT_core_cons.Get()
-					tmp374 := v_clojure_DOT_core_key.Get()
-					tmp375 := lang.Apply1(tmp374, entry372)
-					tmp376 := v_clojure_DOT_core_interpose.Get()
-					tmp377 := v_clojure_DOT_core_key.Get()
-					tmp378 := lang.Apply1(tmp377, entry372)
-					tmp379 := v_clojure_DOT_core_val.Get()
-					tmp380 := lang.Apply1(tmp379, entry372)
-					tmp381 := lang.Apply2(tmp376, tmp378, tmp380)
-					tmp382 := lang.Apply2(tmp373, tmp375, tmp381)
-					return tmp382
+				var new_parents390 any = tmp385
+				_ = new_parents390
+				tmp391 := v_clojure_DOT_core_mapcat.Get()
+				tmp392 := lang.FnFunc1(func(entry393 any) any {
+					tmp394 := v_clojure_DOT_core_cons.Get()
+					tmp395 := v_clojure_DOT_core_key.Get()
+					tmp396 := lang.Apply1(tmp395, entry393)
+					tmp397 := v_clojure_DOT_core_interpose.Get()
+					tmp398 := v_clojure_DOT_core_key.Get()
+					tmp399 := lang.Apply1(tmp398, entry393)
+					tmp400 := v_clojure_DOT_core_val.Get()
+					tmp401 := lang.Apply1(tmp400, entry393)
+					tmp402 := lang.Apply2(tmp397, tmp399, tmp401)
+					tmp403 := lang.Apply2(tmp394, tmp396, tmp402)
+					return tmp403
 				})
-				tmp383 := v_clojure_DOT_core_seq.Get()
-				tmp384 := lang.Apply1(tmp383, new_parents369)
-				tmp385 := lang.Apply2(tmp370, tmp371, tmp384)
-				var deriv_seq386 any = tmp385
-				_ = deriv_seq386
-				tmp387 := v_clojure_DOT_core_contains_QMARK_.Get()
-				tmp388 := lang.Apply1(parent_map354, tag350)
-				tmp389 := lang.Apply2(tmp387, tmp388, parent351)
-				var tmp390 any
-				_ = tmp390
-				if lang.IsTruthy(tmp389) {
-					tmp391 := v_clojure_DOT_core_reduce.Get()
-					tmp392 := lang.FnFunc2(func(hh393, pair394 any) any {
-						tmp395 := v_clojure_DOT_core_apply.Get()
-						tmp396 := v_clojure_DOT_core_derive.Get()
-						tmp397 := lang.Apply3(tmp395, tmp396, hh393, pair394)
-						return tmp397
+				tmp404 := v_clojure_DOT_core_seq.Get()
+				tmp405 := lang.Apply1(tmp404, new_parents390)
+				tmp406 := lang.Apply2(tmp391, tmp392, tmp405)
+				var deriv_seq407 any = tmp406
+				_ = deriv_seq407
+				tmp408 := v_clojure_DOT_core_contains_QMARK_.Get()
+				tmp409 := lang.Apply1(parent_map375, tag371)
+				tmp410 := lang.Apply2(tmp408, tmp409, parent372)
+				var tmp411 any
+				_ = tmp411
+				if lang.IsTruthy(tmp410) {
+					tmp412 := v_clojure_DOT_core_reduce.Get()
+					tmp413 := lang.FnFunc2(func(hh414, pair415 any) any {
+						tmp416 := v_clojure_DOT_core_apply.Get()
+						tmp417 := v_clojure_DOT_core_derive.Get()
+						tmp418 := lang.Apply3(tmp416, tmp417, hh414, pair415)
+						return tmp418
 					})
-					tmp398 := v_clojure_DOT_core_make_hierarchy.Get()
-					tmp399 := lang.Apply0(tmp398)
-					tmp400 := v_clojure_DOT_core_partition.Get()
-					tmp401 := lang.Apply2(tmp400, int64(2), deriv_seq386)
-					tmp402 := lang.Apply3(tmp391, tmp392, tmp399, tmp401)
-					tmp390 = tmp402
+					tmp419 := v_clojure_DOT_core_make_hierarchy.Get()
+					tmp420 := lang.Apply0(tmp419)
+					tmp421 := v_clojure_DOT_core_partition.Get()
+					tmp422 := lang.Apply2(tmp421, int64(2), deriv_seq407)
+					tmp423 := lang.Apply3(tmp412, tmp413, tmp420, tmp422)
+					tmp411 = tmp423
 				} else {
-					tmp390 = h349
+					tmp411 = h370
 				}
-				tmp352 = tmp390
+				tmp373 = tmp411
 			}
-			return tmp352
+			return tmp373
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/underive", "2: [tag parent] or 3: [h tag parent]"))
 		}
 	})
-	v_clojure_DOT_core_underive.BindRoot(tmp343)
+	v_clojure_DOT_core_underive.BindRoot(tmp364)
 	_ = v_clojure_DOT_core_underive
 }
