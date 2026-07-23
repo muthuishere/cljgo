@@ -889,18 +889,20 @@ func (g *generator) gen(n *ast.Node) string {
 // an order of magnitude (measured: 168× raw; see perf_test.go).
 var intrinsic2 = map[string]string{
 	"+": "Add2", "-": "Sub2", "*": "Mul2", "/": "Div2",
-	"<": "LT2", ">": "GT2", "=": "EQ2",
+	"<": "LT2", ">": "GT2", "=": "EQ2", "<=": "LE2", ">=": "GE2",
 }
 
 // testIntrinsics are the comparison builtins with unboxed bool variants
 // for `if` tests (no interface boxing, no IsTruthy round-trip).
-var testIntrinsics = map[string]string{"<": "LTBool", ">": "GTBool", "=": "EQBool"}
+var testIntrinsics = map[string]string{
+	"<": "LTBool", ">": "GTBool", "=": "EQBool", "<=": "LEBool", ">=": "GEBool",
+}
 
 // intUnboxCmp maps a proven-int64 comparison to a raw Go operator (ADR
 // 0067): when the inference pass proved both operands int64, the compare
 // is a single Go instruction — no var deref, no boxing. For two int64,
 // raw `<`/`>`/`==` is byte-identical to LT/GT/Equiv.
-var intUnboxCmp = map[string]string{"<": "<", ">": ">", "=": "=="}
+var intUnboxCmp = map[string]string{"<": "<", ">": ">", "=": "==", "<=": "<=", ">=": ">="}
 
 // intUnboxArith2/1 map proven-int64 arithmetic to the checked rt helpers
 // on raw Go int64s (ADR 0067). These do NOT deref the operator var — the

@@ -140,6 +140,19 @@ to a typed Go func. A kernel that stays inside the boxed calling convention
 
 **Not yet inferred (follow-ups):** float64 (all floats stay boxed);
 multi-arity / variadic / >4-arity specialization; cross-fn (non-self)
-return typing; broadening the lift to capturing closures; `<=`/`>=`
-comparisons. `CLJGO_NUMINFER_OFF=1` remains the kill switch and the A/B
-measurement lever.
+return typing; broadening the lift to capturing closures.
+`CLJGO_NUMINFER_OFF=1` remains the kill switch and the A/B measurement
+lever.
+
+**Shipped follow-up (2026-07-23): `<=`/`>=` comparisons.** The
+benchmark-corpus fib (`(if (<= n 1) …)`) DID lift to a typed func, but its
+`<=` test still emitted a per-call var deref + boxing `lang.Apply2` — `<=`
+and `>=` were missing from all three comparison tables. They now join
+`intUnboxCmp` (raw Go compare on proven int64), `testIntrinsics`
+(rt.LEBool/GEBool) and `intrinsic2` (rt.LE2/GE2), and — required for
+with-redefs liveness through the raw compare — `<=`/`>=` join the sealed
+core set (rt.Boot now seals NINE vars, was seven). Corpus-exact `fib 35`
+AOT wall time (hyperfine, startup included): 739 → 31 ms; tak (40 ms) and
+loop-recur (9.5 ms) held. Conformance: numeric-le-ge-compare.clj,
+numeric-le-ge-overflow-boundary.clj, numeric-le-ge-redefs-unboxed.clj
+(dual harness, oracle-verified).

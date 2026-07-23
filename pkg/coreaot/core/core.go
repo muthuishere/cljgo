@@ -7101,29 +7101,28 @@ func Load() {
 								tmp3118 := lang.Apply1(k3095, w3117)
 								var kw3119 any = tmp3118
 								_ = kw3119
-								tmp3120 := v_clojure_DOT_core_X_LT__EQ_.Get()
-								tmp3121 := lang.Apply2(tmp3120, kw3119, kv3110)
-								var tmp3122 any
-								_ = tmp3122
-								if lang.IsTruthy(tmp3121) {
-									var tmp3123 any = w3117
-									var tmp3124 any = kw3119
-									tmp3125 := v_clojure_DOT_core_next.Get()
-									tmp3126 := lang.Apply1(tmp3125, more3111)
-									var tmp3127 any = tmp3126
-									v3107 = tmp3123
-									kv3110 = tmp3124
-									more3111 = tmp3127
+								tmp3120 := rt.LEBool(v_clojure_DOT_core_X_LT__EQ_, kw3119, kv3110)
+								var tmp3121 any
+								_ = tmp3121
+								if tmp3120 {
+									var tmp3122 any = w3117
+									var tmp3123 any = kw3119
+									tmp3124 := v_clojure_DOT_core_next.Get()
+									tmp3125 := lang.Apply1(tmp3124, more3111)
+									var tmp3126 any = tmp3125
+									v3107 = tmp3122
+									kv3110 = tmp3123
+									more3111 = tmp3126
 									continue loop3112
 								} else {
-									var tmp3128 any = v3107
-									var tmp3129 any = kv3110
-									tmp3130 := v_clojure_DOT_core_next.Get()
-									tmp3131 := lang.Apply1(tmp3130, more3111)
-									var tmp3132 any = tmp3131
-									v3107 = tmp3128
-									kv3110 = tmp3129
-									more3111 = tmp3132
+									var tmp3127 any = v3107
+									var tmp3128 any = kv3110
+									tmp3129 := v_clojure_DOT_core_next.Get()
+									tmp3130 := lang.Apply1(tmp3129, more3111)
+									var tmp3131 any = tmp3130
+									v3107 = tmp3127
+									kv3110 = tmp3128
+									more3111 = tmp3131
 									continue loop3112
 								}
 							}
@@ -7143,2013 +7142,2013 @@ func Load() {
 	_ = v_clojure_DOT_core_min_key
 	// (do (def dotimes (fn* dotimes ([&form &env bindings & body] (let [i (first bindings) n (se…
 	v_clojure_DOT_core_dotimes.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1113), kw_column, int64(11), kw_end_line, int64(1113), kw_end_column, int64(18)))
-	var dotimes3133 any
-	_ = dotimes3133
-	tmp3134 := lang.FnFunc(func(args ...any) any {
+	var dotimes3132 any
+	_ = dotimes3132
+	tmp3133 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/dotimes", "3+: [&form &env bindings body & more]"))
 			}
-			X_AMP_form3135 := args[0]
-			_ = X_AMP_form3135
-			X_AMP_env3136 := args[1]
-			_ = X_AMP_env3136
-			bindings3137 := args[2]
-			_ = bindings3137
-			var body3138 any
+			X_AMP_form3134 := args[0]
+			_ = X_AMP_form3134
+			X_AMP_env3135 := args[1]
+			_ = X_AMP_env3135
+			bindings3136 := args[2]
+			_ = bindings3136
+			var body3137 any
 			if len(args) > 3 {
-				body3138 = lang.NewList(args[3:]...)
+				body3137 = lang.NewList(args[3:]...)
 			}
-			_ = body3138
-			var tmp3139 any
-			_ = tmp3139
+			_ = body3137
+			var tmp3138 any
+			_ = tmp3138
 			{
-				tmp3140 := v_clojure_DOT_core_first.Get()
-				tmp3141 := lang.Apply1(tmp3140, bindings3137)
-				var i3142 any = tmp3141
-				_ = i3142
-				tmp3143 := v_clojure_DOT_core_second.Get()
-				tmp3144 := lang.Apply1(tmp3143, bindings3137)
-				var n3145 any = tmp3144
-				_ = n3145
-				tmp3146 := v_clojure_DOT_core_seq.Get()
-				tmp3147 := v_clojure_DOT_core_concat.Get()
-				tmp3148 := v_clojure_DOT_core_list.Get()
-				tmp3149 := lang.Apply1(tmp3148, sym_clojure_DOT_core_SLASH_let)
-				tmp3150 := v_clojure_DOT_core_list.Get()
-				tmp3151 := v_clojure_DOT_core_apply.Get()
-				tmp3152 := v_clojure_DOT_core_vector.Get()
-				tmp3153 := v_clojure_DOT_core_seq.Get()
-				tmp3154 := v_clojure_DOT_core_concat.Get()
-				tmp3155 := v_clojure_DOT_core_list.Get()
-				tmp3156 := lang.Apply1(tmp3155, sym_n__8__auto__)
-				tmp3157 := v_clojure_DOT_core_list.Get()
-				tmp3158 := lang.Apply1(tmp3157, n3145)
-				tmp3159 := lang.Apply2(tmp3154, tmp3156, tmp3158)
-				tmp3160 := lang.Apply1(tmp3153, tmp3159)
-				tmp3161 := lang.Apply2(tmp3151, tmp3152, tmp3160)
-				tmp3162 := lang.Apply1(tmp3150, tmp3161)
-				tmp3163 := v_clojure_DOT_core_list.Get()
-				tmp3164 := v_clojure_DOT_core_seq.Get()
-				tmp3165 := v_clojure_DOT_core_concat.Get()
-				tmp3166 := v_clojure_DOT_core_list.Get()
-				tmp3167 := lang.Apply1(tmp3166, sym_clojure_DOT_core_SLASH_loop)
-				tmp3168 := v_clojure_DOT_core_list.Get()
-				tmp3169 := v_clojure_DOT_core_apply.Get()
-				tmp3170 := v_clojure_DOT_core_vector.Get()
-				tmp3171 := v_clojure_DOT_core_seq.Get()
-				tmp3172 := v_clojure_DOT_core_concat.Get()
-				tmp3173 := v_clojure_DOT_core_list.Get()
-				tmp3174 := lang.Apply1(tmp3173, i3142)
-				tmp3175 := v_clojure_DOT_core_list.Get()
-				tmp3176 := lang.Apply1(tmp3175, int64(0))
-				tmp3177 := lang.Apply2(tmp3172, tmp3174, tmp3176)
-				tmp3178 := lang.Apply1(tmp3171, tmp3177)
-				tmp3179 := lang.Apply2(tmp3169, tmp3170, tmp3178)
-				tmp3180 := lang.Apply1(tmp3168, tmp3179)
-				tmp3181 := v_clojure_DOT_core_list.Get()
-				tmp3182 := v_clojure_DOT_core_seq.Get()
-				tmp3183 := v_clojure_DOT_core_concat.Get()
-				tmp3184 := v_clojure_DOT_core_list.Get()
-				tmp3185 := lang.Apply1(tmp3184, sym_if_)
-				tmp3186 := v_clojure_DOT_core_list.Get()
-				tmp3187 := v_clojure_DOT_core_seq.Get()
-				tmp3188 := v_clojure_DOT_core_concat.Get()
-				tmp3189 := v_clojure_DOT_core_list.Get()
-				tmp3190 := lang.Apply1(tmp3189, sym_clojure_DOT_core_SLASH__LT_)
-				tmp3191 := v_clojure_DOT_core_list.Get()
-				tmp3192 := lang.Apply1(tmp3191, i3142)
-				tmp3193 := v_clojure_DOT_core_list.Get()
-				tmp3194 := lang.Apply1(tmp3193, sym_n__8__auto__)
-				tmp3195 := lang.Apply3(tmp3188, tmp3190, tmp3192, tmp3194)
-				tmp3196 := lang.Apply1(tmp3187, tmp3195)
-				tmp3197 := lang.Apply1(tmp3186, tmp3196)
-				tmp3198 := v_clojure_DOT_core_list.Get()
-				tmp3199 := v_clojure_DOT_core_seq.Get()
-				tmp3200 := v_clojure_DOT_core_concat.Get()
-				tmp3201 := v_clojure_DOT_core_list.Get()
-				tmp3202 := lang.Apply1(tmp3201, sym_do)
-				tmp3203 := v_clojure_DOT_core_list.Get()
-				tmp3204 := v_clojure_DOT_core_seq.Get()
-				tmp3205 := v_clojure_DOT_core_concat.Get()
-				tmp3206 := v_clojure_DOT_core_list.Get()
-				tmp3207 := lang.Apply1(tmp3206, sym_recur)
-				tmp3208 := v_clojure_DOT_core_list.Get()
-				tmp3209 := v_clojure_DOT_core_seq.Get()
-				tmp3210 := v_clojure_DOT_core_concat.Get()
-				tmp3211 := v_clojure_DOT_core_list.Get()
-				tmp3212 := lang.Apply1(tmp3211, sym_clojure_DOT_core_SLASH_inc)
-				tmp3213 := v_clojure_DOT_core_list.Get()
-				tmp3214 := lang.Apply1(tmp3213, i3142)
-				tmp3215 := lang.Apply2(tmp3210, tmp3212, tmp3214)
-				tmp3216 := lang.Apply1(tmp3209, tmp3215)
-				tmp3217 := lang.Apply1(tmp3208, tmp3216)
-				tmp3218 := lang.Apply2(tmp3205, tmp3207, tmp3217)
-				tmp3219 := lang.Apply1(tmp3204, tmp3218)
-				tmp3220 := lang.Apply1(tmp3203, tmp3219)
-				tmp3221 := lang.Apply3(tmp3200, tmp3202, body3138, tmp3220)
-				tmp3222 := lang.Apply1(tmp3199, tmp3221)
-				tmp3223 := lang.Apply1(tmp3198, tmp3222)
-				tmp3224 := v_clojure_DOT_core_list.Get()
-				tmp3225 := lang.Apply1(tmp3224, nil)
-				tmp3226 := lang.Apply4(tmp3183, tmp3185, tmp3197, tmp3223, tmp3225)
-				tmp3227 := lang.Apply1(tmp3182, tmp3226)
-				tmp3228 := lang.Apply1(tmp3181, tmp3227)
-				tmp3229 := lang.Apply3(tmp3165, tmp3167, tmp3180, tmp3228)
-				tmp3230 := lang.Apply1(tmp3164, tmp3229)
-				tmp3231 := lang.Apply1(tmp3163, tmp3230)
-				tmp3232 := lang.Apply3(tmp3147, tmp3149, tmp3162, tmp3231)
-				tmp3233 := lang.Apply1(tmp3146, tmp3232)
-				tmp3139 = tmp3233
+				tmp3139 := v_clojure_DOT_core_first.Get()
+				tmp3140 := lang.Apply1(tmp3139, bindings3136)
+				var i3141 any = tmp3140
+				_ = i3141
+				tmp3142 := v_clojure_DOT_core_second.Get()
+				tmp3143 := lang.Apply1(tmp3142, bindings3136)
+				var n3144 any = tmp3143
+				_ = n3144
+				tmp3145 := v_clojure_DOT_core_seq.Get()
+				tmp3146 := v_clojure_DOT_core_concat.Get()
+				tmp3147 := v_clojure_DOT_core_list.Get()
+				tmp3148 := lang.Apply1(tmp3147, sym_clojure_DOT_core_SLASH_let)
+				tmp3149 := v_clojure_DOT_core_list.Get()
+				tmp3150 := v_clojure_DOT_core_apply.Get()
+				tmp3151 := v_clojure_DOT_core_vector.Get()
+				tmp3152 := v_clojure_DOT_core_seq.Get()
+				tmp3153 := v_clojure_DOT_core_concat.Get()
+				tmp3154 := v_clojure_DOT_core_list.Get()
+				tmp3155 := lang.Apply1(tmp3154, sym_n__8__auto__)
+				tmp3156 := v_clojure_DOT_core_list.Get()
+				tmp3157 := lang.Apply1(tmp3156, n3144)
+				tmp3158 := lang.Apply2(tmp3153, tmp3155, tmp3157)
+				tmp3159 := lang.Apply1(tmp3152, tmp3158)
+				tmp3160 := lang.Apply2(tmp3150, tmp3151, tmp3159)
+				tmp3161 := lang.Apply1(tmp3149, tmp3160)
+				tmp3162 := v_clojure_DOT_core_list.Get()
+				tmp3163 := v_clojure_DOT_core_seq.Get()
+				tmp3164 := v_clojure_DOT_core_concat.Get()
+				tmp3165 := v_clojure_DOT_core_list.Get()
+				tmp3166 := lang.Apply1(tmp3165, sym_clojure_DOT_core_SLASH_loop)
+				tmp3167 := v_clojure_DOT_core_list.Get()
+				tmp3168 := v_clojure_DOT_core_apply.Get()
+				tmp3169 := v_clojure_DOT_core_vector.Get()
+				tmp3170 := v_clojure_DOT_core_seq.Get()
+				tmp3171 := v_clojure_DOT_core_concat.Get()
+				tmp3172 := v_clojure_DOT_core_list.Get()
+				tmp3173 := lang.Apply1(tmp3172, i3141)
+				tmp3174 := v_clojure_DOT_core_list.Get()
+				tmp3175 := lang.Apply1(tmp3174, int64(0))
+				tmp3176 := lang.Apply2(tmp3171, tmp3173, tmp3175)
+				tmp3177 := lang.Apply1(tmp3170, tmp3176)
+				tmp3178 := lang.Apply2(tmp3168, tmp3169, tmp3177)
+				tmp3179 := lang.Apply1(tmp3167, tmp3178)
+				tmp3180 := v_clojure_DOT_core_list.Get()
+				tmp3181 := v_clojure_DOT_core_seq.Get()
+				tmp3182 := v_clojure_DOT_core_concat.Get()
+				tmp3183 := v_clojure_DOT_core_list.Get()
+				tmp3184 := lang.Apply1(tmp3183, sym_if_)
+				tmp3185 := v_clojure_DOT_core_list.Get()
+				tmp3186 := v_clojure_DOT_core_seq.Get()
+				tmp3187 := v_clojure_DOT_core_concat.Get()
+				tmp3188 := v_clojure_DOT_core_list.Get()
+				tmp3189 := lang.Apply1(tmp3188, sym_clojure_DOT_core_SLASH__LT_)
+				tmp3190 := v_clojure_DOT_core_list.Get()
+				tmp3191 := lang.Apply1(tmp3190, i3141)
+				tmp3192 := v_clojure_DOT_core_list.Get()
+				tmp3193 := lang.Apply1(tmp3192, sym_n__8__auto__)
+				tmp3194 := lang.Apply3(tmp3187, tmp3189, tmp3191, tmp3193)
+				tmp3195 := lang.Apply1(tmp3186, tmp3194)
+				tmp3196 := lang.Apply1(tmp3185, tmp3195)
+				tmp3197 := v_clojure_DOT_core_list.Get()
+				tmp3198 := v_clojure_DOT_core_seq.Get()
+				tmp3199 := v_clojure_DOT_core_concat.Get()
+				tmp3200 := v_clojure_DOT_core_list.Get()
+				tmp3201 := lang.Apply1(tmp3200, sym_do)
+				tmp3202 := v_clojure_DOT_core_list.Get()
+				tmp3203 := v_clojure_DOT_core_seq.Get()
+				tmp3204 := v_clojure_DOT_core_concat.Get()
+				tmp3205 := v_clojure_DOT_core_list.Get()
+				tmp3206 := lang.Apply1(tmp3205, sym_recur)
+				tmp3207 := v_clojure_DOT_core_list.Get()
+				tmp3208 := v_clojure_DOT_core_seq.Get()
+				tmp3209 := v_clojure_DOT_core_concat.Get()
+				tmp3210 := v_clojure_DOT_core_list.Get()
+				tmp3211 := lang.Apply1(tmp3210, sym_clojure_DOT_core_SLASH_inc)
+				tmp3212 := v_clojure_DOT_core_list.Get()
+				tmp3213 := lang.Apply1(tmp3212, i3141)
+				tmp3214 := lang.Apply2(tmp3209, tmp3211, tmp3213)
+				tmp3215 := lang.Apply1(tmp3208, tmp3214)
+				tmp3216 := lang.Apply1(tmp3207, tmp3215)
+				tmp3217 := lang.Apply2(tmp3204, tmp3206, tmp3216)
+				tmp3218 := lang.Apply1(tmp3203, tmp3217)
+				tmp3219 := lang.Apply1(tmp3202, tmp3218)
+				tmp3220 := lang.Apply3(tmp3199, tmp3201, body3137, tmp3219)
+				tmp3221 := lang.Apply1(tmp3198, tmp3220)
+				tmp3222 := lang.Apply1(tmp3197, tmp3221)
+				tmp3223 := v_clojure_DOT_core_list.Get()
+				tmp3224 := lang.Apply1(tmp3223, nil)
+				tmp3225 := lang.Apply4(tmp3182, tmp3184, tmp3196, tmp3222, tmp3224)
+				tmp3226 := lang.Apply1(tmp3181, tmp3225)
+				tmp3227 := lang.Apply1(tmp3180, tmp3226)
+				tmp3228 := lang.Apply3(tmp3164, tmp3166, tmp3179, tmp3227)
+				tmp3229 := lang.Apply1(tmp3163, tmp3228)
+				tmp3230 := lang.Apply1(tmp3162, tmp3229)
+				tmp3231 := lang.Apply3(tmp3146, tmp3148, tmp3161, tmp3230)
+				tmp3232 := lang.Apply1(tmp3145, tmp3231)
+				tmp3138 = tmp3232
 			}
-			return tmp3139
+			return tmp3138
 		}
 	})
-	dotimes3133 = tmp3134
-	v_clojure_DOT_core_dotimes.BindRoot(tmp3134)
+	dotimes3132 = tmp3133
+	v_clojure_DOT_core_dotimes.BindRoot(tmp3133)
 	_ = v_clojure_DOT_core_dotimes
-	tmp3234 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp3235 := lang.Apply1(tmp3234, v_clojure_DOT_core_dotimes)
-	_ = tmp3235
+	tmp3233 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp3234 := lang.Apply1(tmp3233, v_clojure_DOT_core_dotimes)
+	_ = tmp3234
 	_ = v_clojure_DOT_core_dotimes
 	// (def -doseq-mods (clojure.core/fn [more] (loop [ms [] r more] (if (and (seq r) (keyword? (…
 	v_clojure_DOT_core_X_doseq_mods.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1129), kw_column, int64(7), kw_end_line, int64(1129), kw_end_column, int64(28), kw_private, true))
-	tmp3236 := lang.FnFunc1(func(more3237 any) any {
-		var tmp3238 any
-		_ = tmp3238
+	tmp3235 := lang.FnFunc1(func(more3236 any) any {
+		var tmp3237 any
+		_ = tmp3237
 		{
-			tmp3239 := lang.NewVector()
-			var ms3240 any = tmp3239
-			_ = ms3240
-			var r3241 any = more3237
-			_ = r3241
-		loop3242:
+			tmp3238 := lang.NewVector()
+			var ms3239 any = tmp3238
+			_ = ms3239
+			var r3240 any = more3236
+			_ = r3240
+		loop3241:
 			for {
-				var tmp3243 any
-				_ = tmp3243
+				var tmp3242 any
+				_ = tmp3242
 				{
-					tmp3244 := v_clojure_DOT_core_seq.Get()
-					tmp3245 := lang.Apply1(tmp3244, r3241)
-					var and__1__auto__3246 any = tmp3245
-					_ = and__1__auto__3246
-					var tmp3247 any
-					_ = tmp3247
-					if lang.IsTruthy(and__1__auto__3246) {
-						tmp3248 := v_clojure_DOT_core_keyword_QMARK_.Get()
-						tmp3249 := v_clojure_DOT_core_first.Get()
-						tmp3250 := lang.Apply1(tmp3249, r3241)
-						tmp3251 := lang.Apply1(tmp3248, tmp3250)
-						tmp3247 = tmp3251
+					tmp3243 := v_clojure_DOT_core_seq.Get()
+					tmp3244 := lang.Apply1(tmp3243, r3240)
+					var and__1__auto__3245 any = tmp3244
+					_ = and__1__auto__3245
+					var tmp3246 any
+					_ = tmp3246
+					if lang.IsTruthy(and__1__auto__3245) {
+						tmp3247 := v_clojure_DOT_core_keyword_QMARK_.Get()
+						tmp3248 := v_clojure_DOT_core_first.Get()
+						tmp3249 := lang.Apply1(tmp3248, r3240)
+						tmp3250 := lang.Apply1(tmp3247, tmp3249)
+						tmp3246 = tmp3250
 					} else {
-						tmp3247 = and__1__auto__3246
+						tmp3246 = and__1__auto__3245
 					}
-					tmp3243 = tmp3247
+					tmp3242 = tmp3246
 				}
-				var tmp3252 any
-				_ = tmp3252
-				if lang.IsTruthy(tmp3243) {
-					tmp3253 := v_clojure_DOT_core_conj.Get()
-					tmp3254 := v_clojure_DOT_core_first.Get()
-					tmp3255 := lang.Apply1(tmp3254, r3241)
-					tmp3256 := v_clojure_DOT_core_second.Get()
-					tmp3257 := lang.Apply1(tmp3256, r3241)
-					tmp3258 := lang.NewVector(tmp3255, tmp3257)
-					tmp3259 := lang.Apply2(tmp3253, ms3240, tmp3258)
-					var tmp3260 any = tmp3259
-					tmp3261 := v_clojure_DOT_core_nnext.Get()
-					tmp3262 := lang.Apply1(tmp3261, r3241)
-					var tmp3263 any = tmp3262
-					ms3240 = tmp3260
-					r3241 = tmp3263
-					continue loop3242
+				var tmp3251 any
+				_ = tmp3251
+				if lang.IsTruthy(tmp3242) {
+					tmp3252 := v_clojure_DOT_core_conj.Get()
+					tmp3253 := v_clojure_DOT_core_first.Get()
+					tmp3254 := lang.Apply1(tmp3253, r3240)
+					tmp3255 := v_clojure_DOT_core_second.Get()
+					tmp3256 := lang.Apply1(tmp3255, r3240)
+					tmp3257 := lang.NewVector(tmp3254, tmp3256)
+					tmp3258 := lang.Apply2(tmp3252, ms3239, tmp3257)
+					var tmp3259 any = tmp3258
+					tmp3260 := v_clojure_DOT_core_nnext.Get()
+					tmp3261 := lang.Apply1(tmp3260, r3240)
+					var tmp3262 any = tmp3261
+					ms3239 = tmp3259
+					r3240 = tmp3262
+					continue loop3241
 				} else {
-					tmp3264 := lang.NewVector(ms3240, r3241)
-					tmp3252 = tmp3264
+					tmp3263 := lang.NewVector(ms3239, r3240)
+					tmp3251 = tmp3263
 				}
-				tmp3238 = tmp3252
-				break loop3242
+				tmp3237 = tmp3251
+				break loop3241
 			}
 		}
-		return tmp3238
+		return tmp3237
 	})
-	v_clojure_DOT_core_X_doseq_mods.BindRoot(tmp3236)
+	v_clojure_DOT_core_X_doseq_mods.BindRoot(tmp3235)
 	_ = v_clojure_DOT_core_X_doseq_mods
 	// (do (def doseq (fn* doseq ([&form &env bindings & body] (if (empty? bindings) (clojure.cor…
 	v_clojure_DOT_core_doseq.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1135), kw_column, int64(11), kw_end_line, int64(1135), kw_end_column, int64(16)))
-	var doseq3265 any
-	_ = doseq3265
-	tmp3266 := lang.FnFunc(func(args ...any) any {
+	var doseq3264 any
+	_ = doseq3264
+	tmp3265 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/doseq", "3+: [&form &env bindings body & more]"))
 			}
-			X_AMP_form3267 := args[0]
-			_ = X_AMP_form3267
-			X_AMP_env3268 := args[1]
-			_ = X_AMP_env3268
-			bindings3269 := args[2]
-			_ = bindings3269
-			var body3270 any
+			X_AMP_form3266 := args[0]
+			_ = X_AMP_form3266
+			X_AMP_env3267 := args[1]
+			_ = X_AMP_env3267
+			bindings3268 := args[2]
+			_ = bindings3268
+			var body3269 any
 			if len(args) > 3 {
-				body3270 = lang.NewList(args[3:]...)
+				body3269 = lang.NewList(args[3:]...)
 			}
-			_ = body3270
-			tmp3271 := v_clojure_DOT_core_empty_QMARK_.Get()
-			tmp3272 := lang.Apply1(tmp3271, bindings3269)
-			var tmp3273 any
-			_ = tmp3273
-			if lang.IsTruthy(tmp3272) {
-				tmp3274 := v_clojure_DOT_core_seq.Get()
-				tmp3275 := v_clojure_DOT_core_concat.Get()
-				tmp3276 := v_clojure_DOT_core_list.Get()
-				tmp3277 := lang.Apply1(tmp3276, sym_do)
-				tmp3278 := v_clojure_DOT_core_list.Get()
-				tmp3279 := lang.Apply1(tmp3278, nil)
-				tmp3280 := lang.Apply3(tmp3275, tmp3277, body3270, tmp3279)
-				tmp3281 := lang.Apply1(tmp3274, tmp3280)
-				tmp3273 = tmp3281
+			_ = body3269
+			tmp3270 := v_clojure_DOT_core_empty_QMARK_.Get()
+			tmp3271 := lang.Apply1(tmp3270, bindings3268)
+			var tmp3272 any
+			_ = tmp3272
+			if lang.IsTruthy(tmp3271) {
+				tmp3273 := v_clojure_DOT_core_seq.Get()
+				tmp3274 := v_clojure_DOT_core_concat.Get()
+				tmp3275 := v_clojure_DOT_core_list.Get()
+				tmp3276 := lang.Apply1(tmp3275, sym_do)
+				tmp3277 := v_clojure_DOT_core_list.Get()
+				tmp3278 := lang.Apply1(tmp3277, nil)
+				tmp3279 := lang.Apply3(tmp3274, tmp3276, body3269, tmp3278)
+				tmp3280 := lang.Apply1(tmp3273, tmp3279)
+				tmp3272 = tmp3280
 			} else {
-				var tmp3282 any
-				_ = tmp3282
+				var tmp3281 any
+				_ = tmp3281
 				{
-					tmp3283 := v_clojure_DOT_core_first.Get()
-					tmp3284 := lang.Apply1(tmp3283, bindings3269)
-					var x3285 any = tmp3284
-					_ = x3285
-					tmp3286 := v_clojure_DOT_core_second.Get()
-					tmp3287 := lang.Apply1(tmp3286, bindings3269)
-					var coll3288 any = tmp3287
-					_ = coll3288
-					tmp3289 := v_clojure_DOT_core_X_doseq_mods.Get()
-					tmp3290 := v_clojure_DOT_core_nnext.Get()
-					tmp3291 := lang.Apply1(tmp3290, bindings3269)
-					tmp3292 := lang.Apply1(tmp3289, tmp3291)
-					var split3293 any = tmp3292
-					_ = split3293
-					tmp3294 := v_clojure_DOT_core_nth.Get()
-					tmp3295 := lang.Apply2(tmp3294, split3293, int64(0))
-					var mods3296 any = tmp3295
-					_ = mods3296
-					tmp3297 := v_clojure_DOT_core_nth.Get()
-					tmp3298 := lang.Apply2(tmp3297, split3293, int64(1))
-					var more3299 any = tmp3298
-					_ = more3299
-					tmp3300 := v_clojure_DOT_core_reduce.Get()
-					tmp3301 := lang.FnFunc2(func(acc3302, kv3303 any) any {
-						var tmp3304 any
-						_ = tmp3304
+					tmp3282 := v_clojure_DOT_core_first.Get()
+					tmp3283 := lang.Apply1(tmp3282, bindings3268)
+					var x3284 any = tmp3283
+					_ = x3284
+					tmp3285 := v_clojure_DOT_core_second.Get()
+					tmp3286 := lang.Apply1(tmp3285, bindings3268)
+					var coll3287 any = tmp3286
+					_ = coll3287
+					tmp3288 := v_clojure_DOT_core_X_doseq_mods.Get()
+					tmp3289 := v_clojure_DOT_core_nnext.Get()
+					tmp3290 := lang.Apply1(tmp3289, bindings3268)
+					tmp3291 := lang.Apply1(tmp3288, tmp3290)
+					var split3292 any = tmp3291
+					_ = split3292
+					tmp3293 := v_clojure_DOT_core_nth.Get()
+					tmp3294 := lang.Apply2(tmp3293, split3292, int64(0))
+					var mods3295 any = tmp3294
+					_ = mods3295
+					tmp3296 := v_clojure_DOT_core_nth.Get()
+					tmp3297 := lang.Apply2(tmp3296, split3292, int64(1))
+					var more3298 any = tmp3297
+					_ = more3298
+					tmp3299 := v_clojure_DOT_core_reduce.Get()
+					tmp3300 := lang.FnFunc2(func(acc3301, kv3302 any) any {
+						var tmp3303 any
+						_ = tmp3303
 						{
-							tmp3305 := v_clojure_DOT_core_nth.Get()
-							tmp3306 := lang.Apply2(tmp3305, kv3303, int64(0))
-							var k3307 any = tmp3306
-							_ = k3307
-							tmp3308 := v_clojure_DOT_core_nth.Get()
-							tmp3309 := lang.Apply2(tmp3308, kv3303, int64(1))
-							var v3310 any = tmp3309
-							_ = v3310
-							tmp3311 := rt.EQBool(v_clojure_DOT_core_X_EQ_, k3307, kw_let)
-							var tmp3312 any
-							_ = tmp3312
-							if tmp3311 {
-								tmp3313 := v_clojure_DOT_core_seq.Get()
-								tmp3314 := v_clojure_DOT_core_concat.Get()
-								tmp3315 := v_clojure_DOT_core_list.Get()
-								tmp3316 := lang.Apply1(tmp3315, sym_clojure_DOT_core_SLASH_let)
-								tmp3317 := v_clojure_DOT_core_list.Get()
-								tmp3318 := lang.Apply1(tmp3317, v3310)
-								tmp3319 := v_clojure_DOT_core_list.Get()
-								tmp3320 := lang.Apply1(tmp3319, acc3302)
-								tmp3321 := lang.Apply3(tmp3314, tmp3316, tmp3318, tmp3320)
-								tmp3322 := lang.Apply1(tmp3313, tmp3321)
-								tmp3312 = tmp3322
+							tmp3304 := v_clojure_DOT_core_nth.Get()
+							tmp3305 := lang.Apply2(tmp3304, kv3302, int64(0))
+							var k3306 any = tmp3305
+							_ = k3306
+							tmp3307 := v_clojure_DOT_core_nth.Get()
+							tmp3308 := lang.Apply2(tmp3307, kv3302, int64(1))
+							var v3309 any = tmp3308
+							_ = v3309
+							tmp3310 := rt.EQBool(v_clojure_DOT_core_X_EQ_, k3306, kw_let)
+							var tmp3311 any
+							_ = tmp3311
+							if tmp3310 {
+								tmp3312 := v_clojure_DOT_core_seq.Get()
+								tmp3313 := v_clojure_DOT_core_concat.Get()
+								tmp3314 := v_clojure_DOT_core_list.Get()
+								tmp3315 := lang.Apply1(tmp3314, sym_clojure_DOT_core_SLASH_let)
+								tmp3316 := v_clojure_DOT_core_list.Get()
+								tmp3317 := lang.Apply1(tmp3316, v3309)
+								tmp3318 := v_clojure_DOT_core_list.Get()
+								tmp3319 := lang.Apply1(tmp3318, acc3301)
+								tmp3320 := lang.Apply3(tmp3313, tmp3315, tmp3317, tmp3319)
+								tmp3321 := lang.Apply1(tmp3312, tmp3320)
+								tmp3311 = tmp3321
 							} else {
-								tmp3323 := rt.EQBool(v_clojure_DOT_core_X_EQ_, k3307, kw_when)
-								var tmp3324 any
-								_ = tmp3324
-								if tmp3323 {
-									tmp3325 := v_clojure_DOT_core_seq.Get()
-									tmp3326 := v_clojure_DOT_core_concat.Get()
-									tmp3327 := v_clojure_DOT_core_list.Get()
-									tmp3328 := lang.Apply1(tmp3327, sym_if_)
-									tmp3329 := v_clojure_DOT_core_list.Get()
-									tmp3330 := lang.Apply1(tmp3329, v3310)
-									tmp3331 := v_clojure_DOT_core_list.Get()
-									tmp3332 := lang.Apply1(tmp3331, acc3302)
-									tmp3333 := v_clojure_DOT_core_list.Get()
-									tmp3334 := lang.Apply1(tmp3333, true)
-									tmp3335 := lang.Apply4(tmp3326, tmp3328, tmp3330, tmp3332, tmp3334)
-									tmp3336 := lang.Apply1(tmp3325, tmp3335)
-									tmp3324 = tmp3336
+								tmp3322 := rt.EQBool(v_clojure_DOT_core_X_EQ_, k3306, kw_when)
+								var tmp3323 any
+								_ = tmp3323
+								if tmp3322 {
+									tmp3324 := v_clojure_DOT_core_seq.Get()
+									tmp3325 := v_clojure_DOT_core_concat.Get()
+									tmp3326 := v_clojure_DOT_core_list.Get()
+									tmp3327 := lang.Apply1(tmp3326, sym_if_)
+									tmp3328 := v_clojure_DOT_core_list.Get()
+									tmp3329 := lang.Apply1(tmp3328, v3309)
+									tmp3330 := v_clojure_DOT_core_list.Get()
+									tmp3331 := lang.Apply1(tmp3330, acc3301)
+									tmp3332 := v_clojure_DOT_core_list.Get()
+									tmp3333 := lang.Apply1(tmp3332, true)
+									tmp3334 := lang.Apply4(tmp3325, tmp3327, tmp3329, tmp3331, tmp3333)
+									tmp3335 := lang.Apply1(tmp3324, tmp3334)
+									tmp3323 = tmp3335
 								} else {
-									tmp3337 := rt.EQBool(v_clojure_DOT_core_X_EQ_, k3307, kw_while)
-									var tmp3338 any
-									_ = tmp3338
-									if tmp3337 {
-										tmp3339 := v_clojure_DOT_core_seq.Get()
-										tmp3340 := v_clojure_DOT_core_concat.Get()
-										tmp3341 := v_clojure_DOT_core_list.Get()
-										tmp3342 := lang.Apply1(tmp3341, sym_if_)
-										tmp3343 := v_clojure_DOT_core_list.Get()
-										tmp3344 := lang.Apply1(tmp3343, v3310)
-										tmp3345 := v_clojure_DOT_core_list.Get()
-										tmp3346 := lang.Apply1(tmp3345, acc3302)
-										tmp3347 := v_clojure_DOT_core_list.Get()
-										tmp3348 := lang.Apply1(tmp3347, false)
-										tmp3349 := lang.Apply4(tmp3340, tmp3342, tmp3344, tmp3346, tmp3348)
-										tmp3350 := lang.Apply1(tmp3339, tmp3349)
-										tmp3338 = tmp3350
+									tmp3336 := rt.EQBool(v_clojure_DOT_core_X_EQ_, k3306, kw_while)
+									var tmp3337 any
+									_ = tmp3337
+									if tmp3336 {
+										tmp3338 := v_clojure_DOT_core_seq.Get()
+										tmp3339 := v_clojure_DOT_core_concat.Get()
+										tmp3340 := v_clojure_DOT_core_list.Get()
+										tmp3341 := lang.Apply1(tmp3340, sym_if_)
+										tmp3342 := v_clojure_DOT_core_list.Get()
+										tmp3343 := lang.Apply1(tmp3342, v3309)
+										tmp3344 := v_clojure_DOT_core_list.Get()
+										tmp3345 := lang.Apply1(tmp3344, acc3301)
+										tmp3346 := v_clojure_DOT_core_list.Get()
+										tmp3347 := lang.Apply1(tmp3346, false)
+										tmp3348 := lang.Apply4(tmp3339, tmp3341, tmp3343, tmp3345, tmp3347)
+										tmp3349 := lang.Apply1(tmp3338, tmp3348)
+										tmp3337 = tmp3349
 									} else {
-										var tmp3351 any
-										_ = tmp3351
+										var tmp3350 any
+										_ = tmp3350
 										if lang.IsTruthy(kw_else_) {
-											tmp3352 := v_clojure_DOT_core_ex_info.Get()
-											tmp3353 := v_clojure_DOT_core_str.Get()
-											tmp3354 := lang.Apply2(tmp3353, "Invalid doseq modifier: ", k3307)
-											tmp3355 := lang.NewMap()
-											tmp3356 := lang.Apply2(tmp3352, tmp3354, tmp3355)
-											panic(rt.Throw(tmp3356))
+											tmp3351 := v_clojure_DOT_core_ex_info.Get()
+											tmp3352 := v_clojure_DOT_core_str.Get()
+											tmp3353 := lang.Apply2(tmp3352, "Invalid doseq modifier: ", k3306)
+											tmp3354 := lang.NewMap()
+											tmp3355 := lang.Apply2(tmp3351, tmp3353, tmp3354)
+											panic(rt.Throw(tmp3355))
 										} else {
-											tmp3351 = nil
+											tmp3350 = nil
 										}
-										tmp3338 = tmp3351
+										tmp3337 = tmp3350
 									}
-									tmp3324 = tmp3338
+									tmp3323 = tmp3337
 								}
-								tmp3312 = tmp3324
+								tmp3311 = tmp3323
 							}
-							tmp3304 = tmp3312
+							tmp3303 = tmp3311
 						}
-						return tmp3304
+						return tmp3303
 					})
-					tmp3357 := v_clojure_DOT_core_seq.Get()
-					tmp3358 := v_clojure_DOT_core_concat.Get()
-					tmp3359 := v_clojure_DOT_core_list.Get()
-					tmp3360 := lang.Apply1(tmp3359, sym_do)
-					tmp3361 := v_clojure_DOT_core_list.Get()
-					tmp3362 := v_clojure_DOT_core_seq.Get()
-					tmp3363 := v_clojure_DOT_core_concat.Get()
-					tmp3364 := v_clojure_DOT_core_list.Get()
-					tmp3365 := lang.Apply1(tmp3364, sym_clojure_DOT_core_SLASH_doseq)
-					tmp3366 := v_clojure_DOT_core_list.Get()
-					tmp3367 := v_clojure_DOT_core_apply.Get()
-					tmp3368 := v_clojure_DOT_core_vector.Get()
-					tmp3369 := v_clojure_DOT_core_seq.Get()
-					tmp3370 := v_clojure_DOT_core_concat.Get()
-					tmp3371 := lang.Apply1(tmp3370, more3299)
-					tmp3372 := lang.Apply1(tmp3369, tmp3371)
-					tmp3373 := lang.Apply2(tmp3367, tmp3368, tmp3372)
-					tmp3374 := lang.Apply1(tmp3366, tmp3373)
-					tmp3375 := lang.Apply3(tmp3363, tmp3365, tmp3374, body3270)
-					tmp3376 := lang.Apply1(tmp3362, tmp3375)
-					tmp3377 := lang.Apply1(tmp3361, tmp3376)
-					tmp3378 := v_clojure_DOT_core_list.Get()
-					tmp3379 := lang.Apply1(tmp3378, true)
-					tmp3380 := lang.Apply3(tmp3358, tmp3360, tmp3377, tmp3379)
-					tmp3381 := lang.Apply1(tmp3357, tmp3380)
-					tmp3382 := v_clojure_DOT_core_reverse.Get()
-					tmp3383 := lang.Apply1(tmp3382, mods3296)
-					tmp3384 := lang.Apply3(tmp3300, tmp3301, tmp3381, tmp3383)
-					var folded3385 any = tmp3384
-					_ = folded3385
-					tmp3386 := v_clojure_DOT_core_seq.Get()
-					tmp3387 := v_clojure_DOT_core_concat.Get()
-					tmp3388 := v_clojure_DOT_core_list.Get()
-					tmp3389 := lang.Apply1(tmp3388, sym_clojure_DOT_core_SLASH_loop)
-					tmp3390 := v_clojure_DOT_core_list.Get()
-					tmp3391 := v_clojure_DOT_core_apply.Get()
-					tmp3392 := v_clojure_DOT_core_vector.Get()
-					tmp3393 := v_clojure_DOT_core_seq.Get()
-					tmp3394 := v_clojure_DOT_core_concat.Get()
-					tmp3395 := v_clojure_DOT_core_list.Get()
-					tmp3396 := lang.Apply1(tmp3395, sym_s__9__auto__)
-					tmp3397 := v_clojure_DOT_core_list.Get()
-					tmp3398 := v_clojure_DOT_core_seq.Get()
-					tmp3399 := v_clojure_DOT_core_concat.Get()
-					tmp3400 := v_clojure_DOT_core_list.Get()
-					tmp3401 := lang.Apply1(tmp3400, sym_clojure_DOT_core_SLASH_seq)
-					tmp3402 := v_clojure_DOT_core_list.Get()
-					tmp3403 := lang.Apply1(tmp3402, coll3288)
-					tmp3404 := lang.Apply2(tmp3399, tmp3401, tmp3403)
-					tmp3405 := lang.Apply1(tmp3398, tmp3404)
-					tmp3406 := lang.Apply1(tmp3397, tmp3405)
-					tmp3407 := lang.Apply2(tmp3394, tmp3396, tmp3406)
-					tmp3408 := lang.Apply1(tmp3393, tmp3407)
-					tmp3409 := lang.Apply2(tmp3391, tmp3392, tmp3408)
-					tmp3410 := lang.Apply1(tmp3390, tmp3409)
-					tmp3411 := v_clojure_DOT_core_list.Get()
-					tmp3412 := v_clojure_DOT_core_seq.Get()
-					tmp3413 := v_clojure_DOT_core_concat.Get()
-					tmp3414 := v_clojure_DOT_core_list.Get()
-					tmp3415 := lang.Apply1(tmp3414, sym_if_)
-					tmp3416 := v_clojure_DOT_core_list.Get()
-					tmp3417 := lang.Apply1(tmp3416, sym_s__9__auto__)
-					tmp3418 := v_clojure_DOT_core_list.Get()
-					tmp3419 := v_clojure_DOT_core_seq.Get()
-					tmp3420 := v_clojure_DOT_core_concat.Get()
-					tmp3421 := v_clojure_DOT_core_list.Get()
-					tmp3422 := lang.Apply1(tmp3421, sym_clojure_DOT_core_SLASH_let)
-					tmp3423 := v_clojure_DOT_core_list.Get()
-					tmp3424 := v_clojure_DOT_core_apply.Get()
-					tmp3425 := v_clojure_DOT_core_vector.Get()
-					tmp3426 := v_clojure_DOT_core_seq.Get()
-					tmp3427 := v_clojure_DOT_core_concat.Get()
-					tmp3428 := v_clojure_DOT_core_list.Get()
-					tmp3429 := lang.Apply1(tmp3428, x3285)
-					tmp3430 := v_clojure_DOT_core_list.Get()
-					tmp3431 := v_clojure_DOT_core_seq.Get()
-					tmp3432 := v_clojure_DOT_core_concat.Get()
-					tmp3433 := v_clojure_DOT_core_list.Get()
-					tmp3434 := lang.Apply1(tmp3433, sym_clojure_DOT_core_SLASH_first)
-					tmp3435 := v_clojure_DOT_core_list.Get()
-					tmp3436 := lang.Apply1(tmp3435, sym_s__9__auto__)
-					tmp3437 := lang.Apply2(tmp3432, tmp3434, tmp3436)
-					tmp3438 := lang.Apply1(tmp3431, tmp3437)
-					tmp3439 := lang.Apply1(tmp3430, tmp3438)
-					tmp3440 := lang.Apply2(tmp3427, tmp3429, tmp3439)
-					tmp3441 := lang.Apply1(tmp3426, tmp3440)
-					tmp3442 := lang.Apply2(tmp3424, tmp3425, tmp3441)
-					tmp3443 := lang.Apply1(tmp3423, tmp3442)
-					tmp3444 := v_clojure_DOT_core_list.Get()
-					tmp3445 := v_clojure_DOT_core_seq.Get()
-					tmp3446 := v_clojure_DOT_core_concat.Get()
-					tmp3447 := v_clojure_DOT_core_list.Get()
-					tmp3448 := lang.Apply1(tmp3447, sym_if_)
-					tmp3449 := v_clojure_DOT_core_list.Get()
-					tmp3450 := lang.Apply1(tmp3449, folded3385)
-					tmp3451 := v_clojure_DOT_core_list.Get()
-					tmp3452 := v_clojure_DOT_core_seq.Get()
-					tmp3453 := v_clojure_DOT_core_concat.Get()
-					tmp3454 := v_clojure_DOT_core_list.Get()
-					tmp3455 := lang.Apply1(tmp3454, sym_recur)
-					tmp3456 := v_clojure_DOT_core_list.Get()
-					tmp3457 := v_clojure_DOT_core_seq.Get()
-					tmp3458 := v_clojure_DOT_core_concat.Get()
-					tmp3459 := v_clojure_DOT_core_list.Get()
-					tmp3460 := lang.Apply1(tmp3459, sym_clojure_DOT_core_SLASH_next)
-					tmp3461 := v_clojure_DOT_core_list.Get()
-					tmp3462 := lang.Apply1(tmp3461, sym_s__9__auto__)
-					tmp3463 := lang.Apply2(tmp3458, tmp3460, tmp3462)
-					tmp3464 := lang.Apply1(tmp3457, tmp3463)
-					tmp3465 := lang.Apply1(tmp3456, tmp3464)
-					tmp3466 := lang.Apply2(tmp3453, tmp3455, tmp3465)
-					tmp3467 := lang.Apply1(tmp3452, tmp3466)
-					tmp3468 := lang.Apply1(tmp3451, tmp3467)
-					tmp3469 := v_clojure_DOT_core_list.Get()
-					tmp3470 := lang.Apply1(tmp3469, nil)
-					tmp3471 := lang.Apply4(tmp3446, tmp3448, tmp3450, tmp3468, tmp3470)
-					tmp3472 := lang.Apply1(tmp3445, tmp3471)
-					tmp3473 := lang.Apply1(tmp3444, tmp3472)
-					tmp3474 := lang.Apply3(tmp3420, tmp3422, tmp3443, tmp3473)
-					tmp3475 := lang.Apply1(tmp3419, tmp3474)
-					tmp3476 := lang.Apply1(tmp3418, tmp3475)
-					tmp3477 := v_clojure_DOT_core_list.Get()
-					tmp3478 := lang.Apply1(tmp3477, nil)
-					tmp3479 := lang.Apply4(tmp3413, tmp3415, tmp3417, tmp3476, tmp3478)
-					tmp3480 := lang.Apply1(tmp3412, tmp3479)
-					tmp3481 := lang.Apply1(tmp3411, tmp3480)
-					tmp3482 := lang.Apply3(tmp3387, tmp3389, tmp3410, tmp3481)
-					tmp3483 := lang.Apply1(tmp3386, tmp3482)
-					tmp3282 = tmp3483
+					tmp3356 := v_clojure_DOT_core_seq.Get()
+					tmp3357 := v_clojure_DOT_core_concat.Get()
+					tmp3358 := v_clojure_DOT_core_list.Get()
+					tmp3359 := lang.Apply1(tmp3358, sym_do)
+					tmp3360 := v_clojure_DOT_core_list.Get()
+					tmp3361 := v_clojure_DOT_core_seq.Get()
+					tmp3362 := v_clojure_DOT_core_concat.Get()
+					tmp3363 := v_clojure_DOT_core_list.Get()
+					tmp3364 := lang.Apply1(tmp3363, sym_clojure_DOT_core_SLASH_doseq)
+					tmp3365 := v_clojure_DOT_core_list.Get()
+					tmp3366 := v_clojure_DOT_core_apply.Get()
+					tmp3367 := v_clojure_DOT_core_vector.Get()
+					tmp3368 := v_clojure_DOT_core_seq.Get()
+					tmp3369 := v_clojure_DOT_core_concat.Get()
+					tmp3370 := lang.Apply1(tmp3369, more3298)
+					tmp3371 := lang.Apply1(tmp3368, tmp3370)
+					tmp3372 := lang.Apply2(tmp3366, tmp3367, tmp3371)
+					tmp3373 := lang.Apply1(tmp3365, tmp3372)
+					tmp3374 := lang.Apply3(tmp3362, tmp3364, tmp3373, body3269)
+					tmp3375 := lang.Apply1(tmp3361, tmp3374)
+					tmp3376 := lang.Apply1(tmp3360, tmp3375)
+					tmp3377 := v_clojure_DOT_core_list.Get()
+					tmp3378 := lang.Apply1(tmp3377, true)
+					tmp3379 := lang.Apply3(tmp3357, tmp3359, tmp3376, tmp3378)
+					tmp3380 := lang.Apply1(tmp3356, tmp3379)
+					tmp3381 := v_clojure_DOT_core_reverse.Get()
+					tmp3382 := lang.Apply1(tmp3381, mods3295)
+					tmp3383 := lang.Apply3(tmp3299, tmp3300, tmp3380, tmp3382)
+					var folded3384 any = tmp3383
+					_ = folded3384
+					tmp3385 := v_clojure_DOT_core_seq.Get()
+					tmp3386 := v_clojure_DOT_core_concat.Get()
+					tmp3387 := v_clojure_DOT_core_list.Get()
+					tmp3388 := lang.Apply1(tmp3387, sym_clojure_DOT_core_SLASH_loop)
+					tmp3389 := v_clojure_DOT_core_list.Get()
+					tmp3390 := v_clojure_DOT_core_apply.Get()
+					tmp3391 := v_clojure_DOT_core_vector.Get()
+					tmp3392 := v_clojure_DOT_core_seq.Get()
+					tmp3393 := v_clojure_DOT_core_concat.Get()
+					tmp3394 := v_clojure_DOT_core_list.Get()
+					tmp3395 := lang.Apply1(tmp3394, sym_s__9__auto__)
+					tmp3396 := v_clojure_DOT_core_list.Get()
+					tmp3397 := v_clojure_DOT_core_seq.Get()
+					tmp3398 := v_clojure_DOT_core_concat.Get()
+					tmp3399 := v_clojure_DOT_core_list.Get()
+					tmp3400 := lang.Apply1(tmp3399, sym_clojure_DOT_core_SLASH_seq)
+					tmp3401 := v_clojure_DOT_core_list.Get()
+					tmp3402 := lang.Apply1(tmp3401, coll3287)
+					tmp3403 := lang.Apply2(tmp3398, tmp3400, tmp3402)
+					tmp3404 := lang.Apply1(tmp3397, tmp3403)
+					tmp3405 := lang.Apply1(tmp3396, tmp3404)
+					tmp3406 := lang.Apply2(tmp3393, tmp3395, tmp3405)
+					tmp3407 := lang.Apply1(tmp3392, tmp3406)
+					tmp3408 := lang.Apply2(tmp3390, tmp3391, tmp3407)
+					tmp3409 := lang.Apply1(tmp3389, tmp3408)
+					tmp3410 := v_clojure_DOT_core_list.Get()
+					tmp3411 := v_clojure_DOT_core_seq.Get()
+					tmp3412 := v_clojure_DOT_core_concat.Get()
+					tmp3413 := v_clojure_DOT_core_list.Get()
+					tmp3414 := lang.Apply1(tmp3413, sym_if_)
+					tmp3415 := v_clojure_DOT_core_list.Get()
+					tmp3416 := lang.Apply1(tmp3415, sym_s__9__auto__)
+					tmp3417 := v_clojure_DOT_core_list.Get()
+					tmp3418 := v_clojure_DOT_core_seq.Get()
+					tmp3419 := v_clojure_DOT_core_concat.Get()
+					tmp3420 := v_clojure_DOT_core_list.Get()
+					tmp3421 := lang.Apply1(tmp3420, sym_clojure_DOT_core_SLASH_let)
+					tmp3422 := v_clojure_DOT_core_list.Get()
+					tmp3423 := v_clojure_DOT_core_apply.Get()
+					tmp3424 := v_clojure_DOT_core_vector.Get()
+					tmp3425 := v_clojure_DOT_core_seq.Get()
+					tmp3426 := v_clojure_DOT_core_concat.Get()
+					tmp3427 := v_clojure_DOT_core_list.Get()
+					tmp3428 := lang.Apply1(tmp3427, x3284)
+					tmp3429 := v_clojure_DOT_core_list.Get()
+					tmp3430 := v_clojure_DOT_core_seq.Get()
+					tmp3431 := v_clojure_DOT_core_concat.Get()
+					tmp3432 := v_clojure_DOT_core_list.Get()
+					tmp3433 := lang.Apply1(tmp3432, sym_clojure_DOT_core_SLASH_first)
+					tmp3434 := v_clojure_DOT_core_list.Get()
+					tmp3435 := lang.Apply1(tmp3434, sym_s__9__auto__)
+					tmp3436 := lang.Apply2(tmp3431, tmp3433, tmp3435)
+					tmp3437 := lang.Apply1(tmp3430, tmp3436)
+					tmp3438 := lang.Apply1(tmp3429, tmp3437)
+					tmp3439 := lang.Apply2(tmp3426, tmp3428, tmp3438)
+					tmp3440 := lang.Apply1(tmp3425, tmp3439)
+					tmp3441 := lang.Apply2(tmp3423, tmp3424, tmp3440)
+					tmp3442 := lang.Apply1(tmp3422, tmp3441)
+					tmp3443 := v_clojure_DOT_core_list.Get()
+					tmp3444 := v_clojure_DOT_core_seq.Get()
+					tmp3445 := v_clojure_DOT_core_concat.Get()
+					tmp3446 := v_clojure_DOT_core_list.Get()
+					tmp3447 := lang.Apply1(tmp3446, sym_if_)
+					tmp3448 := v_clojure_DOT_core_list.Get()
+					tmp3449 := lang.Apply1(tmp3448, folded3384)
+					tmp3450 := v_clojure_DOT_core_list.Get()
+					tmp3451 := v_clojure_DOT_core_seq.Get()
+					tmp3452 := v_clojure_DOT_core_concat.Get()
+					tmp3453 := v_clojure_DOT_core_list.Get()
+					tmp3454 := lang.Apply1(tmp3453, sym_recur)
+					tmp3455 := v_clojure_DOT_core_list.Get()
+					tmp3456 := v_clojure_DOT_core_seq.Get()
+					tmp3457 := v_clojure_DOT_core_concat.Get()
+					tmp3458 := v_clojure_DOT_core_list.Get()
+					tmp3459 := lang.Apply1(tmp3458, sym_clojure_DOT_core_SLASH_next)
+					tmp3460 := v_clojure_DOT_core_list.Get()
+					tmp3461 := lang.Apply1(tmp3460, sym_s__9__auto__)
+					tmp3462 := lang.Apply2(tmp3457, tmp3459, tmp3461)
+					tmp3463 := lang.Apply1(tmp3456, tmp3462)
+					tmp3464 := lang.Apply1(tmp3455, tmp3463)
+					tmp3465 := lang.Apply2(tmp3452, tmp3454, tmp3464)
+					tmp3466 := lang.Apply1(tmp3451, tmp3465)
+					tmp3467 := lang.Apply1(tmp3450, tmp3466)
+					tmp3468 := v_clojure_DOT_core_list.Get()
+					tmp3469 := lang.Apply1(tmp3468, nil)
+					tmp3470 := lang.Apply4(tmp3445, tmp3447, tmp3449, tmp3467, tmp3469)
+					tmp3471 := lang.Apply1(tmp3444, tmp3470)
+					tmp3472 := lang.Apply1(tmp3443, tmp3471)
+					tmp3473 := lang.Apply3(tmp3419, tmp3421, tmp3442, tmp3472)
+					tmp3474 := lang.Apply1(tmp3418, tmp3473)
+					tmp3475 := lang.Apply1(tmp3417, tmp3474)
+					tmp3476 := v_clojure_DOT_core_list.Get()
+					tmp3477 := lang.Apply1(tmp3476, nil)
+					tmp3478 := lang.Apply4(tmp3412, tmp3414, tmp3416, tmp3475, tmp3477)
+					tmp3479 := lang.Apply1(tmp3411, tmp3478)
+					tmp3480 := lang.Apply1(tmp3410, tmp3479)
+					tmp3481 := lang.Apply3(tmp3386, tmp3388, tmp3409, tmp3480)
+					tmp3482 := lang.Apply1(tmp3385, tmp3481)
+					tmp3281 = tmp3482
 				}
-				tmp3273 = tmp3282
+				tmp3272 = tmp3281
 			}
-			return tmp3273
+			return tmp3272
 		}
 	})
-	doseq3265 = tmp3266
-	v_clojure_DOT_core_doseq.BindRoot(tmp3266)
+	doseq3264 = tmp3265
+	v_clojure_DOT_core_doseq.BindRoot(tmp3265)
 	_ = v_clojure_DOT_core_doseq
-	tmp3484 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp3485 := lang.Apply1(tmp3484, v_clojure_DOT_core_doseq)
-	_ = tmp3485
+	tmp3483 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp3484 := lang.Apply1(tmp3483, v_clojure_DOT_core_doseq)
+	_ = tmp3484
 	_ = v_clojure_DOT_core_doseq
 	// (def -for-expand (clojure.core/fn [pairs body] (if (seq pairs) (let [x (first (first pairs…
 	v_clojure_DOT_core_X_for_expand.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1167), kw_column, int64(7), kw_end_line, int64(1167), kw_end_column, int64(18)))
-	tmp3486 := lang.FnFunc2(func(pairs3487, body3488 any) any {
-		tmp3489 := v_clojure_DOT_core_seq.Get()
-		tmp3490 := lang.Apply1(tmp3489, pairs3487)
-		var tmp3491 any
-		_ = tmp3491
-		if lang.IsTruthy(tmp3490) {
-			var tmp3492 any
-			_ = tmp3492
+	tmp3485 := lang.FnFunc2(func(pairs3486, body3487 any) any {
+		tmp3488 := v_clojure_DOT_core_seq.Get()
+		tmp3489 := lang.Apply1(tmp3488, pairs3486)
+		var tmp3490 any
+		_ = tmp3490
+		if lang.IsTruthy(tmp3489) {
+			var tmp3491 any
+			_ = tmp3491
 			{
+				tmp3492 := v_clojure_DOT_core_first.Get()
 				tmp3493 := v_clojure_DOT_core_first.Get()
-				tmp3494 := v_clojure_DOT_core_first.Get()
-				tmp3495 := lang.Apply1(tmp3494, pairs3487)
-				tmp3496 := lang.Apply1(tmp3493, tmp3495)
-				var x3497 any = tmp3496
-				_ = x3497
-				tmp3498 := v_clojure_DOT_core_second.Get()
-				tmp3499 := v_clojure_DOT_core_first.Get()
-				tmp3500 := lang.Apply1(tmp3499, pairs3487)
-				tmp3501 := lang.Apply1(tmp3498, tmp3500)
-				var coll3502 any = tmp3501
-				_ = coll3502
-				tmp3503 := v_clojure_DOT_core_rest.Get()
-				tmp3504 := lang.Apply1(tmp3503, pairs3487)
-				var more3505 any = tmp3504
-				_ = more3505
-				tmp3506 := v_clojure_DOT_core_seq.Get()
-				tmp3507 := lang.Apply1(tmp3506, more3505)
-				var tmp3508 any
-				_ = tmp3508
-				if lang.IsTruthy(tmp3507) {
+				tmp3494 := lang.Apply1(tmp3493, pairs3486)
+				tmp3495 := lang.Apply1(tmp3492, tmp3494)
+				var x3496 any = tmp3495
+				_ = x3496
+				tmp3497 := v_clojure_DOT_core_second.Get()
+				tmp3498 := v_clojure_DOT_core_first.Get()
+				tmp3499 := lang.Apply1(tmp3498, pairs3486)
+				tmp3500 := lang.Apply1(tmp3497, tmp3499)
+				var coll3501 any = tmp3500
+				_ = coll3501
+				tmp3502 := v_clojure_DOT_core_rest.Get()
+				tmp3503 := lang.Apply1(tmp3502, pairs3486)
+				var more3504 any = tmp3503
+				_ = more3504
+				tmp3505 := v_clojure_DOT_core_seq.Get()
+				tmp3506 := lang.Apply1(tmp3505, more3504)
+				var tmp3507 any
+				_ = tmp3507
+				if lang.IsTruthy(tmp3506) {
+					tmp3508 := v_clojure_DOT_core_list.Get()
 					tmp3509 := v_clojure_DOT_core_list.Get()
-					tmp3510 := v_clojure_DOT_core_list.Get()
-					tmp3511 := v_clojure_DOT_core_vector.Get()
-					tmp3512 := lang.Apply1(tmp3511, x3497)
-					tmp3513 := v_clojure_DOT_core_X_for_expand.Get()
-					tmp3514 := lang.Apply2(tmp3513, more3505, body3488)
-					tmp3515 := lang.Apply3(tmp3510, sym_clojure_DOT_core_SLASH_fn, tmp3512, tmp3514)
-					tmp3516 := lang.Apply3(tmp3509, sym_clojure_DOT_core_SLASH_mapcat, tmp3515, coll3502)
-					tmp3508 = tmp3516
+					tmp3510 := v_clojure_DOT_core_vector.Get()
+					tmp3511 := lang.Apply1(tmp3510, x3496)
+					tmp3512 := v_clojure_DOT_core_X_for_expand.Get()
+					tmp3513 := lang.Apply2(tmp3512, more3504, body3487)
+					tmp3514 := lang.Apply3(tmp3509, sym_clojure_DOT_core_SLASH_fn, tmp3511, tmp3513)
+					tmp3515 := lang.Apply3(tmp3508, sym_clojure_DOT_core_SLASH_mapcat, tmp3514, coll3501)
+					tmp3507 = tmp3515
 				} else {
+					tmp3516 := v_clojure_DOT_core_list.Get()
 					tmp3517 := v_clojure_DOT_core_list.Get()
-					tmp3518 := v_clojure_DOT_core_list.Get()
-					tmp3519 := v_clojure_DOT_core_vector.Get()
-					tmp3520 := lang.Apply1(tmp3519, x3497)
-					tmp3521 := lang.Apply3(tmp3518, sym_clojure_DOT_core_SLASH_fn, tmp3520, body3488)
-					tmp3522 := lang.Apply3(tmp3517, sym_clojure_DOT_core_SLASH_map, tmp3521, coll3502)
-					tmp3508 = tmp3522
+					tmp3518 := v_clojure_DOT_core_vector.Get()
+					tmp3519 := lang.Apply1(tmp3518, x3496)
+					tmp3520 := lang.Apply3(tmp3517, sym_clojure_DOT_core_SLASH_fn, tmp3519, body3487)
+					tmp3521 := lang.Apply3(tmp3516, sym_clojure_DOT_core_SLASH_map, tmp3520, coll3501)
+					tmp3507 = tmp3521
 				}
-				tmp3492 = tmp3508
+				tmp3491 = tmp3507
 			}
-			tmp3491 = tmp3492
+			tmp3490 = tmp3491
 		} else {
-			tmp3491 = body3488
+			tmp3490 = body3487
 		}
-		return tmp3491
+		return tmp3490
 	})
-	v_clojure_DOT_core_X_for_expand.BindRoot(tmp3486)
+	v_clojure_DOT_core_X_for_expand.BindRoot(tmp3485)
 	_ = v_clojure_DOT_core_X_for_expand
 	// (do (def for (fn* for ([&form &env bindings body] (-for-expand (-pairs bindings) body)))) …
 	v_clojure_DOT_core_for_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1177), kw_column, int64(11), kw_end_line, int64(1177), kw_end_column, int64(14)))
-	var for_3523 any
-	_ = for_3523
-	var for_3523d lang.FnFunc4
-	_ = for_3523d
-	tmp3524 := lang.FnFunc4(func(X_AMP_form3525, X_AMP_env3526, bindings3527, body3528 any) any {
-		tmp3529 := v_clojure_DOT_core_X_for_expand.Get()
-		tmp3530 := v_clojure_DOT_core_X_pairs.Get()
-		tmp3531 := lang.Apply1(tmp3530, bindings3527)
-		tmp3532 := lang.Apply2(tmp3529, tmp3531, body3528)
-		return tmp3532
+	var for_3522 any
+	_ = for_3522
+	var for_3522d lang.FnFunc4
+	_ = for_3522d
+	tmp3523 := lang.FnFunc4(func(X_AMP_form3524, X_AMP_env3525, bindings3526, body3527 any) any {
+		tmp3528 := v_clojure_DOT_core_X_for_expand.Get()
+		tmp3529 := v_clojure_DOT_core_X_pairs.Get()
+		tmp3530 := lang.Apply1(tmp3529, bindings3526)
+		tmp3531 := lang.Apply2(tmp3528, tmp3530, body3527)
+		return tmp3531
 	})
-	for_3523 = tmp3524
-	for_3523d = tmp3524
-	v_clojure_DOT_core_for_.BindRoot(tmp3524)
+	for_3522 = tmp3523
+	for_3522d = tmp3523
+	v_clojure_DOT_core_for_.BindRoot(tmp3523)
 	_ = v_clojure_DOT_core_for_
-	tmp3533 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp3534 := lang.Apply1(tmp3533, v_clojure_DOT_core_for_)
-	_ = tmp3534
+	tmp3532 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp3533 := lang.Apply1(tmp3532, v_clojure_DOT_core_for_)
+	_ = tmp3533
 	_ = v_clojure_DOT_core_for_
 	// (def -cond-thread (clojure.core/fn [arrow g clauses] (if (seq clauses) (let [test (first c…
 	v_clojure_DOT_core_X_cond_thread.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1203), kw_column, int64(7), kw_end_line, int64(1203), kw_end_column, int64(19)))
-	tmp3535 := lang.FnFunc3(func(arrow3536, g3537, clauses3538 any) any {
-		tmp3539 := v_clojure_DOT_core_seq.Get()
-		tmp3540 := lang.Apply1(tmp3539, clauses3538)
-		var tmp3541 any
-		_ = tmp3541
-		if lang.IsTruthy(tmp3540) {
-			var tmp3542 any
-			_ = tmp3542
+	tmp3534 := lang.FnFunc3(func(arrow3535, g3536, clauses3537 any) any {
+		tmp3538 := v_clojure_DOT_core_seq.Get()
+		tmp3539 := lang.Apply1(tmp3538, clauses3537)
+		var tmp3540 any
+		_ = tmp3540
+		if lang.IsTruthy(tmp3539) {
+			var tmp3541 any
+			_ = tmp3541
 			{
-				tmp3543 := v_clojure_DOT_core_first.Get()
-				tmp3544 := lang.Apply1(tmp3543, clauses3538)
-				var test3545 any = tmp3544
-				_ = test3545
-				tmp3546 := v_clojure_DOT_core_second.Get()
-				tmp3547 := lang.Apply1(tmp3546, clauses3538)
-				var step3548 any = tmp3547
-				_ = step3548
-				tmp3549 := v_clojure_DOT_core_gensym.Get()
-				tmp3550 := lang.Apply1(tmp3549, "cond__")
-				var g23551 any = tmp3550
-				_ = g23551
-				tmp3552 := v_clojure_DOT_core_seq.Get()
-				tmp3553 := v_clojure_DOT_core_concat.Get()
-				tmp3554 := v_clojure_DOT_core_list.Get()
-				tmp3555 := lang.Apply1(tmp3554, sym_clojure_DOT_core_SLASH_let)
-				tmp3556 := v_clojure_DOT_core_list.Get()
-				tmp3557 := v_clojure_DOT_core_apply.Get()
-				tmp3558 := v_clojure_DOT_core_vector.Get()
-				tmp3559 := v_clojure_DOT_core_seq.Get()
-				tmp3560 := v_clojure_DOT_core_concat.Get()
-				tmp3561 := v_clojure_DOT_core_list.Get()
-				tmp3562 := lang.Apply1(tmp3561, g23551)
-				tmp3563 := v_clojure_DOT_core_list.Get()
-				tmp3564 := v_clojure_DOT_core_seq.Get()
-				tmp3565 := v_clojure_DOT_core_concat.Get()
-				tmp3566 := v_clojure_DOT_core_list.Get()
-				tmp3567 := lang.Apply1(tmp3566, sym_if_)
-				tmp3568 := v_clojure_DOT_core_list.Get()
-				tmp3569 := lang.Apply1(tmp3568, test3545)
-				tmp3570 := v_clojure_DOT_core_list.Get()
-				tmp3571 := v_clojure_DOT_core_seq.Get()
-				tmp3572 := v_clojure_DOT_core_concat.Get()
-				tmp3573 := v_clojure_DOT_core_list.Get()
-				tmp3574 := lang.Apply1(tmp3573, arrow3536)
-				tmp3575 := v_clojure_DOT_core_list.Get()
-				tmp3576 := lang.Apply1(tmp3575, g3537)
-				tmp3577 := v_clojure_DOT_core_list.Get()
-				tmp3578 := lang.Apply1(tmp3577, step3548)
-				tmp3579 := lang.Apply3(tmp3572, tmp3574, tmp3576, tmp3578)
-				tmp3580 := lang.Apply1(tmp3571, tmp3579)
-				tmp3581 := lang.Apply1(tmp3570, tmp3580)
-				tmp3582 := v_clojure_DOT_core_list.Get()
-				tmp3583 := lang.Apply1(tmp3582, g3537)
-				tmp3584 := lang.Apply4(tmp3565, tmp3567, tmp3569, tmp3581, tmp3583)
-				tmp3585 := lang.Apply1(tmp3564, tmp3584)
-				tmp3586 := lang.Apply1(tmp3563, tmp3585)
-				tmp3587 := lang.Apply2(tmp3560, tmp3562, tmp3586)
-				tmp3588 := lang.Apply1(tmp3559, tmp3587)
-				tmp3589 := lang.Apply2(tmp3557, tmp3558, tmp3588)
-				tmp3590 := lang.Apply1(tmp3556, tmp3589)
-				tmp3591 := v_clojure_DOT_core_list.Get()
-				tmp3592 := v_clojure_DOT_core_X_cond_thread.Get()
-				tmp3593 := v_clojure_DOT_core_nnext.Get()
-				tmp3594 := lang.Apply1(tmp3593, clauses3538)
-				tmp3595 := lang.Apply3(tmp3592, arrow3536, g23551, tmp3594)
-				tmp3596 := lang.Apply1(tmp3591, tmp3595)
-				tmp3597 := lang.Apply3(tmp3553, tmp3555, tmp3590, tmp3596)
-				tmp3598 := lang.Apply1(tmp3552, tmp3597)
-				tmp3542 = tmp3598
+				tmp3542 := v_clojure_DOT_core_first.Get()
+				tmp3543 := lang.Apply1(tmp3542, clauses3537)
+				var test3544 any = tmp3543
+				_ = test3544
+				tmp3545 := v_clojure_DOT_core_second.Get()
+				tmp3546 := lang.Apply1(tmp3545, clauses3537)
+				var step3547 any = tmp3546
+				_ = step3547
+				tmp3548 := v_clojure_DOT_core_gensym.Get()
+				tmp3549 := lang.Apply1(tmp3548, "cond__")
+				var g23550 any = tmp3549
+				_ = g23550
+				tmp3551 := v_clojure_DOT_core_seq.Get()
+				tmp3552 := v_clojure_DOT_core_concat.Get()
+				tmp3553 := v_clojure_DOT_core_list.Get()
+				tmp3554 := lang.Apply1(tmp3553, sym_clojure_DOT_core_SLASH_let)
+				tmp3555 := v_clojure_DOT_core_list.Get()
+				tmp3556 := v_clojure_DOT_core_apply.Get()
+				tmp3557 := v_clojure_DOT_core_vector.Get()
+				tmp3558 := v_clojure_DOT_core_seq.Get()
+				tmp3559 := v_clojure_DOT_core_concat.Get()
+				tmp3560 := v_clojure_DOT_core_list.Get()
+				tmp3561 := lang.Apply1(tmp3560, g23550)
+				tmp3562 := v_clojure_DOT_core_list.Get()
+				tmp3563 := v_clojure_DOT_core_seq.Get()
+				tmp3564 := v_clojure_DOT_core_concat.Get()
+				tmp3565 := v_clojure_DOT_core_list.Get()
+				tmp3566 := lang.Apply1(tmp3565, sym_if_)
+				tmp3567 := v_clojure_DOT_core_list.Get()
+				tmp3568 := lang.Apply1(tmp3567, test3544)
+				tmp3569 := v_clojure_DOT_core_list.Get()
+				tmp3570 := v_clojure_DOT_core_seq.Get()
+				tmp3571 := v_clojure_DOT_core_concat.Get()
+				tmp3572 := v_clojure_DOT_core_list.Get()
+				tmp3573 := lang.Apply1(tmp3572, arrow3535)
+				tmp3574 := v_clojure_DOT_core_list.Get()
+				tmp3575 := lang.Apply1(tmp3574, g3536)
+				tmp3576 := v_clojure_DOT_core_list.Get()
+				tmp3577 := lang.Apply1(tmp3576, step3547)
+				tmp3578 := lang.Apply3(tmp3571, tmp3573, tmp3575, tmp3577)
+				tmp3579 := lang.Apply1(tmp3570, tmp3578)
+				tmp3580 := lang.Apply1(tmp3569, tmp3579)
+				tmp3581 := v_clojure_DOT_core_list.Get()
+				tmp3582 := lang.Apply1(tmp3581, g3536)
+				tmp3583 := lang.Apply4(tmp3564, tmp3566, tmp3568, tmp3580, tmp3582)
+				tmp3584 := lang.Apply1(tmp3563, tmp3583)
+				tmp3585 := lang.Apply1(tmp3562, tmp3584)
+				tmp3586 := lang.Apply2(tmp3559, tmp3561, tmp3585)
+				tmp3587 := lang.Apply1(tmp3558, tmp3586)
+				tmp3588 := lang.Apply2(tmp3556, tmp3557, tmp3587)
+				tmp3589 := lang.Apply1(tmp3555, tmp3588)
+				tmp3590 := v_clojure_DOT_core_list.Get()
+				tmp3591 := v_clojure_DOT_core_X_cond_thread.Get()
+				tmp3592 := v_clojure_DOT_core_nnext.Get()
+				tmp3593 := lang.Apply1(tmp3592, clauses3537)
+				tmp3594 := lang.Apply3(tmp3591, arrow3535, g23550, tmp3593)
+				tmp3595 := lang.Apply1(tmp3590, tmp3594)
+				tmp3596 := lang.Apply3(tmp3552, tmp3554, tmp3589, tmp3595)
+				tmp3597 := lang.Apply1(tmp3551, tmp3596)
+				tmp3541 = tmp3597
 			}
-			tmp3541 = tmp3542
+			tmp3540 = tmp3541
 		} else {
-			tmp3541 = g3537
+			tmp3540 = g3536
 		}
-		return tmp3541
+		return tmp3540
 	})
-	v_clojure_DOT_core_X_cond_thread.BindRoot(tmp3535)
+	v_clojure_DOT_core_X_cond_thread.BindRoot(tmp3534)
 	_ = v_clojure_DOT_core_X_cond_thread
 	// (do (def cond-> (fn* cond-> ([&form &env expr & clauses] (let [g (gensym "cond__")] (cloju…
 	v_clojure_DOT_core_cond__GT_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1212), kw_column, int64(11), kw_end_line, int64(1212), kw_end_column, int64(17)))
-	var cond__GT_3599 any
-	_ = cond__GT_3599
-	tmp3600 := lang.FnFunc(func(args ...any) any {
+	var cond__GT_3598 any
+	_ = cond__GT_3598
+	tmp3599 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/cond->", "3+: [&form &env expr clauses & more]"))
 			}
-			X_AMP_form3601 := args[0]
-			_ = X_AMP_form3601
-			X_AMP_env3602 := args[1]
-			_ = X_AMP_env3602
-			expr3603 := args[2]
-			_ = expr3603
-			var clauses3604 any
+			X_AMP_form3600 := args[0]
+			_ = X_AMP_form3600
+			X_AMP_env3601 := args[1]
+			_ = X_AMP_env3601
+			expr3602 := args[2]
+			_ = expr3602
+			var clauses3603 any
 			if len(args) > 3 {
-				clauses3604 = lang.NewList(args[3:]...)
+				clauses3603 = lang.NewList(args[3:]...)
 			}
-			_ = clauses3604
-			var tmp3605 any
-			_ = tmp3605
+			_ = clauses3603
+			var tmp3604 any
+			_ = tmp3604
 			{
-				tmp3606 := v_clojure_DOT_core_gensym.Get()
-				tmp3607 := lang.Apply1(tmp3606, "cond__")
-				var g3608 any = tmp3607
-				_ = g3608
-				tmp3609 := v_clojure_DOT_core_seq.Get()
-				tmp3610 := v_clojure_DOT_core_concat.Get()
-				tmp3611 := v_clojure_DOT_core_list.Get()
-				tmp3612 := lang.Apply1(tmp3611, sym_clojure_DOT_core_SLASH_let)
-				tmp3613 := v_clojure_DOT_core_list.Get()
-				tmp3614 := v_clojure_DOT_core_apply.Get()
-				tmp3615 := v_clojure_DOT_core_vector.Get()
-				tmp3616 := v_clojure_DOT_core_seq.Get()
-				tmp3617 := v_clojure_DOT_core_concat.Get()
-				tmp3618 := v_clojure_DOT_core_list.Get()
-				tmp3619 := lang.Apply1(tmp3618, g3608)
-				tmp3620 := v_clojure_DOT_core_list.Get()
-				tmp3621 := lang.Apply1(tmp3620, expr3603)
-				tmp3622 := lang.Apply2(tmp3617, tmp3619, tmp3621)
-				tmp3623 := lang.Apply1(tmp3616, tmp3622)
-				tmp3624 := lang.Apply2(tmp3614, tmp3615, tmp3623)
-				tmp3625 := lang.Apply1(tmp3613, tmp3624)
-				tmp3626 := v_clojure_DOT_core_list.Get()
-				tmp3627 := v_clojure_DOT_core_X_cond_thread.Get()
-				tmp3628 := v_clojure_DOT_core_seq.Get()
-				tmp3629 := lang.Apply1(tmp3628, clauses3604)
-				tmp3630 := lang.Apply3(tmp3627, sym_X__GT_, g3608, tmp3629)
-				tmp3631 := lang.Apply1(tmp3626, tmp3630)
-				tmp3632 := lang.Apply3(tmp3610, tmp3612, tmp3625, tmp3631)
-				tmp3633 := lang.Apply1(tmp3609, tmp3632)
-				tmp3605 = tmp3633
+				tmp3605 := v_clojure_DOT_core_gensym.Get()
+				tmp3606 := lang.Apply1(tmp3605, "cond__")
+				var g3607 any = tmp3606
+				_ = g3607
+				tmp3608 := v_clojure_DOT_core_seq.Get()
+				tmp3609 := v_clojure_DOT_core_concat.Get()
+				tmp3610 := v_clojure_DOT_core_list.Get()
+				tmp3611 := lang.Apply1(tmp3610, sym_clojure_DOT_core_SLASH_let)
+				tmp3612 := v_clojure_DOT_core_list.Get()
+				tmp3613 := v_clojure_DOT_core_apply.Get()
+				tmp3614 := v_clojure_DOT_core_vector.Get()
+				tmp3615 := v_clojure_DOT_core_seq.Get()
+				tmp3616 := v_clojure_DOT_core_concat.Get()
+				tmp3617 := v_clojure_DOT_core_list.Get()
+				tmp3618 := lang.Apply1(tmp3617, g3607)
+				tmp3619 := v_clojure_DOT_core_list.Get()
+				tmp3620 := lang.Apply1(tmp3619, expr3602)
+				tmp3621 := lang.Apply2(tmp3616, tmp3618, tmp3620)
+				tmp3622 := lang.Apply1(tmp3615, tmp3621)
+				tmp3623 := lang.Apply2(tmp3613, tmp3614, tmp3622)
+				tmp3624 := lang.Apply1(tmp3612, tmp3623)
+				tmp3625 := v_clojure_DOT_core_list.Get()
+				tmp3626 := v_clojure_DOT_core_X_cond_thread.Get()
+				tmp3627 := v_clojure_DOT_core_seq.Get()
+				tmp3628 := lang.Apply1(tmp3627, clauses3603)
+				tmp3629 := lang.Apply3(tmp3626, sym_X__GT_, g3607, tmp3628)
+				tmp3630 := lang.Apply1(tmp3625, tmp3629)
+				tmp3631 := lang.Apply3(tmp3609, tmp3611, tmp3624, tmp3630)
+				tmp3632 := lang.Apply1(tmp3608, tmp3631)
+				tmp3604 = tmp3632
 			}
-			return tmp3605
+			return tmp3604
 		}
 	})
-	cond__GT_3599 = tmp3600
-	v_clojure_DOT_core_cond__GT_.BindRoot(tmp3600)
+	cond__GT_3598 = tmp3599
+	v_clojure_DOT_core_cond__GT_.BindRoot(tmp3599)
 	_ = v_clojure_DOT_core_cond__GT_
-	tmp3634 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp3635 := lang.Apply1(tmp3634, v_clojure_DOT_core_cond__GT_)
-	_ = tmp3635
+	tmp3633 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp3634 := lang.Apply1(tmp3633, v_clojure_DOT_core_cond__GT_)
+	_ = tmp3634
 	_ = v_clojure_DOT_core_cond__GT_
 	// (do (def cond->> (fn* cond->> ([&form &env expr & clauses] (let [g (gensym "cond__")] (clo…
 	v_clojure_DOT_core_cond__GT__GT_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1216), kw_column, int64(11), kw_end_line, int64(1216), kw_end_column, int64(18)))
-	var cond__GT__GT_3636 any
-	_ = cond__GT__GT_3636
-	tmp3637 := lang.FnFunc(func(args ...any) any {
+	var cond__GT__GT_3635 any
+	_ = cond__GT__GT_3635
+	tmp3636 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/cond->>", "3+: [&form &env expr clauses & more]"))
 			}
-			X_AMP_form3638 := args[0]
-			_ = X_AMP_form3638
-			X_AMP_env3639 := args[1]
-			_ = X_AMP_env3639
-			expr3640 := args[2]
-			_ = expr3640
-			var clauses3641 any
+			X_AMP_form3637 := args[0]
+			_ = X_AMP_form3637
+			X_AMP_env3638 := args[1]
+			_ = X_AMP_env3638
+			expr3639 := args[2]
+			_ = expr3639
+			var clauses3640 any
 			if len(args) > 3 {
-				clauses3641 = lang.NewList(args[3:]...)
+				clauses3640 = lang.NewList(args[3:]...)
 			}
-			_ = clauses3641
-			var tmp3642 any
-			_ = tmp3642
+			_ = clauses3640
+			var tmp3641 any
+			_ = tmp3641
 			{
-				tmp3643 := v_clojure_DOT_core_gensym.Get()
-				tmp3644 := lang.Apply1(tmp3643, "cond__")
-				var g3645 any = tmp3644
-				_ = g3645
-				tmp3646 := v_clojure_DOT_core_seq.Get()
-				tmp3647 := v_clojure_DOT_core_concat.Get()
-				tmp3648 := v_clojure_DOT_core_list.Get()
-				tmp3649 := lang.Apply1(tmp3648, sym_clojure_DOT_core_SLASH_let)
-				tmp3650 := v_clojure_DOT_core_list.Get()
-				tmp3651 := v_clojure_DOT_core_apply.Get()
-				tmp3652 := v_clojure_DOT_core_vector.Get()
-				tmp3653 := v_clojure_DOT_core_seq.Get()
-				tmp3654 := v_clojure_DOT_core_concat.Get()
-				tmp3655 := v_clojure_DOT_core_list.Get()
-				tmp3656 := lang.Apply1(tmp3655, g3645)
-				tmp3657 := v_clojure_DOT_core_list.Get()
-				tmp3658 := lang.Apply1(tmp3657, expr3640)
-				tmp3659 := lang.Apply2(tmp3654, tmp3656, tmp3658)
-				tmp3660 := lang.Apply1(tmp3653, tmp3659)
-				tmp3661 := lang.Apply2(tmp3651, tmp3652, tmp3660)
-				tmp3662 := lang.Apply1(tmp3650, tmp3661)
-				tmp3663 := v_clojure_DOT_core_list.Get()
-				tmp3664 := v_clojure_DOT_core_X_cond_thread.Get()
-				tmp3665 := v_clojure_DOT_core_seq.Get()
-				tmp3666 := lang.Apply1(tmp3665, clauses3641)
-				tmp3667 := lang.Apply3(tmp3664, sym_X__GT__GT_, g3645, tmp3666)
-				tmp3668 := lang.Apply1(tmp3663, tmp3667)
-				tmp3669 := lang.Apply3(tmp3647, tmp3649, tmp3662, tmp3668)
-				tmp3670 := lang.Apply1(tmp3646, tmp3669)
-				tmp3642 = tmp3670
+				tmp3642 := v_clojure_DOT_core_gensym.Get()
+				tmp3643 := lang.Apply1(tmp3642, "cond__")
+				var g3644 any = tmp3643
+				_ = g3644
+				tmp3645 := v_clojure_DOT_core_seq.Get()
+				tmp3646 := v_clojure_DOT_core_concat.Get()
+				tmp3647 := v_clojure_DOT_core_list.Get()
+				tmp3648 := lang.Apply1(tmp3647, sym_clojure_DOT_core_SLASH_let)
+				tmp3649 := v_clojure_DOT_core_list.Get()
+				tmp3650 := v_clojure_DOT_core_apply.Get()
+				tmp3651 := v_clojure_DOT_core_vector.Get()
+				tmp3652 := v_clojure_DOT_core_seq.Get()
+				tmp3653 := v_clojure_DOT_core_concat.Get()
+				tmp3654 := v_clojure_DOT_core_list.Get()
+				tmp3655 := lang.Apply1(tmp3654, g3644)
+				tmp3656 := v_clojure_DOT_core_list.Get()
+				tmp3657 := lang.Apply1(tmp3656, expr3639)
+				tmp3658 := lang.Apply2(tmp3653, tmp3655, tmp3657)
+				tmp3659 := lang.Apply1(tmp3652, tmp3658)
+				tmp3660 := lang.Apply2(tmp3650, tmp3651, tmp3659)
+				tmp3661 := lang.Apply1(tmp3649, tmp3660)
+				tmp3662 := v_clojure_DOT_core_list.Get()
+				tmp3663 := v_clojure_DOT_core_X_cond_thread.Get()
+				tmp3664 := v_clojure_DOT_core_seq.Get()
+				tmp3665 := lang.Apply1(tmp3664, clauses3640)
+				tmp3666 := lang.Apply3(tmp3663, sym_X__GT__GT_, g3644, tmp3665)
+				tmp3667 := lang.Apply1(tmp3662, tmp3666)
+				tmp3668 := lang.Apply3(tmp3646, tmp3648, tmp3661, tmp3667)
+				tmp3669 := lang.Apply1(tmp3645, tmp3668)
+				tmp3641 = tmp3669
 			}
-			return tmp3642
+			return tmp3641
 		}
 	})
-	cond__GT__GT_3636 = tmp3637
-	v_clojure_DOT_core_cond__GT__GT_.BindRoot(tmp3637)
+	cond__GT__GT_3635 = tmp3636
+	v_clojure_DOT_core_cond__GT__GT_.BindRoot(tmp3636)
 	_ = v_clojure_DOT_core_cond__GT__GT_
-	tmp3671 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp3672 := lang.Apply1(tmp3671, v_clojure_DOT_core_cond__GT__GT_)
-	_ = tmp3672
+	tmp3670 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp3671 := lang.Apply1(tmp3670, v_clojure_DOT_core_cond__GT__GT_)
+	_ = tmp3671
 	_ = v_clojure_DOT_core_cond__GT__GT_
 	// (def -some-thread (clojure.core/fn [arrow g forms] (if (seq forms) (let [form (first forms…
 	v_clojure_DOT_core_X_some_thread.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1225), kw_column, int64(7), kw_end_line, int64(1225), kw_end_column, int64(19)))
-	tmp3673 := lang.FnFunc3(func(arrow3674, g3675, forms3676 any) any {
-		tmp3677 := v_clojure_DOT_core_seq.Get()
-		tmp3678 := lang.Apply1(tmp3677, forms3676)
-		var tmp3679 any
-		_ = tmp3679
-		if lang.IsTruthy(tmp3678) {
-			var tmp3680 any
-			_ = tmp3680
+	tmp3672 := lang.FnFunc3(func(arrow3673, g3674, forms3675 any) any {
+		tmp3676 := v_clojure_DOT_core_seq.Get()
+		tmp3677 := lang.Apply1(tmp3676, forms3675)
+		var tmp3678 any
+		_ = tmp3678
+		if lang.IsTruthy(tmp3677) {
+			var tmp3679 any
+			_ = tmp3679
 			{
-				tmp3681 := v_clojure_DOT_core_first.Get()
-				tmp3682 := lang.Apply1(tmp3681, forms3676)
-				var form3683 any = tmp3682
-				_ = form3683
-				tmp3684 := v_clojure_DOT_core_gensym.Get()
-				tmp3685 := lang.Apply1(tmp3684, "some__")
-				var g23686 any = tmp3685
-				_ = g23686
-				tmp3687 := v_clojure_DOT_core_seq.Get()
-				tmp3688 := v_clojure_DOT_core_concat.Get()
-				tmp3689 := v_clojure_DOT_core_list.Get()
-				tmp3690 := lang.Apply1(tmp3689, sym_clojure_DOT_core_SLASH_let)
-				tmp3691 := v_clojure_DOT_core_list.Get()
-				tmp3692 := v_clojure_DOT_core_apply.Get()
-				tmp3693 := v_clojure_DOT_core_vector.Get()
-				tmp3694 := v_clojure_DOT_core_seq.Get()
-				tmp3695 := v_clojure_DOT_core_concat.Get()
-				tmp3696 := v_clojure_DOT_core_list.Get()
-				tmp3697 := lang.Apply1(tmp3696, g23686)
-				tmp3698 := v_clojure_DOT_core_list.Get()
-				tmp3699 := v_clojure_DOT_core_seq.Get()
-				tmp3700 := v_clojure_DOT_core_concat.Get()
-				tmp3701 := v_clojure_DOT_core_list.Get()
-				tmp3702 := lang.Apply1(tmp3701, sym_if_)
-				tmp3703 := v_clojure_DOT_core_list.Get()
-				tmp3704 := v_clojure_DOT_core_seq.Get()
-				tmp3705 := v_clojure_DOT_core_concat.Get()
-				tmp3706 := v_clojure_DOT_core_list.Get()
-				tmp3707 := lang.Apply1(tmp3706, sym_clojure_DOT_core_SLASH_nil_QMARK_)
-				tmp3708 := v_clojure_DOT_core_list.Get()
-				tmp3709 := lang.Apply1(tmp3708, g3675)
-				tmp3710 := lang.Apply2(tmp3705, tmp3707, tmp3709)
-				tmp3711 := lang.Apply1(tmp3704, tmp3710)
-				tmp3712 := lang.Apply1(tmp3703, tmp3711)
-				tmp3713 := v_clojure_DOT_core_list.Get()
-				tmp3714 := lang.Apply1(tmp3713, nil)
-				tmp3715 := v_clojure_DOT_core_list.Get()
-				tmp3716 := v_clojure_DOT_core_seq.Get()
-				tmp3717 := v_clojure_DOT_core_concat.Get()
-				tmp3718 := v_clojure_DOT_core_list.Get()
-				tmp3719 := lang.Apply1(tmp3718, arrow3674)
-				tmp3720 := v_clojure_DOT_core_list.Get()
-				tmp3721 := lang.Apply1(tmp3720, g3675)
-				tmp3722 := v_clojure_DOT_core_list.Get()
-				tmp3723 := lang.Apply1(tmp3722, form3683)
-				tmp3724 := lang.Apply3(tmp3717, tmp3719, tmp3721, tmp3723)
-				tmp3725 := lang.Apply1(tmp3716, tmp3724)
-				tmp3726 := lang.Apply1(tmp3715, tmp3725)
-				tmp3727 := lang.Apply4(tmp3700, tmp3702, tmp3712, tmp3714, tmp3726)
-				tmp3728 := lang.Apply1(tmp3699, tmp3727)
-				tmp3729 := lang.Apply1(tmp3698, tmp3728)
-				tmp3730 := lang.Apply2(tmp3695, tmp3697, tmp3729)
-				tmp3731 := lang.Apply1(tmp3694, tmp3730)
-				tmp3732 := lang.Apply2(tmp3692, tmp3693, tmp3731)
-				tmp3733 := lang.Apply1(tmp3691, tmp3732)
-				tmp3734 := v_clojure_DOT_core_list.Get()
-				tmp3735 := v_clojure_DOT_core_X_some_thread.Get()
-				tmp3736 := v_clojure_DOT_core_rest.Get()
-				tmp3737 := lang.Apply1(tmp3736, forms3676)
-				tmp3738 := lang.Apply3(tmp3735, arrow3674, g23686, tmp3737)
-				tmp3739 := lang.Apply1(tmp3734, tmp3738)
-				tmp3740 := lang.Apply3(tmp3688, tmp3690, tmp3733, tmp3739)
-				tmp3741 := lang.Apply1(tmp3687, tmp3740)
-				tmp3680 = tmp3741
+				tmp3680 := v_clojure_DOT_core_first.Get()
+				tmp3681 := lang.Apply1(tmp3680, forms3675)
+				var form3682 any = tmp3681
+				_ = form3682
+				tmp3683 := v_clojure_DOT_core_gensym.Get()
+				tmp3684 := lang.Apply1(tmp3683, "some__")
+				var g23685 any = tmp3684
+				_ = g23685
+				tmp3686 := v_clojure_DOT_core_seq.Get()
+				tmp3687 := v_clojure_DOT_core_concat.Get()
+				tmp3688 := v_clojure_DOT_core_list.Get()
+				tmp3689 := lang.Apply1(tmp3688, sym_clojure_DOT_core_SLASH_let)
+				tmp3690 := v_clojure_DOT_core_list.Get()
+				tmp3691 := v_clojure_DOT_core_apply.Get()
+				tmp3692 := v_clojure_DOT_core_vector.Get()
+				tmp3693 := v_clojure_DOT_core_seq.Get()
+				tmp3694 := v_clojure_DOT_core_concat.Get()
+				tmp3695 := v_clojure_DOT_core_list.Get()
+				tmp3696 := lang.Apply1(tmp3695, g23685)
+				tmp3697 := v_clojure_DOT_core_list.Get()
+				tmp3698 := v_clojure_DOT_core_seq.Get()
+				tmp3699 := v_clojure_DOT_core_concat.Get()
+				tmp3700 := v_clojure_DOT_core_list.Get()
+				tmp3701 := lang.Apply1(tmp3700, sym_if_)
+				tmp3702 := v_clojure_DOT_core_list.Get()
+				tmp3703 := v_clojure_DOT_core_seq.Get()
+				tmp3704 := v_clojure_DOT_core_concat.Get()
+				tmp3705 := v_clojure_DOT_core_list.Get()
+				tmp3706 := lang.Apply1(tmp3705, sym_clojure_DOT_core_SLASH_nil_QMARK_)
+				tmp3707 := v_clojure_DOT_core_list.Get()
+				tmp3708 := lang.Apply1(tmp3707, g3674)
+				tmp3709 := lang.Apply2(tmp3704, tmp3706, tmp3708)
+				tmp3710 := lang.Apply1(tmp3703, tmp3709)
+				tmp3711 := lang.Apply1(tmp3702, tmp3710)
+				tmp3712 := v_clojure_DOT_core_list.Get()
+				tmp3713 := lang.Apply1(tmp3712, nil)
+				tmp3714 := v_clojure_DOT_core_list.Get()
+				tmp3715 := v_clojure_DOT_core_seq.Get()
+				tmp3716 := v_clojure_DOT_core_concat.Get()
+				tmp3717 := v_clojure_DOT_core_list.Get()
+				tmp3718 := lang.Apply1(tmp3717, arrow3673)
+				tmp3719 := v_clojure_DOT_core_list.Get()
+				tmp3720 := lang.Apply1(tmp3719, g3674)
+				tmp3721 := v_clojure_DOT_core_list.Get()
+				tmp3722 := lang.Apply1(tmp3721, form3682)
+				tmp3723 := lang.Apply3(tmp3716, tmp3718, tmp3720, tmp3722)
+				tmp3724 := lang.Apply1(tmp3715, tmp3723)
+				tmp3725 := lang.Apply1(tmp3714, tmp3724)
+				tmp3726 := lang.Apply4(tmp3699, tmp3701, tmp3711, tmp3713, tmp3725)
+				tmp3727 := lang.Apply1(tmp3698, tmp3726)
+				tmp3728 := lang.Apply1(tmp3697, tmp3727)
+				tmp3729 := lang.Apply2(tmp3694, tmp3696, tmp3728)
+				tmp3730 := lang.Apply1(tmp3693, tmp3729)
+				tmp3731 := lang.Apply2(tmp3691, tmp3692, tmp3730)
+				tmp3732 := lang.Apply1(tmp3690, tmp3731)
+				tmp3733 := v_clojure_DOT_core_list.Get()
+				tmp3734 := v_clojure_DOT_core_X_some_thread.Get()
+				tmp3735 := v_clojure_DOT_core_rest.Get()
+				tmp3736 := lang.Apply1(tmp3735, forms3675)
+				tmp3737 := lang.Apply3(tmp3734, arrow3673, g23685, tmp3736)
+				tmp3738 := lang.Apply1(tmp3733, tmp3737)
+				tmp3739 := lang.Apply3(tmp3687, tmp3689, tmp3732, tmp3738)
+				tmp3740 := lang.Apply1(tmp3686, tmp3739)
+				tmp3679 = tmp3740
 			}
-			tmp3679 = tmp3680
+			tmp3678 = tmp3679
 		} else {
-			tmp3679 = g3675
+			tmp3678 = g3674
 		}
-		return tmp3679
+		return tmp3678
 	})
-	v_clojure_DOT_core_X_some_thread.BindRoot(tmp3673)
+	v_clojure_DOT_core_X_some_thread.BindRoot(tmp3672)
 	_ = v_clojure_DOT_core_X_some_thread
 	// (do (def some-> (fn* some-> ([&form &env expr & forms] (let [g (gensym "some__")] (clojure…
 	v_clojure_DOT_core_some__GT_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1233), kw_column, int64(11), kw_end_line, int64(1233), kw_end_column, int64(17)))
-	var some__GT_3742 any
-	_ = some__GT_3742
-	tmp3743 := lang.FnFunc(func(args ...any) any {
+	var some__GT_3741 any
+	_ = some__GT_3741
+	tmp3742 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/some->", "3+: [&form &env expr forms & more]"))
 			}
-			X_AMP_form3744 := args[0]
-			_ = X_AMP_form3744
-			X_AMP_env3745 := args[1]
-			_ = X_AMP_env3745
-			expr3746 := args[2]
-			_ = expr3746
-			var forms3747 any
+			X_AMP_form3743 := args[0]
+			_ = X_AMP_form3743
+			X_AMP_env3744 := args[1]
+			_ = X_AMP_env3744
+			expr3745 := args[2]
+			_ = expr3745
+			var forms3746 any
 			if len(args) > 3 {
-				forms3747 = lang.NewList(args[3:]...)
+				forms3746 = lang.NewList(args[3:]...)
 			}
-			_ = forms3747
-			var tmp3748 any
-			_ = tmp3748
+			_ = forms3746
+			var tmp3747 any
+			_ = tmp3747
 			{
-				tmp3749 := v_clojure_DOT_core_gensym.Get()
-				tmp3750 := lang.Apply1(tmp3749, "some__")
-				var g3751 any = tmp3750
-				_ = g3751
-				tmp3752 := v_clojure_DOT_core_seq.Get()
-				tmp3753 := v_clojure_DOT_core_concat.Get()
-				tmp3754 := v_clojure_DOT_core_list.Get()
-				tmp3755 := lang.Apply1(tmp3754, sym_clojure_DOT_core_SLASH_let)
-				tmp3756 := v_clojure_DOT_core_list.Get()
-				tmp3757 := v_clojure_DOT_core_apply.Get()
-				tmp3758 := v_clojure_DOT_core_vector.Get()
-				tmp3759 := v_clojure_DOT_core_seq.Get()
-				tmp3760 := v_clojure_DOT_core_concat.Get()
-				tmp3761 := v_clojure_DOT_core_list.Get()
-				tmp3762 := lang.Apply1(tmp3761, g3751)
-				tmp3763 := v_clojure_DOT_core_list.Get()
-				tmp3764 := lang.Apply1(tmp3763, expr3746)
-				tmp3765 := lang.Apply2(tmp3760, tmp3762, tmp3764)
-				tmp3766 := lang.Apply1(tmp3759, tmp3765)
-				tmp3767 := lang.Apply2(tmp3757, tmp3758, tmp3766)
-				tmp3768 := lang.Apply1(tmp3756, tmp3767)
-				tmp3769 := v_clojure_DOT_core_list.Get()
-				tmp3770 := v_clojure_DOT_core_X_some_thread.Get()
-				tmp3771 := v_clojure_DOT_core_seq.Get()
-				tmp3772 := lang.Apply1(tmp3771, forms3747)
-				tmp3773 := lang.Apply3(tmp3770, sym_X__GT_, g3751, tmp3772)
-				tmp3774 := lang.Apply1(tmp3769, tmp3773)
-				tmp3775 := lang.Apply3(tmp3753, tmp3755, tmp3768, tmp3774)
-				tmp3776 := lang.Apply1(tmp3752, tmp3775)
-				tmp3748 = tmp3776
+				tmp3748 := v_clojure_DOT_core_gensym.Get()
+				tmp3749 := lang.Apply1(tmp3748, "some__")
+				var g3750 any = tmp3749
+				_ = g3750
+				tmp3751 := v_clojure_DOT_core_seq.Get()
+				tmp3752 := v_clojure_DOT_core_concat.Get()
+				tmp3753 := v_clojure_DOT_core_list.Get()
+				tmp3754 := lang.Apply1(tmp3753, sym_clojure_DOT_core_SLASH_let)
+				tmp3755 := v_clojure_DOT_core_list.Get()
+				tmp3756 := v_clojure_DOT_core_apply.Get()
+				tmp3757 := v_clojure_DOT_core_vector.Get()
+				tmp3758 := v_clojure_DOT_core_seq.Get()
+				tmp3759 := v_clojure_DOT_core_concat.Get()
+				tmp3760 := v_clojure_DOT_core_list.Get()
+				tmp3761 := lang.Apply1(tmp3760, g3750)
+				tmp3762 := v_clojure_DOT_core_list.Get()
+				tmp3763 := lang.Apply1(tmp3762, expr3745)
+				tmp3764 := lang.Apply2(tmp3759, tmp3761, tmp3763)
+				tmp3765 := lang.Apply1(tmp3758, tmp3764)
+				tmp3766 := lang.Apply2(tmp3756, tmp3757, tmp3765)
+				tmp3767 := lang.Apply1(tmp3755, tmp3766)
+				tmp3768 := v_clojure_DOT_core_list.Get()
+				tmp3769 := v_clojure_DOT_core_X_some_thread.Get()
+				tmp3770 := v_clojure_DOT_core_seq.Get()
+				tmp3771 := lang.Apply1(tmp3770, forms3746)
+				tmp3772 := lang.Apply3(tmp3769, sym_X__GT_, g3750, tmp3771)
+				tmp3773 := lang.Apply1(tmp3768, tmp3772)
+				tmp3774 := lang.Apply3(tmp3752, tmp3754, tmp3767, tmp3773)
+				tmp3775 := lang.Apply1(tmp3751, tmp3774)
+				tmp3747 = tmp3775
 			}
-			return tmp3748
+			return tmp3747
 		}
 	})
-	some__GT_3742 = tmp3743
-	v_clojure_DOT_core_some__GT_.BindRoot(tmp3743)
+	some__GT_3741 = tmp3742
+	v_clojure_DOT_core_some__GT_.BindRoot(tmp3742)
 	_ = v_clojure_DOT_core_some__GT_
-	tmp3777 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp3778 := lang.Apply1(tmp3777, v_clojure_DOT_core_some__GT_)
-	_ = tmp3778
+	tmp3776 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp3777 := lang.Apply1(tmp3776, v_clojure_DOT_core_some__GT_)
+	_ = tmp3777
 	_ = v_clojure_DOT_core_some__GT_
 	// (do (def some->> (fn* some->> ([&form &env expr & forms] (let [g (gensym "some__")] (cloju…
 	v_clojure_DOT_core_some__GT__GT_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1237), kw_column, int64(11), kw_end_line, int64(1237), kw_end_column, int64(18)))
-	var some__GT__GT_3779 any
-	_ = some__GT__GT_3779
-	tmp3780 := lang.FnFunc(func(args ...any) any {
+	var some__GT__GT_3778 any
+	_ = some__GT__GT_3778
+	tmp3779 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/some->>", "3+: [&form &env expr forms & more]"))
 			}
-			X_AMP_form3781 := args[0]
-			_ = X_AMP_form3781
-			X_AMP_env3782 := args[1]
-			_ = X_AMP_env3782
-			expr3783 := args[2]
-			_ = expr3783
-			var forms3784 any
+			X_AMP_form3780 := args[0]
+			_ = X_AMP_form3780
+			X_AMP_env3781 := args[1]
+			_ = X_AMP_env3781
+			expr3782 := args[2]
+			_ = expr3782
+			var forms3783 any
 			if len(args) > 3 {
-				forms3784 = lang.NewList(args[3:]...)
+				forms3783 = lang.NewList(args[3:]...)
 			}
-			_ = forms3784
-			var tmp3785 any
-			_ = tmp3785
+			_ = forms3783
+			var tmp3784 any
+			_ = tmp3784
 			{
-				tmp3786 := v_clojure_DOT_core_gensym.Get()
-				tmp3787 := lang.Apply1(tmp3786, "some__")
-				var g3788 any = tmp3787
-				_ = g3788
-				tmp3789 := v_clojure_DOT_core_seq.Get()
-				tmp3790 := v_clojure_DOT_core_concat.Get()
-				tmp3791 := v_clojure_DOT_core_list.Get()
-				tmp3792 := lang.Apply1(tmp3791, sym_clojure_DOT_core_SLASH_let)
-				tmp3793 := v_clojure_DOT_core_list.Get()
-				tmp3794 := v_clojure_DOT_core_apply.Get()
-				tmp3795 := v_clojure_DOT_core_vector.Get()
-				tmp3796 := v_clojure_DOT_core_seq.Get()
-				tmp3797 := v_clojure_DOT_core_concat.Get()
-				tmp3798 := v_clojure_DOT_core_list.Get()
-				tmp3799 := lang.Apply1(tmp3798, g3788)
-				tmp3800 := v_clojure_DOT_core_list.Get()
-				tmp3801 := lang.Apply1(tmp3800, expr3783)
-				tmp3802 := lang.Apply2(tmp3797, tmp3799, tmp3801)
-				tmp3803 := lang.Apply1(tmp3796, tmp3802)
-				tmp3804 := lang.Apply2(tmp3794, tmp3795, tmp3803)
-				tmp3805 := lang.Apply1(tmp3793, tmp3804)
-				tmp3806 := v_clojure_DOT_core_list.Get()
-				tmp3807 := v_clojure_DOT_core_X_some_thread.Get()
-				tmp3808 := v_clojure_DOT_core_seq.Get()
-				tmp3809 := lang.Apply1(tmp3808, forms3784)
-				tmp3810 := lang.Apply3(tmp3807, sym_X__GT__GT_, g3788, tmp3809)
-				tmp3811 := lang.Apply1(tmp3806, tmp3810)
-				tmp3812 := lang.Apply3(tmp3790, tmp3792, tmp3805, tmp3811)
-				tmp3813 := lang.Apply1(tmp3789, tmp3812)
-				tmp3785 = tmp3813
+				tmp3785 := v_clojure_DOT_core_gensym.Get()
+				tmp3786 := lang.Apply1(tmp3785, "some__")
+				var g3787 any = tmp3786
+				_ = g3787
+				tmp3788 := v_clojure_DOT_core_seq.Get()
+				tmp3789 := v_clojure_DOT_core_concat.Get()
+				tmp3790 := v_clojure_DOT_core_list.Get()
+				tmp3791 := lang.Apply1(tmp3790, sym_clojure_DOT_core_SLASH_let)
+				tmp3792 := v_clojure_DOT_core_list.Get()
+				tmp3793 := v_clojure_DOT_core_apply.Get()
+				tmp3794 := v_clojure_DOT_core_vector.Get()
+				tmp3795 := v_clojure_DOT_core_seq.Get()
+				tmp3796 := v_clojure_DOT_core_concat.Get()
+				tmp3797 := v_clojure_DOT_core_list.Get()
+				tmp3798 := lang.Apply1(tmp3797, g3787)
+				tmp3799 := v_clojure_DOT_core_list.Get()
+				tmp3800 := lang.Apply1(tmp3799, expr3782)
+				tmp3801 := lang.Apply2(tmp3796, tmp3798, tmp3800)
+				tmp3802 := lang.Apply1(tmp3795, tmp3801)
+				tmp3803 := lang.Apply2(tmp3793, tmp3794, tmp3802)
+				tmp3804 := lang.Apply1(tmp3792, tmp3803)
+				tmp3805 := v_clojure_DOT_core_list.Get()
+				tmp3806 := v_clojure_DOT_core_X_some_thread.Get()
+				tmp3807 := v_clojure_DOT_core_seq.Get()
+				tmp3808 := lang.Apply1(tmp3807, forms3783)
+				tmp3809 := lang.Apply3(tmp3806, sym_X__GT__GT_, g3787, tmp3808)
+				tmp3810 := lang.Apply1(tmp3805, tmp3809)
+				tmp3811 := lang.Apply3(tmp3789, tmp3791, tmp3804, tmp3810)
+				tmp3812 := lang.Apply1(tmp3788, tmp3811)
+				tmp3784 = tmp3812
 			}
-			return tmp3785
+			return tmp3784
 		}
 	})
-	some__GT__GT_3779 = tmp3780
-	v_clojure_DOT_core_some__GT__GT_.BindRoot(tmp3780)
+	some__GT__GT_3778 = tmp3779
+	v_clojure_DOT_core_some__GT__GT_.BindRoot(tmp3779)
 	_ = v_clojure_DOT_core_some__GT__GT_
-	tmp3814 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp3815 := lang.Apply1(tmp3814, v_clojure_DOT_core_some__GT__GT_)
-	_ = tmp3815
+	tmp3813 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp3814 := lang.Apply1(tmp3813, v_clojure_DOT_core_some__GT__GT_)
+	_ = tmp3814
 	_ = v_clojure_DOT_core_some__GT__GT_
 	// (def -as-steps (clojure.core/fn [name forms] (if (seq forms) (clojure.core/seq (clojure.co…
 	v_clojure_DOT_core_X_as_steps.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1243), kw_column, int64(7), kw_end_line, int64(1243), kw_end_column, int64(16)))
-	tmp3816 := lang.FnFunc2(func(name3817, forms3818 any) any {
-		tmp3819 := v_clojure_DOT_core_seq.Get()
-		tmp3820 := lang.Apply1(tmp3819, forms3818)
-		var tmp3821 any
-		_ = tmp3821
-		if lang.IsTruthy(tmp3820) {
-			tmp3822 := v_clojure_DOT_core_seq.Get()
-			tmp3823 := v_clojure_DOT_core_concat.Get()
-			tmp3824 := v_clojure_DOT_core_list.Get()
-			tmp3825 := lang.Apply1(tmp3824, sym_clojure_DOT_core_SLASH_let)
-			tmp3826 := v_clojure_DOT_core_list.Get()
-			tmp3827 := v_clojure_DOT_core_apply.Get()
-			tmp3828 := v_clojure_DOT_core_vector.Get()
-			tmp3829 := v_clojure_DOT_core_seq.Get()
-			tmp3830 := v_clojure_DOT_core_concat.Get()
-			tmp3831 := v_clojure_DOT_core_list.Get()
-			tmp3832 := lang.Apply1(tmp3831, name3817)
-			tmp3833 := v_clojure_DOT_core_list.Get()
-			tmp3834 := v_clojure_DOT_core_first.Get()
-			tmp3835 := lang.Apply1(tmp3834, forms3818)
-			tmp3836 := lang.Apply1(tmp3833, tmp3835)
-			tmp3837 := lang.Apply2(tmp3830, tmp3832, tmp3836)
-			tmp3838 := lang.Apply1(tmp3829, tmp3837)
-			tmp3839 := lang.Apply2(tmp3827, tmp3828, tmp3838)
-			tmp3840 := lang.Apply1(tmp3826, tmp3839)
-			tmp3841 := v_clojure_DOT_core_list.Get()
-			tmp3842 := v_clojure_DOT_core_X_as_steps.Get()
-			tmp3843 := v_clojure_DOT_core_rest.Get()
-			tmp3844 := lang.Apply1(tmp3843, forms3818)
-			tmp3845 := lang.Apply2(tmp3842, name3817, tmp3844)
-			tmp3846 := lang.Apply1(tmp3841, tmp3845)
-			tmp3847 := lang.Apply3(tmp3823, tmp3825, tmp3840, tmp3846)
-			tmp3848 := lang.Apply1(tmp3822, tmp3847)
-			tmp3821 = tmp3848
+	tmp3815 := lang.FnFunc2(func(name3816, forms3817 any) any {
+		tmp3818 := v_clojure_DOT_core_seq.Get()
+		tmp3819 := lang.Apply1(tmp3818, forms3817)
+		var tmp3820 any
+		_ = tmp3820
+		if lang.IsTruthy(tmp3819) {
+			tmp3821 := v_clojure_DOT_core_seq.Get()
+			tmp3822 := v_clojure_DOT_core_concat.Get()
+			tmp3823 := v_clojure_DOT_core_list.Get()
+			tmp3824 := lang.Apply1(tmp3823, sym_clojure_DOT_core_SLASH_let)
+			tmp3825 := v_clojure_DOT_core_list.Get()
+			tmp3826 := v_clojure_DOT_core_apply.Get()
+			tmp3827 := v_clojure_DOT_core_vector.Get()
+			tmp3828 := v_clojure_DOT_core_seq.Get()
+			tmp3829 := v_clojure_DOT_core_concat.Get()
+			tmp3830 := v_clojure_DOT_core_list.Get()
+			tmp3831 := lang.Apply1(tmp3830, name3816)
+			tmp3832 := v_clojure_DOT_core_list.Get()
+			tmp3833 := v_clojure_DOT_core_first.Get()
+			tmp3834 := lang.Apply1(tmp3833, forms3817)
+			tmp3835 := lang.Apply1(tmp3832, tmp3834)
+			tmp3836 := lang.Apply2(tmp3829, tmp3831, tmp3835)
+			tmp3837 := lang.Apply1(tmp3828, tmp3836)
+			tmp3838 := lang.Apply2(tmp3826, tmp3827, tmp3837)
+			tmp3839 := lang.Apply1(tmp3825, tmp3838)
+			tmp3840 := v_clojure_DOT_core_list.Get()
+			tmp3841 := v_clojure_DOT_core_X_as_steps.Get()
+			tmp3842 := v_clojure_DOT_core_rest.Get()
+			tmp3843 := lang.Apply1(tmp3842, forms3817)
+			tmp3844 := lang.Apply2(tmp3841, name3816, tmp3843)
+			tmp3845 := lang.Apply1(tmp3840, tmp3844)
+			tmp3846 := lang.Apply3(tmp3822, tmp3824, tmp3839, tmp3845)
+			tmp3847 := lang.Apply1(tmp3821, tmp3846)
+			tmp3820 = tmp3847
 		} else {
-			tmp3821 = name3817
+			tmp3820 = name3816
 		}
-		return tmp3821
+		return tmp3820
 	})
-	v_clojure_DOT_core_X_as_steps.BindRoot(tmp3816)
+	v_clojure_DOT_core_X_as_steps.BindRoot(tmp3815)
 	_ = v_clojure_DOT_core_X_as_steps
 	// (do (def as-> (fn* as-> ([&form &env expr name & forms] (clojure.core/seq (clojure.core/co…
 	v_clojure_DOT_core_as__GT_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1248), kw_column, int64(11), kw_end_line, int64(1248), kw_end_column, int64(15)))
-	var as__GT_3849 any
-	_ = as__GT_3849
-	tmp3850 := lang.FnFunc(func(args ...any) any {
+	var as__GT_3848 any
+	_ = as__GT_3848
+	tmp3849 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 4 {
 				panic(lang.NewArityError(len(args), "clojure.core/as->", "4+: [&form &env expr name forms & more]"))
 			}
-			X_AMP_form3851 := args[0]
-			_ = X_AMP_form3851
-			X_AMP_env3852 := args[1]
-			_ = X_AMP_env3852
-			expr3853 := args[2]
-			_ = expr3853
-			name3854 := args[3]
-			_ = name3854
-			var forms3855 any
+			X_AMP_form3850 := args[0]
+			_ = X_AMP_form3850
+			X_AMP_env3851 := args[1]
+			_ = X_AMP_env3851
+			expr3852 := args[2]
+			_ = expr3852
+			name3853 := args[3]
+			_ = name3853
+			var forms3854 any
 			if len(args) > 4 {
-				forms3855 = lang.NewList(args[4:]...)
+				forms3854 = lang.NewList(args[4:]...)
 			}
-			_ = forms3855
-			tmp3856 := v_clojure_DOT_core_seq.Get()
-			tmp3857 := v_clojure_DOT_core_concat.Get()
-			tmp3858 := v_clojure_DOT_core_list.Get()
-			tmp3859 := lang.Apply1(tmp3858, sym_clojure_DOT_core_SLASH_let)
-			tmp3860 := v_clojure_DOT_core_list.Get()
-			tmp3861 := v_clojure_DOT_core_apply.Get()
-			tmp3862 := v_clojure_DOT_core_vector.Get()
-			tmp3863 := v_clojure_DOT_core_seq.Get()
-			tmp3864 := v_clojure_DOT_core_concat.Get()
-			tmp3865 := v_clojure_DOT_core_list.Get()
-			tmp3866 := lang.Apply1(tmp3865, name3854)
-			tmp3867 := v_clojure_DOT_core_list.Get()
-			tmp3868 := lang.Apply1(tmp3867, expr3853)
-			tmp3869 := lang.Apply2(tmp3864, tmp3866, tmp3868)
-			tmp3870 := lang.Apply1(tmp3863, tmp3869)
-			tmp3871 := lang.Apply2(tmp3861, tmp3862, tmp3870)
-			tmp3872 := lang.Apply1(tmp3860, tmp3871)
-			tmp3873 := v_clojure_DOT_core_list.Get()
-			tmp3874 := v_clojure_DOT_core_X_as_steps.Get()
-			tmp3875 := v_clojure_DOT_core_seq.Get()
-			tmp3876 := lang.Apply1(tmp3875, forms3855)
-			tmp3877 := lang.Apply2(tmp3874, name3854, tmp3876)
-			tmp3878 := lang.Apply1(tmp3873, tmp3877)
-			tmp3879 := lang.Apply3(tmp3857, tmp3859, tmp3872, tmp3878)
-			tmp3880 := lang.Apply1(tmp3856, tmp3879)
-			return tmp3880
+			_ = forms3854
+			tmp3855 := v_clojure_DOT_core_seq.Get()
+			tmp3856 := v_clojure_DOT_core_concat.Get()
+			tmp3857 := v_clojure_DOT_core_list.Get()
+			tmp3858 := lang.Apply1(tmp3857, sym_clojure_DOT_core_SLASH_let)
+			tmp3859 := v_clojure_DOT_core_list.Get()
+			tmp3860 := v_clojure_DOT_core_apply.Get()
+			tmp3861 := v_clojure_DOT_core_vector.Get()
+			tmp3862 := v_clojure_DOT_core_seq.Get()
+			tmp3863 := v_clojure_DOT_core_concat.Get()
+			tmp3864 := v_clojure_DOT_core_list.Get()
+			tmp3865 := lang.Apply1(tmp3864, name3853)
+			tmp3866 := v_clojure_DOT_core_list.Get()
+			tmp3867 := lang.Apply1(tmp3866, expr3852)
+			tmp3868 := lang.Apply2(tmp3863, tmp3865, tmp3867)
+			tmp3869 := lang.Apply1(tmp3862, tmp3868)
+			tmp3870 := lang.Apply2(tmp3860, tmp3861, tmp3869)
+			tmp3871 := lang.Apply1(tmp3859, tmp3870)
+			tmp3872 := v_clojure_DOT_core_list.Get()
+			tmp3873 := v_clojure_DOT_core_X_as_steps.Get()
+			tmp3874 := v_clojure_DOT_core_seq.Get()
+			tmp3875 := lang.Apply1(tmp3874, forms3854)
+			tmp3876 := lang.Apply2(tmp3873, name3853, tmp3875)
+			tmp3877 := lang.Apply1(tmp3872, tmp3876)
+			tmp3878 := lang.Apply3(tmp3856, tmp3858, tmp3871, tmp3877)
+			tmp3879 := lang.Apply1(tmp3855, tmp3878)
+			return tmp3879
 		}
 	})
-	as__GT_3849 = tmp3850
-	v_clojure_DOT_core_as__GT_.BindRoot(tmp3850)
+	as__GT_3848 = tmp3849
+	v_clojure_DOT_core_as__GT_.BindRoot(tmp3849)
 	_ = v_clojure_DOT_core_as__GT_
-	tmp3881 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp3882 := lang.Apply1(tmp3881, v_clojure_DOT_core_as__GT_)
-	_ = tmp3882
+	tmp3880 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp3881 := lang.Apply1(tmp3880, v_clojure_DOT_core_as__GT_)
+	_ = tmp3881
 	_ = v_clojure_DOT_core_as__GT_
 	// (do (def if-some (fn* if-some ([&form &env bindings then] (clojure.core/seq (clojure.core/…
 	v_clojure_DOT_core_if_some.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1259), kw_column, int64(11), kw_end_line, int64(1259), kw_end_column, int64(18)))
-	var if_some3883 any
-	_ = if_some3883
-	tmp3884 := lang.FnFunc(func(args ...any) any {
+	var if_some3882 any
+	_ = if_some3882
+	tmp3883 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 4:
-			X_AMP_form3885 := args[0]
-			_ = X_AMP_form3885
-			X_AMP_env3886 := args[1]
-			_ = X_AMP_env3886
-			bindings3887 := args[2]
-			_ = bindings3887
-			then3888 := args[3]
-			_ = then3888
-			tmp3889 := v_clojure_DOT_core_seq.Get()
-			tmp3890 := v_clojure_DOT_core_concat.Get()
-			tmp3891 := v_clojure_DOT_core_list.Get()
-			tmp3892 := lang.Apply1(tmp3891, sym_clojure_DOT_core_SLASH_if_some)
-			tmp3893 := v_clojure_DOT_core_list.Get()
-			tmp3894 := lang.Apply1(tmp3893, bindings3887)
-			tmp3895 := v_clojure_DOT_core_list.Get()
-			tmp3896 := lang.Apply1(tmp3895, then3888)
-			tmp3897 := v_clojure_DOT_core_list.Get()
-			tmp3898 := lang.Apply1(tmp3897, nil)
-			tmp3899 := lang.Apply4(tmp3890, tmp3892, tmp3894, tmp3896, tmp3898)
-			tmp3900 := lang.Apply1(tmp3889, tmp3899)
-			return tmp3900
+			X_AMP_form3884 := args[0]
+			_ = X_AMP_form3884
+			X_AMP_env3885 := args[1]
+			_ = X_AMP_env3885
+			bindings3886 := args[2]
+			_ = bindings3886
+			then3887 := args[3]
+			_ = then3887
+			tmp3888 := v_clojure_DOT_core_seq.Get()
+			tmp3889 := v_clojure_DOT_core_concat.Get()
+			tmp3890 := v_clojure_DOT_core_list.Get()
+			tmp3891 := lang.Apply1(tmp3890, sym_clojure_DOT_core_SLASH_if_some)
+			tmp3892 := v_clojure_DOT_core_list.Get()
+			tmp3893 := lang.Apply1(tmp3892, bindings3886)
+			tmp3894 := v_clojure_DOT_core_list.Get()
+			tmp3895 := lang.Apply1(tmp3894, then3887)
+			tmp3896 := v_clojure_DOT_core_list.Get()
+			tmp3897 := lang.Apply1(tmp3896, nil)
+			tmp3898 := lang.Apply4(tmp3889, tmp3891, tmp3893, tmp3895, tmp3897)
+			tmp3899 := lang.Apply1(tmp3888, tmp3898)
+			return tmp3899
 		case 5:
-			X_AMP_form3901 := args[0]
-			_ = X_AMP_form3901
-			X_AMP_env3902 := args[1]
-			_ = X_AMP_env3902
-			bindings3903 := args[2]
-			_ = bindings3903
-			then3904 := args[3]
-			_ = then3904
-			else_3905 := args[4]
-			_ = else_3905
-			var tmp3906 any
-			_ = tmp3906
+			X_AMP_form3900 := args[0]
+			_ = X_AMP_form3900
+			X_AMP_env3901 := args[1]
+			_ = X_AMP_env3901
+			bindings3902 := args[2]
+			_ = bindings3902
+			then3903 := args[3]
+			_ = then3903
+			else_3904 := args[4]
+			_ = else_3904
+			var tmp3905 any
+			_ = tmp3905
 			{
-				tmp3907 := v_clojure_DOT_core_first.Get()
-				tmp3908 := lang.Apply1(tmp3907, bindings3903)
-				var form3909 any = tmp3908
-				_ = form3909
-				tmp3910 := v_clojure_DOT_core_second.Get()
-				tmp3911 := lang.Apply1(tmp3910, bindings3903)
-				var tst3912 any = tmp3911
-				_ = tst3912
-				tmp3913 := v_clojure_DOT_core_seq.Get()
-				tmp3914 := v_clojure_DOT_core_concat.Get()
-				tmp3915 := v_clojure_DOT_core_list.Get()
-				tmp3916 := lang.Apply1(tmp3915, sym_clojure_DOT_core_SLASH_let)
-				tmp3917 := v_clojure_DOT_core_list.Get()
-				tmp3918 := v_clojure_DOT_core_apply.Get()
-				tmp3919 := v_clojure_DOT_core_vector.Get()
-				tmp3920 := v_clojure_DOT_core_seq.Get()
-				tmp3921 := v_clojure_DOT_core_concat.Get()
-				tmp3922 := v_clojure_DOT_core_list.Get()
-				tmp3923 := lang.Apply1(tmp3922, sym_temp__10__auto__)
-				tmp3924 := v_clojure_DOT_core_list.Get()
-				tmp3925 := lang.Apply1(tmp3924, tst3912)
-				tmp3926 := lang.Apply2(tmp3921, tmp3923, tmp3925)
-				tmp3927 := lang.Apply1(tmp3920, tmp3926)
-				tmp3928 := lang.Apply2(tmp3918, tmp3919, tmp3927)
-				tmp3929 := lang.Apply1(tmp3917, tmp3928)
-				tmp3930 := v_clojure_DOT_core_list.Get()
-				tmp3931 := v_clojure_DOT_core_seq.Get()
-				tmp3932 := v_clojure_DOT_core_concat.Get()
-				tmp3933 := v_clojure_DOT_core_list.Get()
-				tmp3934 := lang.Apply1(tmp3933, sym_if_)
-				tmp3935 := v_clojure_DOT_core_list.Get()
-				tmp3936 := v_clojure_DOT_core_seq.Get()
-				tmp3937 := v_clojure_DOT_core_concat.Get()
-				tmp3938 := v_clojure_DOT_core_list.Get()
-				tmp3939 := lang.Apply1(tmp3938, sym_clojure_DOT_core_SLASH_nil_QMARK_)
-				tmp3940 := v_clojure_DOT_core_list.Get()
-				tmp3941 := lang.Apply1(tmp3940, sym_temp__10__auto__)
-				tmp3942 := lang.Apply2(tmp3937, tmp3939, tmp3941)
-				tmp3943 := lang.Apply1(tmp3936, tmp3942)
-				tmp3944 := lang.Apply1(tmp3935, tmp3943)
-				tmp3945 := v_clojure_DOT_core_list.Get()
-				tmp3946 := lang.Apply1(tmp3945, else_3905)
-				tmp3947 := v_clojure_DOT_core_list.Get()
-				tmp3948 := v_clojure_DOT_core_seq.Get()
-				tmp3949 := v_clojure_DOT_core_concat.Get()
-				tmp3950 := v_clojure_DOT_core_list.Get()
-				tmp3951 := lang.Apply1(tmp3950, sym_clojure_DOT_core_SLASH_let)
-				tmp3952 := v_clojure_DOT_core_list.Get()
-				tmp3953 := v_clojure_DOT_core_apply.Get()
-				tmp3954 := v_clojure_DOT_core_vector.Get()
-				tmp3955 := v_clojure_DOT_core_seq.Get()
-				tmp3956 := v_clojure_DOT_core_concat.Get()
-				tmp3957 := v_clojure_DOT_core_list.Get()
-				tmp3958 := lang.Apply1(tmp3957, form3909)
-				tmp3959 := v_clojure_DOT_core_list.Get()
-				tmp3960 := lang.Apply1(tmp3959, sym_temp__10__auto__)
-				tmp3961 := lang.Apply2(tmp3956, tmp3958, tmp3960)
-				tmp3962 := lang.Apply1(tmp3955, tmp3961)
-				tmp3963 := lang.Apply2(tmp3953, tmp3954, tmp3962)
-				tmp3964 := lang.Apply1(tmp3952, tmp3963)
-				tmp3965 := v_clojure_DOT_core_list.Get()
-				tmp3966 := lang.Apply1(tmp3965, then3904)
-				tmp3967 := lang.Apply3(tmp3949, tmp3951, tmp3964, tmp3966)
-				tmp3968 := lang.Apply1(tmp3948, tmp3967)
-				tmp3969 := lang.Apply1(tmp3947, tmp3968)
-				tmp3970 := lang.Apply4(tmp3932, tmp3934, tmp3944, tmp3946, tmp3969)
-				tmp3971 := lang.Apply1(tmp3931, tmp3970)
-				tmp3972 := lang.Apply1(tmp3930, tmp3971)
-				tmp3973 := lang.Apply3(tmp3914, tmp3916, tmp3929, tmp3972)
-				tmp3974 := lang.Apply1(tmp3913, tmp3973)
-				tmp3906 = tmp3974
+				tmp3906 := v_clojure_DOT_core_first.Get()
+				tmp3907 := lang.Apply1(tmp3906, bindings3902)
+				var form3908 any = tmp3907
+				_ = form3908
+				tmp3909 := v_clojure_DOT_core_second.Get()
+				tmp3910 := lang.Apply1(tmp3909, bindings3902)
+				var tst3911 any = tmp3910
+				_ = tst3911
+				tmp3912 := v_clojure_DOT_core_seq.Get()
+				tmp3913 := v_clojure_DOT_core_concat.Get()
+				tmp3914 := v_clojure_DOT_core_list.Get()
+				tmp3915 := lang.Apply1(tmp3914, sym_clojure_DOT_core_SLASH_let)
+				tmp3916 := v_clojure_DOT_core_list.Get()
+				tmp3917 := v_clojure_DOT_core_apply.Get()
+				tmp3918 := v_clojure_DOT_core_vector.Get()
+				tmp3919 := v_clojure_DOT_core_seq.Get()
+				tmp3920 := v_clojure_DOT_core_concat.Get()
+				tmp3921 := v_clojure_DOT_core_list.Get()
+				tmp3922 := lang.Apply1(tmp3921, sym_temp__10__auto__)
+				tmp3923 := v_clojure_DOT_core_list.Get()
+				tmp3924 := lang.Apply1(tmp3923, tst3911)
+				tmp3925 := lang.Apply2(tmp3920, tmp3922, tmp3924)
+				tmp3926 := lang.Apply1(tmp3919, tmp3925)
+				tmp3927 := lang.Apply2(tmp3917, tmp3918, tmp3926)
+				tmp3928 := lang.Apply1(tmp3916, tmp3927)
+				tmp3929 := v_clojure_DOT_core_list.Get()
+				tmp3930 := v_clojure_DOT_core_seq.Get()
+				tmp3931 := v_clojure_DOT_core_concat.Get()
+				tmp3932 := v_clojure_DOT_core_list.Get()
+				tmp3933 := lang.Apply1(tmp3932, sym_if_)
+				tmp3934 := v_clojure_DOT_core_list.Get()
+				tmp3935 := v_clojure_DOT_core_seq.Get()
+				tmp3936 := v_clojure_DOT_core_concat.Get()
+				tmp3937 := v_clojure_DOT_core_list.Get()
+				tmp3938 := lang.Apply1(tmp3937, sym_clojure_DOT_core_SLASH_nil_QMARK_)
+				tmp3939 := v_clojure_DOT_core_list.Get()
+				tmp3940 := lang.Apply1(tmp3939, sym_temp__10__auto__)
+				tmp3941 := lang.Apply2(tmp3936, tmp3938, tmp3940)
+				tmp3942 := lang.Apply1(tmp3935, tmp3941)
+				tmp3943 := lang.Apply1(tmp3934, tmp3942)
+				tmp3944 := v_clojure_DOT_core_list.Get()
+				tmp3945 := lang.Apply1(tmp3944, else_3904)
+				tmp3946 := v_clojure_DOT_core_list.Get()
+				tmp3947 := v_clojure_DOT_core_seq.Get()
+				tmp3948 := v_clojure_DOT_core_concat.Get()
+				tmp3949 := v_clojure_DOT_core_list.Get()
+				tmp3950 := lang.Apply1(tmp3949, sym_clojure_DOT_core_SLASH_let)
+				tmp3951 := v_clojure_DOT_core_list.Get()
+				tmp3952 := v_clojure_DOT_core_apply.Get()
+				tmp3953 := v_clojure_DOT_core_vector.Get()
+				tmp3954 := v_clojure_DOT_core_seq.Get()
+				tmp3955 := v_clojure_DOT_core_concat.Get()
+				tmp3956 := v_clojure_DOT_core_list.Get()
+				tmp3957 := lang.Apply1(tmp3956, form3908)
+				tmp3958 := v_clojure_DOT_core_list.Get()
+				tmp3959 := lang.Apply1(tmp3958, sym_temp__10__auto__)
+				tmp3960 := lang.Apply2(tmp3955, tmp3957, tmp3959)
+				tmp3961 := lang.Apply1(tmp3954, tmp3960)
+				tmp3962 := lang.Apply2(tmp3952, tmp3953, tmp3961)
+				tmp3963 := lang.Apply1(tmp3951, tmp3962)
+				tmp3964 := v_clojure_DOT_core_list.Get()
+				tmp3965 := lang.Apply1(tmp3964, then3903)
+				tmp3966 := lang.Apply3(tmp3948, tmp3950, tmp3963, tmp3965)
+				tmp3967 := lang.Apply1(tmp3947, tmp3966)
+				tmp3968 := lang.Apply1(tmp3946, tmp3967)
+				tmp3969 := lang.Apply4(tmp3931, tmp3933, tmp3943, tmp3945, tmp3968)
+				tmp3970 := lang.Apply1(tmp3930, tmp3969)
+				tmp3971 := lang.Apply1(tmp3929, tmp3970)
+				tmp3972 := lang.Apply3(tmp3913, tmp3915, tmp3928, tmp3971)
+				tmp3973 := lang.Apply1(tmp3912, tmp3972)
+				tmp3905 = tmp3973
 			}
-			return tmp3906
+			return tmp3905
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/if-some", "4: [&form &env bindings then] or 5: [&form &env bindings then else]"))
 		}
 	})
-	if_some3883 = tmp3884
-	v_clojure_DOT_core_if_some.BindRoot(tmp3884)
+	if_some3882 = tmp3883
+	v_clojure_DOT_core_if_some.BindRoot(tmp3883)
 	_ = v_clojure_DOT_core_if_some
-	tmp3975 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp3976 := lang.Apply1(tmp3975, v_clojure_DOT_core_if_some)
-	_ = tmp3976
+	tmp3974 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp3975 := lang.Apply1(tmp3974, v_clojure_DOT_core_if_some)
+	_ = tmp3975
 	_ = v_clojure_DOT_core_if_some
 	// (do (def when-some (fn* when-some ([&form &env bindings & body] (let [form (first bindings…
 	v_clojure_DOT_core_when_some.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1266), kw_column, int64(11), kw_end_line, int64(1266), kw_end_column, int64(20)))
-	var when_some3977 any
-	_ = when_some3977
-	tmp3978 := lang.FnFunc(func(args ...any) any {
+	var when_some3976 any
+	_ = when_some3976
+	tmp3977 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/when-some", "3+: [&form &env bindings body & more]"))
 			}
-			X_AMP_form3979 := args[0]
-			_ = X_AMP_form3979
-			X_AMP_env3980 := args[1]
-			_ = X_AMP_env3980
-			bindings3981 := args[2]
-			_ = bindings3981
-			var body3982 any
+			X_AMP_form3978 := args[0]
+			_ = X_AMP_form3978
+			X_AMP_env3979 := args[1]
+			_ = X_AMP_env3979
+			bindings3980 := args[2]
+			_ = bindings3980
+			var body3981 any
 			if len(args) > 3 {
-				body3982 = lang.NewList(args[3:]...)
+				body3981 = lang.NewList(args[3:]...)
 			}
-			_ = body3982
-			var tmp3983 any
-			_ = tmp3983
+			_ = body3981
+			var tmp3982 any
+			_ = tmp3982
 			{
-				tmp3984 := v_clojure_DOT_core_first.Get()
-				tmp3985 := lang.Apply1(tmp3984, bindings3981)
-				var form3986 any = tmp3985
-				_ = form3986
-				tmp3987 := v_clojure_DOT_core_second.Get()
-				tmp3988 := lang.Apply1(tmp3987, bindings3981)
-				var tst3989 any = tmp3988
-				_ = tst3989
-				tmp3990 := v_clojure_DOT_core_seq.Get()
-				tmp3991 := v_clojure_DOT_core_concat.Get()
-				tmp3992 := v_clojure_DOT_core_list.Get()
-				tmp3993 := lang.Apply1(tmp3992, sym_clojure_DOT_core_SLASH_let)
-				tmp3994 := v_clojure_DOT_core_list.Get()
-				tmp3995 := v_clojure_DOT_core_apply.Get()
-				tmp3996 := v_clojure_DOT_core_vector.Get()
-				tmp3997 := v_clojure_DOT_core_seq.Get()
-				tmp3998 := v_clojure_DOT_core_concat.Get()
-				tmp3999 := v_clojure_DOT_core_list.Get()
-				tmp4000 := lang.Apply1(tmp3999, sym_temp__11__auto__)
-				tmp4001 := v_clojure_DOT_core_list.Get()
-				tmp4002 := lang.Apply1(tmp4001, tst3989)
-				tmp4003 := lang.Apply2(tmp3998, tmp4000, tmp4002)
-				tmp4004 := lang.Apply1(tmp3997, tmp4003)
-				tmp4005 := lang.Apply2(tmp3995, tmp3996, tmp4004)
-				tmp4006 := lang.Apply1(tmp3994, tmp4005)
-				tmp4007 := v_clojure_DOT_core_list.Get()
-				tmp4008 := v_clojure_DOT_core_seq.Get()
-				tmp4009 := v_clojure_DOT_core_concat.Get()
-				tmp4010 := v_clojure_DOT_core_list.Get()
-				tmp4011 := lang.Apply1(tmp4010, sym_if_)
-				tmp4012 := v_clojure_DOT_core_list.Get()
-				tmp4013 := v_clojure_DOT_core_seq.Get()
-				tmp4014 := v_clojure_DOT_core_concat.Get()
-				tmp4015 := v_clojure_DOT_core_list.Get()
-				tmp4016 := lang.Apply1(tmp4015, sym_clojure_DOT_core_SLASH_nil_QMARK_)
-				tmp4017 := v_clojure_DOT_core_list.Get()
-				tmp4018 := lang.Apply1(tmp4017, sym_temp__11__auto__)
-				tmp4019 := lang.Apply2(tmp4014, tmp4016, tmp4018)
-				tmp4020 := lang.Apply1(tmp4013, tmp4019)
-				tmp4021 := lang.Apply1(tmp4012, tmp4020)
-				tmp4022 := v_clojure_DOT_core_list.Get()
-				tmp4023 := lang.Apply1(tmp4022, nil)
-				tmp4024 := v_clojure_DOT_core_list.Get()
-				tmp4025 := v_clojure_DOT_core_seq.Get()
-				tmp4026 := v_clojure_DOT_core_concat.Get()
-				tmp4027 := v_clojure_DOT_core_list.Get()
-				tmp4028 := lang.Apply1(tmp4027, sym_clojure_DOT_core_SLASH_let)
-				tmp4029 := v_clojure_DOT_core_list.Get()
-				tmp4030 := v_clojure_DOT_core_apply.Get()
-				tmp4031 := v_clojure_DOT_core_vector.Get()
-				tmp4032 := v_clojure_DOT_core_seq.Get()
-				tmp4033 := v_clojure_DOT_core_concat.Get()
-				tmp4034 := v_clojure_DOT_core_list.Get()
-				tmp4035 := lang.Apply1(tmp4034, form3986)
-				tmp4036 := v_clojure_DOT_core_list.Get()
-				tmp4037 := lang.Apply1(tmp4036, sym_temp__11__auto__)
-				tmp4038 := lang.Apply2(tmp4033, tmp4035, tmp4037)
-				tmp4039 := lang.Apply1(tmp4032, tmp4038)
-				tmp4040 := lang.Apply2(tmp4030, tmp4031, tmp4039)
-				tmp4041 := lang.Apply1(tmp4029, tmp4040)
-				tmp4042 := lang.Apply3(tmp4026, tmp4028, tmp4041, body3982)
-				tmp4043 := lang.Apply1(tmp4025, tmp4042)
-				tmp4044 := lang.Apply1(tmp4024, tmp4043)
-				tmp4045 := lang.Apply4(tmp4009, tmp4011, tmp4021, tmp4023, tmp4044)
-				tmp4046 := lang.Apply1(tmp4008, tmp4045)
-				tmp4047 := lang.Apply1(tmp4007, tmp4046)
-				tmp4048 := lang.Apply3(tmp3991, tmp3993, tmp4006, tmp4047)
-				tmp4049 := lang.Apply1(tmp3990, tmp4048)
-				tmp3983 = tmp4049
+				tmp3983 := v_clojure_DOT_core_first.Get()
+				tmp3984 := lang.Apply1(tmp3983, bindings3980)
+				var form3985 any = tmp3984
+				_ = form3985
+				tmp3986 := v_clojure_DOT_core_second.Get()
+				tmp3987 := lang.Apply1(tmp3986, bindings3980)
+				var tst3988 any = tmp3987
+				_ = tst3988
+				tmp3989 := v_clojure_DOT_core_seq.Get()
+				tmp3990 := v_clojure_DOT_core_concat.Get()
+				tmp3991 := v_clojure_DOT_core_list.Get()
+				tmp3992 := lang.Apply1(tmp3991, sym_clojure_DOT_core_SLASH_let)
+				tmp3993 := v_clojure_DOT_core_list.Get()
+				tmp3994 := v_clojure_DOT_core_apply.Get()
+				tmp3995 := v_clojure_DOT_core_vector.Get()
+				tmp3996 := v_clojure_DOT_core_seq.Get()
+				tmp3997 := v_clojure_DOT_core_concat.Get()
+				tmp3998 := v_clojure_DOT_core_list.Get()
+				tmp3999 := lang.Apply1(tmp3998, sym_temp__11__auto__)
+				tmp4000 := v_clojure_DOT_core_list.Get()
+				tmp4001 := lang.Apply1(tmp4000, tst3988)
+				tmp4002 := lang.Apply2(tmp3997, tmp3999, tmp4001)
+				tmp4003 := lang.Apply1(tmp3996, tmp4002)
+				tmp4004 := lang.Apply2(tmp3994, tmp3995, tmp4003)
+				tmp4005 := lang.Apply1(tmp3993, tmp4004)
+				tmp4006 := v_clojure_DOT_core_list.Get()
+				tmp4007 := v_clojure_DOT_core_seq.Get()
+				tmp4008 := v_clojure_DOT_core_concat.Get()
+				tmp4009 := v_clojure_DOT_core_list.Get()
+				tmp4010 := lang.Apply1(tmp4009, sym_if_)
+				tmp4011 := v_clojure_DOT_core_list.Get()
+				tmp4012 := v_clojure_DOT_core_seq.Get()
+				tmp4013 := v_clojure_DOT_core_concat.Get()
+				tmp4014 := v_clojure_DOT_core_list.Get()
+				tmp4015 := lang.Apply1(tmp4014, sym_clojure_DOT_core_SLASH_nil_QMARK_)
+				tmp4016 := v_clojure_DOT_core_list.Get()
+				tmp4017 := lang.Apply1(tmp4016, sym_temp__11__auto__)
+				tmp4018 := lang.Apply2(tmp4013, tmp4015, tmp4017)
+				tmp4019 := lang.Apply1(tmp4012, tmp4018)
+				tmp4020 := lang.Apply1(tmp4011, tmp4019)
+				tmp4021 := v_clojure_DOT_core_list.Get()
+				tmp4022 := lang.Apply1(tmp4021, nil)
+				tmp4023 := v_clojure_DOT_core_list.Get()
+				tmp4024 := v_clojure_DOT_core_seq.Get()
+				tmp4025 := v_clojure_DOT_core_concat.Get()
+				tmp4026 := v_clojure_DOT_core_list.Get()
+				tmp4027 := lang.Apply1(tmp4026, sym_clojure_DOT_core_SLASH_let)
+				tmp4028 := v_clojure_DOT_core_list.Get()
+				tmp4029 := v_clojure_DOT_core_apply.Get()
+				tmp4030 := v_clojure_DOT_core_vector.Get()
+				tmp4031 := v_clojure_DOT_core_seq.Get()
+				tmp4032 := v_clojure_DOT_core_concat.Get()
+				tmp4033 := v_clojure_DOT_core_list.Get()
+				tmp4034 := lang.Apply1(tmp4033, form3985)
+				tmp4035 := v_clojure_DOT_core_list.Get()
+				tmp4036 := lang.Apply1(tmp4035, sym_temp__11__auto__)
+				tmp4037 := lang.Apply2(tmp4032, tmp4034, tmp4036)
+				tmp4038 := lang.Apply1(tmp4031, tmp4037)
+				tmp4039 := lang.Apply2(tmp4029, tmp4030, tmp4038)
+				tmp4040 := lang.Apply1(tmp4028, tmp4039)
+				tmp4041 := lang.Apply3(tmp4025, tmp4027, tmp4040, body3981)
+				tmp4042 := lang.Apply1(tmp4024, tmp4041)
+				tmp4043 := lang.Apply1(tmp4023, tmp4042)
+				tmp4044 := lang.Apply4(tmp4008, tmp4010, tmp4020, tmp4022, tmp4043)
+				tmp4045 := lang.Apply1(tmp4007, tmp4044)
+				tmp4046 := lang.Apply1(tmp4006, tmp4045)
+				tmp4047 := lang.Apply3(tmp3990, tmp3992, tmp4005, tmp4046)
+				tmp4048 := lang.Apply1(tmp3989, tmp4047)
+				tmp3982 = tmp4048
 			}
-			return tmp3983
+			return tmp3982
 		}
 	})
-	when_some3977 = tmp3978
-	v_clojure_DOT_core_when_some.BindRoot(tmp3978)
+	when_some3976 = tmp3977
+	v_clojure_DOT_core_when_some.BindRoot(tmp3977)
 	_ = v_clojure_DOT_core_when_some
-	tmp4050 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4051 := lang.Apply1(tmp4050, v_clojure_DOT_core_when_some)
-	_ = tmp4051
+	tmp4049 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4050 := lang.Apply1(tmp4049, v_clojure_DOT_core_when_some)
+	_ = tmp4050
 	_ = v_clojure_DOT_core_when_some
 	// (def -condp-emit (clojure.core/fn [pred expr clauses] (let [n (if (= :>> (second clauses))…
 	v_clojure_DOT_core_X_condp_emit.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1277), kw_column, int64(7), kw_end_line, int64(1277), kw_end_column, int64(18)))
-	tmp4052 := lang.FnFunc3(func(pred4053, expr4054, clauses4055 any) any {
-		var tmp4056 any
-		_ = tmp4056
+	tmp4051 := lang.FnFunc3(func(pred4052, expr4053, clauses4054 any) any {
+		var tmp4055 any
+		_ = tmp4055
 		{
-			tmp4057 := v_clojure_DOT_core_second.Get()
-			tmp4058 := lang.Apply1(tmp4057, clauses4055)
-			tmp4059 := rt.EQBool(v_clojure_DOT_core_X_EQ_, kw_X_GT__GT_, tmp4058)
-			var tmp4060 any
-			_ = tmp4060
-			if tmp4059 {
-				tmp4060 = int64(3)
+			tmp4056 := v_clojure_DOT_core_second.Get()
+			tmp4057 := lang.Apply1(tmp4056, clauses4054)
+			tmp4058 := rt.EQBool(v_clojure_DOT_core_X_EQ_, kw_X_GT__GT_, tmp4057)
+			var tmp4059 any
+			_ = tmp4059
+			if tmp4058 {
+				tmp4059 = int64(3)
 			} else {
-				tmp4060 = int64(2)
+				tmp4059 = int64(2)
 			}
-			var n4061 any = tmp4060
-			_ = n4061
-			tmp4062 := v_clojure_DOT_core_take.Get()
-			tmp4063 := lang.Apply2(tmp4062, n4061, clauses4055)
-			var clause4064 any = tmp4063
-			_ = clause4064
-			tmp4065 := v_clojure_DOT_core_drop.Get()
-			tmp4066 := lang.Apply2(tmp4065, n4061, clauses4055)
-			var more4067 any = tmp4066
-			_ = more4067
-			tmp4068 := v_clojure_DOT_core_count.Get()
-			tmp4069 := lang.Apply1(tmp4068, clause4064)
-			var c4070 any = tmp4069
-			_ = c4070
-			tmp4071 := rt.EQBool(v_clojure_DOT_core_X_EQ_, int64(0), c4070)
-			var tmp4072 any
-			_ = tmp4072
-			if tmp4071 {
-				tmp4073 := v_clojure_DOT_core_seq.Get()
-				tmp4074 := v_clojure_DOT_core_concat.Get()
-				tmp4075 := v_clojure_DOT_core_list.Get()
-				tmp4076 := lang.Apply1(tmp4075, sym_clojure_DOT_core_SLASH__illegal_argument)
-				tmp4077 := v_clojure_DOT_core_list.Get()
-				tmp4078 := v_clojure_DOT_core_seq.Get()
-				tmp4079 := v_clojure_DOT_core_concat.Get()
-				tmp4080 := v_clojure_DOT_core_list.Get()
-				tmp4081 := lang.Apply1(tmp4080, sym_clojure_DOT_core_SLASH_str)
-				tmp4082 := v_clojure_DOT_core_list.Get()
-				tmp4083 := lang.Apply1(tmp4082, "No matching clause: ")
-				tmp4084 := v_clojure_DOT_core_list.Get()
-				tmp4085 := lang.Apply1(tmp4084, expr4054)
-				tmp4086 := lang.Apply3(tmp4079, tmp4081, tmp4083, tmp4085)
-				tmp4087 := lang.Apply1(tmp4078, tmp4086)
-				tmp4088 := lang.Apply1(tmp4077, tmp4087)
-				tmp4089 := lang.Apply2(tmp4074, tmp4076, tmp4088)
-				tmp4090 := lang.Apply1(tmp4073, tmp4089)
-				tmp4072 = tmp4090
+			var n4060 any = tmp4059
+			_ = n4060
+			tmp4061 := v_clojure_DOT_core_take.Get()
+			tmp4062 := lang.Apply2(tmp4061, n4060, clauses4054)
+			var clause4063 any = tmp4062
+			_ = clause4063
+			tmp4064 := v_clojure_DOT_core_drop.Get()
+			tmp4065 := lang.Apply2(tmp4064, n4060, clauses4054)
+			var more4066 any = tmp4065
+			_ = more4066
+			tmp4067 := v_clojure_DOT_core_count.Get()
+			tmp4068 := lang.Apply1(tmp4067, clause4063)
+			var c4069 any = tmp4068
+			_ = c4069
+			tmp4070 := rt.EQBool(v_clojure_DOT_core_X_EQ_, int64(0), c4069)
+			var tmp4071 any
+			_ = tmp4071
+			if tmp4070 {
+				tmp4072 := v_clojure_DOT_core_seq.Get()
+				tmp4073 := v_clojure_DOT_core_concat.Get()
+				tmp4074 := v_clojure_DOT_core_list.Get()
+				tmp4075 := lang.Apply1(tmp4074, sym_clojure_DOT_core_SLASH__illegal_argument)
+				tmp4076 := v_clojure_DOT_core_list.Get()
+				tmp4077 := v_clojure_DOT_core_seq.Get()
+				tmp4078 := v_clojure_DOT_core_concat.Get()
+				tmp4079 := v_clojure_DOT_core_list.Get()
+				tmp4080 := lang.Apply1(tmp4079, sym_clojure_DOT_core_SLASH_str)
+				tmp4081 := v_clojure_DOT_core_list.Get()
+				tmp4082 := lang.Apply1(tmp4081, "No matching clause: ")
+				tmp4083 := v_clojure_DOT_core_list.Get()
+				tmp4084 := lang.Apply1(tmp4083, expr4053)
+				tmp4085 := lang.Apply3(tmp4078, tmp4080, tmp4082, tmp4084)
+				tmp4086 := lang.Apply1(tmp4077, tmp4085)
+				tmp4087 := lang.Apply1(tmp4076, tmp4086)
+				tmp4088 := lang.Apply2(tmp4073, tmp4075, tmp4087)
+				tmp4089 := lang.Apply1(tmp4072, tmp4088)
+				tmp4071 = tmp4089
 			} else {
-				tmp4091 := rt.EQBool(v_clojure_DOT_core_X_EQ_, int64(1), c4070)
-				var tmp4092 any
-				_ = tmp4092
-				if tmp4091 {
-					tmp4093 := v_clojure_DOT_core_first.Get()
-					tmp4094 := lang.Apply1(tmp4093, clause4064)
-					tmp4092 = tmp4094
+				tmp4090 := rt.EQBool(v_clojure_DOT_core_X_EQ_, int64(1), c4069)
+				var tmp4091 any
+				_ = tmp4091
+				if tmp4090 {
+					tmp4092 := v_clojure_DOT_core_first.Get()
+					tmp4093 := lang.Apply1(tmp4092, clause4063)
+					tmp4091 = tmp4093
 				} else {
-					tmp4095 := rt.EQBool(v_clojure_DOT_core_X_EQ_, int64(2), c4070)
-					var tmp4096 any
-					_ = tmp4096
-					if tmp4095 {
-						tmp4097 := v_clojure_DOT_core_seq.Get()
-						tmp4098 := v_clojure_DOT_core_concat.Get()
-						tmp4099 := v_clojure_DOT_core_list.Get()
-						tmp4100 := lang.Apply1(tmp4099, sym_if_)
-						tmp4101 := v_clojure_DOT_core_list.Get()
-						tmp4102 := v_clojure_DOT_core_seq.Get()
-						tmp4103 := v_clojure_DOT_core_concat.Get()
-						tmp4104 := v_clojure_DOT_core_list.Get()
-						tmp4105 := lang.Apply1(tmp4104, pred4053)
-						tmp4106 := v_clojure_DOT_core_list.Get()
-						tmp4107 := v_clojure_DOT_core_first.Get()
-						tmp4108 := lang.Apply1(tmp4107, clause4064)
-						tmp4109 := lang.Apply1(tmp4106, tmp4108)
-						tmp4110 := v_clojure_DOT_core_list.Get()
-						tmp4111 := lang.Apply1(tmp4110, expr4054)
-						tmp4112 := lang.Apply3(tmp4103, tmp4105, tmp4109, tmp4111)
-						tmp4113 := lang.Apply1(tmp4102, tmp4112)
-						tmp4114 := lang.Apply1(tmp4101, tmp4113)
-						tmp4115 := v_clojure_DOT_core_list.Get()
-						tmp4116 := v_clojure_DOT_core_second.Get()
-						tmp4117 := lang.Apply1(tmp4116, clause4064)
-						tmp4118 := lang.Apply1(tmp4115, tmp4117)
-						tmp4119 := v_clojure_DOT_core_list.Get()
-						tmp4120 := v_clojure_DOT_core_X_condp_emit.Get()
-						tmp4121 := lang.Apply3(tmp4120, pred4053, expr4054, more4067)
-						tmp4122 := lang.Apply1(tmp4119, tmp4121)
-						tmp4123 := lang.Apply4(tmp4098, tmp4100, tmp4114, tmp4118, tmp4122)
-						tmp4124 := lang.Apply1(tmp4097, tmp4123)
-						tmp4096 = tmp4124
+					tmp4094 := rt.EQBool(v_clojure_DOT_core_X_EQ_, int64(2), c4069)
+					var tmp4095 any
+					_ = tmp4095
+					if tmp4094 {
+						tmp4096 := v_clojure_DOT_core_seq.Get()
+						tmp4097 := v_clojure_DOT_core_concat.Get()
+						tmp4098 := v_clojure_DOT_core_list.Get()
+						tmp4099 := lang.Apply1(tmp4098, sym_if_)
+						tmp4100 := v_clojure_DOT_core_list.Get()
+						tmp4101 := v_clojure_DOT_core_seq.Get()
+						tmp4102 := v_clojure_DOT_core_concat.Get()
+						tmp4103 := v_clojure_DOT_core_list.Get()
+						tmp4104 := lang.Apply1(tmp4103, pred4052)
+						tmp4105 := v_clojure_DOT_core_list.Get()
+						tmp4106 := v_clojure_DOT_core_first.Get()
+						tmp4107 := lang.Apply1(tmp4106, clause4063)
+						tmp4108 := lang.Apply1(tmp4105, tmp4107)
+						tmp4109 := v_clojure_DOT_core_list.Get()
+						tmp4110 := lang.Apply1(tmp4109, expr4053)
+						tmp4111 := lang.Apply3(tmp4102, tmp4104, tmp4108, tmp4110)
+						tmp4112 := lang.Apply1(tmp4101, tmp4111)
+						tmp4113 := lang.Apply1(tmp4100, tmp4112)
+						tmp4114 := v_clojure_DOT_core_list.Get()
+						tmp4115 := v_clojure_DOT_core_second.Get()
+						tmp4116 := lang.Apply1(tmp4115, clause4063)
+						tmp4117 := lang.Apply1(tmp4114, tmp4116)
+						tmp4118 := v_clojure_DOT_core_list.Get()
+						tmp4119 := v_clojure_DOT_core_X_condp_emit.Get()
+						tmp4120 := lang.Apply3(tmp4119, pred4052, expr4053, more4066)
+						tmp4121 := lang.Apply1(tmp4118, tmp4120)
+						tmp4122 := lang.Apply4(tmp4097, tmp4099, tmp4113, tmp4117, tmp4121)
+						tmp4123 := lang.Apply1(tmp4096, tmp4122)
+						tmp4095 = tmp4123
 					} else {
-						var tmp4125 any
-						_ = tmp4125
+						var tmp4124 any
+						_ = tmp4124
 						if lang.IsTruthy(kw_else_) {
-							tmp4126 := v_clojure_DOT_core_seq.Get()
-							tmp4127 := v_clojure_DOT_core_concat.Get()
-							tmp4128 := v_clojure_DOT_core_list.Get()
-							tmp4129 := lang.Apply1(tmp4128, sym_clojure_DOT_core_SLASH_if_let)
-							tmp4130 := v_clojure_DOT_core_list.Get()
-							tmp4131 := v_clojure_DOT_core_apply.Get()
-							tmp4132 := v_clojure_DOT_core_vector.Get()
-							tmp4133 := v_clojure_DOT_core_seq.Get()
-							tmp4134 := v_clojure_DOT_core_concat.Get()
-							tmp4135 := v_clojure_DOT_core_list.Get()
-							tmp4136 := lang.Apply1(tmp4135, sym_p__12__auto__)
-							tmp4137 := v_clojure_DOT_core_list.Get()
-							tmp4138 := v_clojure_DOT_core_seq.Get()
-							tmp4139 := v_clojure_DOT_core_concat.Get()
-							tmp4140 := v_clojure_DOT_core_list.Get()
-							tmp4141 := lang.Apply1(tmp4140, pred4053)
-							tmp4142 := v_clojure_DOT_core_list.Get()
-							tmp4143 := v_clojure_DOT_core_first.Get()
-							tmp4144 := lang.Apply1(tmp4143, clause4064)
-							tmp4145 := lang.Apply1(tmp4142, tmp4144)
-							tmp4146 := v_clojure_DOT_core_list.Get()
-							tmp4147 := lang.Apply1(tmp4146, expr4054)
-							tmp4148 := lang.Apply3(tmp4139, tmp4141, tmp4145, tmp4147)
-							tmp4149 := lang.Apply1(tmp4138, tmp4148)
-							tmp4150 := lang.Apply1(tmp4137, tmp4149)
-							tmp4151 := lang.Apply2(tmp4134, tmp4136, tmp4150)
-							tmp4152 := lang.Apply1(tmp4133, tmp4151)
-							tmp4153 := lang.Apply2(tmp4131, tmp4132, tmp4152)
-							tmp4154 := lang.Apply1(tmp4130, tmp4153)
-							tmp4155 := v_clojure_DOT_core_list.Get()
-							tmp4156 := v_clojure_DOT_core_seq.Get()
-							tmp4157 := v_clojure_DOT_core_concat.Get()
-							tmp4158 := v_clojure_DOT_core_list.Get()
-							tmp4159 := v_clojure_DOT_core_nth.Get()
-							tmp4160 := lang.Apply2(tmp4159, clause4064, int64(2))
-							tmp4161 := lang.Apply1(tmp4158, tmp4160)
-							tmp4162 := v_clojure_DOT_core_list.Get()
-							tmp4163 := lang.Apply1(tmp4162, sym_p__12__auto__)
-							tmp4164 := lang.Apply2(tmp4157, tmp4161, tmp4163)
-							tmp4165 := lang.Apply1(tmp4156, tmp4164)
-							tmp4166 := lang.Apply1(tmp4155, tmp4165)
-							tmp4167 := v_clojure_DOT_core_list.Get()
-							tmp4168 := v_clojure_DOT_core_X_condp_emit.Get()
-							tmp4169 := lang.Apply3(tmp4168, pred4053, expr4054, more4067)
-							tmp4170 := lang.Apply1(tmp4167, tmp4169)
-							tmp4171 := lang.Apply4(tmp4127, tmp4129, tmp4154, tmp4166, tmp4170)
-							tmp4172 := lang.Apply1(tmp4126, tmp4171)
-							tmp4125 = tmp4172
+							tmp4125 := v_clojure_DOT_core_seq.Get()
+							tmp4126 := v_clojure_DOT_core_concat.Get()
+							tmp4127 := v_clojure_DOT_core_list.Get()
+							tmp4128 := lang.Apply1(tmp4127, sym_clojure_DOT_core_SLASH_if_let)
+							tmp4129 := v_clojure_DOT_core_list.Get()
+							tmp4130 := v_clojure_DOT_core_apply.Get()
+							tmp4131 := v_clojure_DOT_core_vector.Get()
+							tmp4132 := v_clojure_DOT_core_seq.Get()
+							tmp4133 := v_clojure_DOT_core_concat.Get()
+							tmp4134 := v_clojure_DOT_core_list.Get()
+							tmp4135 := lang.Apply1(tmp4134, sym_p__12__auto__)
+							tmp4136 := v_clojure_DOT_core_list.Get()
+							tmp4137 := v_clojure_DOT_core_seq.Get()
+							tmp4138 := v_clojure_DOT_core_concat.Get()
+							tmp4139 := v_clojure_DOT_core_list.Get()
+							tmp4140 := lang.Apply1(tmp4139, pred4052)
+							tmp4141 := v_clojure_DOT_core_list.Get()
+							tmp4142 := v_clojure_DOT_core_first.Get()
+							tmp4143 := lang.Apply1(tmp4142, clause4063)
+							tmp4144 := lang.Apply1(tmp4141, tmp4143)
+							tmp4145 := v_clojure_DOT_core_list.Get()
+							tmp4146 := lang.Apply1(tmp4145, expr4053)
+							tmp4147 := lang.Apply3(tmp4138, tmp4140, tmp4144, tmp4146)
+							tmp4148 := lang.Apply1(tmp4137, tmp4147)
+							tmp4149 := lang.Apply1(tmp4136, tmp4148)
+							tmp4150 := lang.Apply2(tmp4133, tmp4135, tmp4149)
+							tmp4151 := lang.Apply1(tmp4132, tmp4150)
+							tmp4152 := lang.Apply2(tmp4130, tmp4131, tmp4151)
+							tmp4153 := lang.Apply1(tmp4129, tmp4152)
+							tmp4154 := v_clojure_DOT_core_list.Get()
+							tmp4155 := v_clojure_DOT_core_seq.Get()
+							tmp4156 := v_clojure_DOT_core_concat.Get()
+							tmp4157 := v_clojure_DOT_core_list.Get()
+							tmp4158 := v_clojure_DOT_core_nth.Get()
+							tmp4159 := lang.Apply2(tmp4158, clause4063, int64(2))
+							tmp4160 := lang.Apply1(tmp4157, tmp4159)
+							tmp4161 := v_clojure_DOT_core_list.Get()
+							tmp4162 := lang.Apply1(tmp4161, sym_p__12__auto__)
+							tmp4163 := lang.Apply2(tmp4156, tmp4160, tmp4162)
+							tmp4164 := lang.Apply1(tmp4155, tmp4163)
+							tmp4165 := lang.Apply1(tmp4154, tmp4164)
+							tmp4166 := v_clojure_DOT_core_list.Get()
+							tmp4167 := v_clojure_DOT_core_X_condp_emit.Get()
+							tmp4168 := lang.Apply3(tmp4167, pred4052, expr4053, more4066)
+							tmp4169 := lang.Apply1(tmp4166, tmp4168)
+							tmp4170 := lang.Apply4(tmp4126, tmp4128, tmp4153, tmp4165, tmp4169)
+							tmp4171 := lang.Apply1(tmp4125, tmp4170)
+							tmp4124 = tmp4171
 						} else {
-							tmp4125 = nil
+							tmp4124 = nil
 						}
-						tmp4096 = tmp4125
+						tmp4095 = tmp4124
 					}
-					tmp4092 = tmp4096
+					tmp4091 = tmp4095
 				}
-				tmp4072 = tmp4092
+				tmp4071 = tmp4091
 			}
-			tmp4056 = tmp4072
+			tmp4055 = tmp4071
 		}
-		return tmp4056
+		return tmp4055
 	})
-	v_clojure_DOT_core_X_condp_emit.BindRoot(tmp4052)
+	v_clojure_DOT_core_X_condp_emit.BindRoot(tmp4051)
 	_ = v_clojure_DOT_core_X_condp_emit
 	// (do (def condp (fn* condp ([&form &env pred expr & clauses] (let [gpred (gensym "pred__") …
 	v_clojure_DOT_core_condp.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1292), kw_column, int64(11), kw_end_line, int64(1292), kw_end_column, int64(16)))
-	var condp4173 any
-	_ = condp4173
-	tmp4174 := lang.FnFunc(func(args ...any) any {
+	var condp4172 any
+	_ = condp4172
+	tmp4173 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 4 {
 				panic(lang.NewArityError(len(args), "clojure.core/condp", "4+: [&form &env pred expr clauses & more]"))
 			}
-			X_AMP_form4175 := args[0]
-			_ = X_AMP_form4175
-			X_AMP_env4176 := args[1]
-			_ = X_AMP_env4176
-			pred4177 := args[2]
-			_ = pred4177
-			expr4178 := args[3]
-			_ = expr4178
-			var clauses4179 any
+			X_AMP_form4174 := args[0]
+			_ = X_AMP_form4174
+			X_AMP_env4175 := args[1]
+			_ = X_AMP_env4175
+			pred4176 := args[2]
+			_ = pred4176
+			expr4177 := args[3]
+			_ = expr4177
+			var clauses4178 any
 			if len(args) > 4 {
-				clauses4179 = lang.NewList(args[4:]...)
+				clauses4178 = lang.NewList(args[4:]...)
 			}
-			_ = clauses4179
-			var tmp4180 any
-			_ = tmp4180
+			_ = clauses4178
+			var tmp4179 any
+			_ = tmp4179
 			{
-				tmp4181 := v_clojure_DOT_core_gensym.Get()
-				tmp4182 := lang.Apply1(tmp4181, "pred__")
-				var gpred4183 any = tmp4182
-				_ = gpred4183
-				tmp4184 := v_clojure_DOT_core_gensym.Get()
-				tmp4185 := lang.Apply1(tmp4184, "expr__")
-				var gexpr4186 any = tmp4185
-				_ = gexpr4186
-				tmp4187 := v_clojure_DOT_core_seq.Get()
-				tmp4188 := v_clojure_DOT_core_concat.Get()
-				tmp4189 := v_clojure_DOT_core_list.Get()
-				tmp4190 := lang.Apply1(tmp4189, sym_clojure_DOT_core_SLASH_let)
-				tmp4191 := v_clojure_DOT_core_list.Get()
-				tmp4192 := v_clojure_DOT_core_apply.Get()
-				tmp4193 := v_clojure_DOT_core_vector.Get()
-				tmp4194 := v_clojure_DOT_core_seq.Get()
-				tmp4195 := v_clojure_DOT_core_concat.Get()
-				tmp4196 := v_clojure_DOT_core_list.Get()
-				tmp4197 := lang.Apply1(tmp4196, gpred4183)
-				tmp4198 := v_clojure_DOT_core_list.Get()
-				tmp4199 := lang.Apply1(tmp4198, pred4177)
-				tmp4200 := v_clojure_DOT_core_list.Get()
-				tmp4201 := lang.Apply1(tmp4200, gexpr4186)
-				tmp4202 := v_clojure_DOT_core_list.Get()
-				tmp4203 := lang.Apply1(tmp4202, expr4178)
-				tmp4204 := lang.Apply4(tmp4195, tmp4197, tmp4199, tmp4201, tmp4203)
-				tmp4205 := lang.Apply1(tmp4194, tmp4204)
-				tmp4206 := lang.Apply2(tmp4192, tmp4193, tmp4205)
-				tmp4207 := lang.Apply1(tmp4191, tmp4206)
-				tmp4208 := v_clojure_DOT_core_list.Get()
-				tmp4209 := v_clojure_DOT_core_X_condp_emit.Get()
-				tmp4210 := v_clojure_DOT_core_seq.Get()
-				tmp4211 := lang.Apply1(tmp4210, clauses4179)
-				tmp4212 := lang.Apply3(tmp4209, gpred4183, gexpr4186, tmp4211)
-				tmp4213 := lang.Apply1(tmp4208, tmp4212)
-				tmp4214 := lang.Apply3(tmp4188, tmp4190, tmp4207, tmp4213)
-				tmp4215 := lang.Apply1(tmp4187, tmp4214)
-				tmp4180 = tmp4215
+				tmp4180 := v_clojure_DOT_core_gensym.Get()
+				tmp4181 := lang.Apply1(tmp4180, "pred__")
+				var gpred4182 any = tmp4181
+				_ = gpred4182
+				tmp4183 := v_clojure_DOT_core_gensym.Get()
+				tmp4184 := lang.Apply1(tmp4183, "expr__")
+				var gexpr4185 any = tmp4184
+				_ = gexpr4185
+				tmp4186 := v_clojure_DOT_core_seq.Get()
+				tmp4187 := v_clojure_DOT_core_concat.Get()
+				tmp4188 := v_clojure_DOT_core_list.Get()
+				tmp4189 := lang.Apply1(tmp4188, sym_clojure_DOT_core_SLASH_let)
+				tmp4190 := v_clojure_DOT_core_list.Get()
+				tmp4191 := v_clojure_DOT_core_apply.Get()
+				tmp4192 := v_clojure_DOT_core_vector.Get()
+				tmp4193 := v_clojure_DOT_core_seq.Get()
+				tmp4194 := v_clojure_DOT_core_concat.Get()
+				tmp4195 := v_clojure_DOT_core_list.Get()
+				tmp4196 := lang.Apply1(tmp4195, gpred4182)
+				tmp4197 := v_clojure_DOT_core_list.Get()
+				tmp4198 := lang.Apply1(tmp4197, pred4176)
+				tmp4199 := v_clojure_DOT_core_list.Get()
+				tmp4200 := lang.Apply1(tmp4199, gexpr4185)
+				tmp4201 := v_clojure_DOT_core_list.Get()
+				tmp4202 := lang.Apply1(tmp4201, expr4177)
+				tmp4203 := lang.Apply4(tmp4194, tmp4196, tmp4198, tmp4200, tmp4202)
+				tmp4204 := lang.Apply1(tmp4193, tmp4203)
+				tmp4205 := lang.Apply2(tmp4191, tmp4192, tmp4204)
+				tmp4206 := lang.Apply1(tmp4190, tmp4205)
+				tmp4207 := v_clojure_DOT_core_list.Get()
+				tmp4208 := v_clojure_DOT_core_X_condp_emit.Get()
+				tmp4209 := v_clojure_DOT_core_seq.Get()
+				tmp4210 := lang.Apply1(tmp4209, clauses4178)
+				tmp4211 := lang.Apply3(tmp4208, gpred4182, gexpr4185, tmp4210)
+				tmp4212 := lang.Apply1(tmp4207, tmp4211)
+				tmp4213 := lang.Apply3(tmp4187, tmp4189, tmp4206, tmp4212)
+				tmp4214 := lang.Apply1(tmp4186, tmp4213)
+				tmp4179 = tmp4214
 			}
-			return tmp4180
+			return tmp4179
 		}
 	})
-	condp4173 = tmp4174
-	v_clojure_DOT_core_condp.BindRoot(tmp4174)
+	condp4172 = tmp4173
+	v_clojure_DOT_core_condp.BindRoot(tmp4173)
 	_ = v_clojure_DOT_core_condp
-	tmp4216 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4217 := lang.Apply1(tmp4216, v_clojure_DOT_core_condp)
-	_ = tmp4217
+	tmp4215 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4216 := lang.Apply1(tmp4215, v_clojure_DOT_core_condp)
+	_ = tmp4216
 	_ = v_clojure_DOT_core_condp
 	// (def -case-test (clojure.core/fn [ge const] (if (seq? const) (cons (quote clojure.core/or)…
 	v_clojure_DOT_core_X_case_test.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1303), kw_column, int64(7), kw_end_line, int64(1303), kw_end_column, int64(17)))
-	tmp4218 := lang.FnFunc2(func(ge4219, const_4220 any) any {
-		tmp4221 := v_clojure_DOT_core_seq_QMARK_.Get()
-		tmp4222 := lang.Apply1(tmp4221, const_4220)
-		var tmp4223 any
-		_ = tmp4223
-		if lang.IsTruthy(tmp4222) {
-			tmp4224 := v_clojure_DOT_core_cons.Get()
-			tmp4225 := v_clojure_DOT_core_map_.Get()
-			tmp4226 := lang.FnFunc1(func(c4227 any) any {
-				tmp4228 := v_clojure_DOT_core_seq.Get()
-				tmp4229 := v_clojure_DOT_core_concat.Get()
-				tmp4230 := v_clojure_DOT_core_list.Get()
-				tmp4231 := lang.Apply1(tmp4230, sym_clojure_DOT_core_SLASH__EQ_)
-				tmp4232 := v_clojure_DOT_core_list.Get()
-				tmp4233 := lang.Apply1(tmp4232, ge4219)
-				tmp4234 := v_clojure_DOT_core_list.Get()
-				tmp4235 := v_clojure_DOT_core_seq.Get()
-				tmp4236 := v_clojure_DOT_core_concat.Get()
-				tmp4237 := v_clojure_DOT_core_list.Get()
-				tmp4238 := lang.Apply1(tmp4237, sym_quote)
-				tmp4239 := v_clojure_DOT_core_list.Get()
-				tmp4240 := lang.Apply1(tmp4239, c4227)
-				tmp4241 := lang.Apply2(tmp4236, tmp4238, tmp4240)
-				tmp4242 := lang.Apply1(tmp4235, tmp4241)
-				tmp4243 := lang.Apply1(tmp4234, tmp4242)
-				tmp4244 := lang.Apply3(tmp4229, tmp4231, tmp4233, tmp4243)
-				tmp4245 := lang.Apply1(tmp4228, tmp4244)
-				return tmp4245
+	tmp4217 := lang.FnFunc2(func(ge4218, const_4219 any) any {
+		tmp4220 := v_clojure_DOT_core_seq_QMARK_.Get()
+		tmp4221 := lang.Apply1(tmp4220, const_4219)
+		var tmp4222 any
+		_ = tmp4222
+		if lang.IsTruthy(tmp4221) {
+			tmp4223 := v_clojure_DOT_core_cons.Get()
+			tmp4224 := v_clojure_DOT_core_map_.Get()
+			tmp4225 := lang.FnFunc1(func(c4226 any) any {
+				tmp4227 := v_clojure_DOT_core_seq.Get()
+				tmp4228 := v_clojure_DOT_core_concat.Get()
+				tmp4229 := v_clojure_DOT_core_list.Get()
+				tmp4230 := lang.Apply1(tmp4229, sym_clojure_DOT_core_SLASH__EQ_)
+				tmp4231 := v_clojure_DOT_core_list.Get()
+				tmp4232 := lang.Apply1(tmp4231, ge4218)
+				tmp4233 := v_clojure_DOT_core_list.Get()
+				tmp4234 := v_clojure_DOT_core_seq.Get()
+				tmp4235 := v_clojure_DOT_core_concat.Get()
+				tmp4236 := v_clojure_DOT_core_list.Get()
+				tmp4237 := lang.Apply1(tmp4236, sym_quote)
+				tmp4238 := v_clojure_DOT_core_list.Get()
+				tmp4239 := lang.Apply1(tmp4238, c4226)
+				tmp4240 := lang.Apply2(tmp4235, tmp4237, tmp4239)
+				tmp4241 := lang.Apply1(tmp4234, tmp4240)
+				tmp4242 := lang.Apply1(tmp4233, tmp4241)
+				tmp4243 := lang.Apply3(tmp4228, tmp4230, tmp4232, tmp4242)
+				tmp4244 := lang.Apply1(tmp4227, tmp4243)
+				return tmp4244
 			})
-			tmp4246 := lang.Apply2(tmp4225, tmp4226, const_4220)
-			tmp4247 := lang.Apply2(tmp4224, sym_clojure_DOT_core_SLASH_or, tmp4246)
-			tmp4223 = tmp4247
+			tmp4245 := lang.Apply2(tmp4224, tmp4225, const_4219)
+			tmp4246 := lang.Apply2(tmp4223, sym_clojure_DOT_core_SLASH_or, tmp4245)
+			tmp4222 = tmp4246
 		} else {
-			tmp4248 := v_clojure_DOT_core_seq.Get()
-			tmp4249 := v_clojure_DOT_core_concat.Get()
-			tmp4250 := v_clojure_DOT_core_list.Get()
-			tmp4251 := lang.Apply1(tmp4250, sym_clojure_DOT_core_SLASH__EQ_)
-			tmp4252 := v_clojure_DOT_core_list.Get()
-			tmp4253 := lang.Apply1(tmp4252, ge4219)
-			tmp4254 := v_clojure_DOT_core_list.Get()
-			tmp4255 := v_clojure_DOT_core_seq.Get()
-			tmp4256 := v_clojure_DOT_core_concat.Get()
-			tmp4257 := v_clojure_DOT_core_list.Get()
-			tmp4258 := lang.Apply1(tmp4257, sym_quote)
-			tmp4259 := v_clojure_DOT_core_list.Get()
-			tmp4260 := lang.Apply1(tmp4259, const_4220)
-			tmp4261 := lang.Apply2(tmp4256, tmp4258, tmp4260)
-			tmp4262 := lang.Apply1(tmp4255, tmp4261)
-			tmp4263 := lang.Apply1(tmp4254, tmp4262)
-			tmp4264 := lang.Apply3(tmp4249, tmp4251, tmp4253, tmp4263)
-			tmp4265 := lang.Apply1(tmp4248, tmp4264)
-			tmp4223 = tmp4265
+			tmp4247 := v_clojure_DOT_core_seq.Get()
+			tmp4248 := v_clojure_DOT_core_concat.Get()
+			tmp4249 := v_clojure_DOT_core_list.Get()
+			tmp4250 := lang.Apply1(tmp4249, sym_clojure_DOT_core_SLASH__EQ_)
+			tmp4251 := v_clojure_DOT_core_list.Get()
+			tmp4252 := lang.Apply1(tmp4251, ge4218)
+			tmp4253 := v_clojure_DOT_core_list.Get()
+			tmp4254 := v_clojure_DOT_core_seq.Get()
+			tmp4255 := v_clojure_DOT_core_concat.Get()
+			tmp4256 := v_clojure_DOT_core_list.Get()
+			tmp4257 := lang.Apply1(tmp4256, sym_quote)
+			tmp4258 := v_clojure_DOT_core_list.Get()
+			tmp4259 := lang.Apply1(tmp4258, const_4219)
+			tmp4260 := lang.Apply2(tmp4255, tmp4257, tmp4259)
+			tmp4261 := lang.Apply1(tmp4254, tmp4260)
+			tmp4262 := lang.Apply1(tmp4253, tmp4261)
+			tmp4263 := lang.Apply3(tmp4248, tmp4250, tmp4252, tmp4262)
+			tmp4264 := lang.Apply1(tmp4247, tmp4263)
+			tmp4222 = tmp4264
 		}
-		return tmp4223
+		return tmp4222
 	})
-	v_clojure_DOT_core_X_case_test.BindRoot(tmp4218)
+	v_clojure_DOT_core_X_case_test.BindRoot(tmp4217)
 	_ = v_clojure_DOT_core_X_case_test
 	// (def -case-emit (clojure.core/fn [ge clauses] (if (seq clauses) (if (next clauses) (clojur…
 	v_clojure_DOT_core_X_case_emit.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1308), kw_column, int64(7), kw_end_line, int64(1308), kw_end_column, int64(17)))
-	tmp4266 := lang.FnFunc2(func(ge4267, clauses4268 any) any {
-		tmp4269 := v_clojure_DOT_core_seq.Get()
-		tmp4270 := lang.Apply1(tmp4269, clauses4268)
-		var tmp4271 any
-		_ = tmp4271
-		if lang.IsTruthy(tmp4270) {
-			tmp4272 := v_clojure_DOT_core_next.Get()
-			tmp4273 := lang.Apply1(tmp4272, clauses4268)
-			var tmp4274 any
-			_ = tmp4274
-			if lang.IsTruthy(tmp4273) {
-				tmp4275 := v_clojure_DOT_core_seq.Get()
-				tmp4276 := v_clojure_DOT_core_concat.Get()
-				tmp4277 := v_clojure_DOT_core_list.Get()
-				tmp4278 := lang.Apply1(tmp4277, sym_if_)
-				tmp4279 := v_clojure_DOT_core_list.Get()
-				tmp4280 := v_clojure_DOT_core_X_case_test.Get()
-				tmp4281 := v_clojure_DOT_core_first.Get()
-				tmp4282 := lang.Apply1(tmp4281, clauses4268)
-				tmp4283 := lang.Apply2(tmp4280, ge4267, tmp4282)
-				tmp4284 := lang.Apply1(tmp4279, tmp4283)
-				tmp4285 := v_clojure_DOT_core_list.Get()
-				tmp4286 := v_clojure_DOT_core_second.Get()
-				tmp4287 := lang.Apply1(tmp4286, clauses4268)
-				tmp4288 := lang.Apply1(tmp4285, tmp4287)
-				tmp4289 := v_clojure_DOT_core_list.Get()
-				tmp4290 := v_clojure_DOT_core_X_case_emit.Get()
-				tmp4291 := v_clojure_DOT_core_nnext.Get()
-				tmp4292 := lang.Apply1(tmp4291, clauses4268)
-				tmp4293 := lang.Apply2(tmp4290, ge4267, tmp4292)
-				tmp4294 := lang.Apply1(tmp4289, tmp4293)
-				tmp4295 := lang.Apply4(tmp4276, tmp4278, tmp4284, tmp4288, tmp4294)
-				tmp4296 := lang.Apply1(tmp4275, tmp4295)
-				tmp4274 = tmp4296
+	tmp4265 := lang.FnFunc2(func(ge4266, clauses4267 any) any {
+		tmp4268 := v_clojure_DOT_core_seq.Get()
+		tmp4269 := lang.Apply1(tmp4268, clauses4267)
+		var tmp4270 any
+		_ = tmp4270
+		if lang.IsTruthy(tmp4269) {
+			tmp4271 := v_clojure_DOT_core_next.Get()
+			tmp4272 := lang.Apply1(tmp4271, clauses4267)
+			var tmp4273 any
+			_ = tmp4273
+			if lang.IsTruthy(tmp4272) {
+				tmp4274 := v_clojure_DOT_core_seq.Get()
+				tmp4275 := v_clojure_DOT_core_concat.Get()
+				tmp4276 := v_clojure_DOT_core_list.Get()
+				tmp4277 := lang.Apply1(tmp4276, sym_if_)
+				tmp4278 := v_clojure_DOT_core_list.Get()
+				tmp4279 := v_clojure_DOT_core_X_case_test.Get()
+				tmp4280 := v_clojure_DOT_core_first.Get()
+				tmp4281 := lang.Apply1(tmp4280, clauses4267)
+				tmp4282 := lang.Apply2(tmp4279, ge4266, tmp4281)
+				tmp4283 := lang.Apply1(tmp4278, tmp4282)
+				tmp4284 := v_clojure_DOT_core_list.Get()
+				tmp4285 := v_clojure_DOT_core_second.Get()
+				tmp4286 := lang.Apply1(tmp4285, clauses4267)
+				tmp4287 := lang.Apply1(tmp4284, tmp4286)
+				tmp4288 := v_clojure_DOT_core_list.Get()
+				tmp4289 := v_clojure_DOT_core_X_case_emit.Get()
+				tmp4290 := v_clojure_DOT_core_nnext.Get()
+				tmp4291 := lang.Apply1(tmp4290, clauses4267)
+				tmp4292 := lang.Apply2(tmp4289, ge4266, tmp4291)
+				tmp4293 := lang.Apply1(tmp4288, tmp4292)
+				tmp4294 := lang.Apply4(tmp4275, tmp4277, tmp4283, tmp4287, tmp4293)
+				tmp4295 := lang.Apply1(tmp4274, tmp4294)
+				tmp4273 = tmp4295
 			} else {
-				tmp4297 := v_clojure_DOT_core_first.Get()
-				tmp4298 := lang.Apply1(tmp4297, clauses4268)
-				tmp4274 = tmp4298
+				tmp4296 := v_clojure_DOT_core_first.Get()
+				tmp4297 := lang.Apply1(tmp4296, clauses4267)
+				tmp4273 = tmp4297
 			}
-			tmp4271 = tmp4274
+			tmp4270 = tmp4273
 		} else {
-			tmp4299 := v_clojure_DOT_core_seq.Get()
-			tmp4300 := v_clojure_DOT_core_concat.Get()
-			tmp4301 := v_clojure_DOT_core_list.Get()
-			tmp4302 := lang.Apply1(tmp4301, sym_clojure_DOT_core_SLASH__illegal_argument)
-			tmp4303 := v_clojure_DOT_core_list.Get()
-			tmp4304 := v_clojure_DOT_core_seq.Get()
-			tmp4305 := v_clojure_DOT_core_concat.Get()
-			tmp4306 := v_clojure_DOT_core_list.Get()
-			tmp4307 := lang.Apply1(tmp4306, sym_clojure_DOT_core_SLASH_str)
-			tmp4308 := v_clojure_DOT_core_list.Get()
-			tmp4309 := lang.Apply1(tmp4308, "No matching clause: ")
-			tmp4310 := v_clojure_DOT_core_list.Get()
-			tmp4311 := lang.Apply1(tmp4310, ge4267)
-			tmp4312 := lang.Apply3(tmp4305, tmp4307, tmp4309, tmp4311)
-			tmp4313 := lang.Apply1(tmp4304, tmp4312)
-			tmp4314 := lang.Apply1(tmp4303, tmp4313)
-			tmp4315 := lang.Apply2(tmp4300, tmp4302, tmp4314)
-			tmp4316 := lang.Apply1(tmp4299, tmp4315)
-			tmp4271 = tmp4316
+			tmp4298 := v_clojure_DOT_core_seq.Get()
+			tmp4299 := v_clojure_DOT_core_concat.Get()
+			tmp4300 := v_clojure_DOT_core_list.Get()
+			tmp4301 := lang.Apply1(tmp4300, sym_clojure_DOT_core_SLASH__illegal_argument)
+			tmp4302 := v_clojure_DOT_core_list.Get()
+			tmp4303 := v_clojure_DOT_core_seq.Get()
+			tmp4304 := v_clojure_DOT_core_concat.Get()
+			tmp4305 := v_clojure_DOT_core_list.Get()
+			tmp4306 := lang.Apply1(tmp4305, sym_clojure_DOT_core_SLASH_str)
+			tmp4307 := v_clojure_DOT_core_list.Get()
+			tmp4308 := lang.Apply1(tmp4307, "No matching clause: ")
+			tmp4309 := v_clojure_DOT_core_list.Get()
+			tmp4310 := lang.Apply1(tmp4309, ge4266)
+			tmp4311 := lang.Apply3(tmp4304, tmp4306, tmp4308, tmp4310)
+			tmp4312 := lang.Apply1(tmp4303, tmp4311)
+			tmp4313 := lang.Apply1(tmp4302, tmp4312)
+			tmp4314 := lang.Apply2(tmp4299, tmp4301, tmp4313)
+			tmp4315 := lang.Apply1(tmp4298, tmp4314)
+			tmp4270 = tmp4315
 		}
-		return tmp4271
+		return tmp4270
 	})
-	v_clojure_DOT_core_X_case_emit.BindRoot(tmp4266)
+	v_clojure_DOT_core_X_case_emit.BindRoot(tmp4265)
 	_ = v_clojure_DOT_core_X_case_emit
 	// (do (def case (fn* case ([&form &env e & clauses] (let [ge (gensym "case__")] (clojure.cor…
 	v_clojure_DOT_core_case_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1317), kw_column, int64(11), kw_end_line, int64(1317), kw_end_column, int64(15)))
-	var case_4317 any
-	_ = case_4317
-	tmp4318 := lang.FnFunc(func(args ...any) any {
+	var case_4316 any
+	_ = case_4316
+	tmp4317 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/case", "3+: [&form &env e clauses & more]"))
 			}
-			X_AMP_form4319 := args[0]
-			_ = X_AMP_form4319
-			X_AMP_env4320 := args[1]
-			_ = X_AMP_env4320
-			e4321 := args[2]
-			_ = e4321
-			var clauses4322 any
+			X_AMP_form4318 := args[0]
+			_ = X_AMP_form4318
+			X_AMP_env4319 := args[1]
+			_ = X_AMP_env4319
+			e4320 := args[2]
+			_ = e4320
+			var clauses4321 any
 			if len(args) > 3 {
-				clauses4322 = lang.NewList(args[3:]...)
+				clauses4321 = lang.NewList(args[3:]...)
 			}
-			_ = clauses4322
-			var tmp4323 any
-			_ = tmp4323
+			_ = clauses4321
+			var tmp4322 any
+			_ = tmp4322
 			{
-				tmp4324 := v_clojure_DOT_core_gensym.Get()
-				tmp4325 := lang.Apply1(tmp4324, "case__")
-				var ge4326 any = tmp4325
-				_ = ge4326
-				tmp4327 := v_clojure_DOT_core_seq.Get()
-				tmp4328 := v_clojure_DOT_core_concat.Get()
-				tmp4329 := v_clojure_DOT_core_list.Get()
-				tmp4330 := lang.Apply1(tmp4329, sym_clojure_DOT_core_SLASH_let)
-				tmp4331 := v_clojure_DOT_core_list.Get()
-				tmp4332 := v_clojure_DOT_core_apply.Get()
-				tmp4333 := v_clojure_DOT_core_vector.Get()
-				tmp4334 := v_clojure_DOT_core_seq.Get()
-				tmp4335 := v_clojure_DOT_core_concat.Get()
-				tmp4336 := v_clojure_DOT_core_list.Get()
-				tmp4337 := lang.Apply1(tmp4336, ge4326)
-				tmp4338 := v_clojure_DOT_core_list.Get()
-				tmp4339 := lang.Apply1(tmp4338, e4321)
-				tmp4340 := lang.Apply2(tmp4335, tmp4337, tmp4339)
-				tmp4341 := lang.Apply1(tmp4334, tmp4340)
-				tmp4342 := lang.Apply2(tmp4332, tmp4333, tmp4341)
-				tmp4343 := lang.Apply1(tmp4331, tmp4342)
-				tmp4344 := v_clojure_DOT_core_list.Get()
-				tmp4345 := v_clojure_DOT_core_X_case_emit.Get()
-				tmp4346 := v_clojure_DOT_core_seq.Get()
-				tmp4347 := lang.Apply1(tmp4346, clauses4322)
-				tmp4348 := lang.Apply2(tmp4345, ge4326, tmp4347)
-				tmp4349 := lang.Apply1(tmp4344, tmp4348)
-				tmp4350 := lang.Apply3(tmp4328, tmp4330, tmp4343, tmp4349)
-				tmp4351 := lang.Apply1(tmp4327, tmp4350)
-				tmp4323 = tmp4351
+				tmp4323 := v_clojure_DOT_core_gensym.Get()
+				tmp4324 := lang.Apply1(tmp4323, "case__")
+				var ge4325 any = tmp4324
+				_ = ge4325
+				tmp4326 := v_clojure_DOT_core_seq.Get()
+				tmp4327 := v_clojure_DOT_core_concat.Get()
+				tmp4328 := v_clojure_DOT_core_list.Get()
+				tmp4329 := lang.Apply1(tmp4328, sym_clojure_DOT_core_SLASH_let)
+				tmp4330 := v_clojure_DOT_core_list.Get()
+				tmp4331 := v_clojure_DOT_core_apply.Get()
+				tmp4332 := v_clojure_DOT_core_vector.Get()
+				tmp4333 := v_clojure_DOT_core_seq.Get()
+				tmp4334 := v_clojure_DOT_core_concat.Get()
+				tmp4335 := v_clojure_DOT_core_list.Get()
+				tmp4336 := lang.Apply1(tmp4335, ge4325)
+				tmp4337 := v_clojure_DOT_core_list.Get()
+				tmp4338 := lang.Apply1(tmp4337, e4320)
+				tmp4339 := lang.Apply2(tmp4334, tmp4336, tmp4338)
+				tmp4340 := lang.Apply1(tmp4333, tmp4339)
+				tmp4341 := lang.Apply2(tmp4331, tmp4332, tmp4340)
+				tmp4342 := lang.Apply1(tmp4330, tmp4341)
+				tmp4343 := v_clojure_DOT_core_list.Get()
+				tmp4344 := v_clojure_DOT_core_X_case_emit.Get()
+				tmp4345 := v_clojure_DOT_core_seq.Get()
+				tmp4346 := lang.Apply1(tmp4345, clauses4321)
+				tmp4347 := lang.Apply2(tmp4344, ge4325, tmp4346)
+				tmp4348 := lang.Apply1(tmp4343, tmp4347)
+				tmp4349 := lang.Apply3(tmp4327, tmp4329, tmp4342, tmp4348)
+				tmp4350 := lang.Apply1(tmp4326, tmp4349)
+				tmp4322 = tmp4350
 			}
-			return tmp4323
+			return tmp4322
 		}
 	})
-	case_4317 = tmp4318
-	v_clojure_DOT_core_case_.BindRoot(tmp4318)
+	case_4316 = tmp4317
+	v_clojure_DOT_core_case_.BindRoot(tmp4317)
 	_ = v_clojure_DOT_core_case_
-	tmp4352 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4353 := lang.Apply1(tmp4352, v_clojure_DOT_core_case_)
-	_ = tmp4353
+	tmp4351 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4352 := lang.Apply1(tmp4351, v_clojure_DOT_core_case_)
+	_ = tmp4352
 	_ = v_clojure_DOT_core_case_
 	// (do (def doto (fn* doto ([&form &env x & forms] (let [g (gensym "doto__")] (clojure.core/s…
 	v_clojure_DOT_core_doto.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1323), kw_column, int64(11), kw_end_line, int64(1323), kw_end_column, int64(15)))
-	var doto4354 any
-	_ = doto4354
-	tmp4355 := lang.FnFunc(func(args ...any) any {
+	var doto4353 any
+	_ = doto4353
+	tmp4354 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/doto", "3+: [&form &env x forms & more]"))
 			}
-			X_AMP_form4356 := args[0]
-			_ = X_AMP_form4356
-			X_AMP_env4357 := args[1]
-			_ = X_AMP_env4357
-			x4358 := args[2]
-			_ = x4358
-			var forms4359 any
+			X_AMP_form4355 := args[0]
+			_ = X_AMP_form4355
+			X_AMP_env4356 := args[1]
+			_ = X_AMP_env4356
+			x4357 := args[2]
+			_ = x4357
+			var forms4358 any
 			if len(args) > 3 {
-				forms4359 = lang.NewList(args[3:]...)
+				forms4358 = lang.NewList(args[3:]...)
 			}
-			_ = forms4359
-			var tmp4360 any
-			_ = tmp4360
+			_ = forms4358
+			var tmp4359 any
+			_ = tmp4359
 			{
-				tmp4361 := v_clojure_DOT_core_gensym.Get()
-				tmp4362 := lang.Apply1(tmp4361, "doto__")
-				var g4363 any = tmp4362
-				_ = g4363
-				tmp4364 := v_clojure_DOT_core_seq.Get()
-				tmp4365 := v_clojure_DOT_core_concat.Get()
-				tmp4366 := v_clojure_DOT_core_list.Get()
-				tmp4367 := lang.Apply1(tmp4366, sym_clojure_DOT_core_SLASH_let)
-				tmp4368 := v_clojure_DOT_core_list.Get()
-				tmp4369 := v_clojure_DOT_core_apply.Get()
-				tmp4370 := v_clojure_DOT_core_vector.Get()
-				tmp4371 := v_clojure_DOT_core_seq.Get()
-				tmp4372 := v_clojure_DOT_core_concat.Get()
-				tmp4373 := v_clojure_DOT_core_list.Get()
-				tmp4374 := lang.Apply1(tmp4373, g4363)
-				tmp4375 := v_clojure_DOT_core_list.Get()
-				tmp4376 := lang.Apply1(tmp4375, x4358)
-				tmp4377 := lang.Apply2(tmp4372, tmp4374, tmp4376)
-				tmp4378 := lang.Apply1(tmp4371, tmp4377)
-				tmp4379 := lang.Apply2(tmp4369, tmp4370, tmp4378)
-				tmp4380 := lang.Apply1(tmp4368, tmp4379)
-				tmp4381 := v_clojure_DOT_core_map_.Get()
-				tmp4382 := lang.FnFunc1(func(f4383 any) any {
-					tmp4384 := v_clojure_DOT_core_seq_QMARK_.Get()
-					tmp4385 := lang.Apply1(tmp4384, f4383)
-					var tmp4386 any
-					_ = tmp4386
-					if lang.IsTruthy(tmp4385) {
-						tmp4387 := v_clojure_DOT_core_seq.Get()
-						tmp4388 := v_clojure_DOT_core_concat.Get()
-						tmp4389 := v_clojure_DOT_core_list.Get()
-						tmp4390 := v_clojure_DOT_core_first.Get()
-						tmp4391 := lang.Apply1(tmp4390, f4383)
-						tmp4392 := lang.Apply1(tmp4389, tmp4391)
-						tmp4393 := v_clojure_DOT_core_list.Get()
-						tmp4394 := lang.Apply1(tmp4393, g4363)
-						tmp4395 := v_clojure_DOT_core_next.Get()
-						tmp4396 := lang.Apply1(tmp4395, f4383)
-						tmp4397 := lang.Apply3(tmp4388, tmp4392, tmp4394, tmp4396)
-						tmp4398 := lang.Apply1(tmp4387, tmp4397)
-						tmp4386 = tmp4398
+				tmp4360 := v_clojure_DOT_core_gensym.Get()
+				tmp4361 := lang.Apply1(tmp4360, "doto__")
+				var g4362 any = tmp4361
+				_ = g4362
+				tmp4363 := v_clojure_DOT_core_seq.Get()
+				tmp4364 := v_clojure_DOT_core_concat.Get()
+				tmp4365 := v_clojure_DOT_core_list.Get()
+				tmp4366 := lang.Apply1(tmp4365, sym_clojure_DOT_core_SLASH_let)
+				tmp4367 := v_clojure_DOT_core_list.Get()
+				tmp4368 := v_clojure_DOT_core_apply.Get()
+				tmp4369 := v_clojure_DOT_core_vector.Get()
+				tmp4370 := v_clojure_DOT_core_seq.Get()
+				tmp4371 := v_clojure_DOT_core_concat.Get()
+				tmp4372 := v_clojure_DOT_core_list.Get()
+				tmp4373 := lang.Apply1(tmp4372, g4362)
+				tmp4374 := v_clojure_DOT_core_list.Get()
+				tmp4375 := lang.Apply1(tmp4374, x4357)
+				tmp4376 := lang.Apply2(tmp4371, tmp4373, tmp4375)
+				tmp4377 := lang.Apply1(tmp4370, tmp4376)
+				tmp4378 := lang.Apply2(tmp4368, tmp4369, tmp4377)
+				tmp4379 := lang.Apply1(tmp4367, tmp4378)
+				tmp4380 := v_clojure_DOT_core_map_.Get()
+				tmp4381 := lang.FnFunc1(func(f4382 any) any {
+					tmp4383 := v_clojure_DOT_core_seq_QMARK_.Get()
+					tmp4384 := lang.Apply1(tmp4383, f4382)
+					var tmp4385 any
+					_ = tmp4385
+					if lang.IsTruthy(tmp4384) {
+						tmp4386 := v_clojure_DOT_core_seq.Get()
+						tmp4387 := v_clojure_DOT_core_concat.Get()
+						tmp4388 := v_clojure_DOT_core_list.Get()
+						tmp4389 := v_clojure_DOT_core_first.Get()
+						tmp4390 := lang.Apply1(tmp4389, f4382)
+						tmp4391 := lang.Apply1(tmp4388, tmp4390)
+						tmp4392 := v_clojure_DOT_core_list.Get()
+						tmp4393 := lang.Apply1(tmp4392, g4362)
+						tmp4394 := v_clojure_DOT_core_next.Get()
+						tmp4395 := lang.Apply1(tmp4394, f4382)
+						tmp4396 := lang.Apply3(tmp4387, tmp4391, tmp4393, tmp4395)
+						tmp4397 := lang.Apply1(tmp4386, tmp4396)
+						tmp4385 = tmp4397
 					} else {
-						tmp4399 := v_clojure_DOT_core_seq.Get()
-						tmp4400 := v_clojure_DOT_core_concat.Get()
-						tmp4401 := v_clojure_DOT_core_list.Get()
-						tmp4402 := lang.Apply1(tmp4401, f4383)
-						tmp4403 := v_clojure_DOT_core_list.Get()
-						tmp4404 := lang.Apply1(tmp4403, g4363)
-						tmp4405 := lang.Apply2(tmp4400, tmp4402, tmp4404)
-						tmp4406 := lang.Apply1(tmp4399, tmp4405)
-						tmp4386 = tmp4406
+						tmp4398 := v_clojure_DOT_core_seq.Get()
+						tmp4399 := v_clojure_DOT_core_concat.Get()
+						tmp4400 := v_clojure_DOT_core_list.Get()
+						tmp4401 := lang.Apply1(tmp4400, f4382)
+						tmp4402 := v_clojure_DOT_core_list.Get()
+						tmp4403 := lang.Apply1(tmp4402, g4362)
+						tmp4404 := lang.Apply2(tmp4399, tmp4401, tmp4403)
+						tmp4405 := lang.Apply1(tmp4398, tmp4404)
+						tmp4385 = tmp4405
 					}
-					return tmp4386
+					return tmp4385
 				})
-				tmp4407 := lang.Apply2(tmp4381, tmp4382, forms4359)
-				tmp4408 := v_clojure_DOT_core_list.Get()
-				tmp4409 := lang.Apply1(tmp4408, g4363)
-				tmp4410 := lang.Apply4(tmp4365, tmp4367, tmp4380, tmp4407, tmp4409)
-				tmp4411 := lang.Apply1(tmp4364, tmp4410)
-				tmp4360 = tmp4411
+				tmp4406 := lang.Apply2(tmp4380, tmp4381, forms4358)
+				tmp4407 := v_clojure_DOT_core_list.Get()
+				tmp4408 := lang.Apply1(tmp4407, g4362)
+				tmp4409 := lang.Apply4(tmp4364, tmp4366, tmp4379, tmp4406, tmp4408)
+				tmp4410 := lang.Apply1(tmp4363, tmp4409)
+				tmp4359 = tmp4410
 			}
-			return tmp4360
+			return tmp4359
 		}
 	})
-	doto4354 = tmp4355
-	v_clojure_DOT_core_doto.BindRoot(tmp4355)
+	doto4353 = tmp4354
+	v_clojure_DOT_core_doto.BindRoot(tmp4354)
 	_ = v_clojure_DOT_core_doto
-	tmp4412 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4413 := lang.Apply1(tmp4412, v_clojure_DOT_core_doto)
-	_ = tmp4413
+	tmp4411 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4412 := lang.Apply1(tmp4411, v_clojure_DOT_core_doto)
+	_ = tmp4412
 	_ = v_clojure_DOT_core_doto
 	// (do (def while (fn* while ([&form &env test & body] (clojure.core/seq (clojure.core/concat…
 	v_clojure_DOT_core_while.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1335), kw_column, int64(11), kw_end_line, int64(1335), kw_end_column, int64(16)))
-	var while4414 any
-	_ = while4414
-	tmp4415 := lang.FnFunc(func(args ...any) any {
+	var while4413 any
+	_ = while4413
+	tmp4414 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/while", "3+: [&form &env test body & more]"))
 			}
-			X_AMP_form4416 := args[0]
-			_ = X_AMP_form4416
-			X_AMP_env4417 := args[1]
-			_ = X_AMP_env4417
-			test4418 := args[2]
-			_ = test4418
-			var body4419 any
+			X_AMP_form4415 := args[0]
+			_ = X_AMP_form4415
+			X_AMP_env4416 := args[1]
+			_ = X_AMP_env4416
+			test4417 := args[2]
+			_ = test4417
+			var body4418 any
 			if len(args) > 3 {
-				body4419 = lang.NewList(args[3:]...)
+				body4418 = lang.NewList(args[3:]...)
 			}
-			_ = body4419
-			tmp4420 := v_clojure_DOT_core_seq.Get()
-			tmp4421 := v_clojure_DOT_core_concat.Get()
-			tmp4422 := v_clojure_DOT_core_list.Get()
-			tmp4423 := lang.Apply1(tmp4422, sym_clojure_DOT_core_SLASH_loop)
-			tmp4424 := v_clojure_DOT_core_list.Get()
-			tmp4425 := v_clojure_DOT_core_apply.Get()
-			tmp4426 := v_clojure_DOT_core_vector.Get()
-			tmp4427 := v_clojure_DOT_core_seq.Get()
-			tmp4428 := v_clojure_DOT_core_concat.Get()
-			tmp4429 := lang.Apply0(tmp4428)
-			tmp4430 := lang.Apply1(tmp4427, tmp4429)
-			tmp4431 := lang.Apply2(tmp4425, tmp4426, tmp4430)
-			tmp4432 := lang.Apply1(tmp4424, tmp4431)
-			tmp4433 := v_clojure_DOT_core_list.Get()
-			tmp4434 := v_clojure_DOT_core_seq.Get()
-			tmp4435 := v_clojure_DOT_core_concat.Get()
-			tmp4436 := v_clojure_DOT_core_list.Get()
-			tmp4437 := lang.Apply1(tmp4436, sym_clojure_DOT_core_SLASH_when)
-			tmp4438 := v_clojure_DOT_core_list.Get()
-			tmp4439 := lang.Apply1(tmp4438, test4418)
-			tmp4440 := v_clojure_DOT_core_list.Get()
-			tmp4441 := v_clojure_DOT_core_seq.Get()
-			tmp4442 := v_clojure_DOT_core_concat.Get()
-			tmp4443 := v_clojure_DOT_core_list.Get()
-			tmp4444 := lang.Apply1(tmp4443, sym_recur)
-			tmp4445 := lang.Apply1(tmp4442, tmp4444)
-			tmp4446 := lang.Apply1(tmp4441, tmp4445)
-			tmp4447 := lang.Apply1(tmp4440, tmp4446)
-			tmp4448 := lang.Apply4(tmp4435, tmp4437, tmp4439, body4419, tmp4447)
-			tmp4449 := lang.Apply1(tmp4434, tmp4448)
-			tmp4450 := lang.Apply1(tmp4433, tmp4449)
-			tmp4451 := lang.Apply3(tmp4421, tmp4423, tmp4432, tmp4450)
-			tmp4452 := lang.Apply1(tmp4420, tmp4451)
-			return tmp4452
+			_ = body4418
+			tmp4419 := v_clojure_DOT_core_seq.Get()
+			tmp4420 := v_clojure_DOT_core_concat.Get()
+			tmp4421 := v_clojure_DOT_core_list.Get()
+			tmp4422 := lang.Apply1(tmp4421, sym_clojure_DOT_core_SLASH_loop)
+			tmp4423 := v_clojure_DOT_core_list.Get()
+			tmp4424 := v_clojure_DOT_core_apply.Get()
+			tmp4425 := v_clojure_DOT_core_vector.Get()
+			tmp4426 := v_clojure_DOT_core_seq.Get()
+			tmp4427 := v_clojure_DOT_core_concat.Get()
+			tmp4428 := lang.Apply0(tmp4427)
+			tmp4429 := lang.Apply1(tmp4426, tmp4428)
+			tmp4430 := lang.Apply2(tmp4424, tmp4425, tmp4429)
+			tmp4431 := lang.Apply1(tmp4423, tmp4430)
+			tmp4432 := v_clojure_DOT_core_list.Get()
+			tmp4433 := v_clojure_DOT_core_seq.Get()
+			tmp4434 := v_clojure_DOT_core_concat.Get()
+			tmp4435 := v_clojure_DOT_core_list.Get()
+			tmp4436 := lang.Apply1(tmp4435, sym_clojure_DOT_core_SLASH_when)
+			tmp4437 := v_clojure_DOT_core_list.Get()
+			tmp4438 := lang.Apply1(tmp4437, test4417)
+			tmp4439 := v_clojure_DOT_core_list.Get()
+			tmp4440 := v_clojure_DOT_core_seq.Get()
+			tmp4441 := v_clojure_DOT_core_concat.Get()
+			tmp4442 := v_clojure_DOT_core_list.Get()
+			tmp4443 := lang.Apply1(tmp4442, sym_recur)
+			tmp4444 := lang.Apply1(tmp4441, tmp4443)
+			tmp4445 := lang.Apply1(tmp4440, tmp4444)
+			tmp4446 := lang.Apply1(tmp4439, tmp4445)
+			tmp4447 := lang.Apply4(tmp4434, tmp4436, tmp4438, body4418, tmp4446)
+			tmp4448 := lang.Apply1(tmp4433, tmp4447)
+			tmp4449 := lang.Apply1(tmp4432, tmp4448)
+			tmp4450 := lang.Apply3(tmp4420, tmp4422, tmp4431, tmp4449)
+			tmp4451 := lang.Apply1(tmp4419, tmp4450)
+			return tmp4451
 		}
 	})
-	while4414 = tmp4415
-	v_clojure_DOT_core_while.BindRoot(tmp4415)
+	while4413 = tmp4414
+	v_clojure_DOT_core_while.BindRoot(tmp4414)
 	_ = v_clojure_DOT_core_while
-	tmp4453 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4454 := lang.Apply1(tmp4453, v_clojure_DOT_core_while)
-	_ = tmp4454
+	tmp4452 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4453 := lang.Apply1(tmp4452, v_clojure_DOT_core_while)
+	_ = tmp4453
 	_ = v_clojure_DOT_core_while
 	// (def dorun (clojure.core/fn [coll] (loop [s (seq coll)] (if s (recur (next s)) nil))))
 	v_clojure_DOT_core_dorun.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1344), kw_column, int64(7), kw_end_line, int64(1344), kw_end_column, int64(12)))
-	tmp4455 := lang.FnFunc1(func(coll4456 any) any {
-		var tmp4457 any
-		_ = tmp4457
+	tmp4454 := lang.FnFunc1(func(coll4455 any) any {
+		var tmp4456 any
+		_ = tmp4456
 		{
-			tmp4458 := v_clojure_DOT_core_seq.Get()
-			tmp4459 := lang.Apply1(tmp4458, coll4456)
-			var s4460 any = tmp4459
-			_ = s4460
-		loop4461:
+			tmp4457 := v_clojure_DOT_core_seq.Get()
+			tmp4458 := lang.Apply1(tmp4457, coll4455)
+			var s4459 any = tmp4458
+			_ = s4459
+		loop4460:
 			for {
-				var tmp4462 any
-				_ = tmp4462
-				if lang.IsTruthy(s4460) {
-					tmp4463 := v_clojure_DOT_core_next.Get()
-					tmp4464 := lang.Apply1(tmp4463, s4460)
-					var tmp4465 any = tmp4464
-					s4460 = tmp4465
-					continue loop4461
+				var tmp4461 any
+				_ = tmp4461
+				if lang.IsTruthy(s4459) {
+					tmp4462 := v_clojure_DOT_core_next.Get()
+					tmp4463 := lang.Apply1(tmp4462, s4459)
+					var tmp4464 any = tmp4463
+					s4459 = tmp4464
+					continue loop4460
 				} else {
-					tmp4462 = nil
+					tmp4461 = nil
 				}
-				tmp4457 = tmp4462
-				break loop4461
+				tmp4456 = tmp4461
+				break loop4460
 			}
 		}
-		return tmp4457
+		return tmp4456
 	})
-	v_clojure_DOT_core_dorun.BindRoot(tmp4455)
+	v_clojure_DOT_core_dorun.BindRoot(tmp4454)
 	_ = v_clojure_DOT_core_dorun
 	// (def doall (clojure.core/fn [coll] (dorun coll) coll))
 	v_clojure_DOT_core_doall.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1348), kw_column, int64(7), kw_end_line, int64(1348), kw_end_column, int64(12)))
-	tmp4466 := lang.FnFunc1(func(coll4467 any) any {
-		tmp4468 := v_clojure_DOT_core_dorun.Get()
-		tmp4469 := lang.Apply1(tmp4468, coll4467)
-		_ = tmp4469
-		return coll4467
+	tmp4465 := lang.FnFunc1(func(coll4466 any) any {
+		tmp4467 := v_clojure_DOT_core_dorun.Get()
+		tmp4468 := lang.Apply1(tmp4467, coll4466)
+		_ = tmp4468
+		return coll4466
 	})
-	v_clojure_DOT_core_doall.BindRoot(tmp4466)
+	v_clojure_DOT_core_doall.BindRoot(tmp4465)
 	_ = v_clojure_DOT_core_doall
 	// (do (def defmulti (fn* defmulti ([&form &env mm-name dispatch-fn] (list (quote def) mm-nam…
 	v_clojure_DOT_core_defmulti.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1363), kw_column, int64(11), kw_end_line, int64(1363), kw_end_column, int64(19)))
-	var defmulti4470 any
-	_ = defmulti4470
-	var defmulti4470d lang.FnFunc4
-	_ = defmulti4470d
-	tmp4471 := lang.FnFunc4(func(X_AMP_form4472, X_AMP_env4473, mm_name4474, dispatch_fn4475 any) any {
+	var defmulti4469 any
+	_ = defmulti4469
+	var defmulti4469d lang.FnFunc4
+	_ = defmulti4469d
+	tmp4470 := lang.FnFunc4(func(X_AMP_form4471, X_AMP_env4472, mm_name4473, dispatch_fn4474 any) any {
+		tmp4475 := v_clojure_DOT_core_list.Get()
 		tmp4476 := v_clojure_DOT_core_list.Get()
-		tmp4477 := v_clojure_DOT_core_list.Get()
-		tmp4478 := v_clojure_DOT_core_name.Get()
-		tmp4479 := lang.Apply1(tmp4478, mm_name4474)
-		tmp4480 := lang.Apply3(tmp4477, sym_X_defmulti, tmp4479, dispatch_fn4475)
-		tmp4481 := lang.Apply3(tmp4476, sym_def, mm_name4474, tmp4480)
-		return tmp4481
+		tmp4477 := v_clojure_DOT_core_name.Get()
+		tmp4478 := lang.Apply1(tmp4477, mm_name4473)
+		tmp4479 := lang.Apply3(tmp4476, sym_X_defmulti, tmp4478, dispatch_fn4474)
+		tmp4480 := lang.Apply3(tmp4475, sym_def, mm_name4473, tmp4479)
+		return tmp4480
 	})
-	defmulti4470 = tmp4471
-	defmulti4470d = tmp4471
-	v_clojure_DOT_core_defmulti.BindRoot(tmp4471)
+	defmulti4469 = tmp4470
+	defmulti4469d = tmp4470
+	v_clojure_DOT_core_defmulti.BindRoot(tmp4470)
 	_ = v_clojure_DOT_core_defmulti
-	tmp4482 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4483 := lang.Apply1(tmp4482, v_clojure_DOT_core_defmulti)
-	_ = tmp4483
+	tmp4481 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4482 := lang.Apply1(tmp4481, v_clojure_DOT_core_defmulti)
+	_ = tmp4482
 	_ = v_clojure_DOT_core_defmulti
 	// (do (def defmethod (fn* defmethod ([&form &env mm-name dispatch-val params & body] (list (…
 	v_clojure_DOT_core_defmethod.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1367), kw_column, int64(11), kw_end_line, int64(1367), kw_end_column, int64(20)))
-	var defmethod4484 any
-	_ = defmethod4484
-	tmp4485 := lang.FnFunc(func(args ...any) any {
+	var defmethod4483 any
+	_ = defmethod4483
+	tmp4484 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 5 {
 				panic(lang.NewArityError(len(args), "clojure.core/defmethod", "5+: [&form &env mm-name dispatch-val params body & more]"))
 			}
-			X_AMP_form4486 := args[0]
-			_ = X_AMP_form4486
-			X_AMP_env4487 := args[1]
-			_ = X_AMP_env4487
-			mm_name4488 := args[2]
-			_ = mm_name4488
-			dispatch_val4489 := args[3]
-			_ = dispatch_val4489
-			params4490 := args[4]
-			_ = params4490
-			var body4491 any
+			X_AMP_form4485 := args[0]
+			_ = X_AMP_form4485
+			X_AMP_env4486 := args[1]
+			_ = X_AMP_env4486
+			mm_name4487 := args[2]
+			_ = mm_name4487
+			dispatch_val4488 := args[3]
+			_ = dispatch_val4488
+			params4489 := args[4]
+			_ = params4489
+			var body4490 any
 			if len(args) > 5 {
-				body4491 = lang.NewList(args[5:]...)
+				body4490 = lang.NewList(args[5:]...)
 			}
-			_ = body4491
-			tmp4492 := v_clojure_DOT_core_list.Get()
-			tmp4493 := v_clojure_DOT_core_list_STAR_.Get()
-			tmp4494 := lang.Apply3(tmp4493, sym_fn, params4490, body4491)
-			tmp4495 := lang.Apply4(tmp4492, sym_X_defmethod, mm_name4488, dispatch_val4489, tmp4494)
-			return tmp4495
+			_ = body4490
+			tmp4491 := v_clojure_DOT_core_list.Get()
+			tmp4492 := v_clojure_DOT_core_list_STAR_.Get()
+			tmp4493 := lang.Apply3(tmp4492, sym_fn, params4489, body4490)
+			tmp4494 := lang.Apply4(tmp4491, sym_X_defmethod, mm_name4487, dispatch_val4488, tmp4493)
+			return tmp4494
 		}
 	})
-	defmethod4484 = tmp4485
-	v_clojure_DOT_core_defmethod.BindRoot(tmp4485)
+	defmethod4483 = tmp4484
+	v_clojure_DOT_core_defmethod.BindRoot(tmp4484)
 	_ = v_clojure_DOT_core_defmethod
-	tmp4496 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4497 := lang.Apply1(tmp4496, v_clojure_DOT_core_defmethod)
-	_ = tmp4497
+	tmp4495 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4496 := lang.Apply1(tmp4495, v_clojure_DOT_core_defmethod)
+	_ = tmp4496
 	_ = v_clojure_DOT_core_defmethod
 	// (def *assert* true)
 	v_clojure_DOT_core_X_STAR_assert_STAR_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1383), kw_column, int64(6), kw_end_line, int64(1383), kw_end_column, int64(24), kw_dynamic, true))
@@ -9157,2434 +9156,2434 @@ func Load() {
 	_ = v_clojure_DOT_core_X_STAR_assert_STAR_
 	// (do (def assert (fn* assert ([&form &env x] (when *assert* (clojure.core/seq (clojure.core…
 	v_clojure_DOT_core_assert.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1385), kw_column, int64(11), kw_end_line, int64(1385), kw_end_column, int64(17)))
-	var assert4498 any
-	_ = assert4498
-	tmp4499 := lang.FnFunc(func(args ...any) any {
+	var assert4497 any
+	_ = assert4497
+	tmp4498 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 3:
-			X_AMP_form4500 := args[0]
-			_ = X_AMP_form4500
-			X_AMP_env4501 := args[1]
-			_ = X_AMP_env4501
-			x4502 := args[2]
-			_ = x4502
-			tmp4503 := v_clojure_DOT_core_X_STAR_assert_STAR_.Get()
-			var tmp4504 any
-			_ = tmp4504
-			if lang.IsTruthy(tmp4503) {
-				tmp4505 := v_clojure_DOT_core_seq.Get()
-				tmp4506 := v_clojure_DOT_core_concat.Get()
-				tmp4507 := v_clojure_DOT_core_list.Get()
-				tmp4508 := lang.Apply1(tmp4507, sym_clojure_DOT_core_SLASH_when_not)
-				tmp4509 := v_clojure_DOT_core_list.Get()
-				tmp4510 := lang.Apply1(tmp4509, x4502)
-				tmp4511 := v_clojure_DOT_core_list.Get()
-				tmp4512 := v_clojure_DOT_core_seq.Get()
-				tmp4513 := v_clojure_DOT_core_concat.Get()
-				tmp4514 := v_clojure_DOT_core_list.Get()
-				tmp4515 := lang.Apply1(tmp4514, sym_throw)
-				tmp4516 := v_clojure_DOT_core_list.Get()
-				tmp4517 := v_clojure_DOT_core_seq.Get()
-				tmp4518 := v_clojure_DOT_core_concat.Get()
-				tmp4519 := v_clojure_DOT_core_list.Get()
-				tmp4520 := lang.Apply1(tmp4519, sym_clojure_DOT_core_SLASH_ex_info)
-				tmp4521 := v_clojure_DOT_core_list.Get()
-				tmp4522 := v_clojure_DOT_core_seq.Get()
-				tmp4523 := v_clojure_DOT_core_concat.Get()
-				tmp4524 := v_clojure_DOT_core_list.Get()
-				tmp4525 := lang.Apply1(tmp4524, sym_clojure_DOT_core_SLASH_str)
-				tmp4526 := v_clojure_DOT_core_list.Get()
-				tmp4527 := lang.Apply1(tmp4526, "Assert failed: ")
-				tmp4528 := v_clojure_DOT_core_list.Get()
-				tmp4529 := v_clojure_DOT_core_seq.Get()
-				tmp4530 := v_clojure_DOT_core_concat.Get()
-				tmp4531 := v_clojure_DOT_core_list.Get()
-				tmp4532 := lang.Apply1(tmp4531, sym_clojure_DOT_core_SLASH_pr_str)
-				tmp4533 := v_clojure_DOT_core_list.Get()
-				tmp4534 := v_clojure_DOT_core_seq.Get()
-				tmp4535 := v_clojure_DOT_core_concat.Get()
-				tmp4536 := v_clojure_DOT_core_list.Get()
-				tmp4537 := lang.Apply1(tmp4536, sym_quote)
-				tmp4538 := v_clojure_DOT_core_list.Get()
-				tmp4539 := lang.Apply1(tmp4538, x4502)
-				tmp4540 := lang.Apply2(tmp4535, tmp4537, tmp4539)
-				tmp4541 := lang.Apply1(tmp4534, tmp4540)
-				tmp4542 := lang.Apply1(tmp4533, tmp4541)
-				tmp4543 := lang.Apply2(tmp4530, tmp4532, tmp4542)
-				tmp4544 := lang.Apply1(tmp4529, tmp4543)
-				tmp4545 := lang.Apply1(tmp4528, tmp4544)
-				tmp4546 := lang.Apply3(tmp4523, tmp4525, tmp4527, tmp4545)
-				tmp4547 := lang.Apply1(tmp4522, tmp4546)
-				tmp4548 := lang.Apply1(tmp4521, tmp4547)
-				tmp4549 := v_clojure_DOT_core_list.Get()
-				tmp4550 := v_clojure_DOT_core_apply.Get()
-				tmp4551 := v_clojure_DOT_core_hash_map.Get()
-				tmp4552 := v_clojure_DOT_core_seq.Get()
-				tmp4553 := v_clojure_DOT_core_concat.Get()
-				tmp4554 := lang.Apply0(tmp4553)
-				tmp4555 := lang.Apply1(tmp4552, tmp4554)
-				tmp4556 := lang.Apply2(tmp4550, tmp4551, tmp4555)
-				tmp4557 := lang.Apply1(tmp4549, tmp4556)
-				tmp4558 := lang.Apply3(tmp4518, tmp4520, tmp4548, tmp4557)
-				tmp4559 := lang.Apply1(tmp4517, tmp4558)
-				tmp4560 := lang.Apply1(tmp4516, tmp4559)
-				tmp4561 := lang.Apply2(tmp4513, tmp4515, tmp4560)
-				tmp4562 := lang.Apply1(tmp4512, tmp4561)
-				tmp4563 := lang.Apply1(tmp4511, tmp4562)
-				tmp4564 := lang.Apply3(tmp4506, tmp4508, tmp4510, tmp4563)
-				tmp4565 := lang.Apply1(tmp4505, tmp4564)
-				tmp4504 = tmp4565
+			X_AMP_form4499 := args[0]
+			_ = X_AMP_form4499
+			X_AMP_env4500 := args[1]
+			_ = X_AMP_env4500
+			x4501 := args[2]
+			_ = x4501
+			tmp4502 := v_clojure_DOT_core_X_STAR_assert_STAR_.Get()
+			var tmp4503 any
+			_ = tmp4503
+			if lang.IsTruthy(tmp4502) {
+				tmp4504 := v_clojure_DOT_core_seq.Get()
+				tmp4505 := v_clojure_DOT_core_concat.Get()
+				tmp4506 := v_clojure_DOT_core_list.Get()
+				tmp4507 := lang.Apply1(tmp4506, sym_clojure_DOT_core_SLASH_when_not)
+				tmp4508 := v_clojure_DOT_core_list.Get()
+				tmp4509 := lang.Apply1(tmp4508, x4501)
+				tmp4510 := v_clojure_DOT_core_list.Get()
+				tmp4511 := v_clojure_DOT_core_seq.Get()
+				tmp4512 := v_clojure_DOT_core_concat.Get()
+				tmp4513 := v_clojure_DOT_core_list.Get()
+				tmp4514 := lang.Apply1(tmp4513, sym_throw)
+				tmp4515 := v_clojure_DOT_core_list.Get()
+				tmp4516 := v_clojure_DOT_core_seq.Get()
+				tmp4517 := v_clojure_DOT_core_concat.Get()
+				tmp4518 := v_clojure_DOT_core_list.Get()
+				tmp4519 := lang.Apply1(tmp4518, sym_clojure_DOT_core_SLASH_ex_info)
+				tmp4520 := v_clojure_DOT_core_list.Get()
+				tmp4521 := v_clojure_DOT_core_seq.Get()
+				tmp4522 := v_clojure_DOT_core_concat.Get()
+				tmp4523 := v_clojure_DOT_core_list.Get()
+				tmp4524 := lang.Apply1(tmp4523, sym_clojure_DOT_core_SLASH_str)
+				tmp4525 := v_clojure_DOT_core_list.Get()
+				tmp4526 := lang.Apply1(tmp4525, "Assert failed: ")
+				tmp4527 := v_clojure_DOT_core_list.Get()
+				tmp4528 := v_clojure_DOT_core_seq.Get()
+				tmp4529 := v_clojure_DOT_core_concat.Get()
+				tmp4530 := v_clojure_DOT_core_list.Get()
+				tmp4531 := lang.Apply1(tmp4530, sym_clojure_DOT_core_SLASH_pr_str)
+				tmp4532 := v_clojure_DOT_core_list.Get()
+				tmp4533 := v_clojure_DOT_core_seq.Get()
+				tmp4534 := v_clojure_DOT_core_concat.Get()
+				tmp4535 := v_clojure_DOT_core_list.Get()
+				tmp4536 := lang.Apply1(tmp4535, sym_quote)
+				tmp4537 := v_clojure_DOT_core_list.Get()
+				tmp4538 := lang.Apply1(tmp4537, x4501)
+				tmp4539 := lang.Apply2(tmp4534, tmp4536, tmp4538)
+				tmp4540 := lang.Apply1(tmp4533, tmp4539)
+				tmp4541 := lang.Apply1(tmp4532, tmp4540)
+				tmp4542 := lang.Apply2(tmp4529, tmp4531, tmp4541)
+				tmp4543 := lang.Apply1(tmp4528, tmp4542)
+				tmp4544 := lang.Apply1(tmp4527, tmp4543)
+				tmp4545 := lang.Apply3(tmp4522, tmp4524, tmp4526, tmp4544)
+				tmp4546 := lang.Apply1(tmp4521, tmp4545)
+				tmp4547 := lang.Apply1(tmp4520, tmp4546)
+				tmp4548 := v_clojure_DOT_core_list.Get()
+				tmp4549 := v_clojure_DOT_core_apply.Get()
+				tmp4550 := v_clojure_DOT_core_hash_map.Get()
+				tmp4551 := v_clojure_DOT_core_seq.Get()
+				tmp4552 := v_clojure_DOT_core_concat.Get()
+				tmp4553 := lang.Apply0(tmp4552)
+				tmp4554 := lang.Apply1(tmp4551, tmp4553)
+				tmp4555 := lang.Apply2(tmp4549, tmp4550, tmp4554)
+				tmp4556 := lang.Apply1(tmp4548, tmp4555)
+				tmp4557 := lang.Apply3(tmp4517, tmp4519, tmp4547, tmp4556)
+				tmp4558 := lang.Apply1(tmp4516, tmp4557)
+				tmp4559 := lang.Apply1(tmp4515, tmp4558)
+				tmp4560 := lang.Apply2(tmp4512, tmp4514, tmp4559)
+				tmp4561 := lang.Apply1(tmp4511, tmp4560)
+				tmp4562 := lang.Apply1(tmp4510, tmp4561)
+				tmp4563 := lang.Apply3(tmp4505, tmp4507, tmp4509, tmp4562)
+				tmp4564 := lang.Apply1(tmp4504, tmp4563)
+				tmp4503 = tmp4564
 			} else {
-				tmp4504 = nil
+				tmp4503 = nil
 			}
-			return tmp4504
+			return tmp4503
 		case 4:
-			X_AMP_form4566 := args[0]
-			_ = X_AMP_form4566
-			X_AMP_env4567 := args[1]
-			_ = X_AMP_env4567
-			x4568 := args[2]
-			_ = x4568
-			message4569 := args[3]
-			_ = message4569
-			tmp4570 := v_clojure_DOT_core_X_STAR_assert_STAR_.Get()
-			var tmp4571 any
-			_ = tmp4571
-			if lang.IsTruthy(tmp4570) {
-				tmp4572 := v_clojure_DOT_core_seq.Get()
-				tmp4573 := v_clojure_DOT_core_concat.Get()
-				tmp4574 := v_clojure_DOT_core_list.Get()
-				tmp4575 := lang.Apply1(tmp4574, sym_clojure_DOT_core_SLASH_when_not)
-				tmp4576 := v_clojure_DOT_core_list.Get()
-				tmp4577 := lang.Apply1(tmp4576, x4568)
-				tmp4578 := v_clojure_DOT_core_list.Get()
-				tmp4579 := v_clojure_DOT_core_seq.Get()
-				tmp4580 := v_clojure_DOT_core_concat.Get()
-				tmp4581 := v_clojure_DOT_core_list.Get()
-				tmp4582 := lang.Apply1(tmp4581, sym_throw)
-				tmp4583 := v_clojure_DOT_core_list.Get()
-				tmp4584 := v_clojure_DOT_core_seq.Get()
-				tmp4585 := v_clojure_DOT_core_concat.Get()
-				tmp4586 := v_clojure_DOT_core_list.Get()
-				tmp4587 := lang.Apply1(tmp4586, sym_clojure_DOT_core_SLASH_ex_info)
-				tmp4588 := v_clojure_DOT_core_list.Get()
-				tmp4589 := v_clojure_DOT_core_seq.Get()
-				tmp4590 := v_clojure_DOT_core_concat.Get()
-				tmp4591 := v_clojure_DOT_core_list.Get()
-				tmp4592 := lang.Apply1(tmp4591, sym_clojure_DOT_core_SLASH_str)
-				tmp4593 := v_clojure_DOT_core_list.Get()
-				tmp4594 := lang.Apply1(tmp4593, "Assert failed: ")
-				tmp4595 := v_clojure_DOT_core_list.Get()
-				tmp4596 := lang.Apply1(tmp4595, message4569)
-				tmp4597 := v_clojure_DOT_core_list.Get()
-				tmp4598 := lang.Apply1(tmp4597, "\n")
-				tmp4599 := v_clojure_DOT_core_list.Get()
-				tmp4600 := v_clojure_DOT_core_seq.Get()
-				tmp4601 := v_clojure_DOT_core_concat.Get()
-				tmp4602 := v_clojure_DOT_core_list.Get()
-				tmp4603 := lang.Apply1(tmp4602, sym_clojure_DOT_core_SLASH_pr_str)
-				tmp4604 := v_clojure_DOT_core_list.Get()
-				tmp4605 := v_clojure_DOT_core_seq.Get()
-				tmp4606 := v_clojure_DOT_core_concat.Get()
-				tmp4607 := v_clojure_DOT_core_list.Get()
-				tmp4608 := lang.Apply1(tmp4607, sym_quote)
-				tmp4609 := v_clojure_DOT_core_list.Get()
-				tmp4610 := lang.Apply1(tmp4609, x4568)
-				tmp4611 := lang.Apply2(tmp4606, tmp4608, tmp4610)
-				tmp4612 := lang.Apply1(tmp4605, tmp4611)
-				tmp4613 := lang.Apply1(tmp4604, tmp4612)
-				tmp4614 := lang.Apply2(tmp4601, tmp4603, tmp4613)
-				tmp4615 := lang.Apply1(tmp4600, tmp4614)
-				tmp4616 := lang.Apply1(tmp4599, tmp4615)
-				tmp4617 := lang.Apply(tmp4590, []any{tmp4592, tmp4594, tmp4596, tmp4598, tmp4616})
-				tmp4618 := lang.Apply1(tmp4589, tmp4617)
-				tmp4619 := lang.Apply1(tmp4588, tmp4618)
-				tmp4620 := v_clojure_DOT_core_list.Get()
-				tmp4621 := v_clojure_DOT_core_apply.Get()
-				tmp4622 := v_clojure_DOT_core_hash_map.Get()
-				tmp4623 := v_clojure_DOT_core_seq.Get()
-				tmp4624 := v_clojure_DOT_core_concat.Get()
-				tmp4625 := lang.Apply0(tmp4624)
-				tmp4626 := lang.Apply1(tmp4623, tmp4625)
-				tmp4627 := lang.Apply2(tmp4621, tmp4622, tmp4626)
-				tmp4628 := lang.Apply1(tmp4620, tmp4627)
-				tmp4629 := lang.Apply3(tmp4585, tmp4587, tmp4619, tmp4628)
-				tmp4630 := lang.Apply1(tmp4584, tmp4629)
-				tmp4631 := lang.Apply1(tmp4583, tmp4630)
-				tmp4632 := lang.Apply2(tmp4580, tmp4582, tmp4631)
-				tmp4633 := lang.Apply1(tmp4579, tmp4632)
-				tmp4634 := lang.Apply1(tmp4578, tmp4633)
-				tmp4635 := lang.Apply3(tmp4573, tmp4575, tmp4577, tmp4634)
-				tmp4636 := lang.Apply1(tmp4572, tmp4635)
-				tmp4571 = tmp4636
+			X_AMP_form4565 := args[0]
+			_ = X_AMP_form4565
+			X_AMP_env4566 := args[1]
+			_ = X_AMP_env4566
+			x4567 := args[2]
+			_ = x4567
+			message4568 := args[3]
+			_ = message4568
+			tmp4569 := v_clojure_DOT_core_X_STAR_assert_STAR_.Get()
+			var tmp4570 any
+			_ = tmp4570
+			if lang.IsTruthy(tmp4569) {
+				tmp4571 := v_clojure_DOT_core_seq.Get()
+				tmp4572 := v_clojure_DOT_core_concat.Get()
+				tmp4573 := v_clojure_DOT_core_list.Get()
+				tmp4574 := lang.Apply1(tmp4573, sym_clojure_DOT_core_SLASH_when_not)
+				tmp4575 := v_clojure_DOT_core_list.Get()
+				tmp4576 := lang.Apply1(tmp4575, x4567)
+				tmp4577 := v_clojure_DOT_core_list.Get()
+				tmp4578 := v_clojure_DOT_core_seq.Get()
+				tmp4579 := v_clojure_DOT_core_concat.Get()
+				tmp4580 := v_clojure_DOT_core_list.Get()
+				tmp4581 := lang.Apply1(tmp4580, sym_throw)
+				tmp4582 := v_clojure_DOT_core_list.Get()
+				tmp4583 := v_clojure_DOT_core_seq.Get()
+				tmp4584 := v_clojure_DOT_core_concat.Get()
+				tmp4585 := v_clojure_DOT_core_list.Get()
+				tmp4586 := lang.Apply1(tmp4585, sym_clojure_DOT_core_SLASH_ex_info)
+				tmp4587 := v_clojure_DOT_core_list.Get()
+				tmp4588 := v_clojure_DOT_core_seq.Get()
+				tmp4589 := v_clojure_DOT_core_concat.Get()
+				tmp4590 := v_clojure_DOT_core_list.Get()
+				tmp4591 := lang.Apply1(tmp4590, sym_clojure_DOT_core_SLASH_str)
+				tmp4592 := v_clojure_DOT_core_list.Get()
+				tmp4593 := lang.Apply1(tmp4592, "Assert failed: ")
+				tmp4594 := v_clojure_DOT_core_list.Get()
+				tmp4595 := lang.Apply1(tmp4594, message4568)
+				tmp4596 := v_clojure_DOT_core_list.Get()
+				tmp4597 := lang.Apply1(tmp4596, "\n")
+				tmp4598 := v_clojure_DOT_core_list.Get()
+				tmp4599 := v_clojure_DOT_core_seq.Get()
+				tmp4600 := v_clojure_DOT_core_concat.Get()
+				tmp4601 := v_clojure_DOT_core_list.Get()
+				tmp4602 := lang.Apply1(tmp4601, sym_clojure_DOT_core_SLASH_pr_str)
+				tmp4603 := v_clojure_DOT_core_list.Get()
+				tmp4604 := v_clojure_DOT_core_seq.Get()
+				tmp4605 := v_clojure_DOT_core_concat.Get()
+				tmp4606 := v_clojure_DOT_core_list.Get()
+				tmp4607 := lang.Apply1(tmp4606, sym_quote)
+				tmp4608 := v_clojure_DOT_core_list.Get()
+				tmp4609 := lang.Apply1(tmp4608, x4567)
+				tmp4610 := lang.Apply2(tmp4605, tmp4607, tmp4609)
+				tmp4611 := lang.Apply1(tmp4604, tmp4610)
+				tmp4612 := lang.Apply1(tmp4603, tmp4611)
+				tmp4613 := lang.Apply2(tmp4600, tmp4602, tmp4612)
+				tmp4614 := lang.Apply1(tmp4599, tmp4613)
+				tmp4615 := lang.Apply1(tmp4598, tmp4614)
+				tmp4616 := lang.Apply(tmp4589, []any{tmp4591, tmp4593, tmp4595, tmp4597, tmp4615})
+				tmp4617 := lang.Apply1(tmp4588, tmp4616)
+				tmp4618 := lang.Apply1(tmp4587, tmp4617)
+				tmp4619 := v_clojure_DOT_core_list.Get()
+				tmp4620 := v_clojure_DOT_core_apply.Get()
+				tmp4621 := v_clojure_DOT_core_hash_map.Get()
+				tmp4622 := v_clojure_DOT_core_seq.Get()
+				tmp4623 := v_clojure_DOT_core_concat.Get()
+				tmp4624 := lang.Apply0(tmp4623)
+				tmp4625 := lang.Apply1(tmp4622, tmp4624)
+				tmp4626 := lang.Apply2(tmp4620, tmp4621, tmp4625)
+				tmp4627 := lang.Apply1(tmp4619, tmp4626)
+				tmp4628 := lang.Apply3(tmp4584, tmp4586, tmp4618, tmp4627)
+				tmp4629 := lang.Apply1(tmp4583, tmp4628)
+				tmp4630 := lang.Apply1(tmp4582, tmp4629)
+				tmp4631 := lang.Apply2(tmp4579, tmp4581, tmp4630)
+				tmp4632 := lang.Apply1(tmp4578, tmp4631)
+				tmp4633 := lang.Apply1(tmp4577, tmp4632)
+				tmp4634 := lang.Apply3(tmp4572, tmp4574, tmp4576, tmp4633)
+				tmp4635 := lang.Apply1(tmp4571, tmp4634)
+				tmp4570 = tmp4635
 			} else {
-				tmp4571 = nil
+				tmp4570 = nil
 			}
-			return tmp4571
+			return tmp4570
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/assert", "3: [&form &env x] or 4: [&form &env x message]"))
 		}
 	})
-	assert4498 = tmp4499
-	v_clojure_DOT_core_assert.BindRoot(tmp4499)
+	assert4497 = tmp4498
+	v_clojure_DOT_core_assert.BindRoot(tmp4498)
 	_ = v_clojure_DOT_core_assert
-	tmp4637 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4638 := lang.Apply1(tmp4637, v_clojure_DOT_core_assert)
-	_ = tmp4638
+	tmp4636 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4637 := lang.Apply1(tmp4636, v_clojure_DOT_core_assert)
+	_ = tmp4637
 	_ = v_clojure_DOT_core_assert
 	// (do (def with-precision (fn* with-precision ([&form &env precision & exprs] (let [[body rm…
 	v_clojure_DOT_core_with_precision.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1418), kw_column, int64(11), kw_end_line, int64(1418), kw_end_column, int64(25)))
-	var with_precision4639 any
-	_ = with_precision4639
-	tmp4640 := lang.FnFunc(func(args ...any) any {
+	var with_precision4638 any
+	_ = with_precision4638
+	tmp4639 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/with-precision", "3+: [&form &env precision exprs & more]"))
 			}
-			X_AMP_form4641 := args[0]
-			_ = X_AMP_form4641
-			X_AMP_env4642 := args[1]
-			_ = X_AMP_env4642
-			precision4643 := args[2]
-			_ = precision4643
-			var exprs4644 any
+			X_AMP_form4640 := args[0]
+			_ = X_AMP_form4640
+			X_AMP_env4641 := args[1]
+			_ = X_AMP_env4641
+			precision4642 := args[2]
+			_ = precision4642
+			var exprs4643 any
 			if len(args) > 3 {
-				exprs4644 = lang.NewList(args[3:]...)
+				exprs4643 = lang.NewList(args[3:]...)
 			}
-			_ = exprs4644
-			var tmp4645 any
-			_ = tmp4645
+			_ = exprs4643
+			var tmp4644 any
+			_ = tmp4644
 			{
-				tmp4646 := v_clojure_DOT_core_first.Get()
-				tmp4647 := lang.Apply1(tmp4646, exprs4644)
-				tmp4648 := rt.EQBool(v_clojure_DOT_core_X_EQ_, tmp4647, kw_rounding)
-				var tmp4649 any
-				_ = tmp4649
-				if tmp4648 {
-					tmp4650 := v_clojure_DOT_core_nnext.Get()
-					tmp4651 := lang.Apply1(tmp4650, exprs4644)
-					tmp4652 := v_clojure_DOT_core_second.Get()
-					tmp4653 := lang.Apply1(tmp4652, exprs4644)
-					tmp4654 := lang.NewVector(tmp4651, tmp4653)
-					tmp4649 = tmp4654
+				tmp4645 := v_clojure_DOT_core_first.Get()
+				tmp4646 := lang.Apply1(tmp4645, exprs4643)
+				tmp4647 := rt.EQBool(v_clojure_DOT_core_X_EQ_, tmp4646, kw_rounding)
+				var tmp4648 any
+				_ = tmp4648
+				if tmp4647 {
+					tmp4649 := v_clojure_DOT_core_nnext.Get()
+					tmp4650 := lang.Apply1(tmp4649, exprs4643)
+					tmp4651 := v_clojure_DOT_core_second.Get()
+					tmp4652 := lang.Apply1(tmp4651, exprs4643)
+					tmp4653 := lang.NewVector(tmp4650, tmp4652)
+					tmp4648 = tmp4653
 				} else {
-					tmp4655 := lang.NewVector(exprs4644, "HALF_UP")
-					tmp4649 = tmp4655
+					tmp4654 := lang.NewVector(exprs4643, "HALF_UP")
+					tmp4648 = tmp4654
 				}
-				var vec__124656 any = tmp4649
-				_ = vec__124656
-				tmp4657 := v_clojure_DOT_core_nth.Get()
-				tmp4658 := lang.Apply3(tmp4657, vec__124656, int64(0), nil)
-				var body4659 any = tmp4658
-				_ = body4659
-				tmp4660 := v_clojure_DOT_core_nth.Get()
-				tmp4661 := lang.Apply3(tmp4660, vec__124656, int64(1), nil)
-				var rm4662 any = tmp4661
-				_ = rm4662
-				tmp4663 := v_clojure_DOT_core_symbol_QMARK_.Get()
-				tmp4664 := lang.Apply1(tmp4663, rm4662)
-				var tmp4665 any
-				_ = tmp4665
-				if lang.IsTruthy(tmp4664) {
-					tmp4666 := v_clojure_DOT_core_name.Get()
-					tmp4667 := lang.Apply1(tmp4666, rm4662)
-					tmp4665 = tmp4667
+				var vec__124655 any = tmp4648
+				_ = vec__124655
+				tmp4656 := v_clojure_DOT_core_nth.Get()
+				tmp4657 := lang.Apply3(tmp4656, vec__124655, int64(0), nil)
+				var body4658 any = tmp4657
+				_ = body4658
+				tmp4659 := v_clojure_DOT_core_nth.Get()
+				tmp4660 := lang.Apply3(tmp4659, vec__124655, int64(1), nil)
+				var rm4661 any = tmp4660
+				_ = rm4661
+				tmp4662 := v_clojure_DOT_core_symbol_QMARK_.Get()
+				tmp4663 := lang.Apply1(tmp4662, rm4661)
+				var tmp4664 any
+				_ = tmp4664
+				if lang.IsTruthy(tmp4663) {
+					tmp4665 := v_clojure_DOT_core_name.Get()
+					tmp4666 := lang.Apply1(tmp4665, rm4661)
+					tmp4664 = tmp4666
 				} else {
-					tmp4665 = rm4662
+					tmp4664 = rm4661
 				}
-				var rm_name4668 any = tmp4665
-				_ = rm_name4668
-				tmp4669 := v_clojure_DOT_core_seq.Get()
-				tmp4670 := v_clojure_DOT_core_concat.Get()
-				tmp4671 := v_clojure_DOT_core_list.Get()
-				tmp4672 := lang.Apply1(tmp4671, sym_binding)
-				tmp4673 := v_clojure_DOT_core_list.Get()
-				tmp4674 := v_clojure_DOT_core_apply.Get()
-				tmp4675 := v_clojure_DOT_core_vector.Get()
-				tmp4676 := v_clojure_DOT_core_seq.Get()
-				tmp4677 := v_clojure_DOT_core_concat.Get()
-				tmp4678 := v_clojure_DOT_core_list.Get()
-				tmp4679 := lang.Apply1(tmp4678, sym_clojure_DOT_core_SLASH__STAR_math_context_STAR_)
-				tmp4680 := v_clojure_DOT_core_list.Get()
-				tmp4681 := v_clojure_DOT_core_seq.Get()
-				tmp4682 := v_clojure_DOT_core_concat.Get()
-				tmp4683 := v_clojure_DOT_core_list.Get()
-				tmp4684 := lang.Apply1(tmp4683, sym_clojure_DOT_core_SLASH__math_context)
-				tmp4685 := v_clojure_DOT_core_list.Get()
-				tmp4686 := lang.Apply1(tmp4685, precision4643)
-				tmp4687 := v_clojure_DOT_core_list.Get()
-				tmp4688 := lang.Apply1(tmp4687, rm_name4668)
-				tmp4689 := lang.Apply3(tmp4682, tmp4684, tmp4686, tmp4688)
-				tmp4690 := lang.Apply1(tmp4681, tmp4689)
-				tmp4691 := lang.Apply1(tmp4680, tmp4690)
-				tmp4692 := lang.Apply2(tmp4677, tmp4679, tmp4691)
-				tmp4693 := lang.Apply1(tmp4676, tmp4692)
-				tmp4694 := lang.Apply2(tmp4674, tmp4675, tmp4693)
-				tmp4695 := lang.Apply1(tmp4673, tmp4694)
-				tmp4696 := lang.Apply3(tmp4670, tmp4672, tmp4695, body4659)
-				tmp4697 := lang.Apply1(tmp4669, tmp4696)
-				tmp4645 = tmp4697
+				var rm_name4667 any = tmp4664
+				_ = rm_name4667
+				tmp4668 := v_clojure_DOT_core_seq.Get()
+				tmp4669 := v_clojure_DOT_core_concat.Get()
+				tmp4670 := v_clojure_DOT_core_list.Get()
+				tmp4671 := lang.Apply1(tmp4670, sym_binding)
+				tmp4672 := v_clojure_DOT_core_list.Get()
+				tmp4673 := v_clojure_DOT_core_apply.Get()
+				tmp4674 := v_clojure_DOT_core_vector.Get()
+				tmp4675 := v_clojure_DOT_core_seq.Get()
+				tmp4676 := v_clojure_DOT_core_concat.Get()
+				tmp4677 := v_clojure_DOT_core_list.Get()
+				tmp4678 := lang.Apply1(tmp4677, sym_clojure_DOT_core_SLASH__STAR_math_context_STAR_)
+				tmp4679 := v_clojure_DOT_core_list.Get()
+				tmp4680 := v_clojure_DOT_core_seq.Get()
+				tmp4681 := v_clojure_DOT_core_concat.Get()
+				tmp4682 := v_clojure_DOT_core_list.Get()
+				tmp4683 := lang.Apply1(tmp4682, sym_clojure_DOT_core_SLASH__math_context)
+				tmp4684 := v_clojure_DOT_core_list.Get()
+				tmp4685 := lang.Apply1(tmp4684, precision4642)
+				tmp4686 := v_clojure_DOT_core_list.Get()
+				tmp4687 := lang.Apply1(tmp4686, rm_name4667)
+				tmp4688 := lang.Apply3(tmp4681, tmp4683, tmp4685, tmp4687)
+				tmp4689 := lang.Apply1(tmp4680, tmp4688)
+				tmp4690 := lang.Apply1(tmp4679, tmp4689)
+				tmp4691 := lang.Apply2(tmp4676, tmp4678, tmp4690)
+				tmp4692 := lang.Apply1(tmp4675, tmp4691)
+				tmp4693 := lang.Apply2(tmp4673, tmp4674, tmp4692)
+				tmp4694 := lang.Apply1(tmp4672, tmp4693)
+				tmp4695 := lang.Apply3(tmp4669, tmp4671, tmp4694, body4658)
+				tmp4696 := lang.Apply1(tmp4668, tmp4695)
+				tmp4644 = tmp4696
 			}
-			return tmp4645
+			return tmp4644
 		}
 	})
-	with_precision4639 = tmp4640
-	v_clojure_DOT_core_with_precision.BindRoot(tmp4640)
+	with_precision4638 = tmp4639
+	v_clojure_DOT_core_with_precision.BindRoot(tmp4639)
 	_ = v_clojure_DOT_core_with_precision
-	tmp4698 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4699 := lang.Apply1(tmp4698, v_clojure_DOT_core_with_precision)
-	_ = tmp4699
+	tmp4697 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4698 := lang.Apply1(tmp4697, v_clojure_DOT_core_with_precision)
+	_ = tmp4698
 	_ = v_clojure_DOT_core_with_precision
 	// (do (def delay (fn* delay ([&form &env & body] (list (quote clojure.core/-make-delay) (lis…
 	v_clojure_DOT_core_delay.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1432), kw_column, int64(11), kw_end_line, int64(1432), kw_end_column, int64(16)))
-	var delay4700 any
-	_ = delay4700
-	tmp4701 := lang.FnFunc(func(args ...any) any {
+	var delay4699 any
+	_ = delay4699
+	tmp4700 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "clojure.core/delay", "2+: [&form &env body & more]"))
 			}
-			X_AMP_form4702 := args[0]
-			_ = X_AMP_form4702
-			X_AMP_env4703 := args[1]
-			_ = X_AMP_env4703
-			var body4704 any
+			X_AMP_form4701 := args[0]
+			_ = X_AMP_form4701
+			X_AMP_env4702 := args[1]
+			_ = X_AMP_env4702
+			var body4703 any
 			if len(args) > 2 {
-				body4704 = lang.NewList(args[2:]...)
+				body4703 = lang.NewList(args[2:]...)
 			}
-			_ = body4704
-			tmp4705 := v_clojure_DOT_core_list.Get()
-			tmp4706 := v_clojure_DOT_core_list_STAR_.Get()
-			tmp4707 := lang.NewVector()
-			tmp4708 := lang.Apply3(tmp4706, sym_fn_STAR_, tmp4707, body4704)
-			tmp4709 := lang.Apply2(tmp4705, sym_clojure_DOT_core_SLASH__make_delay, tmp4708)
-			return tmp4709
+			_ = body4703
+			tmp4704 := v_clojure_DOT_core_list.Get()
+			tmp4705 := v_clojure_DOT_core_list_STAR_.Get()
+			tmp4706 := lang.NewVector()
+			tmp4707 := lang.Apply3(tmp4705, sym_fn_STAR_, tmp4706, body4703)
+			tmp4708 := lang.Apply2(tmp4704, sym_clojure_DOT_core_SLASH__make_delay, tmp4707)
+			return tmp4708
 		}
 	})
-	delay4700 = tmp4701
-	v_clojure_DOT_core_delay.BindRoot(tmp4701)
+	delay4699 = tmp4700
+	v_clojure_DOT_core_delay.BindRoot(tmp4700)
 	_ = v_clojure_DOT_core_delay
-	tmp4710 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4711 := lang.Apply1(tmp4710, v_clojure_DOT_core_delay)
-	_ = tmp4711
+	tmp4709 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4710 := lang.Apply1(tmp4709, v_clojure_DOT_core_delay)
+	_ = tmp4710
 	_ = v_clojure_DOT_core_delay
 	// (do (def instance? (fn* instance? ([&form &env c x] (if (symbol? c) (list (quote clojure.c…
 	v_clojure_DOT_core_instance_QMARK_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1451), kw_column, int64(11), kw_end_line, int64(1451), kw_end_column, int64(20)))
-	var instance_QMARK_4712 any
-	_ = instance_QMARK_4712
-	var instance_QMARK_4712d lang.FnFunc4
-	_ = instance_QMARK_4712d
-	tmp4713 := lang.FnFunc4(func(X_AMP_form4714, X_AMP_env4715, c4716, x4717 any) any {
-		tmp4718 := v_clojure_DOT_core_symbol_QMARK_.Get()
-		tmp4719 := lang.Apply1(tmp4718, c4716)
-		var tmp4720 any
-		_ = tmp4720
-		if lang.IsTruthy(tmp4719) {
-			tmp4721 := v_clojure_DOT_core_list.Get()
-			tmp4722 := v_clojure_DOT_core_str.Get()
-			tmp4723 := lang.Apply1(tmp4722, c4716)
-			tmp4724 := lang.Apply3(tmp4721, sym_clojure_DOT_core_SLASH__instance_of_name_QMARK_, tmp4723, x4717)
-			tmp4720 = tmp4724
+	var instance_QMARK_4711 any
+	_ = instance_QMARK_4711
+	var instance_QMARK_4711d lang.FnFunc4
+	_ = instance_QMARK_4711d
+	tmp4712 := lang.FnFunc4(func(X_AMP_form4713, X_AMP_env4714, c4715, x4716 any) any {
+		tmp4717 := v_clojure_DOT_core_symbol_QMARK_.Get()
+		tmp4718 := lang.Apply1(tmp4717, c4715)
+		var tmp4719 any
+		_ = tmp4719
+		if lang.IsTruthy(tmp4718) {
+			tmp4720 := v_clojure_DOT_core_list.Get()
+			tmp4721 := v_clojure_DOT_core_str.Get()
+			tmp4722 := lang.Apply1(tmp4721, c4715)
+			tmp4723 := lang.Apply3(tmp4720, sym_clojure_DOT_core_SLASH__instance_of_name_QMARK_, tmp4722, x4716)
+			tmp4719 = tmp4723
 		} else {
-			tmp4725 := v_clojure_DOT_core_list.Get()
-			tmp4726 := lang.Apply3(tmp4725, sym_clojure_DOT_core_SLASH__instance_QMARK_, c4716, x4717)
-			tmp4720 = tmp4726
+			tmp4724 := v_clojure_DOT_core_list.Get()
+			tmp4725 := lang.Apply3(tmp4724, sym_clojure_DOT_core_SLASH__instance_QMARK_, c4715, x4716)
+			tmp4719 = tmp4725
 		}
-		return tmp4720
+		return tmp4719
 	})
-	instance_QMARK_4712 = tmp4713
-	instance_QMARK_4712d = tmp4713
-	v_clojure_DOT_core_instance_QMARK_.BindRoot(tmp4713)
+	instance_QMARK_4711 = tmp4712
+	instance_QMARK_4711d = tmp4712
+	v_clojure_DOT_core_instance_QMARK_.BindRoot(tmp4712)
 	_ = v_clojure_DOT_core_instance_QMARK_
-	tmp4727 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4728 := lang.Apply1(tmp4727, v_clojure_DOT_core_instance_QMARK_)
-	_ = tmp4728
+	tmp4726 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4727 := lang.Apply1(tmp4726, v_clojure_DOT_core_instance_QMARK_)
+	_ = tmp4727
 	_ = v_clojure_DOT_core_instance_QMARK_
 	// (do (def ns (fn* ns ([&form &env nsname & clauses] (let [requires (mapcat (fn [clause] (wh…
 	v_clojure_DOT_core_ns.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1466), kw_column, int64(11), kw_end_line, int64(1466), kw_end_column, int64(13)))
-	var ns4729 any
-	_ = ns4729
-	tmp4730 := lang.FnFunc(func(args ...any) any {
+	var ns4728 any
+	_ = ns4728
+	tmp4729 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/ns", "3+: [&form &env nsname clauses & more]"))
 			}
-			X_AMP_form4731 := args[0]
-			_ = X_AMP_form4731
-			X_AMP_env4732 := args[1]
-			_ = X_AMP_env4732
-			nsname4733 := args[2]
-			_ = nsname4733
-			var clauses4734 any
+			X_AMP_form4730 := args[0]
+			_ = X_AMP_form4730
+			X_AMP_env4731 := args[1]
+			_ = X_AMP_env4731
+			nsname4732 := args[2]
+			_ = nsname4732
+			var clauses4733 any
 			if len(args) > 3 {
-				clauses4734 = lang.NewList(args[3:]...)
+				clauses4733 = lang.NewList(args[3:]...)
 			}
-			_ = clauses4734
-			var tmp4735 any
-			_ = tmp4735
+			_ = clauses4733
+			var tmp4734 any
+			_ = tmp4734
 			{
-				tmp4736 := v_clojure_DOT_core_mapcat.Get()
-				tmp4737 := lang.FnFunc1(func(clause4738 any) any {
-					var tmp4739 any
-					_ = tmp4739
+				tmp4735 := v_clojure_DOT_core_mapcat.Get()
+				tmp4736 := lang.FnFunc1(func(clause4737 any) any {
+					var tmp4738 any
+					_ = tmp4738
 					{
-						tmp4740 := v_clojure_DOT_core_seq_QMARK_.Get()
-						tmp4741 := lang.Apply1(tmp4740, clause4738)
-						var and__1__auto__4742 any = tmp4741
-						_ = and__1__auto__4742
-						var tmp4743 any
-						_ = tmp4743
-						if lang.IsTruthy(and__1__auto__4742) {
-							tmp4744 := v_clojure_DOT_core_first.Get()
-							tmp4745 := lang.Apply1(tmp4744, clause4738)
-							tmp4746 := rt.EQ2(v_clojure_DOT_core_X_EQ_, kw_require, tmp4745)
-							tmp4743 = tmp4746
+						tmp4739 := v_clojure_DOT_core_seq_QMARK_.Get()
+						tmp4740 := lang.Apply1(tmp4739, clause4737)
+						var and__1__auto__4741 any = tmp4740
+						_ = and__1__auto__4741
+						var tmp4742 any
+						_ = tmp4742
+						if lang.IsTruthy(and__1__auto__4741) {
+							tmp4743 := v_clojure_DOT_core_first.Get()
+							tmp4744 := lang.Apply1(tmp4743, clause4737)
+							tmp4745 := rt.EQ2(v_clojure_DOT_core_X_EQ_, kw_require, tmp4744)
+							tmp4742 = tmp4745
 						} else {
-							tmp4743 = and__1__auto__4742
+							tmp4742 = and__1__auto__4741
 						}
-						tmp4739 = tmp4743
+						tmp4738 = tmp4742
 					}
-					var tmp4747 any
-					_ = tmp4747
-					if lang.IsTruthy(tmp4739) {
-						tmp4748 := v_clojure_DOT_core_map_.Get()
-						tmp4749 := lang.FnFunc1(func(spec4750 any) any {
+					var tmp4746 any
+					_ = tmp4746
+					if lang.IsTruthy(tmp4738) {
+						tmp4747 := v_clojure_DOT_core_map_.Get()
+						tmp4748 := lang.FnFunc1(func(spec4749 any) any {
+							tmp4750 := v_clojure_DOT_core_list.Get()
 							tmp4751 := v_clojure_DOT_core_list.Get()
-							tmp4752 := v_clojure_DOT_core_list.Get()
-							tmp4753 := lang.Apply2(tmp4752, sym_quote, spec4750)
-							tmp4754 := lang.Apply2(tmp4751, sym_clojure_DOT_core_SLASH_require, tmp4753)
-							return tmp4754
+							tmp4752 := lang.Apply2(tmp4751, sym_quote, spec4749)
+							tmp4753 := lang.Apply2(tmp4750, sym_clojure_DOT_core_SLASH_require, tmp4752)
+							return tmp4753
 						})
-						tmp4755 := v_clojure_DOT_core_rest.Get()
-						tmp4756 := lang.Apply1(tmp4755, clause4738)
-						tmp4757 := lang.Apply2(tmp4748, tmp4749, tmp4756)
-						tmp4747 = tmp4757
+						tmp4754 := v_clojure_DOT_core_rest.Get()
+						tmp4755 := lang.Apply1(tmp4754, clause4737)
+						tmp4756 := lang.Apply2(tmp4747, tmp4748, tmp4755)
+						tmp4746 = tmp4756
 					} else {
-						tmp4747 = nil
+						tmp4746 = nil
 					}
-					return tmp4747
+					return tmp4746
 				})
-				tmp4758 := lang.Apply2(tmp4736, tmp4737, clauses4734)
-				var requires4759 any = tmp4758
-				_ = requires4759
+				tmp4757 := lang.Apply2(tmp4735, tmp4736, clauses4733)
+				var requires4758 any = tmp4757
+				_ = requires4758
+				tmp4759 := v_clojure_DOT_core_cons.Get()
 				tmp4760 := v_clojure_DOT_core_cons.Get()
-				tmp4761 := v_clojure_DOT_core_cons.Get()
+				tmp4761 := v_clojure_DOT_core_list.Get()
 				tmp4762 := v_clojure_DOT_core_list.Get()
-				tmp4763 := v_clojure_DOT_core_list.Get()
-				tmp4764 := lang.Apply2(tmp4763, sym_quote, nsname4733)
-				tmp4765 := lang.Apply2(tmp4762, sym_clojure_DOT_core_SLASH_in_ns, tmp4764)
-				tmp4766 := v_clojure_DOT_core_cons.Get()
+				tmp4763 := lang.Apply2(tmp4762, sym_quote, nsname4732)
+				tmp4764 := lang.Apply2(tmp4761, sym_clojure_DOT_core_SLASH_in_ns, tmp4763)
+				tmp4765 := v_clojure_DOT_core_cons.Get()
+				tmp4766 := v_clojure_DOT_core_list.Get()
 				tmp4767 := v_clojure_DOT_core_list.Get()
-				tmp4768 := v_clojure_DOT_core_list.Get()
-				tmp4769 := lang.Apply2(tmp4768, sym_quote, sym_clojure_DOT_core)
-				tmp4770 := lang.Apply2(tmp4767, sym_clojure_DOT_core_SLASH_refer, tmp4769)
-				tmp4771 := lang.Apply2(tmp4766, tmp4770, requires4759)
-				tmp4772 := lang.Apply2(tmp4761, tmp4765, tmp4771)
-				tmp4773 := lang.Apply2(tmp4760, sym_do, tmp4772)
-				tmp4735 = tmp4773
+				tmp4768 := lang.Apply2(tmp4767, sym_quote, sym_clojure_DOT_core)
+				tmp4769 := lang.Apply2(tmp4766, sym_clojure_DOT_core_SLASH_refer, tmp4768)
+				tmp4770 := lang.Apply2(tmp4765, tmp4769, requires4758)
+				tmp4771 := lang.Apply2(tmp4760, tmp4764, tmp4770)
+				tmp4772 := lang.Apply2(tmp4759, sym_do, tmp4771)
+				tmp4734 = tmp4772
 			}
-			return tmp4735
+			return tmp4734
 		}
 	})
-	ns4729 = tmp4730
-	v_clojure_DOT_core_ns.BindRoot(tmp4730)
+	ns4728 = tmp4729
+	v_clojure_DOT_core_ns.BindRoot(tmp4729)
 	_ = v_clojure_DOT_core_ns
-	tmp4774 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp4775 := lang.Apply1(tmp4774, v_clojure_DOT_core_ns)
-	_ = tmp4775
+	tmp4773 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp4774 := lang.Apply1(tmp4773, v_clojure_DOT_core_ns)
+	_ = tmp4774
 	_ = v_clojure_DOT_core_ns
 	// (def split-with "Returns a vector of [(take-while pred coll) (drop-while pred coll)]" (clo…
 	v_clojure_DOT_core_split_with.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1488), kw_column, int64(7), kw_end_line, int64(1488), kw_end_column, int64(17), kw_doc, "Returns a vector of [(take-while pred coll) (drop-while pred coll)]"))
-	tmp4776 := lang.FnFunc2(func(pred4777, coll4778 any) any {
-		tmp4779 := v_clojure_DOT_core_take_while.Get()
-		tmp4780 := lang.Apply2(tmp4779, pred4777, coll4778)
-		tmp4781 := v_clojure_DOT_core_drop_while.Get()
-		tmp4782 := lang.Apply2(tmp4781, pred4777, coll4778)
-		tmp4783 := lang.NewVector(tmp4780, tmp4782)
-		return tmp4783
+	tmp4775 := lang.FnFunc2(func(pred4776, coll4777 any) any {
+		tmp4778 := v_clojure_DOT_core_take_while.Get()
+		tmp4779 := lang.Apply2(tmp4778, pred4776, coll4777)
+		tmp4780 := v_clojure_DOT_core_drop_while.Get()
+		tmp4781 := lang.Apply2(tmp4780, pred4776, coll4777)
+		tmp4782 := lang.NewVector(tmp4779, tmp4781)
+		return tmp4782
 	})
-	v_clojure_DOT_core_split_with.BindRoot(tmp4776)
+	v_clojure_DOT_core_split_with.BindRoot(tmp4775)
 	_ = v_clojure_DOT_core_split_with
 	// (def reductions "Returns a lazy seq of the intermediate values of the reduction (as\n  per…
 	v_clojure_DOT_core_reductions.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1496), kw_column, int64(7), kw_end_line, int64(1496), kw_end_column, int64(17), kw_doc, "Returns a lazy seq of the intermediate values of the reduction (as\n  per reduce) of coll by f, starting with init."))
-	tmp4784 := lang.FnFunc(func(args ...any) any {
+	tmp4783 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
-			f4785 := args[0]
-			_ = f4785
-			coll4786 := args[1]
-			_ = coll4786
-			tmp4787 := v_clojure_DOT_core_lazy_seq_STAR_.Get()
-			tmp4788 := lang.FnFunc0(func() any {
-				var tmp4789 any
-				_ = tmp4789
+			f4784 := args[0]
+			_ = f4784
+			coll4785 := args[1]
+			_ = coll4785
+			tmp4786 := v_clojure_DOT_core_lazy_seq_STAR_.Get()
+			tmp4787 := lang.FnFunc0(func() any {
+				var tmp4788 any
+				_ = tmp4788
 				{
-					tmp4790 := v_clojure_DOT_core_seq.Get()
-					tmp4791 := lang.Apply1(tmp4790, coll4786)
-					var temp__4__auto__4792 any = tmp4791
-					_ = temp__4__auto__4792
-					var tmp4793 any
-					_ = tmp4793
-					if lang.IsTruthy(temp__4__auto__4792) {
-						var tmp4794 any
-						_ = tmp4794
+					tmp4789 := v_clojure_DOT_core_seq.Get()
+					tmp4790 := lang.Apply1(tmp4789, coll4785)
+					var temp__4__auto__4791 any = tmp4790
+					_ = temp__4__auto__4791
+					var tmp4792 any
+					_ = tmp4792
+					if lang.IsTruthy(temp__4__auto__4791) {
+						var tmp4793 any
+						_ = tmp4793
 						{
-							var s4795 any = temp__4__auto__4792
-							_ = s4795
-							tmp4796 := v_clojure_DOT_core_reductions.Get()
-							tmp4797 := v_clojure_DOT_core_first.Get()
-							tmp4798 := lang.Apply1(tmp4797, s4795)
-							tmp4799 := v_clojure_DOT_core_rest.Get()
-							tmp4800 := lang.Apply1(tmp4799, s4795)
-							tmp4801 := lang.Apply3(tmp4796, f4785, tmp4798, tmp4800)
-							tmp4794 = tmp4801
+							var s4794 any = temp__4__auto__4791
+							_ = s4794
+							tmp4795 := v_clojure_DOT_core_reductions.Get()
+							tmp4796 := v_clojure_DOT_core_first.Get()
+							tmp4797 := lang.Apply1(tmp4796, s4794)
+							tmp4798 := v_clojure_DOT_core_rest.Get()
+							tmp4799 := lang.Apply1(tmp4798, s4794)
+							tmp4800 := lang.Apply3(tmp4795, f4784, tmp4797, tmp4799)
+							tmp4793 = tmp4800
 						}
-						tmp4793 = tmp4794
+						tmp4792 = tmp4793
 					} else {
-						tmp4802 := v_clojure_DOT_core_list.Get()
-						tmp4803 := lang.Apply0(f4785)
-						tmp4804 := lang.Apply1(tmp4802, tmp4803)
-						tmp4793 = tmp4804
+						tmp4801 := v_clojure_DOT_core_list.Get()
+						tmp4802 := lang.Apply0(f4784)
+						tmp4803 := lang.Apply1(tmp4801, tmp4802)
+						tmp4792 = tmp4803
 					}
-					tmp4789 = tmp4793
+					tmp4788 = tmp4792
 				}
-				return tmp4789
+				return tmp4788
 			})
-			tmp4805 := lang.Apply1(tmp4787, tmp4788)
-			return tmp4805
+			tmp4804 := lang.Apply1(tmp4786, tmp4787)
+			return tmp4804
 		case 3:
-			f4806 := args[0]
-			_ = f4806
-			init4807 := args[1]
-			_ = init4807
-			coll4808 := args[2]
-			_ = coll4808
-			tmp4809 := v_clojure_DOT_core_reduced_QMARK_.Get()
-			tmp4810 := lang.Apply1(tmp4809, init4807)
-			var tmp4811 any
-			_ = tmp4811
-			if lang.IsTruthy(tmp4810) {
-				tmp4812 := v_clojure_DOT_core_list.Get()
-				tmp4813 := v_clojure_DOT_core_deref.Get()
-				tmp4814 := lang.Apply1(tmp4813, init4807)
-				tmp4815 := lang.Apply1(tmp4812, tmp4814)
-				tmp4811 = tmp4815
+			f4805 := args[0]
+			_ = f4805
+			init4806 := args[1]
+			_ = init4806
+			coll4807 := args[2]
+			_ = coll4807
+			tmp4808 := v_clojure_DOT_core_reduced_QMARK_.Get()
+			tmp4809 := lang.Apply1(tmp4808, init4806)
+			var tmp4810 any
+			_ = tmp4810
+			if lang.IsTruthy(tmp4809) {
+				tmp4811 := v_clojure_DOT_core_list.Get()
+				tmp4812 := v_clojure_DOT_core_deref.Get()
+				tmp4813 := lang.Apply1(tmp4812, init4806)
+				tmp4814 := lang.Apply1(tmp4811, tmp4813)
+				tmp4810 = tmp4814
 			} else {
-				tmp4816 := v_clojure_DOT_core_cons.Get()
-				tmp4817 := v_clojure_DOT_core_lazy_seq_STAR_.Get()
-				tmp4818 := lang.FnFunc0(func() any {
-					var tmp4819 any
-					_ = tmp4819
+				tmp4815 := v_clojure_DOT_core_cons.Get()
+				tmp4816 := v_clojure_DOT_core_lazy_seq_STAR_.Get()
+				tmp4817 := lang.FnFunc0(func() any {
+					var tmp4818 any
+					_ = tmp4818
 					{
-						tmp4820 := v_clojure_DOT_core_seq.Get()
-						tmp4821 := lang.Apply1(tmp4820, coll4808)
-						var temp__5__auto__4822 any = tmp4821
-						_ = temp__5__auto__4822
-						var tmp4823 any
-						_ = tmp4823
-						if lang.IsTruthy(temp__5__auto__4822) {
-							var tmp4824 any
-							_ = tmp4824
+						tmp4819 := v_clojure_DOT_core_seq.Get()
+						tmp4820 := lang.Apply1(tmp4819, coll4807)
+						var temp__5__auto__4821 any = tmp4820
+						_ = temp__5__auto__4821
+						var tmp4822 any
+						_ = tmp4822
+						if lang.IsTruthy(temp__5__auto__4821) {
+							var tmp4823 any
+							_ = tmp4823
 							{
-								var s4825 any = temp__5__auto__4822
-								_ = s4825
-								tmp4826 := v_clojure_DOT_core_reductions.Get()
-								tmp4827 := v_clojure_DOT_core_first.Get()
-								tmp4828 := lang.Apply1(tmp4827, s4825)
-								tmp4829 := lang.Apply2(f4806, init4807, tmp4828)
-								tmp4830 := v_clojure_DOT_core_rest.Get()
-								tmp4831 := lang.Apply1(tmp4830, s4825)
-								tmp4832 := lang.Apply3(tmp4826, f4806, tmp4829, tmp4831)
-								tmp4824 = tmp4832
+								var s4824 any = temp__5__auto__4821
+								_ = s4824
+								tmp4825 := v_clojure_DOT_core_reductions.Get()
+								tmp4826 := v_clojure_DOT_core_first.Get()
+								tmp4827 := lang.Apply1(tmp4826, s4824)
+								tmp4828 := lang.Apply2(f4805, init4806, tmp4827)
+								tmp4829 := v_clojure_DOT_core_rest.Get()
+								tmp4830 := lang.Apply1(tmp4829, s4824)
+								tmp4831 := lang.Apply3(tmp4825, f4805, tmp4828, tmp4830)
+								tmp4823 = tmp4831
 							}
-							tmp4823 = tmp4824
+							tmp4822 = tmp4823
 						} else {
-							tmp4823 = nil
+							tmp4822 = nil
 						}
-						tmp4819 = tmp4823
+						tmp4818 = tmp4822
 					}
-					return tmp4819
+					return tmp4818
 				})
-				tmp4833 := lang.Apply1(tmp4817, tmp4818)
-				tmp4834 := lang.Apply2(tmp4816, init4807, tmp4833)
-				tmp4811 = tmp4834
+				tmp4832 := lang.Apply1(tmp4816, tmp4817)
+				tmp4833 := lang.Apply2(tmp4815, init4806, tmp4832)
+				tmp4810 = tmp4833
 			}
-			return tmp4811
+			return tmp4810
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/reductions", "2: [f coll] or 3: [f init coll]"))
 		}
 	})
-	v_clojure_DOT_core_reductions.BindRoot(tmp4784)
+	v_clojure_DOT_core_reductions.BindRoot(tmp4783)
 	_ = v_clojure_DOT_core_reductions
 	// (def tree-seq "Returns a lazy sequence of the nodes in a tree, via a depth-first walk.\n  …
 	v_clojure_DOT_core_tree_seq.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1516), kw_column, int64(7), kw_end_line, int64(1516), kw_end_column, int64(15), kw_doc, "Returns a lazy sequence of the nodes in a tree, via a depth-first walk.\n  branch? must be a fn of one arg that returns true if passed a node\n  that can have children (but may not). children must be a fn of one\n  arg that returns a sequence of the children. Will only be called on\n  nodes for which branch? returns true. Root is the root node of the\n  tree."))
-	tmp4835 := lang.FnFunc3(func(branch_QMARK_4836, children4837, root4838 any) any {
-		var tmp4839 any
-		_ = tmp4839
+	tmp4834 := lang.FnFunc3(func(branch_QMARK_4835, children4836, root4837 any) any {
+		var tmp4838 any
+		_ = tmp4838
 		{
-			var walk4840 any
-			_ = walk4840
-			var walk4840d lang.FnFunc1
-			_ = walk4840d
-			tmp4841 := lang.FnFunc1(func(node4842 any) any {
-				tmp4843 := v_clojure_DOT_core_lazy_seq_STAR_.Get()
-				tmp4844 := lang.FnFunc0(func() any {
-					tmp4845 := v_clojure_DOT_core_cons.Get()
-					tmp4846 := lang.Apply1(branch_QMARK_4836, node4842)
-					var tmp4847 any
-					_ = tmp4847
-					if lang.IsTruthy(tmp4846) {
-						tmp4848 := v_clojure_DOT_core_mapcat.Get()
-						tmp4849 := lang.Apply1(children4837, node4842)
-						tmp4850 := lang.Apply2(tmp4848, walk4840, tmp4849)
-						tmp4847 = tmp4850
+			var walk4839 any
+			_ = walk4839
+			var walk4839d lang.FnFunc1
+			_ = walk4839d
+			tmp4840 := lang.FnFunc1(func(node4841 any) any {
+				tmp4842 := v_clojure_DOT_core_lazy_seq_STAR_.Get()
+				tmp4843 := lang.FnFunc0(func() any {
+					tmp4844 := v_clojure_DOT_core_cons.Get()
+					tmp4845 := lang.Apply1(branch_QMARK_4835, node4841)
+					var tmp4846 any
+					_ = tmp4846
+					if lang.IsTruthy(tmp4845) {
+						tmp4847 := v_clojure_DOT_core_mapcat.Get()
+						tmp4848 := lang.Apply1(children4836, node4841)
+						tmp4849 := lang.Apply2(tmp4847, walk4839, tmp4848)
+						tmp4846 = tmp4849
 					} else {
-						tmp4847 = nil
+						tmp4846 = nil
 					}
-					tmp4851 := lang.Apply2(tmp4845, node4842, tmp4847)
-					return tmp4851
+					tmp4850 := lang.Apply2(tmp4844, node4841, tmp4846)
+					return tmp4850
 				})
-				tmp4852 := lang.Apply1(tmp4843, tmp4844)
-				return tmp4852
+				tmp4851 := lang.Apply1(tmp4842, tmp4843)
+				return tmp4851
 			})
-			walk4840 = tmp4841
-			walk4840d = tmp4841
-			var walk4853 any = tmp4841
-			_ = walk4853
-			tmp4854 := tmp4841(root4838)
-			tmp4839 = tmp4854
+			walk4839 = tmp4840
+			walk4839d = tmp4840
+			var walk4852 any = tmp4840
+			_ = walk4852
+			tmp4853 := tmp4840(root4837)
+			tmp4838 = tmp4853
 		}
-		return tmp4839
+		return tmp4838
 	})
-	v_clojure_DOT_core_tree_seq.BindRoot(tmp4835)
+	v_clojure_DOT_core_tree_seq.BindRoot(tmp4834)
 	_ = v_clojure_DOT_core_tree_seq
 	// (def update-keys "m f => {(f k) v ...}\n\n  Given a map m and a function f of 1-argument, …
 	v_clojure_DOT_core_update_keys.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1534), kw_column, int64(7), kw_end_line, int64(1534), kw_end_column, int64(18), kw_doc, "m f => {(f k) v ...}\n\n  Given a map m and a function f of 1-argument, returns a new map whose\n  keys are the result of applying f to the keys of m, mapped to the\n  corresponding values of m.\n  f must return a unique key for each key of m, else the behavior is\n  undefined."))
-	tmp4855 := lang.FnFunc2(func(m4856, f4857 any) any {
-		var tmp4858 any
-		_ = tmp4858
+	tmp4854 := lang.FnFunc2(func(m4855, f4856 any) any {
+		var tmp4857 any
+		_ = tmp4857
 		{
-			tmp4859 := v_clojure_DOT_core_persistent_BANG_.Get()
-			tmp4860 := v_clojure_DOT_core_reduce_kv.Get()
-			tmp4861 := lang.FnFunc3(func(acc4862, k4863, v4864 any) any {
-				tmp4865 := v_clojure_DOT_core_assoc_BANG_.Get()
-				tmp4866 := lang.Apply1(f4857, k4863)
-				tmp4867 := lang.Apply3(tmp4865, acc4862, tmp4866, v4864)
-				return tmp4867
+			tmp4858 := v_clojure_DOT_core_persistent_BANG_.Get()
+			tmp4859 := v_clojure_DOT_core_reduce_kv.Get()
+			tmp4860 := lang.FnFunc3(func(acc4861, k4862, v4863 any) any {
+				tmp4864 := v_clojure_DOT_core_assoc_BANG_.Get()
+				tmp4865 := lang.Apply1(f4856, k4862)
+				tmp4866 := lang.Apply3(tmp4864, acc4861, tmp4865, v4863)
+				return tmp4866
 			})
-			tmp4868 := v_clojure_DOT_core_transient.Get()
-			tmp4869 := lang.NewMap()
-			tmp4870 := lang.Apply1(tmp4868, tmp4869)
-			tmp4871 := lang.Apply3(tmp4860, tmp4861, tmp4870, m4856)
-			tmp4872 := lang.Apply1(tmp4859, tmp4871)
-			var ret4873 any = tmp4872
-			_ = ret4873
-			tmp4874 := v_clojure_DOT_core_with_meta.Get()
-			tmp4875 := v_clojure_DOT_core_meta.Get()
-			tmp4876 := lang.Apply1(tmp4875, m4856)
-			tmp4877 := lang.Apply2(tmp4874, ret4873, tmp4876)
-			tmp4858 = tmp4877
+			tmp4867 := v_clojure_DOT_core_transient.Get()
+			tmp4868 := lang.NewMap()
+			tmp4869 := lang.Apply1(tmp4867, tmp4868)
+			tmp4870 := lang.Apply3(tmp4859, tmp4860, tmp4869, m4855)
+			tmp4871 := lang.Apply1(tmp4858, tmp4870)
+			var ret4872 any = tmp4871
+			_ = ret4872
+			tmp4873 := v_clojure_DOT_core_with_meta.Get()
+			tmp4874 := v_clojure_DOT_core_meta.Get()
+			tmp4875 := lang.Apply1(tmp4874, m4855)
+			tmp4876 := lang.Apply2(tmp4873, ret4872, tmp4875)
+			tmp4857 = tmp4876
 		}
-		return tmp4858
+		return tmp4857
 	})
-	v_clojure_DOT_core_update_keys.BindRoot(tmp4855)
+	v_clojure_DOT_core_update_keys.BindRoot(tmp4854)
 	_ = v_clojure_DOT_core_update_keys
 	// (def update-vals "m f => {k (f v) ...}\n\n  Given a map m and a function f of 1-argument, …
 	v_clojure_DOT_core_update_vals.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1555), kw_column, int64(7), kw_end_line, int64(1555), kw_end_column, int64(18), kw_doc, "m f => {k (f v) ...}\n\n  Given a map m and a function f of 1-argument, returns a new map where\n  the keys of m are mapped to result of applying f to the corresponding\n  values of m."))
-	tmp4878 := lang.FnFunc2(func(m4879, f4880 any) any {
-		tmp4881 := v_clojure_DOT_core_with_meta.Get()
-		tmp4882 := v_clojure_DOT_core_persistent_BANG_.Get()
-		tmp4883 := v_clojure_DOT_core_reduce_kv.Get()
-		tmp4884 := lang.FnFunc3(func(acc4885, k4886, v4887 any) any {
-			tmp4888 := v_clojure_DOT_core_assoc_BANG_.Get()
-			tmp4889 := lang.Apply1(f4880, v4887)
-			tmp4890 := lang.Apply3(tmp4888, acc4885, k4886, tmp4889)
-			return tmp4890
+	tmp4877 := lang.FnFunc2(func(m4878, f4879 any) any {
+		tmp4880 := v_clojure_DOT_core_with_meta.Get()
+		tmp4881 := v_clojure_DOT_core_persistent_BANG_.Get()
+		tmp4882 := v_clojure_DOT_core_reduce_kv.Get()
+		tmp4883 := lang.FnFunc3(func(acc4884, k4885, v4886 any) any {
+			tmp4887 := v_clojure_DOT_core_assoc_BANG_.Get()
+			tmp4888 := lang.Apply1(f4879, v4886)
+			tmp4889 := lang.Apply3(tmp4887, acc4884, k4885, tmp4888)
+			return tmp4889
 		})
-		tmp4891 := v_clojure_DOT_core_transient.Get()
-		tmp4892 := lang.NewMap()
-		tmp4893 := lang.Apply1(tmp4891, tmp4892)
-		tmp4894 := lang.Apply3(tmp4883, tmp4884, tmp4893, m4879)
-		tmp4895 := lang.Apply1(tmp4882, tmp4894)
-		tmp4896 := v_clojure_DOT_core_meta.Get()
-		tmp4897 := lang.Apply1(tmp4896, m4879)
-		tmp4898 := lang.Apply2(tmp4881, tmp4895, tmp4897)
-		return tmp4898
+		tmp4890 := v_clojure_DOT_core_transient.Get()
+		tmp4891 := lang.NewMap()
+		tmp4892 := lang.Apply1(tmp4890, tmp4891)
+		tmp4893 := lang.Apply3(tmp4882, tmp4883, tmp4892, m4878)
+		tmp4894 := lang.Apply1(tmp4881, tmp4893)
+		tmp4895 := v_clojure_DOT_core_meta.Get()
+		tmp4896 := lang.Apply1(tmp4895, m4878)
+		tmp4897 := lang.Apply2(tmp4880, tmp4894, tmp4896)
+		return tmp4897
 	})
-	v_clojure_DOT_core_update_vals.BindRoot(tmp4878)
+	v_clojure_DOT_core_update_vals.BindRoot(tmp4877)
 	_ = v_clojure_DOT_core_update_vals
 	// (def distinct? "Returns true if no two of the arguments are =" (clojure.core/fn ([x] true)…
 	v_clojure_DOT_core_distinct_QMARK_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1571), kw_column, int64(7), kw_end_line, int64(1571), kw_end_column, int64(16), kw_doc, "Returns true if no two of the arguments are ="))
-	tmp4899 := lang.FnFunc(func(args ...any) any {
+	tmp4898 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			x4900 := args[0]
-			_ = x4900
+			x4899 := args[0]
+			_ = x4899
 			return true
 		case 2:
-			x4901 := args[0]
-			_ = x4901
-			y4902 := args[1]
-			_ = y4902
-			tmp4903 := v_clojure_DOT_core_not.Get()
-			tmp4904 := rt.EQ2(v_clojure_DOT_core_X_EQ_, x4901, y4902)
-			tmp4905 := lang.Apply1(tmp4903, tmp4904)
-			return tmp4905
+			x4900 := args[0]
+			_ = x4900
+			y4901 := args[1]
+			_ = y4901
+			tmp4902 := v_clojure_DOT_core_not.Get()
+			tmp4903 := rt.EQ2(v_clojure_DOT_core_X_EQ_, x4900, y4901)
+			tmp4904 := lang.Apply1(tmp4902, tmp4903)
+			return tmp4904
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "clojure.core/distinct?", "1: [x] or 2: [x y] or 2+: [x y more & more]"))
 			}
-			x4906 := args[0]
-			_ = x4906
-			y4907 := args[1]
-			_ = y4907
-			var more4908 any
+			x4905 := args[0]
+			_ = x4905
+			y4906 := args[1]
+			_ = y4906
+			var more4907 any
 			if len(args) > 2 {
-				more4908 = lang.NewList(args[2:]...)
+				more4907 = lang.NewList(args[2:]...)
 			}
-			_ = more4908
-			tmp4909 := v_clojure_DOT_core_not.Get()
-			tmp4910 := rt.EQ2(v_clojure_DOT_core_X_EQ_, x4906, y4907)
-			tmp4911 := lang.Apply1(tmp4909, tmp4910)
-			var tmp4912 any
-			_ = tmp4912
-			if lang.IsTruthy(tmp4911) {
-				var tmp4913 any
-				_ = tmp4913
+			_ = more4907
+			tmp4908 := v_clojure_DOT_core_not.Get()
+			tmp4909 := rt.EQ2(v_clojure_DOT_core_X_EQ_, x4905, y4906)
+			tmp4910 := lang.Apply1(tmp4908, tmp4909)
+			var tmp4911 any
+			_ = tmp4911
+			if lang.IsTruthy(tmp4910) {
+				var tmp4912 any
+				_ = tmp4912
 				{
-					tmp4914 := lang.NewSet(x4906, y4907)
-					var s4915 any = tmp4914
-					_ = s4915
-					var G__184916 any = more4908
-					_ = G__184916
-					var vec__194917 any = G__184916
-					_ = vec__194917
-					tmp4918 := v_clojure_DOT_core_seq.Get()
-					tmp4919 := lang.Apply1(tmp4918, vec__194917)
-					var seq__204920 any = tmp4919
-					_ = seq__204920
-					tmp4921 := v_clojure_DOT_core_first.Get()
-					tmp4922 := lang.Apply1(tmp4921, seq__204920)
-					var first__214923 any = tmp4922
-					_ = first__214923
-					tmp4924 := v_clojure_DOT_core_next.Get()
-					tmp4925 := lang.Apply1(tmp4924, seq__204920)
-					var seq__204926 any = tmp4925
-					_ = seq__204926
-					var x4927 any = first__214923
-					_ = x4927
-					var etc4928 any = seq__204926
-					_ = etc4928
-					var xs4929 any = vec__194917
-					_ = xs4929
-					var tmp4930 any
-					_ = tmp4930
+					tmp4913 := lang.NewSet(x4905, y4906)
+					var s4914 any = tmp4913
+					_ = s4914
+					var G__184915 any = more4907
+					_ = G__184915
+					var vec__194916 any = G__184915
+					_ = vec__194916
+					tmp4917 := v_clojure_DOT_core_seq.Get()
+					tmp4918 := lang.Apply1(tmp4917, vec__194916)
+					var seq__204919 any = tmp4918
+					_ = seq__204919
+					tmp4920 := v_clojure_DOT_core_first.Get()
+					tmp4921 := lang.Apply1(tmp4920, seq__204919)
+					var first__214922 any = tmp4921
+					_ = first__214922
+					tmp4923 := v_clojure_DOT_core_next.Get()
+					tmp4924 := lang.Apply1(tmp4923, seq__204919)
+					var seq__204925 any = tmp4924
+					_ = seq__204925
+					var x4926 any = first__214922
+					_ = x4926
+					var etc4927 any = seq__204925
+					_ = etc4927
+					var xs4928 any = vec__194916
+					_ = xs4928
+					var tmp4929 any
+					_ = tmp4929
 					{
-						var s4931 any = s4915
-						_ = s4931
-						var G__184932 any = G__184916
-						_ = G__184932
-					loop4933:
+						var s4930 any = s4914
+						_ = s4930
+						var G__184931 any = G__184915
+						_ = G__184931
+					loop4932:
 						for {
-							var tmp4934 any
-							_ = tmp4934
+							var tmp4933 any
+							_ = tmp4933
 							{
-								var s4935 any = s4931
-								_ = s4935
-								var vec__224936 any = G__184932
-								_ = vec__224936
-								tmp4937 := v_clojure_DOT_core_seq.Get()
-								tmp4938 := lang.Apply1(tmp4937, vec__224936)
-								var seq__234939 any = tmp4938
-								_ = seq__234939
-								tmp4940 := v_clojure_DOT_core_first.Get()
-								tmp4941 := lang.Apply1(tmp4940, seq__234939)
-								var first__244942 any = tmp4941
-								_ = first__244942
-								tmp4943 := v_clojure_DOT_core_next.Get()
-								tmp4944 := lang.Apply1(tmp4943, seq__234939)
-								var seq__234945 any = tmp4944
-								_ = seq__234945
-								var x4946 any = first__244942
-								_ = x4946
-								var etc4947 any = seq__234945
-								_ = etc4947
-								var xs4948 any = vec__224936
-								_ = xs4948
-								var tmp4949 any
-								_ = tmp4949
-								if lang.IsTruthy(xs4948) {
-									tmp4950 := v_clojure_DOT_core_contains_QMARK_.Get()
-									tmp4951 := lang.Apply2(tmp4950, s4935, x4946)
-									var tmp4952 any
-									_ = tmp4952
-									if lang.IsTruthy(tmp4951) {
-										tmp4952 = false
+								var s4934 any = s4930
+								_ = s4934
+								var vec__224935 any = G__184931
+								_ = vec__224935
+								tmp4936 := v_clojure_DOT_core_seq.Get()
+								tmp4937 := lang.Apply1(tmp4936, vec__224935)
+								var seq__234938 any = tmp4937
+								_ = seq__234938
+								tmp4939 := v_clojure_DOT_core_first.Get()
+								tmp4940 := lang.Apply1(tmp4939, seq__234938)
+								var first__244941 any = tmp4940
+								_ = first__244941
+								tmp4942 := v_clojure_DOT_core_next.Get()
+								tmp4943 := lang.Apply1(tmp4942, seq__234938)
+								var seq__234944 any = tmp4943
+								_ = seq__234944
+								var x4945 any = first__244941
+								_ = x4945
+								var etc4946 any = seq__234944
+								_ = etc4946
+								var xs4947 any = vec__224935
+								_ = xs4947
+								var tmp4948 any
+								_ = tmp4948
+								if lang.IsTruthy(xs4947) {
+									tmp4949 := v_clojure_DOT_core_contains_QMARK_.Get()
+									tmp4950 := lang.Apply2(tmp4949, s4934, x4945)
+									var tmp4951 any
+									_ = tmp4951
+									if lang.IsTruthy(tmp4950) {
+										tmp4951 = false
 									} else {
-										tmp4953 := v_clojure_DOT_core_conj.Get()
-										tmp4954 := lang.Apply2(tmp4953, s4935, x4946)
-										var tmp4955 any = tmp4954
-										var tmp4956 any = etc4947
-										s4931 = tmp4955
-										G__184932 = tmp4956
-										continue loop4933
+										tmp4952 := v_clojure_DOT_core_conj.Get()
+										tmp4953 := lang.Apply2(tmp4952, s4934, x4945)
+										var tmp4954 any = tmp4953
+										var tmp4955 any = etc4946
+										s4930 = tmp4954
+										G__184931 = tmp4955
+										continue loop4932
 									}
-									tmp4949 = tmp4952
+									tmp4948 = tmp4951
 								} else {
-									tmp4949 = true
+									tmp4948 = true
 								}
-								tmp4934 = tmp4949
+								tmp4933 = tmp4948
 							}
-							tmp4930 = tmp4934
-							break loop4933
+							tmp4929 = tmp4933
+							break loop4932
 						}
 					}
-					tmp4913 = tmp4930
+					tmp4912 = tmp4929
 				}
-				tmp4912 = tmp4913
+				tmp4911 = tmp4912
 			} else {
-				tmp4912 = false
+				tmp4911 = false
 			}
-			return tmp4912
+			return tmp4911
 		}
 	})
-	v_clojure_DOT_core_distinct_QMARK_.BindRoot(tmp4899)
+	v_clojure_DOT_core_distinct_QMARK_.BindRoot(tmp4898)
 	_ = v_clojure_DOT_core_distinct_QMARK_
 	// (def bounded-count "If coll is counted? returns its count, else will count at most the fir…
 	v_clojure_DOT_core_bounded_count.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1590), kw_column, int64(7), kw_end_line, int64(1590), kw_end_column, int64(20), kw_doc, "If coll is counted? returns its count, else will count at most the first n\n  elements of coll using its seq"))
-	tmp4957 := lang.FnFunc2(func(n4958, coll4959 any) any {
-		tmp4960 := v_clojure_DOT_core_counted_QMARK_.Get()
-		tmp4961 := lang.Apply1(tmp4960, coll4959)
-		var tmp4962 any
-		_ = tmp4962
-		if lang.IsTruthy(tmp4961) {
-			tmp4963 := v_clojure_DOT_core_count.Get()
-			tmp4964 := lang.Apply1(tmp4963, coll4959)
-			tmp4962 = tmp4964
+	tmp4956 := lang.FnFunc2(func(n4957, coll4958 any) any {
+		tmp4959 := v_clojure_DOT_core_counted_QMARK_.Get()
+		tmp4960 := lang.Apply1(tmp4959, coll4958)
+		var tmp4961 any
+		_ = tmp4961
+		if lang.IsTruthy(tmp4960) {
+			tmp4962 := v_clojure_DOT_core_count.Get()
+			tmp4963 := lang.Apply1(tmp4962, coll4958)
+			tmp4961 = tmp4963
 		} else {
-			var tmp4965 any
-			_ = tmp4965
+			var tmp4964 any
+			_ = tmp4964
 			if !rt.CoreDirty() {
-				var tmp4966 int64
-				_ = tmp4966
+				var tmp4965 int64
+				_ = tmp4965
 				{
-					var i4967 int64 = int64(0)
-					_ = i4967
-					tmp4968 := v_clojure_DOT_core_seq.Get()
-					tmp4969 := lang.Apply1(tmp4968, coll4959)
-					var s4970 any = tmp4969
-					_ = s4970
-				loop4971:
+					var i4966 int64 = int64(0)
+					_ = i4966
+					tmp4967 := v_clojure_DOT_core_seq.Get()
+					tmp4968 := lang.Apply1(tmp4967, coll4958)
+					var s4969 any = tmp4968
+					_ = s4969
+				loop4970:
 					for {
-						var tmp4972 any
-						_ = tmp4972
+						var tmp4971 any
+						_ = tmp4971
 						{
-							var and__1__auto__4973 any = s4970
-							_ = and__1__auto__4973
-							var tmp4974 any
-							_ = tmp4974
-							if lang.IsTruthy(and__1__auto__4973) {
-								tmp4975 := rt.LT2(v_clojure_DOT_core_X_LT_, i4967, n4958)
-								tmp4974 = tmp4975
+							var and__1__auto__4972 any = s4969
+							_ = and__1__auto__4972
+							var tmp4973 any
+							_ = tmp4973
+							if lang.IsTruthy(and__1__auto__4972) {
+								tmp4974 := rt.LT2(v_clojure_DOT_core_X_LT_, i4966, n4957)
+								tmp4973 = tmp4974
 							} else {
-								tmp4974 = and__1__auto__4973
+								tmp4973 = and__1__auto__4972
 							}
-							tmp4972 = tmp4974
+							tmp4971 = tmp4973
 						}
-						var tmp4976 int64
-						_ = tmp4976
-						if lang.IsTruthy(tmp4972) {
-							var tmp4977 int64 = rt.IInc(i4967)
-							var tmp4978 int64 = tmp4977
-							tmp4979 := v_clojure_DOT_core_next.Get()
-							tmp4980 := lang.Apply1(tmp4979, s4970)
-							var tmp4981 any = tmp4980
-							i4967 = tmp4978
-							s4970 = tmp4981
-							continue loop4971
+						var tmp4975 int64
+						_ = tmp4975
+						if lang.IsTruthy(tmp4971) {
+							var tmp4976 int64 = rt.IInc(i4966)
+							var tmp4977 int64 = tmp4976
+							tmp4978 := v_clojure_DOT_core_next.Get()
+							tmp4979 := lang.Apply1(tmp4978, s4969)
+							var tmp4980 any = tmp4979
+							i4966 = tmp4977
+							s4969 = tmp4980
+							continue loop4970
 						} else {
-							tmp4976 = i4967
+							tmp4975 = i4966
 						}
-						tmp4966 = tmp4976
-						break loop4971
+						tmp4965 = tmp4975
+						break loop4970
 					}
 				}
-				tmp4965 = tmp4966
+				tmp4964 = tmp4965
 			} else {
-				var tmp4982 any
-				_ = tmp4982
+				var tmp4981 any
+				_ = tmp4981
 				{
-					var i4983 any = int64(0)
-					_ = i4983
-					tmp4984 := v_clojure_DOT_core_seq.Get()
-					tmp4985 := lang.Apply1(tmp4984, coll4959)
-					var s4986 any = tmp4985
-					_ = s4986
-				loop4987:
+					var i4982 any = int64(0)
+					_ = i4982
+					tmp4983 := v_clojure_DOT_core_seq.Get()
+					tmp4984 := lang.Apply1(tmp4983, coll4958)
+					var s4985 any = tmp4984
+					_ = s4985
+				loop4986:
 					for {
-						var tmp4988 any
-						_ = tmp4988
+						var tmp4987 any
+						_ = tmp4987
 						{
-							var and__1__auto__4989 any = s4986
-							_ = and__1__auto__4989
-							var tmp4990 any
-							_ = tmp4990
-							if lang.IsTruthy(and__1__auto__4989) {
-								tmp4991 := rt.LT2(v_clojure_DOT_core_X_LT_, i4983, n4958)
-								tmp4990 = tmp4991
+							var and__1__auto__4988 any = s4985
+							_ = and__1__auto__4988
+							var tmp4989 any
+							_ = tmp4989
+							if lang.IsTruthy(and__1__auto__4988) {
+								tmp4990 := rt.LT2(v_clojure_DOT_core_X_LT_, i4982, n4957)
+								tmp4989 = tmp4990
 							} else {
-								tmp4990 = and__1__auto__4989
+								tmp4989 = and__1__auto__4988
 							}
-							tmp4988 = tmp4990
+							tmp4987 = tmp4989
 						}
-						var tmp4992 any
-						_ = tmp4992
-						if lang.IsTruthy(tmp4988) {
-							tmp4993 := v_clojure_DOT_core_inc.Get()
-							tmp4994 := lang.Apply1(tmp4993, i4983)
-							var tmp4995 any = tmp4994
-							tmp4996 := v_clojure_DOT_core_next.Get()
-							tmp4997 := lang.Apply1(tmp4996, s4986)
-							var tmp4998 any = tmp4997
-							i4983 = tmp4995
-							s4986 = tmp4998
-							continue loop4987
+						var tmp4991 any
+						_ = tmp4991
+						if lang.IsTruthy(tmp4987) {
+							tmp4992 := v_clojure_DOT_core_inc.Get()
+							tmp4993 := lang.Apply1(tmp4992, i4982)
+							var tmp4994 any = tmp4993
+							tmp4995 := v_clojure_DOT_core_next.Get()
+							tmp4996 := lang.Apply1(tmp4995, s4985)
+							var tmp4997 any = tmp4996
+							i4982 = tmp4994
+							s4985 = tmp4997
+							continue loop4986
 						} else {
-							tmp4992 = i4983
+							tmp4991 = i4982
 						}
-						tmp4982 = tmp4992
-						break loop4987
+						tmp4981 = tmp4991
+						break loop4986
 					}
 				}
-				tmp4965 = tmp4982
+				tmp4964 = tmp4981
 			}
-			tmp4962 = tmp4965
+			tmp4961 = tmp4964
 		}
-		return tmp4962
+		return tmp4961
 	})
-	v_clojure_DOT_core_bounded_count.BindRoot(tmp4957)
+	v_clojure_DOT_core_bounded_count.BindRoot(tmp4956)
 	_ = v_clojure_DOT_core_bounded_count
 	// (def vary-meta "Returns an object of the same type and value as obj, with\n  (apply f (met…
 	v_clojure_DOT_core_vary_meta.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1603), kw_column, int64(7), kw_end_line, int64(1603), kw_end_column, int64(16), kw_doc, "Returns an object of the same type and value as obj, with\n  (apply f (meta obj) args) as its metadata."))
-	tmp4999 := lang.FnFunc(func(args ...any) any {
+	tmp4998 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "clojure.core/vary-meta", "2+: [obj f args & more]"))
 			}
-			obj5000 := args[0]
-			_ = obj5000
-			f5001 := args[1]
-			_ = f5001
-			var args5002 any
+			obj4999 := args[0]
+			_ = obj4999
+			f5000 := args[1]
+			_ = f5000
+			var args5001 any
 			if len(args) > 2 {
-				args5002 = lang.NewList(args[2:]...)
+				args5001 = lang.NewList(args[2:]...)
 			}
-			_ = args5002
-			tmp5003 := v_clojure_DOT_core_with_meta.Get()
-			tmp5004 := v_clojure_DOT_core_apply.Get()
-			tmp5005 := v_clojure_DOT_core_meta.Get()
-			tmp5006 := lang.Apply1(tmp5005, obj5000)
-			tmp5007 := lang.Apply3(tmp5004, f5001, tmp5006, args5002)
-			tmp5008 := lang.Apply2(tmp5003, obj5000, tmp5007)
-			return tmp5008
+			_ = args5001
+			tmp5002 := v_clojure_DOT_core_with_meta.Get()
+			tmp5003 := v_clojure_DOT_core_apply.Get()
+			tmp5004 := v_clojure_DOT_core_meta.Get()
+			tmp5005 := lang.Apply1(tmp5004, obj4999)
+			tmp5006 := lang.Apply3(tmp5003, f5000, tmp5005, args5001)
+			tmp5007 := lang.Apply2(tmp5002, obj4999, tmp5006)
+			return tmp5007
 		}
 	})
-	v_clojure_DOT_core_vary_meta.BindRoot(tmp4999)
+	v_clojure_DOT_core_vary_meta.BindRoot(tmp4998)
 	_ = v_clojure_DOT_core_vary_meta
 	// (def memoize "Returns a memoized version of a referentially transparent function. The\n  m…
 	v_clojure_DOT_core_memoize.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1613), kw_column, int64(7), kw_end_line, int64(1613), kw_end_column, int64(14), kw_doc, "Returns a memoized version of a referentially transparent function. The\n  memoized version of the function keeps a cache of the mapping from arguments\n  to results and, when calls with the same arguments are repeated often, has\n  higher performance at the expense of higher memory use."))
-	tmp5009 := lang.FnFunc1(func(f5010 any) any {
-		var tmp5011 any
-		_ = tmp5011
+	tmp5008 := lang.FnFunc1(func(f5009 any) any {
+		var tmp5010 any
+		_ = tmp5010
 		{
-			tmp5012 := v_clojure_DOT_core_atom.Get()
-			tmp5013 := lang.NewMap()
-			tmp5014 := lang.Apply1(tmp5012, tmp5013)
-			var mem5015 any = tmp5014
-			_ = mem5015
-			tmp5016 := lang.FnFunc(func(args ...any) any {
+			tmp5011 := v_clojure_DOT_core_atom.Get()
+			tmp5012 := lang.NewMap()
+			tmp5013 := lang.Apply1(tmp5011, tmp5012)
+			var mem5014 any = tmp5013
+			_ = mem5014
+			tmp5015 := lang.FnFunc(func(args ...any) any {
 				switch len(args) {
 				default:
 					if len(args) < 0 {
 						panic(lang.NewArityError(len(args), "fn", "0+: [args & more]"))
 					}
-					var args5017 any
+					var args5016 any
 					if len(args) > 0 {
-						args5017 = lang.NewList(args[0:]...)
+						args5016 = lang.NewList(args[0:]...)
 					}
-					_ = args5017
-					var tmp5018 any
-					_ = tmp5018
+					_ = args5016
+					var tmp5017 any
+					_ = tmp5017
 					{
-						tmp5019 := v_clojure_DOT_core_find.Get()
-						tmp5020 := v_clojure_DOT_core_deref.Get()
-						tmp5021 := lang.Apply1(tmp5020, mem5015)
-						tmp5022 := lang.Apply2(tmp5019, tmp5021, args5017)
-						var temp__4__auto__5023 any = tmp5022
-						_ = temp__4__auto__5023
-						var tmp5024 any
-						_ = tmp5024
-						if lang.IsTruthy(temp__4__auto__5023) {
-							var tmp5025 any
-							_ = tmp5025
+						tmp5018 := v_clojure_DOT_core_find.Get()
+						tmp5019 := v_clojure_DOT_core_deref.Get()
+						tmp5020 := lang.Apply1(tmp5019, mem5014)
+						tmp5021 := lang.Apply2(tmp5018, tmp5020, args5016)
+						var temp__4__auto__5022 any = tmp5021
+						_ = temp__4__auto__5022
+						var tmp5023 any
+						_ = tmp5023
+						if lang.IsTruthy(temp__4__auto__5022) {
+							var tmp5024 any
+							_ = tmp5024
 							{
-								var e5026 any = temp__4__auto__5023
-								_ = e5026
-								tmp5027 := v_clojure_DOT_core_val.Get()
-								tmp5028 := lang.Apply1(tmp5027, e5026)
-								tmp5025 = tmp5028
+								var e5025 any = temp__4__auto__5022
+								_ = e5025
+								tmp5026 := v_clojure_DOT_core_val.Get()
+								tmp5027 := lang.Apply1(tmp5026, e5025)
+								tmp5024 = tmp5027
 							}
-							tmp5024 = tmp5025
+							tmp5023 = tmp5024
 						} else {
-							var tmp5029 any
-							_ = tmp5029
+							var tmp5028 any
+							_ = tmp5028
 							{
-								tmp5030 := v_clojure_DOT_core_apply.Get()
-								tmp5031 := lang.Apply2(tmp5030, f5010, args5017)
-								var ret5032 any = tmp5031
-								_ = ret5032
-								tmp5033 := v_clojure_DOT_core_swap_BANG_.Get()
-								tmp5034 := v_clojure_DOT_core_assoc.Get()
-								tmp5035 := lang.Apply4(tmp5033, mem5015, tmp5034, args5017, ret5032)
-								_ = tmp5035
-								tmp5029 = ret5032
+								tmp5029 := v_clojure_DOT_core_apply.Get()
+								tmp5030 := lang.Apply2(tmp5029, f5009, args5016)
+								var ret5031 any = tmp5030
+								_ = ret5031
+								tmp5032 := v_clojure_DOT_core_swap_BANG_.Get()
+								tmp5033 := v_clojure_DOT_core_assoc.Get()
+								tmp5034 := lang.Apply4(tmp5032, mem5014, tmp5033, args5016, ret5031)
+								_ = tmp5034
+								tmp5028 = ret5031
 							}
-							tmp5024 = tmp5029
+							tmp5023 = tmp5028
 						}
-						tmp5018 = tmp5024
+						tmp5017 = tmp5023
 					}
-					return tmp5018
+					return tmp5017
 				}
 			})
-			tmp5011 = tmp5016
+			tmp5010 = tmp5015
 		}
-		return tmp5011
+		return tmp5010
 	})
-	v_clojure_DOT_core_memoize.BindRoot(tmp5009)
+	v_clojure_DOT_core_memoize.BindRoot(tmp5008)
 	_ = v_clojure_DOT_core_memoize
 	// (def trampoline "trampoline can be used to convert algorithms requiring mutual\n  recursio…
 	v_clojure_DOT_core_trampoline.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1630), kw_column, int64(7), kw_end_line, int64(1630), kw_end_column, int64(17), kw_doc, "trampoline can be used to convert algorithms requiring mutual\n  recursion without stack consumption. Calls f with supplied args, if\n  any. If f returns a fn, calls that fn with no arguments, and\n  continues repeating, until the return value is not a fn, then\n  returns that non-fn value. Note that if you want to return a fn as a\n  final value, you must wrap it in some data structure and unpack it\n  after trampoline returns."))
-	tmp5036 := lang.FnFunc(func(args ...any) any {
+	tmp5035 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			f5037 := args[0]
-			_ = f5037
-		fnloop5038:
+			f5036 := args[0]
+			_ = f5036
+		fnloop5037:
 			for {
-				var tmp5039 any
-				_ = tmp5039
+				var tmp5038 any
+				_ = tmp5038
 				{
-					tmp5040 := lang.Apply0(f5037)
-					var ret5041 any = tmp5040
-					_ = ret5041
-					tmp5042 := v_clojure_DOT_core_fn_QMARK_.Get()
-					tmp5043 := lang.Apply1(tmp5042, ret5041)
-					var tmp5044 any
-					_ = tmp5044
-					if lang.IsTruthy(tmp5043) {
-						var tmp5045 any = ret5041
-						f5037 = tmp5045
-						continue fnloop5038
+					tmp5039 := lang.Apply0(f5036)
+					var ret5040 any = tmp5039
+					_ = ret5040
+					tmp5041 := v_clojure_DOT_core_fn_QMARK_.Get()
+					tmp5042 := lang.Apply1(tmp5041, ret5040)
+					var tmp5043 any
+					_ = tmp5043
+					if lang.IsTruthy(tmp5042) {
+						var tmp5044 any = ret5040
+						f5036 = tmp5044
+						continue fnloop5037
 					} else {
-						tmp5044 = ret5041
+						tmp5043 = ret5040
 					}
-					tmp5039 = tmp5044
+					tmp5038 = tmp5043
 				}
-				return tmp5039
+				return tmp5038
 			}
 		default:
 			if len(args) < 1 {
 				panic(lang.NewArityError(len(args), "clojure.core/trampoline", "1: [f] or 1+: [f args & more]"))
 			}
-			f5046 := args[0]
-			_ = f5046
-			var args5047 any
+			f5045 := args[0]
+			_ = f5045
+			var args5046 any
 			if len(args) > 1 {
-				args5047 = lang.NewList(args[1:]...)
+				args5046 = lang.NewList(args[1:]...)
 			}
-			_ = args5047
-			tmp5048 := v_clojure_DOT_core_trampoline.Get()
-			tmp5049 := lang.FnFunc0(func() any {
-				tmp5050 := v_clojure_DOT_core_apply.Get()
-				tmp5051 := lang.Apply2(tmp5050, f5046, args5047)
-				return tmp5051
+			_ = args5046
+			tmp5047 := v_clojure_DOT_core_trampoline.Get()
+			tmp5048 := lang.FnFunc0(func() any {
+				tmp5049 := v_clojure_DOT_core_apply.Get()
+				tmp5050 := lang.Apply2(tmp5049, f5045, args5046)
+				return tmp5050
 			})
-			tmp5052 := lang.Apply1(tmp5048, tmp5049)
-			return tmp5052
+			tmp5051 := lang.Apply1(tmp5047, tmp5048)
+			return tmp5051
 		}
 	})
-	v_clojure_DOT_core_trampoline.BindRoot(tmp5036)
+	v_clojure_DOT_core_trampoline.BindRoot(tmp5035)
 	_ = v_clojure_DOT_core_trampoline
 	// (do (def declare (fn* declare ([&form &env & names] (cons (quote do) (map (fn [n] (list (q…
 	v_clojure_DOT_core_declare.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1662), kw_column, int64(11), kw_end_line, int64(1662), kw_end_column, int64(18)))
-	var declare5053 any
-	_ = declare5053
-	tmp5054 := lang.FnFunc(func(args ...any) any {
+	var declare5052 any
+	_ = declare5052
+	tmp5053 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "clojure.core/declare", "2+: [&form &env names & more]"))
 			}
-			X_AMP_form5055 := args[0]
-			_ = X_AMP_form5055
-			X_AMP_env5056 := args[1]
-			_ = X_AMP_env5056
-			var names5057 any
+			X_AMP_form5054 := args[0]
+			_ = X_AMP_form5054
+			X_AMP_env5055 := args[1]
+			_ = X_AMP_env5055
+			var names5056 any
 			if len(args) > 2 {
-				names5057 = lang.NewList(args[2:]...)
+				names5056 = lang.NewList(args[2:]...)
 			}
-			_ = names5057
-			tmp5058 := v_clojure_DOT_core_cons.Get()
-			tmp5059 := v_clojure_DOT_core_map_.Get()
-			tmp5060 := lang.FnFunc1(func(n5061 any) any {
-				tmp5062 := v_clojure_DOT_core_list.Get()
-				tmp5063 := v_clojure_DOT_core_with_meta.Get()
-				tmp5064 := v_clojure_DOT_core_assoc.Get()
-				tmp5065 := v_clojure_DOT_core_meta.Get()
-				tmp5066 := lang.Apply1(tmp5065, n5061)
-				tmp5067 := lang.Apply3(tmp5064, tmp5066, kw_declared, true)
-				tmp5068 := lang.Apply2(tmp5063, n5061, tmp5067)
-				tmp5069 := lang.Apply2(tmp5062, sym_def, tmp5068)
-				return tmp5069
+			_ = names5056
+			tmp5057 := v_clojure_DOT_core_cons.Get()
+			tmp5058 := v_clojure_DOT_core_map_.Get()
+			tmp5059 := lang.FnFunc1(func(n5060 any) any {
+				tmp5061 := v_clojure_DOT_core_list.Get()
+				tmp5062 := v_clojure_DOT_core_with_meta.Get()
+				tmp5063 := v_clojure_DOT_core_assoc.Get()
+				tmp5064 := v_clojure_DOT_core_meta.Get()
+				tmp5065 := lang.Apply1(tmp5064, n5060)
+				tmp5066 := lang.Apply3(tmp5063, tmp5065, kw_declared, true)
+				tmp5067 := lang.Apply2(tmp5062, n5060, tmp5066)
+				tmp5068 := lang.Apply2(tmp5061, sym_def, tmp5067)
+				return tmp5068
 			})
-			tmp5070 := lang.Apply2(tmp5059, tmp5060, names5057)
-			tmp5071 := lang.Apply2(tmp5058, sym_do, tmp5070)
-			return tmp5071
+			tmp5069 := lang.Apply2(tmp5058, tmp5059, names5056)
+			tmp5070 := lang.Apply2(tmp5057, sym_do, tmp5069)
+			return tmp5070
 		}
 	})
-	declare5053 = tmp5054
-	v_clojure_DOT_core_declare.BindRoot(tmp5054)
+	declare5052 = tmp5053
+	v_clojure_DOT_core_declare.BindRoot(tmp5053)
 	_ = v_clojure_DOT_core_declare
-	tmp5072 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5073 := lang.Apply1(tmp5072, v_clojure_DOT_core_declare)
-	_ = tmp5073
+	tmp5071 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5072 := lang.Apply1(tmp5071, v_clojure_DOT_core_declare)
+	_ = tmp5072
 	_ = v_clojure_DOT_core_declare
 	// (do (def defn- (fn* defn- ([&form &env name & decls] (list* (quote clojure.core/defn) (wit…
 	v_clojure_DOT_core_defn_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1670), kw_column, int64(11), kw_end_line, int64(1670), kw_end_column, int64(16)))
-	var defn_5074 any
-	_ = defn_5074
-	tmp5075 := lang.FnFunc(func(args ...any) any {
+	var defn_5073 any
+	_ = defn_5073
+	tmp5074 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/defn-", "3+: [&form &env name decls & more]"))
 			}
-			X_AMP_form5076 := args[0]
-			_ = X_AMP_form5076
-			X_AMP_env5077 := args[1]
-			_ = X_AMP_env5077
-			name5078 := args[2]
-			_ = name5078
-			var decls5079 any
+			X_AMP_form5075 := args[0]
+			_ = X_AMP_form5075
+			X_AMP_env5076 := args[1]
+			_ = X_AMP_env5076
+			name5077 := args[2]
+			_ = name5077
+			var decls5078 any
 			if len(args) > 3 {
-				decls5079 = lang.NewList(args[3:]...)
+				decls5078 = lang.NewList(args[3:]...)
 			}
-			_ = decls5079
-			tmp5080 := v_clojure_DOT_core_list_STAR_.Get()
-			tmp5081 := v_clojure_DOT_core_with_meta.Get()
-			tmp5082 := v_clojure_DOT_core_assoc.Get()
-			tmp5083 := v_clojure_DOT_core_meta.Get()
-			tmp5084 := lang.Apply1(tmp5083, name5078)
-			tmp5085 := lang.Apply3(tmp5082, tmp5084, kw_private, true)
-			tmp5086 := lang.Apply2(tmp5081, name5078, tmp5085)
-			tmp5087 := lang.Apply3(tmp5080, sym_clojure_DOT_core_SLASH_defn, tmp5086, decls5079)
-			return tmp5087
+			_ = decls5078
+			tmp5079 := v_clojure_DOT_core_list_STAR_.Get()
+			tmp5080 := v_clojure_DOT_core_with_meta.Get()
+			tmp5081 := v_clojure_DOT_core_assoc.Get()
+			tmp5082 := v_clojure_DOT_core_meta.Get()
+			tmp5083 := lang.Apply1(tmp5082, name5077)
+			tmp5084 := lang.Apply3(tmp5081, tmp5083, kw_private, true)
+			tmp5085 := lang.Apply2(tmp5080, name5077, tmp5084)
+			tmp5086 := lang.Apply3(tmp5079, sym_clojure_DOT_core_SLASH_defn, tmp5085, decls5078)
+			return tmp5086
 		}
 	})
-	defn_5074 = tmp5075
-	v_clojure_DOT_core_defn_.BindRoot(tmp5075)
+	defn_5073 = tmp5074
+	v_clojure_DOT_core_defn_.BindRoot(tmp5074)
 	_ = v_clojure_DOT_core_defn_
-	tmp5088 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5089 := lang.Apply1(tmp5088, v_clojure_DOT_core_defn_)
-	_ = tmp5089
+	tmp5087 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5088 := lang.Apply1(tmp5087, v_clojure_DOT_core_defn_)
+	_ = tmp5088
 	_ = v_clojure_DOT_core_defn_
 	// (do (def defonce (fn* defonce ([&form &env name expr] (clojure.core/seq (clojure.core/conc…
 	v_clojure_DOT_core_defonce.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1679), kw_column, int64(11), kw_end_line, int64(1679), kw_end_column, int64(18)))
-	var defonce5090 any
-	_ = defonce5090
-	var defonce5090d lang.FnFunc4
-	_ = defonce5090d
-	tmp5091 := lang.FnFunc4(func(X_AMP_form5092, X_AMP_env5093, name5094, expr5095 any) any {
-		tmp5096 := v_clojure_DOT_core_seq.Get()
-		tmp5097 := v_clojure_DOT_core_concat.Get()
-		tmp5098 := v_clojure_DOT_core_list.Get()
-		tmp5099 := lang.Apply1(tmp5098, sym_clojure_DOT_core_SLASH_let)
-		tmp5100 := v_clojure_DOT_core_list.Get()
-		tmp5101 := v_clojure_DOT_core_apply.Get()
-		tmp5102 := v_clojure_DOT_core_vector.Get()
-		tmp5103 := v_clojure_DOT_core_seq.Get()
-		tmp5104 := v_clojure_DOT_core_concat.Get()
-		tmp5105 := v_clojure_DOT_core_list.Get()
-		tmp5106 := lang.Apply1(tmp5105, sym_v__13__auto__)
-		tmp5107 := v_clojure_DOT_core_list.Get()
-		tmp5108 := v_clojure_DOT_core_seq.Get()
-		tmp5109 := v_clojure_DOT_core_concat.Get()
-		tmp5110 := v_clojure_DOT_core_list.Get()
-		tmp5111 := lang.Apply1(tmp5110, sym_def)
-		tmp5112 := v_clojure_DOT_core_list.Get()
-		tmp5113 := lang.Apply1(tmp5112, name5094)
-		tmp5114 := lang.Apply2(tmp5109, tmp5111, tmp5113)
-		tmp5115 := lang.Apply1(tmp5108, tmp5114)
-		tmp5116 := lang.Apply1(tmp5107, tmp5115)
-		tmp5117 := lang.Apply2(tmp5104, tmp5106, tmp5116)
-		tmp5118 := lang.Apply1(tmp5103, tmp5117)
-		tmp5119 := lang.Apply2(tmp5101, tmp5102, tmp5118)
-		tmp5120 := lang.Apply1(tmp5100, tmp5119)
-		tmp5121 := v_clojure_DOT_core_list.Get()
-		tmp5122 := v_clojure_DOT_core_seq.Get()
-		tmp5123 := v_clojure_DOT_core_concat.Get()
-		tmp5124 := v_clojure_DOT_core_list.Get()
-		tmp5125 := lang.Apply1(tmp5124, sym_clojure_DOT_core_SLASH_when_not)
-		tmp5126 := v_clojure_DOT_core_list.Get()
-		tmp5127 := v_clojure_DOT_core_seq.Get()
-		tmp5128 := v_clojure_DOT_core_concat.Get()
-		tmp5129 := v_clojure_DOT_core_list.Get()
-		tmp5130 := lang.Apply1(tmp5129, sym_clojure_DOT_core_SLASH__has_root)
-		tmp5131 := v_clojure_DOT_core_list.Get()
-		tmp5132 := lang.Apply1(tmp5131, sym_v__13__auto__)
-		tmp5133 := lang.Apply2(tmp5128, tmp5130, tmp5132)
-		tmp5134 := lang.Apply1(tmp5127, tmp5133)
-		tmp5135 := lang.Apply1(tmp5126, tmp5134)
-		tmp5136 := v_clojure_DOT_core_list.Get()
-		tmp5137 := v_clojure_DOT_core_seq.Get()
-		tmp5138 := v_clojure_DOT_core_concat.Get()
-		tmp5139 := v_clojure_DOT_core_list.Get()
-		tmp5140 := lang.Apply1(tmp5139, sym_def)
-		tmp5141 := v_clojure_DOT_core_list.Get()
-		tmp5142 := lang.Apply1(tmp5141, name5094)
-		tmp5143 := v_clojure_DOT_core_list.Get()
-		tmp5144 := lang.Apply1(tmp5143, expr5095)
-		tmp5145 := lang.Apply3(tmp5138, tmp5140, tmp5142, tmp5144)
-		tmp5146 := lang.Apply1(tmp5137, tmp5145)
-		tmp5147 := lang.Apply1(tmp5136, tmp5146)
-		tmp5148 := lang.Apply3(tmp5123, tmp5125, tmp5135, tmp5147)
-		tmp5149 := lang.Apply1(tmp5122, tmp5148)
-		tmp5150 := lang.Apply1(tmp5121, tmp5149)
-		tmp5151 := lang.Apply3(tmp5097, tmp5099, tmp5120, tmp5150)
-		tmp5152 := lang.Apply1(tmp5096, tmp5151)
-		return tmp5152
+	var defonce5089 any
+	_ = defonce5089
+	var defonce5089d lang.FnFunc4
+	_ = defonce5089d
+	tmp5090 := lang.FnFunc4(func(X_AMP_form5091, X_AMP_env5092, name5093, expr5094 any) any {
+		tmp5095 := v_clojure_DOT_core_seq.Get()
+		tmp5096 := v_clojure_DOT_core_concat.Get()
+		tmp5097 := v_clojure_DOT_core_list.Get()
+		tmp5098 := lang.Apply1(tmp5097, sym_clojure_DOT_core_SLASH_let)
+		tmp5099 := v_clojure_DOT_core_list.Get()
+		tmp5100 := v_clojure_DOT_core_apply.Get()
+		tmp5101 := v_clojure_DOT_core_vector.Get()
+		tmp5102 := v_clojure_DOT_core_seq.Get()
+		tmp5103 := v_clojure_DOT_core_concat.Get()
+		tmp5104 := v_clojure_DOT_core_list.Get()
+		tmp5105 := lang.Apply1(tmp5104, sym_v__13__auto__)
+		tmp5106 := v_clojure_DOT_core_list.Get()
+		tmp5107 := v_clojure_DOT_core_seq.Get()
+		tmp5108 := v_clojure_DOT_core_concat.Get()
+		tmp5109 := v_clojure_DOT_core_list.Get()
+		tmp5110 := lang.Apply1(tmp5109, sym_def)
+		tmp5111 := v_clojure_DOT_core_list.Get()
+		tmp5112 := lang.Apply1(tmp5111, name5093)
+		tmp5113 := lang.Apply2(tmp5108, tmp5110, tmp5112)
+		tmp5114 := lang.Apply1(tmp5107, tmp5113)
+		tmp5115 := lang.Apply1(tmp5106, tmp5114)
+		tmp5116 := lang.Apply2(tmp5103, tmp5105, tmp5115)
+		tmp5117 := lang.Apply1(tmp5102, tmp5116)
+		tmp5118 := lang.Apply2(tmp5100, tmp5101, tmp5117)
+		tmp5119 := lang.Apply1(tmp5099, tmp5118)
+		tmp5120 := v_clojure_DOT_core_list.Get()
+		tmp5121 := v_clojure_DOT_core_seq.Get()
+		tmp5122 := v_clojure_DOT_core_concat.Get()
+		tmp5123 := v_clojure_DOT_core_list.Get()
+		tmp5124 := lang.Apply1(tmp5123, sym_clojure_DOT_core_SLASH_when_not)
+		tmp5125 := v_clojure_DOT_core_list.Get()
+		tmp5126 := v_clojure_DOT_core_seq.Get()
+		tmp5127 := v_clojure_DOT_core_concat.Get()
+		tmp5128 := v_clojure_DOT_core_list.Get()
+		tmp5129 := lang.Apply1(tmp5128, sym_clojure_DOT_core_SLASH__has_root)
+		tmp5130 := v_clojure_DOT_core_list.Get()
+		tmp5131 := lang.Apply1(tmp5130, sym_v__13__auto__)
+		tmp5132 := lang.Apply2(tmp5127, tmp5129, tmp5131)
+		tmp5133 := lang.Apply1(tmp5126, tmp5132)
+		tmp5134 := lang.Apply1(tmp5125, tmp5133)
+		tmp5135 := v_clojure_DOT_core_list.Get()
+		tmp5136 := v_clojure_DOT_core_seq.Get()
+		tmp5137 := v_clojure_DOT_core_concat.Get()
+		tmp5138 := v_clojure_DOT_core_list.Get()
+		tmp5139 := lang.Apply1(tmp5138, sym_def)
+		tmp5140 := v_clojure_DOT_core_list.Get()
+		tmp5141 := lang.Apply1(tmp5140, name5093)
+		tmp5142 := v_clojure_DOT_core_list.Get()
+		tmp5143 := lang.Apply1(tmp5142, expr5094)
+		tmp5144 := lang.Apply3(tmp5137, tmp5139, tmp5141, tmp5143)
+		tmp5145 := lang.Apply1(tmp5136, tmp5144)
+		tmp5146 := lang.Apply1(tmp5135, tmp5145)
+		tmp5147 := lang.Apply3(tmp5122, tmp5124, tmp5134, tmp5146)
+		tmp5148 := lang.Apply1(tmp5121, tmp5147)
+		tmp5149 := lang.Apply1(tmp5120, tmp5148)
+		tmp5150 := lang.Apply3(tmp5096, tmp5098, tmp5119, tmp5149)
+		tmp5151 := lang.Apply1(tmp5095, tmp5150)
+		return tmp5151
 	})
-	defonce5090 = tmp5091
-	defonce5090d = tmp5091
-	v_clojure_DOT_core_defonce.BindRoot(tmp5091)
+	defonce5089 = tmp5090
+	defonce5089d = tmp5090
+	v_clojure_DOT_core_defonce.BindRoot(tmp5090)
 	_ = v_clojure_DOT_core_defonce
-	tmp5153 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5154 := lang.Apply1(tmp5153, v_clojure_DOT_core_defonce)
-	_ = tmp5154
+	tmp5152 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5153 := lang.Apply1(tmp5152, v_clojure_DOT_core_defonce)
+	_ = tmp5153
 	_ = v_clojure_DOT_core_defonce
 	// (do (def letfn (fn* letfn ([&form &env fnspecs & body] (when-not (vector? fnspecs) (throw …
 	v_clojure_DOT_core_letfn.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1702), kw_column, int64(11), kw_end_line, int64(1702), kw_end_column, int64(16)))
-	var letfn5155 any
-	_ = letfn5155
-	tmp5156 := lang.FnFunc(func(args ...any) any {
+	var letfn5154 any
+	_ = letfn5154
+	tmp5155 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/letfn", "3+: [&form &env fnspecs body & more]"))
 			}
-			X_AMP_form5157 := args[0]
-			_ = X_AMP_form5157
-			X_AMP_env5158 := args[1]
-			_ = X_AMP_env5158
-			fnspecs5159 := args[2]
-			_ = fnspecs5159
-			var body5160 any
+			X_AMP_form5156 := args[0]
+			_ = X_AMP_form5156
+			X_AMP_env5157 := args[1]
+			_ = X_AMP_env5157
+			fnspecs5158 := args[2]
+			_ = fnspecs5158
+			var body5159 any
 			if len(args) > 3 {
-				body5160 = lang.NewList(args[3:]...)
+				body5159 = lang.NewList(args[3:]...)
 			}
-			_ = body5160
-			tmp5161 := v_clojure_DOT_core_vector_QMARK_.Get()
-			tmp5162 := lang.Apply1(tmp5161, fnspecs5159)
-			var tmp5163 any
-			_ = tmp5163
-			if lang.IsTruthy(tmp5162) {
-				tmp5163 = nil
+			_ = body5159
+			tmp5160 := v_clojure_DOT_core_vector_QMARK_.Get()
+			tmp5161 := lang.Apply1(tmp5160, fnspecs5158)
+			var tmp5162 any
+			_ = tmp5162
+			if lang.IsTruthy(tmp5161) {
+				tmp5162 = nil
 			} else {
-				tmp5164 := v_clojure_DOT_core_ex_info.Get()
-				tmp5165 := lang.NewMap(kw_fnspecs, fnspecs5159)
-				tmp5166 := lang.Apply2(tmp5164, "letfn requires a vector for its binding", tmp5165)
-				panic(rt.Throw(tmp5166))
+				tmp5163 := v_clojure_DOT_core_ex_info.Get()
+				tmp5164 := lang.NewMap(kw_fnspecs, fnspecs5158)
+				tmp5165 := lang.Apply2(tmp5163, "letfn requires a vector for its binding", tmp5164)
+				panic(rt.Throw(tmp5165))
 			}
-			_ = tmp5163
-			var tmp5167 any
-			_ = tmp5167
+			_ = tmp5162
+			var tmp5166 any
+			_ = tmp5166
 			{
-				tmp5168 := v_clojure_DOT_core_seq.Get()
-				tmp5169 := lang.Apply1(tmp5168, fnspecs5159)
-				var specs5170 any = tmp5169
-				_ = specs5170
-				tmp5171 := v_clojure_DOT_core_map_.Get()
-				tmp5172 := lang.FnFunc1(func(spec5173 any) any {
-					var tmp5174 any
-					_ = tmp5174
+				tmp5167 := v_clojure_DOT_core_seq.Get()
+				tmp5168 := lang.Apply1(tmp5167, fnspecs5158)
+				var specs5169 any = tmp5168
+				_ = specs5169
+				tmp5170 := v_clojure_DOT_core_map_.Get()
+				tmp5171 := lang.FnFunc1(func(spec5172 any) any {
+					var tmp5173 any
+					_ = tmp5173
 					{
-						tmp5175 := v_clojure_DOT_core_seq_QMARK_.Get()
-						tmp5176 := lang.Apply1(tmp5175, spec5173)
-						var and__1__auto__5177 any = tmp5176
-						_ = and__1__auto__5177
-						var tmp5178 any
-						_ = tmp5178
-						if lang.IsTruthy(and__1__auto__5177) {
-							tmp5179 := v_clojure_DOT_core_symbol_QMARK_.Get()
-							tmp5180 := v_clojure_DOT_core_first.Get()
-							tmp5181 := lang.Apply1(tmp5180, spec5173)
-							tmp5182 := lang.Apply1(tmp5179, tmp5181)
-							tmp5178 = tmp5182
+						tmp5174 := v_clojure_DOT_core_seq_QMARK_.Get()
+						tmp5175 := lang.Apply1(tmp5174, spec5172)
+						var and__1__auto__5176 any = tmp5175
+						_ = and__1__auto__5176
+						var tmp5177 any
+						_ = tmp5177
+						if lang.IsTruthy(and__1__auto__5176) {
+							tmp5178 := v_clojure_DOT_core_symbol_QMARK_.Get()
+							tmp5179 := v_clojure_DOT_core_first.Get()
+							tmp5180 := lang.Apply1(tmp5179, spec5172)
+							tmp5181 := lang.Apply1(tmp5178, tmp5180)
+							tmp5177 = tmp5181
 						} else {
-							tmp5178 = and__1__auto__5177
+							tmp5177 = and__1__auto__5176
 						}
-						tmp5174 = tmp5178
+						tmp5173 = tmp5177
 					}
-					var tmp5183 any
-					_ = tmp5183
-					if lang.IsTruthy(tmp5174) {
-						tmp5183 = nil
+					var tmp5182 any
+					_ = tmp5182
+					if lang.IsTruthy(tmp5173) {
+						tmp5182 = nil
 					} else {
-						tmp5184 := v_clojure_DOT_core_ex_info.Get()
-						tmp5185 := lang.NewMap(kw_spec, spec5173)
-						tmp5186 := lang.Apply2(tmp5184, "letfn requires a parenthesized fnspec: (fname [params*] exprs*)", tmp5185)
-						panic(rt.Throw(tmp5186))
+						tmp5183 := v_clojure_DOT_core_ex_info.Get()
+						tmp5184 := lang.NewMap(kw_spec, spec5172)
+						tmp5185 := lang.Apply2(tmp5183, "letfn requires a parenthesized fnspec: (fname [params*] exprs*)", tmp5184)
+						panic(rt.Throw(tmp5185))
 					}
-					_ = tmp5183
-					tmp5187 := v_clojure_DOT_core_first.Get()
-					tmp5188 := lang.Apply1(tmp5187, spec5173)
-					return tmp5188
+					_ = tmp5182
+					tmp5186 := v_clojure_DOT_core_first.Get()
+					tmp5187 := lang.Apply1(tmp5186, spec5172)
+					return tmp5187
 				})
-				tmp5189 := lang.Apply2(tmp5171, tmp5172, specs5170)
-				var names5190 any = tmp5189
-				_ = names5190
-				tmp5191 := v_clojure_DOT_core_map_.Get()
-				tmp5192 := lang.FnFunc1(func(n5193 any) any {
-					tmp5194 := v_clojure_DOT_core_gensym.Get()
-					tmp5195 := v_clojure_DOT_core_str.Get()
-					tmp5196 := lang.Apply2(tmp5195, n5193, "__letfn")
-					tmp5197 := lang.Apply1(tmp5194, tmp5196)
-					return tmp5197
+				tmp5188 := lang.Apply2(tmp5170, tmp5171, specs5169)
+				var names5189 any = tmp5188
+				_ = names5189
+				tmp5190 := v_clojure_DOT_core_map_.Get()
+				tmp5191 := lang.FnFunc1(func(n5192 any) any {
+					tmp5193 := v_clojure_DOT_core_gensym.Get()
+					tmp5194 := v_clojure_DOT_core_str.Get()
+					tmp5195 := lang.Apply2(tmp5194, n5192, "__letfn")
+					tmp5196 := lang.Apply1(tmp5193, tmp5195)
+					return tmp5196
 				})
-				tmp5198 := lang.Apply2(tmp5191, tmp5192, names5190)
-				var boxes5199 any = tmp5198
-				_ = boxes5199
-				tmp5200 := v_clojure_DOT_core_mapcat.Get()
-				tmp5201 := lang.FnFunc1(func(b5202 any) any {
-					tmp5203 := v_clojure_DOT_core_seq.Get()
-					tmp5204 := v_clojure_DOT_core_concat.Get()
-					tmp5205 := v_clojure_DOT_core_list.Get()
-					tmp5206 := lang.Apply1(tmp5205, sym_clojure_DOT_core_SLASH_volatile_BANG_)
-					tmp5207 := v_clojure_DOT_core_list.Get()
-					tmp5208 := lang.Apply1(tmp5207, nil)
-					tmp5209 := lang.Apply2(tmp5204, tmp5206, tmp5208)
-					tmp5210 := lang.Apply1(tmp5203, tmp5209)
-					tmp5211 := lang.NewVector(b5202, tmp5210)
-					return tmp5211
+				tmp5197 := lang.Apply2(tmp5190, tmp5191, names5189)
+				var boxes5198 any = tmp5197
+				_ = boxes5198
+				tmp5199 := v_clojure_DOT_core_mapcat.Get()
+				tmp5200 := lang.FnFunc1(func(b5201 any) any {
+					tmp5202 := v_clojure_DOT_core_seq.Get()
+					tmp5203 := v_clojure_DOT_core_concat.Get()
+					tmp5204 := v_clojure_DOT_core_list.Get()
+					tmp5205 := lang.Apply1(tmp5204, sym_clojure_DOT_core_SLASH_volatile_BANG_)
+					tmp5206 := v_clojure_DOT_core_list.Get()
+					tmp5207 := lang.Apply1(tmp5206, nil)
+					tmp5208 := lang.Apply2(tmp5203, tmp5205, tmp5207)
+					tmp5209 := lang.Apply1(tmp5202, tmp5208)
+					tmp5210 := lang.NewVector(b5201, tmp5209)
+					return tmp5210
 				})
-				tmp5212 := lang.Apply2(tmp5200, tmp5201, boxes5199)
-				var box_binds5213 any = tmp5212
-				_ = box_binds5213
-				tmp5214 := v_clojure_DOT_core_mapcat.Get()
-				tmp5215 := lang.FnFunc2(func(n5216, b5217 any) any {
-					tmp5218 := v_clojure_DOT_core_seq.Get()
-					tmp5219 := v_clojure_DOT_core_concat.Get()
-					tmp5220 := v_clojure_DOT_core_list.Get()
-					tmp5221 := lang.Apply1(tmp5220, sym_clojure_DOT_core_SLASH_fn)
-					tmp5222 := v_clojure_DOT_core_list.Get()
-					tmp5223 := v_clojure_DOT_core_apply.Get()
-					tmp5224 := v_clojure_DOT_core_vector.Get()
-					tmp5225 := v_clojure_DOT_core_seq.Get()
-					tmp5226 := v_clojure_DOT_core_concat.Get()
-					tmp5227 := v_clojure_DOT_core_list.Get()
-					tmp5228 := lang.Apply1(tmp5227, sym_X_AMP_)
-					tmp5229 := v_clojure_DOT_core_list.Get()
-					tmp5230 := lang.Apply1(tmp5229, sym_args__14__auto__)
-					tmp5231 := lang.Apply2(tmp5226, tmp5228, tmp5230)
-					tmp5232 := lang.Apply1(tmp5225, tmp5231)
-					tmp5233 := lang.Apply2(tmp5223, tmp5224, tmp5232)
-					tmp5234 := lang.Apply1(tmp5222, tmp5233)
-					tmp5235 := v_clojure_DOT_core_list.Get()
-					tmp5236 := v_clojure_DOT_core_seq.Get()
-					tmp5237 := v_clojure_DOT_core_concat.Get()
-					tmp5238 := v_clojure_DOT_core_list.Get()
-					tmp5239 := lang.Apply1(tmp5238, sym_clojure_DOT_core_SLASH_apply)
-					tmp5240 := v_clojure_DOT_core_list.Get()
-					tmp5241 := v_clojure_DOT_core_seq.Get()
-					tmp5242 := v_clojure_DOT_core_concat.Get()
-					tmp5243 := v_clojure_DOT_core_list.Get()
-					tmp5244 := lang.Apply1(tmp5243, sym_clojure_DOT_core_SLASH_deref)
-					tmp5245 := v_clojure_DOT_core_list.Get()
-					tmp5246 := lang.Apply1(tmp5245, b5217)
-					tmp5247 := lang.Apply2(tmp5242, tmp5244, tmp5246)
-					tmp5248 := lang.Apply1(tmp5241, tmp5247)
-					tmp5249 := lang.Apply1(tmp5240, tmp5248)
-					tmp5250 := v_clojure_DOT_core_list.Get()
-					tmp5251 := lang.Apply1(tmp5250, sym_args__14__auto__)
-					tmp5252 := lang.Apply3(tmp5237, tmp5239, tmp5249, tmp5251)
-					tmp5253 := lang.Apply1(tmp5236, tmp5252)
-					tmp5254 := lang.Apply1(tmp5235, tmp5253)
-					tmp5255 := lang.Apply3(tmp5219, tmp5221, tmp5234, tmp5254)
-					tmp5256 := lang.Apply1(tmp5218, tmp5255)
-					tmp5257 := lang.NewVector(n5216, tmp5256)
-					return tmp5257
+				tmp5211 := lang.Apply2(tmp5199, tmp5200, boxes5198)
+				var box_binds5212 any = tmp5211
+				_ = box_binds5212
+				tmp5213 := v_clojure_DOT_core_mapcat.Get()
+				tmp5214 := lang.FnFunc2(func(n5215, b5216 any) any {
+					tmp5217 := v_clojure_DOT_core_seq.Get()
+					tmp5218 := v_clojure_DOT_core_concat.Get()
+					tmp5219 := v_clojure_DOT_core_list.Get()
+					tmp5220 := lang.Apply1(tmp5219, sym_clojure_DOT_core_SLASH_fn)
+					tmp5221 := v_clojure_DOT_core_list.Get()
+					tmp5222 := v_clojure_DOT_core_apply.Get()
+					tmp5223 := v_clojure_DOT_core_vector.Get()
+					tmp5224 := v_clojure_DOT_core_seq.Get()
+					tmp5225 := v_clojure_DOT_core_concat.Get()
+					tmp5226 := v_clojure_DOT_core_list.Get()
+					tmp5227 := lang.Apply1(tmp5226, sym_X_AMP_)
+					tmp5228 := v_clojure_DOT_core_list.Get()
+					tmp5229 := lang.Apply1(tmp5228, sym_args__14__auto__)
+					tmp5230 := lang.Apply2(tmp5225, tmp5227, tmp5229)
+					tmp5231 := lang.Apply1(tmp5224, tmp5230)
+					tmp5232 := lang.Apply2(tmp5222, tmp5223, tmp5231)
+					tmp5233 := lang.Apply1(tmp5221, tmp5232)
+					tmp5234 := v_clojure_DOT_core_list.Get()
+					tmp5235 := v_clojure_DOT_core_seq.Get()
+					tmp5236 := v_clojure_DOT_core_concat.Get()
+					tmp5237 := v_clojure_DOT_core_list.Get()
+					tmp5238 := lang.Apply1(tmp5237, sym_clojure_DOT_core_SLASH_apply)
+					tmp5239 := v_clojure_DOT_core_list.Get()
+					tmp5240 := v_clojure_DOT_core_seq.Get()
+					tmp5241 := v_clojure_DOT_core_concat.Get()
+					tmp5242 := v_clojure_DOT_core_list.Get()
+					tmp5243 := lang.Apply1(tmp5242, sym_clojure_DOT_core_SLASH_deref)
+					tmp5244 := v_clojure_DOT_core_list.Get()
+					tmp5245 := lang.Apply1(tmp5244, b5216)
+					tmp5246 := lang.Apply2(tmp5241, tmp5243, tmp5245)
+					tmp5247 := lang.Apply1(tmp5240, tmp5246)
+					tmp5248 := lang.Apply1(tmp5239, tmp5247)
+					tmp5249 := v_clojure_DOT_core_list.Get()
+					tmp5250 := lang.Apply1(tmp5249, sym_args__14__auto__)
+					tmp5251 := lang.Apply3(tmp5236, tmp5238, tmp5248, tmp5250)
+					tmp5252 := lang.Apply1(tmp5235, tmp5251)
+					tmp5253 := lang.Apply1(tmp5234, tmp5252)
+					tmp5254 := lang.Apply3(tmp5218, tmp5220, tmp5233, tmp5253)
+					tmp5255 := lang.Apply1(tmp5217, tmp5254)
+					tmp5256 := lang.NewVector(n5215, tmp5255)
+					return tmp5256
 				})
-				tmp5258 := lang.Apply3(tmp5214, tmp5215, names5190, boxes5199)
-				var shim_binds5259 any = tmp5258
-				_ = shim_binds5259
-				tmp5260 := v_clojure_DOT_core_map_.Get()
-				tmp5261 := lang.FnFunc2(func(b5262, spec5263 any) any {
-					tmp5264 := v_clojure_DOT_core_seq.Get()
-					tmp5265 := v_clojure_DOT_core_concat.Get()
-					tmp5266 := v_clojure_DOT_core_list.Get()
-					tmp5267 := lang.Apply1(tmp5266, sym_clojure_DOT_core_SLASH_vreset_BANG_)
-					tmp5268 := v_clojure_DOT_core_list.Get()
-					tmp5269 := lang.Apply1(tmp5268, b5262)
-					tmp5270 := v_clojure_DOT_core_list.Get()
-					tmp5271 := v_clojure_DOT_core_seq.Get()
-					tmp5272 := v_clojure_DOT_core_concat.Get()
-					tmp5273 := v_clojure_DOT_core_list.Get()
-					tmp5274 := lang.Apply1(tmp5273, sym_clojure_DOT_core_SLASH_fn)
-					tmp5275 := lang.Apply2(tmp5272, tmp5274, spec5263)
-					tmp5276 := lang.Apply1(tmp5271, tmp5275)
-					tmp5277 := lang.Apply1(tmp5270, tmp5276)
-					tmp5278 := lang.Apply3(tmp5265, tmp5267, tmp5269, tmp5277)
-					tmp5279 := lang.Apply1(tmp5264, tmp5278)
-					return tmp5279
+				tmp5257 := lang.Apply3(tmp5213, tmp5214, names5189, boxes5198)
+				var shim_binds5258 any = tmp5257
+				_ = shim_binds5258
+				tmp5259 := v_clojure_DOT_core_map_.Get()
+				tmp5260 := lang.FnFunc2(func(b5261, spec5262 any) any {
+					tmp5263 := v_clojure_DOT_core_seq.Get()
+					tmp5264 := v_clojure_DOT_core_concat.Get()
+					tmp5265 := v_clojure_DOT_core_list.Get()
+					tmp5266 := lang.Apply1(tmp5265, sym_clojure_DOT_core_SLASH_vreset_BANG_)
+					tmp5267 := v_clojure_DOT_core_list.Get()
+					tmp5268 := lang.Apply1(tmp5267, b5261)
+					tmp5269 := v_clojure_DOT_core_list.Get()
+					tmp5270 := v_clojure_DOT_core_seq.Get()
+					tmp5271 := v_clojure_DOT_core_concat.Get()
+					tmp5272 := v_clojure_DOT_core_list.Get()
+					tmp5273 := lang.Apply1(tmp5272, sym_clojure_DOT_core_SLASH_fn)
+					tmp5274 := lang.Apply2(tmp5271, tmp5273, spec5262)
+					tmp5275 := lang.Apply1(tmp5270, tmp5274)
+					tmp5276 := lang.Apply1(tmp5269, tmp5275)
+					tmp5277 := lang.Apply3(tmp5264, tmp5266, tmp5268, tmp5276)
+					tmp5278 := lang.Apply1(tmp5263, tmp5277)
+					return tmp5278
 				})
-				tmp5280 := lang.Apply3(tmp5260, tmp5261, boxes5199, specs5170)
-				var fills5281 any = tmp5280
-				_ = fills5281
-				tmp5282 := v_clojure_DOT_core_seq.Get()
-				tmp5283 := v_clojure_DOT_core_concat.Get()
-				tmp5284 := v_clojure_DOT_core_list.Get()
-				tmp5285 := lang.Apply1(tmp5284, sym_clojure_DOT_core_SLASH_let)
-				tmp5286 := v_clojure_DOT_core_list.Get()
-				tmp5287 := v_clojure_DOT_core_apply.Get()
-				tmp5288 := v_clojure_DOT_core_vector.Get()
-				tmp5289 := v_clojure_DOT_core_seq.Get()
-				tmp5290 := v_clojure_DOT_core_concat.Get()
-				tmp5291 := lang.Apply2(tmp5290, box_binds5213, shim_binds5259)
-				tmp5292 := lang.Apply1(tmp5289, tmp5291)
-				tmp5293 := lang.Apply2(tmp5287, tmp5288, tmp5292)
-				tmp5294 := lang.Apply1(tmp5286, tmp5293)
-				tmp5295 := lang.Apply4(tmp5283, tmp5285, tmp5294, fills5281, body5160)
-				tmp5296 := lang.Apply1(tmp5282, tmp5295)
-				tmp5167 = tmp5296
+				tmp5279 := lang.Apply3(tmp5259, tmp5260, boxes5198, specs5169)
+				var fills5280 any = tmp5279
+				_ = fills5280
+				tmp5281 := v_clojure_DOT_core_seq.Get()
+				tmp5282 := v_clojure_DOT_core_concat.Get()
+				tmp5283 := v_clojure_DOT_core_list.Get()
+				tmp5284 := lang.Apply1(tmp5283, sym_clojure_DOT_core_SLASH_let)
+				tmp5285 := v_clojure_DOT_core_list.Get()
+				tmp5286 := v_clojure_DOT_core_apply.Get()
+				tmp5287 := v_clojure_DOT_core_vector.Get()
+				tmp5288 := v_clojure_DOT_core_seq.Get()
+				tmp5289 := v_clojure_DOT_core_concat.Get()
+				tmp5290 := lang.Apply2(tmp5289, box_binds5212, shim_binds5258)
+				tmp5291 := lang.Apply1(tmp5288, tmp5290)
+				tmp5292 := lang.Apply2(tmp5286, tmp5287, tmp5291)
+				tmp5293 := lang.Apply1(tmp5285, tmp5292)
+				tmp5294 := lang.Apply4(tmp5282, tmp5284, tmp5293, fills5280, body5159)
+				tmp5295 := lang.Apply1(tmp5281, tmp5294)
+				tmp5166 = tmp5295
 			}
-			return tmp5167
+			return tmp5166
 		}
 	})
-	letfn5155 = tmp5156
-	v_clojure_DOT_core_letfn.BindRoot(tmp5156)
+	letfn5154 = tmp5155
+	v_clojure_DOT_core_letfn.BindRoot(tmp5155)
 	_ = v_clojure_DOT_core_letfn
-	tmp5297 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5298 := lang.Apply1(tmp5297, v_clojure_DOT_core_letfn)
-	_ = tmp5298
+	tmp5296 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5297 := lang.Apply1(tmp5296, v_clojure_DOT_core_letfn)
+	_ = tmp5297
 	_ = v_clojure_DOT_core_letfn
 	// (do (def lazy-cat (fn* lazy-cat ([&form &env & colls] (clojure.core/seq (clojure.core/conc…
 	v_clojure_DOT_core_lazy_cat.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1727), kw_column, int64(11), kw_end_line, int64(1727), kw_end_column, int64(19)))
-	var lazy_cat5299 any
-	_ = lazy_cat5299
-	tmp5300 := lang.FnFunc(func(args ...any) any {
+	var lazy_cat5298 any
+	_ = lazy_cat5298
+	tmp5299 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "clojure.core/lazy-cat", "2+: [&form &env colls & more]"))
 			}
-			X_AMP_form5301 := args[0]
-			_ = X_AMP_form5301
-			X_AMP_env5302 := args[1]
-			_ = X_AMP_env5302
-			var colls5303 any
+			X_AMP_form5300 := args[0]
+			_ = X_AMP_form5300
+			X_AMP_env5301 := args[1]
+			_ = X_AMP_env5301
+			var colls5302 any
 			if len(args) > 2 {
-				colls5303 = lang.NewList(args[2:]...)
+				colls5302 = lang.NewList(args[2:]...)
 			}
-			_ = colls5303
-			tmp5304 := v_clojure_DOT_core_seq.Get()
-			tmp5305 := v_clojure_DOT_core_concat.Get()
-			tmp5306 := v_clojure_DOT_core_list.Get()
-			tmp5307 := lang.Apply1(tmp5306, sym_clojure_DOT_core_SLASH_concat)
-			tmp5308 := v_clojure_DOT_core_map_.Get()
-			tmp5309 := lang.FnFunc1(func(c5310 any) any {
-				tmp5311 := v_clojure_DOT_core_list.Get()
-				tmp5312 := lang.Apply2(tmp5311, sym_clojure_DOT_core_SLASH_lazy_seq, c5310)
-				return tmp5312
+			_ = colls5302
+			tmp5303 := v_clojure_DOT_core_seq.Get()
+			tmp5304 := v_clojure_DOT_core_concat.Get()
+			tmp5305 := v_clojure_DOT_core_list.Get()
+			tmp5306 := lang.Apply1(tmp5305, sym_clojure_DOT_core_SLASH_concat)
+			tmp5307 := v_clojure_DOT_core_map_.Get()
+			tmp5308 := lang.FnFunc1(func(c5309 any) any {
+				tmp5310 := v_clojure_DOT_core_list.Get()
+				tmp5311 := lang.Apply2(tmp5310, sym_clojure_DOT_core_SLASH_lazy_seq, c5309)
+				return tmp5311
 			})
-			tmp5313 := lang.Apply2(tmp5308, tmp5309, colls5303)
-			tmp5314 := lang.Apply2(tmp5305, tmp5307, tmp5313)
-			tmp5315 := lang.Apply1(tmp5304, tmp5314)
-			return tmp5315
+			tmp5312 := lang.Apply2(tmp5307, tmp5308, colls5302)
+			tmp5313 := lang.Apply2(tmp5304, tmp5306, tmp5312)
+			tmp5314 := lang.Apply1(tmp5303, tmp5313)
+			return tmp5314
 		}
 	})
-	lazy_cat5299 = tmp5300
-	v_clojure_DOT_core_lazy_cat.BindRoot(tmp5300)
+	lazy_cat5298 = tmp5299
+	v_clojure_DOT_core_lazy_cat.BindRoot(tmp5299)
 	_ = v_clojure_DOT_core_lazy_cat
-	tmp5316 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5317 := lang.Apply1(tmp5316, v_clojure_DOT_core_lazy_cat)
-	_ = tmp5317
+	tmp5315 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5316 := lang.Apply1(tmp5315, v_clojure_DOT_core_lazy_cat)
+	_ = tmp5316
 	_ = v_clojure_DOT_core_lazy_cat
 	// (do (def time (fn* time ([&form &env expr] (clojure.core/seq (clojure.core/concat (clojure…
 	v_clojure_DOT_core_time.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1735), kw_column, int64(11), kw_end_line, int64(1735), kw_end_column, int64(15)))
-	var time5318 any
-	_ = time5318
-	var time5318d lang.FnFunc3
-	_ = time5318d
-	tmp5319 := lang.FnFunc3(func(X_AMP_form5320, X_AMP_env5321, expr5322 any) any {
-		tmp5323 := v_clojure_DOT_core_seq.Get()
-		tmp5324 := v_clojure_DOT_core_concat.Get()
-		tmp5325 := v_clojure_DOT_core_list.Get()
-		tmp5326 := lang.Apply1(tmp5325, sym_clojure_DOT_core_SLASH_let)
-		tmp5327 := v_clojure_DOT_core_list.Get()
-		tmp5328 := v_clojure_DOT_core_apply.Get()
-		tmp5329 := v_clojure_DOT_core_vector.Get()
-		tmp5330 := v_clojure_DOT_core_seq.Get()
-		tmp5331 := v_clojure_DOT_core_concat.Get()
-		tmp5332 := v_clojure_DOT_core_list.Get()
-		tmp5333 := lang.Apply1(tmp5332, sym_start__15__auto__)
-		tmp5334 := v_clojure_DOT_core_list.Get()
-		tmp5335 := v_clojure_DOT_core_seq.Get()
-		tmp5336 := v_clojure_DOT_core_concat.Get()
-		tmp5337 := v_clojure_DOT_core_list.Get()
-		tmp5338 := lang.Apply1(tmp5337, sym_clojure_DOT_core_SLASH__nano_time)
-		tmp5339 := lang.Apply1(tmp5336, tmp5338)
-		tmp5340 := lang.Apply1(tmp5335, tmp5339)
-		tmp5341 := lang.Apply1(tmp5334, tmp5340)
-		tmp5342 := v_clojure_DOT_core_list.Get()
-		tmp5343 := lang.Apply1(tmp5342, sym_ret__16__auto__)
-		tmp5344 := v_clojure_DOT_core_list.Get()
-		tmp5345 := lang.Apply1(tmp5344, expr5322)
-		tmp5346 := lang.Apply4(tmp5331, tmp5333, tmp5341, tmp5343, tmp5345)
-		tmp5347 := lang.Apply1(tmp5330, tmp5346)
-		tmp5348 := lang.Apply2(tmp5328, tmp5329, tmp5347)
-		tmp5349 := lang.Apply1(tmp5327, tmp5348)
-		tmp5350 := v_clojure_DOT_core_list.Get()
-		tmp5351 := v_clojure_DOT_core_seq.Get()
-		tmp5352 := v_clojure_DOT_core_concat.Get()
-		tmp5353 := v_clojure_DOT_core_list.Get()
-		tmp5354 := lang.Apply1(tmp5353, sym_clojure_DOT_core_SLASH_prn)
-		tmp5355 := v_clojure_DOT_core_list.Get()
-		tmp5356 := v_clojure_DOT_core_seq.Get()
-		tmp5357 := v_clojure_DOT_core_concat.Get()
-		tmp5358 := v_clojure_DOT_core_list.Get()
-		tmp5359 := lang.Apply1(tmp5358, sym_clojure_DOT_core_SLASH_str)
-		tmp5360 := v_clojure_DOT_core_list.Get()
-		tmp5361 := lang.Apply1(tmp5360, "Elapsed time: ")
-		tmp5362 := v_clojure_DOT_core_list.Get()
-		tmp5363 := v_clojure_DOT_core_seq.Get()
-		tmp5364 := v_clojure_DOT_core_concat.Get()
-		tmp5365 := v_clojure_DOT_core_list.Get()
-		tmp5366 := lang.Apply1(tmp5365, sym_clojure_DOT_core_SLASH__SLASH_)
-		tmp5367 := v_clojure_DOT_core_list.Get()
-		tmp5368 := v_clojure_DOT_core_seq.Get()
-		tmp5369 := v_clojure_DOT_core_concat.Get()
-		tmp5370 := v_clojure_DOT_core_list.Get()
-		tmp5371 := lang.Apply1(tmp5370, sym_clojure_DOT_core_SLASH_double)
-		tmp5372 := v_clojure_DOT_core_list.Get()
-		tmp5373 := v_clojure_DOT_core_seq.Get()
-		tmp5374 := v_clojure_DOT_core_concat.Get()
-		tmp5375 := v_clojure_DOT_core_list.Get()
-		tmp5376 := lang.Apply1(tmp5375, sym_clojure_DOT_core_SLASH__)
-		tmp5377 := v_clojure_DOT_core_list.Get()
-		tmp5378 := v_clojure_DOT_core_seq.Get()
-		tmp5379 := v_clojure_DOT_core_concat.Get()
-		tmp5380 := v_clojure_DOT_core_list.Get()
-		tmp5381 := lang.Apply1(tmp5380, sym_clojure_DOT_core_SLASH__nano_time)
-		tmp5382 := lang.Apply1(tmp5379, tmp5381)
-		tmp5383 := lang.Apply1(tmp5378, tmp5382)
-		tmp5384 := lang.Apply1(tmp5377, tmp5383)
-		tmp5385 := v_clojure_DOT_core_list.Get()
-		tmp5386 := lang.Apply1(tmp5385, sym_start__15__auto__)
-		tmp5387 := lang.Apply3(tmp5374, tmp5376, tmp5384, tmp5386)
-		tmp5388 := lang.Apply1(tmp5373, tmp5387)
-		tmp5389 := lang.Apply1(tmp5372, tmp5388)
-		tmp5390 := lang.Apply2(tmp5369, tmp5371, tmp5389)
-		tmp5391 := lang.Apply1(tmp5368, tmp5390)
-		tmp5392 := lang.Apply1(tmp5367, tmp5391)
-		tmp5393 := v_clojure_DOT_core_list.Get()
-		tmp5394 := lang.Apply1(tmp5393, float64(1e+06))
-		tmp5395 := lang.Apply3(tmp5364, tmp5366, tmp5392, tmp5394)
-		tmp5396 := lang.Apply1(tmp5363, tmp5395)
-		tmp5397 := lang.Apply1(tmp5362, tmp5396)
-		tmp5398 := v_clojure_DOT_core_list.Get()
-		tmp5399 := lang.Apply1(tmp5398, " msecs")
-		tmp5400 := lang.Apply4(tmp5357, tmp5359, tmp5361, tmp5397, tmp5399)
-		tmp5401 := lang.Apply1(tmp5356, tmp5400)
-		tmp5402 := lang.Apply1(tmp5355, tmp5401)
-		tmp5403 := lang.Apply2(tmp5352, tmp5354, tmp5402)
-		tmp5404 := lang.Apply1(tmp5351, tmp5403)
-		tmp5405 := lang.Apply1(tmp5350, tmp5404)
-		tmp5406 := v_clojure_DOT_core_list.Get()
-		tmp5407 := lang.Apply1(tmp5406, sym_ret__16__auto__)
-		tmp5408 := lang.Apply4(tmp5324, tmp5326, tmp5349, tmp5405, tmp5407)
-		tmp5409 := lang.Apply1(tmp5323, tmp5408)
-		return tmp5409
+	var time5317 any
+	_ = time5317
+	var time5317d lang.FnFunc3
+	_ = time5317d
+	tmp5318 := lang.FnFunc3(func(X_AMP_form5319, X_AMP_env5320, expr5321 any) any {
+		tmp5322 := v_clojure_DOT_core_seq.Get()
+		tmp5323 := v_clojure_DOT_core_concat.Get()
+		tmp5324 := v_clojure_DOT_core_list.Get()
+		tmp5325 := lang.Apply1(tmp5324, sym_clojure_DOT_core_SLASH_let)
+		tmp5326 := v_clojure_DOT_core_list.Get()
+		tmp5327 := v_clojure_DOT_core_apply.Get()
+		tmp5328 := v_clojure_DOT_core_vector.Get()
+		tmp5329 := v_clojure_DOT_core_seq.Get()
+		tmp5330 := v_clojure_DOT_core_concat.Get()
+		tmp5331 := v_clojure_DOT_core_list.Get()
+		tmp5332 := lang.Apply1(tmp5331, sym_start__15__auto__)
+		tmp5333 := v_clojure_DOT_core_list.Get()
+		tmp5334 := v_clojure_DOT_core_seq.Get()
+		tmp5335 := v_clojure_DOT_core_concat.Get()
+		tmp5336 := v_clojure_DOT_core_list.Get()
+		tmp5337 := lang.Apply1(tmp5336, sym_clojure_DOT_core_SLASH__nano_time)
+		tmp5338 := lang.Apply1(tmp5335, tmp5337)
+		tmp5339 := lang.Apply1(tmp5334, tmp5338)
+		tmp5340 := lang.Apply1(tmp5333, tmp5339)
+		tmp5341 := v_clojure_DOT_core_list.Get()
+		tmp5342 := lang.Apply1(tmp5341, sym_ret__16__auto__)
+		tmp5343 := v_clojure_DOT_core_list.Get()
+		tmp5344 := lang.Apply1(tmp5343, expr5321)
+		tmp5345 := lang.Apply4(tmp5330, tmp5332, tmp5340, tmp5342, tmp5344)
+		tmp5346 := lang.Apply1(tmp5329, tmp5345)
+		tmp5347 := lang.Apply2(tmp5327, tmp5328, tmp5346)
+		tmp5348 := lang.Apply1(tmp5326, tmp5347)
+		tmp5349 := v_clojure_DOT_core_list.Get()
+		tmp5350 := v_clojure_DOT_core_seq.Get()
+		tmp5351 := v_clojure_DOT_core_concat.Get()
+		tmp5352 := v_clojure_DOT_core_list.Get()
+		tmp5353 := lang.Apply1(tmp5352, sym_clojure_DOT_core_SLASH_prn)
+		tmp5354 := v_clojure_DOT_core_list.Get()
+		tmp5355 := v_clojure_DOT_core_seq.Get()
+		tmp5356 := v_clojure_DOT_core_concat.Get()
+		tmp5357 := v_clojure_DOT_core_list.Get()
+		tmp5358 := lang.Apply1(tmp5357, sym_clojure_DOT_core_SLASH_str)
+		tmp5359 := v_clojure_DOT_core_list.Get()
+		tmp5360 := lang.Apply1(tmp5359, "Elapsed time: ")
+		tmp5361 := v_clojure_DOT_core_list.Get()
+		tmp5362 := v_clojure_DOT_core_seq.Get()
+		tmp5363 := v_clojure_DOT_core_concat.Get()
+		tmp5364 := v_clojure_DOT_core_list.Get()
+		tmp5365 := lang.Apply1(tmp5364, sym_clojure_DOT_core_SLASH__SLASH_)
+		tmp5366 := v_clojure_DOT_core_list.Get()
+		tmp5367 := v_clojure_DOT_core_seq.Get()
+		tmp5368 := v_clojure_DOT_core_concat.Get()
+		tmp5369 := v_clojure_DOT_core_list.Get()
+		tmp5370 := lang.Apply1(tmp5369, sym_clojure_DOT_core_SLASH_double)
+		tmp5371 := v_clojure_DOT_core_list.Get()
+		tmp5372 := v_clojure_DOT_core_seq.Get()
+		tmp5373 := v_clojure_DOT_core_concat.Get()
+		tmp5374 := v_clojure_DOT_core_list.Get()
+		tmp5375 := lang.Apply1(tmp5374, sym_clojure_DOT_core_SLASH__)
+		tmp5376 := v_clojure_DOT_core_list.Get()
+		tmp5377 := v_clojure_DOT_core_seq.Get()
+		tmp5378 := v_clojure_DOT_core_concat.Get()
+		tmp5379 := v_clojure_DOT_core_list.Get()
+		tmp5380 := lang.Apply1(tmp5379, sym_clojure_DOT_core_SLASH__nano_time)
+		tmp5381 := lang.Apply1(tmp5378, tmp5380)
+		tmp5382 := lang.Apply1(tmp5377, tmp5381)
+		tmp5383 := lang.Apply1(tmp5376, tmp5382)
+		tmp5384 := v_clojure_DOT_core_list.Get()
+		tmp5385 := lang.Apply1(tmp5384, sym_start__15__auto__)
+		tmp5386 := lang.Apply3(tmp5373, tmp5375, tmp5383, tmp5385)
+		tmp5387 := lang.Apply1(tmp5372, tmp5386)
+		tmp5388 := lang.Apply1(tmp5371, tmp5387)
+		tmp5389 := lang.Apply2(tmp5368, tmp5370, tmp5388)
+		tmp5390 := lang.Apply1(tmp5367, tmp5389)
+		tmp5391 := lang.Apply1(tmp5366, tmp5390)
+		tmp5392 := v_clojure_DOT_core_list.Get()
+		tmp5393 := lang.Apply1(tmp5392, float64(1e+06))
+		tmp5394 := lang.Apply3(tmp5363, tmp5365, tmp5391, tmp5393)
+		tmp5395 := lang.Apply1(tmp5362, tmp5394)
+		tmp5396 := lang.Apply1(tmp5361, tmp5395)
+		tmp5397 := v_clojure_DOT_core_list.Get()
+		tmp5398 := lang.Apply1(tmp5397, " msecs")
+		tmp5399 := lang.Apply4(tmp5356, tmp5358, tmp5360, tmp5396, tmp5398)
+		tmp5400 := lang.Apply1(tmp5355, tmp5399)
+		tmp5401 := lang.Apply1(tmp5354, tmp5400)
+		tmp5402 := lang.Apply2(tmp5351, tmp5353, tmp5401)
+		tmp5403 := lang.Apply1(tmp5350, tmp5402)
+		tmp5404 := lang.Apply1(tmp5349, tmp5403)
+		tmp5405 := v_clojure_DOT_core_list.Get()
+		tmp5406 := lang.Apply1(tmp5405, sym_ret__16__auto__)
+		tmp5407 := lang.Apply4(tmp5323, tmp5325, tmp5348, tmp5404, tmp5406)
+		tmp5408 := lang.Apply1(tmp5322, tmp5407)
+		return tmp5408
 	})
-	time5318 = tmp5319
-	time5318d = tmp5319
-	v_clojure_DOT_core_time.BindRoot(tmp5319)
+	time5317 = tmp5318
+	time5317d = tmp5318
+	v_clojure_DOT_core_time.BindRoot(tmp5318)
 	_ = v_clojure_DOT_core_time
-	tmp5410 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5411 := lang.Apply1(tmp5410, v_clojure_DOT_core_time)
-	_ = tmp5411
+	tmp5409 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5410 := lang.Apply1(tmp5409, v_clojure_DOT_core_time)
+	_ = tmp5410
 	_ = v_clojure_DOT_core_time
 	// (do (def locking (fn* locking ([&form &env x & body] (list (quote clojure.core/-with-lock)…
 	v_clojure_DOT_core_locking.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1748), kw_column, int64(11), kw_end_line, int64(1748), kw_end_column, int64(18)))
-	var locking5412 any
-	_ = locking5412
-	tmp5413 := lang.FnFunc(func(args ...any) any {
+	var locking5411 any
+	_ = locking5411
+	tmp5412 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/locking", "3+: [&form &env x body & more]"))
 			}
-			X_AMP_form5414 := args[0]
-			_ = X_AMP_form5414
-			X_AMP_env5415 := args[1]
-			_ = X_AMP_env5415
-			x5416 := args[2]
-			_ = x5416
-			var body5417 any
+			X_AMP_form5413 := args[0]
+			_ = X_AMP_form5413
+			X_AMP_env5414 := args[1]
+			_ = X_AMP_env5414
+			x5415 := args[2]
+			_ = x5415
+			var body5416 any
 			if len(args) > 3 {
-				body5417 = lang.NewList(args[3:]...)
+				body5416 = lang.NewList(args[3:]...)
 			}
-			_ = body5417
-			tmp5418 := v_clojure_DOT_core_list.Get()
-			tmp5419 := v_clojure_DOT_core_list_STAR_.Get()
-			tmp5420 := lang.NewVector()
-			tmp5421 := lang.Apply3(tmp5419, sym_fn_STAR_, tmp5420, body5417)
-			tmp5422 := lang.Apply3(tmp5418, sym_clojure_DOT_core_SLASH__with_lock, x5416, tmp5421)
-			return tmp5422
+			_ = body5416
+			tmp5417 := v_clojure_DOT_core_list.Get()
+			tmp5418 := v_clojure_DOT_core_list_STAR_.Get()
+			tmp5419 := lang.NewVector()
+			tmp5420 := lang.Apply3(tmp5418, sym_fn_STAR_, tmp5419, body5416)
+			tmp5421 := lang.Apply3(tmp5417, sym_clojure_DOT_core_SLASH__with_lock, x5415, tmp5420)
+			return tmp5421
 		}
 	})
-	locking5412 = tmp5413
-	v_clojure_DOT_core_locking.BindRoot(tmp5413)
+	locking5411 = tmp5412
+	v_clojure_DOT_core_locking.BindRoot(tmp5412)
 	_ = v_clojure_DOT_core_locking
-	tmp5423 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5424 := lang.Apply1(tmp5423, v_clojure_DOT_core_locking)
-	_ = tmp5424
+	tmp5422 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5423 := lang.Apply1(tmp5422, v_clojure_DOT_core_locking)
+	_ = tmp5423
 	_ = v_clojure_DOT_core_locking
 	// (do (def with-open (fn* with-open ([&form &env bindings & body] (when-not (vector? binding…
 	v_clojure_DOT_core_with_open.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1764), kw_column, int64(11), kw_end_line, int64(1764), kw_end_column, int64(20)))
-	var with_open5425 any
-	_ = with_open5425
-	tmp5426 := lang.FnFunc(func(args ...any) any {
+	var with_open5424 any
+	_ = with_open5424
+	tmp5425 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/with-open", "3+: [&form &env bindings body & more]"))
 			}
-			X_AMP_form5427 := args[0]
-			_ = X_AMP_form5427
-			X_AMP_env5428 := args[1]
-			_ = X_AMP_env5428
-			bindings5429 := args[2]
-			_ = bindings5429
-			var body5430 any
+			X_AMP_form5426 := args[0]
+			_ = X_AMP_form5426
+			X_AMP_env5427 := args[1]
+			_ = X_AMP_env5427
+			bindings5428 := args[2]
+			_ = bindings5428
+			var body5429 any
 			if len(args) > 3 {
-				body5430 = lang.NewList(args[3:]...)
+				body5429 = lang.NewList(args[3:]...)
 			}
-			_ = body5430
-			tmp5431 := v_clojure_DOT_core_vector_QMARK_.Get()
-			tmp5432 := lang.Apply1(tmp5431, bindings5429)
-			var tmp5433 any
-			_ = tmp5433
-			if lang.IsTruthy(tmp5432) {
-				tmp5433 = nil
+			_ = body5429
+			tmp5430 := v_clojure_DOT_core_vector_QMARK_.Get()
+			tmp5431 := lang.Apply1(tmp5430, bindings5428)
+			var tmp5432 any
+			_ = tmp5432
+			if lang.IsTruthy(tmp5431) {
+				tmp5432 = nil
 			} else {
-				tmp5434 := v_clojure_DOT_core_ex_info.Get()
-				tmp5435 := lang.NewMap(kw_bindings, bindings5429)
-				tmp5436 := lang.Apply2(tmp5434, "with-open requires a vector for its binding", tmp5435)
-				panic(rt.Throw(tmp5436))
+				tmp5433 := v_clojure_DOT_core_ex_info.Get()
+				tmp5434 := lang.NewMap(kw_bindings, bindings5428)
+				tmp5435 := lang.Apply2(tmp5433, "with-open requires a vector for its binding", tmp5434)
+				panic(rt.Throw(tmp5435))
 			}
-			_ = tmp5433
-			tmp5437 := v_clojure_DOT_core_even_QMARK_.Get()
-			tmp5438 := v_clojure_DOT_core_count.Get()
-			tmp5439 := lang.Apply1(tmp5438, bindings5429)
-			tmp5440 := lang.Apply1(tmp5437, tmp5439)
-			var tmp5441 any
-			_ = tmp5441
-			if lang.IsTruthy(tmp5440) {
-				tmp5441 = nil
+			_ = tmp5432
+			tmp5436 := v_clojure_DOT_core_even_QMARK_.Get()
+			tmp5437 := v_clojure_DOT_core_count.Get()
+			tmp5438 := lang.Apply1(tmp5437, bindings5428)
+			tmp5439 := lang.Apply1(tmp5436, tmp5438)
+			var tmp5440 any
+			_ = tmp5440
+			if lang.IsTruthy(tmp5439) {
+				tmp5440 = nil
 			} else {
-				tmp5442 := v_clojure_DOT_core_ex_info.Get()
-				tmp5443 := lang.NewMap(kw_bindings, bindings5429)
-				tmp5444 := lang.Apply2(tmp5442, "with-open requires an even number of forms in binding vector", tmp5443)
-				panic(rt.Throw(tmp5444))
+				tmp5441 := v_clojure_DOT_core_ex_info.Get()
+				tmp5442 := lang.NewMap(kw_bindings, bindings5428)
+				tmp5443 := lang.Apply2(tmp5441, "with-open requires an even number of forms in binding vector", tmp5442)
+				panic(rt.Throw(tmp5443))
 			}
-			_ = tmp5441
-			tmp5445 := v_clojure_DOT_core_count.Get()
-			tmp5446 := lang.Apply1(tmp5445, bindings5429)
-			tmp5447 := rt.EQBool(v_clojure_DOT_core_X_EQ_, tmp5446, int64(0))
-			var tmp5448 any
-			_ = tmp5448
-			if tmp5447 {
-				tmp5449 := v_clojure_DOT_core_seq.Get()
-				tmp5450 := v_clojure_DOT_core_concat.Get()
-				tmp5451 := v_clojure_DOT_core_list.Get()
-				tmp5452 := lang.Apply1(tmp5451, sym_do)
-				tmp5453 := lang.Apply2(tmp5450, tmp5452, body5430)
-				tmp5454 := lang.Apply1(tmp5449, tmp5453)
-				tmp5448 = tmp5454
+			_ = tmp5440
+			tmp5444 := v_clojure_DOT_core_count.Get()
+			tmp5445 := lang.Apply1(tmp5444, bindings5428)
+			tmp5446 := rt.EQBool(v_clojure_DOT_core_X_EQ_, tmp5445, int64(0))
+			var tmp5447 any
+			_ = tmp5447
+			if tmp5446 {
+				tmp5448 := v_clojure_DOT_core_seq.Get()
+				tmp5449 := v_clojure_DOT_core_concat.Get()
+				tmp5450 := v_clojure_DOT_core_list.Get()
+				tmp5451 := lang.Apply1(tmp5450, sym_do)
+				tmp5452 := lang.Apply2(tmp5449, tmp5451, body5429)
+				tmp5453 := lang.Apply1(tmp5448, tmp5452)
+				tmp5447 = tmp5453
 			} else {
-				tmp5455 := v_clojure_DOT_core_symbol_QMARK_.Get()
-				tmp5456 := lang.Apply1(bindings5429, int64(0))
-				tmp5457 := lang.Apply1(tmp5455, tmp5456)
-				var tmp5458 any
-				_ = tmp5458
-				if lang.IsTruthy(tmp5457) {
-					tmp5459 := v_clojure_DOT_core_seq.Get()
-					tmp5460 := v_clojure_DOT_core_concat.Get()
-					tmp5461 := v_clojure_DOT_core_list.Get()
-					tmp5462 := lang.Apply1(tmp5461, sym_clojure_DOT_core_SLASH_let)
-					tmp5463 := v_clojure_DOT_core_list.Get()
-					tmp5464 := v_clojure_DOT_core_apply.Get()
-					tmp5465 := v_clojure_DOT_core_vector.Get()
-					tmp5466 := v_clojure_DOT_core_seq.Get()
-					tmp5467 := v_clojure_DOT_core_concat.Get()
-					tmp5468 := v_clojure_DOT_core_list.Get()
-					tmp5469 := lang.Apply1(bindings5429, int64(0))
-					tmp5470 := lang.Apply1(tmp5468, tmp5469)
-					tmp5471 := v_clojure_DOT_core_list.Get()
-					tmp5472 := lang.Apply1(bindings5429, int64(1))
-					tmp5473 := lang.Apply1(tmp5471, tmp5472)
-					tmp5474 := lang.Apply2(tmp5467, tmp5470, tmp5473)
-					tmp5475 := lang.Apply1(tmp5466, tmp5474)
-					tmp5476 := lang.Apply2(tmp5464, tmp5465, tmp5475)
-					tmp5477 := lang.Apply1(tmp5463, tmp5476)
-					tmp5478 := v_clojure_DOT_core_list.Get()
-					tmp5479 := v_clojure_DOT_core_seq.Get()
-					tmp5480 := v_clojure_DOT_core_concat.Get()
-					tmp5481 := v_clojure_DOT_core_list.Get()
-					tmp5482 := lang.Apply1(tmp5481, sym_try)
-					tmp5483 := v_clojure_DOT_core_list.Get()
-					tmp5484 := v_clojure_DOT_core_seq.Get()
-					tmp5485 := v_clojure_DOT_core_concat.Get()
-					tmp5486 := v_clojure_DOT_core_list.Get()
-					tmp5487 := lang.Apply1(tmp5486, sym_clojure_DOT_core_SLASH_with_open)
-					tmp5488 := v_clojure_DOT_core_list.Get()
-					tmp5489 := v_clojure_DOT_core_vec.Get()
-					tmp5490 := v_clojure_DOT_core_drop.Get()
-					tmp5491 := lang.Apply2(tmp5490, int64(2), bindings5429)
-					tmp5492 := lang.Apply1(tmp5489, tmp5491)
-					tmp5493 := lang.Apply1(tmp5488, tmp5492)
-					tmp5494 := lang.Apply3(tmp5485, tmp5487, tmp5493, body5430)
-					tmp5495 := lang.Apply1(tmp5484, tmp5494)
-					tmp5496 := lang.Apply1(tmp5483, tmp5495)
-					tmp5497 := v_clojure_DOT_core_list.Get()
-					tmp5498 := v_clojure_DOT_core_seq.Get()
-					tmp5499 := v_clojure_DOT_core_concat.Get()
-					tmp5500 := v_clojure_DOT_core_list.Get()
-					tmp5501 := lang.Apply1(tmp5500, sym_finally)
-					tmp5502 := v_clojure_DOT_core_list.Get()
-					tmp5503 := v_clojure_DOT_core_seq.Get()
-					tmp5504 := v_clojure_DOT_core_concat.Get()
-					tmp5505 := v_clojure_DOT_core_list.Get()
-					tmp5506 := lang.Apply1(tmp5505, sym_clojure_DOT_core_SLASH__close_resource)
-					tmp5507 := v_clojure_DOT_core_list.Get()
-					tmp5508 := lang.Apply1(bindings5429, int64(0))
-					tmp5509 := lang.Apply1(tmp5507, tmp5508)
-					tmp5510 := lang.Apply2(tmp5504, tmp5506, tmp5509)
-					tmp5511 := lang.Apply1(tmp5503, tmp5510)
-					tmp5512 := lang.Apply1(tmp5502, tmp5511)
-					tmp5513 := lang.Apply2(tmp5499, tmp5501, tmp5512)
-					tmp5514 := lang.Apply1(tmp5498, tmp5513)
-					tmp5515 := lang.Apply1(tmp5497, tmp5514)
-					tmp5516 := lang.Apply3(tmp5480, tmp5482, tmp5496, tmp5515)
-					tmp5517 := lang.Apply1(tmp5479, tmp5516)
-					tmp5518 := lang.Apply1(tmp5478, tmp5517)
-					tmp5519 := lang.Apply3(tmp5460, tmp5462, tmp5477, tmp5518)
-					tmp5520 := lang.Apply1(tmp5459, tmp5519)
-					tmp5458 = tmp5520
+				tmp5454 := v_clojure_DOT_core_symbol_QMARK_.Get()
+				tmp5455 := lang.Apply1(bindings5428, int64(0))
+				tmp5456 := lang.Apply1(tmp5454, tmp5455)
+				var tmp5457 any
+				_ = tmp5457
+				if lang.IsTruthy(tmp5456) {
+					tmp5458 := v_clojure_DOT_core_seq.Get()
+					tmp5459 := v_clojure_DOT_core_concat.Get()
+					tmp5460 := v_clojure_DOT_core_list.Get()
+					tmp5461 := lang.Apply1(tmp5460, sym_clojure_DOT_core_SLASH_let)
+					tmp5462 := v_clojure_DOT_core_list.Get()
+					tmp5463 := v_clojure_DOT_core_apply.Get()
+					tmp5464 := v_clojure_DOT_core_vector.Get()
+					tmp5465 := v_clojure_DOT_core_seq.Get()
+					tmp5466 := v_clojure_DOT_core_concat.Get()
+					tmp5467 := v_clojure_DOT_core_list.Get()
+					tmp5468 := lang.Apply1(bindings5428, int64(0))
+					tmp5469 := lang.Apply1(tmp5467, tmp5468)
+					tmp5470 := v_clojure_DOT_core_list.Get()
+					tmp5471 := lang.Apply1(bindings5428, int64(1))
+					tmp5472 := lang.Apply1(tmp5470, tmp5471)
+					tmp5473 := lang.Apply2(tmp5466, tmp5469, tmp5472)
+					tmp5474 := lang.Apply1(tmp5465, tmp5473)
+					tmp5475 := lang.Apply2(tmp5463, tmp5464, tmp5474)
+					tmp5476 := lang.Apply1(tmp5462, tmp5475)
+					tmp5477 := v_clojure_DOT_core_list.Get()
+					tmp5478 := v_clojure_DOT_core_seq.Get()
+					tmp5479 := v_clojure_DOT_core_concat.Get()
+					tmp5480 := v_clojure_DOT_core_list.Get()
+					tmp5481 := lang.Apply1(tmp5480, sym_try)
+					tmp5482 := v_clojure_DOT_core_list.Get()
+					tmp5483 := v_clojure_DOT_core_seq.Get()
+					tmp5484 := v_clojure_DOT_core_concat.Get()
+					tmp5485 := v_clojure_DOT_core_list.Get()
+					tmp5486 := lang.Apply1(tmp5485, sym_clojure_DOT_core_SLASH_with_open)
+					tmp5487 := v_clojure_DOT_core_list.Get()
+					tmp5488 := v_clojure_DOT_core_vec.Get()
+					tmp5489 := v_clojure_DOT_core_drop.Get()
+					tmp5490 := lang.Apply2(tmp5489, int64(2), bindings5428)
+					tmp5491 := lang.Apply1(tmp5488, tmp5490)
+					tmp5492 := lang.Apply1(tmp5487, tmp5491)
+					tmp5493 := lang.Apply3(tmp5484, tmp5486, tmp5492, body5429)
+					tmp5494 := lang.Apply1(tmp5483, tmp5493)
+					tmp5495 := lang.Apply1(tmp5482, tmp5494)
+					tmp5496 := v_clojure_DOT_core_list.Get()
+					tmp5497 := v_clojure_DOT_core_seq.Get()
+					tmp5498 := v_clojure_DOT_core_concat.Get()
+					tmp5499 := v_clojure_DOT_core_list.Get()
+					tmp5500 := lang.Apply1(tmp5499, sym_finally)
+					tmp5501 := v_clojure_DOT_core_list.Get()
+					tmp5502 := v_clojure_DOT_core_seq.Get()
+					tmp5503 := v_clojure_DOT_core_concat.Get()
+					tmp5504 := v_clojure_DOT_core_list.Get()
+					tmp5505 := lang.Apply1(tmp5504, sym_clojure_DOT_core_SLASH__close_resource)
+					tmp5506 := v_clojure_DOT_core_list.Get()
+					tmp5507 := lang.Apply1(bindings5428, int64(0))
+					tmp5508 := lang.Apply1(tmp5506, tmp5507)
+					tmp5509 := lang.Apply2(tmp5503, tmp5505, tmp5508)
+					tmp5510 := lang.Apply1(tmp5502, tmp5509)
+					tmp5511 := lang.Apply1(tmp5501, tmp5510)
+					tmp5512 := lang.Apply2(tmp5498, tmp5500, tmp5511)
+					tmp5513 := lang.Apply1(tmp5497, tmp5512)
+					tmp5514 := lang.Apply1(tmp5496, tmp5513)
+					tmp5515 := lang.Apply3(tmp5479, tmp5481, tmp5495, tmp5514)
+					tmp5516 := lang.Apply1(tmp5478, tmp5515)
+					tmp5517 := lang.Apply1(tmp5477, tmp5516)
+					tmp5518 := lang.Apply3(tmp5459, tmp5461, tmp5476, tmp5517)
+					tmp5519 := lang.Apply1(tmp5458, tmp5518)
+					tmp5457 = tmp5519
 				} else {
-					var tmp5521 any
-					_ = tmp5521
+					var tmp5520 any
+					_ = tmp5520
 					if lang.IsTruthy(kw_else_) {
-						tmp5522 := v_clojure_DOT_core_ex_info.Get()
-						tmp5523 := lang.NewMap(kw_bindings, bindings5429)
-						tmp5524 := lang.Apply2(tmp5522, "with-open only allows Symbols in bindings", tmp5523)
-						panic(rt.Throw(tmp5524))
+						tmp5521 := v_clojure_DOT_core_ex_info.Get()
+						tmp5522 := lang.NewMap(kw_bindings, bindings5428)
+						tmp5523 := lang.Apply2(tmp5521, "with-open only allows Symbols in bindings", tmp5522)
+						panic(rt.Throw(tmp5523))
 					} else {
-						tmp5521 = nil
+						tmp5520 = nil
 					}
-					tmp5458 = tmp5521
+					tmp5457 = tmp5520
 				}
-				tmp5448 = tmp5458
+				tmp5447 = tmp5457
 			}
-			return tmp5448
+			return tmp5447
 		}
 	})
-	with_open5425 = tmp5426
-	v_clojure_DOT_core_with_open.BindRoot(tmp5426)
+	with_open5424 = tmp5425
+	v_clojure_DOT_core_with_open.BindRoot(tmp5425)
 	_ = v_clojure_DOT_core_with_open
-	tmp5525 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5526 := lang.Apply1(tmp5525, v_clojure_DOT_core_with_open)
-	_ = tmp5526
+	tmp5524 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5525 := lang.Apply1(tmp5524, v_clojure_DOT_core_with_open)
+	_ = tmp5525
 	_ = v_clojure_DOT_core_with_open
 	// (def with-redefs-fn (clojure.core/fn [binding-map func] (let [root-bind (fn [m] (doseq [[a…
 	v_clojure_DOT_core_with_redefs_fn.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1789), kw_column, int64(7), kw_end_line, int64(1789), kw_end_column, int64(21)))
-	tmp5527 := lang.FnFunc2(func(binding_map5528, func_5529 any) any {
-		var tmp5530 any
-		_ = tmp5530
+	tmp5526 := lang.FnFunc2(func(binding_map5527, func_5528 any) any {
+		var tmp5529 any
+		_ = tmp5529
 		{
-			tmp5531 := lang.FnFunc1(func(m5532 any) any {
-				var tmp5533 any
-				_ = tmp5533
+			tmp5530 := lang.FnFunc1(func(m5531 any) any {
+				var tmp5532 any
+				_ = tmp5532
 				{
-					tmp5534 := v_clojure_DOT_core_seq.Get()
-					tmp5535 := lang.Apply1(tmp5534, m5532)
-					var s__9__auto__5536 any = tmp5535
-					_ = s__9__auto__5536
-				loop5537:
+					tmp5533 := v_clojure_DOT_core_seq.Get()
+					tmp5534 := lang.Apply1(tmp5533, m5531)
+					var s__9__auto__5535 any = tmp5534
+					_ = s__9__auto__5535
+				loop5536:
 					for {
-						var tmp5538 any
-						_ = tmp5538
-						if lang.IsTruthy(s__9__auto__5536) {
-							var tmp5539 any
-							_ = tmp5539
+						var tmp5537 any
+						_ = tmp5537
+						if lang.IsTruthy(s__9__auto__5535) {
+							var tmp5538 any
+							_ = tmp5538
 							{
-								tmp5540 := v_clojure_DOT_core_first.Get()
-								tmp5541 := lang.Apply1(tmp5540, s__9__auto__5536)
-								var vec__255542 any = tmp5541
-								_ = vec__255542
-								tmp5543 := v_clojure_DOT_core_nth.Get()
-								tmp5544 := lang.Apply3(tmp5543, vec__255542, int64(0), nil)
-								var a_var5545 any = tmp5544
-								_ = a_var5545
-								tmp5546 := v_clojure_DOT_core_nth.Get()
-								tmp5547 := lang.Apply3(tmp5546, vec__255542, int64(1), nil)
-								var a_val5548 any = tmp5547
-								_ = a_val5548
-								tmp5549 := v_clojure_DOT_core_alter_var_root.Get()
-								tmp5550 := v_clojure_DOT_core_constantly.Get()
-								tmp5551 := lang.Apply1(tmp5550, a_val5548)
-								tmp5552 := lang.Apply2(tmp5549, a_var5545, tmp5551)
+								tmp5539 := v_clojure_DOT_core_first.Get()
+								tmp5540 := lang.Apply1(tmp5539, s__9__auto__5535)
+								var vec__255541 any = tmp5540
+								_ = vec__255541
+								tmp5542 := v_clojure_DOT_core_nth.Get()
+								tmp5543 := lang.Apply3(tmp5542, vec__255541, int64(0), nil)
+								var a_var5544 any = tmp5543
+								_ = a_var5544
+								tmp5545 := v_clojure_DOT_core_nth.Get()
+								tmp5546 := lang.Apply3(tmp5545, vec__255541, int64(1), nil)
+								var a_val5547 any = tmp5546
+								_ = a_val5547
+								tmp5548 := v_clojure_DOT_core_alter_var_root.Get()
+								tmp5549 := v_clojure_DOT_core_constantly.Get()
+								tmp5550 := lang.Apply1(tmp5549, a_val5547)
+								tmp5551 := lang.Apply2(tmp5548, a_var5544, tmp5550)
+								_ = tmp5551
+								var tmp5552 any
 								_ = tmp5552
-								var tmp5553 any
-								_ = tmp5553
 								if lang.IsTruthy(true) {
-									tmp5554 := v_clojure_DOT_core_next.Get()
-									tmp5555 := lang.Apply1(tmp5554, s__9__auto__5536)
-									var tmp5556 any = tmp5555
-									s__9__auto__5536 = tmp5556
-									continue loop5537
+									tmp5553 := v_clojure_DOT_core_next.Get()
+									tmp5554 := lang.Apply1(tmp5553, s__9__auto__5535)
+									var tmp5555 any = tmp5554
+									s__9__auto__5535 = tmp5555
+									continue loop5536
 								} else {
-									tmp5553 = nil
+									tmp5552 = nil
 								}
-								tmp5539 = tmp5553
+								tmp5538 = tmp5552
 							}
-							tmp5538 = tmp5539
+							tmp5537 = tmp5538
 						} else {
-							tmp5538 = nil
+							tmp5537 = nil
 						}
-						tmp5533 = tmp5538
-						break loop5537
+						tmp5532 = tmp5537
+						break loop5536
 					}
 				}
-				return tmp5533
+				return tmp5532
 			})
-			var root_bind5557 any = tmp5531
-			_ = root_bind5557
-			tmp5558 := v_clojure_DOT_core_zipmap.Get()
-			tmp5559 := v_clojure_DOT_core_keys.Get()
-			tmp5560 := lang.Apply1(tmp5559, binding_map5528)
-			tmp5561 := v_clojure_DOT_core_map_.Get()
-			tmp5562 := v_clojure_DOT_core_var_get.Get()
-			tmp5563 := v_clojure_DOT_core_keys.Get()
-			tmp5564 := lang.Apply1(tmp5563, binding_map5528)
-			tmp5565 := lang.Apply2(tmp5561, tmp5562, tmp5564)
-			tmp5566 := lang.Apply2(tmp5558, tmp5560, tmp5565)
-			var old_vals5567 any = tmp5566
-			_ = old_vals5567
-			var tmp5568 any
-			_ = tmp5568
+			var root_bind5556 any = tmp5530
+			_ = root_bind5556
+			tmp5557 := v_clojure_DOT_core_zipmap.Get()
+			tmp5558 := v_clojure_DOT_core_keys.Get()
+			tmp5559 := lang.Apply1(tmp5558, binding_map5527)
+			tmp5560 := v_clojure_DOT_core_map_.Get()
+			tmp5561 := v_clojure_DOT_core_var_get.Get()
+			tmp5562 := v_clojure_DOT_core_keys.Get()
+			tmp5563 := lang.Apply1(tmp5562, binding_map5527)
+			tmp5564 := lang.Apply2(tmp5560, tmp5561, tmp5563)
+			tmp5565 := lang.Apply2(tmp5557, tmp5559, tmp5564)
+			var old_vals5566 any = tmp5565
+			_ = old_vals5566
+			var tmp5567 any
+			_ = tmp5567
 			func() {
 				defer func() {
-					tmp5569 := tmp5531(old_vals5567)
-					_ = tmp5569
+					tmp5568 := tmp5530(old_vals5566)
+					_ = tmp5568
 				}()
-				tmp5570 := tmp5531(binding_map5528)
-				_ = tmp5570
-				tmp5571 := lang.Apply0(func_5529)
-				tmp5568 = tmp5571
+				tmp5569 := tmp5530(binding_map5527)
+				_ = tmp5569
+				tmp5570 := lang.Apply0(func_5528)
+				tmp5567 = tmp5570
 			}()
-			tmp5530 = tmp5568
+			tmp5529 = tmp5567
 		}
-		return tmp5530
+		return tmp5529
 	})
-	v_clojure_DOT_core_with_redefs_fn.BindRoot(tmp5527)
+	v_clojure_DOT_core_with_redefs_fn.BindRoot(tmp5526)
 	_ = v_clojure_DOT_core_with_redefs_fn
 	// (do (def with-redefs (fn* with-redefs ([&form &env bindings & body] (when-not (vector? bin…
 	v_clojure_DOT_core_with_redefs.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1801), kw_column, int64(11), kw_end_line, int64(1801), kw_end_column, int64(22)))
-	var with_redefs5572 any
-	_ = with_redefs5572
-	tmp5573 := lang.FnFunc(func(args ...any) any {
+	var with_redefs5571 any
+	_ = with_redefs5571
+	tmp5572 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/with-redefs", "3+: [&form &env bindings body & more]"))
 			}
-			X_AMP_form5574 := args[0]
-			_ = X_AMP_form5574
-			X_AMP_env5575 := args[1]
-			_ = X_AMP_env5575
-			bindings5576 := args[2]
-			_ = bindings5576
-			var body5577 any
+			X_AMP_form5573 := args[0]
+			_ = X_AMP_form5573
+			X_AMP_env5574 := args[1]
+			_ = X_AMP_env5574
+			bindings5575 := args[2]
+			_ = bindings5575
+			var body5576 any
 			if len(args) > 3 {
-				body5577 = lang.NewList(args[3:]...)
+				body5576 = lang.NewList(args[3:]...)
 			}
-			_ = body5577
-			tmp5578 := v_clojure_DOT_core_vector_QMARK_.Get()
-			tmp5579 := lang.Apply1(tmp5578, bindings5576)
-			var tmp5580 any
-			_ = tmp5580
-			if lang.IsTruthy(tmp5579) {
-				tmp5580 = nil
+			_ = body5576
+			tmp5577 := v_clojure_DOT_core_vector_QMARK_.Get()
+			tmp5578 := lang.Apply1(tmp5577, bindings5575)
+			var tmp5579 any
+			_ = tmp5579
+			if lang.IsTruthy(tmp5578) {
+				tmp5579 = nil
 			} else {
-				tmp5581 := v_clojure_DOT_core_ex_info.Get()
-				tmp5582 := lang.NewMap(kw_bindings, bindings5576)
-				tmp5583 := lang.Apply2(tmp5581, "with-redefs requires a vector for its binding", tmp5582)
-				panic(rt.Throw(tmp5583))
+				tmp5580 := v_clojure_DOT_core_ex_info.Get()
+				tmp5581 := lang.NewMap(kw_bindings, bindings5575)
+				tmp5582 := lang.Apply2(tmp5580, "with-redefs requires a vector for its binding", tmp5581)
+				panic(rt.Throw(tmp5582))
 			}
-			_ = tmp5580
-			tmp5584 := v_clojure_DOT_core_even_QMARK_.Get()
-			tmp5585 := v_clojure_DOT_core_count.Get()
-			tmp5586 := lang.Apply1(tmp5585, bindings5576)
-			tmp5587 := lang.Apply1(tmp5584, tmp5586)
-			var tmp5588 any
-			_ = tmp5588
-			if lang.IsTruthy(tmp5587) {
-				tmp5588 = nil
+			_ = tmp5579
+			tmp5583 := v_clojure_DOT_core_even_QMARK_.Get()
+			tmp5584 := v_clojure_DOT_core_count.Get()
+			tmp5585 := lang.Apply1(tmp5584, bindings5575)
+			tmp5586 := lang.Apply1(tmp5583, tmp5585)
+			var tmp5587 any
+			_ = tmp5587
+			if lang.IsTruthy(tmp5586) {
+				tmp5587 = nil
 			} else {
-				tmp5589 := v_clojure_DOT_core_ex_info.Get()
-				tmp5590 := lang.NewMap(kw_bindings, bindings5576)
-				tmp5591 := lang.Apply2(tmp5589, "with-redefs requires an even number of forms in binding vector", tmp5590)
-				panic(rt.Throw(tmp5591))
+				tmp5588 := v_clojure_DOT_core_ex_info.Get()
+				tmp5589 := lang.NewMap(kw_bindings, bindings5575)
+				tmp5590 := lang.Apply2(tmp5588, "with-redefs requires an even number of forms in binding vector", tmp5589)
+				panic(rt.Throw(tmp5590))
 			}
-			_ = tmp5588
-			tmp5592 := v_clojure_DOT_core_seq.Get()
-			tmp5593 := v_clojure_DOT_core_concat.Get()
-			tmp5594 := v_clojure_DOT_core_list.Get()
-			tmp5595 := lang.Apply1(tmp5594, sym_clojure_DOT_core_SLASH_with_redefs_fn)
-			tmp5596 := v_clojure_DOT_core_list.Get()
-			tmp5597 := v_clojure_DOT_core_zipmap.Get()
-			tmp5598 := v_clojure_DOT_core_map_.Get()
-			tmp5599 := lang.FnFunc1(func(v5600 any) any {
-				tmp5601 := v_clojure_DOT_core_list.Get()
-				tmp5602 := lang.Apply2(tmp5601, sym_var_, v5600)
-				return tmp5602
+			_ = tmp5587
+			tmp5591 := v_clojure_DOT_core_seq.Get()
+			tmp5592 := v_clojure_DOT_core_concat.Get()
+			tmp5593 := v_clojure_DOT_core_list.Get()
+			tmp5594 := lang.Apply1(tmp5593, sym_clojure_DOT_core_SLASH_with_redefs_fn)
+			tmp5595 := v_clojure_DOT_core_list.Get()
+			tmp5596 := v_clojure_DOT_core_zipmap.Get()
+			tmp5597 := v_clojure_DOT_core_map_.Get()
+			tmp5598 := lang.FnFunc1(func(v5599 any) any {
+				tmp5600 := v_clojure_DOT_core_list.Get()
+				tmp5601 := lang.Apply2(tmp5600, sym_var_, v5599)
+				return tmp5601
 			})
-			tmp5603 := v_clojure_DOT_core_take_nth.Get()
-			tmp5604 := lang.Apply2(tmp5603, int64(2), bindings5576)
-			tmp5605 := lang.Apply2(tmp5598, tmp5599, tmp5604)
-			tmp5606 := v_clojure_DOT_core_take_nth.Get()
-			tmp5607 := v_clojure_DOT_core_drop.Get()
-			tmp5608 := lang.Apply2(tmp5607, int64(1), bindings5576)
-			tmp5609 := lang.Apply2(tmp5606, int64(2), tmp5608)
-			tmp5610 := lang.Apply2(tmp5597, tmp5605, tmp5609)
-			tmp5611 := lang.Apply1(tmp5596, tmp5610)
-			tmp5612 := v_clojure_DOT_core_list.Get()
-			tmp5613 := v_clojure_DOT_core_seq.Get()
-			tmp5614 := v_clojure_DOT_core_concat.Get()
-			tmp5615 := v_clojure_DOT_core_list.Get()
-			tmp5616 := lang.Apply1(tmp5615, sym_clojure_DOT_core_SLASH_fn)
-			tmp5617 := v_clojure_DOT_core_list.Get()
-			tmp5618 := v_clojure_DOT_core_apply.Get()
-			tmp5619 := v_clojure_DOT_core_vector.Get()
-			tmp5620 := v_clojure_DOT_core_seq.Get()
-			tmp5621 := v_clojure_DOT_core_concat.Get()
-			tmp5622 := lang.Apply0(tmp5621)
-			tmp5623 := lang.Apply1(tmp5620, tmp5622)
-			tmp5624 := lang.Apply2(tmp5618, tmp5619, tmp5623)
-			tmp5625 := lang.Apply1(tmp5617, tmp5624)
-			tmp5626 := lang.Apply3(tmp5614, tmp5616, tmp5625, body5577)
-			tmp5627 := lang.Apply1(tmp5613, tmp5626)
-			tmp5628 := lang.Apply1(tmp5612, tmp5627)
-			tmp5629 := lang.Apply3(tmp5593, tmp5595, tmp5611, tmp5628)
-			tmp5630 := lang.Apply1(tmp5592, tmp5629)
-			return tmp5630
+			tmp5602 := v_clojure_DOT_core_take_nth.Get()
+			tmp5603 := lang.Apply2(tmp5602, int64(2), bindings5575)
+			tmp5604 := lang.Apply2(tmp5597, tmp5598, tmp5603)
+			tmp5605 := v_clojure_DOT_core_take_nth.Get()
+			tmp5606 := v_clojure_DOT_core_drop.Get()
+			tmp5607 := lang.Apply2(tmp5606, int64(1), bindings5575)
+			tmp5608 := lang.Apply2(tmp5605, int64(2), tmp5607)
+			tmp5609 := lang.Apply2(tmp5596, tmp5604, tmp5608)
+			tmp5610 := lang.Apply1(tmp5595, tmp5609)
+			tmp5611 := v_clojure_DOT_core_list.Get()
+			tmp5612 := v_clojure_DOT_core_seq.Get()
+			tmp5613 := v_clojure_DOT_core_concat.Get()
+			tmp5614 := v_clojure_DOT_core_list.Get()
+			tmp5615 := lang.Apply1(tmp5614, sym_clojure_DOT_core_SLASH_fn)
+			tmp5616 := v_clojure_DOT_core_list.Get()
+			tmp5617 := v_clojure_DOT_core_apply.Get()
+			tmp5618 := v_clojure_DOT_core_vector.Get()
+			tmp5619 := v_clojure_DOT_core_seq.Get()
+			tmp5620 := v_clojure_DOT_core_concat.Get()
+			tmp5621 := lang.Apply0(tmp5620)
+			tmp5622 := lang.Apply1(tmp5619, tmp5621)
+			tmp5623 := lang.Apply2(tmp5617, tmp5618, tmp5622)
+			tmp5624 := lang.Apply1(tmp5616, tmp5623)
+			tmp5625 := lang.Apply3(tmp5613, tmp5615, tmp5624, body5576)
+			tmp5626 := lang.Apply1(tmp5612, tmp5625)
+			tmp5627 := lang.Apply1(tmp5611, tmp5626)
+			tmp5628 := lang.Apply3(tmp5592, tmp5594, tmp5610, tmp5627)
+			tmp5629 := lang.Apply1(tmp5591, tmp5628)
+			return tmp5629
 		}
 	})
-	with_redefs5572 = tmp5573
-	v_clojure_DOT_core_with_redefs.BindRoot(tmp5573)
+	with_redefs5571 = tmp5572
+	v_clojure_DOT_core_with_redefs.BindRoot(tmp5572)
 	_ = v_clojure_DOT_core_with_redefs
-	tmp5631 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5632 := lang.Apply1(tmp5631, v_clojure_DOT_core_with_redefs)
-	_ = tmp5632
+	tmp5630 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5631 := lang.Apply1(tmp5630, v_clojure_DOT_core_with_redefs)
+	_ = tmp5631
 	_ = v_clojure_DOT_core_with_redefs
 	// (do (def memfn (fn* memfn ([&form &env name & args] (let [t (gensym "target__")] (clojure.…
 	v_clojure_DOT_core_memfn.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1819), kw_column, int64(11), kw_end_line, int64(1819), kw_end_column, int64(16)))
-	var memfn5633 any
-	_ = memfn5633
-	tmp5634 := lang.FnFunc(func(args ...any) any {
+	var memfn5632 any
+	_ = memfn5632
+	tmp5633 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/memfn", "3+: [&form &env name args & more]"))
 			}
-			X_AMP_form5635 := args[0]
-			_ = X_AMP_form5635
-			X_AMP_env5636 := args[1]
-			_ = X_AMP_env5636
-			name5637 := args[2]
-			_ = name5637
-			var args5638 any
+			X_AMP_form5634 := args[0]
+			_ = X_AMP_form5634
+			X_AMP_env5635 := args[1]
+			_ = X_AMP_env5635
+			name5636 := args[2]
+			_ = name5636
+			var args5637 any
 			if len(args) > 3 {
-				args5638 = lang.NewList(args[3:]...)
+				args5637 = lang.NewList(args[3:]...)
 			}
-			_ = args5638
-			var tmp5639 any
-			_ = tmp5639
+			_ = args5637
+			var tmp5638 any
+			_ = tmp5638
 			{
-				tmp5640 := v_clojure_DOT_core_gensym.Get()
-				tmp5641 := lang.Apply1(tmp5640, "target__")
-				var t5642 any = tmp5641
-				_ = t5642
-				tmp5643 := v_clojure_DOT_core_seq.Get()
-				tmp5644 := v_clojure_DOT_core_concat.Get()
-				tmp5645 := v_clojure_DOT_core_list.Get()
-				tmp5646 := lang.Apply1(tmp5645, sym_clojure_DOT_core_SLASH_fn)
-				tmp5647 := v_clojure_DOT_core_list.Get()
-				tmp5648 := v_clojure_DOT_core_apply.Get()
-				tmp5649 := v_clojure_DOT_core_vector.Get()
-				tmp5650 := v_clojure_DOT_core_seq.Get()
-				tmp5651 := v_clojure_DOT_core_concat.Get()
-				tmp5652 := v_clojure_DOT_core_list.Get()
-				tmp5653 := lang.Apply1(tmp5652, t5642)
-				tmp5654 := lang.Apply2(tmp5651, tmp5653, args5638)
-				tmp5655 := lang.Apply1(tmp5650, tmp5654)
-				tmp5656 := lang.Apply2(tmp5648, tmp5649, tmp5655)
-				tmp5657 := lang.Apply1(tmp5647, tmp5656)
-				tmp5658 := v_clojure_DOT_core_list.Get()
-				tmp5659 := v_clojure_DOT_core_seq.Get()
-				tmp5660 := v_clojure_DOT_core_concat.Get()
-				tmp5661 := v_clojure_DOT_core_list.Get()
-				tmp5662 := v_clojure_DOT_core_symbol.Get()
-				tmp5663 := v_clojure_DOT_core_str.Get()
-				tmp5664 := lang.Apply2(tmp5663, ".", name5637)
-				tmp5665 := lang.Apply1(tmp5662, tmp5664)
-				tmp5666 := lang.Apply1(tmp5661, tmp5665)
-				tmp5667 := v_clojure_DOT_core_list.Get()
-				tmp5668 := lang.Apply1(tmp5667, t5642)
-				tmp5669 := lang.Apply3(tmp5660, tmp5666, tmp5668, args5638)
-				tmp5670 := lang.Apply1(tmp5659, tmp5669)
-				tmp5671 := lang.Apply1(tmp5658, tmp5670)
-				tmp5672 := lang.Apply3(tmp5644, tmp5646, tmp5657, tmp5671)
-				tmp5673 := lang.Apply1(tmp5643, tmp5672)
-				tmp5639 = tmp5673
+				tmp5639 := v_clojure_DOT_core_gensym.Get()
+				tmp5640 := lang.Apply1(tmp5639, "target__")
+				var t5641 any = tmp5640
+				_ = t5641
+				tmp5642 := v_clojure_DOT_core_seq.Get()
+				tmp5643 := v_clojure_DOT_core_concat.Get()
+				tmp5644 := v_clojure_DOT_core_list.Get()
+				tmp5645 := lang.Apply1(tmp5644, sym_clojure_DOT_core_SLASH_fn)
+				tmp5646 := v_clojure_DOT_core_list.Get()
+				tmp5647 := v_clojure_DOT_core_apply.Get()
+				tmp5648 := v_clojure_DOT_core_vector.Get()
+				tmp5649 := v_clojure_DOT_core_seq.Get()
+				tmp5650 := v_clojure_DOT_core_concat.Get()
+				tmp5651 := v_clojure_DOT_core_list.Get()
+				tmp5652 := lang.Apply1(tmp5651, t5641)
+				tmp5653 := lang.Apply2(tmp5650, tmp5652, args5637)
+				tmp5654 := lang.Apply1(tmp5649, tmp5653)
+				tmp5655 := lang.Apply2(tmp5647, tmp5648, tmp5654)
+				tmp5656 := lang.Apply1(tmp5646, tmp5655)
+				tmp5657 := v_clojure_DOT_core_list.Get()
+				tmp5658 := v_clojure_DOT_core_seq.Get()
+				tmp5659 := v_clojure_DOT_core_concat.Get()
+				tmp5660 := v_clojure_DOT_core_list.Get()
+				tmp5661 := v_clojure_DOT_core_symbol.Get()
+				tmp5662 := v_clojure_DOT_core_str.Get()
+				tmp5663 := lang.Apply2(tmp5662, ".", name5636)
+				tmp5664 := lang.Apply1(tmp5661, tmp5663)
+				tmp5665 := lang.Apply1(tmp5660, tmp5664)
+				tmp5666 := v_clojure_DOT_core_list.Get()
+				tmp5667 := lang.Apply1(tmp5666, t5641)
+				tmp5668 := lang.Apply3(tmp5659, tmp5665, tmp5667, args5637)
+				tmp5669 := lang.Apply1(tmp5658, tmp5668)
+				tmp5670 := lang.Apply1(tmp5657, tmp5669)
+				tmp5671 := lang.Apply3(tmp5643, tmp5645, tmp5656, tmp5670)
+				tmp5672 := lang.Apply1(tmp5642, tmp5671)
+				tmp5638 = tmp5672
 			}
-			return tmp5639
+			return tmp5638
 		}
 	})
-	memfn5633 = tmp5634
-	v_clojure_DOT_core_memfn.BindRoot(tmp5634)
+	memfn5632 = tmp5633
+	v_clojure_DOT_core_memfn.BindRoot(tmp5633)
 	_ = v_clojure_DOT_core_memfn
-	tmp5674 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5675 := lang.Apply1(tmp5674, v_clojure_DOT_core_memfn)
-	_ = tmp5675
+	tmp5673 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5674 := lang.Apply1(tmp5673, v_clojure_DOT_core_memfn)
+	_ = tmp5674
 	_ = v_clojure_DOT_core_memfn
 	// (do (def io! (fn* io! ([&form &env & body] (let [message (if (string? (first body)) (first…
 	v_clojure_DOT_core_io_BANG_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1832), kw_column, int64(11), kw_end_line, int64(1832), kw_end_column, int64(14)))
-	var io_BANG_5676 any
-	_ = io_BANG_5676
-	tmp5677 := lang.FnFunc(func(args ...any) any {
+	var io_BANG_5675 any
+	_ = io_BANG_5675
+	tmp5676 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "clojure.core/io!", "2+: [&form &env body & more]"))
 			}
-			X_AMP_form5678 := args[0]
-			_ = X_AMP_form5678
-			X_AMP_env5679 := args[1]
-			_ = X_AMP_env5679
-			var body5680 any
+			X_AMP_form5677 := args[0]
+			_ = X_AMP_form5677
+			X_AMP_env5678 := args[1]
+			_ = X_AMP_env5678
+			var body5679 any
 			if len(args) > 2 {
-				body5680 = lang.NewList(args[2:]...)
+				body5679 = lang.NewList(args[2:]...)
 			}
-			_ = body5680
-			var tmp5681 any
-			_ = tmp5681
+			_ = body5679
+			var tmp5680 any
+			_ = tmp5680
 			{
-				tmp5682 := v_clojure_DOT_core_string_QMARK_.Get()
-				tmp5683 := v_clojure_DOT_core_first.Get()
-				tmp5684 := lang.Apply1(tmp5683, body5680)
-				tmp5685 := lang.Apply1(tmp5682, tmp5684)
-				var tmp5686 any
-				_ = tmp5686
-				if lang.IsTruthy(tmp5685) {
-					tmp5687 := v_clojure_DOT_core_first.Get()
-					tmp5688 := lang.Apply1(tmp5687, body5680)
-					tmp5686 = tmp5688
+				tmp5681 := v_clojure_DOT_core_string_QMARK_.Get()
+				tmp5682 := v_clojure_DOT_core_first.Get()
+				tmp5683 := lang.Apply1(tmp5682, body5679)
+				tmp5684 := lang.Apply1(tmp5681, tmp5683)
+				var tmp5685 any
+				_ = tmp5685
+				if lang.IsTruthy(tmp5684) {
+					tmp5686 := v_clojure_DOT_core_first.Get()
+					tmp5687 := lang.Apply1(tmp5686, body5679)
+					tmp5685 = tmp5687
 				} else {
-					tmp5686 = "I/O in transaction"
+					tmp5685 = "I/O in transaction"
 				}
-				var message5689 any = tmp5686
-				_ = message5689
-				tmp5690 := v_clojure_DOT_core_string_QMARK_.Get()
-				tmp5691 := v_clojure_DOT_core_first.Get()
-				tmp5692 := lang.Apply1(tmp5691, body5680)
-				tmp5693 := lang.Apply1(tmp5690, tmp5692)
-				var tmp5694 any
-				_ = tmp5694
-				if lang.IsTruthy(tmp5693) {
-					tmp5695 := v_clojure_DOT_core_next.Get()
-					tmp5696 := lang.Apply1(tmp5695, body5680)
-					tmp5694 = tmp5696
+				var message5688 any = tmp5685
+				_ = message5688
+				tmp5689 := v_clojure_DOT_core_string_QMARK_.Get()
+				tmp5690 := v_clojure_DOT_core_first.Get()
+				tmp5691 := lang.Apply1(tmp5690, body5679)
+				tmp5692 := lang.Apply1(tmp5689, tmp5691)
+				var tmp5693 any
+				_ = tmp5693
+				if lang.IsTruthy(tmp5692) {
+					tmp5694 := v_clojure_DOT_core_next.Get()
+					tmp5695 := lang.Apply1(tmp5694, body5679)
+					tmp5693 = tmp5695
 				} else {
-					tmp5694 = body5680
+					tmp5693 = body5679
 				}
-				var body5697 any = tmp5694
-				_ = body5697
-				tmp5698 := v_clojure_DOT_core_seq.Get()
-				tmp5699 := v_clojure_DOT_core_concat.Get()
-				tmp5700 := v_clojure_DOT_core_list.Get()
-				tmp5701 := lang.Apply1(tmp5700, sym_do)
-				tmp5702 := v_clojure_DOT_core_list.Get()
-				tmp5703 := v_clojure_DOT_core_seq.Get()
-				tmp5704 := v_clojure_DOT_core_concat.Get()
-				tmp5705 := v_clojure_DOT_core_list.Get()
-				tmp5706 := lang.Apply1(tmp5705, sym_clojure_DOT_core_SLASH__io_guard)
-				tmp5707 := v_clojure_DOT_core_list.Get()
-				tmp5708 := lang.Apply1(tmp5707, message5689)
-				tmp5709 := lang.Apply2(tmp5704, tmp5706, tmp5708)
-				tmp5710 := lang.Apply1(tmp5703, tmp5709)
-				tmp5711 := lang.Apply1(tmp5702, tmp5710)
-				tmp5712 := lang.Apply3(tmp5699, tmp5701, tmp5711, body5697)
-				tmp5713 := lang.Apply1(tmp5698, tmp5712)
-				tmp5681 = tmp5713
+				var body5696 any = tmp5693
+				_ = body5696
+				tmp5697 := v_clojure_DOT_core_seq.Get()
+				tmp5698 := v_clojure_DOT_core_concat.Get()
+				tmp5699 := v_clojure_DOT_core_list.Get()
+				tmp5700 := lang.Apply1(tmp5699, sym_do)
+				tmp5701 := v_clojure_DOT_core_list.Get()
+				tmp5702 := v_clojure_DOT_core_seq.Get()
+				tmp5703 := v_clojure_DOT_core_concat.Get()
+				tmp5704 := v_clojure_DOT_core_list.Get()
+				tmp5705 := lang.Apply1(tmp5704, sym_clojure_DOT_core_SLASH__io_guard)
+				tmp5706 := v_clojure_DOT_core_list.Get()
+				tmp5707 := lang.Apply1(tmp5706, message5688)
+				tmp5708 := lang.Apply2(tmp5703, tmp5705, tmp5707)
+				tmp5709 := lang.Apply1(tmp5702, tmp5708)
+				tmp5710 := lang.Apply1(tmp5701, tmp5709)
+				tmp5711 := lang.Apply3(tmp5698, tmp5700, tmp5710, body5696)
+				tmp5712 := lang.Apply1(tmp5697, tmp5711)
+				tmp5680 = tmp5712
 			}
-			return tmp5681
+			return tmp5680
 		}
 	})
-	io_BANG_5676 = tmp5677
-	v_clojure_DOT_core_io_BANG_.BindRoot(tmp5677)
+	io_BANG_5675 = tmp5676
+	v_clojure_DOT_core_io_BANG_.BindRoot(tmp5676)
 	_ = v_clojure_DOT_core_io_BANG_
-	tmp5714 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5715 := lang.Apply1(tmp5714, v_clojure_DOT_core_io_BANG_)
-	_ = tmp5715
+	tmp5713 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5714 := lang.Apply1(tmp5713, v_clojure_DOT_core_io_BANG_)
+	_ = tmp5714
 	_ = v_clojure_DOT_core_io_BANG_
 	// (do (def sync (fn* sync ([&form &env flags-ignored-for-now & body] (list (quote clojure.co…
 	v_clojure_DOT_core_sync.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1844), kw_column, int64(11), kw_end_line, int64(1844), kw_end_column, int64(15)))
-	var sync5716 any
-	_ = sync5716
-	tmp5717 := lang.FnFunc(func(args ...any) any {
+	var sync5715 any
+	_ = sync5715
+	tmp5716 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 3 {
 				panic(lang.NewArityError(len(args), "clojure.core/sync", "3+: [&form &env flags-ignored-for-now body & more]"))
 			}
-			X_AMP_form5718 := args[0]
-			_ = X_AMP_form5718
-			X_AMP_env5719 := args[1]
-			_ = X_AMP_env5719
-			flags_ignored_for_now5720 := args[2]
-			_ = flags_ignored_for_now5720
-			var body5721 any
+			X_AMP_form5717 := args[0]
+			_ = X_AMP_form5717
+			X_AMP_env5718 := args[1]
+			_ = X_AMP_env5718
+			flags_ignored_for_now5719 := args[2]
+			_ = flags_ignored_for_now5719
+			var body5720 any
 			if len(args) > 3 {
-				body5721 = lang.NewList(args[3:]...)
+				body5720 = lang.NewList(args[3:]...)
 			}
-			_ = body5721
-			tmp5722 := v_clojure_DOT_core_list.Get()
-			tmp5723 := v_clojure_DOT_core_list_STAR_.Get()
-			tmp5724 := lang.NewVector()
-			tmp5725 := lang.Apply3(tmp5723, sym_fn_STAR_, tmp5724, body5721)
-			tmp5726 := lang.Apply2(tmp5722, sym_clojure_DOT_core_SLASH__tx_run, tmp5725)
-			return tmp5726
+			_ = body5720
+			tmp5721 := v_clojure_DOT_core_list.Get()
+			tmp5722 := v_clojure_DOT_core_list_STAR_.Get()
+			tmp5723 := lang.NewVector()
+			tmp5724 := lang.Apply3(tmp5722, sym_fn_STAR_, tmp5723, body5720)
+			tmp5725 := lang.Apply2(tmp5721, sym_clojure_DOT_core_SLASH__tx_run, tmp5724)
+			return tmp5725
 		}
 	})
-	sync5716 = tmp5717
-	v_clojure_DOT_core_sync.BindRoot(tmp5717)
+	sync5715 = tmp5716
+	v_clojure_DOT_core_sync.BindRoot(tmp5716)
 	_ = v_clojure_DOT_core_sync
-	tmp5727 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5728 := lang.Apply1(tmp5727, v_clojure_DOT_core_sync)
-	_ = tmp5728
+	tmp5726 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5727 := lang.Apply1(tmp5726, v_clojure_DOT_core_sync)
+	_ = tmp5727
 	_ = v_clojure_DOT_core_sync
 	// (do (def amap (fn* amap ([&form &env a idx ret expr] (clojure.core/seq (clojure.core/conca…
 	v_clojure_DOT_core_amap.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1856), kw_column, int64(11), kw_end_line, int64(1856), kw_end_column, int64(15)))
-	var amap5729 any
-	_ = amap5729
-	tmp5730 := lang.FnFunc(func(args ...any) any {
+	var amap5728 any
+	_ = amap5728
+	tmp5729 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 6:
-			X_AMP_form5731 := args[0]
-			_ = X_AMP_form5731
-			X_AMP_env5732 := args[1]
-			_ = X_AMP_env5732
-			a5733 := args[2]
-			_ = a5733
-			idx5734 := args[3]
-			_ = idx5734
-			ret5735 := args[4]
-			_ = ret5735
-			expr5736 := args[5]
-			_ = expr5736
-			tmp5737 := v_clojure_DOT_core_seq.Get()
-			tmp5738 := v_clojure_DOT_core_concat.Get()
-			tmp5739 := v_clojure_DOT_core_list.Get()
-			tmp5740 := lang.Apply1(tmp5739, sym_clojure_DOT_core_SLASH_let)
-			tmp5741 := v_clojure_DOT_core_list.Get()
-			tmp5742 := v_clojure_DOT_core_apply.Get()
-			tmp5743 := v_clojure_DOT_core_vector.Get()
-			tmp5744 := v_clojure_DOT_core_seq.Get()
-			tmp5745 := v_clojure_DOT_core_concat.Get()
-			tmp5746 := v_clojure_DOT_core_list.Get()
-			tmp5747 := lang.Apply1(tmp5746, sym_a__17__auto__)
-			tmp5748 := v_clojure_DOT_core_list.Get()
-			tmp5749 := lang.Apply1(tmp5748, a5733)
-			tmp5750 := v_clojure_DOT_core_list.Get()
-			tmp5751 := lang.Apply1(tmp5750, sym_l__18__auto__)
-			tmp5752 := v_clojure_DOT_core_list.Get()
-			tmp5753 := v_clojure_DOT_core_seq.Get()
-			tmp5754 := v_clojure_DOT_core_concat.Get()
-			tmp5755 := v_clojure_DOT_core_list.Get()
-			tmp5756 := lang.Apply1(tmp5755, sym_clojure_DOT_core_SLASH_alength)
-			tmp5757 := v_clojure_DOT_core_list.Get()
-			tmp5758 := lang.Apply1(tmp5757, sym_a__17__auto__)
-			tmp5759 := lang.Apply2(tmp5754, tmp5756, tmp5758)
-			tmp5760 := lang.Apply1(tmp5753, tmp5759)
-			tmp5761 := lang.Apply1(tmp5752, tmp5760)
-			tmp5762 := v_clojure_DOT_core_list.Get()
-			tmp5763 := lang.Apply1(tmp5762, ret5735)
-			tmp5764 := v_clojure_DOT_core_list.Get()
-			tmp5765 := v_clojure_DOT_core_seq.Get()
-			tmp5766 := v_clojure_DOT_core_concat.Get()
-			tmp5767 := v_clojure_DOT_core_list.Get()
-			tmp5768 := lang.Apply1(tmp5767, sym_clojure_DOT_core_SLASH_aclone)
-			tmp5769 := v_clojure_DOT_core_list.Get()
-			tmp5770 := lang.Apply1(tmp5769, sym_a__17__auto__)
-			tmp5771 := lang.Apply2(tmp5766, tmp5768, tmp5770)
-			tmp5772 := lang.Apply1(tmp5765, tmp5771)
-			tmp5773 := lang.Apply1(tmp5764, tmp5772)
-			tmp5774 := lang.Apply(tmp5745, []any{tmp5747, tmp5749, tmp5751, tmp5761, tmp5763, tmp5773})
-			tmp5775 := lang.Apply1(tmp5744, tmp5774)
-			tmp5776 := lang.Apply2(tmp5742, tmp5743, tmp5775)
-			tmp5777 := lang.Apply1(tmp5741, tmp5776)
-			tmp5778 := v_clojure_DOT_core_list.Get()
-			tmp5779 := v_clojure_DOT_core_seq.Get()
-			tmp5780 := v_clojure_DOT_core_concat.Get()
-			tmp5781 := v_clojure_DOT_core_list.Get()
-			tmp5782 := lang.Apply1(tmp5781, sym_clojure_DOT_core_SLASH_loop)
-			tmp5783 := v_clojure_DOT_core_list.Get()
-			tmp5784 := v_clojure_DOT_core_apply.Get()
-			tmp5785 := v_clojure_DOT_core_vector.Get()
-			tmp5786 := v_clojure_DOT_core_seq.Get()
-			tmp5787 := v_clojure_DOT_core_concat.Get()
-			tmp5788 := v_clojure_DOT_core_list.Get()
-			tmp5789 := lang.Apply1(tmp5788, idx5734)
-			tmp5790 := v_clojure_DOT_core_list.Get()
-			tmp5791 := lang.Apply1(tmp5790, int64(0))
-			tmp5792 := lang.Apply2(tmp5787, tmp5789, tmp5791)
-			tmp5793 := lang.Apply1(tmp5786, tmp5792)
-			tmp5794 := lang.Apply2(tmp5784, tmp5785, tmp5793)
-			tmp5795 := lang.Apply1(tmp5783, tmp5794)
-			tmp5796 := v_clojure_DOT_core_list.Get()
-			tmp5797 := v_clojure_DOT_core_seq.Get()
-			tmp5798 := v_clojure_DOT_core_concat.Get()
-			tmp5799 := v_clojure_DOT_core_list.Get()
-			tmp5800 := lang.Apply1(tmp5799, sym_if_)
-			tmp5801 := v_clojure_DOT_core_list.Get()
-			tmp5802 := v_clojure_DOT_core_seq.Get()
-			tmp5803 := v_clojure_DOT_core_concat.Get()
-			tmp5804 := v_clojure_DOT_core_list.Get()
-			tmp5805 := lang.Apply1(tmp5804, sym_clojure_DOT_core_SLASH__LT_)
-			tmp5806 := v_clojure_DOT_core_list.Get()
-			tmp5807 := lang.Apply1(tmp5806, idx5734)
-			tmp5808 := v_clojure_DOT_core_list.Get()
-			tmp5809 := lang.Apply1(tmp5808, sym_l__18__auto__)
-			tmp5810 := lang.Apply3(tmp5803, tmp5805, tmp5807, tmp5809)
-			tmp5811 := lang.Apply1(tmp5802, tmp5810)
-			tmp5812 := lang.Apply1(tmp5801, tmp5811)
-			tmp5813 := v_clojure_DOT_core_list.Get()
-			tmp5814 := v_clojure_DOT_core_seq.Get()
-			tmp5815 := v_clojure_DOT_core_concat.Get()
-			tmp5816 := v_clojure_DOT_core_list.Get()
-			tmp5817 := lang.Apply1(tmp5816, sym_do)
-			tmp5818 := v_clojure_DOT_core_list.Get()
-			tmp5819 := v_clojure_DOT_core_seq.Get()
-			tmp5820 := v_clojure_DOT_core_concat.Get()
-			tmp5821 := v_clojure_DOT_core_list.Get()
-			tmp5822 := lang.Apply1(tmp5821, sym_clojure_DOT_core_SLASH_aset)
-			tmp5823 := v_clojure_DOT_core_list.Get()
-			tmp5824 := lang.Apply1(tmp5823, ret5735)
-			tmp5825 := v_clojure_DOT_core_list.Get()
-			tmp5826 := lang.Apply1(tmp5825, idx5734)
-			tmp5827 := v_clojure_DOT_core_list.Get()
-			tmp5828 := lang.Apply1(tmp5827, expr5736)
-			tmp5829 := lang.Apply4(tmp5820, tmp5822, tmp5824, tmp5826, tmp5828)
-			tmp5830 := lang.Apply1(tmp5819, tmp5829)
-			tmp5831 := lang.Apply1(tmp5818, tmp5830)
-			tmp5832 := v_clojure_DOT_core_list.Get()
-			tmp5833 := v_clojure_DOT_core_seq.Get()
-			tmp5834 := v_clojure_DOT_core_concat.Get()
-			tmp5835 := v_clojure_DOT_core_list.Get()
-			tmp5836 := lang.Apply1(tmp5835, sym_recur)
-			tmp5837 := v_clojure_DOT_core_list.Get()
-			tmp5838 := v_clojure_DOT_core_seq.Get()
-			tmp5839 := v_clojure_DOT_core_concat.Get()
-			tmp5840 := v_clojure_DOT_core_list.Get()
-			tmp5841 := lang.Apply1(tmp5840, sym_clojure_DOT_core_SLASH_inc)
-			tmp5842 := v_clojure_DOT_core_list.Get()
-			tmp5843 := lang.Apply1(tmp5842, idx5734)
-			tmp5844 := lang.Apply2(tmp5839, tmp5841, tmp5843)
-			tmp5845 := lang.Apply1(tmp5838, tmp5844)
-			tmp5846 := lang.Apply1(tmp5837, tmp5845)
-			tmp5847 := lang.Apply2(tmp5834, tmp5836, tmp5846)
-			tmp5848 := lang.Apply1(tmp5833, tmp5847)
-			tmp5849 := lang.Apply1(tmp5832, tmp5848)
-			tmp5850 := lang.Apply3(tmp5815, tmp5817, tmp5831, tmp5849)
-			tmp5851 := lang.Apply1(tmp5814, tmp5850)
-			tmp5852 := lang.Apply1(tmp5813, tmp5851)
-			tmp5853 := v_clojure_DOT_core_list.Get()
-			tmp5854 := lang.Apply1(tmp5853, ret5735)
-			tmp5855 := lang.Apply4(tmp5798, tmp5800, tmp5812, tmp5852, tmp5854)
-			tmp5856 := lang.Apply1(tmp5797, tmp5855)
-			tmp5857 := lang.Apply1(tmp5796, tmp5856)
-			tmp5858 := lang.Apply3(tmp5780, tmp5782, tmp5795, tmp5857)
-			tmp5859 := lang.Apply1(tmp5779, tmp5858)
-			tmp5860 := lang.Apply1(tmp5778, tmp5859)
-			tmp5861 := lang.Apply3(tmp5738, tmp5740, tmp5777, tmp5860)
-			tmp5862 := lang.Apply1(tmp5737, tmp5861)
-			return tmp5862
+			X_AMP_form5730 := args[0]
+			_ = X_AMP_form5730
+			X_AMP_env5731 := args[1]
+			_ = X_AMP_env5731
+			a5732 := args[2]
+			_ = a5732
+			idx5733 := args[3]
+			_ = idx5733
+			ret5734 := args[4]
+			_ = ret5734
+			expr5735 := args[5]
+			_ = expr5735
+			tmp5736 := v_clojure_DOT_core_seq.Get()
+			tmp5737 := v_clojure_DOT_core_concat.Get()
+			tmp5738 := v_clojure_DOT_core_list.Get()
+			tmp5739 := lang.Apply1(tmp5738, sym_clojure_DOT_core_SLASH_let)
+			tmp5740 := v_clojure_DOT_core_list.Get()
+			tmp5741 := v_clojure_DOT_core_apply.Get()
+			tmp5742 := v_clojure_DOT_core_vector.Get()
+			tmp5743 := v_clojure_DOT_core_seq.Get()
+			tmp5744 := v_clojure_DOT_core_concat.Get()
+			tmp5745 := v_clojure_DOT_core_list.Get()
+			tmp5746 := lang.Apply1(tmp5745, sym_a__17__auto__)
+			tmp5747 := v_clojure_DOT_core_list.Get()
+			tmp5748 := lang.Apply1(tmp5747, a5732)
+			tmp5749 := v_clojure_DOT_core_list.Get()
+			tmp5750 := lang.Apply1(tmp5749, sym_l__18__auto__)
+			tmp5751 := v_clojure_DOT_core_list.Get()
+			tmp5752 := v_clojure_DOT_core_seq.Get()
+			tmp5753 := v_clojure_DOT_core_concat.Get()
+			tmp5754 := v_clojure_DOT_core_list.Get()
+			tmp5755 := lang.Apply1(tmp5754, sym_clojure_DOT_core_SLASH_alength)
+			tmp5756 := v_clojure_DOT_core_list.Get()
+			tmp5757 := lang.Apply1(tmp5756, sym_a__17__auto__)
+			tmp5758 := lang.Apply2(tmp5753, tmp5755, tmp5757)
+			tmp5759 := lang.Apply1(tmp5752, tmp5758)
+			tmp5760 := lang.Apply1(tmp5751, tmp5759)
+			tmp5761 := v_clojure_DOT_core_list.Get()
+			tmp5762 := lang.Apply1(tmp5761, ret5734)
+			tmp5763 := v_clojure_DOT_core_list.Get()
+			tmp5764 := v_clojure_DOT_core_seq.Get()
+			tmp5765 := v_clojure_DOT_core_concat.Get()
+			tmp5766 := v_clojure_DOT_core_list.Get()
+			tmp5767 := lang.Apply1(tmp5766, sym_clojure_DOT_core_SLASH_aclone)
+			tmp5768 := v_clojure_DOT_core_list.Get()
+			tmp5769 := lang.Apply1(tmp5768, sym_a__17__auto__)
+			tmp5770 := lang.Apply2(tmp5765, tmp5767, tmp5769)
+			tmp5771 := lang.Apply1(tmp5764, tmp5770)
+			tmp5772 := lang.Apply1(tmp5763, tmp5771)
+			tmp5773 := lang.Apply(tmp5744, []any{tmp5746, tmp5748, tmp5750, tmp5760, tmp5762, tmp5772})
+			tmp5774 := lang.Apply1(tmp5743, tmp5773)
+			tmp5775 := lang.Apply2(tmp5741, tmp5742, tmp5774)
+			tmp5776 := lang.Apply1(tmp5740, tmp5775)
+			tmp5777 := v_clojure_DOT_core_list.Get()
+			tmp5778 := v_clojure_DOT_core_seq.Get()
+			tmp5779 := v_clojure_DOT_core_concat.Get()
+			tmp5780 := v_clojure_DOT_core_list.Get()
+			tmp5781 := lang.Apply1(tmp5780, sym_clojure_DOT_core_SLASH_loop)
+			tmp5782 := v_clojure_DOT_core_list.Get()
+			tmp5783 := v_clojure_DOT_core_apply.Get()
+			tmp5784 := v_clojure_DOT_core_vector.Get()
+			tmp5785 := v_clojure_DOT_core_seq.Get()
+			tmp5786 := v_clojure_DOT_core_concat.Get()
+			tmp5787 := v_clojure_DOT_core_list.Get()
+			tmp5788 := lang.Apply1(tmp5787, idx5733)
+			tmp5789 := v_clojure_DOT_core_list.Get()
+			tmp5790 := lang.Apply1(tmp5789, int64(0))
+			tmp5791 := lang.Apply2(tmp5786, tmp5788, tmp5790)
+			tmp5792 := lang.Apply1(tmp5785, tmp5791)
+			tmp5793 := lang.Apply2(tmp5783, tmp5784, tmp5792)
+			tmp5794 := lang.Apply1(tmp5782, tmp5793)
+			tmp5795 := v_clojure_DOT_core_list.Get()
+			tmp5796 := v_clojure_DOT_core_seq.Get()
+			tmp5797 := v_clojure_DOT_core_concat.Get()
+			tmp5798 := v_clojure_DOT_core_list.Get()
+			tmp5799 := lang.Apply1(tmp5798, sym_if_)
+			tmp5800 := v_clojure_DOT_core_list.Get()
+			tmp5801 := v_clojure_DOT_core_seq.Get()
+			tmp5802 := v_clojure_DOT_core_concat.Get()
+			tmp5803 := v_clojure_DOT_core_list.Get()
+			tmp5804 := lang.Apply1(tmp5803, sym_clojure_DOT_core_SLASH__LT_)
+			tmp5805 := v_clojure_DOT_core_list.Get()
+			tmp5806 := lang.Apply1(tmp5805, idx5733)
+			tmp5807 := v_clojure_DOT_core_list.Get()
+			tmp5808 := lang.Apply1(tmp5807, sym_l__18__auto__)
+			tmp5809 := lang.Apply3(tmp5802, tmp5804, tmp5806, tmp5808)
+			tmp5810 := lang.Apply1(tmp5801, tmp5809)
+			tmp5811 := lang.Apply1(tmp5800, tmp5810)
+			tmp5812 := v_clojure_DOT_core_list.Get()
+			tmp5813 := v_clojure_DOT_core_seq.Get()
+			tmp5814 := v_clojure_DOT_core_concat.Get()
+			tmp5815 := v_clojure_DOT_core_list.Get()
+			tmp5816 := lang.Apply1(tmp5815, sym_do)
+			tmp5817 := v_clojure_DOT_core_list.Get()
+			tmp5818 := v_clojure_DOT_core_seq.Get()
+			tmp5819 := v_clojure_DOT_core_concat.Get()
+			tmp5820 := v_clojure_DOT_core_list.Get()
+			tmp5821 := lang.Apply1(tmp5820, sym_clojure_DOT_core_SLASH_aset)
+			tmp5822 := v_clojure_DOT_core_list.Get()
+			tmp5823 := lang.Apply1(tmp5822, ret5734)
+			tmp5824 := v_clojure_DOT_core_list.Get()
+			tmp5825 := lang.Apply1(tmp5824, idx5733)
+			tmp5826 := v_clojure_DOT_core_list.Get()
+			tmp5827 := lang.Apply1(tmp5826, expr5735)
+			tmp5828 := lang.Apply4(tmp5819, tmp5821, tmp5823, tmp5825, tmp5827)
+			tmp5829 := lang.Apply1(tmp5818, tmp5828)
+			tmp5830 := lang.Apply1(tmp5817, tmp5829)
+			tmp5831 := v_clojure_DOT_core_list.Get()
+			tmp5832 := v_clojure_DOT_core_seq.Get()
+			tmp5833 := v_clojure_DOT_core_concat.Get()
+			tmp5834 := v_clojure_DOT_core_list.Get()
+			tmp5835 := lang.Apply1(tmp5834, sym_recur)
+			tmp5836 := v_clojure_DOT_core_list.Get()
+			tmp5837 := v_clojure_DOT_core_seq.Get()
+			tmp5838 := v_clojure_DOT_core_concat.Get()
+			tmp5839 := v_clojure_DOT_core_list.Get()
+			tmp5840 := lang.Apply1(tmp5839, sym_clojure_DOT_core_SLASH_inc)
+			tmp5841 := v_clojure_DOT_core_list.Get()
+			tmp5842 := lang.Apply1(tmp5841, idx5733)
+			tmp5843 := lang.Apply2(tmp5838, tmp5840, tmp5842)
+			tmp5844 := lang.Apply1(tmp5837, tmp5843)
+			tmp5845 := lang.Apply1(tmp5836, tmp5844)
+			tmp5846 := lang.Apply2(tmp5833, tmp5835, tmp5845)
+			tmp5847 := lang.Apply1(tmp5832, tmp5846)
+			tmp5848 := lang.Apply1(tmp5831, tmp5847)
+			tmp5849 := lang.Apply3(tmp5814, tmp5816, tmp5830, tmp5848)
+			tmp5850 := lang.Apply1(tmp5813, tmp5849)
+			tmp5851 := lang.Apply1(tmp5812, tmp5850)
+			tmp5852 := v_clojure_DOT_core_list.Get()
+			tmp5853 := lang.Apply1(tmp5852, ret5734)
+			tmp5854 := lang.Apply4(tmp5797, tmp5799, tmp5811, tmp5851, tmp5853)
+			tmp5855 := lang.Apply1(tmp5796, tmp5854)
+			tmp5856 := lang.Apply1(tmp5795, tmp5855)
+			tmp5857 := lang.Apply3(tmp5779, tmp5781, tmp5794, tmp5856)
+			tmp5858 := lang.Apply1(tmp5778, tmp5857)
+			tmp5859 := lang.Apply1(tmp5777, tmp5858)
+			tmp5860 := lang.Apply3(tmp5737, tmp5739, tmp5776, tmp5859)
+			tmp5861 := lang.Apply1(tmp5736, tmp5860)
+			return tmp5861
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/amap", "6: [&form &env a idx ret expr]"))
 		}
 	})
-	amap5729 = tmp5730
-	v_clojure_DOT_core_amap.BindRoot(tmp5730)
+	amap5728 = tmp5729
+	v_clojure_DOT_core_amap.BindRoot(tmp5729)
 	_ = v_clojure_DOT_core_amap
-	tmp5863 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5864 := lang.Apply1(tmp5863, v_clojure_DOT_core_amap)
-	_ = tmp5864
+	tmp5862 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5863 := lang.Apply1(tmp5862, v_clojure_DOT_core_amap)
+	_ = tmp5863
 	_ = v_clojure_DOT_core_amap
 	// (do (def areduce (fn* areduce ([&form &env a idx ret init expr] (clojure.core/seq (clojure…
 	v_clojure_DOT_core_areduce.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1872), kw_column, int64(11), kw_end_line, int64(1872), kw_end_column, int64(18)))
-	var areduce5865 any
-	_ = areduce5865
-	tmp5866 := lang.FnFunc(func(args ...any) any {
+	var areduce5864 any
+	_ = areduce5864
+	tmp5865 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 7:
-			X_AMP_form5867 := args[0]
-			_ = X_AMP_form5867
-			X_AMP_env5868 := args[1]
-			_ = X_AMP_env5868
-			a5869 := args[2]
-			_ = a5869
-			idx5870 := args[3]
-			_ = idx5870
-			ret5871 := args[4]
-			_ = ret5871
-			init5872 := args[5]
-			_ = init5872
-			expr5873 := args[6]
-			_ = expr5873
-			tmp5874 := v_clojure_DOT_core_seq.Get()
-			tmp5875 := v_clojure_DOT_core_concat.Get()
-			tmp5876 := v_clojure_DOT_core_list.Get()
-			tmp5877 := lang.Apply1(tmp5876, sym_clojure_DOT_core_SLASH_let)
-			tmp5878 := v_clojure_DOT_core_list.Get()
-			tmp5879 := v_clojure_DOT_core_apply.Get()
-			tmp5880 := v_clojure_DOT_core_vector.Get()
-			tmp5881 := v_clojure_DOT_core_seq.Get()
-			tmp5882 := v_clojure_DOT_core_concat.Get()
-			tmp5883 := v_clojure_DOT_core_list.Get()
-			tmp5884 := lang.Apply1(tmp5883, sym_a__19__auto__)
-			tmp5885 := v_clojure_DOT_core_list.Get()
-			tmp5886 := lang.Apply1(tmp5885, a5869)
-			tmp5887 := v_clojure_DOT_core_list.Get()
-			tmp5888 := lang.Apply1(tmp5887, sym_l__20__auto__)
-			tmp5889 := v_clojure_DOT_core_list.Get()
-			tmp5890 := v_clojure_DOT_core_seq.Get()
-			tmp5891 := v_clojure_DOT_core_concat.Get()
-			tmp5892 := v_clojure_DOT_core_list.Get()
-			tmp5893 := lang.Apply1(tmp5892, sym_clojure_DOT_core_SLASH_alength)
-			tmp5894 := v_clojure_DOT_core_list.Get()
-			tmp5895 := lang.Apply1(tmp5894, sym_a__19__auto__)
-			tmp5896 := lang.Apply2(tmp5891, tmp5893, tmp5895)
-			tmp5897 := lang.Apply1(tmp5890, tmp5896)
-			tmp5898 := lang.Apply1(tmp5889, tmp5897)
-			tmp5899 := lang.Apply4(tmp5882, tmp5884, tmp5886, tmp5888, tmp5898)
-			tmp5900 := lang.Apply1(tmp5881, tmp5899)
-			tmp5901 := lang.Apply2(tmp5879, tmp5880, tmp5900)
-			tmp5902 := lang.Apply1(tmp5878, tmp5901)
-			tmp5903 := v_clojure_DOT_core_list.Get()
-			tmp5904 := v_clojure_DOT_core_seq.Get()
-			tmp5905 := v_clojure_DOT_core_concat.Get()
-			tmp5906 := v_clojure_DOT_core_list.Get()
-			tmp5907 := lang.Apply1(tmp5906, sym_clojure_DOT_core_SLASH_loop)
-			tmp5908 := v_clojure_DOT_core_list.Get()
-			tmp5909 := v_clojure_DOT_core_apply.Get()
-			tmp5910 := v_clojure_DOT_core_vector.Get()
-			tmp5911 := v_clojure_DOT_core_seq.Get()
-			tmp5912 := v_clojure_DOT_core_concat.Get()
-			tmp5913 := v_clojure_DOT_core_list.Get()
-			tmp5914 := lang.Apply1(tmp5913, idx5870)
-			tmp5915 := v_clojure_DOT_core_list.Get()
-			tmp5916 := lang.Apply1(tmp5915, int64(0))
-			tmp5917 := v_clojure_DOT_core_list.Get()
-			tmp5918 := lang.Apply1(tmp5917, ret5871)
-			tmp5919 := v_clojure_DOT_core_list.Get()
-			tmp5920 := lang.Apply1(tmp5919, init5872)
-			tmp5921 := lang.Apply4(tmp5912, tmp5914, tmp5916, tmp5918, tmp5920)
-			tmp5922 := lang.Apply1(tmp5911, tmp5921)
-			tmp5923 := lang.Apply2(tmp5909, tmp5910, tmp5922)
-			tmp5924 := lang.Apply1(tmp5908, tmp5923)
-			tmp5925 := v_clojure_DOT_core_list.Get()
-			tmp5926 := v_clojure_DOT_core_seq.Get()
-			tmp5927 := v_clojure_DOT_core_concat.Get()
-			tmp5928 := v_clojure_DOT_core_list.Get()
-			tmp5929 := lang.Apply1(tmp5928, sym_if_)
-			tmp5930 := v_clojure_DOT_core_list.Get()
-			tmp5931 := v_clojure_DOT_core_seq.Get()
-			tmp5932 := v_clojure_DOT_core_concat.Get()
-			tmp5933 := v_clojure_DOT_core_list.Get()
-			tmp5934 := lang.Apply1(tmp5933, sym_clojure_DOT_core_SLASH__LT_)
-			tmp5935 := v_clojure_DOT_core_list.Get()
-			tmp5936 := lang.Apply1(tmp5935, idx5870)
-			tmp5937 := v_clojure_DOT_core_list.Get()
-			tmp5938 := lang.Apply1(tmp5937, sym_l__20__auto__)
-			tmp5939 := lang.Apply3(tmp5932, tmp5934, tmp5936, tmp5938)
-			tmp5940 := lang.Apply1(tmp5931, tmp5939)
-			tmp5941 := lang.Apply1(tmp5930, tmp5940)
-			tmp5942 := v_clojure_DOT_core_list.Get()
-			tmp5943 := v_clojure_DOT_core_seq.Get()
-			tmp5944 := v_clojure_DOT_core_concat.Get()
-			tmp5945 := v_clojure_DOT_core_list.Get()
-			tmp5946 := lang.Apply1(tmp5945, sym_recur)
-			tmp5947 := v_clojure_DOT_core_list.Get()
-			tmp5948 := v_clojure_DOT_core_seq.Get()
-			tmp5949 := v_clojure_DOT_core_concat.Get()
-			tmp5950 := v_clojure_DOT_core_list.Get()
-			tmp5951 := lang.Apply1(tmp5950, sym_clojure_DOT_core_SLASH_inc)
-			tmp5952 := v_clojure_DOT_core_list.Get()
-			tmp5953 := lang.Apply1(tmp5952, idx5870)
-			tmp5954 := lang.Apply2(tmp5949, tmp5951, tmp5953)
-			tmp5955 := lang.Apply1(tmp5948, tmp5954)
-			tmp5956 := lang.Apply1(tmp5947, tmp5955)
-			tmp5957 := v_clojure_DOT_core_list.Get()
-			tmp5958 := lang.Apply1(tmp5957, expr5873)
-			tmp5959 := lang.Apply3(tmp5944, tmp5946, tmp5956, tmp5958)
-			tmp5960 := lang.Apply1(tmp5943, tmp5959)
-			tmp5961 := lang.Apply1(tmp5942, tmp5960)
-			tmp5962 := v_clojure_DOT_core_list.Get()
-			tmp5963 := lang.Apply1(tmp5962, ret5871)
-			tmp5964 := lang.Apply4(tmp5927, tmp5929, tmp5941, tmp5961, tmp5963)
-			tmp5965 := lang.Apply1(tmp5926, tmp5964)
-			tmp5966 := lang.Apply1(tmp5925, tmp5965)
-			tmp5967 := lang.Apply3(tmp5905, tmp5907, tmp5924, tmp5966)
-			tmp5968 := lang.Apply1(tmp5904, tmp5967)
-			tmp5969 := lang.Apply1(tmp5903, tmp5968)
-			tmp5970 := lang.Apply3(tmp5875, tmp5877, tmp5902, tmp5969)
-			tmp5971 := lang.Apply1(tmp5874, tmp5970)
-			return tmp5971
+			X_AMP_form5866 := args[0]
+			_ = X_AMP_form5866
+			X_AMP_env5867 := args[1]
+			_ = X_AMP_env5867
+			a5868 := args[2]
+			_ = a5868
+			idx5869 := args[3]
+			_ = idx5869
+			ret5870 := args[4]
+			_ = ret5870
+			init5871 := args[5]
+			_ = init5871
+			expr5872 := args[6]
+			_ = expr5872
+			tmp5873 := v_clojure_DOT_core_seq.Get()
+			tmp5874 := v_clojure_DOT_core_concat.Get()
+			tmp5875 := v_clojure_DOT_core_list.Get()
+			tmp5876 := lang.Apply1(tmp5875, sym_clojure_DOT_core_SLASH_let)
+			tmp5877 := v_clojure_DOT_core_list.Get()
+			tmp5878 := v_clojure_DOT_core_apply.Get()
+			tmp5879 := v_clojure_DOT_core_vector.Get()
+			tmp5880 := v_clojure_DOT_core_seq.Get()
+			tmp5881 := v_clojure_DOT_core_concat.Get()
+			tmp5882 := v_clojure_DOT_core_list.Get()
+			tmp5883 := lang.Apply1(tmp5882, sym_a__19__auto__)
+			tmp5884 := v_clojure_DOT_core_list.Get()
+			tmp5885 := lang.Apply1(tmp5884, a5868)
+			tmp5886 := v_clojure_DOT_core_list.Get()
+			tmp5887 := lang.Apply1(tmp5886, sym_l__20__auto__)
+			tmp5888 := v_clojure_DOT_core_list.Get()
+			tmp5889 := v_clojure_DOT_core_seq.Get()
+			tmp5890 := v_clojure_DOT_core_concat.Get()
+			tmp5891 := v_clojure_DOT_core_list.Get()
+			tmp5892 := lang.Apply1(tmp5891, sym_clojure_DOT_core_SLASH_alength)
+			tmp5893 := v_clojure_DOT_core_list.Get()
+			tmp5894 := lang.Apply1(tmp5893, sym_a__19__auto__)
+			tmp5895 := lang.Apply2(tmp5890, tmp5892, tmp5894)
+			tmp5896 := lang.Apply1(tmp5889, tmp5895)
+			tmp5897 := lang.Apply1(tmp5888, tmp5896)
+			tmp5898 := lang.Apply4(tmp5881, tmp5883, tmp5885, tmp5887, tmp5897)
+			tmp5899 := lang.Apply1(tmp5880, tmp5898)
+			tmp5900 := lang.Apply2(tmp5878, tmp5879, tmp5899)
+			tmp5901 := lang.Apply1(tmp5877, tmp5900)
+			tmp5902 := v_clojure_DOT_core_list.Get()
+			tmp5903 := v_clojure_DOT_core_seq.Get()
+			tmp5904 := v_clojure_DOT_core_concat.Get()
+			tmp5905 := v_clojure_DOT_core_list.Get()
+			tmp5906 := lang.Apply1(tmp5905, sym_clojure_DOT_core_SLASH_loop)
+			tmp5907 := v_clojure_DOT_core_list.Get()
+			tmp5908 := v_clojure_DOT_core_apply.Get()
+			tmp5909 := v_clojure_DOT_core_vector.Get()
+			tmp5910 := v_clojure_DOT_core_seq.Get()
+			tmp5911 := v_clojure_DOT_core_concat.Get()
+			tmp5912 := v_clojure_DOT_core_list.Get()
+			tmp5913 := lang.Apply1(tmp5912, idx5869)
+			tmp5914 := v_clojure_DOT_core_list.Get()
+			tmp5915 := lang.Apply1(tmp5914, int64(0))
+			tmp5916 := v_clojure_DOT_core_list.Get()
+			tmp5917 := lang.Apply1(tmp5916, ret5870)
+			tmp5918 := v_clojure_DOT_core_list.Get()
+			tmp5919 := lang.Apply1(tmp5918, init5871)
+			tmp5920 := lang.Apply4(tmp5911, tmp5913, tmp5915, tmp5917, tmp5919)
+			tmp5921 := lang.Apply1(tmp5910, tmp5920)
+			tmp5922 := lang.Apply2(tmp5908, tmp5909, tmp5921)
+			tmp5923 := lang.Apply1(tmp5907, tmp5922)
+			tmp5924 := v_clojure_DOT_core_list.Get()
+			tmp5925 := v_clojure_DOT_core_seq.Get()
+			tmp5926 := v_clojure_DOT_core_concat.Get()
+			tmp5927 := v_clojure_DOT_core_list.Get()
+			tmp5928 := lang.Apply1(tmp5927, sym_if_)
+			tmp5929 := v_clojure_DOT_core_list.Get()
+			tmp5930 := v_clojure_DOT_core_seq.Get()
+			tmp5931 := v_clojure_DOT_core_concat.Get()
+			tmp5932 := v_clojure_DOT_core_list.Get()
+			tmp5933 := lang.Apply1(tmp5932, sym_clojure_DOT_core_SLASH__LT_)
+			tmp5934 := v_clojure_DOT_core_list.Get()
+			tmp5935 := lang.Apply1(tmp5934, idx5869)
+			tmp5936 := v_clojure_DOT_core_list.Get()
+			tmp5937 := lang.Apply1(tmp5936, sym_l__20__auto__)
+			tmp5938 := lang.Apply3(tmp5931, tmp5933, tmp5935, tmp5937)
+			tmp5939 := lang.Apply1(tmp5930, tmp5938)
+			tmp5940 := lang.Apply1(tmp5929, tmp5939)
+			tmp5941 := v_clojure_DOT_core_list.Get()
+			tmp5942 := v_clojure_DOT_core_seq.Get()
+			tmp5943 := v_clojure_DOT_core_concat.Get()
+			tmp5944 := v_clojure_DOT_core_list.Get()
+			tmp5945 := lang.Apply1(tmp5944, sym_recur)
+			tmp5946 := v_clojure_DOT_core_list.Get()
+			tmp5947 := v_clojure_DOT_core_seq.Get()
+			tmp5948 := v_clojure_DOT_core_concat.Get()
+			tmp5949 := v_clojure_DOT_core_list.Get()
+			tmp5950 := lang.Apply1(tmp5949, sym_clojure_DOT_core_SLASH_inc)
+			tmp5951 := v_clojure_DOT_core_list.Get()
+			tmp5952 := lang.Apply1(tmp5951, idx5869)
+			tmp5953 := lang.Apply2(tmp5948, tmp5950, tmp5952)
+			tmp5954 := lang.Apply1(tmp5947, tmp5953)
+			tmp5955 := lang.Apply1(tmp5946, tmp5954)
+			tmp5956 := v_clojure_DOT_core_list.Get()
+			tmp5957 := lang.Apply1(tmp5956, expr5872)
+			tmp5958 := lang.Apply3(tmp5943, tmp5945, tmp5955, tmp5957)
+			tmp5959 := lang.Apply1(tmp5942, tmp5958)
+			tmp5960 := lang.Apply1(tmp5941, tmp5959)
+			tmp5961 := v_clojure_DOT_core_list.Get()
+			tmp5962 := lang.Apply1(tmp5961, ret5870)
+			tmp5963 := lang.Apply4(tmp5926, tmp5928, tmp5940, tmp5960, tmp5962)
+			tmp5964 := lang.Apply1(tmp5925, tmp5963)
+			tmp5965 := lang.Apply1(tmp5924, tmp5964)
+			tmp5966 := lang.Apply3(tmp5904, tmp5906, tmp5923, tmp5965)
+			tmp5967 := lang.Apply1(tmp5903, tmp5966)
+			tmp5968 := lang.Apply1(tmp5902, tmp5967)
+			tmp5969 := lang.Apply3(tmp5874, tmp5876, tmp5901, tmp5968)
+			tmp5970 := lang.Apply1(tmp5873, tmp5969)
+			return tmp5970
 		default:
 			panic(lang.NewArityError(len(args), "clojure.core/areduce", "7: [&form &env a idx ret init expr]"))
 		}
 	})
-	areduce5865 = tmp5866
-	v_clojure_DOT_core_areduce.BindRoot(tmp5866)
+	areduce5864 = tmp5865
+	v_clojure_DOT_core_areduce.BindRoot(tmp5865)
 	_ = v_clojure_DOT_core_areduce
-	tmp5972 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
-	tmp5973 := lang.Apply1(tmp5972, v_clojure_DOT_core_areduce)
-	_ = tmp5973
+	tmp5971 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
+	tmp5972 := lang.Apply1(tmp5971, v_clojure_DOT_core_areduce)
+	_ = tmp5972
 	_ = v_clojure_DOT_core_areduce
 }
