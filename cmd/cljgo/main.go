@@ -22,6 +22,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/build"
 	"github.com/muthuishere/cljgo/pkg/deps"
 	"github.com/muthuishere/cljgo/pkg/emit"
+	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/repl"
 	"github.com/muthuishere/cljgo/pkg/version"
 )
@@ -54,11 +55,11 @@ func run(args []string) int {
 	case "nrepl":
 		return runNREPL(args[1:])
 	case "run":
-		if len(args) != 2 {
-			fmt.Fprintln(os.Stderr, "usage: cljgo run <file.clj>")
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "usage: cljgo run <file.clj> [args...]")
 			return 2
 		}
-		return runFile(args[1])
+		return runFile(args[1], args[2:])
 	case "build":
 		return runBuild(args[1:])
 	case "publish":
@@ -115,7 +116,18 @@ func runREPL() int {
 	return 0
 }
 
-func runFile(path string) int {
+func runFile(path string, cliArgs []string) int {
+	// *command-line-args*: everything after the file, or nil when none —
+	// the clojure.main contract (fundamentals batch A1). Bound as the root
+	// so the whole evaluation (and any goroutines) sees it; the emitted
+	// func main() does the same from os.Args[1:] for REPL-vs-binary parity.
+	if len(cliArgs) > 0 {
+		vals := make([]any, len(cliArgs))
+		for i, a := range cliArgs {
+			vals[i] = a
+		}
+		lang.VarCommandLineArgs.BindRoot(lang.NewList(vals...))
+	}
 	f, err := os.Open(path)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
