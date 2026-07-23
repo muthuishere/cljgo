@@ -56,6 +56,8 @@ func specs() []nsSpec {
 		{name: "bri.http", file: "bri/http.cljg", source: &core.BriHTTPSource, install: installHTTPShims},
 		{name: "bri.html", file: "bri/html.cljg", source: &core.BriHTMLSource, install: nil},
 		{name: "bri.config", file: "bri/config.cljg", source: &core.BriConfigSource, install: installConfigShims},
+		{name: "bri.audit", file: "bri/audit.cljg", source: &core.BriAuditSource, install: installAuditShims},
+		{name: "bri.auth", file: "bri/auth.cljg", source: &core.BriAuthSource, install: installAuthShims},
 	}
 }
 

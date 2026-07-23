@@ -1,12 +1,31 @@
 ;; The generated test: bri's IN-PROCESS http test client (no socket)
-;; against the app's own routes. Run it with `cljgo test`.
+;; against the app's own routes — the HTML page AND the JWT-secured API.
+;; Run it with `cljgo test`.
 (ns app.main-test
   (:require [clojure.test :refer [deftest is]]
             [clojure.string :as str]
             [bri.http :as http]
+            [bri.auth :as auth]
             [app.main :as main]))
+
+(def stack (http/api-defaults))
 
 (deftest home-page-renders
   (let [res (http/request main/routes {:method "GET" :path "/"})]
     (is (= 200 (:status res)))
     (is (str/includes? (:body res) "alive."))))
+
+(deftest api-hello-is-json
+  (let [res (http/request main/routes {:method "GET" :path "/api/hello"} {:middleware stack})]
+    (is (= 200 (:status res)))
+    (is (str/includes? (:body res) "hello from the API"))))
+
+(deftest admin-route-is-guarded
+  ;; No token → 401 (RFC 6750); a valid admin token → 200.
+  (is (= 401 (:status (http/request main/routes {:method "GET" :path "/api/admin"}
+                                    {:middleware stack}))))
+  (let [tok (auth/issue "admin" {:role "admin"})
+        res (http/request main/routes {:method "GET" :path "/api/admin"
+                                       :headers {"authorization" (str "Bearer " tok)}}
+                          {:middleware stack})]
+    (is (= 200 (:status res)))))

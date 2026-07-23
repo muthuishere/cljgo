@@ -326,10 +326,10 @@
 
 (defn ^:private warn-custom-stack [stack]
   (let [names (set (stack-names stack))]
-    (doseq [required [:recover :csrf]]
-      (when-not (contains? names required)
-        (println (str "bri.http WARNING: custom :middleware stack lacks " required
-                      " — the safe default stack includes it (see (bri.http/defaults))"))))))
+    (when-not (contains? names :recover)
+      (println (str "bri.http WARNING: custom :middleware stack lacks :recover"
+                    " — the safe default stacks include it (see (bri.http/defaults)"
+                    " / (bri.http/api-defaults))")))))
 
 ;; --- routes → mounted handlers -----------------------------------------------
 (defn ^:private wrap-stack [stack handler]
@@ -400,6 +400,444 @@
                                   "\n")))
                          routes)))))
 
+;; ============================================================================
+;; The Compojure-style router surface (ADR 0069). Bare verb forms are the
+;; PRIMARY way to write routes; they are PURE SUGAR that lowers to the same
+;; [["METHOD /path" handler] ...] data the low-level engine already mounts —
+;; ONE router (ADR 0041), no second one. `cljgo routes` prints the resolved
+;; table for every form.
+;; ============================================================================
+
+;; --- middleware normalization (the public contract) -------------------------
+;; Middleware is `handler -> handler`; a handler is `request -> response`.
+;; A middleware value is either that bare fn OR a {:name kw :wrap fn} map
+;; (so it shows a name in `cljgo routes`). ->mw normalizes either; USER
+;; middleware and built-ins are the SAME type and compose identically.
+(defn ^:private ->mw [m] (if (and (map? m) (contains? m :wrap)) m {:wrap m}))
+(defn ^:private ->mws [mw] (cond (nil? mw) [] (vector? mw) mw :else [mw]))
+
+(defn wrap-request
+  "Write a middleware that pre-processes the request in ~1 line: (f req)
+  returns a new request (threaded on) OR a response map with :status
+  (short-circuits before the handler)."
+  [f]
+  (fn [handler]
+    (fn [req]
+      (let [r (f req)]
+        (if (and (map? r) (contains? r :status)) r (handler r))))))
+
+(defn wrap-response
+  "Write a middleware that post-processes the response: (f response) ->
+  response."
+  [f]
+  (fn [handler] (fn [req] (f (handler req)))))
+
+;; --- one route: bare verb forms ---------------------------------------------
+(defn ^:private opts-arg?
+  "A route-options map ({:name .. :as ..}) — distinguished from a
+  middleware map by the ABSENCE of :wrap."
+  [x]
+  (and (map? x) (not (contains? x :wrap)) (or (contains? x :name) (contains? x :as))))
+
+(defn ^:private wrap-handler [mw pat handler]
+  (let [mws (->mws mw)]
+    (if (empty? mws)
+      handler ; no per-route mw: keep the #'var live (mount derefs per request)
+      (managed (wrap-stack (mapv ->mw mws) (base-handler pat handler))))))
+
+(defn ^:private make-route
+  "Build a routes value (a 1-route vector) from (method path [opts] [mw]
+  handler). Last arg is the handler; an optional {:name ..} opts map and
+  an optional middleware (fn | vector | {:wrap} map) may precede it in
+  any order. ANY drops the method prefix (ServeMux matches all methods)."
+  [method path args]
+  (let [handler (last args)
+        lead    (vec (butlast args))
+        opts    (first (filter opts-arg? lead))
+        mw      (first (remove opts-arg? lead))
+        pat     (if (= method "ANY") path (str method " " path))
+        h       (wrap-handler mw pat handler)]
+    (if opts
+      [[pat h (select-keys opts [:name :as])]]
+      [[pat h]])))
+
+(defn GET     [path & args] (make-route "GET" path args))
+(defn POST    [path & args] (make-route "POST" path args))
+(defn PUT     [path & args] (make-route "PUT" path args))
+(defn PATCH   [path & args] (make-route "PATCH" path args))
+(defn DELETE  [path & args] (make-route "DELETE" path args))
+(defn HEAD    [path & args] (make-route "HEAD" path args))
+(defn OPTIONS [path & args] (make-route "OPTIONS" path args))
+(defn ANY     [path & args] (make-route "ANY" path args))
+
+;; --- composition: routes / defroutes / defroute / wrap / context ------------
+(def ^:private route-registry (atom []))
+(defn ^:private register-routes! [rts] (reset! route-registry rts) rts)
+
+(defn ^:private route-entry?
+  "A single route entry: a vector whose head is the \"METHOD /path\"
+  string. (A routes VALUE is a vector of these.)"
+  [x]
+  (and (vector? x) (string? (first x))))
+
+(defn ^:private entries-of
+  "Flatten any mix of route entries, route values, and SEQS of them (a
+  `for`/`map` over data) into a flat seq of entries — the functional
+  win: routes are plain values, so you build them with ordinary Clojure."
+  [x]
+  (cond
+    (nil? x)          []
+    (route-entry? x)  [x]
+    (sequential? x)   (mapcat entries-of x)
+    (seq? x)          (mapcat entries-of x)
+    :else (throw (ex-info (str "not a route/routes value: " (pr-str x))
+                          {:bri/error :http/bad-param}))))
+
+(defn ^:private normalize [x] (vec (entries-of x)))
+
+(defn routes
+  "Concatenate route values into one routes value. Each verb form yields
+  a routes value, and arguments may be SEQS of route values (built by
+  `for`/`map` over data), so (routes (for [...] (GET ...)) (GET ...))
+  combines data-generated and literal routes uniformly. This is the value
+  http/serve takes."
+  [& values]
+  (vec (mapcat entries-of values)))
+
+(defn ^:private resolve-routes
+  "Deref a routes var/fn so a re-def of the routes var hot-swaps the table
+  (the REPL-liveness edge), mirroring live handler vars."
+  [rts]
+  (cond (var? rts) (recur (deref rts))
+        (fn? rts)  (recur (rts))
+        :else      (normalize rts)))
+
+(defmacro defroutes
+  "Name a routes value (Compojure). (defroutes api (GET ...) (POST ...))."
+  [nm & forms]
+  `(def ~nm (routes ~@forms)))
+
+(defmacro defroute
+  "Name a SINGLE route value so it can be reused/tested in isolation and
+  spliced anywhere a route goes. (defroute item (GET \"/items/{id}\" #'show))."
+  [nm form]
+  `(def ~nm ~form))
+
+(defn ^:private split-pattern [pat]
+  (let [i (str/index-of pat " ")]
+    (if i [(subs pat 0 i) (subs pat (inc i))] [nil pat])))
+
+(defn wrap
+  "Apply middleware onto EVERY route in a value (group scope). Same
+  ordered handler->handler mechanism as route-level and global; outermost
+  first. (wrap admin (auth/admin-only) (rate-limit 20))."
+  [rts & mws]
+  (let [stk (mapv ->mw mws)]
+    (mapv (fn [route]
+            (let [pat (nth route 0) h (nth route 1) m (get route 2)
+                  h'  (managed (wrap-stack stk (base-handler pat h)))]
+              (if m [pat h' m] [pat h'])))
+          (normalize rts))))
+
+(defn context
+  "Mount route values under a path prefix with shared middleware
+  (Compojure `context`). (context \"/api/v1\" [(auth/logged-in-only)] api
+  (GET \"/me\" #'me))."
+  [prefix mws & values]
+  (let [rts (apply routes values)
+        stk (mapv ->mw mws)]
+    (mapv (fn [route]
+            (let [pat (nth route 0) h (nth route 1) m (get route 2)
+                  [method path] (split-pattern pat)
+                  pat' (if method (str method " " prefix path) (str prefix pat))
+                  h'   (if (empty? stk) h (managed (wrap-stack stk (base-handler pat h))))]
+              (if m [pat' h' m] [pat' h'])))
+          rts)))
+
+;; --- extend / shrink an app value at runtime (immutable, by value) ----------
+;; First-class and composable: add/remove return NEW values, compose with
+;; routes/wrap/context, and — when serve holds the app behind a #'var —
+;; re-defing that var hot-swaps the live table (routes are just data).
+(defn add-route
+  "Append one route value to an app value, returning a NEW value.
+  (add-route app (GET \"/new\" #'new))."
+  [app route]
+  (vec (concat (normalize app) (normalize route))))
+
+(defn add-routes
+  "Splice more route values (or seqs of them) into an app value."
+  [app & more]
+  (apply routes (normalize app) more))
+
+(defn ^:private matches-target? [entry target]
+  (let [pat (nth entry 0) m (get entry 2)]
+    (cond
+      (keyword? target) (= target (:name m))
+      (string? target)  (or (= target pat)                          ; "GET /x"
+                            (= target (second (split-pattern pat)))) ; "/x" (any method)
+      :else false)))
+
+(defn remove-route
+  "Drop a route from an app value by :name (keyword) or by method+path
+  (\"GET /items/{id}\") or path (\"/items/{id}\"). Returns a new value."
+  [app target]
+  (vec (remove (fn [e] (matches-target? e target)) (normalize app))))
+
+(defn remove-routes
+  "Drop several routes by name/path in one call. (remove-routes app :item \"/admin\")."
+  [app & targets]
+  (reduce remove-route (normalize app) targets))
+
+;; --- named routes + reverse routing (path-for / url-for) --------------------
+(defn ^:private path-of-named [rts nm]
+  (some (fn [route]
+          (when (= nm (:name (get route 2)))
+            (second (split-pattern (nth route 0)))))
+        rts))
+
+(defn ^:private fill-path [pat params]
+  ;; ServeMux path params are whole segments (/{id}, /{path...}); fill
+  ;; each {name} segment, url-encoding the value.
+  (str/join "/"
+            (map (fn [seg]
+                   (if (and (str/starts-with? seg "{") (str/ends-with? seg "}"))
+                     (let [raw (subs seg 1 (dec (count seg)))
+                           kw  (keyword (str/replace raw #"(\.\.\.|\$)$" ""))
+                           v   (get params kw)]
+                       (when (nil? v)
+                         (throw (ex-info (str "path-for: missing param " kw " for " (pr-str pat))
+                                         {:bri/error :http/bad-param :param kw})))
+                       (-path-escape (str v)))
+                     seg))
+                 (str/split pat #"/"))))
+
+(defn path-for
+  "Reverse routing: the URL path for a NAMED route, params filled +
+  encoded — no hardcoded path strings. (path-for :item {:id 5}) =>
+  \"/items/5\". Resolves against the served route table by default; pass
+  a routes value first to resolve elsewhere. Throws (diagnostic) on an
+  unknown name or missing param."
+  ([nm params] (path-for @route-registry nm params))
+  ([rts nm params]
+   (let [pat (path-of-named rts nm)]
+     (when (nil? pat)
+       (throw (ex-info (str "path-for: unknown route name " (pr-str nm))
+                       {:bri/error :http/bad-param :name nm})))
+     (fill-path pat params))))
+
+(defn url-for
+  "path-for plus a query string. (url-for :item {:id 5} {:q \"x\"}) =>
+  \"/items/5?q=x\"."
+  ([nm params] (path-for nm params))
+  ([nm params query]
+   (let [p (path-for nm params)]
+     (if (seq query)
+       (str p "?" (str/join "&" (map (fn [kv] (str (-url-encode (name (key kv))) "="
+                                                    (-url-encode (str (val kv)))))
+                                     query)))
+       p))))
+
+;; --- client identity (proxy-aware) ------------------------------------------
+(defn ^:private trusted-proxies []
+  (let [v (-getenv "APP_HTTP__TRUSTED_PROXIES")]
+    (if (str/blank? v) [] (mapv str/trim (str/split v #",")))))
+
+(defn client-ip
+  "The ONE blessed client-IP resolver (ADR 0069 abuse-protection). The
+  socket peer (:remote-addr) by default — unspoofable; X-Forwarded-For /
+  X-Real-IP are honored ONLY when the peer is a configured trusted proxy
+  (APP_HTTP__TRUSTED_PROXIES CIDRs), taking the right-most untrusted hop.
+  Trusting XFF from an untrusted peer is the classic ban-evasion bypass."
+  [req]
+  (-client-ip (or (:remote-addr req) "")
+              (or (get (:headers req) "x-forwarded-for") "")
+              (or (get (:headers req) "x-real-ip") "")
+              (trusted-proxies)))
+
+(defn client-key
+  "The shared identity for rate-limit / auto-ban / logging / audit so all
+  agree on WHO. :key is :ip (default → client-ip), :subject (the
+  authenticated :sub, IP fallback), or a custom (fn [req] key)."
+  ([req] (client-key req {}))
+  ([req opts]
+   (let [k (or (:key opts) :ip)]
+     (cond
+       (fn? k)        (k req)
+       (= k :subject) (or (get-in req [:auth/claims :sub]) (client-ip req))
+       :else          (client-ip req)))))
+
+(defn mark-subject!
+  "Record the authenticated subject on the request's log context so the
+  access log and audit trail show WHO — even on a 403. No-op before
+  request-id middleware ran."
+  [req sub]
+  (when-let [c (:bri/ctx req)] (swap! c assoc :subject sub))
+  nil)
+
+;; --- observability middleware (default-on in api-defaults) ------------------
+(def request-id
+  "Default middleware: honor an inbound X-Request-Id or mint one; thread
+  it into :request/id and a shared :bri/ctx atom, echo it on the response
+  header. The tracing floor — everything downstream logs this id."
+  {:name :request-id
+   :wrap (fn [handler]
+           (fn [req]
+             (let [in  (get (:headers req) "x-request-id")
+                   rid (if (str/blank? in) (-rand-token) in)
+                   ctx (atom {:request/id rid})
+                   res (handler (assoc req :request/id rid :bri/ctx ctx))]
+               (if (map? res)
+                 (update res :headers (fn [h] (assoc (or h {}) "x-request-id" rid)))
+                 res))))})
+
+(def ^:dynamic *log-sink*
+  "Thread-bound access-log sink (tests capture here). nil → process sink."
+  nil)
+(def ^:private log-sink-fn (atom nil))
+(defn set-log-sink! [f] (reset! log-sink-fn f))
+(defn ^:private default-log-sink [ev]
+  (if (dev?) (println (pr-str ev)) (println (-json-encode ev))))
+(defn ^:private emit-log [ev]
+  ((or *log-sink* @log-sink-fn default-log-sink) ev))
+
+(def logging
+  "Default middleware: one STRUCTURED line per request (JSON in prod,
+  readable in dev) — method, path, status, ms, request-id, and the
+  authenticated subject when a guard resolved one."
+  {:name :logging
+   :wrap (fn [handler]
+           (fn [req]
+             (let [t0  (-now-millis)
+                   res (handler req)
+                   ctx (some-> (:bri/ctx req) deref)]
+               (emit-log {:kind :access
+                          :method (str/upper-case (name (:request-method req)))
+                          :path (:uri req)
+                          :status (:status res)
+                          :ms (- (-now-millis) t0)
+                          :request/id (:request/id req)
+                          :subject (:subject ctx)})
+               res)))})
+
+(def metrics
+  "Default middleware: count + latency histogram + status-class per route
+  into the atomic registry (rendered at GET /metrics). Route label is the
+  matched PATTERN (low cardinality), not the raw path."
+  {:name :metrics
+   :wrap (fn [handler]
+           (fn [req]
+             (let [t0  (-now-millis)
+                   res (handler req)
+                   ms  (double (- (-now-millis) t0))]
+               (-metrics-observe (or (:bri.http/route req)
+                                     (str (str/upper-case (name (:request-method req))) " " (:uri req)))
+                                 (or (:status res) 200) ms)
+               res)))})
+
+;; --- CORS (default-on in the API stack) -------------------------------------
+(defn cors
+  "CORS middleware. THE DEV DEFAULT IS PERMISSIVE (origin *) — convenient
+  and LOUD; in prod set :origins (or APP_HTTP__CORS_ORIGINS) to an
+  allowlist. Adds ACAO/ACAM/ACAH + Vary:Origin; an OPTIONS preflight
+  short-circuits 204."
+  ([] (cors {}))
+  ([opts]
+   (let [origins (or (:origins opts)
+                     (let [e (-getenv "APP_HTTP__CORS_ORIGINS")]
+                       (when-not (str/blank? e) (mapv str/trim (str/split e #","))))
+                     "*")
+         methods (or (:methods opts) "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+         hdrs    (or (:headers opts) "Content-Type,Authorization,X-CSRF-Token,X-Request-Id")]
+     {:name :cors
+      :wrap (fn [handler]
+              (fn [req]
+                (let [origin (get (:headers req) "origin")
+                      allow  (cond (= origins "*") "*"
+                                   (and origin (some #(= % origin) origins)) origin
+                                   :else (first origins))
+                      cors-h {"access-control-allow-origin" (or allow "*")
+                              "access-control-allow-methods" methods
+                              "access-control-allow-headers" hdrs
+                              "vary" "Origin"}]
+                  (if (= :options (:request-method req))
+                    {:status 204 :headers cors-h}
+                    (let [res (handler req)]
+                      (if (map? res)
+                        (update res :headers (fn [h] (merge cors-h (or h {}))))
+                        res))))))})))
+
+;; --- rate-limit (plain throughput; distinct from auth/auto-ban) -------------
+(def ^:private rl-store (atom {}))
+(defn rate-limit
+  "Plain throughput limiter: at most n requests per :window-ms (default
+  60000) per client key; over → 429 + Retry-After. :key via client-key
+  (:ip default | :subject | fn). In-process store (single-instance; swap
+  :store for a shared backing). auth/auto-ban is the escalating
+  DENIAL-abuse guard — this is raw throughput."
+  ([n] (rate-limit n {}))
+  ([n opts]
+   (let [window (or (:window-ms opts) 60000)
+         clock  (or (:clock opts) (fn [] (-now-millis)))
+         store  (or (:store opts) rl-store)
+         kopts  {:key (or (:key opts) :ip)}]
+     {:name :rate-limit
+      :wrap (fn [handler]
+              (fn [req]
+                (let [ck   (client-key req kopts)
+                      now  (clock)
+                      hits (conj (filterv #(> % (- now window)) (get @store ck [])) now)]
+                  (reset! store (assoc @store ck hits))
+                  (if (> (count hits) n)
+                    {:status 429
+                     :headers {"retry-after" (str (max 1 (quot window 1000)))}
+                     :body {:error "rate limit exceeded"}}
+                    (handler req)))))})))
+
+;; --- ops endpoints (health / readiness / metrics) ---------------------------
+(defn ops-routes
+  "Default ops endpoints as route values (default-on via serve/listen):
+  GET /healthz (liveness), GET /readyz (runs :ready-checks fns → 200/503),
+  GET /metrics (Prometheus text). Options: :metrics-path, :metrics-guard
+  (e.g. (auth/admin-only) — DEFAULT IS OPEN; GUARD IT IN PROD),
+  :ready-checks (vector of zero-arg fns)."
+  ([] (ops-routes {}))
+  ([opts]
+   (let [mpath    (or (:metrics-path opts) "/metrics")
+         guard    (:metrics-guard opts)
+         checks   (or (:ready-checks opts) [])
+         health-h (managed (fn [_] {:status 200 :body {:status "ok"}}))
+         ready-h  (managed (fn [_]
+                             (if (every? (fn [c] (try (boolean (c)) (catch Throwable _ false))) checks)
+                               {:status 200 :body {:status "ready"}}
+                               {:status 503 :body {:status "not-ready"}})))
+         metrics-fn (fn [_] {:status 200
+                             :headers {"content-type" "text/plain; version=0.0.4; charset=utf-8"}
+                             :body (-metrics-render)})
+         metrics-h  (if guard
+                      (managed ((:wrap (->mw guard)) metrics-fn))
+                      (managed metrics-fn))]
+     [["GET /healthz" health-h]
+      ["GET /readyz" ready-h]
+      [(str "GET " mpath) metrics-h]])))
+
+;; --- api-defaults (the API-first stack, inspectable DATA) -------------------
+(defn api-defaults
+  "The API-first default middleware stack (outermost first, a plain
+  vector you can conj/without): request-id, structured logging, recover
+  (the funnel), CORS, metrics, auto-ban (default-on abuse guard), JSON
+  negotiation. Zero-config gives logs + request-ids + metrics + abuse
+  protection out of the box. Options thread down: :cors, :auto-ban (map
+  of opts, or false to drop it)."
+  ([] (api-defaults {}))
+  ([opts]
+   (require 'bri.auth)
+   (let [auto-ban (deref (resolve 'bri.auth/auto-ban))
+         base     [request-id logging (recover) (cors (or (:cors opts) {})) metrics]
+         base     (if (false? (:auto-ban opts))
+                    base
+                    (conj base (auto-ban (if (map? (:auto-ban opts)) (:auto-ban opts) {}))))]
+     (conj base negotiate))))
+
 ;; --- serve --------------------------------------------------------------------
 (defn serve
   "Start the server and (by default) BLOCK until SIGTERM/SIGINT, then
@@ -410,19 +848,38 @@
   for tests; :stop is a zero-arg fn). Production timeouts are DEFAULT
   ON in the Go adapter; the raw mux/server stay reachable there as the
   escape hatch."
-  [routes opts]
-  (let [stack (or (:middleware opts) (defaults))]
+  [rts opts]
+  (let [stack (or (:middleware opts) (defaults))
+        rts   (if (false? (:ops opts))
+                (resolve-routes rts)
+                (into (resolve-routes rts) (ops-routes opts)))]
+    (register-routes! rts) ; reverse routing resolves against the served table
     (when (and (:middleware opts) (dev?))
       (warn-custom-stack stack))
     (doseq [ping (:ping opts)] (ping))
-    (-serve (mount routes stack) (dissoc opts :middleware :ping))))
+    (-serve (mount rts stack)
+            (dissoc opts :middleware :ping :ops :cors :auto-ban
+                    :metrics-path :metrics-guard :ready-checks))))
+
+(defn listen
+  "The API-first entry point: sugar over serve that defaults the
+  middleware to (api-defaults) — logs, request-ids, metrics, CORS, abuse
+  protection, JSON — and the ops endpoints. (listen app 3000). Override
+  or extend via the same opts serve takes."
+  ([rts port] (listen rts port {}))
+  ([rts port opts]
+   (serve rts (merge {:middleware (api-defaults opts)} opts {:port port}))))
 
 ;; --- in-process test client ------------------------------------------------
 (defn request
   "The in-process http test client (no socket): runs one request map
   {:method \"GET\" :path \"/\" :headers {} :body \"...\"} through the
-  same mount + middleware path as serve and returns the response map."
-  ([routes req] (request routes req {}))
-  ([routes req opts]
-   (let [stack (or (:middleware opts) (defaults))]
-     (-request (mount routes stack) req))))
+  same mount + middleware path as serve and returns the response map.
+  Ops endpoints are appended unless :ops false (so /healthz etc. are
+  testable in-process too)."
+  ([rts req] (request rts req {}))
+  ([rts req opts]
+   (let [stack (or (:middleware opts) (defaults))
+         rts   (if (false? (:ops opts)) (resolve-routes rts) (into (resolve-routes rts) (ops-routes opts)))]
+     (register-routes! rts)
+     (-request (mount rts stack) req))))
