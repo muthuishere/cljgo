@@ -215,12 +215,28 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 	// (read-string "") throws "EOF while reading"; (read-string {:eof :done}
 	// "") => :done; (read-string "::a") => :user/a in ns user.
 	//
-	// DEVIATION (documented): the opts arity honors :eof only — :read-cond/
-	// :features are reader-conditional policy cljgo's reader does not expose
-	// per-call, and #= eval-on-read does not exist in cljgo's reader at all
-	// (it throws), which is the safe subset of *read-eval*'s default. The
-	// stream-based `read` and *in*-based `read-line` stay unimplemented
-	// pending the *in* design note (audit batch 5).
+	// Reader-conditional opts mirror the JVM protocol (Reader Conditionals
+	// guide; oracle 1.12.5, conformance/tests/read-string-read-cond.clj):
+	// a bare (read-string "#?(:clj 1)") throws "Conditional read not
+	// allowed"; {:read-cond :allow} selects (:cljgo/:default on this
+	// platform); {:features #{:kw}} adds selectable features ON TOP of the
+	// always-present platform feature (the JVM keeps :clj even with
+	// explicit :features — cljgo mirrors with :cljgo); {:read-cond
+	// :preserve} reads the conditional as a ReaderConditional data value
+	// with tagged literals inside preserved (ADR 0050). Any other
+	// :read-cond value behaves as not-allowed, matching the oracle
+	// ((read-string {:read-cond :bogus} "#?(:clj 1)") => "Conditional
+	// read not allowed").
+	//
+	// DEVIATION (documented): #= eval-on-read does not exist in cljgo's
+	// reader at all (it throws), which is the safe subset of
+	// *read-eval*'s default. The stream-based `read` and *in*-based
+	// `read-line` stay unimplemented pending the *in* design note (audit
+	// batch 5).
+	kwReadCond := lang.NewKeyword("read-cond")
+	kwFeatures := lang.NewKeyword("features")
+	kwAllow := lang.NewKeyword("allow")
+	kwPreserve := lang.NewKeyword("preserve")
 	def("read-string", func(args ...any) any {
 		var opts lang.IPersistentMap
 		var s any
@@ -243,7 +259,29 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 		if !ok {
 			panic(fmt.Errorf("read-string expects a string, got: %s", lang.PrintString(s)))
 		}
-		form, err := reader.ReadString(str, reader.WithResolver(NSResolver()))
+		ropts := []reader.Option{reader.WithResolver(NSResolver())}
+		switch mode := lang.Get(opts, kwReadCond); {
+		case lang.Equiv(mode, kwAllow):
+			// selection stays on; honor :features additions.
+			if fs := lang.Get(opts, kwFeatures); fs != nil {
+				var feats []lang.Keyword
+				for fseq := lang.Seq(fs); fseq != nil; fseq = fseq.Next() {
+					kw, ok := fseq.First().(lang.Keyword)
+					if !ok {
+						panic(fmt.Errorf("read-string: :features must be a set of keywords, got: %s", lang.PrintString(fseq.First())))
+					}
+					feats = append(feats, kw)
+				}
+				ropts = append(ropts, reader.WithFeatures(feats...))
+			}
+		case lang.Equiv(mode, kwPreserve):
+			ropts = append(ropts, reader.WithReadCondPreserve())
+		default:
+			// No :read-cond (or an unrecognized value): conditionals are
+			// a read error, JVM parity.
+			ropts = append(ropts, reader.WithReadCondForbid())
+		}
+		form, err := reader.ReadString(str, ropts...)
 		if err != nil {
 			if errors.Is(err, reader.ErrEOF) {
 				if opts != nil && opts.ContainsKey(kwEOF) {
@@ -261,12 +299,11 @@ func internMiscBuiltins(def func(name string, fn func(args ...any) any) *lang.Va
 	// The four reader-data publics the fundamentals audit deferred. These are
 	// DATA constructors + predicates over the value types clojure's data
 	// readers and `read`/`read-string` with {:read-cond :preserve} yield
-	// (clojure.lang.TaggedLiteral / ReaderConditional). cljgo's reader does
-	// not currently expose a :read-cond :preserve mode (it always selects or
-	// elides conditionals — ADR 0036), so these constructors are the sole way
-	// to build the values today; reader :preserve integration is scoped to a
-	// follow-up (ADR 0050). Oracle 1.12.5, conformance/tests/
-	// tagged-literal.clj + reader-conditional.clj.
+	// (clojure.lang.TaggedLiteral / ReaderConditional). read-string's
+	// {:read-cond :preserve} (above) yields the same values from the reader
+	// (ADR 0050's follow-up, wired 2026-07-23 — reader.WithReadCondPreserve).
+	// Oracle 1.12.5, conformance/tests/tagged-literal.clj +
+	// reader-conditional.clj + read-string-read-cond.clj.
 
 	// tagged-literal: (tag form) -> a TaggedLiteral with :tag and :form,
 	// printing as `#tag form` (oracle: (pr-str (tagged-literal 'foo 42))

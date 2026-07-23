@@ -10,8 +10,14 @@ package reader
 // reader feature is :cljgo (never :clj — that is the JVM's feature, and
 // claiming it would silently pull JVM-only branches). :default always
 // matches, as a last resort. Unlike JVM Clojure, cljgo does not gate
-// reader conditionals behind an opt-in :read-cond flag: file and REPL
-// reading always process them.
+// reader conditionals behind an opt-in :read-cond flag for FILE and REPL
+// reading: they are always processed there, regardless of extension
+// (deliberate divergence — ADR 0068 addendum). clojure.core/read-string,
+// however, mirrors the JVM's opts protocol exactly: conditionals are an
+// error without {:read-cond :allow}/{:read-cond :preserve}
+// (WithReadCondForbid), {:features #{...}} adds selectable features
+// (WithFeatures), and :preserve reads the conditional as a
+// lang.ReaderConditional data value (WithReadCondPreserve, ADR 0050).
 //
 // The mechanism (first-branch-wins, whole-body-read-then-select,
 // non-keyword-feature rejection, top-level-splice rejection, elision of
@@ -32,10 +38,24 @@ var (
 	kwCljgo   = lang.NewKeyword("cljgo")
 )
 
-// matchesFeature reports whether a reader-conditional feature keyword
-// is satisfied by the cljgo platform.
-func matchesFeature(feat lang.Keyword) bool {
-	return feat == kwCljgo || feat == kwDefault
+// Reader-conditional policy (condMode). The zero value condAllow keeps
+// cljgo's always-process behavior for files and the REPL; condForbid and
+// condPreserve back clojure.core/read-string's JVM-parity opts protocol
+// (WithReadCondForbid / WithReadCondPreserve).
+const (
+	condAllow = iota
+	condForbid
+	condPreserve
+)
+
+// matchesFeature reports whether a reader-conditional feature keyword is
+// satisfied: the platform feature :cljgo and :default always match, plus
+// any caller-supplied WithFeatures keywords (the JVM likewise always
+// includes its platform :clj alongside {:features #{...}} — oracle
+// 1.12.5: (read-string {:read-cond :allow :features #{:cljs}}
+// "#?(:clj 2)") => 2).
+func (r *Reader) matchesFeature(feat lang.Keyword) bool {
+	return feat == kwCljgo || feat == kwDefault || r.condFeatures[feat]
 }
 
 // readConditional reads a reader conditional whose leading "#?" has been
@@ -46,6 +66,13 @@ func matchesFeature(feat lang.Keyword) bool {
 func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again bool, err error) {
 	incomplete := func() (any, bool, error) {
 		return nil, false, &Error{Pos: r.s.Pos(), Start: &start, Err: fmt.Errorf("%w reader conditional", ErrIncomplete)}
+	}
+
+	// JVM parity for read-string without {:read-cond :allow/:preserve}
+	// (oracle 1.12.5: (read-string "#?(:clj 1)") throws this exact
+	// message). Never set for file/REPL reading (see condMode's doc).
+	if r.condMode == condForbid {
+		return nil, false, r.errAt(start, "Conditional read not allowed")
 	}
 
 	// Optional '@' => splicing conditional.
@@ -60,7 +87,11 @@ func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again
 		r.s.Unread()
 	}
 
-	if splicing && !spliceOK {
+	// A preserved conditional is ONE data value, so top-level splicing is
+	// fine there (oracle 1.12.5: (read-string {:read-cond :preserve}
+	// "#?@(:clj [1 2])") => the #?@ object, while {:read-cond :allow}
+	// throws).
+	if splicing && !spliceOK && r.condMode != condPreserve {
 		return nil, false, r.errAt(start, "Reader conditional splicing not allowed at the top level.")
 	}
 
@@ -72,6 +103,22 @@ func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again
 	}
 	if oc != '(' {
 		return nil, false, r.errAt(start, "read-cond body must be a list")
+	}
+
+	// {:read-cond :preserve}: don't select at all — the whole body reads
+	// as ONE lang.ReaderConditional data value (ADR 0050), with every
+	// tagged literal inside preserved as a lang.TaggedLiteral (oracle
+	// 1.12.5: (read-string {:read-cond :preserve} "#?(:clj #inst ...)")
+	// keeps a TaggedLiteral in :form; #inst OUTSIDE a conditional still
+	// resolves normally). tagPreserve gates readTaggedLiteral.
+	if r.condMode == condPreserve {
+		r.tagPreserve++
+		forms, err := r.readDelimited("reader conditional", ')', start)
+		r.tagPreserve--
+		if err != nil {
+			return nil, false, err
+		}
+		return lang.NewReaderConditional(lang.NewList(forms...), splicing), false, nil
 	}
 
 	// Read the entire body first (matching Clojure, which errors on
@@ -92,7 +139,7 @@ func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again
 		if !ok {
 			return nil, false, r.errAt(start, "Feature should be a keyword: %s", featureString(forms[i]))
 		}
-		if !matchesFeature(feat) {
+		if !r.matchesFeature(feat) {
 			continue
 		}
 		val := forms[i+1]
