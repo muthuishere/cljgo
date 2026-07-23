@@ -76,3 +76,27 @@ infrastructure (`ChunkBuffer`, `ChunkedCons`, `LongChunk`) pre-existed.
   separately) — this is the cheap structural win, banked.
 - Not chosen: an uncapped whole-range chunk (2.03× — faster, but breaks JVM
   realization parity); leaving map/filter unchunked (the 3.3× penalty).
+
+## Follow-ups (2026-07-23): chunk-aware count + keep landed
+
+The two named follow-ups above are now done (same ADR, no new decision — these
+extend the chunking contract to the two remaining hot seq ops):
+
+- **Chunk-aware `count`** (`lang.Count`, `pkg/lang/interfaces.go`). When the seq
+  is `IChunkedSeq`, `count` now sums `ChunkedFirst().Count()` and advances by
+  `ChunkedNext()` — a chunk (up to 32) per step instead of one `Next()` node per
+  element — mirroring `clojure.lang.RT.count`'s chunked branch. Pure perf; the
+  count is identical. This removes the `Next()`-per-element half of the residual
+  and takes `(count (filter odd? (map inc (range 2e6))))` from ~273ms to ~240ms
+  (~11%, AOT wall-clock incl. startup); the pipeline gate budget drops 600→500ms.
+- **Chunk-aware `keep`.** `keep` moves from a `lazy-seq` in core.clj to a native
+  builtin alongside `map`/`filter` (`pkg/corelib/hotpath_builtins.go`), with the
+  same chunked fast path: test the whole chunk, collect non-nil `(f x)` into a
+  `ChunkBuffer`, `ChunkedCons` onto a lazy keep of `ChunkedMore()`, and drop an
+  all-nil chunk to the tail (as `chunk-cons` does). The 1-arity transducer form
+  is preserved natively; the unchunked fallback is untouched. Over a chunked
+  `range` it now realizes 32 at a time, matching JVM (frozen by
+  `conformance/tests/chunked-keep-realization.clj`, oracle `[32 2]`). The
+  core.clj `defn keep` is removed to avoid a double definition, exactly as
+  `map`/`filter` are native and `remove` stays `filter`-derived (and so inherits
+  chunking for free).
