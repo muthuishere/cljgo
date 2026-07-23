@@ -187,6 +187,8 @@ func Load() {
 	v_clojure_DOT_repl_doc.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(47), kw_column, int64(11), kw_end_line, int64(47), kw_end_column, int64(14), kw_doc, "Prints documentation for a var, given its name. Prints nothing when\n  the name does not resolve."))
 	var doc33 any
 	_ = doc33
+	var doc33d lang.FnFunc3
+	_ = doc33d
 	tmp34 := lang.FnFunc3(func(X_AMP_form35, X_AMP_env36, name37 any) any {
 		tmp38 := v_clojure_DOT_core_resolve.Get()
 		tmp39 := lang.Apply1(tmp38, name37)
@@ -204,6 +206,7 @@ func Load() {
 		return tmp40
 	})
 	doc33 = tmp34
+	doc33d = tmp34
 	v_clojure_DOT_repl_doc.BindRoot(tmp34)
 	_ = v_clojure_DOT_repl_doc
 	tmp45 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -577,6 +580,8 @@ func Load() {
 	v_clojure_DOT_repl_dir.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(157), kw_column, int64(11), kw_end_line, int64(157), kw_end_column, int64(14), kw_doc, "Prints a sorted directory of public vars in a namespace"))
 	var dir237 any
 	_ = dir237
+	var dir237d lang.FnFunc3
+	_ = dir237d
 	tmp238 := lang.FnFunc3(func(X_AMP_form239, X_AMP_env240, nsname241 any) any {
 		tmp242 := v_clojure_DOT_core_seq.Get()
 		tmp243 := v_clojure_DOT_core_concat.Get()
@@ -626,6 +631,7 @@ func Load() {
 		return tmp286
 	})
 	dir237 = tmp238
+	dir237d = tmp238
 	v_clojure_DOT_repl_dir.BindRoot(tmp238)
 	_ = v_clojure_DOT_repl_dir
 	tmp287 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -837,6 +843,8 @@ func Load() {
 	v_clojure_DOT_repl_source.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(200), kw_column, int64(11), kw_end_line, int64(200), kw_end_column, int64(17), kw_doc, "Prints the source code for the given symbol, if it can find it.\n  This requires that the symbol resolve to a Var defined in a\n  namespace for which the source is available.\n\n  Example: (source filter)"))
 	var source375 any
 	_ = source375
+	var source375d lang.FnFunc3
+	_ = source375d
 	tmp376 := lang.FnFunc3(func(X_AMP_form377, X_AMP_env378, n379 any) any {
 		tmp380 := v_clojure_DOT_core_seq.Get()
 		tmp381 := v_clojure_DOT_core_concat.Get()
@@ -875,6 +883,7 @@ func Load() {
 		return tmp413
 	})
 	source375 = tmp376
+	source375d = tmp376
 	v_clojure_DOT_repl_source.BindRoot(tmp376)
 	_ = v_clojure_DOT_repl_source
 	tmp414 := v_clojure_DOT_core_X_set_macro_BANG_.Get()

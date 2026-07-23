@@ -608,6 +608,8 @@ func Load() {
 			{
 				var cat223 any
 				_ = cat223
+				var cat223d lang.FnFunc2
+				_ = cat223d
 				tmp224 := lang.FnFunc2(func(xys225, zs226 any) any {
 					tmp227 := v_clojure_DOT_core_lazy_seq_STAR_.Get()
 					tmp228 := lang.FnFunc0(func() any {
@@ -626,7 +628,7 @@ func Load() {
 								tmp236 := lang.Apply1(tmp235, xys232)
 								tmp237 := v_clojure_DOT_core_rest.Get()
 								tmp238 := lang.Apply1(tmp237, xys232)
-								tmp239 := lang.Apply2(cat223, tmp238, zs226)
+								tmp239 := cat223d(tmp238, zs226)
 								tmp240 := lang.Apply2(tmp234, tmp236, tmp239)
 								tmp233 = tmp240
 							} else {
@@ -637,7 +639,7 @@ func Load() {
 									tmp243 := lang.Apply1(tmp242, zs226)
 									tmp244 := v_clojure_DOT_core_next.Get()
 									tmp245 := lang.Apply1(tmp244, zs226)
-									tmp246 := lang.Apply2(cat223, tmp243, tmp245)
+									tmp246 := cat223d(tmp243, tmp245)
 									tmp241 = tmp246
 								} else {
 									tmp241 = nil
@@ -652,11 +654,12 @@ func Load() {
 					return tmp247
 				})
 				cat223 = tmp224
+				cat223d = tmp224
 				var cat248 any = tmp224
 				_ = cat248
 				tmp249 := v_clojure_DOT_core_concat.Get()
 				tmp250 := lang.Apply2(tmp249, x219, y220)
-				tmp251 := lang.Apply2(cat248, tmp250, zs221)
+				tmp251 := tmp224(tmp250, zs221)
 				tmp222 = tmp251
 			}
 			return tmp222

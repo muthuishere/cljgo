@@ -7661,6 +7661,8 @@ func Load() {
 	v_clojure_DOT_core_for_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1192), kw_column, int64(11), kw_end_line, int64(1192), kw_end_column, int64(14)))
 	var for_3506 any
 	_ = for_3506
+	var for_3506d lang.FnFunc4
+	_ = for_3506d
 	tmp3507 := lang.FnFunc4(func(X_AMP_form3508, X_AMP_env3509, bindings3510, body3511 any) any {
 		tmp3512 := v_clojure_DOT_core_X_for_expand.Get()
 		tmp3513 := v_clojure_DOT_core_X_pairs.Get()
@@ -7669,6 +7671,7 @@ func Load() {
 		return tmp3515
 	})
 	for_3506 = tmp3507
+	for_3506d = tmp3507
 	v_clojure_DOT_core_for_.BindRoot(tmp3507)
 	_ = v_clojure_DOT_core_for_
 	tmp3516 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -9062,6 +9065,8 @@ func Load() {
 	v_clojure_DOT_core_defmulti.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1378), kw_column, int64(11), kw_end_line, int64(1378), kw_end_column, int64(19)))
 	var defmulti4453 any
 	_ = defmulti4453
+	var defmulti4453d lang.FnFunc4
+	_ = defmulti4453d
 	tmp4454 := lang.FnFunc4(func(X_AMP_form4455, X_AMP_env4456, mm_name4457, dispatch_fn4458 any) any {
 		tmp4459 := v_clojure_DOT_core_list.Get()
 		tmp4460 := v_clojure_DOT_core_list.Get()
@@ -9072,6 +9077,7 @@ func Load() {
 		return tmp4464
 	})
 	defmulti4453 = tmp4454
+	defmulti4453d = tmp4454
 	v_clojure_DOT_core_defmulti.BindRoot(tmp4454)
 	_ = v_clojure_DOT_core_defmulti
 	tmp4465 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -9440,6 +9446,8 @@ func Load() {
 	v_clojure_DOT_core_instance_QMARK_.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1466), kw_column, int64(11), kw_end_line, int64(1466), kw_end_column, int64(20)))
 	var instance_QMARK_4695 any
 	_ = instance_QMARK_4695
+	var instance_QMARK_4695d lang.FnFunc4
+	_ = instance_QMARK_4695d
 	tmp4696 := lang.FnFunc4(func(X_AMP_form4697, X_AMP_env4698, c4699, x4700 any) any {
 		tmp4701 := v_clojure_DOT_core_symbol_QMARK_.Get()
 		tmp4702 := lang.Apply1(tmp4701, c4699)
@@ -9459,6 +9467,7 @@ func Load() {
 		return tmp4703
 	})
 	instance_QMARK_4695 = tmp4696
+	instance_QMARK_4695d = tmp4696
 	v_clojure_DOT_core_instance_QMARK_.BindRoot(tmp4696)
 	_ = v_clojure_DOT_core_instance_QMARK_
 	tmp4710 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -9690,6 +9699,8 @@ func Load() {
 		{
 			var walk4823 any
 			_ = walk4823
+			var walk4823d lang.FnFunc1
+			_ = walk4823d
 			tmp4824 := lang.FnFunc1(func(node4825 any) any {
 				tmp4826 := v_clojure_DOT_core_lazy_seq_STAR_.Get()
 				tmp4827 := lang.FnFunc0(func() any {
@@ -9712,9 +9723,10 @@ func Load() {
 				return tmp4835
 			})
 			walk4823 = tmp4824
+			walk4823d = tmp4824
 			var walk4836 any = tmp4824
 			_ = walk4836
-			tmp4837 := lang.Apply1(walk4836, root4821)
+			tmp4837 := tmp4824(root4821)
 			tmp4822 = tmp4837
 		}
 		return tmp4822
@@ -10215,6 +10227,8 @@ func Load() {
 	v_clojure_DOT_core_defonce.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1694), kw_column, int64(11), kw_end_line, int64(1694), kw_end_column, int64(18)))
 	var defonce5056 any
 	_ = defonce5056
+	var defonce5056d lang.FnFunc4
+	_ = defonce5056d
 	tmp5057 := lang.FnFunc4(func(X_AMP_form5058, X_AMP_env5059, name5060, expr5061 any) any {
 		tmp5062 := v_clojure_DOT_core_seq.Get()
 		tmp5063 := v_clojure_DOT_core_concat.Get()
@@ -10276,6 +10290,7 @@ func Load() {
 		return tmp5118
 	})
 	defonce5056 = tmp5057
+	defonce5056d = tmp5057
 	v_clojure_DOT_core_defonce.BindRoot(tmp5057)
 	_ = v_clojure_DOT_core_defonce
 	tmp5119 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -10533,6 +10548,8 @@ func Load() {
 	v_clojure_DOT_core_time.SetMeta(lang.NewMap(kw_file, "core.clj", kw_line, int64(1750), kw_column, int64(11), kw_end_line, int64(1750), kw_end_column, int64(15)))
 	var time5284 any
 	_ = time5284
+	var time5284d lang.FnFunc3
+	_ = time5284d
 	tmp5285 := lang.FnFunc3(func(X_AMP_form5286, X_AMP_env5287, expr5288 any) any {
 		tmp5289 := v_clojure_DOT_core_seq.Get()
 		tmp5290 := v_clojure_DOT_core_concat.Get()
@@ -10624,6 +10641,7 @@ func Load() {
 		return tmp5375
 	})
 	time5284 = tmp5285
+	time5284d = tmp5285
 	v_clojure_DOT_core_time.BindRoot(tmp5285)
 	_ = v_clojure_DOT_core_time
 	tmp5376 := v_clojure_DOT_core_X_set_macro_BANG_.Get()
@@ -10902,10 +10920,10 @@ func Load() {
 			_ = tmp5534
 			func() {
 				defer func() {
-					tmp5535 := lang.Apply1(root_bind5523, old_vals5533)
+					tmp5535 := tmp5497(old_vals5533)
 					_ = tmp5535
 				}()
-				tmp5536 := lang.Apply1(root_bind5523, binding_map5494)
+				tmp5536 := tmp5497(binding_map5494)
 				_ = tmp5536
 				tmp5537 := lang.Apply0(func_5495)
 				tmp5534 = tmp5537
