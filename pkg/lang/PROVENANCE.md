@@ -459,3 +459,15 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   message is the oracle-exact "Cannot remove clojure namespace"
   (was "cannot remove clojure.core namespace"). No vendored logic
   changed otherwise.
+## Named fixed-arity fn wrappers (ADR 0048 arity-error naming, 2026-07-23)
+
+- `ifn.go`: added `NamedFn0..NamedFn4` — cljgo-authored structs (not
+  vendored) wrapping the corresponding `FnFuncN` closure with the fn's
+  display name ("user/f") and expects label ("1: [x]"), so a compiled
+  binary's arity mismatch panics the same NAMED `ArityError` the
+  interpreter raises instead of the unnamed count-only message.
+  `NamedFn2` also implements the `IFn2` reduce seam. The `FnFuncN`
+  types themselves are unchanged.
+- `apply.go`: `Apply0..Apply4` each gained one `*NamedFnN` fast-path
+  case (a direct `.F` field call, placed right after the `FnFuncN`
+  case) so matching-arity dispatch of emitted fns stays alloc-free.
