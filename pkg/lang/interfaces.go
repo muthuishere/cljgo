@@ -45,6 +45,17 @@ type (
 		ApplyTo(args ISeq) any
 	}
 
+	// IFn2 is an optional fast-path seam an IFn may also implement: a
+	// non-variadic 2-arg entry that Apply2 calls directly, bypassing the
+	// []any box that a variadic Invoke(a, b) allocates on every call.
+	// This is what makes the reduce/HOF inner loop (2M steps over a big
+	// range) alloc-free for the core reducing fns. Invoke2 MUST be
+	// observably identical to Invoke(a, b); it is a performance seam
+	// only, never a semantic one.
+	IFn2 interface {
+		Invoke2(a, b any) any
+	}
+
 	IReduce interface {
 		Reduce(f IFn) any
 	}

@@ -203,7 +203,7 @@ func internCollBuiltins(def func(string, func(...any) any) *lang.Var) {
 	})
 
 	// max / min : variadic maxima/minima over the numeric tower.
-	def("max", func(args ...any) any {
+	attachFast2(def("max", func(args ...any) any {
 		if len(args) == 0 {
 			panic(fmt.Errorf("wrong number of args (0) passed to: max"))
 		}
@@ -212,8 +212,8 @@ func internCollBuiltins(def func(string, func(...any) any) *lang.Var) {
 			acc = lang.Max(acc, a)
 		}
 		return acc
-	})
-	def("min", func(args ...any) any {
+	}), func(a, b any) any { return lang.Max(a, b) })
+	attachFast2(def("min", func(args ...any) any {
 		if len(args) == 0 {
 			panic(fmt.Errorf("wrong number of args (0) passed to: min"))
 		}
@@ -222,7 +222,7 @@ func internCollBuiltins(def func(string, func(...any) any) *lang.Var) {
 			acc = lang.Min(acc, a)
 		}
 		return acc
-	})
+	}), func(a, b any) any { return lang.Min(a, b) })
 
 	// Numeric / value predicates that the tower (or identity) must own.
 	def("zero?", func(args ...any) any { return lang.IsZero(oneArg("zero?", args)) })
