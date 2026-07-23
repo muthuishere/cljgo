@@ -201,6 +201,78 @@ func internHotpathBuiltins(def func(string, func(...any) any) *lang.Var) {
 		}
 	})
 
+	// keepSeq : lazy keep; collects the non-nil values of (f x), skipping
+	// nils. Chunk-aware exactly like filterSeq (JVM parity, mirrors
+	// clojure.core/keep's (chunked-seq? s) branch) — test the whole chunk in a
+	// tight loop, collect non-nil (f x) into a fresh chunk, and chunk-cons onto
+	// a lazy keep of the chunk-rest. Note: keep keeps FALSE (only nil is
+	// dropped), so the guard is IsNil, not IsTruthy. See the map/filter notes
+	// on realization granularity (whole chunk / step).
+	var keepSeq func(f, coll any) any
+	keepSeq = func(f, coll any) any {
+		return lang.NewLazySeq(func() any {
+			s := lang.Seq(coll)
+			for !lang.IsNil(s) {
+				if cs, ok := s.(lang.IChunkedSeq); ok {
+					c := cs.ChunkedFirst()
+					n := c.Count()
+					b := lang.NewChunkBuffer(n)
+					for i := 0; i < n; i++ {
+						v := lang.Apply1(f, c.Nth(i))
+						if !lang.IsNil(v) {
+							b.Add(v)
+						}
+					}
+					tail := keepSeq(f, cs.ChunkedMore()).(lang.ISeq)
+					// chunk-cons drops an all-nil chunk (an empty ChunkedCons
+					// would panic on First()/Nth(0)); fall through to the lazy
+					// tail, exactly as clojure.core/chunk-cons.
+					if b.Count() == 0 {
+						return tail
+					}
+					return lang.NewChunkedCons(b.Chunk(), tail)
+				}
+				v := lang.Apply1(f, s.First())
+				if !lang.IsNil(v) {
+					return lang.NewCons(v, keepSeq(f, s.More()))
+				}
+				s = s.Next()
+			}
+			return nil
+		})
+	}
+
+	// oracle: (keep #(when (even? %) %) (range 6)) => (0 2 4)
+	// oracle: (into [] (keep #(when (even? %) %)) (range 6)) => [0 2 4]  -- 1-arity transducer
+	def("keep", func(args ...any) any {
+		switch len(args) {
+		case 1:
+			f := args[0]
+			return lang.NewFnFunc1(func(rf any) any {
+				return lang.NewFnFunc(func(inner ...any) any {
+					switch len(inner) {
+					case 0:
+						return lang.Apply(rf, nil)
+					case 1:
+						return lang.Apply1(rf, inner[0])
+					case 2:
+						v := lang.Apply1(f, inner[1])
+						if lang.IsNil(v) {
+							return inner[0]
+						}
+						return lang.Apply2(rf, inner[0], v)
+					default:
+						panic(fmt.Errorf("wrong number of args (%d) passed to: keep transducer step", len(inner)))
+					}
+				})
+			})
+		case 2:
+			return keepSeq(args[0], args[1])
+		default:
+			panic(fmt.Errorf("wrong number of args (%d) passed to: keep", len(args)))
+		}
+	})
+
 	// reduce : the seq-walking fold. 2-arity seeds from the first element
 	// and calls (f) on an empty coll; both arities honor the `reduced`
 	// short-circuit box.

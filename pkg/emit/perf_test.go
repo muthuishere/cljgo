@@ -305,11 +305,12 @@ func TestCorePipelinePerfBudget(t *testing.T) {
 }
 
 // defaultCorePipelineBudget locks in today's measured cost with headroom, NOT a
-// target: ~273ms measured (2026-07-23) for (count (filter odd? (map inc (range
-// 2e6)))) including startup, with chunk-aware map/filter (ADR 0063); 600ms
-// leaves ~2.2x before the gate fires. Lower it as map/filter/count get faster
-// (a chunk-aware count is the next step named in ADR 0063).
-const defaultCorePipelineBudget = 600 * time.Millisecond
+// target: ~240ms measured (2026-07-23) for (count (filter odd? (map inc (range
+// 2e6)))) including startup, with chunk-aware map/filter AND a chunk-aware
+// `count` (the ADR 0063 follow-up — count now advances a whole chunk at a time
+// instead of one Next() node per element, ~11% off the pipeline); 550ms leaves
+// ~2x before the gate fires. Lower it as map/filter/count get faster.
+const defaultCorePipelineBudget = 550 * time.Millisecond
 
 // corePipelineBudget mirrors coreReduceBudget: host-relative (ADR 0024),
 // overridable via CLJGO_CORE_PIPELINE_BUDGET for slower/noisier CI runners.

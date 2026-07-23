@@ -521,24 +521,9 @@
 ;; oracle: (reduced? (ensure-reduced 5)) => true; (reduced? (ensure-reduced (reduced 5))) => true
 (defn ensure-reduced [x] (if (reduced? x) x (reduced x)))
 
-;; oracle: (keep #(when (even? %) %) (range 6)) => (0 2 4)
-;; oracle: (into [] (keep #(when (even? %) %)) (range 6)) => [0 2 4]
-(defn keep
-  ([f]
-   (fn [rf]
-     (fn
-       ([] (rf))
-       ([result] (rf result))
-       ([result input]
-        (let [v (f input)]
-          (if (nil? v) result (rf result v)))))))
-  ([f coll]
-   (lazy-seq
-    (when-let [s (seq coll)]
-      (let [x (f (first s))]
-        (if (nil? x)
-          (keep f (rest s))
-          (cons x (keep f (rest s)))))))))
+;; keep is a native Go builtin (pkg/corelib/hotpath_builtins.go, ADR 0045 +
+;; 0063) — chunk-aware over chunked sources, matching JVM. Oracle cases at the
+;; builtin.
 
 ;; oracle: (map-indexed vector [:a :b :c]) => ([0 :a] [1 :b] [2 :c])
 ;; oracle: (into [] (map-indexed vector) [:a :b :c]) => [[0 :a] [1 :b] [2 :c]]
