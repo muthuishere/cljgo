@@ -251,6 +251,11 @@ func TestInReplResumeByIndex(t *testing.T) {
 	work := t.TempDir()
 	mkSession(t, work, "(def gold 42)\n")
 
+	// Resume cds into `work`; restore cwd before TempDir cleanup or Windows
+	// cannot delete the directory the process is sitting in.
+	cwd, _ := os.Getwd()
+	defer os.Chdir(cwd)
+
 	t.Setenv("CLJGO_SESSION", "1")
 	// A returning expression (result prints to the driver's out); println
 	// side-effects go to *out*/stdout, not this buffer.
