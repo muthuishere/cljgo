@@ -35,12 +35,14 @@ func NewSession(ev *eval.Evaluator) *Session {
 func (s *Session) Evaluator() *eval.Evaluator { return s.ev }
 
 // Bindings is the session frame (design/03 §7b): *ns* seeded from the
-// current namespace, *1 *2 *3 *e starting nil. Push it with
+// current namespace, *repl* true (the 1.12 contract: true only inside
+// an interactive REPL), *1 *2 *3 *e starting nil. Push it with
 // lang.PushThreadBindings on the session's goroutine (and pop on exit);
 // callers may Assoc extra vars (pkg/nrepl adds *out*) before pushing.
 func (s *Session) Bindings() lang.IPersistentMap {
 	return lang.NewMap(
 		lang.VarCurrentNS, s.ev.CurrentNS(),
+		lang.VarRepl, true,
 		s.v1, nil, s.v2, nil, s.v3, nil, s.ve, nil,
 	)
 }

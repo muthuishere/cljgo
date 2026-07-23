@@ -140,10 +140,16 @@ var (
 	// file, and the emitted func main() binds it from os.Args[1:], so the
 	// REPL/run and a compiled binary read identically (fundamentals A1).
 	VarCommandLineArgs = InternVarReplaceRoot(NSCore, NewSymbol("*command-line-args*"), nil).SetDynamic()
-	VarAssert          = InternVarReplaceRoot(NSCore, NewSymbol("*assert*"), false).SetDynamic()
-	VarCompileFiles    = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
-	VarFile            = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
-	VarDataReaders     = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
+	// VarRepl backs *repl* (added in Clojure 1.12; root false, the JVM
+	// contract): true only while evaluating inside an interactive REPL.
+	// pkg/repl's session frame (Session.Bindings) binds it true for the
+	// interactive driver and nREPL; `cljgo run`, the conformance harness
+	// and compiled binaries read the false root (tail wave, 2026-07-23).
+	VarRepl         = InternVarReplaceRoot(NSCore, NewSymbol("*repl*"), false).SetDynamic()
+	VarAssert       = InternVarReplaceRoot(NSCore, NewSymbol("*assert*"), false).SetDynamic()
+	VarCompileFiles = InternVarReplaceRoot(NSCore, NewSymbol("*compile-files*"), false).SetDynamic()
+	VarFile         = InternVarReplaceRoot(NSCore, NewSymbol("*file*"), "NO_SOURCE_FILE").SetDynamic()
+	VarDataReaders  = InternVarReplaceRoot(NSCore, NewSymbol("*data-readers*"), emptyMap).SetDynamic()
 	// VarMathContext backs *math-context* (ADR 0032 follow-on): root nil =
 	// unbound = unlimited-precision BigDecimal arithmetic (today's default:
 	// exact add/sub/mul, divide throws on non-termination). `with-precision`
