@@ -1,0 +1,66 @@
+;; S37 — the blessed `bri.db` API, IDENTICAL over the SQLite zero-install
+;; default and a Postgres prod upgrade. This is the Bun `bun:sqlite` model:
+;; you write zero config, a SQLite file appears under `.dev/`, and the SAME
+;; verbs run in prod against pgx by changing ONE env var (APP_DB_URL).
+;;
+;; This is illustrative bri.db usage — bri.db is NOT built (this is a spike,
+;; ADR 0027). Every form is a call the blessed API would expose; the Go half
+;; that backs these verbs ran for real in ../probe (criterion 4).
+;;
+;; Precedence principle: everything lives under bri.*; nothing shadows
+;; clojure.core. `!` variants throw (feed the http recover funnel); plain
+;; variants return Result.
+
+(ns app.users
+  (:require [bri.db :as db]))
+
+;; --- connect ---------------------------------------------------------------
+;; ZERO config is the whole point. With APP_DB_URL unset, bri.db opens a
+;; SQLite file at `.dev/app.db` next to the binary (created on first run),
+;; WAL + busy_timeout pragmas already applied. In prod, APP_DB_URL is
+;; `postgres://…` and the SAME `(db/open)` returns a pgx-backed pool.
+;;
+;;   dev  (default): APP_DB_URL unset          -> sqlite  .dev/app.db
+;;   test          : APP_DB_URL=sqlite://:memory: -> sqlite :memory:
+;;   prod          : APP_DB_URL=postgres://…    -> pgx pool
+(def pool (db/open))            ; picks the driver from APP_DB_URL, no branches in app code
+
+;; --- reads: plain maps out, snake_case column -> kebab-case keyword --------
+
+(defn find-user [id]
+  ;; db/one -> Result<map|nil>; db/one! throws :db/not-found (funnel 404).
+  (db/one! pool "SELECT id, full_name, email_address, created_at
+                 FROM users WHERE id = ?" id))
+;; => {:id 7 :full-name "User 7" :email-address "u7@example.com" :created-at 172…}
+
+(defn recent-users [limit]
+  (db/query pool "SELECT id, full_name FROM users
+                  ORDER BY created_at DESC LIMIT ?" limit))
+;; => [ {:id …, :full-name …} … ]
+
+;; --- writes: kebab keys in, snake columns out -----------------------------
+
+(defn create-user [attrs]
+  ;; :users table + kebab keys -> users table + snake columns; returns new id.
+  (db/insert! pool :users {:full-name     (:full-name attrs)
+                           :email-address (:email-address attrs)
+                           :created-at    (bri.time/now-ms)}))
+
+;; --- transaction: composes as data, commit-together / rollback-together ---
+
+(defn onboard [attrs]
+  (db/tx pool
+    (fn [t]
+      (let [uid (db/insert! t :users {:full-name (:full-name attrs)
+                                      :email-address (:email-address attrs)
+                                      :created-at (bri.time/now-ms)})]
+        (db/insert! t :audit {:action "signup" :user-id uid})
+        uid))))
+;; both inserts commit together; any throw rolls the whole tx back
+;; (proven in ../probe criterion 4: count before == count after on a forced error).
+
+;; --- the ONLY portability caveat the app author sees ----------------------
+;; Placeholders differ ($1 pgx vs ? sqlite). bri.db normalises this: write
+;; `?` everywhere; the pgx adapter rewrites `?` -> `$n`. SQL dialect beyond
+;; that (e.g. RETURNING, JSON funcs) is the user's responsibility and is the
+;; documented seam where "dev on sqlite, prod on pg" can diverge — see VERDICT.

@@ -1,0 +1,1 @@
+{:db {:pool-size 10 :host "localhost"} :feature {:signup true} :timeout-seconds 30}

@@ -1,0 +1,35 @@
+;; S39 — bri.vault Clojure surface sketch (NOT wired; illustrates the seam).
+;;
+;; Design rule (CLAUDE.md precedence principle): batteries live under bri.*,
+;; never shadow clojure.core. So `bri.vault/get`, never a bare `get`.
+
+(require '[bri.vault :as vault])
+
+;; --- single provider, selected purely by the URI scheme in config ---
+(vault/get "env://DATABASE_URL")
+;; => #vault/secret "len=42 ***…db"      ; REPL echo is MASKED by default
+
+(vault/get "keychain://myapp/db-password")
+;; => #vault/secret "len=25 ***…sh"      ; OS keychain, pure-Go, CGO-free
+
+(vault/get "age:///etc/myapp/secrets.age?id=MYAPP_AGE_KEY")
+;; => #vault/secret "len=30 ***…ef"      ; committed ciphertext, key from env
+
+;; --- fallback chain: keychain on the laptop, env in CI/containers ---
+(vault/get ["keychain://myapp/db-password" "env://DATABASE_URL"])
+;; tries left→right, first hit wins; a real backend error aborts (no silent
+;; fall-through past a failing keychain to a weaker source).
+
+;; --- reveal is explicit and auditable; the value never prints by accident ---
+(vault/reveal (vault/get "env://DATABASE_URL"))   ; => "postgres://…"  (raw)
+;; grep for (vault/reveal …) to audit every place a value is unwrapped.
+
+;; --- s38 resolver seam: the whole vault stack as ONE config layer ---
+;; (config/resolver [(config/env) (config/file "app.edn") (vault/layer chain)])
+(def secrets-layer
+  (vault/layer ["keychain://myapp/db-password" "env://DATABASE_URL"]))
+;; secrets-layer is a (fn [key] -> [value found?]) the resolver registers.
+
+;; OPEN QUESTION for the owner (VERDICT §gates): does REPL echo mask by
+;; default (shown above) — safest — or return a raw string like clojure.core?
+;; Recommendation: mask by default, force (vault/reveal …) to get plaintext.

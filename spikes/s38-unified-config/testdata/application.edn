@@ -1,0 +1,3 @@
+;; base file layer (canonical EDN)
+{:db      {:host "db.internal" :pool-size 10}
+ :feature {:signup true}}

@@ -1,0 +1,63 @@
+;; s38 — app-facing bri.config API sketch (NOT wired; illustrates the blessed
+;; shape the Go resolver in this spike backs). Extends today's 2-layer
+;; bri.config to SIX layers without changing its existing surface:
+;;   (config/load!)  and  (config/explain)  keep working unchanged;
+;;   the resolver underneath grows profile-file / vault / DB-primary layers.
+;;
+;; Precedence (low -> high):
+;;   built-in defaults
+;;     < application.{edn,properties}
+;;       < application-{profile}.{edn,properties}   (profile = APP_PROFILE)
+;;         < APP_* env      (APP_DB__POOL_SIZE -> [:db :pool-size])
+;;           < vault        (secrets backend; stub interface)
+;;             < runtime     (DB-primary row; wins over everything)
+;;
+;; EDN is canonical; .properties is an accepted Java-familiar skin that parses
+;; into the IDENTICAL nested map (proven in this spike, cross-checked vs the
+;; clojure CLI).
+
+(clojure.core/in-ns 'bri.config)
+(clojure.core/refer 'clojure.core)
+
+;; --- pure read surface (files + env + profile) ------------------------------
+
+(comment
+  ;; load! stays the entry point; result is ONE plain map.
+  (def cfg (config/load!))                       ; reads application.*, profile, env
+
+  (config/get cfg [:db :pool-size])              ; => 50   (a number, never "50")
+  (config/get cfg [:missing :key] :fallback)     ; => :fallback
+
+  ;; provenance backs `cljgo config` — every key + the layer that won it.
+  (config/source cfg [:db :pool-size])           ; => :runtime
+  (config/source cfg [:log :level])              ; => :profile
+  (println (config/explain))                     ; the full dump, secrets masked
+  )
+
+;; --- DB-primary runtime layer (the new, owner-gated part) -------------------
+
+(comment
+  ;; The runtime store fronts a `runtime_config`-shaped table with a
+  ;; read-through cache. A present row WINS over files/env; files/env are
+  ;; bootstrap seed only (reqsume-kernel §2.1).
+  (def store (config/runtime-store db-conn))     ; or an in-memory stand-in
+
+  ;; hot-rotate a key with NO redeploy; audit fields stamped; cache busted.
+  (config/rotate! store [:openai :api-key] new-key
+                  {:secret true :by "admin:muthu"})
+
+  ;; next read reflects it immediately (cache invalidated on write)
+  (config/get (config/load! {:runtime store}) [:openai :api-key])
+
+  ;; secrets are AES-GCM at rest (prod) and NEVER printed — explain masks them.
+  )
+
+;; --- vault layer (stub interface) -------------------------------------------
+
+(comment
+  ;; Between env and DB: a secrets backend. Blessed shape is a protocol so the
+  ;; real backend (vsync / Infisical / KMS) binds later without touching apps.
+  (defprotocol Vault
+    (lookup [_ path])          ; path -> value | nil
+    (secret-paths [_]))        ; the leaves to mask
+  )
