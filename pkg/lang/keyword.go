@@ -42,6 +42,21 @@ func NewKeyword(s string) Keyword {
 	}
 }
 
+// FindKeyword returns the keyword named s ONLY when a keyword with that
+// full name has already been interned (via NewKeyword), reporting whether
+// it had been. It is clojure.core/find-keyword's substrate and must never
+// intern: a miss leaves the registry untouched (oracle 1.12.5:
+// (find-keyword "never-interned") => nil, and stays nil on repeat calls).
+func FindKeyword(s string) (Keyword, bool) {
+	keywordRegistryMu.RLock()
+	_, ok := keywordRegistry[s]
+	keywordRegistryMu.RUnlock()
+	if !ok {
+		return Keyword{}, false
+	}
+	return NewKeyword(s), true
+}
+
 // AllKeywords returns all keyword strings that have been interned.
 func AllKeywords() []string {
 	keywordRegistryMu.RLock()

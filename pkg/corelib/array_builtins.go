@@ -139,6 +139,75 @@ func internArrayBuiltins(def func(string, func(...any) any) *lang.Var) {
 		reflect.Copy(cp, v)
 		return cp.Interface()
 	})
+
+	// byte-array / short-array (batch A3, completing the ADR 0025 family):
+	// []int8 / []int16 — int8 matches the JVM's SIGNED byte exactly
+	// (oracle 1.12.5: (vec (byte-array [1 -1])) => [1 -1]; Go's unsigned
+	// `byte` would report 255). Elements coerce with the UNCHECKED casts
+	// because the JVM fills these arrays via Number.byteValue()/
+	// .shortValue(), which WRAP rather than throw (oracle: (vec
+	// (byte-array [200])) => [-56], even though (byte 200) itself
+	// throws). Documented divergence (same shape as int-array ==
+	// long-array): the JVM's 2-arity demands a Byte/Short-typed
+	// init-val and mis-treats a Long init as a seq (throws "Don't know
+	// how to create ISeq from: java.lang.Long"); cljgo's tower has ONE
+	// fixnum (int64), so (byte-array 3 7) fills with 7.
+	def("byte-array", func(args ...any) any {
+		return typedArray("byte-array", args, lang.UncheckedByteCast, int8(0))
+	})
+	def("short-array", func(args ...any) any {
+		return typedArray("short-array", args, lang.UncheckedShortCast, int16(0))
+	})
+
+	// bytes?: true only for a byte array — []int8 (what byte-array
+	// builds) or Go-native []byte (what Go interop hands back): both are
+	// honest byte arrays on this host; every other array kind is false,
+	// as on the JVM (bytes? is exactly byte[]).
+	// oracle 1.12.5: [(bytes? (byte-array 1)) (bytes? (int-array 1))
+	// (bytes? "s") (bytes? nil)] => [true false false false]
+	def("bytes?", func(args ...any) any {
+		switch oneArg("bytes?", args).(type) {
+		case []int8, []byte:
+			return true
+		}
+		return false
+	})
+
+	// make-array: (make-array class dim & more-dims) => a nil-filled
+	// []any per dimension (nested for multi-dim), whatever the
+	// well-known class (ADR 0036 ClassRef): the JVM's make-array over a
+	// CLASS builds an OBJECT array of nulls — (vec (make-array Long 3))
+	// => [nil nil nil], (vec (map vec (make-array Object 2 3))) =>
+	// [[nil nil nil] [nil nil nil]], oracle 1.12.5. Primitive component
+	// types (Integer/TYPE) do not resolve in cljgo (fail-closed, ADR
+	// 0036) — the typed ctors (int-array & co) are the typed path.
+	def("make-array", func(args ...any) any {
+		if len(args) < 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: make-array", len(args)))
+		}
+		if _, ok := args[0].(*ClassRef); !ok {
+			panic(fmt.Errorf("make-array: not a class: %s", lang.PrintString(args[0])))
+		}
+		dims := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			n, ok := lang.AsInt(a)
+			if !ok || n < 0 {
+				panic(fmt.Errorf("make-array: dimension must be a non-negative integer, got: %s", lang.PrintString(a)))
+			}
+			dims[i] = n
+		}
+		var build func(ds []int) []any
+		build = func(ds []int) []any {
+			out := make([]any, ds[0])
+			if len(ds) > 1 {
+				for i := range out {
+					out[i] = build(ds[1:])
+				}
+			}
+			return out
+		}
+		return build(dims)
+	})
 }
 
 // typedArray builds a typed cljgo array from one of the three ctor shapes

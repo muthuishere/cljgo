@@ -267,6 +267,52 @@ func internSeqBuiltins(def func(string, func(...any) any) *lang.Var) {
 		}
 	})
 
+	// find-keyword: (find-keyword name) | (find-keyword ns name) — the
+	// keyword ONLY if one with that name was already interned, else nil;
+	// NEVER interns (lang.FindKeyword checks the registry without adding).
+	// Accepts the same argument shapes as `keyword`; a keyword argument
+	// returns itself (it exists, so it is interned by definition).
+	// oracle 1.12.5: (find-keyword "no-such-kw-zzz") => nil;
+	// (find-keyword :abc) => :abc; after :interned-zzq is read,
+	// (find-keyword "interned-zzq") => :interned-zzq;
+	// (find-keyword "user" "zzz-nope") => nil.
+	def("find-keyword", func(args ...any) any {
+		found := func(s string) any {
+			if kw, ok := lang.FindKeyword(s); ok {
+				return kw
+			}
+			return nil
+		}
+		switch len(args) {
+		case 1:
+			switch x := args[0].(type) {
+			case lang.Keyword:
+				return x
+			case *lang.Symbol:
+				return found(x.FullName())
+			case string:
+				return found(x)
+			default:
+				panic(fmt.Errorf("find-keyword: cannot look up a keyword from: %s", lang.PrintString(args[0])))
+			}
+		case 2:
+			name, ok := args[1].(string)
+			if !ok {
+				panic(fmt.Errorf("find-keyword: name must be a string, got: %s", lang.PrintString(args[1])))
+			}
+			if args[0] == nil {
+				return found(name)
+			}
+			ns, ok := args[0].(string)
+			if !ok {
+				panic(fmt.Errorf("find-keyword: ns must be a string, got: %s", lang.PrintString(args[0])))
+			}
+			return found(ns + "/" + name)
+		default:
+			panic(fmt.Errorf("wrong number of args (%d) passed to: find-keyword", len(args)))
+		}
+	})
+
 	// Predicates the destructure algorithm branches on.
 	def("symbol?", func(args ...any) any {
 		_, ok := oneArg("symbol?", args).(*lang.Symbol)

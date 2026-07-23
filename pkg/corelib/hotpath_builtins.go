@@ -108,7 +108,13 @@ func internHotpathBuiltins(def func(string, func(...any) any) *lang.Var) {
 					case 2:
 						return lang.Apply2(rf, inner[0], lang.Apply1(f, inner[1]))
 					default:
-						panic(fmt.Errorf("wrong number of args (%d) passed to: map transducer step", len(inner)))
+						// Multi-input step — the JVM map transducer's
+						// ([result input & inputs] (rf result (apply f input
+						// inputs))) arity, exercised by multi-coll sequence:
+						// (sequence (map +) [1 2] [10 20]) feeds the step ONE
+						// input per source coll and pushes ONE combined output
+						// into rf (oracle 1.12.5: => (11 22)).
+						return lang.Apply2(rf, inner[0], lang.Apply(f, inner[1:]))
 					}
 				})
 			})
