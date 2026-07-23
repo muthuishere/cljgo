@@ -50,6 +50,18 @@ func (e *arityError) Error() string {
 	return fmt.Sprintf("wrong number of args (%d) passed to: %s", e.actual, e.name)
 }
 
+// Is matches *arityError, *lang.ArityError and *lang.IllegalArgumentError
+// targets — the same JVM reading lang.ArityError.Is encodes (ArityException
+// extends IllegalArgumentException) — so corelib.CatchMatches's errors.Is
+// probes see the interpreter's arity error exactly as the compiled leg's.
+func (e *arityError) Is(other error) bool {
+	switch other.(type) {
+	case *arityError, *lang.ArityError, *lang.IllegalArgumentError:
+		return true
+	}
+	return false
+}
+
 // Diagnostic implements diag.Carrier: FromError picks up the enriched
 // (named + located + expected/found) diagnostic when the call site set one.
 func (e *arityError) Diagnostic() (diag.Diagnostic, bool) {
