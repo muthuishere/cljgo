@@ -1,9 +1,10 @@
 ;; clojure.core/reader-conditional + reader-conditional? (ADR 0050).
 ;; A ReaderConditional carries the whole `#?(...)` / `#?@(...)` body as a
 ;; :form list plus a :splicing? flag; it prints as `#?(...)` or `#?@(...)`,
-;; supports keyword lookup and =. (This is the DATA value; cljgo's reader
-;; still selects/elides conditionals rather than preserving them — ADR 0050
-;; scopes :read-cond :preserve integration to a follow-up.)
+;; supports keyword lookup and =. (This is the DATA value; the reader
+;; yields the same values via read-string {:read-cond :preserve} — ADR
+;; 0050's follow-up, wired 2026-07-23, frozen in
+;; read-string-read-cond.clj.)
 ;;
 ;; oracle: JVM Clojure 1.12.5 (clojure CLI), 2026-07-22:
 ;;   (prn [(pr-str (reader-conditional '(:clj 1 :cljs 2) false))

@@ -23,3 +23,5 @@ R1006 invalid number literal
 R1007 invalid escape sequence in string
 R1008 invalid character literal
 R1009 invalid metadata
+R1010 reader conditional splicing at top level
+R1011 conditional read not allowed
