@@ -214,6 +214,13 @@ func (g *generator) hoistVar(v *lang.Var) string {
 	name := v.Symbol().Name()
 	gn := g.uniqueGlobal("v_" + munge(ns) + "_" + munge(name))
 	init := fmt.Sprintf("lang.InternVarName(lang.NewSymbol(%q), lang.NewSymbol(%q))", ns, name)
+	// Class-ref vars (ADR 0036) are interned lazily BY the interpreter's
+	// resolveVar fallback, value included; re-interning by name alone
+	// would leave them unbound in the binary (REPL/binary divergence,
+	// ADR 0002/0007). rt.ClassRefVar re-runs that fallback at runtime.
+	if ns == "cljgo.classes" {
+		init = fmt.Sprintf("rt.ClassRefVar(%q)", name)
+	}
 	if lang.IsTruthy(lang.Get(v.Meta(), lang.KWDynamic)) {
 		init += ".SetDynamic()"
 		g.dynVars[v] = true
@@ -339,6 +346,13 @@ func (g *generator) constExpr(v any) string {
 		return fmt.Sprintf("lang.Char(%s)", strconv.QuoteRune(rune(x)))
 	case *reader.Regex:
 		return g.hoistRegex(x)
+	case reader.Inst:
+		// #inst constants reconstruct from the literal timestamp text the
+		// compile-time reader already validated (reader.Inst round-trips
+		// verbatim — pkg/reader/tagged.go), so the compiled value equals
+		// the interpreter's, epoch millis included.
+		g.usesReader = true
+		return fmt.Sprintf("reader.MustInst(%q)", x.Value())
 	case lang.Keyword:
 		return g.hoistKeyword(x)
 	case *lang.Symbol:

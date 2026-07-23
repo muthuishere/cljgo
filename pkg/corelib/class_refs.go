@@ -156,6 +156,17 @@ func classRefVar(sym *lang.Symbol) *lang.Var {
 	return lang.InternVar(ns, lang.NewSymbol(sym.Name()), c, false)
 }
 
+// InternClassRefVar is classRefVar for an accepted class-name spelling,
+// exported for pkg/emit/rt: a compiled binary hoists every reference to
+// a cljgo.classes var through it so the var is interned BOUND to the
+// same canonical ClassRef the interpreter's resolveVar fallback binds —
+// a plain lang.InternVarName there leaves the var unbound and the
+// binary diverges from the REPL (the ADR 0002/0007 blocker). Returns
+// nil for names outside the ADR 0036 table.
+func InternClassRefVar(name string) *lang.Var {
+	return classRefVar(lang.NewSymbol(name))
+}
+
 // typeClassVar resolves a qualified GENERATED class name for one of OUR
 // types (ADR 0039): on the JVM, (defprotocol P) / (defrecord R ...) /
 // (deftype T ...) in namespace my.name-space generate classes named

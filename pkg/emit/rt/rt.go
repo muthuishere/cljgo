@@ -144,6 +144,23 @@ func RegisterCoreLoader(load func()) { coreLoader = load }
 // position, once (Load is guarded).
 func RegisterLib(name string, load func()) { corelib.RegisterLibProvider(name, load) }
 
+// ClassRefVar interns the cljgo.classes var for a well-known class-name
+// spelling (ADR 0036), BOUND to its canonical interned ClassRef — the
+// same var the interpreter's resolveVar fallback produces. Emitted code
+// hoists every class-ref reference through it (pkg/emit hoistVar): a
+// plain InternVarName would re-intern the var UNBOUND in the binary and
+// `(make-array Long 3)` etc. would throw where the REPL succeeds (the
+// ADR 0002/0007 divergence class). Panics only on a name outside the
+// table — unreachable, because the emitter routes here exactly the vars
+// the compile-time analyzer already resolved via that table.
+func ClassRefVar(name string) *lang.Var {
+	v := corelib.InternClassRefVar(name)
+	if v == nil {
+		panic(fmt.Sprintf("rt.ClassRefVar: %q is not a well-known class name (ADR 0036)", name))
+	}
+	return v
+}
+
 // The helpers keep their hot bodies small (slow tails split out) so the
 // Go inliner can fuse the int64 fast path into emitted call sites.
 
