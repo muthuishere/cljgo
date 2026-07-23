@@ -683,6 +683,9 @@ func RegisterAll() {
 	// clojure-test-suite harness surface (ADR 0022, var_builtins.go);
 	// `eval` itself stays interpreter-registered (pkg/eval).
 	internVarBuiltins(def)
+	// --- stdio/atom-vals/var-state/runtime essentials (fundamentals batch
+	// A1, core gap audit 2026-07-23 — essentials_builtins.go).
+	internEssentialsBuiltins(def, defPrivate)
 	// --- namespace introspection (ns-name/the-ns/all-ns/ns-publics/
 	// ns-interns/ns-map/ns-refers/ns-aliases/ns-imports): the tooling
 	// substrate clojure.repl + clojure.test ride on (fundamentals audit

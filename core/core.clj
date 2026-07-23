@@ -1876,3 +1876,70 @@
        (if (< ~idx l#)
          (recur (inc ~idx) ~expr)
          ~ret))))
+
+;; --- fundamentals batch A1 (core gap audit 2026-07-23): stdio + runtime ---
+
+;; with-in-str: runs body with *in* bound to an in-memory reader over s
+;; (-string-reader, essentials_builtins.go — the read-side mirror of
+;; with-out-str). `binding` forced bare with ~'binding for the same
+;; special-form reason as with-out-str above.
+;; oracle (clojure 1.12.5, 2026-07-23): (with-in-str "a\nb" [(read-line)
+;; (read-line) (read-line)]) => ["a" "b" nil]; (with-in-str "" (read-line))
+;; => nil
+(defmacro with-in-str
+  [s & body]
+  `(let [r# (-string-reader ~s)]
+     (~'binding [*in* r#]
+       ~@body)))
+
+;; line-seq: lazy seq of the lines read from rdr — nil when rdr is at EOF
+;; immediately, exactly clojure.core's shape (outer when-let, inner
+;; lazy-seq: the first line reads eagerly). rdr is any Go io.Reader
+;; (-read-line-from); *in* qualifies, where the JVM needs a BufferedReader.
+;; oracle (clojure 1.12.5, 2026-07-23, via (java.io.BufferedReader. *in*)):
+;; "a\nb\nc" => ("a" "b" "c"); "" => nil; "a\n" => ("a"); "a\r\nb" => ("a" "b")
+(defn line-seq [rdr]
+  (when-let [line (-read-line-from rdr)]
+    (cons line (lazy-seq (line-seq rdr)))))
+
+;; file-seq: lazy depth-first tree of dir and everything under it, root
+;; first — clojure.core's (tree-seq isDirectory listFiles dir) over the Go
+;; host: files are PATH STRINGS (the same representation slurp/spit take;
+;; cljgo has no java.io.File), children in os.ReadDir's sorted order.
+;; oracle (clojure 1.12.5, 2026-07-23): JVM file-seq returns the java.io.File
+;; tree as a LazySeq, root (the dir itself) first, directories included.
+(defn file-seq [dir]
+  (tree-seq -directory? -dir-children dir))
+
+;; requiring-resolve: resolve a QUALIFIED sym, requiring its namespace
+;; first if it does not resolve yet; nil when the namespace loads but the
+;; var is absent. clojure.core's shape ((or (resolve sym) (do (require …)
+;; (resolve sym)))), with the qualified check inlined (predicates.cljg's
+;; qualified-symbol? loads after core.clj).
+;; oracle (clojure 1.12.5, 2026-07-23):
+;; (some? (requiring-resolve 'clojure.string/trim)) => true;
+;; (requiring-resolve 'clojure.string/nope-not-here) => nil;
+;; (requiring-resolve 'trim) throws "Not a qualified symbol: trim"
+(defn requiring-resolve [sym]
+  (if (and (symbol? sym) (namespace sym))
+    (or (resolve sym)
+        (do (require (symbol (namespace sym)))
+            (resolve sym)))
+    (throw (ex-info (str "Not a qualified symbol: " sym) {:sym sym}))))
+
+;; .. : chained member access — (.. x f (g a) h) threads x through each
+;; member form left to right. The JVM macro expands to the bare `.`
+;; special form ((. (. (. x f) (g a)) h)); cljgo has no bare `.`, so each
+;; step expands directly to the dot-method/dot-field operator form the
+;; analyzer DOES implement ((.f x) / (.-fld x), ADR 0010) — same
+;; semantics, cljgo's interop spelling. A `-fld` member symbol becomes
+;; field access (.-fld x), as on the JVM.
+;; oracle (clojure 1.12.5, 2026-07-23):
+;; (.. "abc" toUpperCase (substring 1) length) => 2
+(defmacro .. [x form & more]
+  (let [call (if (seq? form)
+               (cons (symbol (str "." (name (first form)))) (cons x (next form)))
+               (list (symbol (str "." (name form))) x))]
+    (if more
+      (list* 'clojure.core/.. call more)
+      call)))

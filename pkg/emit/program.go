@@ -190,8 +190,10 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		}
 		declText.WriteString(")\n\n")
 	}
+	// spec.isMain: main() always references lang now — the
+	// *command-line-args* binding it emits below (fundamentals batch A1).
 	usesLang := strings.Contains(scanText, "lang.") || strings.Contains(declText.String(), "lang.") ||
-		printLast || mainVar != "" || spec.srcFile != ""
+		printLast || mainVar != "" || spec.srcFile != "" || spec.isMain
 
 	out.WriteString("import (\n")
 	if g.usesFmt || printLast || spec.isMain {
@@ -297,6 +299,10 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		out.WriteString("fmt.Fprintln(os.Stderr, \"error: \"+rt.RenderRecovered(r))\n")
 		out.WriteString("os.Exit(1)\n}\n}()\n")
 		out.WriteString("rt.Boot() // bootstrap: Go builtins + the AOT-compiled core (ADR 0046)\n")
+		// *command-line-args* (fundamentals batch A1): bound from os.Args
+		// before Load(), the clojure.main contract — nil root when none.
+		// Same wiring as cmd/cljgo's runFile, for REPL-vs-binary parity.
+		out.WriteString("if len(os.Args) > 1 {\ncla := make([]any, 0, len(os.Args)-1)\nfor _, a := range os.Args[1:] {\ncla = append(cla, a)\n}\nlang.VarCommandLineArgs.BindRoot(lang.NewList(cla...))\n}\n")
 		out.WriteString("Load()\n")
 		if mainVar != "" {
 			out.WriteString("args := make([]any, 0, len(os.Args)-1)\nfor _, a := range os.Args[1:] {\nargs = append(args, a)\n}\n")
