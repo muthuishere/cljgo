@@ -1,0 +1,38 @@
+;; app.routes — the routes shared by the real server (app.main) and the
+;; dual-mode parity harness (parity/check). Every route is a VALUE; the
+;; handlers are plain Clojure. Kept in one namespace so the interpreted
+;; and compiled paths exercise BYTE-FOR-BYTE the same code (ADR 0071 dec 6).
+(ns app.routes
+  (:require [bri.http :as http :refer [GET]]
+            [bri.auth :as auth]))
+
+;; GET / -> plain text (matches the compare/ corpus: "hello\n")
+(defn home [_req]
+  {:status 200
+   :headers {"content-type" "text/plain"}
+   :body "hello\n"})
+
+;; GET /api/hello -> JSON (a map body auto-encodes as application/json)
+(defn hello [_req]
+  {:status 200 :body {:msg "hello from bri"}})
+
+;; GET /api/secret -> JWT-guarded: 401 without a valid token, 200 with one.
+(defn secret [req]
+  {:status 200 :body {:secret "42" :sub (get-in req [:auth/claims :sub])}})
+
+;; GET /api/n/{id} -> typed path param. A non-int id funnels to 400 (no code
+;; written here): (param! …) rejects type confusion at the boundary.
+(defn note [req]
+  (let [id (http/param! req :id :int)]
+    {:status 200 :body {:id id}}))
+
+(def routes
+  (http/routes
+    (GET "/"           #'home)
+    (GET "/api/hello"  #'hello)
+    (GET "/api/secret" (auth/logged-in-only) #'secret)
+    (GET "/api/n/{id}" #'note)))
+
+;; issue-token mints a JWT the parity harness sends on the guarded route.
+(defn issue-token [user]
+  (auth/issue user {:role "user"}))

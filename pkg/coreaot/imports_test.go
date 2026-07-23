@@ -31,6 +31,14 @@ func TestNoInterpreterInCompiledBinary(t *testing.T) {
 	for _, pkg := range []string{
 		"github.com/muthuishere/cljgo/pkg/coreaot",
 		"github.com/muthuishere/cljgo/pkg/emit/rt",
+		// ADR 0071: the AOT-compiled bri framework a bri binary blank-imports
+		// must stay interpreter-free for the same reason coreaot must — an
+		// edge back to pkg/eval relinks the whole tree-walker into every bri
+		// binary and undoes the cutover. pkg/bri (the shims) and pkg/briaot
+		// (the compiled namespaces + providers) are on this path; pkg/briloader
+		// (the interpreter loader) is deliberately NOT — it is the REPL half.
+		"github.com/muthuishere/cljgo/pkg/briaot",
+		"github.com/muthuishere/cljgo/pkg/bri",
 	} {
 		out, err := exec.Command("go", "list", "-deps", pkg).CombinedOutput()
 		if err != nil {

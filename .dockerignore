@@ -1,0 +1,8 @@
+.git
+.claude
+refs
+worktrees
+**/*.log
+**/node_modules
+spikes/s45-bri-aot-docker/compare
+spikes/s45-bri-aot-docker/bench

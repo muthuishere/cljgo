@@ -1237,8 +1237,13 @@ func (g *generator) genTry(s *ast.TryNode) string {
 			g.wf("var %s any = thrown\n_ = %s\n", gn, gn)
 			if rv := g.gen(c.Body); rv != "" {
 				g.wf("%s = %s\n", t, rv)
+				g.wf("return\n")
 			}
-			g.wf("return\n")
+			// rv == "" means the catch body transferred control (a tail
+			// `throw` emitted its own panic): a trailing `return` would be
+			// unreachable, which `go vet` flags — and our generated packages
+			// (pkg/briaot) are vetted like any other. The panic unwinds the
+			// recover closure, so no explicit return is needed there.
 			g.wf("}\n")
 		}
 		g.wf("panic(r)\n") // no catch matched: re-throw (finally still runs)

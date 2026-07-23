@@ -1,0 +1,6 @@
+{:port 8080
+ :jwt-secret "s45-spike-secret"
+ :profiles
+ {:dev  {}
+  :test {}
+  :prod {}}}

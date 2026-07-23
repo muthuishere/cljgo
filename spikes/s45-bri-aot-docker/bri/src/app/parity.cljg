@@ -1,0 +1,32 @@
+;; app.parity — the DUAL-MODE parity harness (ADR 0071 dec 6). Drives the
+;; SAME app.routes through bri.http's in-process client and prints a
+;; canonical, deterministic line per case. Run it interpreted AND compiled
+;; (parity/run.sh) and diff stdout: a single byte of divergence fails the
+;; spike (a REPL↔binary divergence is a release blocker — CLAUDE.md).
+;;
+;; Cases: a text route, a JSON route, a JWT-guarded route with NO token
+;; (401) and WITH a valid token (200). The token is minted in-process so
+;; both modes verify against the same per-process secret; we print the
+;; RESPONSE (status/content-type/body), never the token bytes.
+(ns app.parity
+  (:require [bri.http :as http]
+            [app.routes :as routes]))
+
+(defn- show [label r]
+  (println label
+           (pr-str {:status (:status r)
+                    :content-type (or (get-in r [:headers "content-type"])
+                                      (get-in r [:headers "Content-Type"]))
+                    :body (:body r)})))
+
+(defn -main [& _args]
+  (let [opts  {:ops false}
+        token (routes/issue-token "ada")
+        req   (fn [m] (http/request routes/routes m opts))]
+    (show "GET /            " (req {:method "GET" :path "/"}))
+    (show "GET /api/hello   " (req {:method "GET" :path "/api/hello"}))
+    (show "GET /api/secret  " (req {:method "GET" :path "/api/secret"}))
+    (show "GET /api/secret+ " (req {:method "GET" :path "/api/secret"
+                                    :headers {"authorization" (str "Bearer " token)}}))
+    (show "GET /api/n/7      " (req {:method "GET" :path "/api/n/7"}))
+    (show "GET /api/n/abc    " (req {:method "GET" :path "/api/n/abc"}))))

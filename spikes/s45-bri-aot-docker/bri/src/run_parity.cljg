@@ -1,0 +1,7 @@
+;; run_parity — the INTERPRETED entry for the parity harness. `cljgo run`
+;; evaluates a file's top-level forms but does not call -main (that is the
+;; compiled binary's job), so this thin runner requires app.parity and
+;; calls it. The compiled side builds app.parity directly (its func main
+;; invokes -main). Both drive the SAME app.parity / app.routes code.
+(require '[app.parity :as p])
+(p/-main)

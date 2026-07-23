@@ -28,7 +28,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/muthuishere/cljgo/pkg/bri"
+	"github.com/muthuishere/cljgo/pkg/briloader"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
@@ -77,7 +77,7 @@ type request struct {
 // NewServer boots a fresh evaluator and returns a server fronting it.
 func NewServer() *Server {
 	ev := eval.New()
-	bri.Register(ev) // bri.* namespaces requireable, loaded lazily (ADR 0041)
+	briloader.Register(ev) // bri.* namespaces requireable, loaded lazily (ADR 0041)
 	return &Server{ev: ev, sessions: map[string]*session{}}
 }
 
