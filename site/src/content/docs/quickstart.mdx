@@ -1,0 +1,125 @@
+---
+title: Quickstart
+description: From install to a first REPL, a first script, a first compiled native binary, and a generated project — lib, cli, or web.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Five minutes from install to a compiled native binary. Only the compile step
+needs the Go toolchain — the REPL, `cljgo run`, and Go interop work from the
+cljgo binary alone.
+
+<Steps>
+
+1. **Install cljgo.**
+
+   ```bash
+   # Homebrew — macOS & Linux
+   brew install muthuishere/tap/cljgo
+
+   # …or with a Go 1.26+ toolchain
+   go install github.com/muthuishere/cljgo/cmd/cljgo@latest
+   ```
+
+   More options (prebuilt binaries, toolchain notes) on the
+   [install page](/cljgo/install/).
+
+2. **Start a REPL.**
+
+   ```clojure
+   $ cljgo repl
+   user=> (defn square [x] (* x x))
+   #'user/square
+   user=> (map square [1 2 3 4])
+   (1 4 9 16)
+   user=> (require-go '[strings])   ;; call Go, live
+   user=> (strings/ToUpper "hi")
+   "HI"
+   ```
+
+   Live re-`def` and `defmacro` work at the prompt. For an editor-connected
+   REPL, run `cljgo nrepl` and connect Calva ("Connect to a running REPL") or
+   CIDER (`cider-connect-clj`) to the printed port — a `.nrepl-port` file
+   makes it auto-discoverable. More in the [REPL guide](/cljgo/guides/repl/).
+
+3. **Run a first script.**
+
+   ```clojure
+   ;; hello.clj
+   (require-go '[strings])
+   (require-go '[strconv])
+
+   (println (strings/ToUpper "hello from go's stdlib"))
+   (println "Atoi! ->" (strconv/Atoi! "42"))   ; unwraps, or throws
+   (println "Atoi  ->" (strconv/Atoi "oops"))  ; => [0 <error>], errors-as-values
+   ```
+
+   ```bash
+   cljgo run hello.clj
+   ```
+
+   The Go ecosystem is the standard library: `(require-go '[net/http :as http])`
+   and call it — no bindings, no wrappers. See the
+   [interop guide](/cljgo/guides/interop/).
+
+4. **Compile it to a native binary.** This step needs the Go toolchain on
+   `PATH`; the first build fetches the pinned runtime module from the Go
+   module proxy once per machine (~1 MB, a few seconds).
+
+   ```bash
+   cljgo build hello.clj   # -> ./hello, a static native binary
+   ./hello                 # byte-identical output
+   ```
+
+   For hello-world that binary is 5.3 MB and starts in ~5 ms — no JVM, no
+   runtime install. More in
+   [compile & ship binaries](/cljgo/guides/compile/).
+
+5. **Generate a project.**
+
+   ```bash
+   cljgo new myapp                    # library (the default)
+   cljgo new --template cli myapp     # a CLI tool
+   cljgo new --template web myapp     # a bri web app
+   ```
+
+   Each template is a real, runnable project, not a string literal:
+
+   - **lib** (default) — plain namespaces of plain fns plus a test; a
+     library's build is `cljgo test`, and `cljgo publish go | clojars` ships
+     it to either ecosystem
+     ([dependencies & publishing](/cljgo/guides/deps-publish/)).
+   - **cli** — a `build.cljgo` that declares an executable:
+     `cljgo build` installs one static binary, `cljgo build run` builds and
+     runs it. Third-party Go is one line:
+     `(go-require app "github.com/gorilla/websocket" "v1.5.3")`.
+   - **web** — a bri app: routes as data, hiccup-style HTML, layered config.
+     The dev loop is `cljgo dev` (server + nREPL + dev warnings); start with
+     the [bri tutorial](/cljgo/bri/tutorial/).
+
+6. **Work the project loop.**
+
+   ```bash
+   cljgo test        # run the project's tests (clojure.test)
+   cljgo build       # resolve declared deps (build.cljgo + build.lock.edn), compile
+   cljgo build run   # build it, then run it
+   ```
+
+   `build.cljgo` is the whole build description — a program, not a data
+   file:
+
+   ```clojure
+   ;; build.cljgo
+   (defn build [b]
+     (let [app (exe b {:name "myapp"
+                       :main "src/myapp/core.cljg"})]
+       (install b app)
+       (run b app)))
+   ```
+
+</Steps>
+
+Sources may be `.clj`, `.cljg`, or `.cljgo`. When something goes wrong, errors
+carry registered codes: `cljgo check file.clj --json` for structured
+diagnostics, `cljgo explain <code>` for the long-form page — see
+[error codes & diagnostics](/cljgo/reference/diagnostics/).

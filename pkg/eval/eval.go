@@ -84,8 +84,7 @@ func NewBare() *Evaluator {
 		ResolveHost:     e.resolveHost,
 		ResolveHostType: e.resolveHostType,
 	}
-	e.internBuiltins()
-	e.installDefmacro()
+	e.internBuiltins() // corelib.RegisterAll interns the bootstrap defmacro too
 	return e
 }
 
@@ -285,6 +284,14 @@ func (e *Evaluator) Eval(n *ast.Node, s *Scope) (any, error) {
 			v, err := e.Eval(sub.Init, s)
 			if err != nil {
 				return nil, err
+			}
+			// Thread the Var's qualified name onto a DIRECT fn* init so its
+			// arity error names the fn (user/f) — the same rule and
+			// precedence (def name > self-name > "fn") as the emitter's
+			// OpDef/genFn pair, so both legs raise byte-identical named
+			// arity errors (ADR 0048).
+			if f, ok := v.(*evalFn); ok && sub.Init.Op == ast.OpFn {
+				f.defName = sub.Var.ToSymbol().String()
 			}
 			// Re-def replaces the root, never the Var identity — existing
 			// references see the new value (design/03 §3b).

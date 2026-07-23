@@ -434,7 +434,7 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   two-line wrappers over `Ops(x).Combine(Ops(y)).LTE/GTE`, mirroring the
   existing `LT`/`GT` exactly. They back the new rt.LE2/GE2/LEBool/GEBool
   guarded comparison intrinsics (pkg/emit/rt); no vendored logic changed.
-||||||| 24b7505
+
 ## Boot-refer bulk install (perf/startup clawback, 2026-07-23)
 
 - `namespace.go`: added `CompareAndSetMappings` (swap the whole mapping
@@ -444,3 +444,16 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   snapshot of clojure.core's public vars instead of ~900 per-symbol
   path-copying Assocs per boot namespace. Per-symbol `reference()`
   semantics are unchanged and remain the fallback on any conflict.
+
+## Named fixed-arity fn wrappers (ADR 0048 arity-error naming, 2026-07-23)
+
+- `ifn.go`: added `NamedFn0..NamedFn4` — cljgo-authored structs (not
+  vendored) wrapping the corresponding `FnFuncN` closure with the fn's
+  display name ("user/f") and expects label ("1: [x]"), so a compiled
+  binary's arity mismatch panics the same NAMED `ArityError` the
+  interpreter raises instead of the unnamed count-only message.
+  `NamedFn2` also implements the `IFn2` reduce seam. The `FnFuncN`
+  types themselves are unchanged.
+- `apply.go`: `Apply0..Apply4` each gained one `*NamedFnN` fast-path
+  case (a direct `.F` field call, placed right after the `FnFuncN`
+  case) so matching-arity dispatch of emitted fns stays alloc-free.

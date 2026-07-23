@@ -116,24 +116,27 @@ func Load() {
 		}
 		return tmp20
 	})
-	v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_.BindRoot(tmp18)
+	tmp29 := &lang.NamedFn1{Name: "clojure.core-test.portability/big-int?", Expects: "1: [n]", F: tmp18}
+	v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_.BindRoot(tmp29)
 	_ = v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_
 	// (def lazy-seq? (clojure.core/fn [x] (clojure.core/seq? x)))
 	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(16)))
-	tmp29 := lang.FnFunc1(func(x30 any) any {
-		tmp31 := v_clojure_DOT_core_seq_QMARK_.Get()
-		tmp32 := lang.Apply1(tmp31, x30)
-		return tmp32
+	tmp30 := lang.FnFunc1(func(x31 any) any {
+		tmp32 := v_clojure_DOT_core_seq_QMARK_.Get()
+		tmp33 := lang.Apply1(tmp32, x31)
+		return tmp33
 	})
-	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.BindRoot(tmp29)
+	tmp34 := &lang.NamedFn1{Name: "clojure.core-test.portability/lazy-seq?", Expects: "1: [x]", F: tmp30}
+	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.BindRoot(tmp34)
 	_ = v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_
 	// (def sleep (clojure.core/fn [ms] (clojure.core/-sleep-ms ms)))
 	v_clojure_DOT_core_test_DOT_portability_sleep.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(50), kw_column, int64(7), kw_end_line, int64(50), kw_end_column, int64(12)))
-	tmp33 := lang.FnFunc1(func(ms34 any) any {
-		tmp35 := v_clojure_DOT_core_X_sleep_ms.Get()
-		tmp36 := lang.Apply1(tmp35, ms34)
-		return tmp36
+	tmp35 := lang.FnFunc1(func(ms36 any) any {
+		tmp37 := v_clojure_DOT_core_X_sleep_ms.Get()
+		tmp38 := lang.Apply1(tmp37, ms36)
+		return tmp38
 	})
-	v_clojure_DOT_core_test_DOT_portability_sleep.BindRoot(tmp33)
+	tmp39 := &lang.NamedFn1{Name: "clojure.core-test.portability/sleep", Expects: "1: [ms]", F: tmp35}
+	v_clojure_DOT_core_test_DOT_portability_sleep.BindRoot(tmp39)
 	_ = v_clojure_DOT_core_test_DOT_portability_sleep
 }

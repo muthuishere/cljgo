@@ -1,8 +1,9 @@
-# Deploy the static landing page in site/ to GitHub Pages.
+# Build the Astro/Starlight docs site in site/ and deploy to GitHub Pages.
+# The hand-written landing page (site/public/index.html) ships as the root page.
 #
 # ENABLE ONCE: repo Settings → Pages → Source: "GitHub Actions".
-# This uses the modern Pages-via-Actions flow, so it publishes ONLY site/
-# and never touches the docs/ ADR folder.
+# This uses the modern Pages-via-Actions flow, so it publishes ONLY the built
+# site and never touches the docs/ ADR folder.
 name: Deploy Pages
 
 on:
@@ -34,13 +35,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: site
+
+      - name: Build site
+        run: npm run build
+        working-directory: site
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: site/dist
 
       - name: Deploy to GitHub Pages
         id: deployment
