@@ -66,6 +66,11 @@ type Driver struct {
 	journalOn   bool
 	sessionID   string
 	journalFile *os.File
+
+	// ResumeID, when set, replays that journal once at Run start — the
+	// command-line form of the in-REPL `:resume <id>` the goodbye line
+	// prints, so `cljgo repl :resume <id>` does what the message says.
+	ResumeID string
 }
 
 // New returns a driver with a fresh evaluator. in may be nil when only
@@ -108,6 +113,14 @@ func (d *Driver) Run() error {
 		d.sessionID = newSessionID()
 	}
 	defer d.closeJournal()
+
+	// `cljgo repl :resume <id>`: replay the journal before the first
+	// prompt, exactly as typing `:resume <id>` would (resumeSession sets
+	// journalOn + continues appending to that id). Runs under the session
+	// frame pushed above, so in-ns during replay moves the prompt.
+	if d.ResumeID != "" {
+		d.resumeSession(d.ResumeID)
+	}
 
 	// SIGINT → Interrupt for the duration of the session (terminal
 	// frontend). A future nREPL frontend calls Interrupt directly.
