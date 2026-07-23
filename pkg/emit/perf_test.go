@@ -253,3 +253,75 @@ func coreReduceBudget(t *testing.T) time.Duration {
 	}
 	return d
 }
+
+// TestCorePipelinePerfBudget guards the map/filter path, which the reduce gate
+// above is structurally blind to: (reduce + (range N)) seeds only `range`, so it
+// rides the chunked-reduce fast path and never exercises `map`/`filter`. The
+// core audit (2026-07-23) found exactly this blind spot — map/filter dropped
+// chunking, degrading `range -> map/filter -> reduce` ~3.3x, and no gate caught
+// it. This one runs (count (filter odd? (map inc (range N)))): map, filter, and
+// count all over a chunked source — the pipeline the chunk-aware fast path (ADR
+// 0063) exists to keep fast. Like the reduce gate it is a WALL-CLOCK TOTAL
+// regression gate, not a target — lower the budget as the path gets faster.
+func TestCorePipelinePerfBudget(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping perf measurement in -short mode")
+	}
+	const n = 2_000_000
+
+	lang.RemoveNamespace(lang.NewSymbol("user"))
+	oldOut := corelib.Out
+	corelib.Out = io.Discard
+	forms, err := CompileReader(strings.NewReader(fmt.Sprintf("(count (filter odd? (map inc (range %d))))\n", n)), "corepipeline.clj")
+	corelib.Out = oldOut
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	dir := t.TempDir()
+	if err := WriteModule(dir, forms, Options{PrintLastValue: true}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	bin := filepath.Join(dir, "corepipeline"+ExeSuffix)
+	if err := GoBuild(dir, bin); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+
+	best := time.Duration(1<<62 - 1)
+	for i := 0; i < 3; i++ {
+		start := time.Now()
+		if err := exec.Command(bin).Run(); err != nil {
+			t.Fatalf("run: %v", err)
+		}
+		if d := time.Since(start); d < best {
+			best = d
+		}
+	}
+
+	budget := corePipelineBudget(t)
+	t.Logf("(count (filter odd? (map inc (range %d)))) compiled: %v total wall clock (budget %v)", n, best, budget)
+	if best > budget {
+		t.Fatalf("clojure.core map/filter pipeline took %v, past the %v budget — a core-path regression (ADR 0063)", best, budget)
+	}
+}
+
+// defaultCorePipelineBudget locks in today's measured cost with headroom, NOT a
+// target: ~273ms measured (2026-07-23) for (count (filter odd? (map inc (range
+// 2e6)))) including startup, with chunk-aware map/filter (ADR 0063); 600ms
+// leaves ~2.2x before the gate fires. Lower it as map/filter/count get faster
+// (a chunk-aware count is the next step named in ADR 0063).
+const defaultCorePipelineBudget = 600 * time.Millisecond
+
+// corePipelineBudget mirrors coreReduceBudget: host-relative (ADR 0024),
+// overridable via CLJGO_CORE_PIPELINE_BUDGET for slower/noisier CI runners.
+func corePipelineBudget(t *testing.T) time.Duration {
+	t.Helper()
+	s := os.Getenv("CLJGO_CORE_PIPELINE_BUDGET")
+	if s == "" {
+		return defaultCorePipelineBudget
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		t.Fatalf("CLJGO_CORE_PIPELINE_BUDGET=%q is not a duration: %v", s, err)
+	}
+	return d
+}

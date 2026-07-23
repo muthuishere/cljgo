@@ -87,6 +87,13 @@ jobs:
           # runners. Still tight enough to catch the class of core-path
           # regression the user-code-only gate was structurally blind to.
           CLJGO_CORE_REDUCE_BUDGET: 3s
+          # The map/filter pipeline gate (ADR 0063): (count (filter odd? (map
+          # inc (range 2e6)))) — a wall-clock total, ~273ms locally with
+          # chunk-aware map/filter, 600ms local budget, 8s here for the same
+          # slow/contended-runner headroom the reduce gate gets. Closes the
+          # blind spot where the range-only reduce gate never exercised
+          # map/filter.
+          CLJGO_CORE_PIPELINE_BUDGET: 8s
           # Channel-op budgets (ADR 0040 / ADR 0024, pkg/lang
           # chan_budget_test.go): local defaults are 1.5x wrapper-vs-raw
           # and 5x alts-vs-static-select (S19 measured 1.37x/1.9x). Both
