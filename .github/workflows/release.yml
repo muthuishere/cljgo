@@ -32,21 +32,31 @@ jobs:
 
       # Don't ship a release that fails its own gates.
       - name: go test
-        run: go test ./...
+        # Must mirror ci.yml exactly (same shared runners): the -timeout and
+        # the FULL set of host-relative budget overrides. A missing budget
+        # here fails the release on a slow runner while ci.yml is green —
+        # which is how v0.3.0's first tag failed on the pipeline gate.
+        run: go test -timeout 30m ./...
         env:
-          # Same host-relative boot budget as ci.yml (ADR 0024) — this runs on
-          # the same shared runners, where the 250ms default is a property of
-          # the owner's machine, not of the code.
+          # The boot budget is host-relative (ADR 0024): 250ms locally, but a
+          # shared runner boots far slower; 5s absorbs runner variance while
+          # staying ~20x under any real O(n²) pathology.
           CLJGO_BOOT_BUDGET: 5s
-          # Same reasoning for the emitted-vs-raw-Go ratio (ADR 0024): it
-          # divides two independently measured net times, so a contended
-          # runner swings the quotient (63.2x observed vs ~35x local, passing
-          # on rerun). 120 stays far under the ~168x naive-emission regression
-          # the gate exists to catch.
+          # Emitted-vs-raw-Go ratio (ADR 0024): divides two independently
+          # measured net times, so a contended runner swings the quotient
+          # (63.2x once observed vs ~35x local). 60 leaves >10x noise headroom
+          # yet still catches the ~168x naive-emission regression.
           CLJGO_PERF_RATIO_MAX: "60"
-          # AOT-binary startup gate: same loosened runner ceiling as ci.yml
-          # (25ms local default is a laptop property; runners fork/exec
-          # slower and noisier).
+          # clojure.core-mediated reduce gate (ADR 0037 #5): ~110ms locally,
+          # 350ms local budget, 3s here for slower/contended runners.
+          CLJGO_CORE_REDUCE_BUDGET: 3s
+          # map/filter pipeline gate (ADR 0063): (count (filter odd? (map inc
+          # (range 2e6)))) — ~273ms locally, 600ms local budget, 8s here for
+          # the same slow/contended-runner headroom. Its absence failed the
+          # first v0.3.0 tag at 973ms > 500ms default.
+          CLJGO_CORE_PIPELINE_BUDGET: 8s
+          # AOT-binary startup gate: 25ms local default is a laptop property;
+          # runners fork/exec slower and noisier — 500ms here.
           CLJGO_BOOT_STARTUP_BUDGET: 500ms
           # Channel-op budgets (ADR 0040 / ADR 0024): same loosened runner
           # ceilings as ci.yml — ratios of two same-host measurements.
