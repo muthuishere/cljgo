@@ -41,6 +41,13 @@ type Options struct {
 	// PrintLastValue makes main() print pr-str of the last top-level
 	// form's value — the conformance dual-harness contract (ADR 0007).
 	PrintLastValue bool
+	// UsesBri marks a program that requires a bri.* namespace (ADR 0071).
+	// When set, the emitted main package blank-imports pkg/briaot — the
+	// AOT-compiled bri framework — so the replayed (require 'bri.http)
+	// resolves at runtime to real net/http + the framework fns with no
+	// interpreter linked. WriteProgram sets it from Program.UsesBri, which
+	// CompileProgram records when a bri lib provider fires during discovery.
+	UsesBri bool
 	// EntrySrcFile is the entry namespace's logical source path. When set,
 	// the emitted main package's Load() binds *file* to it (ADR 0053 dec 3),
 	// so an AOT binary reports the same *file* semantics as the interpreter
@@ -251,6 +258,13 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	// makes clojure.core exist in the binary WITHOUT the interpreter.
 	if spec.isMain {
 		fmt.Fprintf(&out, "_ %q\n", runtimeModule+"/pkg/coreaot")
+		// The AOT-compiled bri framework (ADR 0071): a bri app blank-imports
+		// pkg/briaot so its init() registers a lib provider per bri namespace
+		// — the replayed (require 'bri.http) then resolves to the compiled
+		// framework + Go shims, no interpreter linked.
+		if opts.UsesBri {
+			fmt.Fprintf(&out, "_ %q\n", runtimeModule+"/pkg/briaot")
+		}
 	}
 	// File-backed requires: blank imports keep the dependency packages
 	// linked (and init-registered) — ADR 0042 §2.
@@ -404,6 +418,22 @@ func SynthGoMod(dir, moduleName, runtimeDir string, requires []GoModRequire) err
 	if runtimeDir == "" {
 		runtimeVersion = "v" + version.Version
 	}
+	// ADR 0071: a replace-based (dev/override) build resolves the runtime
+	// LOCALLY, but Go does not inherit a replaced module's own external
+	// dependencies — the generated module must require + sum them itself.
+	// Carry the runtime's external requires (e.g. golang.org/x/crypto, which
+	// bri's argon2/bcrypt shims need) as indirect requires and copy the
+	// runtime's go.sum, so a readonly `go build` links them offline. Unused
+	// requires are harmless: the linker drops any module a hello-world binary
+	// does not import (no binary bloat), and release-pin builds (no replace)
+	// keep the tidy path untouched.
+	var extRequires []GoModRequire
+	if runtimeDir != "" {
+		var err error
+		if extRequires, err = runtimeExternalRequires(runtimeDir); err != nil {
+			return err
+		}
+	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "module %s\n\ngo 1.26\n\n", moduleName)
 	b.WriteString("require (\n")
@@ -411,11 +441,66 @@ func SynthGoMod(dir, moduleName, runtimeDir string, requires []GoModRequire) err
 	for _, r := range requires {
 		fmt.Fprintf(&b, "%s %s\n", r.Path, r.Version)
 	}
+	for _, r := range extRequires {
+		fmt.Fprintf(&b, "%s %s // indirect\n", r.Path, r.Version)
+	}
 	b.WriteString(")\n")
 	if runtimeDir != "" {
 		fmt.Fprintf(&b, "\nreplace %s => %s\n", runtimeModule, runtimeDir)
 	}
-	return os.WriteFile(modPath, []byte(b.String()), 0o644)
+	if err := os.WriteFile(modPath, []byte(b.String()), 0o644); err != nil {
+		return err
+	}
+	// Copy the runtime's go.sum so the added external requires verify offline
+	// under readonly build (skipped for release-pin, which tidies its own).
+	if runtimeDir != "" {
+		if sum, err := os.ReadFile(filepath.Join(runtimeDir, "go.sum")); err == nil {
+			if werr := os.WriteFile(filepath.Join(dir, "go.sum"), sum, 0o644); werr != nil {
+				return werr
+			}
+		}
+	}
+	return nil
+}
+
+// runtimeExternalRequires parses runtimeDir/go.mod and returns every require
+// whose module path is NOT the runtime module itself — the third-party deps
+// (golang.org/x/crypto, …) a replace-based generated module must re-declare
+// because Go does not inherit a replaced module's dependency graph into the
+// consuming module's go.mod. Line-based parse (no x/mod dependency): handles
+// both the `require ( … )` block and single-line `require path version`.
+func runtimeExternalRequires(runtimeDir string) ([]GoModRequire, error) {
+	data, err := os.ReadFile(filepath.Join(runtimeDir, "go.mod"))
+	if err != nil {
+		return nil, fmt.Errorf("reading runtime go.mod for external deps: %w", err)
+	}
+	var out []GoModRequire
+	inBlock := false
+	for _, line := range strings.Split(string(data), "\n") {
+		t := strings.TrimSpace(line)
+		if strings.HasPrefix(t, "//") || t == "" {
+			continue
+		}
+		switch {
+		case strings.HasPrefix(t, "require ("):
+			inBlock = true
+			continue
+		case inBlock && t == ")":
+			inBlock = false
+			continue
+		case strings.HasPrefix(t, "require ") && !strings.Contains(t, "("):
+			t = strings.TrimPrefix(t, "require ")
+		case !inBlock:
+			continue
+		}
+		// t is now "path version [// indirect]"; keep path + version.
+		fields := strings.Fields(t)
+		if len(fields) < 2 || fields[0] == runtimeModule {
+			continue
+		}
+		out = append(out, GoModRequire{Path: fields[0], Version: fields[1]})
+	}
+	return out, nil
 }
 
 // ExeSuffix is ".exe" on Windows and "" everywhere else — the extension an

@@ -16,7 +16,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/muthuishere/cljgo/pkg/bri"
+	"github.com/muthuishere/cljgo/pkg/briloader"
 	"github.com/muthuishere/cljgo/pkg/diag"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -76,8 +76,8 @@ type Driver struct {
 // New returns a driver with a fresh evaluator. in may be nil when only
 // EvalReader/EvalString will be used (e.g. `cljgo run`).
 func New(in io.Reader, out, errOut io.Writer) *Driver {
-	ev := eval.New() // interns the core builtins incl. *1 *2 *3 *e
-	bri.Register(ev) // bri.* namespaces requireable, loaded lazily (ADR 0041)
+	ev := eval.New()       // interns the core builtins incl. *1 *2 *3 *e
+	briloader.Register(ev) // bri.* namespaces requireable, loaded lazily (ADR 0041)
 	return &Driver{ev: ev, in: in, out: out, errOut: errOut, sess: NewSession(ev)}
 }
 

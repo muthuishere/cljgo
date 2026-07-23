@@ -15,6 +15,9 @@ import (
 	"strings"
 
 	"github.com/muthuishere/cljgo/pkg/ast"
+	"github.com/muthuishere/cljgo/pkg/bri"
+	"github.com/muthuishere/cljgo/pkg/briloader"
+	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -33,6 +36,12 @@ type CompiledNS struct {
 type Program struct {
 	Entry *CompiledNS
 	Deps  []*CompiledNS
+	// UsesBri is set when the program required a bri.* namespace during
+	// discovery (ADR 0071). bri namespaces are provider-backed (not
+	// file-backed), so they never enter Deps — instead the emitted main
+	// blank-imports the AOT-compiled pkg/briaot. WriteProgram passes this
+	// to Options.UsesBri.
+	UsesBri bool
 }
 
 // moduleCompiler captures namespaces as the evaluator's lib loader
@@ -110,12 +119,32 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	mc := &moduleCompiler{done: map[string]*CompiledNS{}}
 	ev.LibLoader = mc.load
 
+	// ADR 0071: register the bri lib providers on this discovery evaluator
+	// so (require '[bri.http]) resolves at build time. bri is provider-backed
+	// (not file-backed), so it NEVER enters mc.load / Program.Deps — the
+	// namespaces are AOT-compiled in pkg/briaot, blank-imported when a bri
+	// provider fires here. Track that so the main package imports briaot only
+	// when the app actually uses bri; guard so a repeated require is a no-op.
+	usesBri := false
+	briDone := map[string]bool{}
+	for _, s := range bri.Specs() {
+		s := s
+		corelib.RegisterLibProvider(s.Name, func() {
+			usesBri = true
+			if briDone[s.Name] {
+				return
+			}
+			briDone[s.Name] = true
+			briloader.LoadSpec(ev, s)
+		})
+	}
+
 	entry := &CompiledNS{Path: srcPath}
 	mc.stack = []*CompiledNS{entry}
 	if entry.Forms, err = compileStream(ev, f, srcPath); err != nil {
 		return nil, err
 	}
-	return &Program{Entry: entry, Deps: mc.order}, nil
+	return &Program{Entry: entry, Deps: mc.order, UsesBri: usesBri}, nil
 }
 
 // WriteProgram writes the generated module for a compiled program: the
@@ -125,6 +154,9 @@ func WriteProgram(dir string, p *Program, opts Options) error {
 	// ADR 0053 dec 3: the entry namespace's *file* binds to its logical
 	// source path so a binary matches the interpreter (not NO_SOURCE_FILE).
 	opts.EntrySrcFile = p.Entry.Path
+	// ADR 0071: carry bri usage into emission so the main package
+	// blank-imports the AOT-compiled framework (pkg/briaot).
+	opts.UsesBri = p.UsesBri
 	if len(p.Deps) == 0 {
 		return WriteModule(dir, p.Entry.Forms, opts)
 	}
