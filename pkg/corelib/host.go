@@ -11,6 +11,7 @@ package corelib
 
 import (
 	"fmt"
+	"io"
 	"math"
 	"net/url"
 	"reflect"
@@ -128,6 +129,25 @@ func CallGoMethod(recv any, method string, throw bool, args []any) any {
 	// generalize to arbitrary receivers, only to cljgo's own Inst.
 	if inst, ok := recv.(reader.Inst); ok && method == "getTime" && len(args) == 0 {
 		return inst.EpochMillis()
+	}
+	// The same kind of narrow bridge for java.io.Writer's lowercase
+	// `.write` (batch A2, printing): a custom print-method /
+	// print-dup method's idiomatic body is (.write w (str ...)), and w is a
+	// Go io.Writer (os.Stdout, with-out-str's buffer, pr-str's builder).
+	// Lowercase names are invisible to reflection, so without this the
+	// canonical JVM-portable method body cannot run. Strings and chars
+	// only — the two overloads such methods actually use.
+	if method == "write" && len(args) == 1 {
+		if w, ok := recv.(io.Writer); ok {
+			switch s := args[0].(type) {
+			case string:
+				io.WriteString(w, s)
+				return nil
+			case lang.Char:
+				io.WriteString(w, string(rune(s)))
+				return nil
+			}
+		}
 	}
 	rv := reflect.ValueOf(recv)
 	mv := rv.MethodByName(method)

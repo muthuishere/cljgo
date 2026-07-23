@@ -210,6 +210,17 @@ func daysInMonth(year, month int) int {
 	return dim[month-1]
 }
 
+// defaultDataReaderFn returns the fn bound to *default-data-reader-fn*
+// (lang.VarDefaultDataReaderFn), when one is bound (batch A2, reading).
+func defaultDataReaderFn() (lang.IFn, bool) {
+	v := lang.VarDefaultDataReaderFn
+	if v == nil || !v.IsBound() {
+		return nil, false
+	}
+	fn, ok := v.Deref().(lang.IFn)
+	return fn, ok
+}
+
 // dataReaderFor consults lang.*data-readers* for a registered reader
 // function bound to tag, returning it (and true) when present.
 func dataReaderFor(tag *lang.Symbol) (lang.IFn, bool) {

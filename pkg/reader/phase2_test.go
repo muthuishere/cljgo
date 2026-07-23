@@ -25,23 +25,26 @@ import (
 // Namespaced maps
 
 func TestNamespacedMapGolden(t *testing.T) {
-	// Printed with cljgo's plain map printer (no #:ns{...} sugar). The
-	// underlying entries match the CLI byte-for-byte; see oracle notes.
+	// Printed with the *print-namespace-maps* sugar (batch A2 — root true,
+	// matching clojure.main): a map whose keys all share one namespace
+	// prints as #:ns{...}, exactly the CLI's own printing byte-for-byte
+	// (CLI 2026-07-23: (prn {:foo/a 1 'foo/x 2}) => #:foo{:a 1, x 2}).
 	tests := []struct{ src, want string }{
 		// CLI: (read-string "#:foo{:a 1 :b 2}") entries => :foo/a 1, :foo/b 2.
-		{"#:foo{:a 1 :b 2}", "{:foo/a 1, :foo/b 2}"},
-		// CLI: already-qualified keys stay, :_/d strips to :d.
+		{"#:foo{:a 1 :b 2}", "#:foo{:a 1, :b 2}"},
+		// CLI: already-qualified keys stay, :_/d strips to :d (mixed
+		// namespaces => plain map printing).
 		{"#:foo{:a 1 :foo/b 2 :bar/c 3 :_/d 4}", "{:foo/a 1, :foo/b 2, :bar/c 3, :d 4}"},
 		// CLI: bare symbol key gets the namespace too (foo/x).
-		{"#:foo{:a 1 x 2}", "{:foo/a 1, foo/x 2}"},
+		{"#:foo{:a 1 x 2}", "#:foo{:a 1, x 2}"},
 		// CLI: (read-string "#::{:a 1}") in ns user => {:user/a 1}.
-		{"#::{:a 1}", "{:user/a 1}"},
+		{"#::{:a 1}", "#:user{:a 1}"},
 		// #::alias resolves via the resolver (str -> clojure.string here).
-		{"#::str{:a 1}", "{:clojure.string/a 1}"},
+		{"#::str{:a 1}", "#:clojure.string{:a 1}"},
 		// CLI: non-qualifiable key (a number) is unchanged.
 		{"#:foo{1 2}", "{1 2}"},
 		// Whitespace between the namespace and the map is allowed.
-		{"#:foo {:a 1}", "{:foo/a 1}"},
+		{"#:foo {:a 1}", "#:foo{:a 1}"},
 		{"#:foo{}", "{}"},
 	}
 	for _, tt := range tests {

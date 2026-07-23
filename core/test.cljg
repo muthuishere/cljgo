@@ -67,23 +67,42 @@
       (recur (next cs) (str (first cs) " " s))
       s)))
 
-;; do-report tallies every assertion by :type and prints failures/errors
-;; showing the failing form (:expected) and the observed value (:actual).
+;; report — THE reporter extension point, a multimethod on :type exactly
+;; like upstream clojure.test (batch A2, 2026-07-23): a custom runner
+;; replaces or wraps reporting with (defmethod report :fail [m] ...) and
+;; every assertion flows through it via do-report below. The built-in
+;; methods reproduce cljgo's previous do-report output BYTE-IDENTICALLY
+;; (the whole conformance suite + test.cljg harness freeze it), and — as
+;; upstream — the :pass/:fail/:error methods own their counter increments,
+;; so a replaced method takes over tallying too. oracle: clojure.test
+;; 1.12.5 source (report/do-report), verified with the `clojure` CLI;
+;; conformance/tests/clojure-test-report.clj freezes a custom reporter run.
+(defmulti report :type)
+
+(defmethod report :default [m] nil)
+
+(defmethod report :pass [m]
+  (inc-report-counter :pass))
+
+(defmethod report :fail [m]
+  (inc-report-counter :fail)
+  (println)
+  (println "FAIL in" (testing-vars-str) (testing-contexts-str))
+  (println "expected:" (pr-str (:expected m)))
+  (println "  actual:" (pr-str (:actual m))))
+
+(defmethod report :error [m]
+  (inc-report-counter :error)
+  (println)
+  (println "ERROR in" (testing-vars-str) (testing-contexts-str))
+  (println "expected:" (pr-str (:expected m)))
+  (println "  actual:" (pr-str (:actual m))))
+
+;; do-report routes every assertion through the `report` multimethod, as
+;; upstream clojure.test does (the JVM's file/line enrichment step is a
+;; no-op here — cljgo has no stack-frame introspection, see file-position).
 (defn do-report [m]
-  (let [t (:type m)]
-    (inc-report-counter t)
-    (cond
-      (= t :fail)
-      (do (println)
-          (println "FAIL in" (testing-vars-str) (testing-contexts-str))
-          (println "expected:" (pr-str (:expected m)))
-          (println "  actual:" (pr-str (:actual m))))
-      (= t :error)
-      (do (println)
-          (println "ERROR in" (testing-vars-str) (testing-contexts-str))
-          (println "expected:" (pr-str (:expected m)))
-          (println "  actual:" (pr-str (:actual m))))
-      :else nil)))
+  (report m))
 
 ;; --- is / testing / deftest -----------------------------------------
 
@@ -385,6 +404,12 @@
            (+ (:pass m) (:fail m) (:error m)) "assertions.")
   (println (:fail m) "failures," (:error m) "errors."))
 
+;; The summary flows through the `report` multimethod too (upstream
+;; clojure.test shape), so a custom reporter can replace it; the default
+;; method is the long-standing report-summary output, unchanged.
+(defmethod report :summary [m]
+  (report-summary m))
+
 ;; test-vars: groups vars by their namespace and runs test-var on them with
 ;; that namespace's :once/:each fixtures applied (real clojure.test shape).
 (defn test-vars [vars]
@@ -401,7 +426,7 @@
   (binding [*report-counters* (atom initial-report-counters)]
     (test-vars vars)
     (let [summary (assoc (deref *report-counters*) :type :summary)]
-      (report-summary summary)
+      (report summary)
       summary)))
 
 ;; run-tests with no args runs the current namespace; with namespace
