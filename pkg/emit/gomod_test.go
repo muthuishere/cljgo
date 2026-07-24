@@ -181,6 +181,13 @@ func isNetworkErr(err error) bool {
 		"dial tcp", "no such host", "network is unreachable",
 		"timeout", "connection refused", "i/o timeout",
 		"TLS handshake", "lookup ", "unrecognized import path",
+		// Transient module-proxy / checksum-DB outages — notably the
+		// ~hour-long sum.golang.org indexing lag right after a release, when
+		// verifying the just-published version 500s. The go.mod SHAPE is
+		// asserted separately (TestSynthGoModReleasePin + the inline check),
+		// so the best-effort full build skips rather than failing on infra.
+		"verifying module", "sum.golang.org", "500 Internal Server Error",
+		"proxy.golang.org", "GOSUMDB", "checksum",
 	} {
 		if strings.Contains(s, m) {
 			return true
