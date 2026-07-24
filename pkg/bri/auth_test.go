@@ -13,6 +13,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"testing"
@@ -526,12 +527,25 @@ func TestMetricsStackOverhead(t *testing.T) {
 		eval(t, d, fmt.Sprintf(`(dotimes [_ %d] (%s))`, n, fn))
 		return time.Since(start)
 	}
-	bare := bench("bare")
-	timed := bench("timed")
-	ratio := float64(timed) / float64(bare)
-	t.Logf("bare %v/req vs +metrics %v/req = %.2fx", bare/n, timed/n, ratio)
-	// Wall-clock ratio of two tiny measurements jitters on shared runners
-	// (same rationale as the emitter/bri gates); a real regression is 5x+.
+	// The wall-clock ratio of two tiny measurements jitters badly on shared
+	// runners: a single scheduler hiccup in the `bare` (denominator) sample
+	// alone can spike the ratio past the ceiling on a green build (it tripped
+	// macOS CI on a docs-only PR). A one-off hiccup inflates the ratio but can
+	// never deflate a REAL regression below it, so take the MIN ratio over a
+	// few samples — regression-faithful, immune to isolated jitter.
+	const samples = 5
+	ratio := math.Inf(1)
+	var lastBare, lastTimed time.Duration
+	for i := 0; i < samples; i++ {
+		bare := bench("bare")
+		timed := bench("timed")
+		if r := float64(timed) / float64(bare); r < ratio {
+			ratio, lastBare, lastTimed = r, bare, timed
+		}
+	}
+	t.Logf("best of %d: bare %v/req vs +metrics %v/req = %.2fx", samples, lastBare/n, lastTimed/n, ratio)
+	// A real regression is 5x+ (the middleware is a thin wrapper); the 3x
+	// ceiling flags that with margin now that isolated jitter is sampled out.
 	max := 3.0
 	if s := os.Getenv("CLJGO_METRICS_PERF_MAX"); s != "" {
 		fmt.Sscanf(s, "%f", &max)
