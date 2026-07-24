@@ -9,18 +9,49 @@ Questions people have actually asked — on Slack, Reddit, and elsewhere — ans
 <details class="faq" open>
 <summary>How is this different from Glojure and let-go?</summary>
 
-Full credit first: cljgo's runtime data structures started as a hard fork of
-[Glojure](https://github.com/glojure/glojure)'s `pkg/lang` (vendored and
-credited in the repo), and reading [let-go](https://github.com/nooga/let-go)
-shaped several decisions. The difference is the model. Glojure is a tree-walk
-interpreter whose compile story serializes an evaluated namespace, and whose
-interop goes through a generated reflection registry; let-go compiles to
-bytecode and bundles its VM into shipped binaries. cljgo is the ClojureScript
-model with Go as the target: one analyzer, one AST, two consumers — a
-tree-walk evaluator that is the REPL and macro engine, and an emitter that
-compiles forms to plain Go source for `go build`. The compiled binary links
-zero interpreter (CI checks the link set), and the output lives inside the Go
-ecosystem — a normal Go program, a normal Go module.
+Less than an earlier version of this entry claimed — that version was written
+from the projects' public docs, and their docs undersold them. This one comes
+from reading their source. All three projects compile Clojure to Go source and
+then to native binaries: [Glojure](https://github.com/glojurelang/glojure) has
+a real per-namespace Go generator (int64/float64 specialization, direct calls,
+reduce-pipeline fusion), and [let-go](https://github.com/nooga/let-go) lowers
+its IR to real `go/ast` (via [gloat](https://github.com/gloathub/gloat), the
+automation tool for both). "Three attempts at the same thing" is fair framing.
+
+The deltas we believe are real. **Where compilation starts:** cljgo is the
+ClojureScript model — one analyzer, one AST, and the emitter compiles source
+forms directly, so nothing has to be *evaluated* to be compiled; Glojure's
+generator walks an already-evaluated namespace; let-go lowers its bytecode IR.
+**What ships:** cljgo's compiled binary links zero interpreter (CI checks the
+link set); Glojure's compact AOT builds retain the evaluator; let-go's lowered
+binaries keep the VM runtime linked. **The rest is product surface** —
+conformance frozen against JVM Clojure 1.12.5 through both REPL and binary,
+the bri batteries, the toolchain — positioning, not architecture.
+
+And measured head-to-head, AOT vs AOT vs AOT on the same programs, **Glojure
+wins 6 of 8 rows** (cljgo takes the tree-recursion rows and has the smaller
+binaries). The table is published as-is on the
+[benchmarks page](/cljgo/reference/benchmarks/).
+
+</details>
+
+<details class="faq" open>
+<summary>Is cljgo just a fork of Glojure?</summary>
+
+No — but part of it is a fork, on purpose, and it's credited. `pkg/lang` (the
+persistent data structures and runtime types) is a hard fork of Glojure's
+`pkg/lang` at v0.6.8: 23.4k lines of Go, EPL license preserved, a full
+PROVENANCE.md with the surgery log. Persistent vectors and maps don't need
+reinventing; that's the layer where sharing is a feature, not a secret.
+
+Everything above it is original: ~85k lines of Go (reader, analyzer, tree-walk
+evaluator, Go-source emitter, Go-native corelib, bri, diagnostics, the
+new/dev/build/dist toolchain), ~8k lines of Clojure-in-Clojure core, and ~490
+conformance tests frozen against real JVM Clojure 1.12.5, each run through
+both the interpreter and the compiled binary. So "same codebase" is true for
+the data-structure layer — about 22% of the Go — and false for the compiler,
+which is the part that makes cljgo cljgo. Shared runtime foundation, credited;
+independent compiler and product on top.
 
 </details>
 
@@ -212,8 +243,10 @@ import like any other module. Direct C FFI without cgo (purego,
 <details class="faq" open>
 <summary>How big and how fast are the binaries?</summary>
 
-Hello-world compiles to a 5.3 MB static binary that starts in ~5 ms — dead
-even with let-go's startup, no JVM, no runtime install. Emitted code currently
+Hello-world compiles to a 5.3 MB static binary that starts in ~5 ms — the
+smallest binary of the three Clojure-on-Go AOT compilers (Glojure's start is
+~1 ms quicker; all three are single-digit ms), no JVM, no runtime install.
+Emitted code currently
 runs within ~5× of hand-written Go on the worst measured hot loop, and that
 gap is CI-gated so it only shrinks. Full tables on the
 [benchmarks page](/cljgo/reference/benchmarks/).

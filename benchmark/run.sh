@@ -45,6 +45,19 @@ if [ -z "$LETGO" ]; then
   done
 fi
 [ -z "$LETGO" ] && echo "### let-go not found (set \$LETGO to include it) ###"
+
+# glojure: env override, else build glj from a reference clone (same probing).
+GLJ="${GLJ:-}"
+if [ -z "$GLJ" ]; then
+  for c in "$ROOT/../references/glojure" "$ROOT/../../references/glojure" "$ROOT/references/glojure"; do
+    if [ -f "$c/cmd/glj/main.go" ]; then
+      echo "### building glojure from $c ###"
+      ( cd "$c" && go build -trimpath -ldflags="-s -w" -o "$BUILD/glj" ./cmd/glj ) && GLJ="$BUILD/glj"
+      break
+    fi
+  done
+fi
+[ -z "$GLJ" ] && echo "### glojure not found (set \$GLJ to include it) ###"
 BB=$(command -v bb || true); JOKER=$(command -v joker || true); CLJ=$(command -v clj || true)
 
 BENCHES=(tak fib loop-recur persistent-map map-filter transducers reduce)
@@ -63,6 +76,7 @@ bench_cmds () {  # emit hyperfine -n/cmd pairs for one program name ($1) or "sta
     printf '%s\0' -n cljgo-run "$CLJGO run $BUILD/empty.clj"
     [ -x "$BUILD/aot_startup" ] && printf '%s\0' -n cljgo-aot "$BUILD/aot_startup"
     [ -n "$LETGO" ] && printf '%s\0' -n let-go "$LETGO -e nil"
+    [ -n "$GLJ" ]   && printf '%s\0' -n glojure "$GLJ -e nil"
     [ -n "$BB" ]    && printf '%s\0' -n babashka "bb -e nil"
     [ -n "$JOKER" ] && printf '%s\0' -n joker "joker -e nil"
     [ -n "$CLJ" ]   && printf '%s\0' -n clojure-jvm "clj -M -e nil"
@@ -72,6 +86,7 @@ bench_cmds () {  # emit hyperfine -n/cmd pairs for one program name ($1) or "sta
   printf '%s\0' -n cljgo-run "$CLJGO run $f"
   [ -x "$BUILD/aot_$n" ] && printf '%s\0' -n cljgo-aot "$BUILD/aot_$n"
   [ -n "$LETGO" ] && printf '%s\0' -n let-go "$LETGO $f"
+  [ -n "$GLJ" ]   && printf '%s\0' -n glojure "$GLJ $f"
   [ -n "$BB" ]    && printf '%s\0' -n babashka "bb $f"
   if [ -n "$JOKER" ] && ! echo " $JOKER_SKIP " | grep -q " $n "; then printf '%s\0' -n joker "joker $f"; fi
   [ -n "$CLJ" ]   && printf '%s\0' -n clojure-jvm "clj -M -e '(load-file \"$f\")'"

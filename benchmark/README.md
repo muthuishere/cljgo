@@ -142,9 +142,39 @@ conformance cases + jank suite run + the (still-owed) `clojure.core`-mediated CI
 perf gate that ADR 0037 decision #5 mandated. Sequencing this is an ADR 0045
 continuation, not a spec change.
 
+## The AOT-only head-to-head (`run-aot.sh` → `results-aot.md`)
+
+The like-for-like comparison of the three Clojure-on-Go AOT compilers:
+`cljgo build` vs Glojure vs let-go, **native binaries only, no interpreted
+legs** (those live in `results.md`). Glojure and let-go binaries are built
+with [gloat](https://github.com/gloathub/gloat), the official automation tool
+for both, which pins its own Glojure/let-go/Go versions.
+
+```bash
+# 1. cljgo binaries (also produced by run.sh's precompile stage)
+#    -> .build/aot_<name>
+# 2. Glojure + let-go binaries via gloat, from let-go's own AOT variants
+#    of the same programs (ns + -main wrapper; upstream benchmark/gloat/):
+GLOAT=path/to/gloat/bin/gloat
+SRC=path/to/let-go/benchmark/gloat
+cd benchmark/.build/aotcmp
+for p in startup tak fib loop-recur persistent-map map-filter transducers reduce; do
+  $GLOAT           "$SRC/$p.clj" -o "$p-glj" -Xprune -f -q   # Glojure engine
+  $GLOAT -E lglvm  "$SRC/$p.clj" -o "$p-lg"  -Xprune -f -q   # let-go lowered
+done
+# 3. time them:
+bash benchmark/run-aot.sh    # -> results-aot.md
+```
+
+gloat's pure `lgl` (no-VM) engine is not implemented yet; `lglvm` (IR lowered
+to Go, VM runtime linked) is its shipping AOT mode.
+
 ## Provenance
 
 Benchmark programs derived from
 [let-go](https://github.com/nooga/let-go)'s `benchmark/` suite. The comparison
 method (hyperfine 3/10, wall-clock, same-machine) follows let-go's published
-methodology so the two projects' numbers are directly comparable.
+methodology so the two projects' numbers are directly comparable. The AOT
+head-to-head compiles let-go's own `benchmark/gloat/` variants of the same
+programs (identical bodies, wrapped in `(ns …)` + `(defn -main …)` because
+gloat needs an entry point).

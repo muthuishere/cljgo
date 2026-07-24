@@ -33,7 +33,8 @@ path only.
 ## Head-to-head: let-go's own suite, unmodified
 
 [let-go](https://github.com/nooga/let-go) is the closest comparable — Clojure
-on Go, but a bytecode VM rather than AOT-to-Go-source. cljgo ran **let-go's own
+on Go; this table runs its bytecode VM (`lg file.clj`), its AOT leg is in the
+head-to-head below. cljgo ran **let-go's own
 benchmark suite** with let-go's published methodology (hyperfine, 3 warmup /
 10 runs). All 7 files run on cljgo with no edits. Wall-clock mean of 10 runs,
 **startup included** — the honest mode. Best per row in bold.
@@ -61,10 +62,9 @@ Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1. joker has no `transducers` and is
 skipped on `fib`/`tak` (~13× slower there). Runtime size is the stripped
 binary for cljgo/let-go, the installed binary for babashka/joker, and
 JDK + `clojure.jar` (381.0 + 4.0 MB) for the JVM; a *compiled cljgo program*
-is 5.3 MB. Not measured (and honestly flagged as such): **gloat** (no
-installable package path) and **go-joker** (needs a source clone + codegen) —
-let-go's published M1 Pro data puts gloat at 12.7× let-go on `fib`, 5.4× on
-`reduce`. Reproduce the whole table: `bash benchmark/run.sh` — methodology in
+is 5.3 MB. Not measured (and honestly flagged as such): **go-joker** (needs a
+source clone + codegen). Reproduce the whole table: `bash benchmark/run.sh` —
+methodology in
 [`benchmark/README.md`](https://github.com/muthuishere/cljgo/blob/main/benchmark/README.md).
 
 ### Two honest reads of that table
@@ -83,6 +83,48 @@ dispatch on the reducing fn plus `LongChunk.Nth` boxing; ADR 0067's follow-ups
 and an unboxed internal-reduce are the named path. And the interpreter leg
 (`cljgo run`) is a tree-walker: it loses everywhere except against joker.
 That is what `cljgo build` is for.
+
+## AOT vs AOT vs AOT: the compiled-Clojure-on-Go head-to-head
+
+Three projects compile Clojure to Go source and then to a native binary:
+cljgo, [Glojure](https://github.com/glojurelang/glojure), and
+[let-go](https://github.com/nooga/let-go). This is the like-for-like
+comparison — **every column is a native binary built from the same program**,
+no interpreted legs. Glojure and let-go binaries were built with
+[gloat](https://github.com/gloathub/gloat) (`-E glj` and `-E lglvm`), the
+official automation tool for both. Measured **2026-07-24**, hyperfine
+3 warmup / 10 runs, wall-clock mean, startup included, compile time excluded.
+Best per row in bold.
+
+| Benchmark | cljgo (AOT) | Glojure (AOT) | let-go (AOT) |
+|---|---|---|---|
+| startup | 4.7 ms | **3.6 ms** | 5.1 ms |
+| `tak` | **36.4 ms** | 50.6 ms | 59.6 ms |
+| `fib` | **24.1 ms** | 37.4 ms | 65.8 ms |
+| `loop-recur` | 5.9 ms | **3.7 ms** | 37.3 ms |
+| `persistent-map` | 10.5 ms | **7.4 ms** | 12.6 ms |
+| `map-filter` | 6.3 ms | **3.8 ms** | 5.3 ms |
+| `transducers` | 17.0 ms | **9.9 ms** | 25.4 ms |
+| `reduce` | 26.8 ms | **23.2 ms** | 39.4 ms |
+| binary size | **5.3–6.7 MB** | 7.5 MB | 12.8 MB |
+
+**Honest read: Glojure wins this table** — 6 of 8 rows. Its codegen does
+int64/float64 specialization, direct-call targets, and reduce-pipeline fusion,
+and it shows. cljgo takes the tree-recursion rows (`tak`, `fib` — the ADR 0067
+numeric-inference pass) and the smallest binaries; let-go's lowered leg trails
+because values stay VM-boxed. Where the three still differ architecturally:
+cljgo compiles source forms without evaluating them and links **zero
+interpreter** into the binary (CI-checked); Glojure's generator walks an
+evaluated namespace and its AOT builds retain the evaluator; let-go's lowered
+binaries keep the VM runtime linked.
+
+Versions: cljgo @HEAD · gloat v0.1.62 pinning Glojure v0.7.0 and let-go
+v1.12.2 (gloat builds with its own pinned Go toolchain; cljgo with the repo
+toolchain). let-go's `transducers` used gloat's pure-retry fallback (its
+LG-overrides pass failed to build). gloat's pure `lgl` engine (no VM) is not
+implemented yet; `lglvm` is its shipping AOT mode. Reproduce:
+`bash benchmark/run-aot.sh` after building the three binary sets — steps in
+[`benchmark/README.md`](https://github.com/muthuishere/cljgo/blob/main/benchmark/README.md).
 
 ## Web framework (bri) vs the field
 
