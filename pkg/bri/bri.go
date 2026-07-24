@@ -93,7 +93,12 @@ func Specs() []Spec {
 		{Name: "bri.audit", File: "bri/audit.cljg", Pkg: "briaudit", Source: &core.BriAuditSource, install: installAuditShims},
 		{Name: "bri.html", File: "bri/html.cljg", Pkg: "brihtml", Source: &core.BriHTMLSource, install: nil},
 		{Name: "bri.auth", File: "bri/auth.cljg", Pkg: "briauth", Source: &core.BriAuthSource, install: installAuthShims},
-		{Name: "bri.db", File: "bri/db.cljg", Pkg: "bridb", Source: &core.BriDBSource, install: installDBShims},
+		// bri.db is OPT-IN (ADR 0076): its shims pull the SQLite + pgx drivers
+		// (~7 MB), which must not link into a bri app that never touches a
+		// database. Like bri.otel it is excluded from the umbrella pkg/briaot;
+		// its shims live in the isolated pkg/bri/db (ShimImport), which registers
+		// its installer via RegisterInstaller when linked.
+		{Name: "bri.db", File: "bri/db.cljg", Pkg: "bridb", Source: &core.BriDBSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/db"},
 		// bri.otel is OPT-IN (ADR 0074): its shims pull the OpenTelemetry SDK,
 		// which must not link into a bri app that does not require tracing. It
 		// is excluded from the umbrella pkg/briaot; its shims live in the

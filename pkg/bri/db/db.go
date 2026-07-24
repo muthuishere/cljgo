@@ -1,21 +1,33 @@
-// db.go — the pure-Go host shims for bri.db (ADR 0072, realizing ADR
-// 0041 §4 Data / ADR 0057 SQLite-default + ADR 0058 Postgres-via-pgx).
+// Package db is the ISOLATED Go half of bri.db — the pure-Go SQLite/pgx
+// host shims for the opt-in data layer (ADR 0072, realizing ADR 0041 §4
+// Data / ADR 0057 SQLite-default + ADR 0058 Postgres-via-pgx). It is a
+// SEPARATE package from pkg/bri on purpose (ADR 0076): the SQLite + pgx
+// drivers are a heavy dependency (~7 MB) that must NOT link into a bri
+// binary that never touches a database. pkg/bri never imports this
+// package; only pkg/briloader (the interpreter / REPL path, which already
+// links the whole interpreter) and the generated pkg/briaot/bridb
+// sub-package (blank-imported into a user binary ONLY when the app requires
+// bri.db) do — so the linker keeps the drivers exactly when, and only when,
+// an app uses the database.
 //
-// The Clojure half is core/bri/db.cljg (ns bri.db); this file interns
-// the private `-db-*` primitives it leans on, driving database/sql over
-// two PURE-GO drivers so a compiled bri app still links CGO_ENABLED=0:
+// The Clojure half is core/bri/db.cljg (ns bri.db); this file interns the
+// private `-db-*` primitives it leans on, driving database/sql over two
+// PURE-GO drivers so a compiled bri app still links CGO_ENABLED=0:
 //
 //   - modernc.org/sqlite (registered as driver "sqlite") — the
 //     zero-install default, NOT cgo mattn/go-sqlite3 (ADR 0057);
 //   - github.com/jackc/pgx/v5/stdlib (driver "pgx") — production
 //     Postgres (ADR 0058), also pure Go.
 //
-// Like the rest of pkg/bri this file must NOT import pkg/eval — it links
-// into an AOT binary. Handles (*sql.DB / *sql.Tx) are held opaquely by
-// the Clojure layer inside its {:bri.db/handle …} map and handed back to
-// these shims; both DB and Tx satisfy one `querier`, so one -db-query /
-// -db-exec serves connections and transactions alike.
-package bri
+// Like the rest of bri's Go half this package must NOT import pkg/eval — it
+// links into an AOT binary. It registers its shim installer with pkg/bri
+// from init() (RegisterInstaller), so bri.InstallShimsInto resolves bri.db's
+// private vars exactly like every other namespace once this package is
+// linked. Handles (*sql.DB / *sql.Tx) are held opaquely by the Clojure layer
+// inside its {:bri.db/handle …} map and handed back to these shims; both DB
+// and Tx satisfy one `querier`, so one -db-query / -db-exec serves
+// connections and transactions alike.
+package db
 
 import (
 	"database/sql"
@@ -27,9 +39,16 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // driver "pgx"
+	"github.com/muthuishere/cljgo/pkg/bri"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	_ "modernc.org/sqlite" // driver "sqlite"
 )
+
+// init wires bri.db's shim installer into pkg/bri's registry. It runs only
+// when this package is linked (i.e. the app requires bri.db, or the
+// interpreter is running), so a non-db AOT binary never carries the SQLite +
+// pgx drivers (ADR 0076).
+func init() { bri.RegisterInstaller("bri.db", installDBShims) }
 
 // querier is the common surface of *sql.DB and *sql.Tx that bri.db uses;
 // a db handle and a tx handle drive the identical read/write verbs.
@@ -325,3 +344,37 @@ func rewritePlaceholders(query, driver string) string {
 }
 
 func snakeToKebab(s string) string { return strings.ReplaceAll(s, "_", "-") }
+
+// --- shared shim helpers -----------------------------------------------------
+// Duplicated (not exported from pkg/bri) so this isolated package stays
+// self-contained and pkg/bri keeps zero edges to the drivers — the same
+// choice pkg/bri/otel made (ADR 0076).
+
+// one asserts a single argument and returns it (a 1-arity shim guard).
+func one(name string, args []any) any {
+	if len(args) != 1 {
+		panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), name))
+	}
+	return args[0]
+}
+
+// asString unwraps a Clojure string argument.
+func asString(v any) string {
+	s, ok := v.(string)
+	if !ok {
+		panic(fmt.Errorf("expected a string, got: %s", lang.PrintString(v)))
+	}
+	return s
+}
+
+// keywordName is a keyword's name without the leading colon.
+func keywordName(k lang.Keyword) string { return strings.TrimPrefix(k.String(), ":") }
+
+// getenvShim backs bri.db's (-getenv name) — os.LookupEnv, nil when unset.
+func getenvShim(args ...any) any {
+	v, ok := os.LookupEnv(asString(one("-getenv", args)))
+	if !ok {
+		return nil
+	}
+	return v
+}
