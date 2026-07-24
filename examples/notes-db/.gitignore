@@ -1,0 +1,5 @@
+/notes-db
+/.dev/
+/notes.db
+/notes.db-shm
+/notes.db-wal

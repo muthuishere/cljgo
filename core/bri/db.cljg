@@ -1,0 +1,189 @@
+;; bri.db — the ONE blessed data layer (ADR 0072, realizing ADR 0041 §4
+;; Data T2). Connect, query, transact, migrate — API-first, functional,
+;; injection-safe by construction, and IDENTICAL interpreted (cljgo dev)
+;; vs AOT-compiled (CGO_ENABLED=0 static binary). Two pure-Go drivers
+;; behind one API: modernc.org/sqlite (zero-install default, ADR 0057)
+;; and pgx (production Postgres, ADR 0058) — a driver swap, not an API
+;; fork.
+;;
+;; The blessed form is a SQL STRING plus positional `?` params (never
+;; string-concatenated values). bri.db normalizes placeholders (`?`→`$n`
+;; for Postgres) and column names (snake_case ↔ kebab-case), but NOT SQL
+;; dialect (the ADR 0057 seam).
+;;
+;; Private Go shims interned by pkg/bri before this loads: -db-open
+;; -db-close -db-query -db-exec -db-begin -db-commit -db-rollback
+;; -db-migration-files -db-now -getenv.
+(clojure.core/in-ns 'bri.db)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+
+;; --- handles ----------------------------------------------------------------
+;; A connection is a plain map {:bri.db/handle H :driver kw}; a tx conn is
+;; the same map with the tx handle swapped in and :tx true. Every verb
+;; reads the opaque handle out of it, so a db and a tx drive one API.
+(defn ^:private handle [db] (:bri.db/handle db))
+
+(defn connect
+  "Open a connection pool. opts:
+     :driver   :sqlite (default) | :postgres
+     :database SQLite file path (default \".dev/app.db\") or \":memory:\"
+     :url      Postgres URL (or set APP_DB_URL)
+   With no :driver, APP_DB_URL starting \"postgres\" selects pgx, else
+   SQLite — the zero-install default (ADR 0057). Returns a handle map."
+  ([] (connect {}))
+  ([opts]
+   (let [url    (or (:url opts) (-getenv "APP_DB_URL"))
+         driver (cond
+                  (:driver opts)                             (:driver opts)
+                  (and url (str/starts-with? url "postgres")) :postgres
+                  :else                                      :sqlite)
+         dsn    (if (= driver :postgres)
+                  (or url (:database opts))
+                  (or (:database opts) ".dev/app.db"))]
+     (when (nil? dsn)
+       (throw (ex-info "bri.db/connect: no Postgres URL (:url or APP_DB_URL)"
+                       {:bri.db/error :bri.db/no-url})))
+     {:bri.db/handle (-db-open (name driver) dsn) :driver driver})))
+
+(defn close!
+  "Close a connection pool (a no-op on a tx handle)."
+  [db]
+  (-db-close (handle db))
+  nil)
+
+(defn now
+  "The current UTC instant as an RFC3339 string — a portable timestamp for
+  created-at/updated-at columns (no Java interop, identical across modes)."
+  []
+  (-db-now))
+
+;; --- reads ------------------------------------------------------------------
+(defn query
+  "Run a parametrized SELECT — SQL string + positional `?` params — and
+  return a vector of maps (snake_case columns → kebab-case keyword keys)."
+  [db sql & params]
+  (-db-query (handle db) sql (vec params)))
+
+(defn one
+  "The first row of (query …) as a map, or nil."
+  [db sql & params]
+  (first (-db-query (handle db) sql (vec params))))
+
+(defn one!
+  "Like `one`, but throws an ex-info tagged :bri.db/not-found when no row
+  matches (the ADR 0041 funnel → 404)."
+  [db sql & params]
+  (or (first (-db-query (handle db) sql (vec params)))
+      (throw (ex-info "bri.db/one!: no matching row"
+                      {:bri.db/error :bri.db/not-found :sql sql}))))
+
+;; --- writes -----------------------------------------------------------------
+(defn exec!
+  "Run a parametrized write (INSERT/UPDATE/DELETE/DDL). Returns
+  {:rows-affected n :last-insert-id id}."
+  [db sql & params]
+  (-db-exec (handle db) sql (vec params)))
+
+(defn ^:private col-name
+  "Kebab-case keyword key → snake_case column name."
+  [k]
+  (str/replace (name k) "-" "_"))
+
+(defn insert!
+  "Insert one row from a map (kebab keys → snake columns), parametrized.
+  Returns {:rows-affected :last-insert-id} (SQLite fills :last-insert-id)."
+  [db table row]
+  (let [cols (keys row)
+        sql  (str "insert into " (name table)
+                  " (" (str/join ", " (map col-name cols)) ")"
+                  " values (" (str/join ", " (map (constantly "?") cols)) ")")]
+    (apply exec! db sql (map #(get row %) cols))))
+
+(defn update!
+  "Update rows matching where-map with set-map (both kebab→snake),
+  parametrized. Returns {:rows-affected …}."
+  [db table set-map where-map]
+  (let [set-cols   (keys set-map)
+        where-cols (keys where-map)
+        set-cl     (str/join ", " (map #(str (col-name %) " = ?") set-cols))
+        where-cl   (str/join " and " (map #(str (col-name %) " = ?") where-cols))
+        sql        (str "update " (name table) " set " set-cl
+                        (when (seq where-cols) (str " where " where-cl)))]
+    (apply exec! db sql (concat (map #(get set-map %) set-cols)
+                                (map #(get where-map %) where-cols)))))
+
+(defn delete!
+  "Delete rows matching where-map (kebab→snake), parametrized.
+  Returns {:rows-affected …}."
+  [db table where-map]
+  (let [where-cols (keys where-map)
+        where-cl   (str/join " and " (map #(str (col-name %) " = ?") where-cols))
+        sql        (str "delete from " (name table)
+                        (when (seq where-cols) (str " where " where-cl)))]
+    (apply exec! db sql (map #(get where-map %) where-cols))))
+
+;; --- transactions -----------------------------------------------------------
+(defn tx
+  "Run (f tx-conn) in a transaction: COMMIT on normal return, ROLL BACK
+  on any throw (re-raising). tx-conn drives the identical read/write
+  verbs. Called on a tx handle, runs inline (no nested savepoints on the
+  blessed path)."
+  [db f]
+  (if (:tx db)
+    (f db)
+    (let [t (assoc db :bri.db/handle (-db-begin (handle db)) :tx true)]
+      (try
+        (let [result (f t)]
+          (-db-commit (handle t))
+          result)
+        (catch Throwable e
+          (-db-rollback (handle t))
+          (throw e))))))
+
+(defn with-rollback
+  "Run (f tx-conn) in a transaction that is ALWAYS rolled back — the
+  per-test sandbox (Ecto-Sandbox shape, ADR 0058). Returns (f tx-conn)."
+  [db f]
+  (let [t (assoc db :bri.db/handle (-db-begin (handle db)) :tx true)]
+    (try
+      (f t)
+      (finally
+        (-db-rollback (handle t))))))
+
+;; --- migrations -------------------------------------------------------------
+;; Files <utc-timestamp>_<slug>.sql, applied forward-only in version order,
+;; each in its own tx, tracked in schema_migrations; idempotent.
+(defn ^:private ensure-migrations-table! [db]
+  (exec! db (str "create table if not exists schema_migrations "
+                 "(version text primary key, applied_at text not null)")))
+
+(defn ^:private applied-set [db]
+  (set (map :version (query db "select version from schema_migrations"))))
+
+(defn migrate-status
+  "Return {:applied [versions…] :pending [versions…]} for `dir`."
+  [db dir]
+  (ensure-migrations-table! db)
+  (let [applied (applied-set db)
+        files   (-db-migration-files dir)]
+    {:applied (vec (sort applied))
+     :pending (into [] (comp (remove #(contains? applied (:version %)))
+                             (map :version))
+                    files)}))
+
+(defn migrate!
+  "Apply every pending migration in `dir` (ascending version order, each
+  in its own transaction), idempotently. Returns the post-run
+  (migrate-status …)."
+  [db dir]
+  (ensure-migrations-table! db)
+  (let [applied (applied-set db)
+        files   (-db-migration-files dir)
+        pending (remove #(contains? applied (:version %)) files)]
+    (doseq [m pending]
+      (tx db (fn [t]
+               (exec! t (:sql m))
+               (exec! t "insert into schema_migrations (version, applied_at) values (?, ?)"
+                      (:version m) (-db-now)))))
+    (migrate-status db dir)))
