@@ -1,0 +1,65 @@
+;; The suite for the persistent notes API — bri's IN-PROCESS http test
+;; client (no socket) over a hermetic in-memory SQLite (the :test profile
+;; sets :db-path ":memory:"). Every request runs the same mount +
+;; middleware path as the real server, and every write really hits the
+;; database. Run it with `cljgo test`.
+(ns app.main-test
+  (:require [clojure.test :refer [deftest is testing]]
+            [clojure.string :as str]
+            [bri.http :as http]
+            [bri.db :as db]
+            [app.main :as main]))
+
+(def stack (http/api-defaults))
+
+(defn pr-str-json [m]
+  (str "{" (str/join "," (map (fn [[k v]] (str \" (name k) "\":\"" v \")) m)) "}"))
+
+(defn req
+  [m]
+  (let [m (if (contains? m :json)
+            (-> m
+                (assoc :body (pr-str-json (:json m)))
+                (assoc-in [:headers "content-type"] "application/json")
+                (dissoc :json))
+            m)]
+    (http/request main/routes m {:middleware stack})))
+
+;; --- POST persists, GET reads it back (the round-trip through SQLite) ------
+(deftest post-then-get-persists
+  (let [created (req {:method "POST" :path "/api/notes" :json {:text "buy milk"}})]
+    (is (= 201 (:status created)))
+    (is (re-find #"^/api/notes/\d+$" (get-in created [:headers "location"])))
+    (is (str/includes? (:body created) "buy milk"))
+    ;; and it is now readable through a SEPARATE request (it is in the db)
+    (let [listed (req {:method "GET" :path "/api/notes"})]
+      (is (= 200 (:status listed)))
+      (is (str/includes? (:body listed) "buy milk")))))
+
+;; --- GET one by typed id; a non-int id is a 400 with no handler code ------
+(deftest get-one-and-bad-id
+  (req {:method "POST" :path "/api/notes" :json {:text "ship cljgo"}})
+  (let [id  (-> (db/one (main/conn) "select max(id) as m from notes") :m)
+        one (req {:method "GET" :path (str "/api/notes/" id)})]
+    (is (= 200 (:status one)))
+    (is (str/includes? (:body one) "ship cljgo")))
+  (testing "a missing id is 404"
+    (is (= 404 (:status (req {:method "GET" :path "/api/notes/99999"})))))
+  (testing "a non-int id is 400"
+    (is (= 400 (:status (req {:method "GET" :path "/api/notes/not-a-number"}))))))
+
+;; --- DELETE removes the row from the database -----------------------------
+(deftest delete-persists
+  (let [created (req {:method "POST" :path "/api/notes" :json {:text "temporary"}})
+        loc     (get-in created [:headers "location"])]
+    (is (= 204 (:status (req {:method "DELETE" :path loc}))))
+    ;; gone from the db: a direct query finds nothing
+    (let [id (last (str/split loc #"/"))]
+      (is (nil? (db/one (main/conn) "select id from notes where id = ?" (parse-long id)))))))
+
+;; --- the data layer maps snake_case columns to kebab-case keys ------------
+(deftest snake-to-kebab-keys
+  (req {:method "POST" :path "/api/notes" :json {:text "keys"}})
+  (let [row (db/one (main/conn) "select id, text, created_at from notes order by id desc")]
+    (is (contains? row :created-at))
+    (is (string? (:created-at row)))))

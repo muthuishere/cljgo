@@ -158,6 +158,26 @@ func TestExampleWebApiSuite(t *testing.T) {
 	}
 }
 
+// The shipped examples/notes-db project (a persistent notes CRUD on
+// bri.db, ADR 0072) is REAL source too: every gate run runs its
+// in-process suite through the built binary. It is the thing people copy
+// to get a database-backed API, so a rot in bri.db — a renamed verb, a
+// broken migration, a lost snake→kebab mapping — turns this red. The
+// dual-mode (interpreted vs compiled) proof lives in TestBriDBParity.
+func TestExampleNotesDBSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+	dir, err := filepath.Abs(filepath.Join("..", "..", "examples", "notes-db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out, err := runIn(dir, bin, "test"); err != nil {
+		t.Fatalf("cljgo test (examples/notes-db): %v\n%s", err, out)
+	}
+}
+
 func TestBriNewDevTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping binary build in -short mode")

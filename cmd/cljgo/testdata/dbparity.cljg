@@ -1,0 +1,30 @@
+;; dbparity.cljg — the DUAL-MODE parity fixture for bri.db (ADR 0072 dec 8;
+;; the ADR 0057/0058 constraint-filter #4 commitment). Exercises the whole
+;; blessed surface — connect, insert!, tx, update!, delete!, query, one —
+;; over an in-memory SQLite database, printing a DETERMINISTIC transcript
+;; (no timestamps, no wall clock). cmd/cljgo/dbparity_test.go runs this
+;; both interpreted (`cljgo run`) and AOT-compiled (`cljgo build`) and
+;; asserts byte-identical output — a REPL↔binary divergence is a release
+;; blocker (CLAUDE.md).
+(require '[bri.db :as db])
+
+(def conn (db/connect {:driver :sqlite :database ":memory:"}))
+(db/exec! conn "create table item (id integer primary key autoincrement, label text not null, qty integer)")
+
+(db/insert! conn :item {:label "alpha" :qty 3})
+(db/insert! conn :item {:label "beta" :qty 7})
+;; a committed transaction
+(db/tx conn (fn [t] (db/insert! t :item {:label "gamma" :qty 1})))
+;; a rolled-back transaction leaves nothing behind
+(try
+  (db/tx conn (fn [t]
+                (db/insert! t :item {:label "doomed" :qty 99})
+                (throw (ex-info "rollback" {}))))
+  (catch Throwable _ nil))
+(db/update! conn :item {:qty 9} {:label "beta"})
+(db/delete! conn :item {:label "alpha"})
+
+(doseq [r (db/query conn "select id, label, qty from item order by id")]
+  (println "row" (:id r) (:label r) (:qty r)))
+(println "one" (:label (db/one conn "select label from item where qty = ?" 9)))
+(println "count" (:n (db/one conn "select count(*) as n from item")))

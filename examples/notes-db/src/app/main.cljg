@@ -1,0 +1,74 @@
+;; app.main — a REAL persistent notes CRUD in cljgo: bri.http routes over
+;; bri.db (ADR 0072). GET/POST/DELETE persist to SQLite — the zero-install
+;; default (ADR 0057) — through the ONE blessed data layer: parametrized
+;; SQL, plain maps out, migrations forward-only. Set APP_DB_URL=postgres://…
+;; and the identical code drives pgx (ADR 0058) — a driver swap, not a fork.
+;;
+;;   cljgo test              # the in-process suite (test/app/main_test.cljg)
+;;   cljgo dev               # boot with an nREPL; re-def a handler, refresh
+;;   cljgo build run         # compile to ONE static binary (CGO_ENABLED=0)
+;;
+;; The API surface (all JSON):
+;;   GET    /api/notes            -> {"notes": [ {id,text,created-at}, … ]}
+;;   GET    /api/notes/{id}       -> the note, or 404
+;;   POST   /api/notes  {"text"…} -> 201 + Location, the created note
+;;   DELETE /api/notes/{id}       -> 204
+(ns app.main
+  (:require [bri.http :as http :refer [GET POST DELETE]]
+            [bri.db :as db]
+            [bri.config :as config]))
+
+(def cfg (config/load!))
+
+;; --- the database: bri.db over SQLite (or Postgres via APP_DB_URL) --------
+;; APP_DB_URL wins when set (postgres://…); otherwise the SQLite file at
+;; :db-path (":memory:" in the :test profile, so the suite is hermetic).
+;;
+;; A `delay` keeps connect + migrate OFF the top level: `cljgo build`'s
+;; discovery pass evaluates top-level forms (compile = eval, ADR 0002), so
+;; opening a socket/file there would run at BUILD time. Deref forces it
+;; once, on first use — and migrations (forward-only .sql under migrations/,
+;; idempotent — the same call a deploy runs as `./app migrate`) apply then.
+(def ^:private conn*
+  (delay
+    (let [c (db/connect {:database (:db-path cfg "notes.db")})]
+      (db/migrate! c "migrations")
+      c)))
+
+(defn conn "The shared connection pool (opened + migrated on first use)." []
+  @conn*)
+
+;; --- handlers: Ring (request -> response); a map/vector body auto-JSON ----
+(defn list-notes [_req]
+  {:status 200 :body {:notes (db/query (conn) "select id, text, created_at from notes order by id")}})
+
+(defn get-note [req]
+  (let [id (http/param! req :id :int)]           ; non-int id -> 400, no code
+    (if-let [n (db/one (conn) "select id, text, created_at from notes where id = ?" id)]
+      {:status 200 :body n}
+      {:status 404 :body {:error "no such note"}})))
+
+(defn create-note [req]
+  (let [text (get-in req [:json :text])
+        res  (db/insert! (conn) :notes {:text text :created-at (db/now)})
+        id   (:last-insert-id res)]
+    {:status 201
+     :headers {"location" (http/path-for :note {:id id})}
+     :body (db/one (conn) "select id, text, created_at from notes where id = ?" id)}))
+
+(defn delete-note [req]
+  (let [id (http/param! req :id :int)]
+    (db/delete! (conn) :notes {:id id})
+    {:status 204 :body ""}))
+
+;; --- routes: the whole API reads as a flat column; each verb is a VALUE ---
+(def routes
+  (http/routes
+    (GET    "/api/notes"        #'list-notes)
+    (GET    "/api/notes/{id}"   {:name :note} #'get-note)   ; named -> path-for
+    (POST   "/api/notes"        #'create-note)
+    (DELETE "/api/notes/{id}"   #'delete-note)))
+
+(defn -main [& _args]
+  (println "notes-db API on :" (:port cfg))
+  (http/listen #'routes (:port cfg)))
