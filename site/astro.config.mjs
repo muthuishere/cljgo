@@ -51,6 +51,7 @@ export default defineConfig({
 						{ label: 'Why cljgo', slug: 'why' },
 						{ label: 'Install', slug: 'install' },
 						{ label: 'Quickstart', slug: 'quickstart' },
+						{ label: 'FAQ', slug: 'faq' },
 					],
 				},
 				{
