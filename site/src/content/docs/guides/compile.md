@@ -78,22 +78,69 @@ Project builds also resolve declared dependencies and write/verify
 modules declared with `(go-require …)` are fetched and linked into the
 binary here.
 
-## Cross-compilation
+## Cross-compilation — `cljgo dist`
 
-Because the output is plain Go, the standard Go cross-compilation
-environment variables work directly:
+Every cljgo binary is **pure Go, `CGO_ENABLED=0`**. That constraint has a
+payoff: the Go toolchain cross-compiles to *any* platform from a single
+host, with **no C cross-toolchain, no sysroot, no per-OS CI runner**.
+`cljgo dist` (ADR 0077) turns that into one command:
 
 ```
-$ GOOS=linux GOARCH=amd64 cljgo build -o hello-linux hello.clj
-$ file hello-linux
-hello-linux: ELF 64-bit LSB executable, x86-64, statically linked, stripped
+$ cljgo dist
+cljgo dist: building darwin/arm64     -> dist/myapp_darwin-arm64
+cljgo dist: building darwin/amd64     -> dist/myapp_darwin-amd64
+cljgo dist: building linux/amd64      -> dist/myapp_linux-amd64
+cljgo dist: building linux/arm64      -> dist/myapp_linux-arm64
+cljgo dist: building windows/amd64    -> dist/myapp_windows-amd64.exe
+
+cljgo dist: 5 binaries in dist/
 ```
 
-(Verified from macOS/arm64.) All the usual Go targets apply —
-macOS/Linux/Windows, amd64/arm64. The usual Go caveat applies too:
-cgo-based dependencies generally break cross-compiles (you need a target
-C toolchain and sysroot). A first-class per-artifact `:target` surface in
-`build.cljgo` is planned but not wired yet.
+The output directory is ready to attach to a GitHub Release or a Homebrew
+tap: one native binary per platform plus a `sha256sum -c`-compatible
+`checksums.txt`.
+
+```
+dist/
+  myapp_darwin-arm64        # Mach-O arm64
+  myapp_darwin-amd64        # Mach-O x86-64
+  myapp_linux-amd64         # ELF x86-64
+  myapp_linux-arm64         # ELF aarch64
+  myapp_windows-amd64.exe   # PE32+
+  checksums.txt
+```
+
+Flags:
+
+- **no flags** — the five mainstream desktop/server targets above
+  (Apple Silicon + Intel Mac, x86-64 + ARM Linux, Windows): effectively
+  every real end user.
+- `--target os/arch,…` — an explicit subset, e.g.
+  `cljgo dist --target linux/amd64,windows/amd64`. Each pair is validated
+  against `go tool dist list`, so a typo is a named error, not a cryptic
+  build failure.
+- `--all` — every `GOOS/GOARCH` the toolchain supports (the long tail —
+  freebsd, riscv64, wasm, … — opt-in, not in the default).
+- `-o dir` — output directory (default `dist`).
+- a `<file.clj>` positional — single-file input, same resolution as
+  `cljgo build`; a bare invocation uses the project's `build.cljgo`
+  install artifact.
+
+`dist` generates the (target-independent) Go module **once** and re-links
+it per target, so the five-way build does not recompile your Clojure five
+times. Since `dist` ships executables, a library project (no install
+step) is a clear error pointing you at
+[`cljgo publish`](/cljgo/guides/deps-publish/).
+
+This is a capability the JVM does not have: a `.jar` needs a JVM on the
+target machine, and GraalVM `native-image` needs a builder per target
+OS/arch. cljgo needs neither — which is one more reason the pure-Go
+constraint stays sacred (a future cgo dependency would break `dist`).
+
+> The one caveat is inherited from Go: a `(go-require …)` third-party
+> module that itself uses **cgo** breaks cross-compilation. cljgo's own
+> runtime and the bri framework are pure Go, so the default path always
+> cross-compiles.
 
 ## Two things worth knowing
 

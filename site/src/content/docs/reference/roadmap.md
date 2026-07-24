@@ -33,6 +33,8 @@ The original build-order roadmap
 | bri T2 — data | ✅ | [bri.db](/cljgo/bri/db/) (ADR 0072): pure-Go SQLite (zero-install default) + Postgres (pgx), parametrized queries, data-shaped writers, transactions, forward-only migrations — one API, driver swap |
 | resource generator | ✅ | [`cljgo generate resource`](/cljgo/guides/generate/) (ADR 0073): migration + model + handlers + routes + a green CRUD test, spliced into `main` at markers |
 | bri.otel | ✅ | Opt-in [OpenTelemetry tracing](/cljgo/bri/otel/) (ADR 0074): server span per request, W3C trace-context, OTLP exporter — linked only when required |
+| bri.db opt-in | ✅ | bri.db linking is opt-in (ADR 0076): the SQLite/pgx drivers link only when an app requires `bri.db`, so a db-less web binary drops ~8 MB — the same zero-cost mechanism as bri.otel |
+| `cljgo dist` | ✅ | [Cross-compile to every platform](/cljgo/guides/compile/) in one command (ADR 0077): pure-Go/`CGO_ENABLED=0` means no cross-toolchain — `dist/` gets a native binary per OS/arch + `checksums.txt` |
 | core batches | ✅ | Numeric tower, transients, JVM-compatible hashing, `reify`, tagged literals/reader conditionals, richer error rendering, suite ratchet |
 | Next | ◦ | See below |
 

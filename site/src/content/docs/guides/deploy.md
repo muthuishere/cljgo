@@ -10,9 +10,10 @@ A bri app AOT-compiles to a single static `CGO_ENABLED=0` binary, byte-identical
 ```bash
 cljgo build -o server src/app/main.cljg     # AOT-compile to one static binary
 CGO_ENABLED=0 GOOS=linux cljgo build -o server src/app/main.cljg   # for a Linux image
+cljgo dist --target linux/amd64,linux/arm64  # or cross-compile a whole matrix at once (ADR 0077)
 ```
 
-The binary links the **compiled** core (never the interpreter), so it starts in single-digit milliseconds. It embeds nothing it doesn't need — an app that never requires `bri.otel` never links the OpenTelemetry SDK (ADR 0074 conditional linking).
+The binary links the **compiled** core (never the interpreter), so it starts in single-digit milliseconds. It embeds nothing it doesn't need — an app that never requires `bri.otel` never links the OpenTelemetry SDK (ADR 0074), and a db-less app never links SQLite/pgx (ADR 0076). For shipping binaries to many platforms at once (releases, Homebrew), see [`cljgo dist`](/cljgo/guides/compile/).
 
 ## The Dockerfile
 
