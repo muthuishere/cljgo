@@ -106,17 +106,23 @@ Best per row in bold.
 | `map-filter` | 6.3 ms | **3.8 ms** | 5.3 ms |
 | `transducers` | 17.0 ms | **9.9 ms** | 25.4 ms |
 | `reduce` | 26.8 ms | **23.2 ms** | 39.4 ms |
-| binary size | **5.3–6.7 MB** | 7.5 MB | 12.8 MB |
+| binary size | **6.7 MB** | 7.5 MB | 12.8 MB |
 
 **Honest read: Glojure wins this table** — 6 of 8 rows. Its codegen does
 int64/float64 specialization, direct-call targets, and reduce-pipeline fusion,
 and it shows. cljgo takes the tree-recursion rows (`tak`, `fib` — the ADR 0067
 numeric-inference pass) and the smallest binaries; let-go's lowered leg trails
-because values stay VM-boxed. Where the three still differ architecturally:
-cljgo compiles source forms without evaluating them and links **zero
-interpreter** into the binary (CI-checked); Glojure's generator walks an
-evaluated namespace and its AOT builds retain the evaluator; let-go's lowered
-binaries keep the VM runtime linked.
+because values stay VM-boxed. Binary sizes are the same suite for all three
+(every cljgo binary is 6,684,722 bytes; hello-world elsewhere on this page is
+5.3 MB — different program, don't mix them). Where the three still differ
+architecturally: cljgo compiles source forms without evaluating them and links
+**zero interpreter** into the binary (CI-checked); Glojure's shipping AOT mode
+(`glj_aot_runtime`, what gloat builds with) retains the evaluator and reader —
+verifiable on the measured binaries, which are stripped but keep Go's pclntab:
+`strings fib-glj | grep EvalAST` finds the evaluator, `grep glojure/pkg/reader`
+finds the reader; the same probes on a cljgo binary return nothing. let-go's
+lowered binaries keep the VM runtime linked. We don't claim the interpreter
+accounts for the whole size delta — only that it's in theirs and not in ours.
 
 Versions: cljgo @HEAD · gloat v0.1.62 pinning Glojure v0.7.0 and let-go
 v1.12.2 (gloat builds with its own pinned Go toolchain; cljgo with the repo

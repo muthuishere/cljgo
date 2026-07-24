@@ -111,6 +111,29 @@ http/db/auth/otel/html/config/audit) ·
 lib (default) / cli / web; never string literals) · `conformance/` · `design/` · `docs/adr/` · `openspec/` ·
 `spikes/` (frozen) · `refs/` (gitignored clones).
 
+## Competitive claims discipline (owner, 2026-07-25)
+
+Any public claim about Glojure / let-go / gloat (FAQ, benchmarks page, Slack)
+must be verified against their SOURCE or the actual measured binaries — never
+READMEs, never memory. Verified facts as of 2026-07-25 (re-verify before
+reuse):
+
+- **What ships in an AOT binary:** cljgo links zero interpreter (CI:
+  `pkg/coreaot/imports_test.go` TestNoInterpreterInCompiledBinary). Glojure's
+  shipping AOT mode (`-tags glj_aot_runtime`, what gloat uses) RETAINS the
+  evaluator and reader — its README says "retains evaluation", and
+  `strings <bin> | grep EvalAST` / `grep glojure/pkg/reader` proves it on the
+  binary (stripped binaries keep the pclntab, so function names survive
+  `-s -w`). let-go's lowered binaries retain the VM. Do NOT claim "only
+  let-go includes its runtime" and do NOT claim Glojure is interpreter-free.
+- **Size claims:** one corpus per table. Benchmark-suite binaries: cljgo
+  6.7 MB / Glojure 7.5 MB / let-go 12.8 MB. hello-world 5.3 MB is a DIFFERENT
+  program — never mix it into the suite row. Don't attribute the whole size
+  delta to the interpreter; say "it's in theirs, not in ours" and stop.
+- **Speed:** Glojure AOT wins 6 of 8 suite rows (fusion + int64
+  specialization); cljgo wins tak/fib. Losses are roadmap gaps, not design
+  costs — never spin them as deliberate trade-offs.
+
 ## The precedence principle (owner, 2026-07-12)
 
 **Clojure is first-class.** Everything we add (comptime, Result/Option, ffi,
