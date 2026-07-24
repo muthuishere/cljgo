@@ -545,6 +545,19 @@ var ExeSuffix = func() string {
 // skip that step entirely (offline, and the conformance perf budgets stay
 // unaffected).
 func GoBuild(dir, outPath string) error {
+	return GoBuildTarget(dir, outPath, "", "")
+}
+
+// GoBuildTarget is GoBuild with an explicit cross-compilation target: when
+// goos/goarch are non-empty they are set as GOOS/GOARCH for the child `go
+// build`, so one generated module links to any platform (ADR 0077). Empty
+// goos/goarch means the host — GoBuild's behavior, byte-for-byte unchanged.
+//
+// CGO_ENABLED=0 is forced unconditionally: cljgo binaries are pure-Go static
+// (ADR 0023), which is exactly what makes cross-compilation free (no C
+// cross-toolchain). The -s -w -trimpath release stripping (ADR 0023) applies
+// to every target.
+func GoBuildTarget(dir, outPath, goos, goarch string) error {
 	if err := ensureGoSum(dir); err != nil {
 		return err
 	}
@@ -552,11 +565,15 @@ func GoBuild(dir, outPath string) error {
 	if err != nil {
 		return err
 	}
-	// Strip DWARF + symbol table and trim absolute paths from the release
-	// artifact: ~30% smaller with no behavior change (design/08 §binary-size,
-	// ADR 0023). Debug builds that want symbols pass their own flags.
 	cmd := exec.Command("go", "build", "-trimpath", "-ldflags=-s -w", "-o", abs, ".")
 	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
+	if goos != "" {
+		cmd.Env = append(cmd.Env, "GOOS="+goos)
+	}
+	if goarch != "" {
+		cmd.Env = append(cmd.Env, "GOARCH="+goarch)
+	}
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("go build: %w\n%s", err, out)
 	}

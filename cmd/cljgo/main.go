@@ -62,6 +62,8 @@ func run(args []string) int {
 		return runFile(args[1], args[2:])
 	case "build":
 		return runBuild(args[1:])
+	case "dist":
+		return runDist(args[1:])
 	case "publish":
 		return runPublish(args[1:])
 	case "cache":
@@ -362,6 +364,7 @@ usage:
   cljgo nrepl [--port N]           start an nREPL server for editors (writes .nrepl-port; ADR 0031)
   cljgo run <file.clj>             evaluate a file
   cljgo build [-o out] <file.clj>  compile a file to a native binary
+  cljgo dist [--target os/arch,...] [--all] [<file.clj>]  cross-compile to every platform + checksums (ADR 0077)
   cljgo publish <go|clojars>       publish the project library to Go or Clojars (ADR 0054)
   cljgo cache clean                remove the global dependency cache (ADR 0052)
   cljgo new [--template T] <name>  generate a project: T = lib (default) | cli | web | <path>
