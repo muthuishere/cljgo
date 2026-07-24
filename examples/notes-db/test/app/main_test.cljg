@@ -6,8 +6,8 @@
 (ns app.main-test
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
-            [bri.http :as http]
-            [bri.db :as db]
+            [bri.web.http :as http]
+            [bri.core.data :as db]
             [app.main :as main]))
 
 (def stack (http/api-defaults))

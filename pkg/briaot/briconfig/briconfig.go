@@ -9,101 +9,101 @@ import (
 )
 
 var (
-	kw_as                                   = lang.InternKeywordString("as")
-	kw_boolean                              = lang.InternKeywordString("boolean")
-	kw_bri_SLASH_error                      = lang.InternKeywordString("bri/error")
-	kw_column                               = lang.InternKeywordString("column")
-	kw_config_SLASH_invalid                 = lang.InternKeywordString("config/invalid")
-	kw_default_                             = lang.InternKeywordString("default")
-	kw_doc                                  = lang.InternKeywordString("doc")
-	kw_else_                                = lang.InternKeywordString("else")
-	kw_end_column                           = lang.InternKeywordString("end-column")
-	kw_end_line                             = lang.InternKeywordString("end-line")
-	kw_env                                  = lang.InternKeywordString("env")
-	kw_file                                 = lang.InternKeywordString("file")
-	kw_int_                                 = lang.InternKeywordString("int")
-	kw_key                                  = lang.InternKeywordString("key")
-	kw_keyword                              = lang.InternKeywordString("keyword")
-	kw_layer                                = lang.InternKeywordString("layer")
-	kw_line                                 = lang.InternKeywordString("line")
-	kw_number                               = lang.InternKeywordString("number")
-	kw_private                              = lang.InternKeywordString("private")
-	kw_profile                              = lang.InternKeywordString("profile")
-	kw_profiles                             = lang.InternKeywordString("profiles")
-	kw_required                             = lang.InternKeywordString("required")
-	kw_string_                              = lang.InternKeywordString("string")
-	kw_type_                                = lang.InternKeywordString("type")
-	re_57                                   = &reader.Regex{Pattern: "__"}
-	re_68                                   = &reader.Regex{Pattern: "-?\\d+"}
-	sym_bri_DOT_config                      = lang.NewSymbol("bri.config")
-	sym_clojure_DOT_core                    = lang.NewSymbol("clojure.core")
-	sym_clojure_DOT_edn                     = lang.NewSymbol("clojure.edn")
-	sym_clojure_DOT_string                  = lang.NewSymbol("clojure.string")
-	sym_edn                                 = lang.NewSymbol("edn")
-	sym_str                                 = lang.NewSymbol("str")
-	v_bri_DOT_config_X_env_pairs            = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("-env-pairs")).SetPrivate()
-	v_bri_DOT_config_X_getenv               = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("-getenv")).SetPrivate()
-	v_bri_DOT_config_X_read_file            = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("-read-file")).SetPrivate()
-	v_bri_DOT_config_coerce_env             = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("coerce-env")).SetPrivate()
-	v_bri_DOT_config_deep_merge             = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("deep-merge")).SetPrivate()
-	v_bri_DOT_config_env_overlay            = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("env-overlay")).SetPrivate()
-	v_bri_DOT_config_env_path               = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("env-path")).SetPrivate()
-	v_bri_DOT_config_explain                = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("explain"))
-	v_bri_DOT_config_leaf_paths             = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("leaf-paths")).SetPrivate()
-	v_bri_DOT_config_load_BANG_             = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("load!"))
-	v_bri_DOT_config_profile                = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("profile"))
-	v_bri_DOT_config_read_edn_file          = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("read-edn-file")).SetPrivate()
-	v_bri_DOT_config_resolve_layers         = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("resolve-layers")).SetPrivate()
-	v_bri_DOT_config_type_ok_QMARK_         = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("type-ok?")).SetPrivate()
-	v_bri_DOT_config_validate_BANG_         = lang.InternVarName(lang.NewSymbol("bri.config"), lang.NewSymbol("validate!")).SetPrivate()
-	v_clojure_DOT_core_X_EQ_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
-	v_clojure_DOT_core_apply                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
-	v_clojure_DOT_core_assoc                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
-	v_clojure_DOT_core_assoc_in             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc-in"))
-	v_clojure_DOT_core_boolean_QMARK_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("boolean?"))
-	v_clojure_DOT_core_conj                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("conj"))
-	v_clojure_DOT_core_contains_QMARK_      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("contains?"))
-	v_clojure_DOT_core_dissoc               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("dissoc"))
-	v_clojure_DOT_core_ex_info              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("ex-info"))
-	v_clojure_DOT_core_first                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("first"))
-	v_clojure_DOT_core_format               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("format"))
-	v_clojure_DOT_core_get                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
-	v_clojure_DOT_core_get_in               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get-in"))
-	v_clojure_DOT_core_in_ns                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
-	v_clojure_DOT_core_int_QMARK_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("int?"))
-	v_clojure_DOT_core_into                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("into"))
-	v_clojure_DOT_core_key                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("key"))
-	v_clojure_DOT_core_keyword              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("keyword"))
-	v_clojure_DOT_core_keyword_QMARK_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("keyword?"))
-	v_clojure_DOT_core_map_                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map"))
-	v_clojure_DOT_core_map_QMARK_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
-	v_clojure_DOT_core_mapv                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("mapv"))
-	v_clojure_DOT_core_name                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("name"))
-	v_clojure_DOT_core_next                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("next"))
-	v_clojure_DOT_core_nil_QMARK_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nil?"))
-	v_clojure_DOT_core_not                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("not"))
-	v_clojure_DOT_core_not_EQ_              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("not="))
-	v_clojure_DOT_core_nth                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nth"))
-	v_clojure_DOT_core_number_QMARK_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("number?"))
-	v_clojure_DOT_core_parse_long           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("parse-long"))
-	v_clojure_DOT_core_pr_str               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("pr-str"))
-	v_clojure_DOT_core_re_matches           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("re-matches"))
-	v_clojure_DOT_core_reduce               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("reduce"))
-	v_clojure_DOT_core_refer                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
-	v_clojure_DOT_core_require              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
-	v_clojure_DOT_core_seq                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("seq"))
-	v_clojure_DOT_core_some                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("some"))
-	v_clojure_DOT_core_some_QMARK_          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("some?"))
-	v_clojure_DOT_core_sort_by              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("sort-by"))
-	v_clojure_DOT_core_str                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
-	v_clojure_DOT_core_string_QMARK_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("string?"))
-	v_clojure_DOT_core_subs                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("subs"))
-	v_clojure_DOT_core_val                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("val"))
-	v_clojure_DOT_edn_read_string           = lang.InternVarName(lang.NewSymbol("clojure.edn"), lang.NewSymbol("read-string"))
-	v_clojure_DOT_string_lower_case         = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("lower-case"))
-	v_clojure_DOT_string_replace            = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("replace"))
-	v_clojure_DOT_string_split              = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("split"))
-	v_clojure_DOT_string_starts_with_QMARK_ = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("starts-with?"))
+	kw_as                                    = lang.InternKeywordString("as")
+	kw_boolean                               = lang.InternKeywordString("boolean")
+	kw_bri_SLASH_error                       = lang.InternKeywordString("bri/error")
+	kw_column                                = lang.InternKeywordString("column")
+	kw_config_SLASH_invalid                  = lang.InternKeywordString("config/invalid")
+	kw_default_                              = lang.InternKeywordString("default")
+	kw_doc                                   = lang.InternKeywordString("doc")
+	kw_else_                                 = lang.InternKeywordString("else")
+	kw_end_column                            = lang.InternKeywordString("end-column")
+	kw_end_line                              = lang.InternKeywordString("end-line")
+	kw_env                                   = lang.InternKeywordString("env")
+	kw_file                                  = lang.InternKeywordString("file")
+	kw_int_                                  = lang.InternKeywordString("int")
+	kw_key                                   = lang.InternKeywordString("key")
+	kw_keyword                               = lang.InternKeywordString("keyword")
+	kw_layer                                 = lang.InternKeywordString("layer")
+	kw_line                                  = lang.InternKeywordString("line")
+	kw_number                                = lang.InternKeywordString("number")
+	kw_private                               = lang.InternKeywordString("private")
+	kw_profile                               = lang.InternKeywordString("profile")
+	kw_profiles                              = lang.InternKeywordString("profiles")
+	kw_required                              = lang.InternKeywordString("required")
+	kw_string_                               = lang.InternKeywordString("string")
+	kw_type_                                 = lang.InternKeywordString("type")
+	re_57                                    = &reader.Regex{Pattern: "__"}
+	re_68                                    = &reader.Regex{Pattern: "-?\\d+"}
+	sym_bri_DOT_core_DOT_config              = lang.NewSymbol("bri.core.config")
+	sym_clojure_DOT_core                     = lang.NewSymbol("clojure.core")
+	sym_clojure_DOT_edn                      = lang.NewSymbol("clojure.edn")
+	sym_clojure_DOT_string                   = lang.NewSymbol("clojure.string")
+	sym_edn                                  = lang.NewSymbol("edn")
+	sym_str                                  = lang.NewSymbol("str")
+	v_bri_DOT_core_DOT_config_X_env_pairs    = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("-env-pairs")).SetPrivate()
+	v_bri_DOT_core_DOT_config_X_getenv       = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("-getenv")).SetPrivate()
+	v_bri_DOT_core_DOT_config_X_read_file    = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("-read-file")).SetPrivate()
+	v_bri_DOT_core_DOT_config_coerce_env     = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("coerce-env")).SetPrivate()
+	v_bri_DOT_core_DOT_config_deep_merge     = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("deep-merge")).SetPrivate()
+	v_bri_DOT_core_DOT_config_env_overlay    = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("env-overlay")).SetPrivate()
+	v_bri_DOT_core_DOT_config_env_path       = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("env-path")).SetPrivate()
+	v_bri_DOT_core_DOT_config_explain        = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("explain"))
+	v_bri_DOT_core_DOT_config_leaf_paths     = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("leaf-paths")).SetPrivate()
+	v_bri_DOT_core_DOT_config_load_BANG_     = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("load!"))
+	v_bri_DOT_core_DOT_config_profile        = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("profile"))
+	v_bri_DOT_core_DOT_config_read_edn_file  = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("read-edn-file")).SetPrivate()
+	v_bri_DOT_core_DOT_config_resolve_layers = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("resolve-layers")).SetPrivate()
+	v_bri_DOT_core_DOT_config_type_ok_QMARK_ = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("type-ok?")).SetPrivate()
+	v_bri_DOT_core_DOT_config_validate_BANG_ = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("validate!")).SetPrivate()
+	v_clojure_DOT_core_X_EQ_                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
+	v_clojure_DOT_core_apply                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
+	v_clojure_DOT_core_assoc                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
+	v_clojure_DOT_core_assoc_in              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc-in"))
+	v_clojure_DOT_core_boolean_QMARK_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("boolean?"))
+	v_clojure_DOT_core_conj                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("conj"))
+	v_clojure_DOT_core_contains_QMARK_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("contains?"))
+	v_clojure_DOT_core_dissoc                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("dissoc"))
+	v_clojure_DOT_core_ex_info               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("ex-info"))
+	v_clojure_DOT_core_first                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("first"))
+	v_clojure_DOT_core_format                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("format"))
+	v_clojure_DOT_core_get                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
+	v_clojure_DOT_core_get_in                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get-in"))
+	v_clojure_DOT_core_in_ns                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_int_QMARK_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("int?"))
+	v_clojure_DOT_core_into                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("into"))
+	v_clojure_DOT_core_key                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("key"))
+	v_clojure_DOT_core_keyword               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("keyword"))
+	v_clojure_DOT_core_keyword_QMARK_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("keyword?"))
+	v_clojure_DOT_core_map_                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map"))
+	v_clojure_DOT_core_map_QMARK_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
+	v_clojure_DOT_core_mapv                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("mapv"))
+	v_clojure_DOT_core_name                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("name"))
+	v_clojure_DOT_core_next                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("next"))
+	v_clojure_DOT_core_nil_QMARK_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nil?"))
+	v_clojure_DOT_core_not                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("not"))
+	v_clojure_DOT_core_not_EQ_               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("not="))
+	v_clojure_DOT_core_nth                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nth"))
+	v_clojure_DOT_core_number_QMARK_         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("number?"))
+	v_clojure_DOT_core_parse_long            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("parse-long"))
+	v_clojure_DOT_core_pr_str                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("pr-str"))
+	v_clojure_DOT_core_re_matches            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("re-matches"))
+	v_clojure_DOT_core_reduce                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("reduce"))
+	v_clojure_DOT_core_refer                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	v_clojure_DOT_core_require               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
+	v_clojure_DOT_core_seq                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("seq"))
+	v_clojure_DOT_core_some                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("some"))
+	v_clojure_DOT_core_some_QMARK_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("some?"))
+	v_clojure_DOT_core_sort_by               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("sort-by"))
+	v_clojure_DOT_core_str                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
+	v_clojure_DOT_core_string_QMARK_         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("string?"))
+	v_clojure_DOT_core_subs                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("subs"))
+	v_clojure_DOT_core_val                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("val"))
+	v_clojure_DOT_edn_read_string            = lang.InternVarName(lang.NewSymbol("clojure.edn"), lang.NewSymbol("read-string"))
+	v_clojure_DOT_string_lower_case          = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("lower-case"))
+	v_clojure_DOT_string_replace             = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("replace"))
+	v_clojure_DOT_string_split               = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("split"))
+	v_clojure_DOT_string_starts_with_QMARK_  = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("starts-with?"))
 )
 
 var loaded = false
@@ -114,11 +114,11 @@ func Load() {
 		return
 	}
 	loaded = true
-	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.config")), lang.VarFile, "bri/config.cljg"))
+	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.core.config")), lang.VarFile, "bri/config.cljg"))
 	defer lang.PopThreadBindings()
-	// (clojure.core/in-ns (quote bri.config))
+	// (clojure.core/in-ns (quote bri.core.config))
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
-	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_config)
+	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_core_DOT_config)
 	_ = tmp2
 	// (clojure.core/refer (quote clojure.core))
 	tmp3 := v_clojure_DOT_core_refer.Get()
@@ -133,7 +133,7 @@ func Load() {
 	tmp8 := lang.Apply1(tmp7, lang.NewVector(sym_clojure_DOT_edn, kw_as, sym_edn))
 	_ = tmp8
 	// (def deep-merge (clojure.core/fn [a b] (if (and (map? a) (map? b)) (reduce (fn [m kv] (ass…
-	v_bri_DOT_config_deep_merge.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(19), kw_column, int64(7), kw_end_line, int64(19), kw_end_column, int64(27), kw_private, true))
+	v_bri_DOT_core_DOT_config_deep_merge.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(19), kw_column, int64(7), kw_end_line, int64(19), kw_end_column, int64(27), kw_private, true))
 	tmp9 := lang.FnFunc2(func(a10, b11 any) any {
 		var tmp12 any
 		_ = tmp12
@@ -161,7 +161,7 @@ func Load() {
 				tmp24 := v_clojure_DOT_core_assoc.Get()
 				tmp25 := v_clojure_DOT_core_key.Get()
 				tmp26 := lang.Apply1(tmp25, kv23)
-				tmp27 := v_bri_DOT_config_deep_merge.Get()
+				tmp27 := v_bri_DOT_core_DOT_config_deep_merge.Get()
 				tmp28 := v_clojure_DOT_core_get.Get()
 				tmp29 := v_clojure_DOT_core_key.Get()
 				tmp30 := lang.Apply1(tmp29, kv23)
@@ -191,11 +191,11 @@ func Load() {
 		}
 		return tmp19
 	})
-	tmp43 := &lang.NamedFn2{Name: "bri.config/deep-merge", Expects: "2: [a b]", F: tmp9}
-	v_bri_DOT_config_deep_merge.BindRoot(tmp43)
-	_ = v_bri_DOT_config_deep_merge
+	tmp43 := &lang.NamedFn2{Name: "bri.core.config/deep-merge", Expects: "2: [a b]", F: tmp9}
+	v_bri_DOT_core_DOT_config_deep_merge.BindRoot(tmp43)
+	_ = v_bri_DOT_core_DOT_config_deep_merge
 	// (def env-path "APP_DB__POOL_SIZE → [:db :pool-size]: __ separates path segments,\n  _ jo…
-	v_bri_DOT_config_env_path.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(25), kw_private, true, kw_doc, "APP_DB__POOL_SIZE → [:db :pool-size]: __ separates path segments,\n  _ joins words inside a segment."))
+	v_bri_DOT_core_DOT_config_env_path.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(25), kw_private, true, kw_doc, "APP_DB__POOL_SIZE → [:db :pool-size]: __ separates path segments,\n  _ joins words inside a segment."))
 	tmp44 := lang.FnFunc1(func(k45 any) any {
 		tmp46 := v_clojure_DOT_core_mapv.Get()
 		tmp47 := lang.FnFunc1(func(seg48 any) any {
@@ -213,11 +213,11 @@ func Load() {
 		tmp59 := lang.Apply2(tmp46, tmp55, tmp58)
 		return tmp59
 	})
-	tmp60 := &lang.NamedFn1{Name: "bri.config/env-path", Expects: "1: [k]", F: tmp44}
-	v_bri_DOT_config_env_path.BindRoot(tmp60)
-	_ = v_bri_DOT_config_env_path
+	tmp60 := &lang.NamedFn1{Name: "bri.core.config/env-path", Expects: "1: [k]", F: tmp44}
+	v_bri_DOT_core_DOT_config_env_path.BindRoot(tmp60)
+	_ = v_bri_DOT_core_DOT_config_env_path
 	// (def coerce-env "Env values arrive as strings; numbers and booleans coerce (durations\n  a…
-	v_bri_DOT_config_coerce_env.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(27), kw_private, true, kw_doc, "Env values arrive as strings; numbers and booleans coerce (durations\n  and sizes are NUMBERS — no stringly-typed \"5m\")."))
+	v_bri_DOT_core_DOT_config_coerce_env.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(27), kw_private, true, kw_doc, "Env values arrive as strings; numbers and booleans coerce (durations\n  and sizes are NUMBERS — no stringly-typed \"5m\")."))
 	tmp61 := lang.FnFunc1(func(v62 any) any {
 		tmp63 := rt.EQBool(v_clojure_DOT_core_X_EQ_, v62, "true")
 		var tmp64 any
@@ -255,11 +255,11 @@ func Load() {
 		}
 		return tmp64
 	})
-	tmp74 := &lang.NamedFn1{Name: "bri.config/coerce-env", Expects: "1: [v]", F: tmp61}
-	v_bri_DOT_config_coerce_env.BindRoot(tmp74)
-	_ = v_bri_DOT_config_coerce_env
+	tmp74 := &lang.NamedFn1{Name: "bri.core.config/coerce-env", Expects: "1: [v]", F: tmp61}
+	v_bri_DOT_core_DOT_config_coerce_env.BindRoot(tmp74)
+	_ = v_bri_DOT_core_DOT_config_coerce_env
 	// (def env-overlay "All APP_* variables as [path value] pairs (APP_PROFILE is the\n  profile…
-	v_bri_DOT_config_env_overlay.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(28), kw_private, true, kw_doc, "All APP_* variables as [path value] pairs (APP_PROFILE is the\n  profile selector, not config data)."))
+	v_bri_DOT_core_DOT_config_env_overlay.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(28), kw_private, true, kw_doc, "All APP_* variables as [path value] pairs (APP_PROFILE is the\n  profile selector, not config data)."))
 	tmp75 := lang.FnFunc0(func() any {
 		tmp76 := v_clojure_DOT_core_reduce.Get()
 		tmp77 := lang.FnFunc2(func(acc78, pair79 any) any {
@@ -312,11 +312,11 @@ func Load() {
 				_ = tmp99
 				if lang.IsTruthy(tmp87) {
 					tmp100 := v_clojure_DOT_core_conj.Get()
-					tmp101 := v_bri_DOT_config_env_path.Get()
+					tmp101 := v_bri_DOT_core_DOT_config_env_path.Get()
 					tmp102 := v_clojure_DOT_core_subs.Get()
 					tmp103 := lang.Apply2(tmp102, k83, int64(4))
 					tmp104 := lang.Apply1(tmp101, tmp103)
-					tmp105 := v_bri_DOT_config_coerce_env.Get()
+					tmp105 := v_bri_DOT_core_DOT_config_coerce_env.Get()
 					tmp106 := lang.Apply1(tmp105, v86)
 					tmp107 := lang.NewVector(tmp104, tmp106)
 					tmp108 := lang.Apply2(tmp100, acc78, tmp107)
@@ -330,22 +330,22 @@ func Load() {
 		})
 		tmp109 := &lang.NamedFn2{Name: "fn", Expects: "2: [acc pair]", F: tmp77}
 		tmp110 := lang.NewVector()
-		tmp111 := v_bri_DOT_config_X_env_pairs.Get()
+		tmp111 := v_bri_DOT_core_DOT_config_X_env_pairs.Get()
 		tmp112 := lang.Apply0(tmp111)
 		tmp113 := lang.Apply3(tmp76, tmp109, tmp110, tmp112)
 		return tmp113
 	})
-	tmp114 := &lang.NamedFn0{Name: "bri.config/env-overlay", Expects: "0: []", F: tmp75}
-	v_bri_DOT_config_env_overlay.BindRoot(tmp114)
-	_ = v_bri_DOT_config_env_overlay
+	tmp114 := &lang.NamedFn0{Name: "bri.core.config/env-overlay", Expects: "0: []", F: tmp75}
+	v_bri_DOT_core_DOT_config_env_overlay.BindRoot(tmp114)
+	_ = v_bri_DOT_core_DOT_config_env_overlay
 	// (def profile "The active profile keyword: APP_PROFILE, default :dev." (clojure.core/fn [] …
-	v_bri_DOT_config_profile.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(14), kw_doc, "The active profile keyword: APP_PROFILE, default :dev."))
+	v_bri_DOT_core_DOT_config_profile.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(14), kw_doc, "The active profile keyword: APP_PROFILE, default :dev."))
 	tmp115 := lang.FnFunc0(func() any {
 		tmp116 := v_clojure_DOT_core_keyword.Get()
 		var tmp117 any
 		_ = tmp117
 		{
-			tmp118 := v_bri_DOT_config_X_getenv.Get()
+			tmp118 := v_bri_DOT_core_DOT_config_X_getenv.Get()
 			tmp119 := lang.Apply1(tmp118, "APP_PROFILE")
 			var or__2__auto__120 any = tmp119
 			_ = or__2__auto__120
@@ -361,16 +361,16 @@ func Load() {
 		tmp122 := lang.Apply1(tmp116, tmp117)
 		return tmp122
 	})
-	tmp123 := &lang.NamedFn0{Name: "bri.config/profile", Expects: "0: []", F: tmp115}
-	v_bri_DOT_config_profile.BindRoot(tmp123)
-	_ = v_bri_DOT_config_profile
+	tmp123 := &lang.NamedFn0{Name: "bri.core.config/profile", Expects: "0: []", F: tmp115}
+	v_bri_DOT_core_DOT_config_profile.BindRoot(tmp123)
+	_ = v_bri_DOT_core_DOT_config_profile
 	// (def read-edn-file (clojure.core/fn [path] (let [s (-read-file path)] (when s (edn/read-st…
-	v_bri_DOT_config_read_edn_file.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(30), kw_private, true))
+	v_bri_DOT_core_DOT_config_read_edn_file.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(30), kw_private, true))
 	tmp124 := lang.FnFunc1(func(path125 any) any {
 		var tmp126 any
 		_ = tmp126
 		{
-			tmp127 := v_bri_DOT_config_X_read_file.Get()
+			tmp127 := v_bri_DOT_core_DOT_config_X_read_file.Get()
 			tmp128 := lang.Apply1(tmp127, path125)
 			var s129 any = tmp128
 			_ = s129
@@ -387,11 +387,11 @@ func Load() {
 		}
 		return tmp126
 	})
-	tmp133 := &lang.NamedFn1{Name: "bri.config/read-edn-file", Expects: "1: [path]", F: tmp124}
-	v_bri_DOT_config_read_edn_file.BindRoot(tmp133)
-	_ = v_bri_DOT_config_read_edn_file
+	tmp133 := &lang.NamedFn1{Name: "bri.core.config/read-edn-file", Expects: "1: [path]", F: tmp124}
+	v_bri_DOT_core_DOT_config_read_edn_file.BindRoot(tmp133)
+	_ = v_bri_DOT_core_DOT_config_read_edn_file
 	// (def type-ok? (clojure.core/fn [t v] (cond (= t :int) (int? v) (= t :number) (number? v) (…
-	v_bri_DOT_config_type_ok_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(67), kw_column, int64(7), kw_end_line, int64(67), kw_end_column, int64(25), kw_private, true))
+	v_bri_DOT_core_DOT_config_type_ok_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(67), kw_column, int64(7), kw_end_line, int64(67), kw_end_column, int64(25), kw_private, true))
 	tmp134 := lang.FnFunc2(func(t135, v136 any) any {
 		tmp137 := rt.EQBool(v_clojure_DOT_core_X_EQ_, t135, kw_int_)
 		var tmp138 any
@@ -452,11 +452,11 @@ func Load() {
 		}
 		return tmp138
 	})
-	tmp158 := &lang.NamedFn2{Name: "bri.config/type-ok?", Expects: "2: [t v]", F: tmp134}
-	v_bri_DOT_config_type_ok_QMARK_.BindRoot(tmp158)
-	_ = v_bri_DOT_config_type_ok_QMARK_
+	tmp158 := &lang.NamedFn2{Name: "bri.core.config/type-ok?", Expects: "2: [t v]", F: tmp134}
+	v_bri_DOT_core_DOT_config_type_ok_QMARK_.BindRoot(tmp158)
+	_ = v_bri_DOT_core_DOT_config_type_ok_QMARK_
 	// (def validate! "Enforce the schema against the resolved map; violations abort boot\n  NAMI…
-	v_bri_DOT_config_validate_BANG_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(26), kw_private, true, kw_doc, "Enforce the schema against the resolved map; violations abort boot\n  NAMING THE KEY AND THE LAYER (misconfigured deploys must not boot)."))
+	v_bri_DOT_core_DOT_config_validate_BANG_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(26), kw_private, true, kw_doc, "Enforce the schema against the resolved map; violations abort boot\n  NAMING THE KEY AND THE LAYER (misconfigured deploys must not boot)."))
 	tmp159 := lang.FnFunc3(func(cfg160, schema161, layers162 any) any {
 		var tmp163 any
 		_ = tmp163
@@ -565,7 +565,7 @@ func Load() {
 										_ = tmp214
 										if lang.IsTruthy(and__1__auto__213) {
 											tmp215 := v_clojure_DOT_core_not.Get()
-											tmp216 := v_bri_DOT_config_type_ok_QMARK_.Get()
+											tmp216 := v_bri_DOT_core_DOT_config_type_ok_QMARK_.Get()
 											tmp217 := lang.Apply1(kw_type_, spec185)
 											tmp218 := lang.Apply2(tmp216, tmp217, v188)
 											tmp219 := lang.Apply1(tmp215, tmp218)
@@ -629,17 +629,17 @@ func Load() {
 		_ = tmp163
 		return cfg160
 	})
-	tmp239 := &lang.NamedFn3{Name: "bri.config/validate!", Expects: "3: [cfg schema layers]", F: tmp159}
-	v_bri_DOT_config_validate_BANG_.BindRoot(tmp239)
-	_ = v_bri_DOT_config_validate_BANG_
+	tmp239 := &lang.NamedFn3{Name: "bri.core.config/validate!", Expects: "3: [cfg schema layers]", F: tmp159}
+	v_bri_DOT_core_DOT_config_validate_BANG_.BindRoot(tmp239)
+	_ = v_bri_DOT_core_DOT_config_validate_BANG_
 	// (def leaf-paths (clojure.core/fn ([m] (leaf-paths [] m)) ([prefix m] (reduce (fn [acc kv] …
-	v_bri_DOT_config_leaf_paths.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(27), kw_private, true))
+	v_bri_DOT_core_DOT_config_leaf_paths.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(27), kw_private, true))
 	tmp240 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
 			m241 := args[0]
 			_ = m241
-			tmp242 := v_bri_DOT_config_leaf_paths.Get()
+			tmp242 := v_bri_DOT_core_DOT_config_leaf_paths.Get()
 			tmp243 := lang.NewVector()
 			tmp244 := lang.Apply2(tmp242, tmp243, m241)
 			return tmp244
@@ -669,7 +669,7 @@ func Load() {
 					_ = tmp262
 					if lang.IsTruthy(tmp261) {
 						tmp263 := v_clojure_DOT_core_into.Get()
-						tmp264 := v_bri_DOT_config_leaf_paths.Get()
+						tmp264 := v_bri_DOT_core_DOT_config_leaf_paths.Get()
 						tmp265 := lang.Apply2(tmp264, p256, v259)
 						tmp266 := lang.Apply2(tmp263, acc249, tmp265)
 						tmp262 = tmp266
@@ -689,18 +689,18 @@ func Load() {
 			tmp273 := lang.Apply3(tmp247, tmp269, tmp270, tmp272)
 			return tmp273
 		default:
-			panic(lang.NewArityError(len(args), "bri.config/leaf-paths", "1: [m] or 2: [prefix m]"))
+			panic(lang.NewArityError(len(args), "bri.core.config/leaf-paths", "1: [m] or 2: [prefix m]"))
 		}
 	})
-	v_bri_DOT_config_leaf_paths.BindRoot(tmp240)
-	_ = v_bri_DOT_config_leaf_paths
+	v_bri_DOT_core_DOT_config_leaf_paths.BindRoot(tmp240)
+	_ = v_bri_DOT_core_DOT_config_leaf_paths
 	// (def resolve-layers "Returns [cfg layers]: the merged map and, per leaf path, the winning\…
-	v_bri_DOT_config_resolve_layers.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(107), kw_column, int64(7), kw_end_line, int64(107), kw_end_column, int64(31), kw_private, true, kw_doc, "Returns [cfg layers]: the merged map and, per leaf path, the winning\n  layer (:default :file :profile :env)."))
+	v_bri_DOT_core_DOT_config_resolve_layers.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(107), kw_column, int64(7), kw_end_line, int64(107), kw_end_column, int64(31), kw_private, true, kw_doc, "Returns [cfg layers]: the merged map and, per leaf path, the winning\n  layer (:default :file :profile :env)."))
 	tmp274 := lang.FnFunc1(func(path275 any) any {
 		var tmp276 any
 		_ = tmp276
 		{
-			tmp277 := v_bri_DOT_config_read_edn_file.Get()
+			tmp277 := v_bri_DOT_core_DOT_config_read_edn_file.Get()
 			tmp278 := lang.Apply1(tmp277, path275)
 			var raw279 any = tmp278
 			_ = raw279
@@ -724,13 +724,13 @@ func Load() {
 			var base286 any = tmp285
 			_ = base286
 			tmp287 := v_clojure_DOT_core_get_in.Get()
-			tmp288 := v_bri_DOT_config_profile.Get()
+			tmp288 := v_bri_DOT_core_DOT_config_profile.Get()
 			tmp289 := lang.Apply0(tmp288)
 			tmp290 := lang.NewVector(kw_profiles, tmp289)
 			tmp291 := lang.Apply2(tmp287, raw279, tmp290)
 			var prof292 any = tmp291
 			_ = prof292
-			tmp293 := v_bri_DOT_config_read_edn_file.Get()
+			tmp293 := v_bri_DOT_core_DOT_config_read_edn_file.Get()
 			tmp294 := lang.Apply1(tmp293, "conf.schema.edn")
 			var schema295 any = tmp294
 			_ = schema295
@@ -778,15 +778,15 @@ func Load() {
 			tmp320 := lang.Apply3(tmp296, tmp312, tmp313, tmp319)
 			var defaults321 any = tmp320
 			_ = defaults321
-			tmp322 := v_bri_DOT_config_deep_merge.Get()
+			tmp322 := v_bri_DOT_core_DOT_config_deep_merge.Get()
 			tmp323 := lang.Apply2(tmp322, defaults321, base286)
 			var with_file324 any = tmp323
 			_ = with_file324
-			tmp325 := v_bri_DOT_config_deep_merge.Get()
+			tmp325 := v_bri_DOT_core_DOT_config_deep_merge.Get()
 			tmp326 := lang.Apply2(tmp325, with_file324, prof292)
 			var with_prof327 any = tmp326
 			_ = with_prof327
-			tmp328 := v_bri_DOT_config_env_overlay.Get()
+			tmp328 := v_bri_DOT_core_DOT_config_env_overlay.Get()
 			tmp329 := lang.Apply0(tmp328)
 			var env330 any = tmp329
 			_ = env330
@@ -864,49 +864,49 @@ func Load() {
 			})
 			tmp375 := &lang.NamedFn2{Name: "fn", Expects: "2: [m p]", F: tmp369}
 			tmp376 := lang.NewMap()
-			tmp377 := v_bri_DOT_config_leaf_paths.Get()
+			tmp377 := v_bri_DOT_core_DOT_config_leaf_paths.Get()
 			tmp378 := lang.Apply1(tmp377, cfg343)
 			tmp379 := lang.Apply3(tmp368, tmp375, tmp376, tmp378)
 			var layers380 any = tmp379
 			_ = layers380
-			tmp381 := v_bri_DOT_config_validate_BANG_.Get()
+			tmp381 := v_bri_DOT_core_DOT_config_validate_BANG_.Get()
 			tmp382 := lang.Apply3(tmp381, cfg343, schema295, layers380)
 			tmp383 := lang.NewVector(tmp382, layers380, schema295)
 			tmp276 = tmp383
 		}
 		return tmp276
 	})
-	tmp384 := &lang.NamedFn1{Name: "bri.config/resolve-layers", Expects: "1: [path]", F: tmp274}
-	v_bri_DOT_config_resolve_layers.BindRoot(tmp384)
-	_ = v_bri_DOT_config_resolve_layers
+	tmp384 := &lang.NamedFn1{Name: "bri.core.config/resolve-layers", Expects: "1: [path]", F: tmp274}
+	v_bri_DOT_core_DOT_config_resolve_layers.BindRoot(tmp384)
+	_ = v_bri_DOT_core_DOT_config_resolve_layers
 	// (def load! "conf.edn (+ :profiles by APP_PROFILE) → APP_* env → ONE PLAIN MAP.\n  Read…
-	v_bri_DOT_config_load_BANG_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(12), kw_doc, "conf.edn (+ :profiles by APP_PROFILE) → APP_* env → ONE PLAIN MAP.\n  Reads a file (and the env), no more — no sockets, no pools; a schema\n  violation throws before anything else boots."))
+	v_bri_DOT_core_DOT_config_load_BANG_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(12), kw_doc, "conf.edn (+ :profiles by APP_PROFILE) → APP_* env → ONE PLAIN MAP.\n  Reads a file (and the env), no more — no sockets, no pools; a schema\n  violation throws before anything else boots."))
 	tmp385 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp386 := v_bri_DOT_config_load_BANG_.Get()
+			tmp386 := v_bri_DOT_core_DOT_config_load_BANG_.Get()
 			tmp387 := lang.Apply1(tmp386, "conf.edn")
 			return tmp387
 		case 1:
 			path388 := args[0]
 			_ = path388
 			tmp389 := v_clojure_DOT_core_nth.Get()
-			tmp390 := v_bri_DOT_config_resolve_layers.Get()
+			tmp390 := v_bri_DOT_core_DOT_config_resolve_layers.Get()
 			tmp391 := lang.Apply1(tmp390, path388)
 			tmp392 := lang.Apply2(tmp389, tmp391, int64(0))
 			return tmp392
 		default:
-			panic(lang.NewArityError(len(args), "bri.config/load!", "0: [] or 1: [path]"))
+			panic(lang.NewArityError(len(args), "bri.core.config/load!", "0: [] or 1: [path]"))
 		}
 	})
-	v_bri_DOT_config_load_BANG_.BindRoot(tmp385)
-	_ = v_bri_DOT_config_load_BANG_
+	v_bri_DOT_core_DOT_config_load_BANG_.BindRoot(tmp385)
+	_ = v_bri_DOT_core_DOT_config_load_BANG_
 	// (def explain "The `cljgo config` body: every key's effective value and the layer\n  that w…
-	v_bri_DOT_config_explain.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(142), kw_column, int64(7), kw_end_line, int64(142), kw_end_column, int64(14), kw_doc, "The `cljgo config` body: every key's effective value and the layer\n  that won (default < file < profile < env)."))
+	v_bri_DOT_core_DOT_config_explain.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(142), kw_column, int64(7), kw_end_line, int64(142), kw_end_column, int64(14), kw_doc, "The `cljgo config` body: every key's effective value and the layer\n  that won (default < file < profile < env)."))
 	tmp393 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp394 := v_bri_DOT_config_explain.Get()
+			tmp394 := v_bri_DOT_core_DOT_config_explain.Get()
 			tmp395 := lang.Apply1(tmp394, "conf.edn")
 			return tmp395
 		case 1:
@@ -915,7 +915,7 @@ func Load() {
 			var tmp397 any
 			_ = tmp397
 			{
-				tmp398 := v_bri_DOT_config_resolve_layers.Get()
+				tmp398 := v_bri_DOT_core_DOT_config_resolve_layers.Get()
 				tmp399 := lang.Apply1(tmp398, path396)
 				var pair400 any = tmp399
 				_ = pair400
@@ -929,7 +929,7 @@ func Load() {
 				_ = layers406
 				tmp407 := v_clojure_DOT_core_str.Get()
 				tmp408 := v_clojure_DOT_core_name.Get()
-				tmp409 := v_bri_DOT_config_profile.Get()
+				tmp409 := v_bri_DOT_core_DOT_config_profile.Get()
 				tmp410 := lang.Apply0(tmp409)
 				tmp411 := lang.Apply1(tmp408, tmp410)
 				tmp412 := v_clojure_DOT_core_apply.Get()
@@ -957,7 +957,7 @@ func Load() {
 				tmp433 := &lang.NamedFn1{Name: "fn", Expects: "1: [p]", F: tmp415}
 				tmp434 := v_clojure_DOT_core_sort_by.Get()
 				tmp435 := v_clojure_DOT_core_pr_str.Get()
-				tmp436 := v_bri_DOT_config_leaf_paths.Get()
+				tmp436 := v_bri_DOT_core_DOT_config_leaf_paths.Get()
 				tmp437 := lang.Apply1(tmp436, cfg403)
 				tmp438 := lang.Apply2(tmp434, tmp435, tmp437)
 				tmp439 := lang.Apply2(tmp414, tmp433, tmp438)
@@ -967,9 +967,9 @@ func Load() {
 			}
 			return tmp397
 		default:
-			panic(lang.NewArityError(len(args), "bri.config/explain", "0: [] or 1: [path]"))
+			panic(lang.NewArityError(len(args), "bri.core.config/explain", "0: [] or 1: [path]"))
 		}
 	})
-	v_bri_DOT_config_explain.BindRoot(tmp393)
-	_ = v_bri_DOT_config_explain
+	v_bri_DOT_core_DOT_config_explain.BindRoot(tmp393)
+	_ = v_bri_DOT_core_DOT_config_explain
 }

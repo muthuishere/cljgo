@@ -194,7 +194,7 @@ func validAppName(name string) bool {
 // interpreter with an nREPL attached — the REPL is the reload story
 // (nothing is watched; re-def the var). BRI_DEV=1 turns on bri's
 // loud dev behaviors (plain-fn route warnings, bare-Result messages).
-// Ctrl-C/SIGTERM = graceful drain (bri.http/serve owns shutdown).
+// Ctrl-C/SIGTERM = graceful drain (bri.web.http/serve owns shutdown).
 func runDev(args []string) int {
 	fs := flag.NewFlagSet("dev", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -380,7 +380,7 @@ func runConfig(args []string) int {
 		return 1
 	}
 	d := repl.New(nil, os.Stdout, os.Stderr)
-	out, err := d.EvalString("(do (require 'bri.config) (bri.config/explain))", "cljgo-config")
+	out, err := d.EvalString("(do (require 'bri.core.config) (bri.core.config/explain))", "cljgo-config")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "cljgo config:", err)
 		return 1
@@ -403,7 +403,7 @@ func runRoutes(args []string) int {
 	if code := evalAppFile(d, appMain); code != 0 {
 		return code
 	}
-	out, err := d.EvalString("(bri.http/describe app.main/routes {})", "cljgo-routes")
+	out, err := d.EvalString("(bri.web.http/describe app.main/routes {})", "cljgo-routes")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "cljgo routes:", err)
 		return 1

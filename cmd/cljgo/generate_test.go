@@ -6,7 +6,7 @@
 // checked, and the marker splice into app.main is asserted (idempotent,
 // force, missing-marker).
 //
-// The generated CRUD calls bri.db (ADR 0072) and a generated resource's
+// The generated CRUD calls bri.core.data (ADR 0072) and a generated resource's
 // own `cljgo test` is green out of the box (verified against a fresh
 // in-memory DB). This gate proves the generator emits valid source and
 // splices correctly; TestExampleWebApiSuite-style E2E covers the runtime.
@@ -105,11 +105,11 @@ func TestGenerateResource(t *testing.T) {
 		}
 	}
 
-	// --- the resource ns: model calls bri.db, handlers use bri.http --------
+	// --- the resource ns: model calls bri.core.data, handlers use bri.web.http --------
 	rsrc := readFile(t, resource)
 	for _, want := range []string{
 		"(ns app.notes",
-		"[bri.db :as db]",
+		"[bri.core.data :as db]",
 		"[app.db :as adb]",
 		`(db/query   ds "SELECT * FROM notes ORDER BY id DESC")`,
 		"(db/insert! ds :notes row)",

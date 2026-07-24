@@ -1,8 +1,8 @@
-// http.go — bri.http's Go half: the routes→ServeMux adapter (grown
+// http.go — bri.web.http's Go half: the routes→ServeMux adapter (grown
 // from spike S20's prototype/main.go), the http.Server with production
 // timeouts + SIGTERM drain, the in-process test client, and the small
 // host primitives (JSON, form decode, HMAC, tokens, base64, clock,
-// env) interned as :private vars into the bri.http namespace.
+// env) interned as :private vars into the bri.web.http namespace.
 //
 // The Ring contract at this boundary (design/05 shaping discipline —
 // one conversion, both directions, no reflection surprises):
@@ -56,12 +56,12 @@ var (
 	kwStop          = lang.NewKeyword("stop")
 	kwMethod        = lang.NewKeyword("method")
 	kwPath          = lang.NewKeyword("path")
-	kwDirMarker     = lang.NewKeyword("bri.http/dir")
+	kwDirMarker     = lang.NewKeyword("bri.web.http/dir")
 	kwPathParams    = lang.NewKeyword("path-params")
-	kwRoutePattern  = lang.NewKeyword("bri.http/route")
+	kwRoutePattern  = lang.NewKeyword("bri.web.http/route")
 )
 
-// installHTTPShims interns bri.http's private Go primitives.
+// installHTTPShims interns bri.web.http's private Go primitives.
 func installHTTPShims(def func(name string, fn func(args ...any) any)) {
 	def("-serve", serveShim)
 	def("-request", requestShim)
@@ -121,7 +121,7 @@ func installHTTPShims(def func(name string, fn func(args ...any) any)) {
 // nowMillis is the shared clock the observability shims read.
 func nowMillis() int64 { return time.Now().UnixMilli() }
 
-// installConfigShims interns bri.config's private Go primitives.
+// installConfigShims interns bri.core.config's private Go primitives.
 func installConfigShims(def func(name string, fn func(args ...any) any)) {
 	def("-read-file", func(args ...any) any {
 		b, err := os.ReadFile(asString(one("-read-file", args)))
@@ -168,8 +168,8 @@ func asString(v any) string {
 
 // --- mux construction -------------------------------------------------------
 
-// buildMux mounts the [pattern handler] pairs bri.http/mount compiled
-// (handlers are fully-wrapped IFns; {:bri.http/dir path} markers become
+// buildMux mounts the [pattern handler] pairs bri.web.http/mount compiled
+// (handlers are fully-wrapped IFns; {:bri.web.http/dir path} markers become
 // stdlib file servers) onto a Go 1.22+ ServeMux — the stdlib does the
 // routing (method match, {name} params); we build no router.
 func buildMux(mounted any) *http.ServeMux {
@@ -186,7 +186,7 @@ func buildMux(mounted any) *http.ServeMux {
 		}
 		ifn, ok := h.(lang.IFn)
 		if !ok {
-			panic(fmt.Errorf("bri.http: route %q handler is not callable: %s", pattern, lang.PrintString(h)))
+			panic(fmt.Errorf("bri.web.http: route %q handler is not callable: %s", pattern, lang.PrintString(h)))
 		}
 		mux.HandleFunc(pattern, adapt(pattern, ifn))
 	}
@@ -220,7 +220,7 @@ func paramNames(pattern string) []string {
 
 // adapt is the request/response boundary: request map in, response map
 // out (the Ring contract). The handler arrives fully wrapped — var
-// deref (the liveness line) and middleware happen in bri.http/mount's
+// deref (the liveness line) and middleware happen in bri.web.http/mount's
 // Clojure closures; this side only converts and writes.
 func adapt(pattern string, ifn lang.IFn) http.HandlerFunc {
 	names := paramNames(pattern)
@@ -230,7 +230,7 @@ func adapt(pattern string, ifn lang.IFn) http.HandlerFunc {
 			// recover covers a custom stack that removed it (and adapter bugs)
 			// so one request can never kill the server loop silently.
 			if rec := recover(); rec != nil {
-				fmt.Fprintf(os.Stderr, "bri.http: unrecovered handler panic on %s %s: %v\n",
+				fmt.Fprintf(os.Stderr, "bri.web.http: unrecovered handler panic on %s %s: %v\n",
 					r.Method, r.URL.Path, rec)
 				w.WriteHeader(http.StatusInternalServerError)
 				io.WriteString(w, "internal error")
@@ -308,7 +308,7 @@ func writeResponse(w http.ResponseWriter, res any) {
 
 // --- serve -------------------------------------------------------------------
 
-// serveShim is bri.http/-serve: mount, listen, and (by default) block
+// serveShim is bri.web.http/-serve: mount, listen, and (by default) block
 // until SIGTERM/SIGINT, then drain — in-flight requests get a deadline,
 // then each handle in :drain is invoked (shutdown wiring is ON THE
 // PAGE, spec: no ambient shutdown registry). Production timeouts are
@@ -328,14 +328,14 @@ func serveShim(args ...any) any {
 	case int:
 		port = v
 	case nil:
-		panic(fmt.Errorf("bri.http/serve: no :port in opts"))
+		panic(fmt.Errorf("bri.web.http/serve: no :port in opts"))
 	default:
-		panic(fmt.Errorf("bri.http/serve: :port must be an int, got: %s", lang.PrintString(v)))
+		panic(fmt.Errorf("bri.web.http/serve: :port must be an int, got: %s", lang.PrintString(v)))
 	}
 
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		panic(fmt.Errorf("bri.http/serve: %w", err))
+		panic(fmt.Errorf("bri.web.http/serve: %w", err))
 	}
 	actual := ln.Addr().(*net.TCPAddr).Port
 
@@ -381,13 +381,13 @@ func serveShim(args ...any) any {
 		drain()
 	case err := <-errCh:
 		if err != nil && err != http.ErrServerClosed {
-			panic(fmt.Errorf("bri.http/serve: %w", err))
+			panic(fmt.Errorf("bri.web.http/serve: %w", err))
 		}
 	}
 	return nil
 }
 
-// requestShim is bri.http/-request: the in-process test client — the
+// requestShim is bri.web.http/-request: the in-process test client — the
 // same mount path as serve, no socket, an httptest recorder.
 func requestShim(args ...any) any {
 	if len(args) != 2 {

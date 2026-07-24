@@ -1,20 +1,20 @@
-# bri.auth — API-first security
+# bri.core.security — API-first security
 
 Security in one blessed way (ADR 0069): HS256 JWTs (algorithm PINNED
 server-side — the token's own `alg` is never trusted), argon2id passwords,
 a composable guard family that is plain Ring middleware, and escalating
 abuse protection. Every decision (401/403/ban/token-issued) is audited via
-`bri.audit`.
+`bri.core.audit`.
 
 Guards, rate-limit, CORS, CSRF, sessions, metrics, request-ids and logs
-are default-on in the bri.http stacks; this is how to reach each piece.
+are default-on in the bri.web.http stacks; this is how to reach each piece.
 
 Full guide on the site: https://muthuishere.github.io/cljgo/bri/auth/
 
 ## JWT
 
 ```clojure
-(require '[bri.auth :as auth])
+(require '[bri.core.security :as auth])
 
 (auth/sign {:sub "u" :role "admin"})            ; iat/exp injected; exp default 3600s
 (auth/verify token)     ; → claims, or nil (bad sig / wrong alg / malformed / expired)
@@ -72,7 +72,7 @@ cap). After `:threshold` denials (401/403) inside `:window-ms`, ban for
 
 In-process store (single-instance); swap `:store` for a shared backing.
 
-## From bri.http (default-on in the relevant stack)
+## From bri.web.http (default-on in the relevant stack)
 
 - `(http/rate-limit n opts)` — plain throughput cap → 429 + Retry-After.
 - CORS — `(http/cors {:origins […]})`; permissive `*` in dev, allowlist via

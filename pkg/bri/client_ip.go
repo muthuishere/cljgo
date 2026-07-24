@@ -1,4 +1,4 @@
-// client_ip.go — the ONE blessed client-IP resolver bri.http/client-ip
+// client_ip.go — the ONE blessed client-IP resolver bri.web.http/client-ip
 // leans on (ADR 0069 abuse-protection §). RemoteAddr is the socket peer
 // — unspoofable, but it is the PROXY's address behind an LB/CDN. We
 // honor X-Forwarded-For / X-Real-IP ONLY when the immediate peer is a

@@ -62,8 +62,8 @@ export default defineConfig({
 						{ label: 'HTTP services', slug: 'bri/http' },
 						{ label: 'HTML & views', slug: 'bri/html' },
 						{ label: 'Security & auth', slug: 'bri/auth' },
-						{ label: 'Data layer (bri.db)', slug: 'bri/db' },
-						{ label: 'Tracing (bri.otel)', slug: 'bri/otel' },
+						{ label: 'Data layer (bri.core.data)', slug: 'bri/db' },
+						{ label: 'Tracing (bri.core.telemetry)', slug: 'bri/otel' },
 					],
 				},
 				{

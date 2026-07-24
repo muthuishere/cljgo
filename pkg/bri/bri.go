@@ -37,17 +37,17 @@ import (
 // binds *file* to while loading, the Go package genbri emits it into
 // (pkg/briaot/<Pkg>), and the Go shims interned (as :private vars)
 // before the source evaluates. install is nil for a pure-Clojure
-// namespace (bri.html) or for an OptIn namespace whose shims live in an
-// isolated package that registers itself via RegisterInstaller (bri.otel).
+// namespace (bri.web.html) or for an OptIn namespace whose shims live in an
+// isolated package that registers itself via RegisterInstaller (bri.core.telemetry).
 type Spec struct {
-	Name    string  // "bri.http"
+	Name    string  // "bri.web.http"
 	File    string  // "bri/http.cljg" (bound to *file* while loading)
 	Pkg     string  // "brihttp" (the pkg/briaot subpackage genbri emits)
 	Source  *string // &core.BriHTTPSource
 	install func(def func(name string, fn func(args ...any) any))
 
 	// OptIn marks a namespace whose Go shims pull a HEAVY dependency
-	// (bri.otel → the OpenTelemetry SDK) that must NOT link into a bri
+	// (bri.core.telemetry → the OpenTelemetry SDK) that must NOT link into a bri
 	// binary that does not require it (ADR 0074). An OptIn namespace is
 	// EXCLUDED from the always-linked umbrella pkg/briaot: its Go shims
 	// live in an isolated package (ShimImport) that registers its
@@ -81,33 +81,33 @@ func RegisterInstaller(name string, install func(def func(name string, fn func(a
 }
 
 // Specs returns the bri namespaces in DEPENDENCY-SAFE load order:
-// bri.http first (nothing bri depends on it at load time), then the
-// namespaces that require it (bri.html) or bri.audit (bri.auth). genbri
+// bri.web.http first (nothing bri depends on it at load time), then the
+// namespaces that require it (bri.web.html) or bri.core.audit (bri.core.security). genbri
 // compiles them in this order — each namespace's vars must exist before a
 // later one's top-level require resolves — and pkg/briaot's providers are
 // registered from it too.
 func Specs() []Spec {
 	return []Spec{
-		{Name: "bri.http", File: "bri/http.cljg", Pkg: "brihttp", Source: &core.BriHTTPSource, install: installHTTPShims},
-		{Name: "bri.config", File: "bri/config.cljg", Pkg: "briconfig", Source: &core.BriConfigSource, install: installConfigShims},
-		{Name: "bri.audit", File: "bri/audit.cljg", Pkg: "briaudit", Source: &core.BriAuditSource, install: installAuditShims},
-		{Name: "bri.html", File: "bri/html.cljg", Pkg: "brihtml", Source: &core.BriHTMLSource, install: nil},
-		{Name: "bri.auth", File: "bri/auth.cljg", Pkg: "briauth", Source: &core.BriAuthSource, install: installAuthShims},
-		// bri.db is OPT-IN (ADR 0076): its shims pull the SQLite + pgx drivers
+		{Name: "bri.web.http", File: "bri/http.cljg", Pkg: "brihttp", Source: &core.BriHTTPSource, install: installHTTPShims},
+		{Name: "bri.core.config", File: "bri/config.cljg", Pkg: "briconfig", Source: &core.BriConfigSource, install: installConfigShims},
+		{Name: "bri.core.audit", File: "bri/audit.cljg", Pkg: "briaudit", Source: &core.BriAuditSource, install: installAuditShims},
+		{Name: "bri.web.html", File: "bri/html.cljg", Pkg: "brihtml", Source: &core.BriHTMLSource, install: nil},
+		{Name: "bri.core.security", File: "bri/auth.cljg", Pkg: "briauth", Source: &core.BriAuthSource, install: installAuthShims},
+		// bri.core.data is OPT-IN (ADR 0076): its shims pull the SQLite + pgx drivers
 		// (~7 MB), which must not link into a bri app that never touches a
-		// database. Like bri.otel it is excluded from the umbrella pkg/briaot;
+		// database. Like bri.core.telemetry it is excluded from the umbrella pkg/briaot;
 		// its shims live in the isolated pkg/bri/db (ShimImport), which registers
 		// its installer via RegisterInstaller when linked.
-		{Name: "bri.db", File: "bri/db.cljg", Pkg: "bridb", Source: &core.BriDBSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/db"},
-		// bri.otel is OPT-IN (ADR 0074): its shims pull the OpenTelemetry SDK,
+		{Name: "bri.core.data", File: "bri/db.cljg", Pkg: "bridb", Source: &core.BriDBSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/db"},
+		// bri.core.telemetry is OPT-IN (ADR 0074): its shims pull the OpenTelemetry SDK,
 		// which must not link into a bri app that does not require tracing. It
 		// is excluded from the umbrella pkg/briaot; its shims live in the
 		// isolated pkg/bri/otel (ShimImport), which registers its installer via
 		// RegisterInstaller when linked.
-		{Name: "bri.otel", File: "bri/otel.cljg", Pkg: "briotel", Source: &core.BriOtelSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/otel"},
+		{Name: "bri.core.telemetry", File: "bri/otel.cljg", Pkg: "briotel", Source: &core.BriOtelSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/otel"},
 		// bri.cli + bri.cli.validate are PURE CLOJURE in this increment (ADR
 		// 0078): the deterministic command-tree + unified-parameter core has no
-		// Go shims, so like bri.html they carry install:nil and stay in the
+		// Go shims, so like bri.web.html they carry install:nil and stay in the
 		// umbrella. When the Charm-backed interactive layer lands (increment 2)
 		// bri.cli flips to OptIn with an isolated pkg/bri/cli shim package.
 		{Name: "bri.cli.validate", File: "bri/cli_validate.cljg", Pkg: "briclivalidate", Source: &core.BriCLIValidateSource, install: nil},
@@ -120,13 +120,13 @@ func Specs() []Spec {
 // loaders out. Both the interpreter loader (pkg/briloader) and the
 // compiled loader (pkg/briaot) call this before evaluating/running the
 // namespace's forms, so the private -serve/-jwt-sign/… vars are bound in
-// either mode. A namespace with no shims (bri.html) is a no-op.
+// either mode. A namespace with no shims (bri.web.html) is a no-op.
 func InstallShimsInto(s Spec) {
 	install := s.install
 	if install == nil {
 		// An OptIn namespace's installer arrives through the registry, set by
 		// its isolated shim package's init() when that package is linked (ADR
-		// 0074). A pure-Clojure namespace (bri.html) has neither — a no-op.
+		// 0074). A pure-Clojure namespace (bri.web.html) has neither — a no-op.
 		install = installers[s.Name]
 	}
 	if install == nil {

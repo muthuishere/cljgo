@@ -1,16 +1,16 @@
 ---
-title: "bri.auth"
+title: "bri.core.security"
 description: "API-first security in one blessed way: pinned HS256 JWTs, argon2id passwords, a composable guard family that is plain Ring middleware, and escalating abuse protection — every decision audited."
 ---
 
-`bri.auth` is API-first security in one blessed way (ADR 0069): HS256 JWTs (the algorithm is **pinned** server-side — the token's own `alg` header is never trusted), argon2id passwords, a composable **guard** family that is plain Ring middleware (`handler → handler`, so `->` composes them), and escalating abuse protection. Every security decision — 401, 403, ban, token issued — is audited through [`bri.audit`](/cljgo/bri/http/).
+`bri.core.security` is API-first security in one blessed way (ADR 0069): HS256 JWTs (the algorithm is **pinned** server-side — the token's own `alg` header is never trusted), argon2id passwords, a composable **guard** family that is plain Ring middleware (`handler → handler`, so `->` composes them), and escalating abuse protection. Every security decision — 401, 403, ban, token issued — is audited through [`bri.core.audit`](/cljgo/bri/http/).
 
-Guards, rate-limiting, CORS, CSRF, sessions, metrics, request-ids and structured logs are **default-on** in the [bri.http](/cljgo/bri/http/) API stack — this page is how you reach for each piece explicitly.
+Guards, rate-limiting, CORS, CSRF, sessions, metrics, request-ids and structured logs are **default-on** in the [bri.web.http](/cljgo/bri/http/) API stack — this page is how you reach for each piece explicitly.
 
 ## JWT: sign, verify, issue
 
 ```clojure
-(require '[bri.auth :as auth])
+(require '[bri.core.security :as auth])
 
 (auth/sign {:sub "u" :role "admin"})           ; → an HS256 token string
 (auth/sign claims {:exp-seconds 900 :secret s}) ; iat/exp injected; exp default 3600s
@@ -60,7 +60,7 @@ Guards are plain Ring middleware. Each is both a middleware value (one arg) and 
 (auth/guard-claims (fn [c] (contains? (:scopes c) "notes:write")))
 ```
 
-`logged-in-only` / `role-only` / `user-only` / `admin-only` are all thin specializations of `guard`. On a route (Compojure-style, from [bri.http](/cljgo/bri/http/)):
+`logged-in-only` / `role-only` / `user-only` / `admin-only` are all thin specializations of `guard`. On a route (Compojure-style, from [bri.web.http](/cljgo/bri/http/)):
 
 ```clojure
 (http/routes
@@ -82,11 +82,11 @@ Keys on client IP by default (proxy-aware `http/client-ip`), or `:subject`, or a
 
 ## Rate-limit, CORS, CSRF, sessions
 
-These live in [bri.http](/cljgo/bri/http/) and are on by default in the relevant stack:
+These live in [bri.web.http](/cljgo/bri/http/) and are on by default in the relevant stack:
 
 - **`(http/rate-limit n opts)`** — plain throughput: at most `n` requests per `:window-ms` per client key; over → 429 + Retry-After. Raw throughput, not denial-abuse.
 - **CORS** — `(http/cors {:origins […]})`; permissive (`*`) and loud in dev, allowlist in prod via `:origins` or `APP_HTTP__CORS_ORIGINS`. Default-on in `api-defaults`.
-- **CSRF** — gates session-bearing mutating requests on a token `bri.html/form` mints (or the `x-csrf-token` header). Sessionless JSON requests pass — a curl with no cookie has nothing to forge. Default-on in `(http/defaults)`.
+- **CSRF** — gates session-bearing mutating requests on a token `bri.web.html/form` mints (or the `x-csrf-token` header). Sessionless JSON requests pass — a curl with no cookie has nothing to forge. Default-on in `(http/defaults)`.
 - **Sessions** — signed cookies (HMAC-SHA256; key from `APP_SESSION_KEY`, else per-process random). Read as `:session`; attach with `(http/start-session res {…})`.
 
 ## Everything a token does — one login handler
@@ -102,7 +102,7 @@ These live in [bri.http](/cljgo/bri/http/) and are on by default in the relevant
 
 ## Where next
 
-- [bri.http](/cljgo/bri/http/) — the middleware stack, rate-limit, CORS, CSRF, the error funnel
-- [bri.db](/cljgo/bri/db/) — the model layer your guarded handlers call
-- [bri.otel](/cljgo/bri/otel/) — opt-in tracing that records the authenticated subject on each span
-- [bri.config](/cljgo/bri/config/) — where `APP_AUTH__SECRET` and `APP_SESSION_KEY` come from
+- [bri.web.http](/cljgo/bri/http/) — the middleware stack, rate-limit, CORS, CSRF, the error funnel
+- [bri.core.data](/cljgo/bri/db/) — the model layer your guarded handlers call
+- [bri.core.telemetry](/cljgo/bri/otel/) — opt-in tracing that records the authenticated subject on each span
+- [bri.core.config](/cljgo/bri/config/) — where `APP_AUTH__SECRET` and `APP_SESSION_KEY` come from

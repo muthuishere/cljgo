@@ -78,9 +78,9 @@ bri is cljgo's application framework: the batteries of Spring Boot, the manners 
 
    ```clojure
    (ns app.main
-     (:require [bri.http :as http]
-               [bri.html :as html]
-               [bri.config :as config]))
+     (:require [bri.web.http :as http]
+               [bri.web.html :as html]
+               [bri.core.config :as config]))
 
    (def cfg (config/load!))          ; conf.edn + APP_* env. Reads a file, no more.
 
@@ -96,7 +96,7 @@ bri is cljgo's application framework: the batteries of Spring Boot, the manners 
      (http/serve routes {:port (:port cfg)}))
    ```
 
-   The shape is the doctrine: **top-level defs construct values, with no I/O** (requiring `app.main` is side-effect-free — that's why tests can load it); `-main` starts the world; routes are data on Go's own ServeMux patterns; the safe middleware stack applies because you didn't type one. Config is one plain map — see [bri.config](/cljgo/bri/config/).
+   The shape is the doctrine: **top-level defs construct values, with no I/O** (requiring `app.main` is side-effect-free — that's why tests can load it); `-main` starts the world; routes are data on Go's own ServeMux patterns; the safe middleware stack applies because you didn't type one. Config is one plain map — see [bri.core.config](/cljgo/bri/config/).
 
 5. ### Test
 
@@ -123,7 +123,7 @@ bri is cljgo's application framework: the batteries of Spring Boot, the manners 
 
 7. ### Scaffold a database-backed resource
 
-   One command generates a whole authenticated CRUD slice over [`bri.db`](/cljgo/bri/db/) — a migration, a model, handlers, routes, and a **green** test — and splices it into `app.main`:
+   One command generates a whole authenticated CRUD slice over [`bri.core.data`](/cljgo/bri/db/) — a migration, a model, handlers, routes, and a **green** test — and splices it into `app.main`:
 
    ```
    $ cljgo generate resource Note title:string body:text
@@ -138,17 +138,17 @@ bri is cljgo's application framework: the batteries of Spring Boot, the manners 
    $ cljgo routes      # GET/POST/PUT/DELETE /api/notes, with their guards
    ```
 
-   Persistence is the zero-install SQLite default (Postgres via `APP_DB_URL`, no code change). The generated model is the only place that touches `bri.db`, every query is parametrized, and `src/app/notes.cljg` is **yours** to edit — see [the resource generator](/cljgo/guides/generate/) for the field grammar and [bri.db](/cljgo/bri/db/) for the data layer.
+   Persistence is the zero-install SQLite default (Postgres via `APP_DB_URL`, no code change). The generated model is the only place that touches `bri.core.data`, every query is parametrized, and `src/app/notes.cljg` is **yours** to edit — see [the resource generator](/cljgo/guides/generate/) for the field grammar and [bri.core.data](/cljgo/bri/db/) for the data layer.
 
 </Steps>
 
 ## Where next
 
-- [bri.http](/cljgo/bri/http/) — handlers, middleware, the error funnel
-- [bri.auth](/cljgo/bri/auth/) — JWT, guards, rate-limit, abuse protection
-- [bri.db](/cljgo/bri/db/) — connect, query, transact, migrate
+- [bri.web.http](/cljgo/bri/http/) — handlers, middleware, the error funnel
+- [bri.core.security](/cljgo/bri/auth/) — JWT, guards, rate-limit, abuse protection
+- [bri.core.data](/cljgo/bri/db/) — connect, query, transact, migrate
 - [The resource generator](/cljgo/guides/generate/) — scaffold CRUD in one command
-- [bri.html](/cljgo/bri/html/) — pages, forms, escaping
-- [bri.config](/cljgo/bri/config/) — profiles, env, the schema
+- [bri.web.html](/cljgo/bri/html/) — pages, forms, escaping
+- [bri.core.config](/cljgo/bri/config/) — profiles, env, the schema
 - [Deploy](/cljgo/guides/deploy/) — ship it as one static binary
 - New to cljgo itself? Start at the [quickstart](/cljgo/quickstart/).

@@ -1,12 +1,12 @@
-# bri.otel — opt-in OpenTelemetry tracing
+# bri.core.telemetry — opt-in OpenTelemetry tracing
 
 Opt-in distributed tracing (ADR 0074): a server span per request, W3C
 trace-context propagation, and an OTLP exporter. NEVER in `api-defaults` —
-you require it and add one middleware. An app that never requires `bri.otel`
+you require it and add one middleware. An app that never requires `bri.core.telemetry`
 never links the OpenTelemetry SDK (~6 MB smaller).
 
 bri already ships default-on: Prometheus `/metrics`, structured JSON access
-logs, X-Request-Id propagation. bri.otel ADDS spans so logs/metrics/traces
+logs, X-Request-Id propagation. bri.core.telemetry ADDS spans so logs/metrics/traces
 correlate (the span carries the request-id).
 
 Full guide on the site: https://muthuishere.github.io/cljgo/bri/otel/
@@ -14,7 +14,7 @@ Full guide on the site: https://muthuishere.github.io/cljgo/bri/otel/
 ## Wire it in
 
 ```clojure
-(require '[bri.http :as http] '[bri.otel :as otel])
+(require '[bri.web.http :as http] '[bri.core.telemetry :as otel])
 
 (http/serve routes {:port 3000
                     :middleware (otel/with-tracing (http/api-defaults))
@@ -47,7 +47,7 @@ dev vs AOT) — just not exported. Zero cost unused.
 - `APP_OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT` — collector URL
 - `APP_OTEL_EXPORTER_OTLP_PROTOCOL` / `OTEL_EXPORTER_OTLP_PROTOCOL` — e.g. `http/protobuf`
 - `APP_OTEL_SERVICE_NAME` / `OTEL_SERVICE_NAME` — `service.name` (else `:service-name`
-  opt, else the bri.config app name, else `bri-app`)
+  opt, else the bri.core.config app name, else `bri-app`)
 - `APP_OTEL_STDOUT=1` — export spans to stdout (demos, no collector)
 
 ```bash

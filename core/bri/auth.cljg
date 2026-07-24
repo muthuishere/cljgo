@@ -1,4 +1,4 @@
-;; bri.auth — API-first security in ONE blessed way (ADR 0069). JWT
+;; bri.core.security — API-first security in ONE blessed way (ADR 0069). JWT
 ;; HS256 (algorithm PINNED server-side — the token's own alg header is
 ;; never trusted), argon2id passwords (bcrypt-verify for legacy), a
 ;; composable guard family that is plain Ring middleware (handler ->
@@ -14,11 +14,11 @@
 ;; Private Go shims interned before this loads: -jwt-sign -jwt-verify
 ;; -argon2-hash -argon2-verify -bcrypt-verify -rand-token -now-millis
 ;; -getenv.
-(clojure.core/in-ns 'bri.auth)
+(clojure.core/in-ns 'bri.core.security)
 (clojure.core/refer 'clojure.core)
 (require '[clojure.string :as str])
-(require '[bri.audit :as audit])
-(require '[bri.http :as http])
+(require '[bri.core.audit :as audit])
+(require '[bri.web.http :as http])
 
 ;; --- secret resolution -------------------------------------------------
 ;; APP_AUTH__SECRET is the one knob (secrets-are-env doctrine). With none

@@ -1,4 +1,4 @@
-// otel_middleware_test.go — bri.otel's tracing MIDDLEWARE through the real
+// otel_middleware_test.go — bri.core.telemetry's tracing MIDDLEWARE through the real
 // interpreter (ADR 0074). The AOT-compiled binary runs the same middleware
 // over the same pkg/bri/otel shims, so the request-visible behavior asserted
 // here (span opened per request, inbound traceparent adopted, the span's
@@ -31,7 +31,7 @@ func otelEval(t *testing.T, d *repl.Driver, code string) any {
 }
 
 const otelPrelude = `
-(require '[bri.http :as http] '[bri.otel :as otel])
+(require '[bri.web.http :as http] '[bri.core.telemetry :as otel])
 (defn home [req] {:status 200 :body (str "trace=" (:trace/id req))})
 (def routes [["GET /users/{id}" #'home]])
 (def stack (otel/with-tracing (http/defaults)))

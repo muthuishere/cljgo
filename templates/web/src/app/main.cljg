@@ -6,10 +6,10 @@
 ;; `METHOD path [middleware] handler`. Each form is just a VALUE, so you
 ;; compose, generate, guard, and reverse-route them with plain Clojure.
 (ns app.main
-  (:require [bri.http :as http :refer [GET POST]]
-            [bri.html :as html]
-            [bri.auth :as auth]
-            [bri.config :as config]
+  (:require [bri.web.http :as http :refer [GET POST]]
+            [bri.web.html :as html]
+            [bri.core.security :as auth]
+            [bri.core.config :as config]
             ;; cljgo:resource-requires — `cljgo generate resource` splices requires here
             ))
 
@@ -26,7 +26,7 @@
     (html/page {:title "newapp"}
       [:main
        [:h1 "It's alive."]
-       [:p "This page is bri.html data, served by bri.http on Go's net/http."]
+       [:p "This page is bri.web.html data, served by bri.web.http on Go's net/http."]
        [:p "Edit " [:code "src/app/main.cljg"] " — or connect to the nREPL port
            printed by " [:code "cljgo dev"] " and re-" [:code "def"] " " [:code "home"] ",
            then refresh: the route holds " [:code "#'home"] ", derefed per request."]

@@ -1,4 +1,4 @@
-;; bri.db — the ONE blessed data layer (ADR 0072, realizing ADR 0041 §4
+;; bri.core.data — the ONE blessed data layer (ADR 0072, realizing ADR 0041 §4
 ;; Data T2). Connect, query, transact, migrate — API-first, functional,
 ;; injection-safe by construction, and IDENTICAL interpreted (cljgo dev)
 ;; vs AOT-compiled (CGO_ENABLED=0 static binary). Two pure-Go drivers
@@ -7,22 +7,22 @@
 ;; fork.
 ;;
 ;; The blessed form is a SQL STRING plus positional `?` params (never
-;; string-concatenated values). bri.db normalizes placeholders (`?`→`$n`
+;; string-concatenated values). bri.core.data normalizes placeholders (`?`→`$n`
 ;; for Postgres) and column names (snake_case ↔ kebab-case), but NOT SQL
 ;; dialect (the ADR 0057 seam).
 ;;
 ;; Private Go shims interned by pkg/bri before this loads: -db-open
 ;; -db-close -db-query -db-exec -db-begin -db-commit -db-rollback
 ;; -db-migration-files -db-now -getenv.
-(clojure.core/in-ns 'bri.db)
+(clojure.core/in-ns 'bri.core.data)
 (clojure.core/refer 'clojure.core)
 (require '[clojure.string :as str])
 
 ;; --- handles ----------------------------------------------------------------
-;; A connection is a plain map {:bri.db/handle H :driver kw}; a tx conn is
+;; A connection is a plain map {:bri.core.data/handle H :driver kw}; a tx conn is
 ;; the same map with the tx handle swapped in and :tx true. Every verb
 ;; reads the opaque handle out of it, so a db and a tx drive one API.
-(defn ^:private handle [db] (:bri.db/handle db))
+(defn ^:private handle [db] (:bri.core.data/handle db))
 
 (defn connect
   "Open a connection pool. opts:
@@ -42,9 +42,9 @@
                   (or url (:database opts))
                   (or (:database opts) ".dev/app.db"))]
      (when (nil? dsn)
-       (throw (ex-info "bri.db/connect: no Postgres URL (:url or APP_DB_URL)"
-                       {:bri.db/error :bri.db/no-url})))
-     {:bri.db/handle (-db-open (name driver) dsn) :driver driver})))
+       (throw (ex-info "bri.core.data/connect: no Postgres URL (:url or APP_DB_URL)"
+                       {:bri.core.data/error :bri.core.data/no-url})))
+     {:bri.core.data/handle (-db-open (name driver) dsn) :driver driver})))
 
 (defn close!
   "Close a connection pool (a no-op on a tx handle)."
@@ -71,12 +71,12 @@
   (first (-db-query (handle db) sql (vec params))))
 
 (defn one!
-  "Like `one`, but throws an ex-info tagged :bri.db/not-found when no row
+  "Like `one`, but throws an ex-info tagged :bri.core.data/not-found when no row
   matches (the ADR 0041 funnel → 404)."
   [db sql & params]
   (or (first (-db-query (handle db) sql (vec params)))
-      (throw (ex-info "bri.db/one!: no matching row"
-                      {:bri.db/error :bri.db/not-found :sql sql}))))
+      (throw (ex-info "bri.core.data/one!: no matching row"
+                      {:bri.core.data/error :bri.core.data/not-found :sql sql}))))
 
 ;; --- writes -----------------------------------------------------------------
 (defn exec!
@@ -132,7 +132,7 @@
   [db f]
   (if (:tx db)
     (f db)
-    (let [t (assoc db :bri.db/handle (-db-begin (handle db)) :tx true)]
+    (let [t (assoc db :bri.core.data/handle (-db-begin (handle db)) :tx true)]
       (try
         (let [result (f t)]
           (-db-commit (handle t))
@@ -145,7 +145,7 @@
   "Run (f tx-conn) in a transaction that is ALWAYS rolled back — the
   per-test sandbox (Ecto-Sandbox shape, ADR 0058). Returns (f tx-conn)."
   [db f]
-  (let [t (assoc db :bri.db/handle (-db-begin (handle db)) :tx true)]
+  (let [t (assoc db :bri.core.data/handle (-db-begin (handle db)) :tx true)]
     (try
       (f t)
       (finally

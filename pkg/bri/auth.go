@@ -1,4 +1,4 @@
-// auth.go — bri.auth's Go half: the S44-blessed security primitives.
+// auth.go — bri.core.security's Go half: the S44-blessed security primitives.
 //
 //   - JWT HS256, HAND-ROLLED on stdlib crypto/sha256 (S44 VERDICT: 2–3×
 //     faster than golang-jwt/v5, ⅓ the allocs, zero external JWT dep).
@@ -10,8 +10,8 @@
 //     pure Go (golang.org/x/crypto) — ADR 0056 CGO_ENABLED=0 holds.
 //     These are DELIBERATELY slow (~15–45 ms); never SIMD-fast.
 //
-// Interned as :private vars into bri.auth on first (require 'bri.auth),
-// same lazy lib-provider path as bri.http (see bri.go). exp/iat live in
+// Interned as :private vars into bri.core.security on first (require 'bri.core.security),
+// same lazy lib-provider path as bri.web.http (see bri.go). exp/iat live in
 // the Clojure half (bri/auth.cljg) so tests can freeze the clock.
 package bri
 
@@ -38,7 +38,7 @@ const jwtFixedHeader = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
 
 var jwtB64 = base64.RawURLEncoding
 
-// installAuthShims interns bri.auth's private Go primitives.
+// installAuthShims interns bri.core.security's private Go primitives.
 func installAuthShims(def func(name string, fn func(args ...any) any)) {
 	def("-jwt-sign", func(args ...any) any {
 		if len(args) != 2 {
@@ -75,7 +75,7 @@ func installAuthShims(def func(name string, fn func(args ...any) any)) {
 // --- JWT HS256 (hand-rolled, alg-pinned) ------------------------------------
 
 // jwtSign builds header.payload.signature. claims is a cljgo map,
-// marshaled through the same JSON shaping bri.http uses (keyword keys →
+// marshaled through the same JSON shaping bri.web.http uses (keyword keys →
 // names, int64 stays integral).
 func jwtSign(secret string, claims any) string {
 	claimsJSON := jsonEncode(claims)

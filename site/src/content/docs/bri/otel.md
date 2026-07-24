@@ -1,16 +1,16 @@
 ---
-title: "bri.otel"
+title: "bri.core.telemetry"
 description: "Opt-in OpenTelemetry distributed tracing: a server span per request, W3C trace-context propagation, and an OTLP exporter — linked only when you require it, zero cost otherwise."
 ---
 
-`bri.otel` adds **opt-in** OpenTelemetry distributed tracing (ADR 0074). It is never in `api-defaults` — you require it and add one middleware. A bri app that never requires `bri.otel` never links the OpenTelemetry SDK (the binary stays ~6 MB smaller); a bri app that does gets spans, W3C trace-context propagation, and an OTLP exporter.
+`bri.core.telemetry` adds **opt-in** OpenTelemetry distributed tracing (ADR 0074). It is never in `api-defaults` — you require it and add one middleware. A bri app that never requires `bri.core.telemetry` never links the OpenTelemetry SDK (the binary stays ~6 MB smaller); a bri app that does gets spans, W3C trace-context propagation, and an OTLP exporter.
 
-What bri already ships **default-on** (do not rebuild): Prometheus metrics at `/metrics`, structured JSON access logs, and X-Request-Id propagation — all covered in [bri.http](/cljgo/bri/http/) and [bri.auth](/cljgo/bri/auth/). `bri.otel` *adds* spans so a bri service joins a distributed trace and its logs/metrics/traces correlate (the span carries the request-id).
+What bri already ships **default-on** (do not rebuild): Prometheus metrics at `/metrics`, structured JSON access logs, and X-Request-Id propagation — all covered in [bri.web.http](/cljgo/bri/http/) and [bri.core.security](/cljgo/bri/auth/). `bri.core.telemetry` *adds* spans so a bri service joins a distributed trace and its logs/metrics/traces correlate (the span carries the request-id).
 
 ## Wire it in
 
 ```clojure
-(require '[bri.http :as http] '[bri.otel :as otel])
+(require '[bri.web.http :as http] '[bri.core.telemetry :as otel])
 
 (http/serve routes {:port 3000
                     :middleware (otel/with-tracing (http/api-defaults))
@@ -53,7 +53,7 @@ Config is env-driven; `APP_*` overrides the standard `OTEL_*`:
 |---|---|
 | `APP_OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT` | the collector URL |
 | `APP_OTEL_EXPORTER_OTLP_PROTOCOL` / `OTEL_EXPORTER_OTLP_PROTOCOL` | e.g. `http/protobuf` |
-| `APP_OTEL_SERVICE_NAME` / `OTEL_SERVICE_NAME` | `service.name` (else the `:service-name` opt, else the [bri.config](/cljgo/bri/config/) app name, else `bri-app`) |
+| `APP_OTEL_SERVICE_NAME` / `OTEL_SERVICE_NAME` | `service.name` (else the `:service-name` opt, else the [bri.core.config](/cljgo/bri/config/) app name, else `bri-app`) |
 | `APP_OTEL_STDOUT=1` | export spans to stdout — demos, no collector needed |
 
 ```bash
@@ -79,7 +79,7 @@ The response carries a `traceparent` header, and each access-log line's request-
 
 ## Where next
 
-- [bri.http](/cljgo/bri/http/) — the default-on observability (metrics, logs, request-ids) this builds on
-- [bri.auth](/cljgo/bri/auth/) — the authenticated subject recorded on each span
-- [bri.config](/cljgo/bri/config/) — where `service.name` is resolved from
+- [bri.web.http](/cljgo/bri/http/) — the default-on observability (metrics, logs, request-ids) this builds on
+- [bri.core.security](/cljgo/bri/auth/) — the authenticated subject recorded on each span
+- [bri.core.config](/cljgo/bri/config/) — where `service.name` is resolved from
 - [Deploy](/cljgo/guides/deploy/) — the tracing binary still ships as one static image

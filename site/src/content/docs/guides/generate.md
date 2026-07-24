@@ -1,6 +1,6 @@
 ---
 title: "The resource generator"
-description: "cljgo generate resource Note title:string scaffolds a migration, model, handlers, routes, and a green CRUD test over bri.db — and splices it into your app."
+description: "cljgo generate resource Note title:string scaffolds a migration, model, handlers, routes, and a green CRUD test over bri.core.data — and splices it into your app."
 ---
 
 `cljgo generate resource` is the DHH-style scaffold: it turns a resource description into a whole authenticated CRUD slice inside a bri web app — a migration, a model, five handlers, a routes value, and a **green** test — then splices the routes into `src/app/main.cljg` at documented comment markers (ADR 0073). It is a real code generator, not a file copy: the output is field-parametrized, and every emitted file is validated on each build.
@@ -43,11 +43,11 @@ generated resource note (/api/notes)
 ```
 
 - **The migration** — `CREATE TABLE notes (…)` with an `id` primary key and your columns, plus an index per `references` field.
-- **`src/app/db.cljg`** — the app's single datasource, created **once** and never clobbered. It wires the [bri.db](/cljgo/bri/db/) connection (SQLite by default, `:memory:` under the `:test` profile, Postgres via `APP_DB_URL`).
-- **The resource** (`src/app/notes.cljg`) — a `coerce` fn (JSON body → typed columns), a model of parametrized `bri.db` calls, five handlers (`index`/`show`/`create`/`update-one`/`delete-one`), and a `routes` value. Every route is authenticated ([bri.auth](/cljgo/bri/auth/)); `delete` is `admin-only`. **This file is yours** — edit it freely; the generator never rewrites an existing resource.
+- **`src/app/db.cljg`** — the app's single datasource, created **once** and never clobbered. It wires the [bri.core.data](/cljgo/bri/db/) connection (SQLite by default, `:memory:` under the `:test` profile, Postgres via `APP_DB_URL`).
+- **The resource** (`src/app/notes.cljg`) — a `coerce` fn (JSON body → typed columns), a model of parametrized `bri.core.data` calls, five handlers (`index`/`show`/`create`/`update-one`/`delete-one`), and a `routes` value. Every route is authenticated ([bri.core.security](/cljgo/bri/auth/)); `delete` is `admin-only`. **This file is yours** — edit it freely; the generator never rewrites an existing resource.
 - **The test** — the full CRUD over a fresh in-memory database, plus the guards and the typed-param funnel. It is green out of the box.
 
-The model is the only place that touches `bri.db`, and every query is parametrized — the injection-safe seam kept in one file.
+The model is the only place that touches `bri.core.data`, and every query is parametrized — the injection-safe seam kept in one file.
 
 ## The splice
 
@@ -55,7 +55,7 @@ The generator inserts the resource's `require` and `routes` value into `app.main
 
 ```clojure
 (ns app.main
-  (:require [bri.http :as http]
+  (:require [bri.web.http :as http]
             ;; cljgo:resource-requires
             ))
 
@@ -77,7 +77,7 @@ cljgo dev       # serve it
 
 ## Where next
 
-- [bri.db](/cljgo/bri/db/) — the data layer the generated model calls
-- [bri.auth](/cljgo/bri/auth/) — the guards on the generated routes
-- [bri.http](/cljgo/bri/http/) — the router the routes value plugs into
+- [bri.core.data](/cljgo/bri/db/) — the data layer the generated model calls
+- [bri.core.security](/cljgo/bri/auth/) — the guards on the generated routes
+- [bri.web.http](/cljgo/bri/http/) — the router the routes value plugs into
 - [Deploy](/cljgo/guides/deploy/) — ship the finished app as one static binary

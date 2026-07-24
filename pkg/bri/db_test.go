@@ -1,5 +1,5 @@
-// db_test.go — the behavior suite for bri.db (ADR 0072). Like the rest
-// of bri these behaviors have NO JVM oracle (bri.db does not exist in
+// db_test.go — the behavior suite for bri.core.data (ADR 0072). Like the rest
+// of bri these behaviors have NO JVM oracle (bri.core.data does not exist in
 // Clojure 1.12.5), so they run against the real interpreter here rather
 // than in conformance/tests. Every test uses a private in-memory SQLite
 // database (the ADR 0072 test sandbox) — pure Go, CGO_ENABLED=0, no file,
@@ -15,7 +15,7 @@ import (
 
 // dbPrelude opens a fresh in-memory SQLite db and creates a notes table.
 const dbPrelude = `
-(require '[bri.db :as db])
+(require '[bri.core.data :as db])
 (def conn (db/connect {:driver :sqlite :database ":memory:"}))
 (db/exec! conn "create table notes (id integer primary key autoincrement, title text not null, body text, created_at text)")
 `
@@ -99,14 +99,14 @@ func TestUpdateDeleteRowsAffected(t *testing.T) {
 	}
 }
 
-// Scenario: one! throws :bri.db/not-found on no match.
+// Scenario: one! throws :bri.core.data/not-found on no match.
 func TestOneBangNotFound(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, dbPrelude)
 	ok := eval(t, d, `(try (db/one! conn "select * from notes where id = ?" 999)
-                          (catch Throwable e (= :bri.db/not-found (:bri.db/error (ex-data e)))))`)
+                          (catch Throwable e (= :bri.core.data/not-found (:bri.core.data/error (ex-data e)))))`)
 	if ok != true {
-		t.Fatalf("one! on no row did not throw :bri.db/not-found (got %v)", ok)
+		t.Fatalf("one! on no row did not throw :bri.core.data/not-found (got %v)", ok)
 	}
 }
 
@@ -168,7 +168,7 @@ func TestMigrationsApplyIdempotentStatus(t *testing.T) {
 	dir = filepath.ToSlash(dir)
 
 	d := newDriver(t)
-	eval(t, d, `(require '[bri.db :as db])
+	eval(t, d, `(require '[bri.core.data :as db])
                 (def conn (db/connect {:driver :sqlite :database ":memory:"}))`)
 
 	// First run applies both.

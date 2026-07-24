@@ -1,16 +1,16 @@
-// Package otel is the ISOLATED Go half of bri.otel — the OpenTelemetry
+// Package otel is the ISOLATED Go half of bri.core.telemetry — the OpenTelemetry
 // SDK wiring for opt-in distributed tracing (ADR 0074). It is a SEPARATE
 // package from pkg/bri on purpose: the OpenTelemetry SDK is a heavy
 // dependency that must NOT link into a bri binary that does not require
 // tracing. pkg/bri never imports this package; only the generated
 // pkg/briaot/briotel sub-package (and the build-time genbri / interpreter
 // briloader paths) do, so the linker keeps the SDK exactly when — and only
-// when — an app requires bri.otel.
+// when — an app requires bri.core.telemetry.
 //
 // Like the rest of bri's Go half this package is PURE Go (the whole
-// OpenTelemetry SDK is: no cgo), so a bri.otel app still AOT-compiles to a
+// OpenTelemetry SDK is: no cgo), so a bri.core.telemetry app still AOT-compiles to a
 // CGO_ENABLED=0 static binary. It registers its shim installer with pkg/bri
-// from init(), so bri.InstallShimsInto resolves bri.otel's private vars
+// from init(), so bri.InstallShimsInto resolves bri.core.telemetry's private vars
 // exactly like every other namespace once this package is linked.
 package otel
 
@@ -35,10 +35,10 @@ import (
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
-// init wires bri.otel's shim installer into pkg/bri's registry. It runs
-// only when this package is linked (i.e. the app requires bri.otel), so a
+// init wires bri.core.telemetry's shim installer into pkg/bri's registry. It runs
+// only when this package is linked (i.e. the app requires bri.core.telemetry), so a
 // non-tracing binary never carries the OpenTelemetry SDK (ADR 0074).
-func init() { bri.RegisterInstaller("bri.otel", installShims) }
+func init() { bri.RegisterInstaller("bri.core.telemetry", installShims) }
 
 var (
 	mu       sync.Mutex
@@ -50,7 +50,7 @@ var (
 	prop = propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 )
 
-// spanHandle is the opaque value bri.otel threads through a request: the
+// spanHandle is the opaque value bri.core.telemetry threads through a request: the
 // live span plus the context it was started in (so injection carries the
 // span's identity). Clojure holds it as an ordinary value and hands it back
 // to -otel-end / -otel-traceparent.
@@ -59,7 +59,7 @@ type spanHandle struct {
 	span trace.Span
 }
 
-// installShims interns bri.otel's private Go primitives into the namespace,
+// installShims interns bri.core.telemetry's private Go primitives into the namespace,
 // mirroring pkg/bri's installers for the always-linked namespaces. The
 // interning func is supplied by bri.InstallShimsInto.
 func installShims(def func(name string, fn func(args ...any) any)) {
@@ -118,7 +118,7 @@ func initProvider(serviceName string) {
 	provider = sdktrace.NewTracerProvider(opts...)
 	otel.SetTracerProvider(provider)
 	otel.SetTextMapPropagator(prop)
-	tracer = provider.Tracer("bri.otel")
+	tracer = provider.Tracer("bri.core.telemetry")
 }
 
 // buildExporter returns the configured span exporter, or nil (no export).
@@ -226,7 +226,7 @@ func traceparentOf(h any) any {
 	return nil
 }
 
-// shutdown flushes and stops the batch processor — hooked into bri.http's
+// shutdown flushes and stops the batch processor — hooked into bri.web.http's
 // serve :drain so buffered spans reach the collector on SIGTERM (ADR 0074).
 func shutdown() {
 	mu.Lock()

@@ -1,5 +1,5 @@
-// otel_test.go — the bri.otel Go-half behavior suite (ADR 0074). No JVM
-// oracle (bri.otel is bri-specific), so these are Go tests against the real
+// otel_test.go — the bri.core.telemetry Go-half behavior suite (ADR 0074). No JVM
+// oracle (bri.core.telemetry is bri-specific), so these are Go tests against the real
 // OpenTelemetry SDK: a request-shaped span is exported with the right
 // name/attributes/status, an inbound W3C traceparent is adopted (the trace
 // is joined), and the span's own traceparent is injectable for outbound
@@ -27,7 +27,7 @@ func recorder(t *testing.T) *tracetest.InMemoryExporter {
 	provider = sdktrace.NewTracerProvider(
 		sdktrace.WithSyncer(exp),
 		sdktrace.WithResource(resource.NewSchemaless(attribute.String("service.name", "test-svc"))))
-	tracer = provider.Tracer("bri.otel")
+	tracer = provider.Tracer("bri.core.telemetry")
 	mu.Unlock()
 	t.Cleanup(func() {
 		mu.Lock()

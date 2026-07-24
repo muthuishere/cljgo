@@ -1,10 +1,10 @@
 ;; app.main — the web-api, now with OPT-IN OpenTelemetry tracing (ADR 0074).
 ;;
 ;; bri already gives you, default-on: Prometheus metrics at /metrics,
-;; structured JSON access logs, and X-Request-Id propagation. bri.otel ADDS
+;; structured JSON access logs, and X-Request-Id propagation. bri.core.telemetry ADDS
 ;; distributed tracing — a span per request, W3C trace-context propagation,
 ;; and an OTLP exporter — WITHOUT being forced on: you require it and add one
-;; middleware. A bri app that never requires bri.otel never links the
+;; middleware. A bri app that never requires bri.core.telemetry never links the
 ;; OpenTelemetry SDK (it stays ~6 MB smaller).
 ;;
 ;;   cljgo dev                          # boot with an nREPL
@@ -19,9 +19,9 @@
 ;; request-id matches the span's bri.request_id — logs, metrics, and traces
 ;; all line up.
 (ns app.main
-  (:require [bri.http :as http :refer [GET POST]]
-            [bri.otel :as otel]
-            [bri.config :as config]))
+  (:require [bri.web.http :as http :refer [GET POST]]
+            [bri.core.telemetry :as otel]
+            [bri.core.config :as config]))
 
 (def cfg (config/load!))
 

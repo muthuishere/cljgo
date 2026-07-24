@@ -93,9 +93,9 @@ server sees the new definition because `#'home` is on the routes page.
 
 ```clojure
 (ns app.main
-  (:require [bri.http :as http]
-            [bri.html :as html]
-            [bri.config :as config]))
+  (:require [bri.web.http :as http]
+            [bri.web.html :as html]
+            [bri.core.config :as config]))
 
 (def cfg (config/load!))          ; conf.edn + APP_* env. Reads a file, no more.
 
@@ -143,9 +143,9 @@ $ cljgo routes      ; every route + the effective middleware stack
 
 ## Where next
 
-- [bri.http](bri-http.md) — handlers, middleware, the error funnel
-- [bri.html](bri-html.md) — pages, forms, escaping
-- [bri.config](bri-config.md) — profiles, env, the schema
+- [bri.web.http](bri-http.md) — handlers, middleware, the error funnel
+- [bri.web.html](bri-html.md) — pages, forms, escaping
+- [bri.core.config](bri-config.md) — profiles, env, the schema
 
-The data layer (`bri.db`, migrations, the embedded dev Postgres) and
+The data layer (`bri.core.data`, migrations, the embedded dev Postgres) and
 jobs/cache land in the next tiers of the app-framework change.

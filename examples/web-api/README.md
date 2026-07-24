@@ -28,7 +28,7 @@ APP_PORT=3999 cljgo dev           # a live server + an nREPL; re-def a handler, 
 ```
 
 > AOT (`cljgo build`) of a bri app lands with a later app-framework tier —
-> `bri.http` is a runtime lib provider today. The dev loop is `cljgo dev`
+> `bri.web.http` is a runtime lib provider today. The dev loop is `cljgo dev`
 > and `cljgo test`.
 
 ## The API

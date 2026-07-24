@@ -9,95 +9,95 @@ import (
 )
 
 var (
-	kw_action                          = lang.InternKeywordString("action")
-	kw_as                              = lang.InternKeywordString("as")
-	kw_body                            = lang.InternKeywordString("body")
-	kw_bri_DOT_html_SLASH_unsafe       = lang.InternKeywordString("bri.html/unsafe")
-	kw_charset                         = lang.InternKeywordString("charset")
-	kw_class                           = lang.InternKeywordString("class")
-	kw_column                          = lang.InternKeywordString("column")
-	kw_content                         = lang.InternKeywordString("content")
-	kw_doc                             = lang.InternKeywordString("doc")
-	kw_else_                           = lang.InternKeywordString("else")
-	kw_end_column                      = lang.InternKeywordString("end-column")
-	kw_end_line                        = lang.InternKeywordString("end-line")
-	kw_file                            = lang.InternKeywordString("file")
-	kw_form                            = lang.InternKeywordString("form")
-	kw_get                             = lang.InternKeywordString("get")
-	kw_head                            = lang.InternKeywordString("head")
-	kw_href                            = lang.InternKeywordString("href")
-	kw_html                            = lang.InternKeywordString("html")
-	kw_id                              = lang.InternKeywordString("id")
-	kw_input                           = lang.InternKeywordString("input")
-	kw_line                            = lang.InternKeywordString("line")
-	kw_link                            = lang.InternKeywordString("link")
-	kw_meta                            = lang.InternKeywordString("meta")
-	kw_method                          = lang.InternKeywordString("method")
-	kw_name                            = lang.InternKeywordString("name")
-	kw_post                            = lang.InternKeywordString("post")
-	kw_private                         = lang.InternKeywordString("private")
-	kw_rel                             = lang.InternKeywordString("rel")
-	kw_stylesheet                      = lang.InternKeywordString("stylesheet")
-	kw_title                           = lang.InternKeywordString("title")
-	kw_type_                           = lang.InternKeywordString("type")
-	kw_value                           = lang.InternKeywordString("value")
-	re_131                             = &reader.Regex{Pattern: "#"}
-	re_137                             = &reader.Regex{Pattern: "\\."}
-	sym_bri_DOT_html                   = lang.NewSymbol("bri.html")
-	sym_bri_DOT_http                   = lang.NewSymbol("bri.http")
-	sym_clojure_DOT_core               = lang.NewSymbol("clojure.core")
-	sym_clojure_DOT_string             = lang.NewSymbol("clojure.string")
-	sym_str                            = lang.NewSymbol("str")
-	v_bri_DOT_html_escape              = lang.InternVarName(lang.NewSymbol("bri.html"), lang.NewSymbol("escape"))
-	v_bri_DOT_html_form                = lang.InternVarName(lang.NewSymbol("bri.html"), lang.NewSymbol("form"))
-	v_bri_DOT_html_page                = lang.InternVarName(lang.NewSymbol("bri.html"), lang.NewSymbol("page"))
-	v_bri_DOT_html_parse_tag           = lang.InternVarName(lang.NewSymbol("bri.html"), lang.NewSymbol("parse-tag")).SetPrivate()
-	v_bri_DOT_html_render              = lang.InternVarName(lang.NewSymbol("bri.html"), lang.NewSymbol("render"))
-	v_bri_DOT_html_render_attrs        = lang.InternVarName(lang.NewSymbol("bri.html"), lang.NewSymbol("render-attrs")).SetPrivate()
-	v_bri_DOT_html_unsafe_QMARK_       = lang.InternVarName(lang.NewSymbol("bri.html"), lang.NewSymbol("unsafe?")).SetPrivate()
-	v_bri_DOT_html_unsafe_raw_html     = lang.InternVarName(lang.NewSymbol("bri.html"), lang.NewSymbol("unsafe-raw-html"))
-	v_bri_DOT_html_void_tags           = lang.InternVarName(lang.NewSymbol("bri.html"), lang.NewSymbol("void-tags")).SetPrivate()
-	v_bri_DOT_http_form_token          = lang.InternVarName(lang.NewSymbol("bri.http"), lang.NewSymbol("form-token"))
-	v_clojure_DOT_core_X_EQ_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
-	v_clojure_DOT_core_apply           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
-	v_clojure_DOT_core_contains_QMARK_ = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("contains?"))
-	v_clojure_DOT_core_count           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("count"))
-	v_clojure_DOT_core_dissoc          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("dissoc"))
-	v_clojure_DOT_core_false_QMARK_    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("false?"))
-	v_clojure_DOT_core_first           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("first"))
-	v_clojure_DOT_core_get             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
-	v_clojure_DOT_core_in_ns           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
-	v_clojure_DOT_core_inc             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("inc"))
-	v_clojure_DOT_core_into            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("into"))
-	v_clojure_DOT_core_key             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("key"))
-	v_clojure_DOT_core_map_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map"))
-	v_clojure_DOT_core_map_QMARK_      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
-	v_clojure_DOT_core_merge           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("merge"))
-	v_clojure_DOT_core_merge_with      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("merge-with"))
-	v_clojure_DOT_core_min_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("min"))
-	v_clojure_DOT_core_name            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("name"))
-	v_clojure_DOT_core_nil_QMARK_      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nil?"))
-	v_clojure_DOT_core_not             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("not"))
-	v_clojure_DOT_core_nth             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nth"))
-	v_clojure_DOT_core_nthrest         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nthrest"))
-	v_clojure_DOT_core_refer           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
-	v_clojure_DOT_core_remove          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("remove"))
-	v_clojure_DOT_core_require         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
-	v_clojure_DOT_core_rest            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("rest"))
-	v_clojure_DOT_core_second          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("second"))
-	v_clojure_DOT_core_seq             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("seq"))
-	v_clojure_DOT_core_seq_QMARK_      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("seq?"))
-	v_clojure_DOT_core_str             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
-	v_clojure_DOT_core_string_QMARK_   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("string?"))
-	v_clojure_DOT_core_subs            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("subs"))
-	v_clojure_DOT_core_true_QMARK_     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("true?"))
-	v_clojure_DOT_core_val             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("val"))
-	v_clojure_DOT_core_vector_QMARK_   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("vector?"))
-	v_clojure_DOT_string_blank_QMARK_  = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("blank?"))
-	v_clojure_DOT_string_index_of      = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("index-of"))
-	v_clojure_DOT_string_join          = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("join"))
-	v_clojure_DOT_string_replace       = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("replace"))
-	v_clojure_DOT_string_split         = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("split"))
+	kw_action                              = lang.InternKeywordString("action")
+	kw_as                                  = lang.InternKeywordString("as")
+	kw_body                                = lang.InternKeywordString("body")
+	kw_bri_DOT_web_DOT_html_SLASH_unsafe   = lang.InternKeywordString("bri.web.html/unsafe")
+	kw_charset                             = lang.InternKeywordString("charset")
+	kw_class                               = lang.InternKeywordString("class")
+	kw_column                              = lang.InternKeywordString("column")
+	kw_content                             = lang.InternKeywordString("content")
+	kw_doc                                 = lang.InternKeywordString("doc")
+	kw_else_                               = lang.InternKeywordString("else")
+	kw_end_column                          = lang.InternKeywordString("end-column")
+	kw_end_line                            = lang.InternKeywordString("end-line")
+	kw_file                                = lang.InternKeywordString("file")
+	kw_form                                = lang.InternKeywordString("form")
+	kw_get                                 = lang.InternKeywordString("get")
+	kw_head                                = lang.InternKeywordString("head")
+	kw_href                                = lang.InternKeywordString("href")
+	kw_html                                = lang.InternKeywordString("html")
+	kw_id                                  = lang.InternKeywordString("id")
+	kw_input                               = lang.InternKeywordString("input")
+	kw_line                                = lang.InternKeywordString("line")
+	kw_link                                = lang.InternKeywordString("link")
+	kw_meta                                = lang.InternKeywordString("meta")
+	kw_method                              = lang.InternKeywordString("method")
+	kw_name                                = lang.InternKeywordString("name")
+	kw_post                                = lang.InternKeywordString("post")
+	kw_private                             = lang.InternKeywordString("private")
+	kw_rel                                 = lang.InternKeywordString("rel")
+	kw_stylesheet                          = lang.InternKeywordString("stylesheet")
+	kw_title                               = lang.InternKeywordString("title")
+	kw_type_                               = lang.InternKeywordString("type")
+	kw_value                               = lang.InternKeywordString("value")
+	re_131                                 = &reader.Regex{Pattern: "#"}
+	re_137                                 = &reader.Regex{Pattern: "\\."}
+	sym_bri_DOT_web_DOT_html               = lang.NewSymbol("bri.web.html")
+	sym_bri_DOT_web_DOT_http               = lang.NewSymbol("bri.web.http")
+	sym_clojure_DOT_core                   = lang.NewSymbol("clojure.core")
+	sym_clojure_DOT_string                 = lang.NewSymbol("clojure.string")
+	sym_str                                = lang.NewSymbol("str")
+	v_bri_DOT_web_DOT_html_escape          = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("escape"))
+	v_bri_DOT_web_DOT_html_form            = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("form"))
+	v_bri_DOT_web_DOT_html_page            = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("page"))
+	v_bri_DOT_web_DOT_html_parse_tag       = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("parse-tag")).SetPrivate()
+	v_bri_DOT_web_DOT_html_render          = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("render"))
+	v_bri_DOT_web_DOT_html_render_attrs    = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("render-attrs")).SetPrivate()
+	v_bri_DOT_web_DOT_html_unsafe_QMARK_   = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("unsafe?")).SetPrivate()
+	v_bri_DOT_web_DOT_html_unsafe_raw_html = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("unsafe-raw-html"))
+	v_bri_DOT_web_DOT_html_void_tags       = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("void-tags")).SetPrivate()
+	v_bri_DOT_web_DOT_http_form_token      = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("form-token"))
+	v_clojure_DOT_core_X_EQ_               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
+	v_clojure_DOT_core_apply               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
+	v_clojure_DOT_core_contains_QMARK_     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("contains?"))
+	v_clojure_DOT_core_count               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("count"))
+	v_clojure_DOT_core_dissoc              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("dissoc"))
+	v_clojure_DOT_core_false_QMARK_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("false?"))
+	v_clojure_DOT_core_first               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("first"))
+	v_clojure_DOT_core_get                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
+	v_clojure_DOT_core_in_ns               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_inc                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("inc"))
+	v_clojure_DOT_core_into                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("into"))
+	v_clojure_DOT_core_key                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("key"))
+	v_clojure_DOT_core_map_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map"))
+	v_clojure_DOT_core_map_QMARK_          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
+	v_clojure_DOT_core_merge               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("merge"))
+	v_clojure_DOT_core_merge_with          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("merge-with"))
+	v_clojure_DOT_core_min_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("min"))
+	v_clojure_DOT_core_name                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("name"))
+	v_clojure_DOT_core_nil_QMARK_          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nil?"))
+	v_clojure_DOT_core_not                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("not"))
+	v_clojure_DOT_core_nth                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nth"))
+	v_clojure_DOT_core_nthrest             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nthrest"))
+	v_clojure_DOT_core_refer               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	v_clojure_DOT_core_remove              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("remove"))
+	v_clojure_DOT_core_require             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
+	v_clojure_DOT_core_rest                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("rest"))
+	v_clojure_DOT_core_second              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("second"))
+	v_clojure_DOT_core_seq                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("seq"))
+	v_clojure_DOT_core_seq_QMARK_          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("seq?"))
+	v_clojure_DOT_core_str                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
+	v_clojure_DOT_core_string_QMARK_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("string?"))
+	v_clojure_DOT_core_subs                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("subs"))
+	v_clojure_DOT_core_true_QMARK_         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("true?"))
+	v_clojure_DOT_core_val                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("val"))
+	v_clojure_DOT_core_vector_QMARK_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("vector?"))
+	v_clojure_DOT_string_blank_QMARK_      = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("blank?"))
+	v_clojure_DOT_string_index_of          = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("index-of"))
+	v_clojure_DOT_string_join              = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("join"))
+	v_clojure_DOT_string_replace           = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("replace"))
+	v_clojure_DOT_string_split             = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("split"))
 )
 
 var loaded = false
@@ -108,11 +108,11 @@ func Load() {
 		return
 	}
 	loaded = true
-	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.html")), lang.VarFile, "bri/html.cljg"))
+	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.web.html")), lang.VarFile, "bri/html.cljg"))
 	defer lang.PopThreadBindings()
-	// (clojure.core/in-ns (quote bri.html))
+	// (clojure.core/in-ns (quote bri.web.html))
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
-	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_html)
+	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_web_DOT_html)
 	_ = tmp2
 	// (clojure.core/refer (quote clojure.core))
 	tmp3 := v_clojure_DOT_core_refer.Get()
@@ -122,12 +122,12 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (require (quote bri.http))
+	// (require (quote bri.web.http))
 	tmp7 := v_clojure_DOT_core_require.Get()
-	tmp8 := lang.Apply1(tmp7, sym_bri_DOT_http)
+	tmp8 := lang.Apply1(tmp7, sym_bri_DOT_web_DOT_http)
 	_ = tmp8
 	// (def escape "HTML-escape a string: & < > \" ' — applied to every text node and\n  attrib…
-	v_bri_DOT_html_escape.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(14), kw_column, int64(7), kw_end_line, int64(14), kw_end_column, int64(13), kw_doc, "HTML-escape a string: & < > \" ' — applied to every text node and\n  attribute value."))
+	v_bri_DOT_web_DOT_html_escape.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(14), kw_column, int64(7), kw_end_line, int64(14), kw_end_column, int64(13), kw_doc, "HTML-escape a string: & < > \" ' — applied to every text node and\n  attribute value."))
 	tmp9 := lang.FnFunc1(func(s10 any) any {
 		tmp11 := v_clojure_DOT_string_replace.Get()
 		tmp12 := v_clojure_DOT_string_replace.Get()
@@ -143,22 +143,22 @@ func Load() {
 		tmp22 := lang.Apply3(tmp11, tmp21, "'", "&#39;")
 		return tmp22
 	})
-	tmp23 := &lang.NamedFn1{Name: "bri.html/escape", Expects: "1: [s]", F: tmp9}
-	v_bri_DOT_html_escape.BindRoot(tmp23)
-	_ = v_bri_DOT_html_escape
+	tmp23 := &lang.NamedFn1{Name: "bri.web.html/escape", Expects: "1: [s]", F: tmp9}
+	v_bri_DOT_web_DOT_html_escape.BindRoot(tmp23)
+	_ = v_bri_DOT_web_DOT_html_escape
 	// (def unsafe-raw-html "The EXPLICIT, deliberately ugly escape hatch: marks a string to be\n…
-	v_bri_DOT_html_unsafe_raw_html.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(22), kw_doc, "The EXPLICIT, deliberately ugly escape hatch: marks a string to be\n  emitted verbatim, unescaped. You own every byte you pass here."))
+	v_bri_DOT_web_DOT_html_unsafe_raw_html.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(22), kw_doc, "The EXPLICIT, deliberately ugly escape hatch: marks a string to be\n  emitted verbatim, unescaped. You own every byte you pass here."))
 	tmp24 := lang.FnFunc1(func(s25 any) any {
 		tmp26 := v_clojure_DOT_core_str.Get()
 		tmp27 := lang.Apply1(tmp26, s25)
-		tmp28 := lang.NewMap(kw_bri_DOT_html_SLASH_unsafe, tmp27)
+		tmp28 := lang.NewMap(kw_bri_DOT_web_DOT_html_SLASH_unsafe, tmp27)
 		return tmp28
 	})
-	tmp29 := &lang.NamedFn1{Name: "bri.html/unsafe-raw-html", Expects: "1: [s]", F: tmp24}
-	v_bri_DOT_html_unsafe_raw_html.BindRoot(tmp29)
-	_ = v_bri_DOT_html_unsafe_raw_html
-	// (def unsafe? (clojure.core/fn [x] (and (map? x) (contains? x :bri.html/unsafe))))
-	v_bri_DOT_html_unsafe_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(24), kw_private, true))
+	tmp29 := &lang.NamedFn1{Name: "bri.web.html/unsafe-raw-html", Expects: "1: [s]", F: tmp24}
+	v_bri_DOT_web_DOT_html_unsafe_raw_html.BindRoot(tmp29)
+	_ = v_bri_DOT_web_DOT_html_unsafe_raw_html
+	// (def unsafe? (clojure.core/fn [x] (and (map? x) (contains? x :bri.web.html/unsafe))))
+	v_bri_DOT_web_DOT_html_unsafe_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(24), kw_private, true))
 	tmp30 := lang.FnFunc1(func(x31 any) any {
 		var tmp32 any
 		_ = tmp32
@@ -171,7 +171,7 @@ func Load() {
 			_ = tmp36
 			if lang.IsTruthy(and__1__auto__35) {
 				tmp37 := v_clojure_DOT_core_contains_QMARK_.Get()
-				tmp38 := lang.Apply2(tmp37, x31, kw_bri_DOT_html_SLASH_unsafe)
+				tmp38 := lang.Apply2(tmp37, x31, kw_bri_DOT_web_DOT_html_SLASH_unsafe)
 				tmp36 = tmp38
 			} else {
 				tmp36 = and__1__auto__35
@@ -180,16 +180,16 @@ func Load() {
 		}
 		return tmp32
 	})
-	tmp39 := &lang.NamedFn1{Name: "bri.html/unsafe?", Expects: "1: [x]", F: tmp30}
-	v_bri_DOT_html_unsafe_QMARK_.BindRoot(tmp39)
-	_ = v_bri_DOT_html_unsafe_QMARK_
+	tmp39 := &lang.NamedFn1{Name: "bri.web.html/unsafe?", Expects: "1: [x]", F: tmp30}
+	v_bri_DOT_web_DOT_html_unsafe_QMARK_.BindRoot(tmp39)
+	_ = v_bri_DOT_web_DOT_html_unsafe_QMARK_
 	// (def void-tags #{"track" "br" "img" "area" "base" "hr" "col" "input" "link" "source" "meta…
-	v_bri_DOT_html_void_tags.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(34), kw_column, int64(6), kw_end_line, int64(34), kw_end_column, int64(25), kw_private, true))
+	v_bri_DOT_web_DOT_html_void_tags.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(34), kw_column, int64(6), kw_end_line, int64(34), kw_end_column, int64(25), kw_private, true))
 	tmp40 := lang.NewSet("track", "br", "img", "area", "base", "hr", "col", "input", "link", "source", "meta", "wbr", "embed")
-	v_bri_DOT_html_void_tags.BindRoot(tmp40)
-	_ = v_bri_DOT_html_void_tags
+	v_bri_DOT_web_DOT_html_void_tags.BindRoot(tmp40)
+	_ = v_bri_DOT_web_DOT_html_void_tags
 	// (def render-attrs (clojure.core/fn [attrs] (apply str (map (fn [kv] (let [k (name (key kv)…
-	v_bri_DOT_html_render_attrs.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(29), kw_private, true))
+	v_bri_DOT_web_DOT_html_render_attrs.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(29), kw_private, true))
 	tmp41 := lang.FnFunc1(func(attrs42 any) any {
 		tmp43 := v_clojure_DOT_core_apply.Get()
 		tmp44 := v_clojure_DOT_core_str.Get()
@@ -244,7 +244,7 @@ func Load() {
 						_ = tmp70
 						if lang.IsTruthy(kw_else_) {
 							tmp71 := v_clojure_DOT_core_str.Get()
-							tmp72 := v_bri_DOT_html_escape.Get()
+							tmp72 := v_bri_DOT_web_DOT_html_escape.Get()
 							tmp73 := lang.Apply1(tmp72, v56)
 							tmp74 := lang.Apply(tmp71, []any{" ", k53, "=\"", tmp73, "\""})
 							tmp70 = tmp74
@@ -266,11 +266,11 @@ func Load() {
 		tmp79 := lang.Apply2(tmp43, tmp44, tmp78)
 		return tmp79
 	})
-	tmp80 := &lang.NamedFn1{Name: "bri.html/render-attrs", Expects: "1: [attrs]", F: tmp41}
-	v_bri_DOT_html_render_attrs.BindRoot(tmp80)
-	_ = v_bri_DOT_html_render_attrs
+	tmp80 := &lang.NamedFn1{Name: "bri.web.html/render-attrs", Expects: "1: [attrs]", F: tmp41}
+	v_bri_DOT_web_DOT_html_render_attrs.BindRoot(tmp80)
+	_ = v_bri_DOT_web_DOT_html_render_attrs
 	// (def parse-tag "Hiccup tag sugar: :div#id.a.b → [\"div\" {:id \"id\" :class \"a b\"}]." …
-	v_bri_DOT_html_parse_tag.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(26), kw_private, true, kw_doc, "Hiccup tag sugar: :div#id.a.b → [\"div\" {:id \"id\" :class \"a b\"}]."))
+	v_bri_DOT_web_DOT_html_parse_tag.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(26), kw_private, true, kw_doc, "Hiccup tag sugar: :div#id.a.b → [\"div\" {:id \"id\" :class \"a b\"}]."))
 	tmp81 := lang.FnFunc1(func(t82 any) any {
 		var tmp83 any
 		_ = tmp83
@@ -452,11 +452,11 @@ func Load() {
 		}
 		return tmp83
 	})
-	tmp163 := &lang.NamedFn1{Name: "bri.html/parse-tag", Expects: "1: [t]", F: tmp81}
-	v_bri_DOT_html_parse_tag.BindRoot(tmp163)
-	_ = v_bri_DOT_html_parse_tag
+	tmp163 := &lang.NamedFn1{Name: "bri.web.html/parse-tag", Expects: "1: [t]", F: tmp81}
+	v_bri_DOT_web_DOT_html_parse_tag.BindRoot(tmp163)
+	_ = v_bri_DOT_web_DOT_html_parse_tag
 	// (def render "Render one hiccup node — a vector element, a string/number (escaped),\n  ni…
-	v_bri_DOT_html_render.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(13), kw_doc, "Render one hiccup node — a vector element, a string/number (escaped),\n  nil (nothing), a seq (concatenated), or (unsafe-raw-html s) — to an\n  HTML string."))
+	v_bri_DOT_web_DOT_html_render.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(13), kw_doc, "Render one hiccup node — a vector element, a string/number (escaped),\n  nil (nothing), a seq (concatenated), or (unsafe-raw-html s) — to an\n  HTML string."))
 	tmp164 := lang.FnFunc1(func(node165 any) any {
 		tmp166 := v_clojure_DOT_core_nil_QMARK_.Get()
 		tmp167 := lang.Apply1(tmp166, node165)
@@ -470,16 +470,16 @@ func Load() {
 			var tmp171 any
 			_ = tmp171
 			if lang.IsTruthy(tmp170) {
-				tmp172 := v_bri_DOT_html_escape.Get()
+				tmp172 := v_bri_DOT_web_DOT_html_escape.Get()
 				tmp173 := lang.Apply1(tmp172, node165)
 				tmp171 = tmp173
 			} else {
-				tmp174 := v_bri_DOT_html_unsafe_QMARK_.Get()
+				tmp174 := v_bri_DOT_web_DOT_html_unsafe_QMARK_.Get()
 				tmp175 := lang.Apply1(tmp174, node165)
 				var tmp176 any
 				_ = tmp176
 				if lang.IsTruthy(tmp175) {
-					tmp177 := lang.Apply1(kw_bri_DOT_html_SLASH_unsafe, node165)
+					tmp177 := lang.Apply1(kw_bri_DOT_web_DOT_html_SLASH_unsafe, node165)
 					tmp176 = tmp177
 				} else {
 					tmp178 := v_clojure_DOT_core_vector_QMARK_.Get()
@@ -490,7 +490,7 @@ func Load() {
 						var tmp181 any
 						_ = tmp181
 						{
-							tmp182 := v_bri_DOT_html_parse_tag.Get()
+							tmp182 := v_bri_DOT_web_DOT_html_parse_tag.Get()
 							tmp183 := v_clojure_DOT_core_name.Get()
 							tmp184 := v_clojure_DOT_core_first.Get()
 							tmp185 := lang.Apply1(tmp184, node165)
@@ -519,7 +519,7 @@ func Load() {
 								_ = tmp201
 								if lang.IsTruthy(and__1__auto__200) {
 									tmp202 := v_clojure_DOT_core_not.Get()
-									tmp203 := v_bri_DOT_html_unsafe_QMARK_.Get()
+									tmp203 := v_bri_DOT_web_DOT_html_unsafe_QMARK_.Get()
 									tmp204 := v_clojure_DOT_core_second.Get()
 									tmp205 := lang.Apply1(tmp204, node165)
 									tmp206 := lang.Apply1(tmp203, tmp205)
@@ -566,24 +566,24 @@ func Load() {
 							var children227 any = tmp222
 							_ = children227
 							tmp228 := v_clojure_DOT_core_contains_QMARK_.Get()
-							tmp229 := v_bri_DOT_html_void_tags.Get()
+							tmp229 := v_bri_DOT_web_DOT_html_void_tags.Get()
 							tmp230 := lang.Apply2(tmp228, tmp229, tag191)
 							var tmp231 any
 							_ = tmp231
 							if lang.IsTruthy(tmp230) {
 								tmp232 := v_clojure_DOT_core_str.Get()
-								tmp233 := v_bri_DOT_html_render_attrs.Get()
+								tmp233 := v_bri_DOT_web_DOT_html_render_attrs.Get()
 								tmp234 := lang.Apply1(tmp233, attrs221)
 								tmp235 := lang.Apply4(tmp232, "<", tag191, tmp234, ">")
 								tmp231 = tmp235
 							} else {
 								tmp236 := v_clojure_DOT_core_str.Get()
-								tmp237 := v_bri_DOT_html_render_attrs.Get()
+								tmp237 := v_bri_DOT_web_DOT_html_render_attrs.Get()
 								tmp238 := lang.Apply1(tmp237, attrs221)
 								tmp239 := v_clojure_DOT_core_apply.Get()
 								tmp240 := v_clojure_DOT_core_str.Get()
 								tmp241 := v_clojure_DOT_core_map_.Get()
-								tmp242 := v_bri_DOT_html_render.Get()
+								tmp242 := v_bri_DOT_web_DOT_html_render.Get()
 								tmp243 := lang.Apply2(tmp241, tmp242, children227)
 								tmp244 := lang.Apply2(tmp239, tmp240, tmp243)
 								tmp245 := lang.Apply(tmp236, []any{"<", tag191, tmp238, ">", tmp244, "</", tag191, ">"})
@@ -601,7 +601,7 @@ func Load() {
 							tmp249 := v_clojure_DOT_core_apply.Get()
 							tmp250 := v_clojure_DOT_core_str.Get()
 							tmp251 := v_clojure_DOT_core_map_.Get()
-							tmp252 := v_bri_DOT_html_render.Get()
+							tmp252 := v_bri_DOT_web_DOT_html_render.Get()
 							tmp253 := lang.Apply2(tmp251, tmp252, node165)
 							tmp254 := lang.Apply2(tmp249, tmp250, tmp253)
 							tmp248 = tmp254
@@ -609,7 +609,7 @@ func Load() {
 							var tmp255 any
 							_ = tmp255
 							if lang.IsTruthy(kw_else_) {
-								tmp256 := v_bri_DOT_html_escape.Get()
+								tmp256 := v_bri_DOT_web_DOT_html_escape.Get()
 								tmp257 := v_clojure_DOT_core_str.Get()
 								tmp258 := lang.Apply1(tmp257, node165)
 								tmp259 := lang.Apply1(tmp256, tmp258)
@@ -629,16 +629,16 @@ func Load() {
 		}
 		return tmp168
 	})
-	tmp260 := &lang.NamedFn1{Name: "bri.html/render", Expects: "1: [node]", F: tmp164}
-	v_bri_DOT_html_render.BindRoot(tmp260)
-	_ = v_bri_DOT_html_render
+	tmp260 := &lang.NamedFn1{Name: "bri.web.html/render", Expects: "1: [node]", F: tmp164}
+	v_bri_DOT_web_DOT_html_render.BindRoot(tmp260)
+	_ = v_bri_DOT_web_DOT_html_render
 	// (def page "A complete HTML document from body nodes. An optional leading opts\n  map sets …
-	v_bri_DOT_html_page.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(11), kw_doc, "A complete HTML document from body nodes. An optional leading opts\n  map sets :title and :stylesheet (default \"/static/app.css\")."))
+	v_bri_DOT_web_DOT_html_page.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(11), kw_doc, "A complete HTML document from body nodes. An optional leading opts\n  map sets :title and :stylesheet (default \"/static/app.css\")."))
 	tmp261 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
-				panic(lang.NewArityError(len(args), "bri.html/page", "0+: [body & more]"))
+				panic(lang.NewArityError(len(args), "bri.web.html/page", "0+: [body & more]"))
 			}
 			var body262 any
 			if len(args) > 0 {
@@ -678,7 +678,7 @@ func Load() {
 				var nodes277 any = tmp274
 				_ = nodes277
 				tmp278 := v_clojure_DOT_core_str.Get()
-				tmp279 := v_bri_DOT_html_render.Get()
+				tmp279 := v_bri_DOT_web_DOT_html_render.Get()
 				tmp280 := lang.NewMap(kw_charset, "utf-8")
 				tmp281 := lang.NewVector(kw_meta, tmp280)
 				tmp282 := lang.NewMap(kw_name, "viewport", kw_content, "width=device-width, initial-scale=1")
@@ -702,15 +702,15 @@ func Load() {
 			return tmp263
 		}
 	})
-	v_bri_DOT_html_page.BindRoot(tmp261)
-	_ = v_bri_DOT_html_page
+	v_bri_DOT_web_DOT_html_page.BindRoot(tmp261)
+	_ = v_bri_DOT_web_DOT_html_page
 	// (def form "A form element that MINTS THE CSRF TOKEN (the reason this fn exists —\n  and …
-	v_bri_DOT_html_form.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(114), kw_column, int64(7), kw_end_line, int64(114), kw_end_column, int64(11), kw_doc, "A form element that MINTS THE CSRF TOKEN (the reason this fn exists —\n  and the outer boundary of bri.html). (form {:post \"/signup\"} …)\n  or (form {:get \"/search\"} …); other opts keys pass through as\n  attributes. Returns hiccup data — compose it, then render/page it."))
+	v_bri_DOT_web_DOT_html_form.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(114), kw_column, int64(7), kw_end_line, int64(114), kw_end_column, int64(11), kw_doc, "A form element that MINTS THE CSRF TOKEN (the reason this fn exists —\n  and the outer boundary of bri.web.html). (form {:post \"/signup\"} …)\n  or (form {:get \"/search\"} …); other opts keys pass through as\n  attributes. Returns hiccup data — compose it, then render/page it."))
 	tmp298 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 1 {
-				panic(lang.NewArityError(len(args), "bri.html/form", "1+: [opts body & more]"))
+				panic(lang.NewArityError(len(args), "bri.web.html/form", "1+: [opts body & more]"))
 			}
 			opts299 := args[0]
 			_ = opts299
@@ -789,7 +789,7 @@ func Load() {
 				tmp324 := lang.Apply2(tmp320, tmp321, tmp323)
 				var attrs325 any = tmp324
 				_ = attrs325
-				tmp326 := v_bri_DOT_http_form_token.Get()
+				tmp326 := v_bri_DOT_web_DOT_http_form_token.Get()
 				tmp327 := lang.Apply0(tmp326)
 				var token328 any = tmp327
 				_ = token328
@@ -826,6 +826,6 @@ func Load() {
 			return tmp301
 		}
 	})
-	v_bri_DOT_html_form.BindRoot(tmp298)
-	_ = v_bri_DOT_html_form
+	v_bri_DOT_web_DOT_html_form.BindRoot(tmp298)
+	_ = v_bri_DOT_web_DOT_html_form
 }

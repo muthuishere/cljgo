@@ -4,10 +4,10 @@
 // bri namespace (core/bri/*.cljg — bri.Specs()), each a Load() that runs
 // that namespace's top-level forms, plus a lib provider per namespace that
 // installs the Go shims before running it. Blank-importing this package
-// into a compiled binary is what makes (require 'bri.http) resolve WITHOUT
+// into a compiled binary is what makes (require 'bri.web.http) resolve WITHOUT
 // the tree-walk interpreter (ADR 0071, mirroring pkg/coreaot / ADR 0046).
 // The emitter blank-imports it into a bri app's main package when the app
-// uses bri (pkg/emit UsesBri). OPT-IN namespaces (ADR 0074, e.g. bri.otel)
+// uses bri (pkg/emit UsesBri). OPT-IN namespaces (ADR 0074, e.g. bri.core.telemetry)
 // are EXCLUDED here — they self-register from their own sub-package and are
 // blank-imported by the emitter only when the app requires them, so their
 // heavy dependency never links into this umbrella.
@@ -28,15 +28,15 @@ import (
 )
 
 // init registers a lib provider per bri namespace: the replayed
-// (require 'bri.http) in a compiled binary triggers the matching loader at
+// (require 'bri.web.http) in a compiled binary triggers the matching loader at
 // its source position (the providers are guarded — each sub-package's Load
 // is load-once, and InstallShimsInto is idempotent re-interning).
 func init() {
-	rt.RegisterLib("bri.http", loadBrihttp)
-	rt.RegisterLib("bri.config", loadBriconfig)
-	rt.RegisterLib("bri.audit", loadBriaudit)
-	rt.RegisterLib("bri.html", loadBrihtml)
-	rt.RegisterLib("bri.auth", loadBriauth)
+	rt.RegisterLib("bri.web.http", loadBrihttp)
+	rt.RegisterLib("bri.core.config", loadBriconfig)
+	rt.RegisterLib("bri.core.audit", loadBriaudit)
+	rt.RegisterLib("bri.web.html", loadBrihtml)
+	rt.RegisterLib("bri.core.security", loadBriauth)
 	rt.RegisterLib("bri.cli.validate", loadBriclivalidate)
 	rt.RegisterLib("bri.cli", loadBricli)
 }
@@ -53,10 +53,10 @@ func installShims(name string) {
 	}
 }
 
-func loadBrihttp()        { installShims("bri.http"); brihttp.Load() }
-func loadBriconfig()      { installShims("bri.config"); briconfig.Load() }
-func loadBriaudit()       { installShims("bri.audit"); briaudit.Load() }
-func loadBrihtml()        { installShims("bri.html"); brihtml.Load() }
-func loadBriauth()        { installShims("bri.auth"); briauth.Load() }
+func loadBrihttp()        { installShims("bri.web.http"); brihttp.Load() }
+func loadBriconfig()      { installShims("bri.core.config"); briconfig.Load() }
+func loadBriaudit()       { installShims("bri.core.audit"); briaudit.Load() }
+func loadBrihtml()        { installShims("bri.web.html"); brihtml.Load() }
+func loadBriauth()        { installShims("bri.core.security"); briauth.Load() }
 func loadBriclivalidate() { installShims("bri.cli.validate"); briclivalidate.Load() }
 func loadBricli()         { installShims("bri.cli"); bricli.Load() }

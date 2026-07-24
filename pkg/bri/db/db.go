@@ -1,4 +1,4 @@
-// Package db is the ISOLATED Go half of bri.db — the pure-Go SQLite/pgx
+// Package db is the ISOLATED Go half of bri.core.data — the pure-Go SQLite/pgx
 // host shims for the opt-in data layer (ADR 0072, realizing ADR 0041 §4
 // Data / ADR 0057 SQLite-default + ADR 0058 Postgres-via-pgx). It is a
 // SEPARATE package from pkg/bri on purpose (ADR 0076): the SQLite + pgx
@@ -7,10 +7,10 @@
 // package; only pkg/briloader (the interpreter / REPL path, which already
 // links the whole interpreter) and the generated pkg/briaot/bridb
 // sub-package (blank-imported into a user binary ONLY when the app requires
-// bri.db) do — so the linker keeps the drivers exactly when, and only when,
+// bri.core.data) do — so the linker keeps the drivers exactly when, and only when,
 // an app uses the database.
 //
-// The Clojure half is core/bri/db.cljg (ns bri.db); this file interns the
+// The Clojure half is core/bri/db.cljg (ns bri.core.data); this file interns the
 // private `-db-*` primitives it leans on, driving database/sql over two
 // PURE-GO drivers so a compiled bri app still links CGO_ENABLED=0:
 //
@@ -21,10 +21,10 @@
 //
 // Like the rest of bri's Go half this package must NOT import pkg/eval — it
 // links into an AOT binary. It registers its shim installer with pkg/bri
-// from init() (RegisterInstaller), so bri.InstallShimsInto resolves bri.db's
+// from init() (RegisterInstaller), so bri.InstallShimsInto resolves bri.core.data's
 // private vars exactly like every other namespace once this package is
 // linked. Handles (*sql.DB / *sql.Tx) are held opaquely by the Clojure layer
-// inside its {:bri.db/handle …} map and handed back to these shims; both DB
+// inside its {:bri.core.data/handle …} map and handed back to these shims; both DB
 // and Tx satisfy one `querier`, so one -db-query / -db-exec serves
 // connections and transactions alike.
 package db
@@ -44,13 +44,13 @@ import (
 	_ "modernc.org/sqlite" // driver "sqlite"
 )
 
-// init wires bri.db's shim installer into pkg/bri's registry. It runs only
-// when this package is linked (i.e. the app requires bri.db, or the
+// init wires bri.core.data's shim installer into pkg/bri's registry. It runs only
+// when this package is linked (i.e. the app requires bri.core.data, or the
 // interpreter is running), so a non-db AOT binary never carries the SQLite +
 // pgx drivers (ADR 0076).
-func init() { bri.RegisterInstaller("bri.db", installDBShims) }
+func init() { bri.RegisterInstaller("bri.core.data", installDBShims) }
 
-// querier is the common surface of *sql.DB and *sql.Tx that bri.db uses;
+// querier is the common surface of *sql.DB and *sql.Tx that bri.core.data uses;
 // a db handle and a tx handle drive the identical read/write verbs.
 type querier interface {
 	Query(query string, args ...any) (*sql.Rows, error)
@@ -59,7 +59,7 @@ type querier interface {
 
 // dbHandle wraps a pool; txHandle wraps an in-flight transaction. driver
 // ("sqlite" | "pgx") selects placeholder style. Both are opaque to the
-// Clojure layer, which stores them under :bri.db/handle and passes them
+// Clojure layer, which stores them under :bri.core.data/handle and passes them
 // straight back.
 type dbHandle struct {
 	db     *sql.DB
@@ -79,10 +79,10 @@ func handleOf(v any) (querier, string) {
 	case *txHandle:
 		return h.tx, h.driver
 	}
-	panic(fmt.Errorf("bri.db: not a db/tx handle: %s", lang.PrintString(v)))
+	panic(fmt.Errorf("bri.core.data: not a db/tx handle: %s", lang.PrintString(v)))
 }
 
-// installDBShims interns bri.db's private Go primitives (ADR 0072). It is
+// installDBShims interns bri.core.data's private Go primitives (ADR 0072). It is
 // referenced by pkg/bri.Specs() and by pkg/briaot's generated loader, so
 // these run identically interpreted and compiled.
 func installDBShims(def func(name string, fn func(args ...any) any)) {
@@ -115,18 +115,18 @@ func installDBShims(def func(name string, fn func(args ...any) any)) {
 	def("-db-begin", func(args ...any) any {
 		h, ok := one("-db-begin", args).(*dbHandle)
 		if !ok {
-			panic(fmt.Errorf("bri.db: -db-begin needs a connection handle (transactions do not nest into new transactions)"))
+			panic(fmt.Errorf("bri.core.data: -db-begin needs a connection handle (transactions do not nest into new transactions)"))
 		}
 		tx, err := h.db.Begin()
 		if err != nil {
-			panic(fmt.Errorf("bri.db: begin: %w", err))
+			panic(fmt.Errorf("bri.core.data: begin: %w", err))
 		}
 		return &txHandle{tx: tx, driver: h.driver}
 	})
 	def("-db-commit", func(args ...any) any {
 		if h, ok := one("-db-commit", args).(*txHandle); ok {
 			if err := h.tx.Commit(); err != nil {
-				panic(fmt.Errorf("bri.db: commit: %w", err))
+				panic(fmt.Errorf("bri.core.data: commit: %w", err))
 			}
 		}
 		return nil
@@ -166,11 +166,11 @@ func dbOpen(driver, dsn string) any {
 	case "pgx", "postgres":
 		sqlDriver = "pgx"
 	default:
-		panic(fmt.Errorf("bri.db: unknown driver %q (want :sqlite or :postgres)", driver))
+		panic(fmt.Errorf("bri.core.data: unknown driver %q (want :sqlite or :postgres)", driver))
 	}
 	db, err := sql.Open(sqlDriver, dsn)
 	if err != nil {
-		panic(fmt.Errorf("bri.db: open %s: %w", driver, err))
+		panic(fmt.Errorf("bri.core.data: open %s: %w", driver, err))
 	}
 	// An in-memory SQLite database lives inside ONE connection: a pool that
 	// opens a second connection would see a fresh, empty database. Cap it at
@@ -180,7 +180,7 @@ func dbOpen(driver, dsn string) any {
 		db.SetMaxOpenConns(1)
 	}
 	if err := db.Ping(); err != nil {
-		panic(fmt.Errorf("bri.db: cannot reach the database (%s): %w", driver, err))
+		panic(fmt.Errorf("bri.core.data: cannot reach the database (%s): %w", driver, err))
 	}
 	return &dbHandle{db: db, driver: driver}
 }
@@ -190,12 +190,12 @@ func dbOpen(driver, dsn string) any {
 func dbQuery(q querier, driver, query string, paramsColl any) any {
 	rows, err := q.Query(rewritePlaceholders(query, driver), driverArgs(paramsColl)...)
 	if err != nil {
-		panic(fmt.Errorf("bri.db: query: %w", err))
+		panic(fmt.Errorf("bri.core.data: query: %w", err))
 	}
 	defer rows.Close()
 	cols, err := rows.Columns()
 	if err != nil {
-		panic(fmt.Errorf("bri.db: columns: %w", err))
+		panic(fmt.Errorf("bri.core.data: columns: %w", err))
 	}
 	keys := make([]lang.Keyword, len(cols))
 	for i, c := range cols {
@@ -209,7 +209,7 @@ func dbQuery(q querier, driver, query string, paramsColl any) any {
 			ptrs[i] = &cells[i]
 		}
 		if err := rows.Scan(ptrs...); err != nil {
-			panic(fmt.Errorf("bri.db: scan: %w", err))
+			panic(fmt.Errorf("bri.core.data: scan: %w", err))
 		}
 		kvs := make([]any, 0, len(cols)*2)
 		for i, cell := range cells {
@@ -218,7 +218,7 @@ func dbQuery(q querier, driver, query string, paramsColl any) any {
 		out = append(out, lang.NewMap(kvs...))
 	}
 	if err := rows.Err(); err != nil {
-		panic(fmt.Errorf("bri.db: rows: %w", err))
+		panic(fmt.Errorf("bri.core.data: rows: %w", err))
 	}
 	return lang.NewVectorOwning(out)
 }
@@ -228,7 +228,7 @@ func dbQuery(q querier, driver, query string, paramsColl any) any {
 func dbExec(q querier, driver, query string, paramsColl any) any {
 	res, err := q.Exec(rewritePlaceholders(query, driver), driverArgs(paramsColl)...)
 	if err != nil {
-		panic(fmt.Errorf("bri.db: exec: %w", err))
+		panic(fmt.Errorf("bri.core.data: exec: %w", err))
 	}
 	var affected any
 	if n, err := res.RowsAffected(); err == nil {
@@ -264,7 +264,7 @@ func migrationFiles(dir string) any {
 	for _, name := range names {
 		sqlBytes, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
-			panic(fmt.Errorf("bri.db: reading migration %s: %w", name, err))
+			panic(fmt.Errorf("bri.core.data: reading migration %s: %w", name, err))
 		}
 		version := strings.TrimSuffix(name, ".sql")
 		if i := strings.Index(version, "_"); i > 0 {
@@ -370,7 +370,7 @@ func asString(v any) string {
 // keywordName is a keyword's name without the leading colon.
 func keywordName(k lang.Keyword) string { return strings.TrimPrefix(k.String(), ":") }
 
-// getenvShim backs bri.db's (-getenv name) — os.LookupEnv, nil when unset.
+// getenvShim backs bri.core.data's (-getenv name) — os.LookupEnv, nil when unset.
 func getenvShim(args ...any) any {
 	v, ok := os.LookupEnv(asString(one("-getenv", args)))
 	if !ok {

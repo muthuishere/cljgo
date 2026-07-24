@@ -10,7 +10,7 @@
 // reader-validates every emitted file, and checks the splice — the ADR
 // 0047 anti-rot guarantee applied to the generator's output.
 //
-// bri.db (ADR 0072) is the data layer the generated model calls; this
+// bri.core.data (ADR 0072) is the data layer the generated model calls; this
 // command does NOT implement it. Every db call site is confined to the
 // generated resource's model section plus the one generated app.db ns, so
 // a reconciliation pass aligns exact names in one place.

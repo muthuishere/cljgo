@@ -1,5 +1,5 @@
 ;; bri.cli — the CLI app-shape of bri (ADR 0078). A command is data; the
-;; DSL mirrors bri.http's routes so there is nothing new to learn:
+;; DSL mirrors bri.web.http's routes so there is nothing new to learn:
 ;;
 ;;   http:  (defroute  x  (GET "/x" #'h))   (defroutes api x y)   (http/serve api)
 ;;   cli:   (defcommand add "..." [..] body) (defcommands app {} add ls) (cli/run app args)

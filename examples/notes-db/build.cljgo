@@ -1,4 +1,4 @@
-;; build.cljgo — the project build plan (ADR 0021). bri.db apps AOT-compile
+;; build.cljgo — the project build plan (ADR 0021). bri.core.data apps AOT-compile
 ;; to ONE static CGO_ENABLED=0 binary (ADR 0072): the pure-Go SQLite engine
 ;; (modernc) + pgx link in, no cgo. `cljgo build run` compiles and serves.
 (defn build [b]

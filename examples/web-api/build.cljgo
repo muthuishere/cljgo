@@ -1,6 +1,6 @@
 ;; build.cljgo — the project build plan (ADR 0021).
 ;; NOTE: AOT compilation of bri apps lands with a later tier of the
-;; app-framework change (bri.http is a runtime lib provider today); the
+;; app-framework change (bri.web.http is a runtime lib provider today); the
 ;; dev loop is `cljgo dev` (a live server + nREPL) and `cljgo test`.
 (defn build [b]
   (let [app (exe b {:name "notes-api"

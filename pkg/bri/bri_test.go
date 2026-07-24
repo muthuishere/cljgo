@@ -1,5 +1,5 @@
-// bri_test.go — the T1 behavior suite for bri.http / bri.html /
-// bri.config (openspec app-framework tasks 1.2–1.7). These behaviors
+// bri_test.go — the T1 behavior suite for bri.web.http / bri.web.html /
+// bri.core.config (openspec app-framework tasks 1.2–1.7). These behaviors
 // have NO JVM oracle (bri does not exist in Clojure 1.12.5), so they
 // live here as Go tests against the real interpreter rather than in
 // conformance/tests (whose files are oracle-verified; CLAUDE.md).
@@ -50,10 +50,10 @@ func evalString(t *testing.T, d *repl.Driver, code string) string {
 	return s
 }
 
-// --- bri.http: routing, params, funnel, negotiation ------------------------
+// --- bri.web.http: routing, params, funnel, negotiation ------------------------
 
 const testClientPrelude = `
-(require '[bri.http :as http] '[bri.html :as html])
+(require '[bri.web.http :as http] '[bri.web.html :as html])
 (defn show [req] {:status 200 :body (str "user " (http/param! req :id :int))})
 (def routes [["GET /users/{id}" #'show]])
 `
@@ -87,7 +87,7 @@ func TestBadParamIsA400(t *testing.T) {
 func TestBareResultIsALoud500(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[bri.http :as http])
+(require '[bri.web.http :as http])
 (defn bare [_] (ok {:status 200 :body "x"}))
 (def routes [["GET /b" #'bare]])
 `)
@@ -101,7 +101,7 @@ func TestBareResultIsALoud500(t *testing.T) {
 func TestRenderBridge(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[bri.http :as http])
+(require '[bri.web.http :as http])
 (defn good [_] (http/render (ok {:status 201 :body "made"})))
 (defn bad  [_] (http/render (err {:bri/error :db/not-found})))
 (def routes [["GET /good" #'good] ["GET /bad" #'bad]])
@@ -118,7 +118,7 @@ func TestRenderBridge(t *testing.T) {
 func TestRecoverErrorMapOverride(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[bri.http :as http])
+(require '[bri.web.http :as http])
 (defn boom [_] (throw (ex-info "teapot" {:bri/error :app/teapot})))
 (def routes [["GET /t" #'boom]])
 (def stack (into [(http/recover {:error-map {:app/teapot 418}})]
@@ -134,7 +134,7 @@ func TestRecoverErrorMapOverride(t *testing.T) {
 func TestJSONNegotiation(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[bri.http :as http])
+(require '[bri.web.http :as http])
 (defn echo [req] {:status 200 :body {:got (:a (:json req))}})
 (def routes [["POST /e" #'echo]])
 (def res (http/request routes {:method "POST" :path "/e"
@@ -157,7 +157,7 @@ func TestJSONNegotiation(t *testing.T) {
 func TestCSRFPosture(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[bri.http :as http] '[bri.html :as html])
+(require '[bri.web.http :as http] '[bri.web.html :as html])
 (defn login [_] (http/start-session {:status 200 :body "in"} {:user "m"}))
 (defn page-h [_] (http/ok (html/page (html/form {:post "/save"} [:button "go"]))))
 (defn save [_] {:status 200 :body "saved"})
@@ -204,7 +204,7 @@ func TestCSRFPosture(t *testing.T) {
 func TestLiveRedefOnARunningServer(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[bri.http :as http])
+(require '[bri.web.http :as http])
 (defn hello [req] {:status 200 :body (str "hello, " (:name (:params req)) " (v1)")})
 (def routes [["GET /hello/{name}" #'hello]])
 (def srv (http/serve routes {:port 0 :block? false}))
@@ -238,7 +238,7 @@ func TestStaticDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	eval(t, d, fmt.Sprintf(`
-(require '[bri.http :as http])
+(require '[bri.web.http :as http])
 (def routes [["GET /static/" (http/dir %q)]])
 (def srv (http/serve routes {:port 0 :block? false}))`, pub))
 	port := eval(t, d, `(:port srv)`).(int64)
@@ -258,7 +258,7 @@ func TestStaticDir(t *testing.T) {
 func TestStopDrainsHandles(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-(require '[bri.http :as http])
+(require '[bri.web.http :as http])
 (def drained (atom false))
 (defn h [_] {:status 200 :body "ok"})
 (def srv (http/serve [["GET /" #'h]] {:port 0 :block? false
@@ -270,13 +270,13 @@ func TestStopDrainsHandles(t *testing.T) {
 	}
 }
 
-// --- bri.html -----------------------------------------------------------------
+// --- bri.web.html -----------------------------------------------------------------
 
 // Scenario: page from data — escaped by construction; the opt-out is
 // explicit and ugly.
 func TestHTMLEscapingByConstruction(t *testing.T) {
 	d := newDriver(t)
-	eval(t, d, `(require '[bri.html :as html])`)
+	eval(t, d, `(require '[bri.web.html :as html])`)
 	if got := evalString(t, d, `(html/render [:p "<script>alert(1)</script>"])`); got != "<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>" {
 		t.Fatalf("escaping broken: %q", got)
 	}
@@ -295,7 +295,7 @@ func TestHTMLEscapingByConstruction(t *testing.T) {
 	}
 }
 
-// --- bri.config -----------------------------------------------------------------
+// --- bri.core.config -----------------------------------------------------------------
 
 // Two layers into one plain map: env > profile > file > schema default —
 // and `cljgo config`'s explain names the winning layer.
@@ -313,7 +313,7 @@ func TestConfigLayers(t *testing.T) {
 	t.Setenv("APP_PROFILE", "test")
 	t.Setenv("APP_DB__POOL_SIZE", "9")
 
-	eval(t, d, `(require '[bri.config :as config]) (def cfg (config/load!))`)
+	eval(t, d, `(require '[bri.core.config :as config]) (def cfg (config/load!))`)
 	checks := map[string]any{
 		`(:port cfg)`:                   int64(3000), // file
 		`(get-in cfg [:db :host])`:      "test-db",   // profile overlay
@@ -344,7 +344,7 @@ func TestConfigSchemaRefusesToBoot(t *testing.T) {
 	must(t, os.Chdir(dir))
 	defer os.Chdir(cwd)
 
-	eval(t, d, `(require '[bri.config :as config])`)
+	eval(t, d, `(require '[bri.core.config :as config])`)
 	_, err := d.EvalString(`(config/load!)`, "bri_test")
 	if err == nil || !strings.Contains(err.Error(), "[:port]") {
 		t.Fatalf("load! with a missing required key: err = %v, want a diagnostic naming [:port]", err)
@@ -381,7 +381,7 @@ func TestInterpretedHandlerOverhead(t *testing.T) {
 
 	d := newDriver(t)
 	eval(t, d, `
-(require '[bri.http :as http])
+(require '[bri.web.http :as http])
 (defn hello [req] {:status 200 :body (str "hello, " (:name (:params req)))})
 (def routes [["GET /hello/{name}" #'hello]])
 (def srv (http/serve routes {:port 0 :block? false :middleware []}))

@@ -44,7 +44,7 @@ type Program struct {
 	UsesBri bool
 	// OptInBriPkgs are the pkg/briaot sub-packages of any OPT-IN bri
 	// namespaces required during discovery (ADR 0074, e.g. "briotel" for
-	// bri.otel). Excluded from the umbrella pkg/briaot, blank-imported
+	// bri.core.telemetry). Excluded from the umbrella pkg/briaot, blank-imported
 	// additively by the emitted main. WriteProgram passes this to
 	// Options.OptInBriPkgs.
 	OptInBriPkgs []string
@@ -126,7 +126,7 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	ev.LibLoader = mc.load
 
 	// ADR 0071: register the bri lib providers on this discovery evaluator
-	// so (require '[bri.http]) resolves at build time. bri is provider-backed
+	// so (require '[bri.web.http]) resolves at build time. bri is provider-backed
 	// (not file-backed), so it NEVER enters mc.load / Program.Deps — the
 	// namespaces are AOT-compiled in pkg/briaot, blank-imported when a bri
 	// provider fires here. Track that so the main package imports briaot only
