@@ -60,11 +60,16 @@ export default defineConfig({
 						{ label: 'Configuration', slug: 'bri/config' },
 						{ label: 'HTTP services', slug: 'bri/http' },
 						{ label: 'HTML & views', slug: 'bri/html' },
+						{ label: 'Security & auth', slug: 'bri/auth' },
+						{ label: 'Data layer (bri.db)', slug: 'bri/db' },
+						{ label: 'Tracing (bri.otel)', slug: 'bri/otel' },
 					],
 				},
 				{
 					label: 'Guides',
 					items: [
+						{ label: 'The resource generator', slug: 'guides/generate' },
+						{ label: 'Deploy: one static binary', slug: 'guides/deploy' },
 						{ label: 'Zero-binding Go interop', slug: 'guides/interop' },
 						{ label: 'Concurrency & core.async', slug: 'guides/concurrency' },
 						{ label: 'Dependencies & publishing', slug: 'guides/deps-publish' },
