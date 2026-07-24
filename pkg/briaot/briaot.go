@@ -17,6 +17,7 @@ import (
 	briaudit "github.com/muthuishere/cljgo/pkg/briaot/briaudit"
 	briauth "github.com/muthuishere/cljgo/pkg/briaot/briauth"
 	briconfig "github.com/muthuishere/cljgo/pkg/briaot/briconfig"
+	bridb "github.com/muthuishere/cljgo/pkg/briaot/bridb"
 	brihtml "github.com/muthuishere/cljgo/pkg/briaot/brihtml"
 	brihttp "github.com/muthuishere/cljgo/pkg/briaot/brihttp"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
@@ -32,6 +33,7 @@ func init() {
 	rt.RegisterLib("bri.audit", loadBriaudit)
 	rt.RegisterLib("bri.html", loadBrihtml)
 	rt.RegisterLib("bri.auth", loadBriauth)
+	rt.RegisterLib("bri.db", loadBridb)
 }
 
 // installShims interns the named bri namespace's Go shims as :private vars
@@ -51,3 +53,4 @@ func loadBriconfig() { installShims("bri.config"); briconfig.Load() }
 func loadBriaudit()  { installShims("bri.audit"); briaudit.Load() }
 func loadBrihtml()   { installShims("bri.html"); brihtml.Load() }
 func loadBriauth()   { installShims("bri.auth"); briauth.Load() }
+func loadBridb()     { installShims("bri.db"); bridb.Load() }

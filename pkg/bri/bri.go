@@ -59,6 +59,7 @@ func Specs() []Spec {
 		{Name: "bri.audit", File: "bri/audit.cljg", Pkg: "briaudit", Source: &core.BriAuditSource, install: installAuditShims},
 		{Name: "bri.html", File: "bri/html.cljg", Pkg: "brihtml", Source: &core.BriHTMLSource, install: nil},
 		{Name: "bri.auth", File: "bri/auth.cljg", Pkg: "briauth", Source: &core.BriAuthSource, install: installAuthShims},
+		{Name: "bri.db", File: "bri/db.cljg", Pkg: "bridb", Source: &core.BriDBSource, install: installDBShims},
 	}
 }
 

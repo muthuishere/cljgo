@@ -42,3 +42,11 @@ var BriAuditSource string
 //
 //go:embed bri/auth.cljg
 var BriAuthSource string
+
+// BriDBSource is core/bri/db.cljg — bri.db: the one blessed data layer
+// (ADR 0072). connect/query/one/one!/exec!/insert!/update!/delete!/tx/
+// with-rollback/migrate! over two pure-Go drivers (modernc SQLite default,
+// pgx Postgres) behind one API. The Go half lives in pkg/bri (db.go).
+//
+//go:embed bri/db.cljg
+var BriDBSource string
