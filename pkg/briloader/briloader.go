@@ -19,6 +19,13 @@ import (
 	"sync"
 
 	"github.com/muthuishere/cljgo/pkg/bri"
+	// Blank-import every OptIn namespace's isolated shim package (ADR 0074)
+	// so its init() registers the shim installer before an interpreted
+	// (require 'bri.otel) interns the private vars. briloader is the REPL /
+	// `cljgo dev` half — it already links the whole interpreter, so linking
+	// the OpenTelemetry SDK here does not touch the AOT user-binary
+	// zero-cost guarantee (that is enforced on pkg/briaot's sub-packages).
+	_ "github.com/muthuishere/cljgo/pkg/bri/otel"
 	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"

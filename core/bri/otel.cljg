@@ -1,0 +1,124 @@
+;; bri.otel — OPT-IN OpenTelemetry distributed tracing (ADR 0074).
+;;
+;; What bri already ships default-on (do NOT rebuild): Prometheus metrics
+;; at /metrics, structured JSON access logs, and X-Request-Id propagation.
+;; What bri.otel ADDS when required: spans, W3C trace-context propagation,
+;; and an OTLP exporter — so a bri service joins a distributed trace and
+;; its logs/metrics/traces correlate (the span carries the request-id).
+;;
+;; It is OPT-IN — never in api-defaults. Add it explicitly:
+;;
+;;   (require '[bri.http :as http] '[bri.otel :as otel])
+;;   (http/serve routes {:port 3000
+;;                       :middleware (otel/with-tracing (http/api-defaults))
+;;                       :drain [otel/shutdown!]})
+;;
+;; or drop the middleware onto any stack: (conj (http/api-defaults) (otel/trace)).
+;;
+;; Config surface (env; APP_* overrides the standard OTEL_*):
+;;   APP_OTEL_EXPORTER_OTLP_ENDPOINT / OTEL_EXPORTER_OTLP_ENDPOINT — collector URL
+;;   APP_OTEL_EXPORTER_OTLP_PROTOCOL / OTEL_EXPORTER_OTLP_PROTOCOL — http/protobuf
+;;   APP_OTEL_SERVICE_NAME / OTEL_SERVICE_NAME — service.name (else :service-name
+;;     opt, else the bri.config app name, else "bri-app")
+;;   APP_OTEL_STDOUT=1 — export spans to stdout (demos; no collector needed)
+;; With no endpoint configured, spans are still opened/closed (identical
+;; behavior across dev and AOT) — they are simply not exported.
+;;
+;; Private Go shims interned by the ISOLATED pkg/bri/otel before this loads:
+;;   -otel-init -otel-start -otel-end -otel-traceid -otel-traceparent -otel-shutdown
+(clojure.core/in-ns 'bri.otel)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+
+;; --- provider lifecycle -----------------------------------------------------
+
+(defn ^:private config-service-name
+  "Best-effort service.name from bri.config's app name — never throws (a
+  missing/!invalid conf.edn just yields nil, and the Go side defaults)."
+  []
+  (try
+    (require 'bri.config)
+    (let [load! (resolve 'bri.config/load!)
+          cfg   (when load! (load!))]
+      (or (:service-name cfg)
+          (get-in cfg [:otel :service-name])
+          (:app/name cfg)
+          (:name cfg)))
+    (catch Throwable _ nil)))
+
+(defn init!
+  "Initialize the tracer provider + OTLP exporter (idempotent — safe to call
+  from every (otel/trace)). :service-name overrides the resolved name."
+  ([] (init! {}))
+  ([opts]
+   (-otel-init (str (or (:service-name opts) (config-service-name) "")))
+   nil))
+
+(defn shutdown!
+  "Flush and stop the batch span processor. Add to serve's :drain so
+  buffered spans reach the collector on SIGTERM: {:drain [otel/shutdown!]}."
+  []
+  (-otel-shutdown))
+
+;; --- the tracing middleware -------------------------------------------------
+
+(defn ^:private req-subject
+  "The authenticated subject a guard recorded on the request's :bri/ctx
+  (mark-subject!), read AFTER handling — nil when no guard resolved one."
+  [req]
+  (:subject (some-> (:bri/ctx req) deref)))
+
+(defn trace
+  "Tracing middleware: opens a SERVER span per request named after the
+  matched route PATTERN (low cardinality, not the raw path), adopts an
+  inbound W3C traceparent/tracestate so bri joins the caller's trace,
+  records method/route/status + the request-id and authenticated subject as
+  span attributes, sets span status from the HTTP status, and ends the span
+  on response. The span's trace-id is threaded into :trace/id and the shared
+  :bri/ctx so logs/metrics/traces correlate. Echoes the span's traceparent
+  on the response for downstream correlation.
+
+  Returns a {:name :otel :wrap fn} middleware value — compose it like any
+  other (conj a stack, or (otel/with-tracing stack))."
+  ([] (trace {}))
+  ([opts]
+   (init! opts)
+   {:name :otel
+    :wrap (fn [handler]
+            (fn [req]
+              (let [hdrs   (:headers req)
+                    tp     (or (get hdrs "traceparent") "")
+                    ts     (or (get hdrs "tracestate") "")
+                    route  (or (:bri.http/route req)
+                               (str (str/upper-case (name (:request-method req)))
+                                    " " (:uri req)))
+                    method (str/upper-case (name (:request-method req)))
+                    rid    (or (:request/id req) "")
+                    span   (-otel-start route method (or (:bri.http/route req) "") rid tp ts)
+                    tid    (-otel-traceid span)]
+                (when-let [c (:bri/ctx req)] (swap! c assoc :trace/id tid))
+                (try
+                  (let [res (handler (assoc req :trace/id tid :bri.otel/span span))]
+                    (-otel-end span (or (:status res) 200) (str (or (req-subject req) "")))
+                    (if (map? res)
+                      (update res :headers
+                              (fn [h] (assoc (or h {}) "traceparent"
+                                             (or (-otel-traceparent span) tp))))
+                      res))
+                  (catch Throwable t
+                    (-otel-end span 500 (str (or (req-subject req) "")))
+                    (throw t))))))}))
+
+(defn with-tracing
+  "Add the tracing middleware as the OUTERMOST entry of an existing stack
+  (so the span wraps request-id, logging, and the handler):
+  (http/serve routes {:middleware (otel/with-tracing (http/api-defaults))})."
+  ([stack] (with-tracing stack {}))
+  ([stack opts] (into [(trace opts)] stack)))
+
+(defn current-traceparent
+  "The W3C traceparent for the request's active span — inject it into
+  OUTBOUND calls so downstream services join this trace. nil outside a
+  traced request."
+  [req]
+  (when-let [span (:bri.otel/span req)] (-otel-traceparent span)))

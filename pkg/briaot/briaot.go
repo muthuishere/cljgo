@@ -7,7 +7,10 @@
 // into a compiled binary is what makes (require 'bri.http) resolve WITHOUT
 // the tree-walk interpreter (ADR 0071, mirroring pkg/coreaot / ADR 0046).
 // The emitter blank-imports it into a bri app's main package when the app
-// uses bri (pkg/emit UsesBri).
+// uses bri (pkg/emit UsesBri). OPT-IN namespaces (ADR 0074, e.g. bri.otel)
+// are EXCLUDED here — they self-register from their own sub-package and are
+// blank-imported by the emitter only when the app requires them, so their
+// heavy dependency never links into this umbrella.
 package briaot
 
 //go:generate go run ../../cmd/genbri -o .
