@@ -367,3 +367,86 @@ func TestCLISelectWidget(t *testing.T) {
 		t.Errorf("esc cancels = %v, want -1", got)
 	}
 }
+
+// TestCLIConfirmWidget: yes/no toggle + accept/cancel, all through the loop.
+func TestCLIConfirmWidget(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[bri.cli :as cli])
+	  (defn confirm-keys [default ks]
+	    (let [q (atom ks) rk (fn [] (let [k (first @q)] (swap! q rest) k)) w (fn [_] nil)]
+	      (pr-str (cli/drive (cli/confirm-widget "OK?" default) rk w))))`)
+
+	if got := evalString(t, d, `(confirm-keys false [:enter])`); got != "false" {
+		t.Errorf("default false, enter = %q, want false", got)
+	}
+	if got := evalString(t, d, `(confirm-keys true [:enter])`); got != "true" {
+		t.Errorf("default true, enter = %q, want true", got)
+	}
+	if got := evalString(t, d, `(confirm-keys false [:left :enter])`); got != "true" {
+		t.Errorf("toggle then enter = %q, want true", got)
+	}
+	if got := evalString(t, d, `(confirm-keys false [[:rune \y] ])`); got != "true" {
+		t.Errorf("y = %q, want true", got)
+	}
+	if got := evalString(t, d, `(confirm-keys true [[:rune \n]])`); got != "false" {
+		t.Errorf("n = %q, want false", got)
+	}
+	if got := evalString(t, d, `(confirm-keys true [:esc])`); got != "nil" {
+		t.Errorf("esc cancels = %q, want nil", got)
+	}
+}
+
+// TestCLIMultiselectWidget: space toggles rows, enter returns sorted indices,
+// esc cancels to nil.
+func TestCLIMultiselectWidget(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[bri.cli :as cli])
+	  (defn multi-keys [opts ks]
+	    (let [q (atom ks) rk (fn [] (let [k (first @q)] (swap! q rest) k)) w (fn [_] nil)]
+	      (pr-str (cli/drive (cli/multiselect-widget "Pick" opts) rk w))))`)
+
+	// toggle row 0 and row 2 (down,down to reach 2), accept
+	if got := evalString(t, d, `(multi-keys ["a" "b" "c"] [[:rune \space] :down :down [:rune \space] :enter])`); got != "[0 2]" {
+		t.Errorf("toggle 0 and 2 = %q, want [0 2]", got)
+	}
+	// toggle then untoggle row 0 → empty
+	if got := evalString(t, d, `(multi-keys ["a" "b"] [[:rune \space] [:rune \space] :enter])`); got != "[]" {
+		t.Errorf("toggle+untoggle = %q, want []", got)
+	}
+	// esc cancels
+	if got := evalString(t, d, `(multi-keys ["a" "b"] [[:rune \space] :esc])`); got != "nil" {
+		t.Errorf("esc cancels = %q, want nil", got)
+	}
+}
+
+// TestCLIEditorWidget: the multi-line buffer — insert, newline, backspace
+// (incl. line-join), arrow-nav — all pure index math through the loop.
+func TestCLIEditorWidget(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[bri.cli :as cli])
+	  (defn edit-keys [ks]
+	    (let [q (atom ks) rk (fn [] (let [k (first @q)] (swap! q rest) k)) w (fn [_] nil)]
+	      (cli/drive (cli/editor-widget "Notes") rk w)))
+	  (defn runes [s] (mapv (fn [c] [:rune c]) s))`)
+
+	// type "hi", esc → "hi"
+	if got := evalString(t, d, `(edit-keys (conj (runes "hi") :esc))`); got != "hi" {
+		t.Errorf("type hi = %q, want hi", got)
+	}
+	// "ab" enter "cd" esc → two lines "ab\ncd"
+	if got := evalString(t, d, `(edit-keys (concat (runes "ab") [:enter] (runes "cd") [:esc]))`); got != "ab\ncd" {
+		t.Errorf("two lines = %q, want ab\\ncd", got)
+	}
+	// backspace joins lines: "ab" enter (cursor at col 0 of line 2) backspace → "ab"
+	if got := evalString(t, d, `(edit-keys (concat (runes "ab") [:enter :backspace] (runes "c") [:esc]))`); got != "abc" {
+		t.Errorf("backspace join = %q, want abc", got)
+	}
+	// mid-line insert via left-arrow: type "ac", left, insert "b" → "abc"
+	if got := evalString(t, d, `(edit-keys (concat (runes "ac") [:left] (runes "b") [:esc]))`); got != "abc" {
+		t.Errorf("mid-insert = %q, want abc", got)
+	}
+	// backspace mid-line: "abc" backspace → "ab"
+	if got := evalString(t, d, `(edit-keys (concat (runes "abc") [:backspace :esc]))`); got != "ab" {
+		t.Errorf("backspace = %q, want ab", got)
+	}
+}

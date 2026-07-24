@@ -232,6 +232,115 @@
                    ["" (str esc "[2m" "up/down move · enter select · esc cancel" esc "[0m")])))
    :value (fn [w] (:cur w))})
 
+(defn multiselect-widget
+  "An arrow-key multi-choice list (the :multi widget): up/down move, space
+  toggles the current row, enter accepts. :value is the vector of chosen
+  indices (in list order), or nil if cancelled (esc/ctrl-c)."
+  [title opts]
+  {:title (str title) :opts (vec opts) :cur 0 :marks #{} :cancel false
+   :update (fn [w k]
+             (cond
+               (= k :up)         [(update w :cur (fn [c] (max 0 (dec c)))) false]
+               (= k :down)       [(update w :cur (fn [c] (min (dec (count (:opts w))) (inc c)))) false]
+               (= k [:rune \space]) [(update w :marks (fn [m] (if (m (:cur w)) (disj m (:cur w)) (conj m (:cur w))))) false]
+               (= k :enter)      [w true]
+               (or (= k :esc) (= k :ctrl-c)) [(assoc w :cancel true) true]
+               :else             [w false]))
+   :view (fn [w]
+           (into [(str esc "[1m" (:title w) esc "[0m")]
+                 (concat
+                   (map-indexed
+                     (fn [i o]
+                       (str (if (= i (:cur w)) (str esc "[36m>" esc "[0m") " ")
+                            (if ((:marks w) i) "[x] " " [ ] ")
+                            o))
+                     (:opts w))
+                   ["" (str esc "[2m" "up/down move · space toggle · enter accept · esc cancel" esc "[0m")])))
+   :value (fn [w] (when-not (:cancel w) (vec (sort (:marks w)))))})
+
+(defn confirm-widget
+  "A yes/no confirm (the :bool prompt widget): ←/→ (or y/n) toggle, enter
+  accepts. :value is true/false, or nil if cancelled."
+  [title default]
+  {:title (str title) :choice (boolean default) :cancel false
+   :update (fn [w k]
+             (cond
+               (contains? #{:left :right :up :down :tab} k) [(update w :choice not) false]
+               (= k [:rune \y]) [(assoc w :choice true) true]
+               (= k [:rune \n]) [(assoc w :choice false) true]
+               (= k :enter)     [w true]
+               (or (= k :esc) (= k :ctrl-c)) [(assoc w :cancel true) true]
+               :else            [w false]))
+   :view (fn [w]
+           [(str esc "[1m" (:title w) esc "[0m")
+            (if (:choice w)
+              (str esc "[36m> yes" esc "[0m    no")
+              (str "  yes  " esc "[36m> no" esc "[0m"))
+            ""
+            (str esc "[2m" "y/n or left/right · enter accept · esc cancel" esc "[0m")])
+   :value (fn [w] (when-not (:cancel w) (:choice w)))})
+
+;; --- the editor widget: a multi-line text buffer (the :multiline prompt) -----
+;; The s47 proof that the SAME loop reaches an "editor like opencode" — buffer,
+;; cursor, insert/delete/newline, arrow-nav. :value is the joined text; esc
+;; (or ctrl-c) finishes. Pure data + index math, so it is exhaustively tested
+;; through `drive` with no terminal.
+
+(defn- ed-cursor
+  "Render one line with a reverse-video cell at column cx (padding a space
+  when the cursor sits past the end)."
+  [line cx]
+  (let [padded (if (>= cx (count line)) (str line " ") line)]
+    (str (subs padded 0 cx) esc "[7m" (subs padded cx (inc cx)) esc "[0m"
+         (subs padded (inc cx)))))
+
+(defn editor-widget
+  "A minimal multi-line editor (:multiline / :editor). Type to insert; arrows
+  navigate; enter splits the line; backspace deletes / joins; esc finishes.
+  :value is the buffer joined by newlines."
+  [title]
+  {:title (str title) :lines [""] :cx 0 :cy 0
+   :update (fn [w k]
+             (let [lines (:lines w) cx (:cx w) cy (:cy w) line (nth lines cy)]
+               (cond
+                 (and (vector? k) (= (first k) :rune))
+                 (let [ch (str (second k))]
+                   [(assoc w :lines (assoc lines cy (str (subs line 0 cx) ch (subs line cx)))
+                             :cx (inc cx)) false])
+
+                 (= k :enter)
+                 (let [before (subs line 0 cx) after (subs line cx)]
+                   [(assoc w :lines (vec (concat (subvec lines 0 cy) [before after] (subvec lines (inc cy))))
+                             :cy (inc cy) :cx 0) false])
+
+                 (= k :backspace)
+                 (cond
+                   (pos? cx)
+                   [(assoc w :lines (assoc lines cy (str (subs line 0 (dec cx)) (subs line cx)))
+                             :cx (dec cx)) false]
+                   (pos? cy)
+                   (let [prev (nth lines (dec cy))]
+                     [(assoc w :lines (vec (concat (subvec lines 0 (dec cy)) [(str prev line)] (subvec lines (inc cy))))
+                               :cy (dec cy) :cx (count prev)) false])
+                   :else [w false])
+
+                 (= k :left)  [(if (pos? cx) (update w :cx dec) w) false]
+                 (= k :right) [(if (< cx (count line)) (update w :cx inc) w) false]
+                 (= k :up)    [(if (pos? cy)
+                                 (let [ncy (dec cy)] (assoc w :cy ncy :cx (min cx (count (nth lines ncy))))) w) false]
+                 (= k :down)  [(if (< cy (dec (count lines)))
+                                 (let [ncy (inc cy)] (assoc w :cy ncy :cx (min cx (count (nth lines ncy))))) w) false]
+                 (or (= k :esc) (= k :ctrl-c)) [w true]
+                 :else [w false])))
+   :view (fn [w]
+           (into [(str esc "[1m" (:title w) esc "[0m") ""]
+                 (concat
+                   (map-indexed
+                     (fn [y ln] (if (= y (:cy w)) (ed-cursor ln (:cx w)) ln))
+                     (:lines w))
+                   ["" (str esc "[2m" "type · arrows move · enter newline · esc done" esc "[0m")])))
+   :value (fn [w] (str/join "\n" (:lines w)))})
+
 (defn- host-read-key [] (decode-key (-read-key)))
 (defn- host-write [s] (-raw-write s))
 
@@ -305,37 +414,56 @@
             :else (throw (ex-info (:err res)
                                   {:bri/error :bri.cli/invalid :param (:name p)}))))))))
 
-(defn- use-select?
-  "A :one-of param on a REAL terminal (no *prompt* backend) prompts with the
-  arrow-key select widget rather than free text."
-  [p]
-  (and (nil? *prompt*) (seq (:one-of p)) (-tty?)))
+(defn- widget-title [p]
+  (str (or (:prompt p) (:about p) (name (:name p))) "?"))
 
-(defn- select-prompt
-  "Run the select widget over a :one-of param's choices; returns the chosen
-  value (the canonical choice — already valid, then validator-checked), or
-  ::cancel if the user pressed esc."
+;; The rich widgets fire only on a REAL terminal (no *prompt* backend bound):
+;; tests script text answers through *prompt* and get the free-text path, so
+;; the widget code never needs a PTY to be exercised (it is unit-tested pure
+;; through `drive`, above). Each maps a param SHAPE to its widget.
+
+(defn- use-select?  [p] (and (nil? *prompt*) (-tty?) (seq (:one-of p))))
+(defn- use-editor?  [p] (and (nil? *prompt*) (-tty?) (contains? #{:multiline :editor} (:type p))))
+
+(defn- required-missing [p]
+  (throw (ex-info (str "--" (name (:name p)) " is required")
+                  {:bri/error :bri.cli/missing :param (:name p)})))
+
+(defn- select-flow
+  "Select widget over a :one-of param's choices → the canonical (validated)
+  choice; a cancel falls to :default, else required-error, else nil."
   [p]
   (let [choices (vec (:one-of p))
         labels  (mapv (fn [c] (if (keyword? c) (name c) (str c))) choices)
-        title   (str (or (:prompt p) (:about p) (name (:name p))) "?")
-        i       (run-widget (select-widget title labels))]
-    (if (neg? i) ::cancel (validate! p (nth choices i)))))
+        i       (run-widget (select-widget (widget-title p) labels))]
+    (cond
+      (not (neg? i))          (validate! p (nth choices i))
+      (contains? p :default)  (:default p)
+      (:required p)           (required-missing p)
+      :else                   nil)))
+
+(defn- editor-flow
+  "Editor widget → the entered text, coerced (trimmed) + validated like any
+  supplied value."
+  [p]
+  (supplied p (run-widget (editor-widget (widget-title p)))))
+
+(defn- confirm-flow
+  "Confirm widget → true/false, validated; a cancel falls to (:default false)."
+  [p]
+  (let [v (run-widget (confirm-widget (widget-title p) (:default p false)))]
+    (validate! p (if (nil? v) (:default p false) v))))
 
 (defn- prompt-param
-  "Prompt for a missing value: the select widget for a :one-of param on a real
-  TTY, else a free-text/secret line (both run the param's validators). A
-  cancelled select falls to :default, else required-error, else nil."
+  "Prompt for a missing value, choosing the widget by param shape on a real
+  TTY (confirm for a bool · select for :one-of · editor for :multiline),
+  else a free-text/secret line. Every path runs the param's validators."
   [p]
-  (if (use-select? p)
-    (let [chosen (select-prompt p)]
-      (cond
-        (not= ::cancel chosen)   chosen
-        (contains? p :default)   (:default p)
-        (:required p)            (throw (ex-info (str "--" (name (:name p)) " is required")
-                                                 {:bri/error :bri.cli/missing :param (:name p)}))
-        :else                    nil))
-    (prompt-text p)))
+  (cond
+    (bool-param? p) (confirm-flow p)   ; only reached for a bool on a real TTY (resolve-param)
+    (use-select? p) (select-flow p)
+    (use-editor? p) (editor-flow p)
+    :else           (prompt-text p)))
 
 (defn- env-raw
   "The param's :env value (an env-var name, string or keyword) if set, else
@@ -348,9 +476,10 @@
 (defn- resolve-param
   "Resolve one parameter to its value, in precedence order (ADR 0078):
   flag -> positional -> :env -> prompt-if-interactive -> :default -> required
-  -error. A bool with no flag is its :default (false) and never prompts.
-  Every user-supplied path (flag/positional/env/prompt) runs the param's
-  coercion + validators via `supplied`."
+  -error. A bool with no flag is its :default (false); the one exception is a
+  REQUIRED bool on a real TTY, which asks with the confirm widget. Every
+  user-supplied path (flag/positional/env/prompt) runs the param's coercion +
+  validators."
   [p flags pos-atom]
   (let [k    (:name p)
         fname (name k)]
@@ -359,7 +488,9 @@
       (supplied p (get flags fname))
 
       (bool-param? p)
-      (:default p false)
+      (if (and (:required p) (nil? *prompt*) (-tty?))
+        (prompt-param p)          ; -> confirm widget (real TTY only)
+        (:default p false))
 
       (seq @pos-atom)
       (let [v (first @pos-atom)] (swap! pos-atom rest) (supplied p v))
