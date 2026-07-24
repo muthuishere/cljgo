@@ -54,6 +54,7 @@ func parseExpectation(path, src string) (expectation, error) {
 type directives struct {
 	evalOnly   string // reason after ";; harness: eval", "" = dual
 	oracleSkip string // reason after ";; oracle: skip", "" = audited
+	noBatch    string // reason after ";; harness: standalone", "" = batchable
 }
 
 func parseDirectives(src string) directives {
@@ -61,7 +62,17 @@ func parseDirectives(src string) directives {
 	sc := bufio.NewScanner(strings.NewReader(src))
 	for sc.Scan() {
 		line := strings.TrimSpace(sc.Text())
-		if rest, ok := strings.CutPrefix(line, ";; harness: eval"); ok {
+		if rest, ok := strings.CutPrefix(line, ";; harness: standalone"); ok {
+			// Compiled dual-harness runs this file as its OWN binary rather
+			// than sharing a batched group binary (compiled_test.go): its
+			// output depends on the process-global namespace/keyword registry
+			// (ns-map, all-ns, find-keyword …), which sibling programs in a
+			// shared binary would pollute via their package-init interning.
+			d.noBatch = strings.TrimSpace(strings.TrimLeft(rest, " —-"))
+			if d.noBatch == "" {
+				d.noBatch = "marked standalone"
+			}
+		} else if rest, ok := strings.CutPrefix(line, ";; harness: eval"); ok {
 			d.evalOnly = strings.TrimSpace(strings.TrimLeft(rest, " —-"))
 			if d.evalOnly == "" {
 				d.evalOnly = "marked eval-only"

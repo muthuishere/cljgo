@@ -29,6 +29,28 @@ ns `conf.*`) — subdirectories are outside the harness glob, so those
 files load only via require, in both harnesses. Oracle such tests with
 `clojure -Sdeps '{:paths ["."]}' -M <file>` from `tests/`.
 
+## Harness directives
+
+A `;;`-comment line may carry a per-file directive:
+
+- `;; harness: eval — <reason>` — run ONLY the interpreted harness; skip
+  the compiled (AOT-binary) leg. For behaviors with no compiled contract
+  yet (e.g. runtime-error output).
+- `;; oracle: skip — <reason>` — the `ORACLE=1` re-audit does not compare
+  this file against the real `clojure` CLI (documented cljgo deviations).
+- `;; harness: standalone — <reason>` — the compiled leg builds this file
+  as its **own** binary instead of sharing a batched group binary. The
+  compiled harness (`compiled_test.go`) links most single-file programs
+  into a handful of shared group binaries and runs each in its own
+  process — one shared binary means one macOS first-exec penalty instead
+  of hundreds, the dominant cost of the suite. Programs whose output
+  depends on the **process-global** namespace/keyword registry (`ns-map`,
+  `all-ns`, `ns-publics` counts, membership of common short names, …)
+  must opt out: sibling programs in a shared binary intern their vars at
+  package-init, polluting that registry. Correctness is never at risk if
+  you forget the marker — the eval-vs-binary divergence assertion fails
+  loudly (it can never false-pass), pointing you here.
+
 ## Running
 
 ```
