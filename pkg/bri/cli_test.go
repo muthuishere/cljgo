@@ -282,3 +282,88 @@ func TestCLIPromptResolvesMissingValues(t *testing.T) {
 		t.Errorf("secret prompt = %q, want hunter2|true", sec)
 	}
 }
+
+// --- increment 2 Part B: the native TUI core (s47 Elm loop, no Charm) --------
+
+// TestCLIDecodeKey: raw key bytes decode to portable key events (the same
+// decoder the JVM host will reuse). Arrows are 3-byte CSI; enter/esc/ctrl-c/
+// backspace/tab are single bytes; a printable byte is [:rune ch].
+func TestCLIDecodeKey(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[bri.cli :as cli])`)
+	// each case: bytes -> the pr-str of the decoded event
+	cases := map[string]string{
+		`[27 91 65]`: ":up",
+		`[27 91 66]`: ":down",
+		`[27 91 67]`: ":right",
+		`[27 91 68]`: ":left",
+		`[13]`:       ":enter",
+		`[10]`:       ":enter",
+		`[27]`:       ":esc",
+		`[3]`:        ":ctrl-c",
+		`[9]`:        ":tab",
+		`[127]`:      ":backspace",
+		`[8]`:        ":backspace",
+		`[]`:         ":esc",
+		`[97]`:       `[:rune \a]`,
+	}
+	for bytes, want := range cases {
+		if got := evalString(t, d, `(pr-str (cli/decode-key `+bytes+`))`); got != want {
+			t.Errorf("decode-key %s = %q, want %q", bytes, got, want)
+		}
+	}
+}
+
+// TestCLIRenderDiff: the renderer repaints only changed lines and clears
+// trailing removed ones — the flicker-free line diff.
+func TestCLIRenderDiff(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[bri.cli :as cli] '[clojure.string :as s])`)
+
+	// first paint writes every line
+	full := evalString(t, d, `
+	  (let [sink (atom "") w (fn [x] (swap! sink str x))]
+	    (cli/render-diff [] ["alpha" "bravo"] w) @sink)`)
+	if !strings.Contains(full, "alpha") || !strings.Contains(full, "bravo") {
+		t.Errorf("full paint missing lines: %q", full)
+	}
+	// a diff paints only the changed line (unchanged "alpha" is skipped)
+	diff := evalString(t, d, `
+	  (let [sink (atom "") w (fn [x] (swap! sink str x))]
+	    (cli/render-diff ["alpha" "bravo"] ["alpha" "charlie"] w) @sink)`)
+	if !strings.Contains(diff, "charlie") || strings.Contains(diff, "alpha") {
+		t.Errorf("diff should write only 'charlie', got: %q", diff)
+	}
+}
+
+// TestCLISelectWidget: the whole Elm loop (drive + select-widget + renderer)
+// runs against an in-memory key queue and string sink — no PTY. Cursor moves
+// clamp at the ends; enter returns the index; esc cancels to -1.
+func TestCLISelectWidget(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[bri.cli :as cli])
+	  (defn drive-keys [opts ks]
+	    (let [q (atom ks)
+	          rk (fn [] (let [k (first @q)] (swap! q rest) k))
+	          w  (fn [_] nil)]
+	      (cli/drive (cli/select-widget "Pick" opts) rk w)))`)
+
+	if got := eval(t, d, `(drive-keys ["lib" "cli" "web"] [:down :down :enter])`); got != int64(2) {
+		t.Errorf("down,down,enter = %v, want index 2", got)
+	}
+	if got := eval(t, d, `(drive-keys ["lib" "cli" "web"] [:enter])`); got != int64(0) {
+		t.Errorf("enter at rest = %v, want index 0", got)
+	}
+	// up clamps at 0
+	if got := eval(t, d, `(drive-keys ["lib" "cli" "web"] [:up :up :enter])`); got != int64(0) {
+		t.Errorf("up clamps at 0 = %v, want 0", got)
+	}
+	// down clamps at the last index
+	if got := eval(t, d, `(drive-keys ["lib" "cli" "web"] [:down :down :down :down :enter])`); got != int64(2) {
+		t.Errorf("down clamps at last = %v, want 2", got)
+	}
+	// esc cancels to -1
+	if got := eval(t, d, `(drive-keys ["lib" "cli" "web"] [:down :esc])`); got != int64(-1) {
+		t.Errorf("esc cancels = %v, want -1", got)
+	}
+}

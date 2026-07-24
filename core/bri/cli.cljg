@@ -144,13 +144,114 @@
         :else (recur (rest args) flags (conj pos a)))
       {:flags flags :pos pos})))
 
+;; --- the native TUI core (s47: our own Elm loop, no Charm) ------------------
+;; A minimal, PORTABLE terminal-UI runtime — the same model→update→view loop
+;; Bubble Tea/Elm use, but pure Clojure so it runs identically on cljgo AND
+;; the JVM (the payoff Charm's Go-only stack cannot match, s47 VERDICT). Only
+;; four operations are host-specific (pkg/bri/cli.go): -raw-enter/-raw-exit/
+;; -read-key/-raw-write. Everything here — key decoding, the diff renderer,
+;; the widgets, the loop — is plain data + fns, and is driven in tests by an
+;; in-memory key source + string sink (no PTY needed).
+;;
+;; A WIDGET is a map {:update (fn [w key] [w' done?]) :view (fn [w] lines)
+;; :value (fn [w] result)} carrying its own state. This 3-fn shape is the
+;; whole contract; select below is the first widget, multiselect/confirm/
+;; editor grow on the same loop.
+
+(def ^:private esc (str (char 27)))  ; the ESC byte (Clojure has no \033)
+
+(defn decode-key
+  "Decode raw key bytes (the int-vector -read-key returns) into a key event:
+  a keyword (:up :down :left :right :enter :esc :backspace :ctrl-c :tab) or
+  [:rune ch]. Portable: the JVM host feeds the same bytes here (s47)."
+  [b]
+  (let [n (count b)]
+    (cond
+      (zero? n) :esc
+      (and (= n 3) (= 27 (nth b 0)) (= 91 (nth b 1)))
+      (let [c (nth b 2)]
+        (cond (= c 65) :up (= c 66) :down (= c 67) :right (= c 68) :left :else :esc))
+      (= n 1)
+      (let [c (nth b 0)]
+        (cond
+          (or (= c 13) (= c 10)) :enter
+          (= c 27)  :esc
+          (= c 3)   :ctrl-c
+          (= c 9)   :tab
+          (or (= c 127) (= c 8)) :backspace
+          (>= c 32) [:rune (char c)]
+          :else :esc))
+      :else :esc)))
+
+(defn render-diff
+  "Repaint only the lines that changed from `prev` (a flicker-free line diff);
+  clears trailing removed lines. Writes one ANSI string via `write` and
+  returns `lines` as the new previous frame."
+  [prev lines write]
+  (let [changed (keep-indexed
+                  (fn [i ln]
+                    (when-not (= ln (nth prev i nil))
+                      (str esc "[" (inc i) ";1H" esc "[K" ln)))
+                  lines)
+        cleared (map (fn [i] (str esc "[" (inc i) ";1H" esc "[K"))
+                     (range (count lines) (count prev)))
+        chunks  (concat changed cleared)]
+    (when (seq chunks) (write (apply str chunks)))
+    lines))
+
+(defn drive
+  "The Elm loop: paint the widget, read a key, update, repeat until done —
+  then return (:value w). `read-key` is a 0-arg fn -> key event; `write` a
+  1-arg fn <- ANSI string. Both are injected, so the whole loop (renderer
+  included) is testable with a scripted key queue + a string sink."
+  [widget read-key write]
+  (loop [w widget prev []]
+    (let [prev' (render-diff prev ((:view w) w) write)
+          [w2 done?] ((:update w) w (read-key))]
+      (if done? ((:value w2) w2) (recur w2 prev')))))
+
+(defn select-widget
+  "An arrow-key single-choice list (the :one-of / :enum widget). :value is
+  the chosen index, or -1 if cancelled (esc/ctrl-c)."
+  [title opts]
+  {:title (str title) :opts (vec opts) :cur 0
+   :update (fn [w k]
+             (cond
+               (= k :up)     [(update w :cur (fn [c] (max 0 (dec c)))) false]
+               (= k :down)   [(update w :cur (fn [c] (min (dec (count (:opts w))) (inc c)))) false]
+               (= k :enter)  [w true]
+               (or (= k :esc) (= k :ctrl-c)) [(assoc w :cur -1) true]
+               :else         [w false]))
+   :view (fn [w]
+           (into [(str esc "[1m" (:title w) esc "[0m")]
+                 (concat
+                   (map-indexed
+                     (fn [i o]
+                       (str (if (= i (:cur w)) (str esc "[36m> " esc "[0m") "  ") o))
+                     (:opts w))
+                   ["" (str esc "[2m" "up/down move · enter select · esc cancel" esc "[0m")])))
+   :value (fn [w] (:cur w))})
+
+(defn- host-read-key [] (decode-key (-read-key)))
+(defn- host-write [s] (-raw-write s))
+
+(defn run-widget
+  "Drive a widget on the REAL terminal: raw mode + alt-screen around the Elm
+  loop, always restored. Returns (:value w)."
+  [widget]
+  (-raw-enter)
+  (try (drive widget host-read-key host-write)
+       (finally (-raw-exit))))
+
 ;; --- the interactive half (increment 2, ADR 0078 / s47) ---------------------
 ;; A parameter is declared ONCE; when its value is not on the command line and
 ;; stdin is a TTY, bri.cli prompts for it — through the SAME `supplied`
 ;; (coerce + validators) as the flag path, so a prompted value is validated
-;; identically. The prompt POLICY here is portable Clojure; only -tty?/
-;; -read-input/-read-secret are host primitives (pkg/bri/cli.go). Tests and
-;; non-interactive callers rebind *prompt* to drive resolution without a TTY.
+;; identically. A :one-of param prompts with the arrow-key select widget
+;; above; every other param with a free-text (or :secret) line. The prompt
+;; POLICY here is portable Clojure; only the terminal ops are host primitives
+;; (pkg/bri/cli.go). Tests and non-interactive callers rebind *prompt* to
+;; script text answers (the select widget only fires on a real TTY).
 
 (def ^:dynamic *prompt*
   "The prompt backend, or nil to use the host terminal. When bound it is a
@@ -180,11 +281,12 @@
   [msg]
   (binding [*out* *err*] (println (str "  " msg))))
 
-(defn- prompt-param
-  "Prompt for a param, coercing + validating through `supplied`, re-prompting
-  up to (:tries p, default 3) times on an invalid/bad value. Empty input with
-  a :default present yields the default; empty input on a required param with
-  no default re-prompts (then errors) rather than silently passing nil."
+(defn- prompt-text
+  "Prompt for a param via a free-text (or :secret) line, coercing + validating
+  through `supplied`, re-prompting up to (:tries p, default 3) times on an
+  invalid/bad value. Empty input with a :default present yields the default;
+  empty input on a required param with no default re-prompts (then errors)
+  rather than silently passing nil."
   [p]
   (loop [n (:tries p 3)]
     (let [raw   (prompt-raw p)
@@ -202,6 +304,38 @@
             (> n 1)            (do (prompt-note (:err res)) (recur (dec n)))
             :else (throw (ex-info (:err res)
                                   {:bri/error :bri.cli/invalid :param (:name p)}))))))))
+
+(defn- use-select?
+  "A :one-of param on a REAL terminal (no *prompt* backend) prompts with the
+  arrow-key select widget rather than free text."
+  [p]
+  (and (nil? *prompt*) (seq (:one-of p)) (-tty?)))
+
+(defn- select-prompt
+  "Run the select widget over a :one-of param's choices; returns the chosen
+  value (the canonical choice — already valid, then validator-checked), or
+  ::cancel if the user pressed esc."
+  [p]
+  (let [choices (vec (:one-of p))
+        labels  (mapv (fn [c] (if (keyword? c) (name c) (str c))) choices)
+        title   (str (or (:prompt p) (:about p) (name (:name p))) "?")
+        i       (run-widget (select-widget title labels))]
+    (if (neg? i) ::cancel (validate! p (nth choices i)))))
+
+(defn- prompt-param
+  "Prompt for a missing value: the select widget for a :one-of param on a real
+  TTY, else a free-text/secret line (both run the param's validators). A
+  cancelled select falls to :default, else required-error, else nil."
+  [p]
+  (if (use-select? p)
+    (let [chosen (select-prompt p)]
+      (cond
+        (not= ::cancel chosen)   chosen
+        (contains? p :default)   (:default p)
+        (:required p)            (throw (ex-info (str "--" (name (:name p)) " is required")
+                                                 {:bri/error :bri.cli/missing :param (:name p)}))
+        :else                    nil))
+    (prompt-text p)))
 
 (defn- env-raw
   "The param's :env value (an env-var name, string or keyword) if set, else
