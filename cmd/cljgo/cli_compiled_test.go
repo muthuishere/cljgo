@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/muthuishere/cljgo/pkg/emit"
 )
 
 const briCliApp = `(require '[bri.cli :as cli] '[bri.cli.validate :as v])
@@ -34,7 +36,9 @@ func TestBriCliCompiledParity(t *testing.T) {
 	if err := os.WriteFile(src, []byte(briCliApp), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	app := filepath.Join(dir, "todo")
+	// -o is honored verbatim (like `go build -o`), so add the platform exe
+	// suffix ourselves — Windows will not exec a file that lacks .exe.
+	app := filepath.Join(dir, "todo"+emit.ExeSuffix)
 	build := exec.Command(bin, "build", "-o", app, src)
 	build.Env = append(os.Environ(), "CLJGO_SRC="+repoRoot(t), "CGO_ENABLED=0")
 	if out, err := build.CombinedOutput(); err != nil {
