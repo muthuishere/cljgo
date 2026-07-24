@@ -18,7 +18,7 @@ import (
 const briCliApp = `(require '[bri.cli :as cli] '[bri.cli.validate :as v])
 (cli/defcommand add "Add an item"
   [text     {:type :string :about "item text" :validate [(v/non-empty) (v/min-len 2)]}
-   priority {:type :int    :about "1-5" :default 3 :validate [(v/min 1) (v/max 5)]}]
+   priority {:type :int    :about "1-5" :default 3 :env "TODO_PRIORITY" :validate [(v/min 1) (v/max 5)]}]
   (println "added" text "priority" priority))
 (cli/defcommand ls "List items" [all {:type :bool :about "include done"}]
   (println "listing all=" all))
@@ -75,5 +75,25 @@ func TestBriCliCompiledParity(t *testing.T) {
 				t.Errorf("%s: compiled output missing %q\ngot: %s", c.name, w, got)
 			}
 		}
+	}
+
+	// increment 2: :env resolution must behave identically in the binary — a
+	// missing value falls to $TODO_PRIORITY (and is validated), while a flag
+	// still overrides it. (The interactive prompt path needs a TTY and is
+	// covered interpreted via the *prompt* seam in pkg/bri/cli_test.go.)
+	runEnv := func(env string, args ...string) string {
+		cmd := exec.Command(app, args...)
+		cmd.Env = append(os.Environ(), env)
+		out, _ := cmd.CombinedOutput()
+		return strings.TrimSpace(string(out))
+	}
+	if got := runEnv("TODO_PRIORITY=4", "add", "ok"); !strings.Contains(got, "priority 4") {
+		t.Errorf("env: compiled binary should read $TODO_PRIORITY=4, got: %s", got)
+	}
+	if got := runEnv("TODO_PRIORITY=4", "add", "ok", "--priority", "2"); !strings.Contains(got, "priority 2") {
+		t.Errorf("env: a flag must override $TODO_PRIORITY, got: %s", got)
+	}
+	if got := runEnv("TODO_PRIORITY=9", "add", "ok"); !strings.Contains(got, "must be <= 5") {
+		t.Errorf("env: a bad $TODO_PRIORITY must be validated, got: %s", got)
 	}
 }

@@ -105,13 +105,15 @@ func Specs() []Spec {
 		// isolated pkg/bri/otel (ShimImport), which registers its installer via
 		// RegisterInstaller when linked.
 		{Name: "bri.core.telemetry", File: "bri/otel.cljg", Pkg: "briotel", Source: &core.BriOtelSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/otel"},
-		// bri.cli + bri.cli.validate are PURE CLOJURE in this increment (ADR
-		// 0078): the deterministic command-tree + unified-parameter core has no
-		// Go shims, so like bri.web.html they carry install:nil and stay in the
-		// umbrella. When the Charm-backed interactive layer lands (increment 2)
-		// bri.cli flips to OptIn with an isolated pkg/bri/cli shim package.
+		// bri.cli.validate stays PURE CLOJURE (composable validators, no host
+		// deps). bri.cli carries a THIN terminal primitive (installCLIShims,
+		// cli.go): -tty?/-read-input/-read-secret for the interactive half of
+		// the unified parameter model (increment 2, ADR 0078 / s47 VERDICT).
+		// It stays NON-OptIn — after the Charm rejection (s47) the interactive
+		// layer is just golang.org/x/term, pure-Go and tiny, so there is no
+		// heavy dep to isolate; the prompt POLICY is portable Clojure.
 		{Name: "bri.cli.validate", File: "bri/cli_validate.cljg", Pkg: "briclivalidate", Source: &core.BriCLIValidateSource, install: nil},
-		{Name: "bri.cli", File: "bri/cli.cljg", Pkg: "bricli", Source: &core.BriCLISource, install: nil},
+		{Name: "bri.cli", File: "bri/cli.cljg", Pkg: "bricli", Source: &core.BriCLISource, install: installCLIShims},
 	}
 }
 
