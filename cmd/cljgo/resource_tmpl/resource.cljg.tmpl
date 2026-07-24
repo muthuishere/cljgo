@@ -22,13 +22,13 @@
   {{"{"}}{{range .Fields}}{{.Keyword}} {{.CoerceExpr}}
    {{end}}})
 
-;; --- model: parametrized bri.db calls (db call sites — reconcile w/ ADR 0072)
+;; --- model: parametrized bri.db calls (ADR 0072) ------------------------
 ;; query -> vector of keyword-keyed maps; one -> a single map or nil.
-(defn all      [ds]       (db/query  ds "SELECT * FROM {{.Table}} ORDER BY id DESC" []))
-(defn fetch    [ds id]    (db/one    ds "SELECT * FROM {{.Table}} WHERE id = ?" [id]))
-(defn create!  [ds row]   (db/insert! ds {{.TableKw}} row))
-(defn modify!  [ds id row] (db/exec  ds "UPDATE {{.Table}} SET {{.SetClause}} WHERE id = ?" [{{.SetArgs}} id]))
-(defn destroy! [ds id]    (db/exec   ds "DELETE FROM {{.Table}} WHERE id = ?" [id]))
+(defn all      [ds]        (db/query   ds "SELECT * FROM {{.Table}} ORDER BY id DESC"))
+(defn fetch    [ds id]     (db/one     ds "SELECT * FROM {{.Table}} WHERE id = ?" id))
+(defn create!  [ds row]    (db/insert! ds {{.TableKw}} row))
+(defn modify!  [ds id row] (db/exec!   ds "UPDATE {{.Table}} SET {{.SetClause}} WHERE id = ?" {{.SetArgs}} id))
+(defn destroy! [ds id]     (db/exec!   ds "DELETE FROM {{.Table}} WHERE id = ?" id))
 
 ;; --- handlers: Ring request -> response; a map body auto-encodes as JSON --
 (defn index [_req]

@@ -138,6 +138,30 @@ func runIn(dir, bin string, args ...string) (string, error) {
 	return string(out), err
 }
 
+// The one-person-framework promise, end to end through the REAL binary
+// (ADR 0073, reconciled with bri.db ADR 0072): `cljgo new --template web`,
+// then `cljgo generate resource Note …`, then `cljgo test` is GREEN — a
+// working, authenticated, DB-backed CRUD scaffolded and passing its own
+// suite against a fresh in-memory database, with zero hand-editing.
+func TestGenerateResourceRunsGreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+	work := t.TempDir()
+	if out, err := runIn(work, bin, "new", "--template", "web", "demo"); err != nil {
+		t.Fatalf("cljgo new: %v\n%s", err, out)
+	}
+	app := filepath.Join(work, "demo")
+	if out, err := runIn(app, bin, "generate", "resource", "Note", "title:string", "body:text"); err != nil {
+		t.Fatalf("cljgo generate resource: %v\n%s", err, out)
+	}
+	// The generated CRUD suite runs against a fresh in-memory bri.db.
+	if out, err := runIn(app, bin, "test"); err != nil {
+		t.Fatalf("cljgo test on the generated resource was not green: %v\n%s", err, out)
+	}
+}
+
 // The shipped examples/web-api project (a JWT-secured JSON notes API) is
 // REAL source, and it stays that way: every gate run compiles the binary
 // and runs the example's own in-process suite through it. The example is

@@ -316,7 +316,7 @@ func runGenerateResource(args []string) int {
 		fmt.Printf("  create  %s\n", p)
 	}
 	fmt.Printf("  splice  %s  (require %s + routes)\n", appMain, d.Ns)
-	fmt.Printf("\nnext:\n  cljgo routes   # see the new endpoints\n  cljgo test     # the generated CRUD suite (green once bri.db resolves)\n  cljgo dev      # serve it\n")
+	fmt.Printf("\nnext:\n  cljgo routes   # see the new endpoints\n  cljgo test     # the generated CRUD suite (green)\n  cljgo dev      # serve it\n")
 	return 0
 }
 

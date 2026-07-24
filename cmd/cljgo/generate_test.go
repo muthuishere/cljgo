@@ -6,10 +6,10 @@
 // checked, and the marker splice into app.main is asserted (idempotent,
 // force, missing-marker).
 //
-// The generated CRUD calls bri.db (ADR 0072), which is being built in
-// parallel; a full `cljgo test` goes green once bri.db resolves. Until
-// then this gate proves the generator emits valid source and splices
-// correctly — the mandate's explicit fallback.
+// The generated CRUD calls bri.db (ADR 0072) and a generated resource's
+// own `cljgo test` is green out of the box (verified against a fresh
+// in-memory DB). This gate proves the generator emits valid source and
+// splices correctly; TestExampleWebApiSuite-style E2E covers the runtime.
 package main
 
 import (
@@ -111,8 +111,9 @@ func TestGenerateResource(t *testing.T) {
 		"(ns app.notes",
 		"[bri.db :as db]",
 		"[app.db :as adb]",
-		`(db/query  ds "SELECT * FROM notes ORDER BY id DESC" [])`,
+		`(db/query   ds "SELECT * FROM notes ORDER BY id DESC")`,
 		"(db/insert! ds :notes row)",
+		`(db/exec!   ds "DELETE FROM notes WHERE id = ?" id)`,
 		"(http/param! req :id :int)",
 		"(->long (get m :views))",
 		"(->bool (get m :done))",
