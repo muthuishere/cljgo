@@ -161,6 +161,12 @@ func TestMigrationsApplyIdempotentStatus(t *testing.T) {
 	writeMigration(t, dir, "20260724130000_add_color.sql",
 		"alter table widgets add column color text;")
 
+	// Forward-slash the path before embedding it in evaluated Clojure source:
+	// a Windows temp dir (C:\Users\...) has backslashes that are invalid
+	// string escapes (\U), and modernc/sqlite + Go file APIs accept / on
+	// Windows anyway.
+	dir = filepath.ToSlash(dir)
+
 	d := newDriver(t)
 	eval(t, d, `(require '[bri.db :as db])
                 (def conn (db/connect {:driver :sqlite :database ":memory:"}))`)
