@@ -89,7 +89,9 @@ Three projects compile Clojure to Go source and then to a native binary:
 cljgo, [Glojure](https://github.com/glojurelang/glojure), and
 [let-go](https://github.com/nooga/let-go). This is the like-for-like
 comparison — **every column is a native binary built from the same program**,
-no interpreted legs. Glojure and let-go binaries were built with
+no interpreted legs. The programs are
+[let-go's own benchmark suite](https://github.com/nooga/let-go/tree/main/benchmark)
+(vendored unmodified — credit nooga). Glojure and let-go binaries were built with
 [gloat](https://github.com/gloathub/gloat) (`-E glj` and `-E lglvm`), the
 official automation tool for both. Measured **2026-07-24**, hyperfine
 3 warmup / 10 runs, wall-clock mean, startup included, compile time excluded.

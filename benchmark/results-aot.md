@@ -9,7 +9,8 @@
 | `transducers` | 17.0 ms | **9.9 ms** | 25.4 ms |
 | `reduce` | 26.8 ms | **23.2 ms** | 39.4 ms |
 
-All three columns are native binaries compiled from the same programs
+All three columns are native binaries compiled from the same programs —
+let-go's own benchmark suite (github.com/nooga/let-go), vendored unmodified
 (hyperfine, 3 warmup / 10 timed runs, wall-clock mean, startup included;
 compile time not measured). `cljgo-aot` = `cljgo build`. `glojure-aot` =
 gloat `-E glj` (Glojure Clojure→Go→native). `letgo-aot` = gloat `-E lglvm`
