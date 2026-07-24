@@ -1,3 +1,5 @@
+;; harness: standalone — counts (ns-map 'user)'s full mapping set, which a
+;; shared batch binary would pollute via sibling programs' package-init interns.
 ;; ns-map's mapping set is IDENTICAL between the interpreter and a
 ;; compiled binary. The println'd count is the canary the dual harness
 ;; compares byte-for-byte across legs (its value moves as core grows, so

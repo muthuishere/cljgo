@@ -1,3 +1,6 @@
+;; harness: standalone — probes (ns-publics 'user) membership of the short
+;; names p/q, which a shared batch binary could collide with via sibling
+;; programs' package-init interns; runs as its own binary for a clean registry.
 ;; ^:private survives compilation (regression, fundamentals audit 2026-07).
 ;; A compiled var is interned by NAME, so before pkg/emit carried :private
 ;; explicitly every private helper came back public in a binary: (dir

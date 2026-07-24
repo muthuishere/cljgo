@@ -1,3 +1,6 @@
+;; harness: standalone — introspects the live namespace registry (all-ns,
+;; ns-publics/interns/map/refers over 'user) incl. membership of some-var,
+;; which a shared batch binary could pollute; runs as its own binary.
 ;; Namespace introspection (fundamentals audit 2026-07): ns-name/the-ns/
 ;; all-ns/ns-publics/ns-interns/ns-map/ns-refers over the live registry.
 ;; Frozen via membership probes — never by counting a namespace's vars
