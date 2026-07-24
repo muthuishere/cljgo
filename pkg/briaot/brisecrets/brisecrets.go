@@ -8,49 +8,67 @@ import (
 )
 
 var (
-	kw_bri_DOT_core_DOT_secrets_SLASH_raw    = lang.InternKeywordString("bri.core.secrets/raw")
-	kw_bri_DOT_core_DOT_secrets_SLASH_secret = lang.InternKeywordString("bri.core.secrets/secret")
-	kw_column                                = lang.InternKeywordString("column")
-	kw_doc                                   = lang.InternKeywordString("doc")
-	kw_else_                                 = lang.InternKeywordString("else")
-	kw_end_column                            = lang.InternKeywordString("end-column")
-	kw_end_line                              = lang.InternKeywordString("end-line")
-	kw_exclude                               = lang.InternKeywordString("exclude")
-	kw_file                                  = lang.InternKeywordString("file")
-	kw_line                                  = lang.InternKeywordString("line")
-	kw_masked                                = lang.InternKeywordString("masked")
-	kw_private                               = lang.InternKeywordString("private")
-	sym_bri_DOT_core_DOT_secrets             = lang.NewSymbol("bri.core.secrets")
-	sym_clojure_DOT_core                     = lang.NewSymbol("clojure.core")
-	sym_get                                  = lang.NewSymbol("get")
-	sym_set                                  = lang.NewSymbol("set")
-	v_bri_DOT_core_DOT_secrets_X_secret_del1 = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("-secret-del1")).SetPrivate()
-	v_bri_DOT_core_DOT_secrets_X_secret_get1 = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("-secret-get1")).SetPrivate()
-	v_bri_DOT_core_DOT_secrets_X_secret_set1 = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("-secret-set1")).SetPrivate()
-	v_bri_DOT_core_DOT_secrets_as_uris       = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("as-uris")).SetPrivate()
-	v_bri_DOT_core_DOT_secrets_delete_       = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("delete"))
-	v_bri_DOT_core_DOT_secrets_get           = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("get"))
-	v_bri_DOT_core_DOT_secrets_mask          = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("mask")).SetPrivate()
-	v_bri_DOT_core_DOT_secrets_reveal        = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("reveal"))
-	v_bri_DOT_core_DOT_secrets_secret        = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("secret"))
-	v_bri_DOT_core_DOT_secrets_secret_QMARK_ = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("secret?"))
-	v_bri_DOT_core_DOT_secrets_set           = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("set"))
-	v_clojure_DOT_core_X_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
-	v_clojure_DOT_core_X_LT_                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("<"))
-	v_clojure_DOT_core_boolean               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("boolean"))
-	v_clojure_DOT_core_count                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("count"))
-	v_clojure_DOT_core_first                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("first"))
-	v_clojure_DOT_core_in_ns                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
-	v_clojure_DOT_core_map_QMARK_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
-	v_clojure_DOT_core_meta                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("meta"))
-	v_clojure_DOT_core_refer                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
-	v_clojure_DOT_core_rest                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("rest"))
-	v_clojure_DOT_core_sequential_QMARK_     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("sequential?"))
-	v_clojure_DOT_core_str                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
-	v_clojure_DOT_core_subs                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("subs"))
-	v_clojure_DOT_core_vec                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("vec"))
-	v_clojure_DOT_core_with_meta             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("with-meta"))
-	v_clojure_DOT_core_zero_QMARK_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("zero?"))
+	kw_as                                        = lang.InternKeywordString("as")
+	kw_bri_DOT_core_DOT_secrets_SLASH_bad_arg    = lang.InternKeywordString("bri.core.secrets/bad-arg")
+	kw_bri_DOT_core_DOT_secrets_SLASH_raw        = lang.InternKeywordString("bri.core.secrets/raw")
+	kw_bri_DOT_core_DOT_secrets_SLASH_secret     = lang.InternKeywordString("bri.core.secrets/secret")
+	kw_bri_SLASH_error                           = lang.InternKeywordString("bri/error")
+	kw_column                                    = lang.InternKeywordString("column")
+	kw_doc                                       = lang.InternKeywordString("doc")
+	kw_else_                                     = lang.InternKeywordString("else")
+	kw_end_column                                = lang.InternKeywordString("end-column")
+	kw_end_line                                  = lang.InternKeywordString("end-line")
+	kw_exclude                                   = lang.InternKeywordString("exclude")
+	kw_file                                      = lang.InternKeywordString("file")
+	kw_got                                       = lang.InternKeywordString("got")
+	kw_line                                      = lang.InternKeywordString("line")
+	kw_masked                                    = lang.InternKeywordString("masked")
+	kw_name                                      = lang.InternKeywordString("name")
+	kw_private                                   = lang.InternKeywordString("private")
+	kw_service                                   = lang.InternKeywordString("service")
+	kw_value                                     = lang.InternKeywordString("value")
+	sym_bri_DOT_core_DOT_secrets                 = lang.NewSymbol("bri.core.secrets")
+	sym_clojure_DOT_core                         = lang.NewSymbol("clojure.core")
+	sym_clojure_DOT_string                       = lang.NewSymbol("clojure.string")
+	sym_get                                      = lang.NewSymbol("get")
+	sym_set                                      = lang.NewSymbol("set")
+	sym_str                                      = lang.NewSymbol("str")
+	v_bri_DOT_core_DOT_secrets_X_keychain_del    = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("-keychain-del")).SetPrivate()
+	v_bri_DOT_core_DOT_secrets_X_keychain_get    = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("-keychain-get")).SetPrivate()
+	v_bri_DOT_core_DOT_secrets_X_keychain_set    = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("-keychain-set")).SetPrivate()
+	v_bri_DOT_core_DOT_secrets_X_secret_del1     = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("-secret-del1")).SetPrivate()
+	v_bri_DOT_core_DOT_secrets_X_secret_get1     = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("-secret-get1")).SetPrivate()
+	v_bri_DOT_core_DOT_secrets_X_secret_set1     = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("-secret-set1")).SetPrivate()
+	v_bri_DOT_core_DOT_secrets_chain_get         = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("chain-get")).SetPrivate()
+	v_bri_DOT_core_DOT_secrets_delete_           = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("delete"))
+	v_bri_DOT_core_DOT_secrets_get               = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("get"))
+	v_bri_DOT_core_DOT_secrets_kc_get            = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("kc-get")).SetPrivate()
+	v_bri_DOT_core_DOT_secrets_mask              = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("mask")).SetPrivate()
+	v_bri_DOT_core_DOT_secrets_reveal            = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("reveal"))
+	v_bri_DOT_core_DOT_secrets_secret            = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("secret"))
+	v_bri_DOT_core_DOT_secrets_secret_QMARK_     = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("secret?"))
+	v_bri_DOT_core_DOT_secrets_set               = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("set"))
+	v_bri_DOT_core_DOT_secrets_uri_string_QMARK_ = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("uri-string?")).SetPrivate()
+	v_clojure_DOT_core_X_                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
+	v_clojure_DOT_core_X_LT_                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("<"))
+	v_clojure_DOT_core_boolean                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("boolean"))
+	v_clojure_DOT_core_count                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("count"))
+	v_clojure_DOT_core_ex_info                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("ex-info"))
+	v_clojure_DOT_core_first                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("first"))
+	v_clojure_DOT_core_in_ns                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_map_QMARK_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
+	v_clojure_DOT_core_meta                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("meta"))
+	v_clojure_DOT_core_refer                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	v_clojure_DOT_core_require                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
+	v_clojure_DOT_core_rest                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("rest"))
+	v_clojure_DOT_core_sequential_QMARK_         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("sequential?"))
+	v_clojure_DOT_core_str                       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
+	v_clojure_DOT_core_string_QMARK_             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("string?"))
+	v_clojure_DOT_core_subs                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("subs"))
+	v_clojure_DOT_core_vec                       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("vec"))
+	v_clojure_DOT_core_with_meta                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("with-meta"))
+	v_clojure_DOT_core_zero_QMARK_               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("zero?"))
+	v_clojure_DOT_string_includes_QMARK_         = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("includes?"))
 )
 
 var loaded = false
@@ -71,318 +89,545 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply3(tmp3, sym_clojure_DOT_core, kw_exclude, lang.NewVector(sym_get, sym_set))
 	_ = tmp4
+	// (require (quote [clojure.string :as str]))
+	tmp5 := v_clojure_DOT_core_require.Get()
+	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
+	_ = tmp6
 	// (def mask "Render a value safe for any surface: never the plaintext. `len=N ***…xy`\n  k…
-	v_bri_DOT_core_DOT_secrets_mask.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(33), kw_column, int64(8), kw_end_line, int64(33), kw_end_column, int64(12), kw_private, true, kw_doc, "Render a value safe for any surface: never the plaintext. `len=N ***…xy`\n  keeps only the last 2 chars as a disambiguator; tiny values leak neither."))
-	tmp5 := lang.FnFunc1(func(v6 any) any {
-		var tmp7 any
-		_ = tmp7
+	v_bri_DOT_core_DOT_secrets_mask.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(42), kw_column, int64(8), kw_end_line, int64(42), kw_end_column, int64(12), kw_private, true, kw_doc, "Render a value safe for any surface: never the plaintext. `len=N ***…xy`\n  keeps only the last 2 chars as a disambiguator; tiny values leak neither."))
+	tmp7 := lang.FnFunc1(func(v8 any) any {
+		var tmp9 any
+		_ = tmp9
 		{
-			tmp8 := v_clojure_DOT_core_count.Get()
-			tmp9 := lang.Apply1(tmp8, v6)
-			var n10 any = tmp9
-			_ = n10
-			tmp11 := v_clojure_DOT_core_zero_QMARK_.Get()
-			tmp12 := lang.Apply1(tmp11, n10)
-			var tmp13 any
-			_ = tmp13
-			if lang.IsTruthy(tmp12) {
-				tmp13 = "***(empty)"
+			tmp10 := v_clojure_DOT_core_count.Get()
+			tmp11 := lang.Apply1(tmp10, v8)
+			var n12 any = tmp11
+			_ = n12
+			tmp13 := v_clojure_DOT_core_zero_QMARK_.Get()
+			tmp14 := lang.Apply1(tmp13, n12)
+			var tmp15 any
+			_ = tmp15
+			if lang.IsTruthy(tmp14) {
+				tmp15 = "***(empty)"
 			} else {
-				tmp14 := rt.LTBool(v_clojure_DOT_core_X_LT_, n10, int64(4))
-				var tmp15 any
-				_ = tmp15
-				if tmp14 {
-					tmp16 := v_clojure_DOT_core_str.Get()
-					tmp17 := lang.Apply3(tmp16, "len=", n10, " ***")
-					tmp15 = tmp17
+				tmp16 := rt.LTBool(v_clojure_DOT_core_X_LT_, n12, int64(4))
+				var tmp17 any
+				_ = tmp17
+				if tmp16 {
+					tmp18 := v_clojure_DOT_core_str.Get()
+					tmp19 := lang.Apply3(tmp18, "len=", n12, " ***")
+					tmp17 = tmp19
 				} else {
-					var tmp18 any
-					_ = tmp18
+					var tmp20 any
+					_ = tmp20
 					if lang.IsTruthy(kw_else_) {
-						tmp19 := v_clojure_DOT_core_str.Get()
-						tmp20 := v_clojure_DOT_core_subs.Get()
-						tmp21 := rt.Sub2(v_clojure_DOT_core_X_, n10, int64(2))
-						tmp22 := lang.Apply2(tmp20, v6, tmp21)
-						tmp23 := lang.Apply4(tmp19, "len=", n10, " ***…", tmp22)
-						tmp18 = tmp23
+						tmp21 := v_clojure_DOT_core_str.Get()
+						tmp22 := v_clojure_DOT_core_subs.Get()
+						tmp23 := rt.Sub2(v_clojure_DOT_core_X_, n12, int64(2))
+						tmp24 := lang.Apply2(tmp22, v8, tmp23)
+						tmp25 := lang.Apply4(tmp21, "len=", n12, " ***…", tmp24)
+						tmp20 = tmp25
 					} else {
-						tmp18 = nil
+						tmp20 = nil
 					}
-					tmp15 = tmp18
+					tmp17 = tmp20
 				}
-				tmp13 = tmp15
+				tmp15 = tmp17
 			}
-			tmp7 = tmp13
+			tmp9 = tmp15
 		}
-		return tmp7
+		return tmp9
 	})
-	tmp24 := &lang.NamedFn1{Name: "bri.core.secrets/mask", Expects: "1: [v]", F: tmp5}
-	v_bri_DOT_core_DOT_secrets_mask.BindRoot(tmp24)
+	tmp26 := &lang.NamedFn1{Name: "bri.core.secrets/mask", Expects: "1: [v]", F: tmp7}
+	v_bri_DOT_core_DOT_secrets_mask.BindRoot(tmp26)
 	_ = v_bri_DOT_core_DOT_secrets_mask
 	// (def secret "Wrap a raw string as a masked secret: the map prints as its mask only, the\n …
-	v_bri_DOT_core_DOT_secrets_secret.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(43), kw_column, int64(7), kw_end_line, int64(43), kw_end_column, int64(13), kw_doc, "Wrap a raw string as a masked secret: the map prints as its mask only, the\n  plaintext lives in metadata (pr/println don't print metadata)."))
-	tmp25 := lang.FnFunc1(func(raw26 any) any {
-		tmp27 := v_clojure_DOT_core_with_meta.Get()
-		tmp28 := v_bri_DOT_core_DOT_secrets_mask.Get()
-		tmp29 := lang.Apply1(tmp28, raw26)
-		tmp30 := lang.NewMap(kw_bri_DOT_core_DOT_secrets_SLASH_secret, true, kw_masked, tmp29)
-		tmp31 := lang.NewMap(kw_bri_DOT_core_DOT_secrets_SLASH_raw, raw26)
-		tmp32 := lang.Apply2(tmp27, tmp30, tmp31)
-		return tmp32
+	v_bri_DOT_core_DOT_secrets_secret.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(13), kw_doc, "Wrap a raw string as a masked secret: the map prints as its mask only, the\n  plaintext lives in metadata (pr/println don't print metadata)."))
+	tmp27 := lang.FnFunc1(func(raw28 any) any {
+		tmp29 := v_clojure_DOT_core_with_meta.Get()
+		tmp30 := v_bri_DOT_core_DOT_secrets_mask.Get()
+		tmp31 := lang.Apply1(tmp30, raw28)
+		tmp32 := lang.NewMap(kw_bri_DOT_core_DOT_secrets_SLASH_secret, true, kw_masked, tmp31)
+		tmp33 := lang.NewMap(kw_bri_DOT_core_DOT_secrets_SLASH_raw, raw28)
+		tmp34 := lang.Apply2(tmp29, tmp32, tmp33)
+		return tmp34
 	})
-	tmp33 := &lang.NamedFn1{Name: "bri.core.secrets/secret", Expects: "1: [raw]", F: tmp25}
-	v_bri_DOT_core_DOT_secrets_secret.BindRoot(tmp33)
+	tmp35 := &lang.NamedFn1{Name: "bri.core.secrets/secret", Expects: "1: [raw]", F: tmp27}
+	v_bri_DOT_core_DOT_secrets_secret.BindRoot(tmp35)
 	_ = v_bri_DOT_core_DOT_secrets_secret
 	// (def secret? "Is x a masked secret object?" (clojure.core/fn [x] (boolean (and (map? x) (:…
-	v_bri_DOT_core_DOT_secrets_secret_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(50), kw_column, int64(7), kw_end_line, int64(50), kw_end_column, int64(14), kw_doc, "Is x a masked secret object?"))
-	tmp34 := lang.FnFunc1(func(x35 any) any {
-		tmp36 := v_clojure_DOT_core_boolean.Get()
-		var tmp37 any
-		_ = tmp37
+	v_bri_DOT_core_DOT_secrets_secret_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(59), kw_column, int64(7), kw_end_line, int64(59), kw_end_column, int64(14), kw_doc, "Is x a masked secret object?"))
+	tmp36 := lang.FnFunc1(func(x37 any) any {
+		tmp38 := v_clojure_DOT_core_boolean.Get()
+		var tmp39 any
+		_ = tmp39
 		{
-			tmp38 := v_clojure_DOT_core_map_QMARK_.Get()
-			tmp39 := lang.Apply1(tmp38, x35)
-			var and__1__auto__40 any = tmp39
-			_ = and__1__auto__40
-			var tmp41 any
-			_ = tmp41
-			if lang.IsTruthy(and__1__auto__40) {
-				tmp42 := lang.Apply1(kw_bri_DOT_core_DOT_secrets_SLASH_secret, x35)
-				tmp41 = tmp42
+			tmp40 := v_clojure_DOT_core_map_QMARK_.Get()
+			tmp41 := lang.Apply1(tmp40, x37)
+			var and__1__auto__42 any = tmp41
+			_ = and__1__auto__42
+			var tmp43 any
+			_ = tmp43
+			if lang.IsTruthy(and__1__auto__42) {
+				tmp44 := lang.Apply1(kw_bri_DOT_core_DOT_secrets_SLASH_secret, x37)
+				tmp43 = tmp44
 			} else {
-				tmp41 = and__1__auto__40
+				tmp43 = and__1__auto__42
 			}
-			tmp37 = tmp41
+			tmp39 = tmp43
 		}
-		tmp43 := lang.Apply1(tmp36, tmp37)
-		return tmp43
+		tmp45 := lang.Apply1(tmp38, tmp39)
+		return tmp45
 	})
-	tmp44 := &lang.NamedFn1{Name: "bri.core.secrets/secret?", Expects: "1: [x]", F: tmp34}
-	v_bri_DOT_core_DOT_secrets_secret_QMARK_.BindRoot(tmp44)
+	tmp46 := &lang.NamedFn1{Name: "bri.core.secrets/secret?", Expects: "1: [x]", F: tmp36}
+	v_bri_DOT_core_DOT_secrets_secret_QMARK_.BindRoot(tmp46)
 	_ = v_bri_DOT_core_DOT_secrets_secret_QMARK_
 	// (def reveal "Return a secret's plaintext — THE explicit, auditable unmask seam. Grep for…
-	v_bri_DOT_core_DOT_secrets_reveal.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(55), kw_column, int64(7), kw_end_line, int64(55), kw_end_column, int64(13), kw_doc, "Return a secret's plaintext — THE explicit, auditable unmask seam. Grep for\n  `reveal` to find every place a value is unwrapped. A bare string passes\n  through, so callers can `(reveal maybe-secret)` uniformly."))
-	tmp45 := lang.FnFunc1(func(s46 any) any {
-		tmp47 := v_bri_DOT_core_DOT_secrets_secret_QMARK_.Get()
-		tmp48 := lang.Apply1(tmp47, s46)
-		var tmp49 any
-		_ = tmp49
-		if lang.IsTruthy(tmp48) {
-			tmp50 := v_clojure_DOT_core_meta.Get()
-			tmp51 := lang.Apply1(tmp50, s46)
-			tmp52 := lang.Apply1(kw_bri_DOT_core_DOT_secrets_SLASH_raw, tmp51)
-			tmp49 = tmp52
+	v_bri_DOT_core_DOT_secrets_reveal.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(13), kw_doc, "Return a secret's plaintext — THE explicit, auditable unmask seam. Grep for\n  `reveal` to find every place a value is unwrapped. A bare string passes\n  through, so callers can `(reveal maybe-secret)` uniformly."))
+	tmp47 := lang.FnFunc1(func(s48 any) any {
+		tmp49 := v_bri_DOT_core_DOT_secrets_secret_QMARK_.Get()
+		tmp50 := lang.Apply1(tmp49, s48)
+		var tmp51 any
+		_ = tmp51
+		if lang.IsTruthy(tmp50) {
+			tmp52 := v_clojure_DOT_core_meta.Get()
+			tmp53 := lang.Apply1(tmp52, s48)
+			tmp54 := lang.Apply1(kw_bri_DOT_core_DOT_secrets_SLASH_raw, tmp53)
+			tmp51 = tmp54
 		} else {
-			tmp49 = s46
+			tmp51 = s48
 		}
-		return tmp49
+		return tmp51
 	})
-	tmp53 := &lang.NamedFn1{Name: "bri.core.secrets/reveal", Expects: "1: [s]", F: tmp45}
-	v_bri_DOT_core_DOT_secrets_reveal.BindRoot(tmp53)
+	tmp55 := &lang.NamedFn1{Name: "bri.core.secrets/reveal", Expects: "1: [s]", F: tmp47}
+	v_bri_DOT_core_DOT_secrets_reveal.BindRoot(tmp55)
 	_ = v_bri_DOT_core_DOT_secrets_reveal
-	// (def as-uris (clojure.core/fn [uri-or-uris] (if (sequential? uri-or-uris) (vec uri-or-uris…
-	v_bri_DOT_core_DOT_secrets_as_uris.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(64), kw_column, int64(8), kw_end_line, int64(64), kw_end_column, int64(15), kw_private, true))
-	tmp54 := lang.FnFunc1(func(uri_or_uris55 any) any {
-		tmp56 := v_clojure_DOT_core_sequential_QMARK_.Get()
-		tmp57 := lang.Apply1(tmp56, uri_or_uris55)
+	// (def uri-string? (clojure.core/fn [x] (and (string? x) (str/includes? x "://"))))
+	v_bri_DOT_core_DOT_secrets_uri_string_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(78), kw_column, int64(8), kw_end_line, int64(78), kw_end_column, int64(19), kw_private, true))
+	tmp56 := lang.FnFunc1(func(x57 any) any {
 		var tmp58 any
 		_ = tmp58
-		if lang.IsTruthy(tmp57) {
-			tmp59 := v_clojure_DOT_core_vec.Get()
-			tmp60 := lang.Apply1(tmp59, uri_or_uris55)
-			tmp58 = tmp60
-		} else {
-			tmp61 := lang.NewVector(uri_or_uris55)
-			tmp58 = tmp61
+		{
+			tmp59 := v_clojure_DOT_core_string_QMARK_.Get()
+			tmp60 := lang.Apply1(tmp59, x57)
+			var and__1__auto__61 any = tmp60
+			_ = and__1__auto__61
+			var tmp62 any
+			_ = tmp62
+			if lang.IsTruthy(and__1__auto__61) {
+				tmp63 := v_clojure_DOT_string_includes_QMARK_.Get()
+				tmp64 := lang.Apply2(tmp63, x57, "://")
+				tmp62 = tmp64
+			} else {
+				tmp62 = and__1__auto__61
+			}
+			tmp58 = tmp62
 		}
 		return tmp58
 	})
-	tmp62 := &lang.NamedFn1{Name: "bri.core.secrets/as-uris", Expects: "1: [uri-or-uris]", F: tmp54}
-	v_bri_DOT_core_DOT_secrets_as_uris.BindRoot(tmp62)
-	_ = v_bri_DOT_core_DOT_secrets_as_uris
-	// (def get "Fetch a secret from the first backend that has it. `uri-or-uris` is one URI\n  (…
-	v_bri_DOT_core_DOT_secrets_get.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(67), kw_column, int64(7), kw_end_line, int64(67), kw_end_column, int64(10), kw_doc, "Fetch a secret from the first backend that has it. `uri-or-uris` is one URI\n  (env://KEY or keychain://service/account) or a vector tried left→right —\n  first hit wins; a real backend failure aborts (never falls through to a\n  weaker source). Optional `key` overrides an account in a keychain URI.\n  Returns a MASKED secret (use `reveal` for the plaintext), or nil if no\n  backend has it."))
-	tmp63 := lang.FnFunc(func(args ...any) any {
-		switch len(args) {
-		case 1:
-			uri_or_uris64 := args[0]
-			_ = uri_or_uris64
-			tmp65 := v_bri_DOT_core_DOT_secrets_get.Get()
-			tmp66 := lang.Apply2(tmp65, uri_or_uris64, "")
-			return tmp66
-		case 2:
-			uri_or_uris67 := args[0]
-			_ = uri_or_uris67
-			key68 := args[1]
-			_ = key68
-			var tmp69 any
-			_ = tmp69
-			{
-				tmp70 := v_bri_DOT_core_DOT_secrets_as_uris.Get()
-				tmp71 := lang.Apply1(tmp70, uri_or_uris67)
-				var uris72 any = tmp71
-				_ = uris72
-			loop73:
-				for {
-					var tmp74 any
-					_ = tmp74
-					{
-						tmp75 := v_clojure_DOT_core_first.Get()
-						tmp76 := lang.Apply1(tmp75, uris72)
-						var temp__5__auto__77 any = tmp76
-						_ = temp__5__auto__77
-						var tmp78 any
-						_ = tmp78
-						if lang.IsTruthy(temp__5__auto__77) {
-							var tmp79 any
-							_ = tmp79
+	tmp65 := &lang.NamedFn1{Name: "bri.core.secrets/uri-string?", Expects: "1: [x]", F: tmp56}
+	v_bri_DOT_core_DOT_secrets_uri_string_QMARK_.BindRoot(tmp65)
+	_ = v_bri_DOT_core_DOT_secrets_uri_string_QMARK_
+	// (def kc-get (clojure.core/fn [service account] (when-let [raw (-keychain-get (str service)…
+	v_bri_DOT_core_DOT_secrets_kc_get.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(80), kw_column, int64(8), kw_end_line, int64(80), kw_end_column, int64(14), kw_private, true))
+	tmp66 := lang.FnFunc2(func(service67, account68 any) any {
+		var tmp69 any
+		_ = tmp69
+		{
+			tmp70 := v_bri_DOT_core_DOT_secrets_X_keychain_get.Get()
+			tmp71 := v_clojure_DOT_core_str.Get()
+			tmp72 := lang.Apply1(tmp71, service67)
+			tmp73 := v_clojure_DOT_core_str.Get()
+			tmp74 := lang.Apply1(tmp73, account68)
+			tmp75 := lang.Apply2(tmp70, tmp72, tmp74)
+			var temp__5__auto__76 any = tmp75
+			_ = temp__5__auto__76
+			var tmp77 any
+			_ = tmp77
+			if lang.IsTruthy(temp__5__auto__76) {
+				var tmp78 any
+				_ = tmp78
+				{
+					var raw79 any = temp__5__auto__76
+					_ = raw79
+					tmp80 := v_bri_DOT_core_DOT_secrets_secret.Get()
+					tmp81 := lang.Apply1(tmp80, raw79)
+					tmp78 = tmp81
+				}
+				tmp77 = tmp78
+			} else {
+				tmp77 = nil
+			}
+			tmp69 = tmp77
+		}
+		return tmp69
+	})
+	tmp82 := &lang.NamedFn2{Name: "bri.core.secrets/kc-get", Expects: "2: [service account]", F: tmp66}
+	v_bri_DOT_core_DOT_secrets_kc_get.BindRoot(tmp82)
+	_ = v_bri_DOT_core_DOT_secrets_kc_get
+	// (def chain-get (clojure.core/fn [uris key] (loop [us uris] (when-let [u (first us)] (if-le…
+	v_bri_DOT_core_DOT_secrets_chain_get.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(84), kw_column, int64(8), kw_end_line, int64(84), kw_end_column, int64(17), kw_private, true))
+	tmp83 := lang.FnFunc2(func(uris84, key85 any) any {
+		var tmp86 any
+		_ = tmp86
+		{
+			var us87 any = uris84
+			_ = us87
+		loop88:
+			for {
+				var tmp89 any
+				_ = tmp89
+				{
+					tmp90 := v_clojure_DOT_core_first.Get()
+					tmp91 := lang.Apply1(tmp90, us87)
+					var temp__5__auto__92 any = tmp91
+					_ = temp__5__auto__92
+					var tmp93 any
+					_ = tmp93
+					if lang.IsTruthy(temp__5__auto__92) {
+						var tmp94 any
+						_ = tmp94
+						{
+							var u95 any = temp__5__auto__92
+							_ = u95
+							var tmp96 any
+							_ = tmp96
 							{
-								var u80 any = temp__5__auto__77
-								_ = u80
-								var tmp81 any
-								_ = tmp81
+								tmp97 := v_bri_DOT_core_DOT_secrets_X_secret_get1.Get()
+								var tmp98 any
+								_ = tmp98
 								{
-									tmp82 := v_bri_DOT_core_DOT_secrets_X_secret_get1.Get()
-									var tmp83 any
-									_ = tmp83
-									{
-										var or__2__auto__84 any = key68
-										_ = or__2__auto__84
-										var tmp85 any
-										_ = tmp85
-										if lang.IsTruthy(or__2__auto__84) {
-											tmp85 = or__2__auto__84
-										} else {
-											tmp85 = ""
-										}
-										tmp83 = tmp85
-									}
-									tmp86 := lang.Apply2(tmp82, u80, tmp83)
-									var temp__4__auto__87 any = tmp86
-									_ = temp__4__auto__87
-									var tmp88 any
-									_ = tmp88
-									if lang.IsTruthy(temp__4__auto__87) {
-										var tmp89 any
-										_ = tmp89
-										{
-											var raw90 any = temp__4__auto__87
-											_ = raw90
-											tmp91 := v_bri_DOT_core_DOT_secrets_secret.Get()
-											tmp92 := lang.Apply1(tmp91, raw90)
-											tmp89 = tmp92
-										}
-										tmp88 = tmp89
+									var or__2__auto__99 any = key85
+									_ = or__2__auto__99
+									var tmp100 any
+									_ = tmp100
+									if lang.IsTruthy(or__2__auto__99) {
+										tmp100 = or__2__auto__99
 									} else {
-										tmp93 := v_clojure_DOT_core_rest.Get()
-										tmp94 := lang.Apply1(tmp93, uris72)
-										var tmp95 any = tmp94
-										uris72 = tmp95
-										continue loop73
+										tmp100 = ""
 									}
-									tmp81 = tmp88
+									tmp98 = tmp100
 								}
-								tmp79 = tmp81
+								tmp101 := lang.Apply2(tmp97, u95, tmp98)
+								var temp__4__auto__102 any = tmp101
+								_ = temp__4__auto__102
+								var tmp103 any
+								_ = tmp103
+								if lang.IsTruthy(temp__4__auto__102) {
+									var tmp104 any
+									_ = tmp104
+									{
+										var raw105 any = temp__4__auto__102
+										_ = raw105
+										tmp106 := v_bri_DOT_core_DOT_secrets_secret.Get()
+										tmp107 := lang.Apply1(tmp106, raw105)
+										tmp104 = tmp107
+									}
+									tmp103 = tmp104
+								} else {
+									tmp108 := v_clojure_DOT_core_rest.Get()
+									tmp109 := lang.Apply1(tmp108, us87)
+									var tmp110 any = tmp109
+									us87 = tmp110
+									continue loop88
+								}
+								tmp96 = tmp103
 							}
-							tmp78 = tmp79
-						} else {
-							tmp78 = nil
+							tmp94 = tmp96
 						}
-						tmp74 = tmp78
+						tmp93 = tmp94
+					} else {
+						tmp93 = nil
 					}
-					tmp69 = tmp74
-					break loop73
+					tmp89 = tmp93
 				}
+				tmp86 = tmp89
+				break loop88
 			}
-			return tmp69
-		default:
-			panic(lang.NewArityError(len(args), "bri.core.secrets/get", "1: [uri-or-uris] or 2: [uri-or-uris key]"))
 		}
+		return tmp86
 	})
-	v_bri_DOT_core_DOT_secrets_get.BindRoot(tmp63)
-	_ = v_bri_DOT_core_DOT_secrets_get
-	// (def set "Store a raw value in a writable backend (keychain://service/account); env://\n  …
-	v_bri_DOT_core_DOT_secrets_set.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(82), kw_column, int64(7), kw_end_line, int64(82), kw_end_column, int64(10), kw_doc, "Store a raw value in a writable backend (keychain://service/account); env://\n  is read-only. `value` may be a raw string or a secret (revealed at the\n  boundary). Returns nil."))
-	tmp96 := lang.FnFunc(func(args ...any) any {
-		switch len(args) {
-		case 2:
-			uri97 := args[0]
-			_ = uri97
-			value98 := args[1]
-			_ = value98
-			tmp99 := v_bri_DOT_core_DOT_secrets_set.Get()
-			tmp100 := lang.Apply3(tmp99, uri97, "", value98)
-			return tmp100
-		case 3:
-			uri101 := args[0]
-			_ = uri101
-			key102 := args[1]
-			_ = key102
-			value103 := args[2]
-			_ = value103
-			tmp104 := v_bri_DOT_core_DOT_secrets_X_secret_set1.Get()
-			var tmp105 any
-			_ = tmp105
-			{
-				var or__2__auto__106 any = key102
-				_ = or__2__auto__106
-				var tmp107 any
-				_ = tmp107
-				if lang.IsTruthy(or__2__auto__106) {
-					tmp107 = or__2__auto__106
-				} else {
-					tmp107 = ""
-				}
-				tmp105 = tmp107
-			}
-			tmp108 := v_bri_DOT_core_DOT_secrets_reveal.Get()
-			tmp109 := lang.Apply1(tmp108, value103)
-			tmp110 := lang.Apply3(tmp104, uri101, tmp105, tmp109)
-			_ = tmp110
-			return nil
-		default:
-			panic(lang.NewArityError(len(args), "bri.core.secrets/set", "2: [uri value] or 3: [uri key value]"))
-		}
-	})
-	v_bri_DOT_core_DOT_secrets_set.BindRoot(tmp96)
-	_ = v_bri_DOT_core_DOT_secrets_set
-	// (def delete "Remove a secret from a writable backend. Returns nil." (clojure.core/fn ([uri…
-	v_bri_DOT_core_DOT_secrets_delete_.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(89), kw_column, int64(7), kw_end_line, int64(89), kw_end_column, int64(13), kw_doc, "Remove a secret from a writable backend. Returns nil."))
-	tmp111 := lang.FnFunc(func(args ...any) any {
+	tmp111 := &lang.NamedFn2{Name: "bri.core.secrets/chain-get", Expects: "2: [uris key]", F: tmp83}
+	v_bri_DOT_core_DOT_secrets_chain_get.BindRoot(tmp111)
+	_ = v_bri_DOT_core_DOT_secrets_chain_get
+	// (def get "Fetch a secret; MASKED (use `reveal` for the plaintext), or nil if absent.\n\n  …
+	v_bri_DOT_core_DOT_secrets_get.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(91), kw_column, int64(7), kw_end_line, int64(91), kw_end_column, int64(10), kw_doc, "Fetch a secret; MASKED (use `reveal` for the plaintext), or nil if absent.\n\n  Bun.secrets front door (the OS keychain — Keychain / Secret Service /\n  Credential Manager):\n    (get \"my-app\" \"api-key\")\n    (get {:service \"my-app\" :name \"api-key\"})\n\n  Advanced (scheme URIs): a single URI, or a vector tried left→right (first hit\n  wins; a real backend failure aborts, never falling through to a weaker\n  source):\n    (get \"env://DATABASE_URL\")\n    (get [\"keychain://my-app/db\" \"env://DATABASE_URL\"])"))
+	tmp112 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			uri112 := args[0]
-			_ = uri112
-			tmp113 := v_bri_DOT_core_DOT_secrets_delete_.Get()
-			tmp114 := lang.Apply2(tmp113, uri112, "")
-			return tmp114
-		case 2:
-			uri115 := args[0]
-			_ = uri115
-			key116 := args[1]
-			_ = key116
-			tmp117 := v_bri_DOT_core_DOT_secrets_X_secret_del1.Get()
-			var tmp118 any
-			_ = tmp118
-			{
-				var or__2__auto__119 any = key116
-				_ = or__2__auto__119
-				var tmp120 any
-				_ = tmp120
-				if lang.IsTruthy(or__2__auto__119) {
-					tmp120 = or__2__auto__119
+			spec113 := args[0]
+			_ = spec113
+			tmp114 := v_clojure_DOT_core_map_QMARK_.Get()
+			tmp115 := lang.Apply1(tmp114, spec113)
+			var tmp116 any
+			_ = tmp116
+			if lang.IsTruthy(tmp115) {
+				tmp117 := v_bri_DOT_core_DOT_secrets_kc_get.Get()
+				tmp118 := lang.Apply1(kw_service, spec113)
+				tmp119 := lang.Apply1(kw_name, spec113)
+				tmp120 := lang.Apply2(tmp117, tmp118, tmp119)
+				tmp116 = tmp120
+			} else {
+				tmp121 := v_clojure_DOT_core_sequential_QMARK_.Get()
+				tmp122 := lang.Apply1(tmp121, spec113)
+				var tmp123 any
+				_ = tmp123
+				if lang.IsTruthy(tmp122) {
+					tmp124 := v_bri_DOT_core_DOT_secrets_chain_get.Get()
+					tmp125 := v_clojure_DOT_core_vec.Get()
+					tmp126 := lang.Apply1(tmp125, spec113)
+					tmp127 := lang.Apply2(tmp124, tmp126, "")
+					tmp123 = tmp127
 				} else {
-					tmp120 = ""
+					tmp128 := v_bri_DOT_core_DOT_secrets_uri_string_QMARK_.Get()
+					tmp129 := lang.Apply1(tmp128, spec113)
+					var tmp130 any
+					_ = tmp130
+					if lang.IsTruthy(tmp129) {
+						tmp131 := v_bri_DOT_core_DOT_secrets_chain_get.Get()
+						tmp132 := lang.NewVector(spec113)
+						tmp133 := lang.Apply2(tmp131, tmp132, "")
+						tmp130 = tmp133
+					} else {
+						var tmp134 any
+						_ = tmp134
+						if lang.IsTruthy(kw_else_) {
+							tmp135 := v_clojure_DOT_core_ex_info.Get()
+							tmp136 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_core_DOT_secrets_SLASH_bad_arg, kw_got, spec113)
+							tmp137 := lang.Apply2(tmp135, "secrets/get: pass (service name), {:service :name}, or a URI", tmp136)
+							panic(rt.Throw(tmp137))
+						} else {
+							tmp134 = nil
+						}
+						tmp130 = tmp134
+					}
+					tmp123 = tmp130
 				}
-				tmp118 = tmp120
+				tmp116 = tmp123
 			}
-			tmp121 := lang.Apply2(tmp117, uri115, tmp118)
-			_ = tmp121
-			return nil
+			return tmp116
+		case 2:
+			service_or_uri138 := args[0]
+			_ = service_or_uri138
+			name_or_key139 := args[1]
+			_ = name_or_key139
+			tmp140 := v_bri_DOT_core_DOT_secrets_uri_string_QMARK_.Get()
+			tmp141 := lang.Apply1(tmp140, service_or_uri138)
+			var tmp142 any
+			_ = tmp142
+			if lang.IsTruthy(tmp141) {
+				tmp143 := v_bri_DOT_core_DOT_secrets_chain_get.Get()
+				tmp144 := lang.NewVector(service_or_uri138)
+				var tmp145 any
+				_ = tmp145
+				{
+					var or__2__auto__146 any = name_or_key139
+					_ = or__2__auto__146
+					var tmp147 any
+					_ = tmp147
+					if lang.IsTruthy(or__2__auto__146) {
+						tmp147 = or__2__auto__146
+					} else {
+						tmp147 = ""
+					}
+					tmp145 = tmp147
+				}
+				tmp148 := lang.Apply2(tmp143, tmp144, tmp145)
+				tmp142 = tmp148
+			} else {
+				tmp149 := v_bri_DOT_core_DOT_secrets_kc_get.Get()
+				tmp150 := lang.Apply2(tmp149, service_or_uri138, name_or_key139)
+				tmp142 = tmp150
+			}
+			return tmp142
 		default:
-			panic(lang.NewArityError(len(args), "bri.core.secrets/delete", "1: [uri] or 2: [uri key]"))
+			panic(lang.NewArityError(len(args), "bri.core.secrets/get", "1: [spec] or 2: [service-or-uri name-or-key]"))
 		}
 	})
-	v_bri_DOT_core_DOT_secrets_delete_.BindRoot(tmp111)
+	v_bri_DOT_core_DOT_secrets_get.BindRoot(tmp112)
+	_ = v_bri_DOT_core_DOT_secrets_get
+	// (def set "Store a secret. `value` may be a raw string or a secret (revealed at the\n  boun…
+	v_bri_DOT_core_DOT_secrets_set.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(116), kw_column, int64(7), kw_end_line, int64(116), kw_end_column, int64(10), kw_doc, "Store a secret. `value` may be a raw string or a secret (revealed at the\n  boundary). Returns nil.\n\n  Bun.secrets front door (writes the OS keychain):\n    (set \"my-app\" \"api-key\" \"sk-live-…\")\n    (set {:service \"my-app\" :name \"api-key\" :value \"sk-live-…\"})\n\n  Advanced: (set \"keychain://svc/acct\" value) — env:// is read-only."))
+	tmp151 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		case 1:
+			spec152 := args[0]
+			_ = spec152
+			tmp153 := v_clojure_DOT_core_map_QMARK_.Get()
+			tmp154 := lang.Apply1(tmp153, spec152)
+			var tmp155 any
+			_ = tmp155
+			if lang.IsTruthy(tmp154) {
+				tmp156 := v_bri_DOT_core_DOT_secrets_X_keychain_set.Get()
+				tmp157 := v_clojure_DOT_core_str.Get()
+				tmp158 := lang.Apply1(kw_service, spec152)
+				tmp159 := lang.Apply1(tmp157, tmp158)
+				tmp160 := v_clojure_DOT_core_str.Get()
+				tmp161 := lang.Apply1(kw_name, spec152)
+				tmp162 := lang.Apply1(tmp160, tmp161)
+				tmp163 := v_bri_DOT_core_DOT_secrets_reveal.Get()
+				tmp164 := lang.Apply1(kw_value, spec152)
+				tmp165 := lang.Apply1(tmp163, tmp164)
+				tmp166 := lang.Apply3(tmp156, tmp159, tmp162, tmp165)
+				_ = tmp166
+				tmp155 = nil
+			} else {
+				tmp167 := v_clojure_DOT_core_ex_info.Get()
+				tmp168 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_core_DOT_secrets_SLASH_bad_arg, kw_got, spec152)
+				tmp169 := lang.Apply2(tmp167, "secrets/set: pass {:service :name :value}, or (service name value)", tmp168)
+				panic(rt.Throw(tmp169))
+			}
+			return tmp155
+		case 2:
+			uri170 := args[0]
+			_ = uri170
+			value171 := args[1]
+			_ = value171
+			tmp172 := v_bri_DOT_core_DOT_secrets_X_secret_set1.Get()
+			tmp173 := v_bri_DOT_core_DOT_secrets_reveal.Get()
+			tmp174 := lang.Apply1(tmp173, value171)
+			tmp175 := lang.Apply3(tmp172, uri170, "", tmp174)
+			_ = tmp175
+			return nil
+		case 3:
+			service_or_uri176 := args[0]
+			_ = service_or_uri176
+			name177 := args[1]
+			_ = name177
+			value178 := args[2]
+			_ = value178
+			tmp179 := v_bri_DOT_core_DOT_secrets_uri_string_QMARK_.Get()
+			tmp180 := lang.Apply1(tmp179, service_or_uri176)
+			var tmp181 any
+			_ = tmp181
+			if lang.IsTruthy(tmp180) {
+				tmp182 := v_bri_DOT_core_DOT_secrets_X_secret_set1.Get()
+				var tmp183 any
+				_ = tmp183
+				{
+					var or__2__auto__184 any = name177
+					_ = or__2__auto__184
+					var tmp185 any
+					_ = tmp185
+					if lang.IsTruthy(or__2__auto__184) {
+						tmp185 = or__2__auto__184
+					} else {
+						tmp185 = ""
+					}
+					tmp183 = tmp185
+				}
+				tmp186 := v_bri_DOT_core_DOT_secrets_reveal.Get()
+				tmp187 := lang.Apply1(tmp186, value178)
+				tmp188 := lang.Apply3(tmp182, service_or_uri176, tmp183, tmp187)
+				tmp181 = tmp188
+			} else {
+				tmp189 := v_bri_DOT_core_DOT_secrets_X_keychain_set.Get()
+				tmp190 := v_clojure_DOT_core_str.Get()
+				tmp191 := lang.Apply1(tmp190, service_or_uri176)
+				tmp192 := v_clojure_DOT_core_str.Get()
+				tmp193 := lang.Apply1(tmp192, name177)
+				tmp194 := v_bri_DOT_core_DOT_secrets_reveal.Get()
+				tmp195 := lang.Apply1(tmp194, value178)
+				tmp196 := lang.Apply3(tmp189, tmp191, tmp193, tmp195)
+				tmp181 = tmp196
+			}
+			_ = tmp181
+			return nil
+		default:
+			panic(lang.NewArityError(len(args), "bri.core.secrets/set", "1: [spec] or 2: [uri value] or 3: [service-or-uri name value]"))
+		}
+	})
+	v_bri_DOT_core_DOT_secrets_set.BindRoot(tmp151)
+	_ = v_bri_DOT_core_DOT_secrets_set
+	// (def delete "Remove a secret. Deleting an absent key is a no-op. Returns nil.\n\n  Bun.sec…
+	v_bri_DOT_core_DOT_secrets_delete_.SetMeta(lang.NewMap(kw_file, "bri/secrets.cljg", kw_line, int64(138), kw_column, int64(7), kw_end_line, int64(138), kw_end_column, int64(13), kw_doc, "Remove a secret. Deleting an absent key is a no-op. Returns nil.\n\n  Bun.secrets front door: (delete \"my-app\" \"api-key\") or\n  (delete {:service \"my-app\" :name \"api-key\"}).\n  Advanced: (delete \"keychain://svc/acct\")."))
+	tmp197 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		case 1:
+			spec198 := args[0]
+			_ = spec198
+			tmp199 := v_clojure_DOT_core_map_QMARK_.Get()
+			tmp200 := lang.Apply1(tmp199, spec198)
+			var tmp201 any
+			_ = tmp201
+			if lang.IsTruthy(tmp200) {
+				tmp202 := v_bri_DOT_core_DOT_secrets_X_keychain_del.Get()
+				tmp203 := v_clojure_DOT_core_str.Get()
+				tmp204 := lang.Apply1(kw_service, spec198)
+				tmp205 := lang.Apply1(tmp203, tmp204)
+				tmp206 := v_clojure_DOT_core_str.Get()
+				tmp207 := lang.Apply1(kw_name, spec198)
+				tmp208 := lang.Apply1(tmp206, tmp207)
+				tmp209 := lang.Apply2(tmp202, tmp205, tmp208)
+				tmp201 = tmp209
+			} else {
+				tmp210 := v_bri_DOT_core_DOT_secrets_uri_string_QMARK_.Get()
+				tmp211 := lang.Apply1(tmp210, spec198)
+				var tmp212 any
+				_ = tmp212
+				if lang.IsTruthy(tmp211) {
+					tmp213 := v_bri_DOT_core_DOT_secrets_X_secret_del1.Get()
+					tmp214 := lang.Apply2(tmp213, spec198, "")
+					tmp212 = tmp214
+				} else {
+					var tmp215 any
+					_ = tmp215
+					if lang.IsTruthy(kw_else_) {
+						tmp216 := v_clojure_DOT_core_ex_info.Get()
+						tmp217 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_core_DOT_secrets_SLASH_bad_arg, kw_got, spec198)
+						tmp218 := lang.Apply2(tmp216, "secrets/delete: pass (service name), {:service :name}, or a URI", tmp217)
+						panic(rt.Throw(tmp218))
+					} else {
+						tmp215 = nil
+					}
+					tmp212 = tmp215
+				}
+				tmp201 = tmp212
+			}
+			_ = tmp201
+			return nil
+		case 2:
+			service_or_uri219 := args[0]
+			_ = service_or_uri219
+			name220 := args[1]
+			_ = name220
+			tmp221 := v_bri_DOT_core_DOT_secrets_uri_string_QMARK_.Get()
+			tmp222 := lang.Apply1(tmp221, service_or_uri219)
+			var tmp223 any
+			_ = tmp223
+			if lang.IsTruthy(tmp222) {
+				tmp224 := v_bri_DOT_core_DOT_secrets_X_secret_del1.Get()
+				var tmp225 any
+				_ = tmp225
+				{
+					var or__2__auto__226 any = name220
+					_ = or__2__auto__226
+					var tmp227 any
+					_ = tmp227
+					if lang.IsTruthy(or__2__auto__226) {
+						tmp227 = or__2__auto__226
+					} else {
+						tmp227 = ""
+					}
+					tmp225 = tmp227
+				}
+				tmp228 := lang.Apply2(tmp224, service_or_uri219, tmp225)
+				tmp223 = tmp228
+			} else {
+				tmp229 := v_bri_DOT_core_DOT_secrets_X_keychain_del.Get()
+				tmp230 := v_clojure_DOT_core_str.Get()
+				tmp231 := lang.Apply1(tmp230, service_or_uri219)
+				tmp232 := v_clojure_DOT_core_str.Get()
+				tmp233 := lang.Apply1(tmp232, name220)
+				tmp234 := lang.Apply2(tmp229, tmp231, tmp233)
+				tmp223 = tmp234
+			}
+			_ = tmp223
+			return nil
+		default:
+			panic(lang.NewArityError(len(args), "bri.core.secrets/delete", "1: [spec] or 2: [service-or-uri name]"))
+		}
+	})
+	v_bri_DOT_core_DOT_secrets_delete_.BindRoot(tmp197)
 	_ = v_bri_DOT_core_DOT_secrets_delete_
 }

@@ -27,6 +27,26 @@ Ship the vault as **`bri.core.secrets`** — a distinct **OptIn leaf** under the
 when an app requires the namespace), realizing ADR 0060's design. `bri.core.security`
 (auth) stays non-opt-in and untouched.
 
+### The front door is Bun.secrets — the OS keychain by (service, name)
+
+The owner's ask is *"like Bun secrets — it puts into whatever keychain stuff."*
+So the **default, zero-ceremony API is the OS keychain**, mirroring
+`Bun.secrets.{get,set,delete}({service, name[, value]})` — no URI, no scheme to
+think about:
+
+```clojure
+(secrets/set "my-app" "api-key" "sk-live-…")   ; → the OS keychain
+(secrets/get "my-app" "api-key")               ; masked secret | nil
+(secrets/delete "my-app" "api-key")
+(secrets/set {:service "my-app" :name "api-key" :value "…"})  ; map form
+```
+
+`go-keyring` routes to macOS Keychain / Linux Secret Service / Windows
+Credential Manager — "whatever keychain the OS has". The **URI/scheme layer
+below is the advanced path** (env vars, fallback chains), selected only when the
+argument contains `://`; a plain `(get service name)` is always the keychain.
+Deleting an absent key is a no-op, as in Bun.
+
 ### Scope of this increment: `env://` + `keychain://`
 
 - **`env://KEY`** — the dependency-free floor (CI/containers inject secrets as env

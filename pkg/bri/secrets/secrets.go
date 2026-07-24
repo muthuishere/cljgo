@@ -71,6 +71,39 @@ func installShims(def func(name string, fn func(args ...any) any)) {
 		}
 		return nil
 	})
+
+	// --- the Bun.secrets front door: the OS keychain by (service, account),
+	// no URI. keyring routes to macOS Keychain / Linux Secret Service / Windows
+	// Credential Manager — "whatever keychain the OS has".
+	def("-keychain-get", func(args ...any) any {
+		service, account := twoStr("-keychain-get", args)
+		v, err := keyring.Get(service, account)
+		if errors.Is(err, keyring.ErrNotFound) {
+			return nil
+		}
+		if err != nil {
+			panic(fmt.Errorf("bri.core.secrets: keychain %q failed: %w", service, err))
+		}
+		return v
+	})
+	def("-keychain-set", func(args ...any) any {
+		service, account, value := threeStr("-keychain-set", args)
+		if err := keyring.Set(service, account, value); err != nil {
+			panic(fmt.Errorf("bri.core.secrets: keychain %q set failed: %w", service, err))
+		}
+		return nil
+	})
+	def("-keychain-del", func(args ...any) any {
+		service, account := twoStr("-keychain-del", args)
+		err := keyring.Delete(service, account)
+		if errors.Is(err, keyring.ErrNotFound) {
+			return nil // deleting an absent key is a no-op, like Bun
+		}
+		if err != nil {
+			panic(fmt.Errorf("bri.core.secrets: keychain %q delete failed: %w", service, err))
+		}
+		return nil
+	})
 }
 
 // --- the two schemes (env + keychain; the registry grows age/cloud later) ---
