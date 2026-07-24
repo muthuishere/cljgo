@@ -10,10 +10,11 @@
 ;; validation, and the `--help` entry. Increment 1 (this file) is the
 ;; deterministic core: parse argv, resolve each param (flag/positional ->
 ;; :default -> required-error), coerce by type, and dispatch — all pure
-;; Clojure, so it runs byte-identically interpreted and AOT-compiled. The
-;; interactive prompt for a missing value (the other half of the unified
-;; model) and :env resolution arrive in increment 2 behind the *resolve*
-;; seam below, without changing this surface.
+;; Clojure, so it runs byte-identically interpreted and AOT-compiled.
+;; Increment 2 adds the other half of the unified model behind the same
+;; resolution seam: :env lookup and the interactive prompt-if-TTY for a
+;; missing value (over a thin terminal primitive, cli.go). A prompted value
+;; runs the identical validators, so the CLI surface is unchanged.
 ;;
 ;; Loaded as a bri namespace (ADR 0041): like every core/bri/*.cljg there is
 ;; NO (ns …) form — the file opens with the fully-qualified in-ns + refer
@@ -143,13 +144,79 @@
         :else (recur (rest args) flags (conj pos a)))
       {:flags flags :pos pos})))
 
+;; --- the interactive half (increment 2, ADR 0078 / s47) ---------------------
+;; A parameter is declared ONCE; when its value is not on the command line and
+;; stdin is a TTY, bri.cli prompts for it — through the SAME `supplied`
+;; (coerce + validators) as the flag path, so a prompted value is validated
+;; identically. The prompt POLICY here is portable Clojure; only -tty?/
+;; -read-input/-read-secret are host primitives (pkg/bri/cli.go). Tests and
+;; non-interactive callers rebind *prompt* to drive resolution without a TTY.
+
+(def ^:dynamic *prompt*
+  "The prompt backend, or nil to use the host terminal. When bound it is a
+  fn (label secret?) -> raw-string, letting tests/non-TTY code script answers
+  without a real terminal. nil => -read-input / -read-secret on the TTY."
+  nil)
+
+(defn- interactive?
+  "Should a missing value be prompted for? True when a *prompt* backend is
+  bound (tests/embedding) or stdin is a real terminal."
+  []
+  (if *prompt* true (boolean (-tty?))))
+
+(defn- prompt-raw
+  "Ask once for a param's raw value via the active backend."
+  [p]
+  (let [label   (or (:prompt p) (:about p) (name (:name p)))
+        secret? (boolean (:secret p))]
+    (if-let [pf *prompt*]
+      (pf label secret?)
+      (if secret?
+        (-read-secret (str label ": "))
+        (-read-input  (str label ": "))))))
+
+(defn- prompt-note
+  "Show a re-prompt reason on stderr (kept off stdout)."
+  [msg]
+  (binding [*out* *err*] (println (str "  " msg))))
+
+(defn- prompt-param
+  "Prompt for a param, coercing + validating through `supplied`, re-prompting
+  up to (:tries p, default 3) times on an invalid/bad value. Empty input with
+  a :default present yields the default; empty input on a required param with
+  no default re-prompts (then errors) rather than silently passing nil."
+  [p]
+  (loop [n (:tries p 3)]
+    (let [raw   (prompt-raw p)
+          blank (or (nil? raw) (= "" (str/trim (str raw))))]
+      (cond
+        (and blank (contains? p :default)) (:default p)
+
+        (and blank (not (:required p)))    nil
+
+        :else
+        (let [res (try {:v (supplied p raw)}
+                       (catch Throwable e {:err (ex-message e)}))]
+          (cond
+            (contains? res :v) (:v res)
+            (> n 1)            (do (prompt-note (:err res)) (recur (dec n)))
+            :else (throw (ex-info (:err res)
+                                  {:bri/error :bri.cli/invalid :param (:name p)}))))))))
+
+(defn- env-raw
+  "The param's :env value (an env-var name, string or keyword) if set, else
+  nil — resolved through the -getenv host shim."
+  [p]
+  (when-let [e (:env p)] (-getenv (if (keyword? e) (name e) (str e)))))
+
 ;; --- parameter resolution (the unified model's runtime) ---------------------
 
 (defn- resolve-param
-  "Resolve one parameter to its value from the parsed flags/positionals,
-  else its :default, else a required-error. The seam where increment 2
-  inserts :env lookup and the interactive prompt for a missing value (ADR
-  0078: flag/positional -> env -> prompt-if-TTY -> default -> error)."
+  "Resolve one parameter to its value, in precedence order (ADR 0078):
+  flag -> positional -> :env -> prompt-if-interactive -> :default -> required
+  -error. A bool with no flag is its :default (false) and never prompts.
+  Every user-supplied path (flag/positional/env/prompt) runs the param's
+  coercion + validators via `supplied`."
   [p flags pos-atom]
   (let [k    (:name p)
         fname (name k)]
@@ -162,6 +229,12 @@
 
       (seq @pos-atom)
       (let [v (first @pos-atom)] (swap! pos-atom rest) (supplied p v))
+
+      (some? (env-raw p))
+      (supplied p (env-raw p))
+
+      (interactive?)
+      (prompt-param p)
 
       (contains? p :default)
       (:default p)

@@ -202,3 +202,83 @@ func TestCLIRunDispatchesAndRenders(t *testing.T) {
 		t.Errorf("a failed validation must not dispatch the handler; hits=%v", got)
 	}
 }
+
+// --- increment 2: the interactive half of the unified parameter model -------
+
+// TestCLIEnvResolution: a missing value falls to :env before its :default,
+// and a flag still wins over :env — the ADR 0078 precedence
+// (flag → positional → env → prompt → default).
+func TestCLIEnvResolution(t *testing.T) {
+	d := newDriver(t)
+	t.Setenv("TODO_PRIORITY", "4")
+	eval(t, d, `(require '[bri.cli :as cli] '[bri.cli.validate :as v])
+	  (cli/defcommand add "" [priority {:type :int :env "TODO_PRIORITY" :default 3
+	                                     :validate [(v/min 1) (v/max 5)]}]
+	    {:priority priority})
+	  (cli/defcommands app {:name "todo"} add)`)
+	if got := eval(t, d, `(:priority (cli/parse app ["add"]))`); got != int64(4) {
+		t.Errorf("env resolution = %v, want 4 (env beats :default)", got)
+	}
+	if got := eval(t, d, `(:priority (cli/parse app ["add" "--priority" "2"]))`); got != int64(2) {
+		t.Errorf("flag should override env = %v, want 2", got)
+	}
+}
+
+// TestCLIEnvValidated: an :env value is coerced + validated through the SAME
+// pipeline as a flag — a bad env value is a named error, not a silent pass.
+func TestCLIEnvValidated(t *testing.T) {
+	d := newDriver(t)
+	t.Setenv("TODO_PRIORITY", "9") // out of the 1..5 range
+	eval(t, d, `(require '[bri.cli :as cli] '[bri.cli.validate :as v])
+	  (cli/defcommand add "" [priority {:type :int :env "TODO_PRIORITY"
+	                                     :validate [(v/min 1) (v/max 5)]}]
+	    {:priority priority})
+	  (cli/defcommands app {:name "todo"} add)`)
+	if msg := evalErr(t, d, `(cli/parse app ["add"])`); !strings.Contains(msg, "<= 5") {
+		t.Errorf("an env value must be validated like a flag: %q", msg)
+	}
+}
+
+// TestCLIPromptResolvesMissingValues: with a *prompt* backend bound (the
+// test/no-TTY seam), missing values are prompted in param order; a blank
+// answer with a :default takes the default; bools never prompt; a prompted
+// value runs the SAME validators (an invalid answer re-prompts); and :secret
+// is passed through to the backend (password path).
+func TestCLIPromptResolvesMissingValues(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, cliPrelude)
+
+	// script answers in param order: text, priority(blank→default), channel(blank→default)
+	res := evalString(t, d, `
+	  (let [q  (atom ["  hello  " "" ""])
+	        pf (fn [_ _] (let [a (first @q)] (swap! q rest) a))]
+	    (binding [bri.cli/*prompt* pf]
+	      (let [m (cli/parse app ["add"])]
+	        (str (:text m) "|" (:priority m) "|" (name (:channel m)) "|" (:done m)))))`)
+	if res != "hello|3|stable|false" {
+		t.Errorf("prompt resolution = %q, want hello|3|stable|false", res)
+	}
+
+	// an invalid prompted value re-prompts (first "a" fails min-len 2, "ok" passes)
+	txt := evalString(t, d, `
+	  (let [q  (atom ["a" "ok" "" ""])
+	        pf (fn [_ _] (let [a (first @q)] (swap! q rest) a))]
+	    (binding [bri.cli/*prompt* pf]
+	      (:text (cli/parse app ["add"]))))`)
+	if txt != "ok" {
+		t.Errorf("re-prompt on invalid = %q, want ok", txt)
+	}
+
+	// :secret reaches the backend so it can turn echo off
+	sec := evalString(t, d, `
+	  (do
+	    (cli/defcommand login "" [pass {:type :string :secret true :about "password"}] {:pass pass})
+	    (cli/defcommands lapp {:name "l"} login)
+	    (let [seen (atom nil)
+	          pf   (fn [_ secret?] (reset! seen secret?) "hunter2")]
+	      (binding [bri.cli/*prompt* pf]
+	        (str (:pass (cli/parse lapp ["login"])) "|" @seen))))`)
+	if sec != "hunter2|true" {
+		t.Errorf("secret prompt = %q, want hunter2|true", sec)
+	}
+}
