@@ -162,11 +162,17 @@ campaign history: [`docs/performance.md`](docs/performance.md)** (reproduce with
 ## Web framework (bri) — one static binary, tiny Docker image
 
 bri is cljgo's batteries-included web framework (ADR 0041/0069): API-first,
-JWT auth, composable guards, CORS, metrics, audit, a Compojure-style router.
-It runs both **interpreted** (`cljgo dev`, live re-`def`, nREPL) and
-**AOT-compiled** to a single static `CGO_ENABLED=0` binary, byte-identical
-(ADR 0071) — so the dev loop is a REPL and the deploy artifact is a
-scratch-image binary. `cljgo new --template web` ships a `Dockerfile`;
+JWT auth, composable guards, CORS + CSRF, rate-limit + auto-ban, a
+Compojure-style router, a **data layer** (`bri.db` — pure-Go SQLite + Postgres,
+migrations, transactions; ADR 0072), and a **resource generator** (`cljgo
+generate resource Note title:string` → migration + model + handlers + routes +
+a green CRUD test; ADR 0073). Observability is default-on — Prometheus
+`/metrics`, structured logs, request-ids — with **OpenTelemetry** available as
+an opt-in namespace (`bri.otel`, ADR 0074: spans, W3C trace-context, OTLP;
+linked only when required). It runs both **interpreted** (`cljgo dev`, live
+re-`def`, nREPL) and **AOT-compiled** to a single static `CGO_ENABLED=0` binary,
+byte-identical (ADR 0071) — so the dev loop is a REPL and the deploy artifact is
+a scratch-image binary. `cljgo new --template web` ships a `Dockerfile`;
 `docker build` gives you a ~15 MB image.
 
 Benchmarked against the field (Docker, [`oha`](https://github.com/hatoo/oha)
