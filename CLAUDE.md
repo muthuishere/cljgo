@@ -102,7 +102,11 @@ the extra detail is added at the render layer by `diag.Render`.
 
 `pkg/lang` runtime · `pkg/corelib` Go-native core builtins (ADR 0043) ·
 `pkg/reader` · `pkg/ast` · `pkg/analyzer` · `pkg/eval` ·
-`pkg/repl` · `cmd/cljgo` · `core/` (core.clj, Clojure-in-Clojure) ·
+`pkg/repl` · `pkg/bri` (bri runtime shims: http/db/auth/otel host fns) ·
+`pkg/briaot` (AOT-compiled bri + opt-in per-namespace linking, ADR 0074) ·
+`pkg/briloader` · `cmd/genbri` · `cmd/cljgo` ·
+`core/` (core.clj, Clojure-in-Clojure) · `core/bri/` (bri namespaces —
+http/db/auth/otel/html/config/audit) ·
 `templates/` (real, runnable project templates `cljgo new` embeds —
 lib (default) / cli / web; never string literals) · `conformance/` · `design/` · `docs/adr/` · `openspec/` ·
 `spikes/` (frozen) · `refs/` (gitignored clones).
