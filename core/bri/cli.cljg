@@ -1,0 +1,296 @@
+;; bri.cli — the CLI app-shape of bri (ADR 0078). A command is data; the
+;; DSL mirrors bri.http's routes so there is nothing new to learn:
+;;
+;;   http:  (defroute  x  (GET "/x" #'h))   (defroutes api x y)   (http/serve api)
+;;   cli:   (defcommand add "..." [..] body) (defcommands app {} add ls) (cli/run app args)
+;;
+;; The load-bearing idea (ADR 0078) is the UNIFIED PARAMETER MODEL: a
+;; parameter is declared ONCE — a name, a type, an :about — and from that
+;; single declaration bri.cli derives the CLI flag/positional, the parse +
+;; validation, and the `--help` entry. Increment 1 (this file) is the
+;; deterministic core: parse argv, resolve each param (flag/positional ->
+;; :default -> required-error), coerce by type, and dispatch — all pure
+;; Clojure, so it runs byte-identically interpreted and AOT-compiled. The
+;; interactive prompt for a missing value (the other half of the unified
+;; model) and :env resolution arrive in increment 2 behind the *resolve*
+;; seam below, without changing this surface.
+;;
+;; Loaded as a bri namespace (ADR 0041): like every core/bri/*.cljg there is
+;; NO (ns …) form — the file opens with the fully-qualified in-ns + refer
+;; (they resolve before clojure.core is referred), then its requires + defns.
+(clojure.core/in-ns 'bri.cli)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+
+;; --- the command value (the GET-analog: data in, data out) ------------------
+
+(defn command
+  "Build a command value from a name, opts {:about :params}, and a handler
+  fn of the resolved-parameter map. Usually written with `defcommand`."
+  [cmd-name opts handler]
+  (merge {:bri.cli/command true :name cmd-name :handler handler :params []}
+         (select-keys opts [:about :params])))
+
+(defn commands
+  "Concatenate command values into one vector — the routes-analog, so a
+  command set can be built from data (for/map) as well as literals."
+  [& values]
+  (vec (mapcat (fn [v] (if (:bri.cli/command v) [v] (vec v))) values)))
+
+(defn app
+  "Assemble a CLI app from meta {:name :version :about} + command values."
+  [meta & cmds]
+  (assoc meta :commands (vec cmds)))
+
+;; --- the DSL macros (the defroute / defroutes analogs) ----------------------
+
+(defmacro defcommand
+  "Name a command, reading like a defn: a docstring (its :about), a
+  parameter vector of `name {opts}` pairs, and a body that uses the params
+  directly. Mirrors `defroute`.
+
+    (defcommand add \"Add an item\"
+      [text     {:type :string :about \"item text\"}
+       priority {:type :int    :about \"1-5\" :default 3}]
+      (println \"added\" text \"@\" priority))"
+  [nm doc params & body]
+  (let [pairs  (partition 2 params)
+        pspecs (mapv (fn [[psym popts]] (assoc popts :name (keyword (name psym)))) pairs)
+        syms   (mapv first pairs)]
+    `(def ~nm
+       (command ~(name nm)
+                {:about ~doc :params ~pspecs}
+                (fn [{:keys [~@syms]}] ~@body)))))
+
+(defmacro defcommands
+  "Name a CLI app from meta + command vars. Mirrors `defroutes`.
+    (defcommands app {:name \"todo\" :version \"1.0\"} add ls)"
+  [nm meta & cmd-forms]
+  `(def ~nm (app ~meta ~@cmd-forms)))
+
+;; --- type coercion + validation ---------------------------------------------
+
+(def ^:private string-like #{:string :multiline :path :file})
+
+(defn- coerce
+  "Trim (§2 default: string-like values, unless :trim false) then coerce a
+  raw string flag/positional to the param's :type, validating :one-of
+  membership. Returns the value or throws a bri.cli/bad-arg."
+  [p raw]
+  (let [t   (:type p :string)
+        k   (:name p)
+        raw (if (and (string? raw) (string-like t) (not (false? (:trim p))))
+              (str/trim raw)
+              raw)
+        v (case t
+            :string  raw
+            :keyword (keyword raw)
+            :int     (or (parse-long raw)
+                         (throw (ex-info (str "--" (name k) " expects an int, got: " raw)
+                                         {:bri/error :bri.cli/bad-arg :param k :found raw})))
+            :bool    (contains? #{"true" "1" "yes" "" nil} raw)
+            (:enum :one-of) (keyword raw)
+            raw)]
+    (when-let [choices (:one-of p)]
+      (when-not (some #{v} choices)
+        (throw (ex-info (str "--" (name k) " must be one of " (str/join ", " (map #(str %) choices)) ", got: " raw)
+                        {:bri/error :bri.cli/bad-arg :param k :found raw :expected choices}))))
+    v))
+
+;; --- validators (ADR 0078 §3): a validator is a fn value->nil|message ------
+
+(defn- as-validators
+  "Normalize :validate (a fn, a vector of fns = logical AND, or nil) into a
+  seq of validator fns."
+  [v]
+  (cond (nil? v) [] (sequential? v) (vec v) :else [v]))
+
+(defn- validate!
+  "Run a param's :validate chain on a coerced value; the first validator that
+  returns a (truthy) message throws a bri.cli/invalid with the param named."
+  [p value]
+  (doseq [vf (as-validators (:validate p))]
+    (when-let [msg (vf value)]
+      (throw (ex-info (str "--" (name (:name p)) " " msg)
+                      {:bri/error :bri.cli/invalid :param (:name p) :message msg}))))
+  value)
+
+(defn- supplied
+  "Coerce a user-supplied raw value and run its validators (both surfaces run
+  through here, ADR 0078 §3)."
+  [p raw]
+  (validate! p (coerce p raw)))
+
+;; --- argv parsing -----------------------------------------------------------
+
+(defn- bool-param? [p] (= :bool (:type p :string)))
+
+(defn- parse-argv
+  "Split a command's argv tail into {:flags {\"name\" raw} :pos [..]}. Honors
+  --k v, --k=v, and bare --bool. `bool?` is the set of bool flag names (they
+  don't consume the next token)."
+  [argv bool?]
+  (loop [args argv, flags {}, pos []]
+    (if-let [a (first args)]
+      (cond
+        (str/starts-with? a "--")
+        (let [body (subs a 2)]
+          (if-let [i (str/index-of body "=")]
+            (recur (rest args) (assoc flags (subs body 0 i) (subs body (inc i))) pos)
+            (if (bool? body)
+              (recur (rest args) (assoc flags body "true") pos)
+              (recur (rest (rest args)) (assoc flags body (second args)) pos))))
+        :else (recur (rest args) flags (conj pos a)))
+      {:flags flags :pos pos})))
+
+;; --- parameter resolution (the unified model's runtime) ---------------------
+
+(defn- resolve-param
+  "Resolve one parameter to its value from the parsed flags/positionals,
+  else its :default, else a required-error. The seam where increment 2
+  inserts :env lookup and the interactive prompt for a missing value (ADR
+  0078: flag/positional -> env -> prompt-if-TTY -> default -> error)."
+  [p flags pos-atom]
+  (let [k    (:name p)
+        fname (name k)]
+    (cond
+      (contains? flags fname)
+      (supplied p (get flags fname))
+
+      (bool-param? p)
+      (:default p false)
+
+      (seq @pos-atom)
+      (let [v (first @pos-atom)] (swap! pos-atom rest) (supplied p v))
+
+      (contains? p :default)
+      (:default p)
+
+      (:required p)
+      (throw (ex-info (str "missing required argument: --" fname
+                           (when (:about p) (str " (" (:about p) ")")))
+                      {:bri/error :bri.cli/missing :param k}))
+
+      :else nil)))
+
+(defn- resolve-params
+  "Resolve every param of a command into the handler's argument map."
+  [cmd flags pos]
+  (let [pos-atom (atom pos)]
+    (reduce (fn [m p] (assoc m (:name p) (resolve-param p flags pos-atom)))
+            {} (:params cmd))))
+
+;; --- help + version rendering -----------------------------------------------
+
+(defn- type-label [p]
+  (if-let [c (:one-of p)] (str "{" (str/join "|" (map #(subs (str %) 1) c)) "}")
+      (name (:type p :string))))
+
+(defn- command-usage [app cmd]
+  (let [lines (map (fn [p]
+                     (format "  --%-14s %-8s %s"
+                             (name (:name p))
+                             (type-label p)
+                             (str (or (:about p) "")
+                                  (when (contains? p :default) (str " [default: " (pr-str (:default p)) "]"))
+                                  (when (:required p) " (required)"))))
+                   (:params cmd))]
+    (str/join "\n"
+              (concat [(str (:name app) " " (:name cmd)
+                            (when (:about cmd) (str " — " (:about cmd))))
+                       ""
+                       (str "usage: " (:name app) " " (:name cmd) " [options]")]
+                      (when (seq lines) (cons "" (cons "options:" lines)))))))
+
+(defn- app-usage [app]
+  (str/join "\n"
+            (concat [(str (:name app) (when (:version app) (str " " (:version app)))
+                          (when (:about app) (str " — " (:about app))))
+                     ""
+                     (str "usage: " (:name app) " <command> [options]")
+                     ""
+                     "commands:"]
+                    (map (fn [c] (format "  %-14s %s" (:name c) (or (:about c) ""))) (:commands app))
+                    [""
+                     (str "run `" (:name app) " <command> --help` for a command's options.")])))
+
+;; --- did-you-mean (Levenshtein-1-ish nearest command) -----------------------
+
+(defn- edit-distance [a b]
+  (let [la (count a) lb (count b)]
+    (loop [i 1 prev (vec (range (inc lb)))]
+      (if (> i la)
+        (peek prev)
+        (let [row (loop [j 1 row [i]]
+                    (if (> j lb)
+                      row
+                      (recur (inc j)
+                             (conj row (min (inc (peek row))
+                                            (inc (get prev j))
+                                            (+ (get prev (dec j))
+                                               (if (= (get a (dec i)) (get b (dec j))) 0 1)))))))]
+          (recur (inc i) row))))))
+
+(defn- nearest-command [app token]
+  (->> (:commands app)
+       (map (fn [c] [(:name c) (edit-distance token (:name c))]))
+       (filter (fn [[_ d]] (<= d 2)))
+       (sort-by second)
+       ffirst))
+
+;; --- run --------------------------------------------------------------------
+
+(defn- find-command [app nm] (first (filter #(= nm (:name %)) (:commands app))))
+
+(defn- command-args
+  "Parse a command's argv tail and resolve every parameter into the
+  handler-argument map (throwing on a bad/missing/invalid arg)."
+  [cmd tail]
+  (let [bool? (set (map #(name (:name %)) (filter bool-param? (:params cmd))))
+        {:keys [flags pos]} (parse-argv tail bool?)]
+    (resolve-params cmd flags pos)))
+
+(defn parse
+  "Find the command named by (first argv) and resolve its parameters into the
+  handler-argument map, THROWING ex-info on an unknown command or a
+  bad/missing/invalid argument. This is run's inspectable core — no dispatch,
+  no printing — useful for testing and for driving a command programmatically."
+  [app argv]
+  (let [argv (vec argv)
+        head (first argv)
+        cmd  (find-command app head)]
+    (when-not cmd
+      (throw (ex-info (str "unknown command: " (pr-str head))
+                      {:bri/error :bri.cli/unknown-command :command head})))
+    (command-args cmd (subvec argv 1))))
+
+(defn run
+  "Parse argv against the app, resolve the matched command's parameters,
+  and invoke its handler. Prints `--help`/`--version` and usage/errors.
+  The entry point: `(defn -main [& args] (cli/run app args))`."
+  [app argv]
+  (let [argv (vec argv)
+        head (first argv)]
+    (cond
+      (or (nil? head) (= head "help") (= head "--help") (= head "-h"))
+      (println (app-usage app))
+
+      (or (= head "--version") (= head "-v"))
+      (println (str (:name app) " " (or (:version app) "")))
+
+      :else
+      (if-let [cmd (find-command app head)]
+        (let [tail (subvec argv 1)]
+          (if (some #{"--help" "-h"} tail)
+            (println (command-usage app cmd))
+            (try
+              ((:handler cmd) (command-args cmd tail))
+              (catch Throwable e
+                (binding [*out* *err*]
+                  (println (str "error: " (ex-message e)))
+                  (println (str "help: run `" (:name app) " " (:name cmd) " --help`")))))))
+        (binding [*out* *err*]
+          (println (str "error: unknown command: " head))
+          (when-let [near (nearest-command app head)]
+            (println (str "help: did you mean `" (:name app) " " near "`?")))
+          (println (str "help: run `" (:name app) " --help` for the command list")))))))

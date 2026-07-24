@@ -105,6 +105,13 @@ func Specs() []Spec {
 		// isolated pkg/bri/otel (ShimImport), which registers its installer via
 		// RegisterInstaller when linked.
 		{Name: "bri.otel", File: "bri/otel.cljg", Pkg: "briotel", Source: &core.BriOtelSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/otel"},
+		// bri.cli + bri.cli.validate are PURE CLOJURE in this increment (ADR
+		// 0078): the deterministic command-tree + unified-parameter core has no
+		// Go shims, so like bri.html they carry install:nil and stay in the
+		// umbrella. When the Charm-backed interactive layer lands (increment 2)
+		// bri.cli flips to OptIn with an isolated pkg/bri/cli shim package.
+		{Name: "bri.cli.validate", File: "bri/cli_validate.cljg", Pkg: "briclivalidate", Source: &core.BriCLIValidateSource, install: nil},
+		{Name: "bri.cli", File: "bri/cli.cljg", Pkg: "bricli", Source: &core.BriCLISource, install: nil},
 	}
 }
 
