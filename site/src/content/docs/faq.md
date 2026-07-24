@@ -25,6 +25,32 @@ ecosystem — a normal Go program, a normal Go module.
 </details>
 
 <details class="faq" open>
+<summary>What is cljgo actually for, day to day?</summary>
+
+Web APIs and CLIs, shipped as one small static binary — the kind of thing you
+run on a cheap VPS or in a minimal container without a JVM, a runtime install,
+or a fat base image. Hello-world is a 5.3 MB static binary with ~5 ms startup;
+`cljgo dist` cross-compiles it for every OS/arch in one command.
+
+The batteries follow the Bun model (included and curated, not assembled from
+a dependency hunt) and the Zig model for builds (`build.cljgo` is a program,
+not a data file). They arrive as real runnable templates, not docs:
+
+```
+cljgo new myapp                    # library (the default)
+cljgo new --template cli myapp     # a CLI tool
+cljgo new --template web myapp     # a bri web app
+```
+
+The web template scaffolds the bri stack — config, HTTP, HTML, auth, db,
+otel — with `cljgo dev` / `cljgo test` as the dev loop. Honest caveat: bri
+web apps run interpreted today; their AOT-to-static-binary tier is in
+progress (the compiler spike already produced a ~15 MB scratch Docker image
+with ~30 ms cold start).
+
+</details>
+
+<details class="faq" open>
 <summary>If the compiler can't handle something, does it fall back to interpretation?</summary>
 
 No. Compilation compiles or fails — there is no interpreter in the binary to
