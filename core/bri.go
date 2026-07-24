@@ -61,3 +61,23 @@ var BriDBSource string
 //
 //go:embed bri/otel.cljg
 var BriOtelSource string
+
+// BriCLISource is core/bri/cli.cljg — bri.cli: the CLI app-shape of bri
+// (ADR 0078). The defcommand/defcommands DSL (mirroring bri.http's
+// defroute/defroutes), the UNIFIED PARAMETER MODEL (one declaration → a CLI
+// flag AND, in a later increment, an interactive prompt), type coercion +
+// default string trim, composable validators, and cli/run (parse → resolve →
+// validate → dispatch, with --help/--version/did-you-mean). Pure Clojure —
+// no Go shims in this increment.
+//
+//go:embed bri/cli.cljg
+var BriCLISource string
+
+// BriCLIValidateSource is core/bri/cli_validate.cljg — bri.cli.validate: the
+// built-in validator constructors for bri.cli parameters (ADR 0078 §3),
+// conventionally aliased `v` (v/min, v/max, v/matches, v/email, v/one-of,
+// and the composers v/all / v/any / v/not). A validator is a fn value →
+// nil|message, so a custom validator is any fn; these are the batteries.
+//
+//go:embed bri/cli_validate.cljg
+var BriCLIValidateSource string

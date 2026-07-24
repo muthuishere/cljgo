@@ -1,0 +1,52 @@
+;; bri.cli.validate — the built-in validator constructors for bri.cli
+;; parameters (ADR 0078 §3). Conventionally required as `[bri.cli.validate
+;; :as v]`, so a param reads `:validate [(v/min 1) (v/max 5)]`.
+;;
+;; A validator is just a fn `value -> nil-if-ok | error-message` (ADR 0078
+;; §3), so a CUSTOM validator is any predicate-shaped fn the author writes —
+;; these are only the batteries. They COMPOSE: `all`/`any`/`not` combine
+;; validators into new validators, and a `:validate` VECTOR is `all` (logical
+;; AND).
+;;
+;; Loaded as a bri namespace (ADR 0041): like every core/bri/*.cljg there is
+;; NO (ns …) form — it opens with the fully-qualified in-ns + refer. The refer
+;; EXCLUDES min/max/range/not (the same way bri.http excludes its own `ok`),
+;; so these validator names shadow clojure.core cleanly behind the `v/` alias;
+;; bodies call the core originals fully-qualified.
+(clojure.core/in-ns 'bri.cli.validate)
+(clojure.core/refer 'clojure.core :exclude '[min max range not])
+(require '[clojure.string :as str])
+
+;; --- numeric ----------------------------------------------------------------
+
+(defn min "value >= n." [n] (fn [v] (when (clojure.core/< v n) (str "must be >= " n ", got " v))))
+(defn max "value <= n." [n] (fn [v] (when (clojure.core/> v n) (str "must be <= " n ", got " v))))
+(defn range "lo <= value <= hi." [lo hi] (fn [v] (when-not (clojure.core/<= lo v hi) (str "must be between " lo " and " hi ", got " v))))
+(defn positive "value > 0." [] (fn [v] (when (clojure.core/<= v 0) "must be positive")))
+
+;; --- string -----------------------------------------------------------------
+
+(defn non-empty "not blank." [] (fn [v] (when (or (nil? v) (and (string? v) (str/blank? v))) "must not be empty")))
+(defn min-len "at least n chars." [n] (fn [v] (when (clojure.core/< (count (str v)) n) (str "must be at least " n " characters"))))
+(defn max-len "at most n chars." [n] (fn [v] (when (clojure.core/> (count (str v)) n) (str "must be at most " n " characters"))))
+(defn matches "matches a regex." [re] (fn [v] (when-not (re-find re (str v)) (str "must match " (str re)))))
+(defn one-of "member of a set." [choices] (fn [v] (when-not (some #{v} choices) (str "must be one of " (str/join ", " (map str choices))))))
+(defn email "looks like an email." [] (matches #"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+
+;; --- composition (the composable win, ADR 0078 §3) --------------------------
+
+(defn all
+  "AND: passes only if every validator passes; the FIRST failure's message
+  wins. A :validate vector is sugar for this."
+  [& vs]
+  (fn [v] (some (fn [f] (f v)) vs)))
+
+(defn any
+  "OR: passes if ANY validator passes; fails (with msg) only if all fail."
+  [& vs]
+  (fn [v] (when (not-any? (fn [f] (nil? (f v))) vs) "did not satisfy any allowed rule")))
+
+(defn not
+  "Invert a validator: passes when `vf` fails, else reports `msg`."
+  [vf msg]
+  (fn [v] (when (nil? (vf v)) msg)))
