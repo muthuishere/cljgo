@@ -48,6 +48,15 @@ type Options struct {
 	// interpreter linked. WriteProgram sets it from Program.UsesBri, which
 	// CompileProgram records when a bri lib provider fires during discovery.
 	UsesBri bool
+	// OptInBriPkgs are the pkg/briaot sub-packages (e.g. "briotel") of any
+	// OPT-IN bri namespaces the program required (ADR 0074). These are
+	// EXCLUDED from the always-linked umbrella pkg/briaot; the emitted main
+	// package blank-imports each of them ADDITIVELY, so their heavy
+	// dependency (the OpenTelemetry SDK for bri.otel) links ONLY when the
+	// app requires the namespace. WriteProgram sets it from
+	// Program.OptInBriPkgs, recorded when an opt-in bri provider fires
+	// during discovery.
+	OptInBriPkgs []string
 	// EntrySrcFile is the entry namespace's logical source path. When set,
 	// the emitted main package's Load() binds *file* to it (ADR 0053 dec 3),
 	// so an AOT binary reports the same *file* semantics as the interpreter
@@ -264,6 +273,13 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		// framework + Go shims, no interpreter linked.
 		if opts.UsesBri {
 			fmt.Fprintf(&out, "_ %q\n", runtimeModule+"/pkg/briaot")
+		}
+		// ADR 0074: an OPT-IN bri namespace (bri.otel) is NOT in the umbrella
+		// pkg/briaot. Blank-import its sub-package additively so its provider
+		// registers and its isolated heavy dependency links — but ONLY here,
+		// where the app actually required it.
+		for _, pkg := range opts.OptInBriPkgs {
+			fmt.Fprintf(&out, "_ %q\n", runtimeModule+"/pkg/briaot/"+pkg)
 		}
 	}
 	// File-backed requires: blank imports keep the dependency packages

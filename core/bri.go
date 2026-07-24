@@ -50,3 +50,14 @@ var BriAuthSource string
 //
 //go:embed bri/db.cljg
 var BriDBSource string
+
+// BriOtelSource is core/bri/otel.cljg — bri.otel: OPT-IN OpenTelemetry
+// distributed tracing (ADR 0074). A server-span-per-request middleware
+// ((otel/trace)), W3C trace-context propagation, and an OTLP exporter,
+// bridging the existing request-id/metrics so logs, metrics, and traces
+// correlate. NOT in api-defaults — added explicitly. The Go half (the
+// OpenTelemetry SDK wiring) lives in the ISOLATED pkg/bri/otel, linked
+// only when an app requires bri.otel.
+//
+//go:embed bri/otel.cljg
+var BriOtelSource string

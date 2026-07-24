@@ -37,13 +37,47 @@ import (
 // binds *file* to while loading, the Go package genbri emits it into
 // (pkg/briaot/<Pkg>), and the Go shims interned (as :private vars)
 // before the source evaluates. install is nil for a pure-Clojure
-// namespace (bri.html).
+// namespace (bri.html) or for an OptIn namespace whose shims live in an
+// isolated package that registers itself via RegisterInstaller (bri.otel).
 type Spec struct {
 	Name    string  // "bri.http"
 	File    string  // "bri/http.cljg" (bound to *file* while loading)
 	Pkg     string  // "brihttp" (the pkg/briaot subpackage genbri emits)
 	Source  *string // &core.BriHTTPSource
 	install func(def func(name string, fn func(args ...any) any))
+
+	// OptIn marks a namespace whose Go shims pull a HEAVY dependency
+	// (bri.otel → the OpenTelemetry SDK) that must NOT link into a bri
+	// binary that does not require it (ADR 0074). An OptIn namespace is
+	// EXCLUDED from the always-linked umbrella pkg/briaot: its Go shims
+	// live in an isolated package (ShimImport) that registers its
+	// installer via RegisterInstaller, its compiled sub-package
+	// self-registers its lib provider, and the emitter blank-imports that
+	// sub-package ONLY when the app requires the namespace. install is nil
+	// (the installer arrives through the registry when ShimImport is
+	// linked, so pkg/bri never references the heavy dependency).
+	OptIn bool
+
+	// ShimImport is the Go import path of the isolated package holding an
+	// OptIn namespace's Go shims (e.g. github.com/muthuishere/cljgo/pkg/bri/otel).
+	// genbri blank-imports it into the generated sub-package so its init()
+	// registers the installer (RegisterInstaller) before Load runs. Empty
+	// for the always-linked namespaces (their installers are in pkg/bri).
+	ShimImport string
+}
+
+// installers holds the shim installer for an OptIn namespace, registered
+// by its isolated shim package's init() (RegisterInstaller). It stays empty
+// — and the heavy dependency stays UNLINKED — in any binary that does not
+// import that package (ADR 0074: opt-in means zero cost when unused).
+var installers = map[string]func(def func(name string, fn func(args ...any) any)){}
+
+// RegisterInstaller records an OptIn namespace's Go-shim installer. The
+// isolated shim package (e.g. pkg/bri/otel) calls this from its init(), so
+// the installer is present exactly when that package is linked — and absent
+// (the heavy dependency dropped by the linker) otherwise.
+func RegisterInstaller(name string, install func(def func(name string, fn func(args ...any) any))) {
+	installers[name] = install
 }
 
 // Specs returns the bri namespaces in DEPENDENCY-SAFE load order:
@@ -60,6 +94,12 @@ func Specs() []Spec {
 		{Name: "bri.html", File: "bri/html.cljg", Pkg: "brihtml", Source: &core.BriHTMLSource, install: nil},
 		{Name: "bri.auth", File: "bri/auth.cljg", Pkg: "briauth", Source: &core.BriAuthSource, install: installAuthShims},
 		{Name: "bri.db", File: "bri/db.cljg", Pkg: "bridb", Source: &core.BriDBSource, install: installDBShims},
+		// bri.otel is OPT-IN (ADR 0074): its shims pull the OpenTelemetry SDK,
+		// which must not link into a bri app that does not require tracing. It
+		// is excluded from the umbrella pkg/briaot; its shims live in the
+		// isolated pkg/bri/otel (ShimImport), which registers its installer via
+		// RegisterInstaller when linked.
+		{Name: "bri.otel", File: "bri/otel.cljg", Pkg: "briotel", Source: &core.BriOtelSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/otel"},
 	}
 }
 
@@ -70,11 +110,18 @@ func Specs() []Spec {
 // namespace's forms, so the private -serve/-jwt-sign/… vars are bound in
 // either mode. A namespace with no shims (bri.html) is a no-op.
 func InstallShimsInto(s Spec) {
-	if s.install == nil {
+	install := s.install
+	if install == nil {
+		// An OptIn namespace's installer arrives through the registry, set by
+		// its isolated shim package's init() when that package is linked (ADR
+		// 0074). A pure-Clojure namespace (bri.html) has neither — a no-op.
+		install = installers[s.Name]
+	}
+	if install == nil {
 		return
 	}
 	ns := lang.FindOrCreateNamespace(lang.NewSymbol(s.Name))
-	s.install(func(name string, fn func(args ...any) any) {
+	install(func(name string, fn func(args ...any) any) {
 		v := ns.Intern(lang.NewSymbol(name))
 		v.BindRoot(lang.NewFnFunc(fn))
 		v.SetMeta(v.Meta().Assoc(lang.KWPrivate, true).(lang.IPersistentMap))

@@ -1,0 +1,8 @@
+;; build.cljgo — the project build plan (ADR 0021). A bri.otel app AOT-
+;; compiles to ONE CGO_ENABLED=0 static binary (ADR 0071/0074); the
+;; OpenTelemetry SDK links in ONLY because this app requires bri.otel.
+(defn build [b]
+  (let [app (exe b {:name "notes-otel"
+                    :main "src/app/main.cljg"})]
+    (install b app)
+    (run b app)))

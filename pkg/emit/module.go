@@ -42,6 +42,12 @@ type Program struct {
 	// blank-imports the AOT-compiled pkg/briaot. WriteProgram passes this
 	// to Options.UsesBri.
 	UsesBri bool
+	// OptInBriPkgs are the pkg/briaot sub-packages of any OPT-IN bri
+	// namespaces required during discovery (ADR 0074, e.g. "briotel" for
+	// bri.otel). Excluded from the umbrella pkg/briaot, blank-imported
+	// additively by the emitted main. WriteProgram passes this to
+	// Options.OptInBriPkgs.
+	OptInBriPkgs []string
 }
 
 // moduleCompiler captures namespaces as the evaluator's lib loader
@@ -127,10 +133,20 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	// when the app actually uses bri; guard so a repeated require is a no-op.
 	usesBri := false
 	briDone := map[string]bool{}
+	var optInBriPkgs []string
+	optInSeen := map[string]bool{}
 	for _, s := range bri.Specs() {
 		s := s
 		corelib.RegisterLibProvider(s.Name, func() {
 			usesBri = true
+			// ADR 0074: an OPT-IN namespace links a separate sub-package the
+			// emitter must blank-import; record it (deduped) when its provider
+			// fires during discovery — including transitively (a required
+			// namespace whose source requires an opt-in one triggers this too).
+			if s.OptIn && !optInSeen[s.Pkg] {
+				optInSeen[s.Pkg] = true
+				optInBriPkgs = append(optInBriPkgs, s.Pkg)
+			}
 			if briDone[s.Name] {
 				return
 			}
@@ -144,7 +160,7 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	if entry.Forms, err = compileStream(ev, f, srcPath); err != nil {
 		return nil, err
 	}
-	return &Program{Entry: entry, Deps: mc.order, UsesBri: usesBri}, nil
+	return &Program{Entry: entry, Deps: mc.order, UsesBri: usesBri, OptInBriPkgs: optInBriPkgs}, nil
 }
 
 // WriteProgram writes the generated module for a compiled program: the
@@ -157,6 +173,7 @@ func WriteProgram(dir string, p *Program, opts Options) error {
 	// ADR 0071: carry bri usage into emission so the main package
 	// blank-imports the AOT-compiled framework (pkg/briaot).
 	opts.UsesBri = p.UsesBri
+	opts.OptInBriPkgs = p.OptInBriPkgs
 	if len(p.Deps) == 0 {
 		return WriteModule(dir, p.Entry.Forms, opts)
 	}
