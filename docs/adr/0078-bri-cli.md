@@ -93,17 +93,83 @@ same `release --channel beta v1.2.3` a human types in a script, an agent invokes
 non-interactively (all params as flags, no prompts), and a human runs bare
 (`release` → prompted for each missing param) — **all from one declaration**.
 Types (`:string :int :bool :keyword :enum :file :path :multiline`) drive parsing,
-validation, help, and the prompt widget uniformly. The precedence principle
-holds: every public is under the `cli/` alias; nothing shadows clojure.core.
+help, and the prompt widget uniformly. **String values are trimmed by default** —
+leading/trailing whitespace is stripped from a `:string` (and the string-like
+types) whether it arrived as a flag or a typed prompt, since a stray space around
+a flag value or a pasted prompt answer is virtually never intended; `:trim false`
+on a param preserves the value verbatim (for the rare secret/blob that must keep
+its whitespace). Trimming happens before validation (§3), so a validator sees the
+cleaned value. The precedence principle holds: every public is under the `cli/`
+alias; nothing shadows clojure.core.
 
-### 3. Subcommands, help, and errors — free from the tree
+Three further conventions round out the model, all from the same declaration:
+
+- **Repeated / multi-value params.** `:multi true` (or `:type [:string]`) collects
+  a repeated flag into a vector: `--tag a --tag b` → `[:tag ["a" "b"]]`, each
+  element coerced + validated by the element type. In interactive mode a multi
+  param becomes a multi-select or a repeat-until-blank prompt.
+- **Global flags.** An app declares `:flags [...]` (same param shape) shared by
+  **every** command — `--verbose`, `--json` (ADR 0081's structured-output switch,
+  even with the CLI-agent layer deferred), `--config`, `--yes`. They resolve
+  through the same pipeline and merge into every handler's argument map, so a
+  command never re-declares them.
+- **Aliases.** A param may carry `:alias :p` (a short `-p` flag), and a command
+  may carry `:aliases ["list"]` (so `ls`/`list` both dispatch). Aliases are pure
+  sugar over the one declaration — help lists the canonical name and its aliases.
+
+### 3. Validators — composable, custom, run on BOTH surfaces
+
+Type coercion answers "is it an int"; **validation** answers "is it a *valid*
+int" — and it is a first-class, composable part of the parameter declaration, not
+an afterthought the handler re-checks. A parameter carries `:validate`, one
+validator or a vector of them:
+
+```clojure
+[{:name :priority :type :int    :about "1-5"   :validate [(v/min 1) (v/max 5)]}
+ {:name :email    :type :string :about "email" :validate (v/email)}
+ {:name :slug     :type :string :validate [(v/non-empty) (v/matches #"^[a-z][a-z0-9-]*$")]}
+ {:name :port     :type :int    :validate (fn [p] (when (< p 1024) "use a non-privileged port"))}]
+```
+
+The contract makes them **composable and custom** by construction:
+
+- **A validator is just a function** `value → nil-if-ok | error-message`. So a
+  **custom** validator is any predicate-shaped fn the author writes inline — no
+  registration, no special form.
+- **Built-ins are validator constructors** under a `v` alias (`bri.cli` re-exports
+  them, or `[bri.cli.validate :as v]`): `v/min` `v/max` `v/range` `v/non-empty`
+  `v/min-len` `v/max-len` `v/matches` `v/one-of` `v/email` `v/url` `v/file-exists`
+  `v/dir-exists` `v/positive` … each returns a validator fn.
+- **They compose.** A vector in `:validate` is sugar for `v/all` (logical AND,
+  first failure reported); `v/all`/`v/any`/`v/not` combine validators into new
+  validators, and a composed validator is itself an ordinary value you can `def`
+  and reuse across params and commands:
+
+  ```clojure
+  (def strong-name (v/all (v/non-empty) (v/max-len 30) (v/matches #"^[a-z][a-z0-9-]*$")))
+  ;; … :validate strong-name  (anywhere)
+  ```
+
+Validation runs **after coercion**, in the one resolution pipeline (§2), so it
+guards **both surfaces from the single declaration**: a bad `--priority 9` on the
+command line is a named error (with the flag and the validator's message), and the
+*same* rule makes the interactive prompt **re-ask** until the typed value passes —
+one validator list, both front doors, zero duplication. `--json`/non-interactive
+turns a failure into a structured error rather than a re-prompt.
+
+This validator surface is intentionally the same shape bri.validate (the request-
+validation battery, ADR 0075) will use, so a project validates a CLI argument and
+an HTTP request body with one composable vocabulary; bri.cli ships the CLI-facing
+subset first and they converge rather than fork.
+
+### 4. Subcommands, help, and errors — free from the tree
 
 `cli/run` parses argv against the command tree and, for free, generates
 `--help`/`-h` at every level (built from each param's `:about`), `--version`,
 usage-on-error, and did-you-mean suggestions rendered as `diag` `Fix`es — so a
 bri.cli app's errors read like the rest of cljgo, in every context.
 
-### 4. Progress, status, and output — best-in-class, as data
+### 5. Progress, status, and output — best-in-class, as data
 
 First-class, non-negotiable-quality progress reporting:
 
@@ -119,14 +185,14 @@ than escaped by hand, and honors `NO_COLOR`/non-TTY automatically (a progress ba
 degrades to plain line output when piped). These map onto the chosen backend
 (Charm's `bubbles`/`lipgloss` if selected) behind a stable Clojure surface.
 
-### 5. Full TUIs when wanted — the escape hatch
+### 6. Full TUIs when wanted — the escape hatch
 
 For an app that needs a live TUI (a picker, a dashboard), bri.cli exposes the
 Elm-architecture loop as data — `{:init … :update (fn [model msg] …) :view (fn
 [model] …)}` driven by `(cli/run-tui model)`. Opt-in depth: simple CLIs never
 touch it; the ceiling is a real TUI, not a println loop.
 
-### 6. Backend selected by spike s46, surface frozen here
+### 7. Backend selected by spike s46, surface frozen here
 
 s46 evaluates the Charm stack vs a bespoke renderer against: pure-Go /
 `CGO_ENABLED=0` (mandatory — a `go list -deps` zero-cgo gate, like ADR 0074/0076),
