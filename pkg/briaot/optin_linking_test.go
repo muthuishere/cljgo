@@ -6,47 +6,70 @@ import (
 	"testing"
 )
 
-// TestOptInNamespaceIsNotInUmbrella is ADR 0074's zero-cost proof: bri.otel
-// is OPT-IN because its OpenTelemetry SDK must NOT link into a bri binary
-// that does not require tracing. The mechanism is a separately-linked
-// sub-package (pkg/briaot/briotel) that the emitter blank-imports only when
-// the app requires bri.otel — so the umbrella pkg/briaot, the shared shims
-// pkg/bri, and every always-linked sub-package (here brihttp, what any bri
-// web app links) must have ZERO OpenTelemetry packages in their dependency
-// closure, while the opt-in sub-package briotel must carry the SDK.
-//
-// This is the package-graph half of the guarantee; the binary-size / string
-// half is measured on real `cljgo build` output (a bri.http app has 0
-// "go.opentelemetry.io" strings; a bri.otel app has thousands, ~6 MB more).
-func TestOptInNamespaceIsNotInUmbrella(t *testing.T) {
+// depsLinkAny reports whether `go list -deps mod/pkg` reaches any package
+// whose import path starts with one of the given prefixes — the package-graph
+// half of an opt-in namespace's zero-cost guarantee (the binary-size / symbol
+// half is measured on real `cljgo build` output in the s45 spike + parity
+// harness).
+func depsLinkAny(t *testing.T, pkg string, prefixes ...string) bool {
+	t.Helper()
+	const mod = "github.com/muthuishere/cljgo/"
+	out, err := exec.Command("go", "list", "-deps", mod+pkg).CombinedOutput()
+	if err != nil {
+		t.Fatalf("go list -deps %s: %v\n%s", pkg, err, out)
+	}
+	for _, dep := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		for _, p := range prefixes {
+			if strings.HasPrefix(dep, p) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// alwaysLinked are the pkg/briaot sub-packages every bri binary carries: the
+// umbrella, the shared shims, and bri.http (what any bri web app links). No
+// opt-in namespace's heavy dependency may appear in their closure.
+var alwaysLinked = []string{"pkg/briaot", "pkg/bri", "pkg/briaot/brihttp"}
+
+// TestOtelIsOptIn is ADR 0074's zero-cost proof: the OpenTelemetry SDK must
+// NOT link into a bri binary that does not require tracing. The always-linked
+// packages (+ the OTHER opt-in sub-package, bridb) must have ZERO
+// "go.opentelemetry.io" packages in their closure; only pkg/briaot/briotel
+// carries the SDK.
+func TestOtelIsOptIn(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping go list -deps in -short mode")
 	}
 	const otel = "go.opentelemetry.io/"
-	const mod = "github.com/muthuishere/cljgo/"
-
-	links := func(pkg string) bool {
-		out, err := exec.Command("go", "list", "-deps", mod+pkg).CombinedOutput()
-		if err != nil {
-			t.Fatalf("go list -deps %s: %v\n%s", pkg, err, out)
-		}
-		for _, dep := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-			if strings.HasPrefix(dep, otel) {
-				return true
-			}
-		}
-		return false
-	}
-
-	// Always-linked packages every bri binary carries: none may reach otel.
-	for _, pkg := range []string{"pkg/briaot", "pkg/bri", "pkg/briaot/brihttp", "pkg/briaot/bridb"} {
-		if links(pkg) {
+	for _, pkg := range append(append([]string{}, alwaysLinked...), "pkg/briaot/bridb") {
+		if depsLinkAny(t, pkg, otel) {
 			t.Errorf("%s links the OpenTelemetry SDK — bri.otel is no longer zero-cost (ADR 0074); a non-tracing bri binary now carries the SDK", pkg)
 		}
 	}
-
-	// The opt-in sub-package MUST carry the SDK (else it could not export).
-	if !links("pkg/briaot/briotel") {
+	if !depsLinkAny(t, "pkg/briaot/briotel", otel) {
 		t.Error("pkg/briaot/briotel does NOT link the OpenTelemetry SDK — the opt-in namespace cannot trace")
+	}
+}
+
+// TestDbIsOptIn is ADR 0076's zero-cost proof: the SQLite + pgx drivers must
+// NOT link into a bri binary that never touches a database. The always-linked
+// packages (+ the OTHER opt-in sub-package, briotel) must have ZERO
+// modernc.org/sqlite or jackc/pgx packages in their closure; only
+// pkg/briaot/bridb carries the drivers. This closes the ADR 0072 tradeoff
+// where every bri binary linked SQLite whether or not it used the database.
+func TestDbIsOptIn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping go list -deps in -short mode")
+	}
+	sqlite, pgx := "modernc.org/sqlite", "github.com/jackc/pgx"
+	for _, pkg := range append(append([]string{}, alwaysLinked...), "pkg/briaot/briotel") {
+		if depsLinkAny(t, pkg, sqlite, pgx) {
+			t.Errorf("%s links the SQLite/pgx drivers — bri.db is no longer zero-cost (ADR 0076); a db-less bri binary now carries ~7 MB of drivers", pkg)
+		}
+	}
+	if !depsLinkAny(t, "pkg/briaot/bridb", sqlite) {
+		t.Error("pkg/briaot/bridb does NOT link modernc.org/sqlite — the opt-in namespace cannot reach a database")
 	}
 }
