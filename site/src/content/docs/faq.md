@@ -6,7 +6,7 @@ description: Questions people have actually asked about cljgo — Glojure/let-go
 
 Questions people have actually asked — on Slack, Reddit, and elsewhere — answered honestly.
 
-<details class="faq">
+<details class="faq" open>
 <summary>How is this different from Glojure and let-go?</summary>
 
 Full credit first: cljgo's runtime data structures started as a hard fork of
@@ -24,7 +24,7 @@ ecosystem — a normal Go program, a normal Go module.
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>If the compiler can't handle something, does it fall back to interpretation?</summary>
 
 No. Compilation compiles or fails — there is no interpreter in the binary to
@@ -36,7 +36,7 @@ release blocker.
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Do I have to manually coerce types between Clojure and Go?</summary>
 
 No. Values crossing into Go coerce automatically — a Clojure vector passes
@@ -48,7 +48,7 @@ it's a direct typed Go call. That is where the lower overhead comes from.
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Does a real REPL work with this approach? With persistent state?</summary>
 
 Yes — live re-`def`, `defmacro` at the prompt, nREPL for CIDER/Calva. Session
@@ -58,7 +58,7 @@ saved (under `~/.config/cljgo/sessions`) and replayed on `--resume`. See
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>How readable is the emitted Go?</summary>
 
 Honestly: not very, today. It is correct, `gofmt`-clean, and fast — but it is
@@ -68,7 +68,7 @@ look hand-written.
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>What about Java interop — can existing Clojure libraries work via shims like gojava?</summary>
 
 cljgo has no Java interop layer, by design — no JVM bytecode, no jars, ever.
@@ -80,7 +80,7 @@ watching, but cljgo doesn't use them yet.
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Can I publish one library to both ecosystems — Go and Clojure?</summary>
 
 Yes — this is a design goal, and both targets publish from the same
@@ -119,7 +119,7 @@ publish time. Full details in
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Can one source file serve both JVM Clojure and cljgo?</summary>
 
 Yes. `.cljc` is an accepted source extension with a `:cljgo`
@@ -129,7 +129,7 @@ above.
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Why not just GraalVM native-image?</summary>
 
 native-image is excellent and if your world is JVM libraries, use it. cljgo
@@ -141,7 +141,7 @@ no Java interop.
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>How does it compare to babashka?</summary>
 
 Different tools. babashka is a mature interpreter with a huge curated library
@@ -154,7 +154,7 @@ let-go. Numbers and methodology on the
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Do macros work in compiled code? What about <code>eval</code>?</summary>
 
 Macros work fully — the tree-walk evaluator is the macro engine, so macros
@@ -165,7 +165,7 @@ the REPL side is for.
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Does core.async work?</summary>
 
 Yes, over real goroutines — `go` blocks are goroutines, channels are backed by
@@ -174,7 +174,7 @@ Go channels, no CPS rewrite. Same semantics interpreted and compiled. See
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Can I call C?</summary>
 
 Through Go, today: cgo-based Go modules (sqlite drivers, sensors, GUI/audio)
@@ -183,7 +183,7 @@ import like any other module. Direct C FFI without cgo (purego,
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>How big and how fast are the binaries?</summary>
 
 Hello-world compiles to a 5.3 MB static binary that starts in ~5 ms — dead
@@ -194,7 +194,7 @@ gap is CI-gated so it only shrinks. Full tables on the
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Is it production-ready?</summary>
 
 No. It is 0.x and moving fast. The parts that are solid are guarded hard
@@ -203,7 +203,7 @@ gates); the honest gap list is the section right above this FAQ.
 
 </details>
 
-<details class="faq">
+<details class="faq" open>
 <summary>Why build a fourth Clojure-on-Go?</summary>
 
 Personal, honestly: day-to-day work moved to Go, and this is one tool that
