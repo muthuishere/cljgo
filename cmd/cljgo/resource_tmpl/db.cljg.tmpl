@@ -1,0 +1,22 @@
+;; app.db — the app's single datasource. `cljgo generate resource` creates
+;; this once; every generated resource model reads @app.db/ds.
+;;
+;; This is the ONE place the bri.db connection is wired (ADR 0072).
+;; bri.db defaults to sqlite with zero install (ADR 0057).
+(ns app.db
+  (:require [bri.db :as db]
+            [bri.config :as config]))
+
+(def cfg (config/load!))
+
+;; `delay`: no I/O at load (the require / `cljgo test` contract) — the pool
+;; opens on first deref, in -main or on the first request that needs it.
+;; Default: a zero-install SQLite file (ADR 0057); the :test profile uses an
+;; in-memory DB so `cljgo test` runs against a fresh, disposable schema.
+;; Override per env with :db in conf.edn (e.g. Postgres via APP_DB_URL).
+(def ^:private default-db
+  (if (= :test (config/profile))
+    {:driver :sqlite :database ":memory:"}
+    {:driver :sqlite :database ".dev/app.db"}))
+
+(def ds (delay (db/connect (get cfg :db default-db))))

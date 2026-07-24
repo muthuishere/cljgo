@@ -68,6 +68,8 @@ func run(args []string) int {
 		return runCache(args[1:])
 	case "new":
 		return runNew(args[1:])
+	case "generate", "g":
+		return runGenerate(args[1:])
 	case "dev":
 		return runDev(args[1:])
 	case "test":
@@ -363,6 +365,7 @@ usage:
   cljgo publish <go|clojars>       publish the project library to Go or Clojars (ADR 0054)
   cljgo cache clean                remove the global dependency cache (ADR 0052)
   cljgo new [--template T] <name>  generate a project: T = lib (default) | cli | web | <path>
+  cljgo generate resource <Name> <field:type>...  scaffold a CRUD resource into a bri app (ADR 0073)
   cljgo dev                        run a bri app: server + nREPL + dev warnings
   cljgo test                       run the app's tests (test/ via clojure.test)
   cljgo config                     print resolved config, winning layer per key

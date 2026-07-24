@@ -1,0 +1,63 @@
+;; The suite for the {{.Plural}} CRUD resource — bri's IN-PROCESS http
+;; client (no socket), the same mount + middleware path the real server
+;; runs. `cljgo test`.
+;;
+;; These exercise the full CRUD over bri.db (ADR 0072) against a fresh
+;; in-memory database (the :test profile), plus the guards and typed-param
+;; funnel — a working resource out of the box.
+(ns {{.Ns}}-test
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
+            [clojure.string :as str]
+            [bri.http :as http]
+            [bri.auth :as auth]
+            [bri.db :as db]
+            [app.db :as adb]
+            [{{.Ns}} :as {{.Alias}}]))
+
+;; The API-first stack: request-ids, logging, recover, CORS, metrics,
+;; auto-ban, JSON — the same one -main serves under.
+(def stack (http/api-defaults))
+
+;; Migrate the (in-memory, :test profile) database once before the CRUD
+;; assertions, so the resource's table exists (ADR 0072). :memory: is a
+;; fresh, disposable schema per run.
+(use-fixtures :once (fn [f] (db/migrate! @adb/ds "db/migrations") (f)))
+
+(defn admin-tok [] (auth/issue "ada"   {:role "admin"}))
+(defn user-tok  [] (auth/issue "grace" {:role "user"}))
+(defn hdr [t] {"authorization" (str "Bearer " t)})
+
+;; a tiny JSON encoder for the flat string bodies these tests post
+(defn json-body [m]
+  (str "{" (str/join "," (map (fn [[k v]] (str \" (name k) "\":\"" v \")) m)) "}"))
+
+(defn req
+  ([m] (req m nil))
+  ([m tok]
+   (let [m (cond-> m
+             (contains? m :json) (-> (assoc :body (json-body (:json m)))
+                                     (assoc-in [:headers "content-type"] "application/json")
+                                     (dissoc :json))
+             tok (update :headers merge (hdr tok)))]
+     (http/request {{.Alias}}/routes m {:middleware stack}))))
+
+;; --- guards: unauthenticated is 401 (RFC 6750) ----------------------------
+(deftest unauthenticated-is-401
+  (is (= 401 (:status (req {:method "GET" :path "{{.RouteBase}}"})))))
+
+;; --- the CRUD surface -----------------------------------------------------
+(deftest crud-surface
+  (let [tok (admin-tok)]
+    (testing "list is 200 for an authenticated caller"
+      (is (= 200 (:status (req {:method "GET" :path "{{.RouteBase}}"} tok)))))
+    (testing "create returns 201"
+      (is (= 201 (:status (req {:method "POST" :path "{{.RouteBase}}"
+                                :json {{.SampleBody}}} tok)))))
+    (testing "a missing id is 404, not a crash"
+      (is (= 404 (:status (req {:method "GET" :path "{{.RouteBase}}/999999"} tok)))))
+    (testing "a non-int id is a funnel 400 — no handler code"
+      (is (= 400 (:status (req {:method "GET" :path "{{.RouteBase}}/not-a-number"} tok)))))))
+
+;; --- role guard: destroy is admin-only ------------------------------------
+(deftest delete-is-admin-only
+  (is (= 403 (:status (req {:method "DELETE" :path "{{.RouteBase}}/1"} (user-tok))))))

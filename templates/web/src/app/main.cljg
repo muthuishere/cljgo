@@ -9,7 +9,9 @@
   (:require [bri.http :as http :refer [GET POST]]
             [bri.html :as html]
             [bri.auth :as auth]
-            [bri.config :as config]))
+            [bri.config :as config]
+            ;; cljgo:resource-requires — `cljgo generate resource` splices requires here
+            ))
 
 (def cfg (config/load!))   ; conf.edn (+ :profiles by APP_PROFILE) + APP_* env.
 
@@ -50,7 +52,9 @@
     (GET  "/static/"   (http/dir "public"))    ; static files via Go's file server
     (GET  "/api/hello" #'hello)                ; a JSON route
     (POST "/login"     #'login)                ; issues a JWT
-    (GET  "/api/admin" (auth/admin-only) #'admin)))  ; guarded: needs role=admin (401/403)
+    (GET  "/api/admin" (auth/admin-only) #'admin)  ; guarded: needs role=admin (401/403)
+    ;; cljgo:resource-routes — `cljgo generate resource` splices route values here
+    ))
 
 (defn -main [& _args]
   ;; (api-defaults) is default-on: request-ids, structured logging, the
