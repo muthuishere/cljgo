@@ -1,0 +1,62 @@
+;; app.main — the web-api, now with OPT-IN OpenTelemetry tracing (ADR 0074).
+;;
+;; bri already gives you, default-on: Prometheus metrics at /metrics,
+;; structured JSON access logs, and X-Request-Id propagation. bri.otel ADDS
+;; distributed tracing — a span per request, W3C trace-context propagation,
+;; and an OTLP exporter — WITHOUT being forced on: you require it and add one
+;; middleware. A bri app that never requires bri.otel never links the
+;; OpenTelemetry SDK (it stays ~6 MB smaller).
+;;
+;;   cljgo dev                          # boot with an nREPL
+;;   APP_OTEL_STDOUT=1 cljgo build run  # print each span to stdout (no collector)
+;;   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 cljgo build run   # → collector
+;;
+;; Try it (with APP_OTEL_STDOUT=1):
+;;   curl -s localhost:3000/api/notes            # a fresh trace, span "GET /api/notes"
+;;   curl -s -H 'traceparent: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01' \
+;;        localhost:3000/api/notes               # JOINS that trace (same trace-id)
+;; The response carries a `traceparent` header, and each access-log line's
+;; request-id matches the span's bri.request_id — logs, metrics, and traces
+;; all line up.
+(ns app.main
+  (:require [bri.http :as http :refer [GET POST]]
+            [bri.otel :as otel]
+            [bri.config :as config]))
+
+(def cfg (config/load!))
+
+(def notes (atom {1 {:id 1 :text "buy milk"}
+                  2 {:id 2 :text "ship cljgo"}}))
+(def next-id (atom 3))
+
+(defn list-notes [_req]
+  {:status 200 :body {:notes (vec (vals @notes))}})
+
+(defn get-note [req]
+  (let [id (http/param! req :id :int)]
+    (if-let [n (get @notes id)]
+      {:status 200 :body n}
+      {:status 404 :body {:error "no such note"}})))
+
+(defn create-note [req]
+  (let [text (get-in req [:json :text])
+        id   (swap! next-id inc)
+        note {:id id :text text}]
+    (swap! notes assoc id note)
+    {:status 201 :body note}))
+
+(def routes
+  (http/routes
+    (GET  "/api/notes"      #'list-notes)
+    (GET  "/api/notes/{id}" #'get-note)
+    (POST "/api/notes"      #'create-note)))
+
+(defn -main [& _args]
+  ;; (otel/with-tracing …) wraps the tracing middleware as the OUTERMOST
+  ;; entry of the default API stack, so the span encloses request-id,
+  ;; logging, and the handler. (otel/shutdown!) on :drain flushes buffered
+  ;; spans to the collector when the server drains on SIGTERM.
+  (println "notes API (traced) on :" (:port cfg))
+  (http/serve #'routes {:port (:port cfg)
+                        :middleware (otel/with-tracing (http/api-defaults))
+                        :drain [otel/shutdown!]}))
