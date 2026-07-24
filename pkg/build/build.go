@@ -302,7 +302,31 @@ func (p *Plan) Run(stepArg string, opts emit.Options, keepGen bool) error {
 // .cljg, synthesize the module (go.mod with any go-require pins + `go get`
 // them), emit main.go with host facts resolved against that module, `go
 // build`. Returns the generated module dir.
+// buildArtifact prepares the artifact's Go module and links it for the host.
+// It is prepareArtifact (module generation, target-independent) followed by
+// the single host `go build`.
 func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, keepGen bool) (string, error) {
+	genDir, err := p.prepareArtifact(art, opts)
+	if err != nil {
+		return genDir, err
+	}
+	if err := emit.GoBuild(genDir, outPath); err != nil {
+		return genDir, err
+	}
+	if !keepGen {
+		os.RemoveAll(genDir)
+	}
+	return genDir, nil
+}
+
+// prepareArtifact resolves dependencies, compiles the artifact's entry
+// program, and emits its generated Go module into a fresh temp dir, returning
+// that dir READY to `go build` (host or any cross target). It is the
+// target-independent half of buildArtifact — split out so `cljgo dist` (ADR
+// 0077) can prepare the module ONCE and link it per GOOS/GOARCH via
+// emit.GoBuildTarget, instead of recompiling per target. On any error the
+// genDir is returned un-removed for debugging (as the single-file -gen path).
+func (p *Plan) prepareArtifact(art Artifact, opts emit.Options) (string, error) {
 	// ADR 0052: resolve declared dependencies BEFORE compiling. This publishes
 	// their source roots (deps.SetResolvedRoots) so the emitter's interpreter
 	// discovery pass — which evaluates require forms — finds dep namespaces
@@ -383,13 +407,28 @@ func (p *Plan) buildArtifact(art Artifact, outPath string, opts emit.Options, ke
 		}
 	}
 
-	if err := emit.GoBuild(genDir, outPath); err != nil {
-		return genDir, err
-	}
-	if !keepGen {
-		os.RemoveAll(genDir)
-	}
 	return genDir, nil
+}
+
+// DistInstall prepares the plan's install-step artifact ONCE (ADR 0077): it
+// resolves deps, compiles, and emits the target-independent Go module,
+// returning the ready-to-link genDir and the artifact's base name (no
+// extension). `cljgo dist` then links that one module for each GOOS/GOARCH via
+// emit.GoBuildTarget. A project with no install step (a library) is an error
+// naming `cljgo publish` — dist ships executables, not libraries.
+func (p *Plan) DistInstall(opts emit.Options) (genDir, name string, err error) {
+	for _, s := range p.Steps {
+		if s.Type != "install" {
+			continue
+		}
+		art, err := p.artifact(s.Name)
+		if err != nil {
+			return "", "", err
+		}
+		genDir, err := p.prepareArtifact(art, opts)
+		return genDir, art.Name, err
+	}
+	return "", "", fmt.Errorf("no install step in %s: cljgo dist ships executables — a library is published with `cljgo publish` (ADR 0054)", BuildFileName)
 }
 
 // resolveDeps resolves the plan's declared (dep …) dependencies (ADR 0052),

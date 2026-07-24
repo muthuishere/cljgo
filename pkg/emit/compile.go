@@ -132,6 +132,19 @@ func evalNode(ev *eval.Evaluator, n *ast.Node) (err error) {
 // module into genDir (a temp dir when empty), `go build` it to outPath.
 // Returns the generated module dir actually used.
 func Build(srcPath, outPath, genDir string, opts Options) (string, error) {
+	genDir, err := PrepareModule(srcPath, genDir, opts)
+	if err != nil {
+		return genDir, err
+	}
+	return genDir, GoBuild(genDir, outPath)
+}
+
+// PrepareModule compiles srcPath and emits the generated Go module into
+// genDir (a temp dir when empty), returning genDir READY to `go build` — the
+// single-file body of Build minus the final link. It exists so `cljgo dist`
+// can emit the target-independent module ONCE and then GoBuildTarget it per
+// GOOS/GOARCH (ADR 0077), rather than recompiling the Clojure per target.
+func PrepareModule(srcPath, genDir string, opts Options) (string, error) {
 	prog, err := CompileProgram(srcPath)
 	if err != nil {
 		return "", err
@@ -156,7 +169,7 @@ func Build(srcPath, outPath, genDir string, opts Options) (string, error) {
 	if err := WriteProgram(genDir, prog, opts); err != nil {
 		return genDir, err
 	}
-	return genDir, GoBuild(genDir, outPath)
+	return genDir, nil
 }
 
 // CompileSource is CompileReader against a CALLER-SUPPLIED evaluator:

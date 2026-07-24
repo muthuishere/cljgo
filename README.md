@@ -67,6 +67,17 @@ seconds). (v0.1.0 binaries predate that and need a repo checkout via
 $ cljgo run hello.clj        # interpreted
 $ cljgo build hello.clj      # -> ./hello, a static native binary
 $ ./hello                    # byte-identical output
+$ cljgo dist                 # cross-compile to every platform -> ./dist/ + checksums (ADR 0077)
+```
+
+Because every cljgo binary is pure-Go / `CGO_ENABLED=0`, `cljgo dist` cross-compiles
+one program to **every mainstream platform from a single host** — no cross-toolchain,
+no per-OS CI runner (something a JVM `.jar` or GraalVM `native-image` cannot do):
+
+```
+$ cljgo dist                 # -> dist/{darwin-arm64,darwin-amd64,linux-amd64,linux-arm64,windows-amd64.exe} + checksums.txt
+$ cljgo dist --target linux/amd64,windows/amd64   # an explicit subset
+$ cljgo dist --all           # every GOOS/GOARCH the toolchain supports
 ```
 
 The Go ecosystem is the standard library: `(require-go '[net/http :as http])`
@@ -121,7 +132,7 @@ published number is what the suite gives as it ships (analysis:
 | **Result/Option** | ✅ | `ok`/`err`/`just`/`none` + `unwrap`/`and-then`/`map-ok` + `let?`, `#cljgo/ok` literals (ADR 0014) |
 | **Diagnostics** | ✅ | Banded error codes + explain pages, `cljgo check --json`, `cljgo explain <code>` (ADRs 0015/0048) |
 | **nREPL** | ✅ | `cljgo nrepl` — Calva/CIDER connect; babashka's 13-op surface, per-session `*ns*`/`*1`/`*out*` streaming, `.nrepl-port` (ADR 0031) |
-| **Projects & toolkit** | ✅ | `cljgo new` (real runnable templates: lib/cli/web, ADR 0047), dependency resolution + lockfile (`build.cljgo`/`build.lock.edn`, ADRs 0052/0053), `cljgo publish go\|clojars` (0054), `.clj`/`.cljg`/`.cljgo` (0055); app scaffolding `cljgo dev`/`config`/`routes` (ADR 0041 T0/T1) |
+| **Projects & toolkit** | ✅ | `cljgo new` (real runnable templates: lib/cli/web, ADR 0047), dependency resolution + lockfile (`build.cljgo`/`build.lock.edn`, ADRs 0052/0053), `cljgo publish go\|clojars` (0054), `.clj`/`.cljg`/`.cljgo` (0055), `cljgo dist` cross-compiles to every platform + checksums (0077); app scaffolding `cljgo dev`/`config`/`routes` (ADR 0041 T0/T1) |
 | **Web framework (bri)** | ✅ | API-first HTTP + Compojure-style router, JWT/argon2 security, composable guards, rate-limit + auto-ban, CORS/CSRF/sessions (ADR 0069); `bri.db` data layer — pure-Go SQLite + Postgres, transactions, migrations (0072); `cljgo generate resource` → migration + model + handlers + routes + green CRUD test (0073); Prometheus `/metrics` + structured logs + request-ids default-on, opt-in OpenTelemetry (`bri.otel`, 0074); AOT-compiled to one static `CGO_ENABLED=0` binary + scratch Dockerfile (0071) — see [below](#web-framework-bri--one-static-binary-tiny-docker-image) |
 | **AOT core** | ✅ | Compiled binaries link the **compiled** `core.clj`, never the interpreter — `pkg/eval` 155 → **0** symbols in the link set (ADR 0046) |
 | **Perf campaign** | ✅ | ADRs 0063–0067: chunk-aware seq ops, IFn2 reduce seam, direct-call emission, sealed-core guard elision, int64 numeric inference — emitted factorial ~35× → **4.8×** handwritten Go ([details](#performance)) |
