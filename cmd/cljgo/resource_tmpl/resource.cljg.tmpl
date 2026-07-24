@@ -2,13 +2,13 @@
 ;; `{{.Command}}`
 ;;
 ;; Handlers are JSON + authenticated (ADR 0069). The MODEL section is the
-;; only place that touches bri.db (ADR 0072); `ds` is the datasource
+;; only place that touches bri.core.data (ADR 0072); `ds` is the datasource
 ;; (@app.db/ds) and every query is parametrized. This file is YOURS — edit
 ;; it freely; `cljgo generate resource` never rewrites an existing one.
 (ns {{.Ns}}
-  (:require [bri.http :as http :refer [GET POST PUT DELETE]]
-            [bri.auth :as auth]
-            [bri.db :as db]
+  (:require [bri.web.http :as http :refer [GET POST PUT DELETE]]
+            [bri.core.security :as auth]
+            [bri.core.data :as db]
             [app.db :as adb]))
 
 ;; --- coercion: JSON body -> typed column values ---------------------------
@@ -22,7 +22,7 @@
   {{"{"}}{{range .Fields}}{{.Keyword}} {{.CoerceExpr}}
    {{end}}})
 
-;; --- model: parametrized bri.db calls (ADR 0072) ------------------------
+;; --- model: parametrized bri.core.data calls (ADR 0072) ------------------------
 ;; query -> vector of keyword-keyed maps; one -> a single map or nil.
 (defn all      [ds]        (db/query   ds "SELECT * FROM {{.Table}} ORDER BY id DESC"))
 (defn fetch    [ds id]     (db/one     ds "SELECT * FROM {{.Table}} WHERE id = ?" id))

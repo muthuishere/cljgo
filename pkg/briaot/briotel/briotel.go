@@ -8,64 +8,64 @@ import (
 )
 
 var (
-	kw_app_SLASH_name                   = lang.InternKeywordString("app/name")
-	kw_as                               = lang.InternKeywordString("as")
-	kw_bri_DOT_http_SLASH_route         = lang.InternKeywordString("bri.http/route")
-	kw_bri_DOT_otel_SLASH_span          = lang.InternKeywordString("bri.otel/span")
-	kw_bri_SLASH_ctx                    = lang.InternKeywordString("bri/ctx")
-	kw_column                           = lang.InternKeywordString("column")
-	kw_doc                              = lang.InternKeywordString("doc")
-	kw_end_column                       = lang.InternKeywordString("end-column")
-	kw_end_line                         = lang.InternKeywordString("end-line")
-	kw_file                             = lang.InternKeywordString("file")
-	kw_headers                          = lang.InternKeywordString("headers")
-	kw_line                             = lang.InternKeywordString("line")
-	kw_name                             = lang.InternKeywordString("name")
-	kw_otel                             = lang.InternKeywordString("otel")
-	kw_private                          = lang.InternKeywordString("private")
-	kw_request_SLASH_id                 = lang.InternKeywordString("request/id")
-	kw_request_method                   = lang.InternKeywordString("request-method")
-	kw_service_name                     = lang.InternKeywordString("service-name")
-	kw_status                           = lang.InternKeywordString("status")
-	kw_subject                          = lang.InternKeywordString("subject")
-	kw_trace_SLASH_id                   = lang.InternKeywordString("trace/id")
-	kw_uri                              = lang.InternKeywordString("uri")
-	kw_wrap                             = lang.InternKeywordString("wrap")
-	sym_bri_DOT_config                  = lang.NewSymbol("bri.config")
-	sym_bri_DOT_config_SLASH_load_BANG_ = lang.NewSymbol("bri.config/load!")
-	sym_bri_DOT_otel                    = lang.NewSymbol("bri.otel")
-	sym_clojure_DOT_core                = lang.NewSymbol("clojure.core")
-	sym_clojure_DOT_string              = lang.NewSymbol("clojure.string")
-	sym_str                             = lang.NewSymbol("str")
-	v_bri_DOT_otel_X_otel_end           = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("-otel-end")).SetPrivate()
-	v_bri_DOT_otel_X_otel_init          = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("-otel-init")).SetPrivate()
-	v_bri_DOT_otel_X_otel_shutdown      = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("-otel-shutdown")).SetPrivate()
-	v_bri_DOT_otel_X_otel_start         = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("-otel-start")).SetPrivate()
-	v_bri_DOT_otel_X_otel_traceid       = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("-otel-traceid")).SetPrivate()
-	v_bri_DOT_otel_X_otel_traceparent   = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("-otel-traceparent")).SetPrivate()
-	v_bri_DOT_otel_config_service_name  = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("config-service-name")).SetPrivate()
-	v_bri_DOT_otel_current_traceparent  = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("current-traceparent"))
-	v_bri_DOT_otel_init_BANG_           = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("init!"))
-	v_bri_DOT_otel_req_subject          = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("req-subject")).SetPrivate()
-	v_bri_DOT_otel_shutdown_BANG_       = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("shutdown!"))
-	v_bri_DOT_otel_trace                = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("trace"))
-	v_bri_DOT_otel_with_tracing         = lang.InternVarName(lang.NewSymbol("bri.otel"), lang.NewSymbol("with-tracing"))
-	v_clojure_DOT_core_assoc            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
-	v_clojure_DOT_core_deref            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("deref"))
-	v_clojure_DOT_core_get              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
-	v_clojure_DOT_core_get_in           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get-in"))
-	v_clojure_DOT_core_in_ns            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
-	v_clojure_DOT_core_into             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("into"))
-	v_clojure_DOT_core_map_QMARK_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
-	v_clojure_DOT_core_name             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("name"))
-	v_clojure_DOT_core_nil_QMARK_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nil?"))
-	v_clojure_DOT_core_refer            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
-	v_clojure_DOT_core_require          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
-	v_clojure_DOT_core_resolve          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("resolve"))
-	v_clojure_DOT_core_str              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
-	v_clojure_DOT_core_swap_BANG_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("swap!"))
-	v_clojure_DOT_core_update           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("update"))
-	v_clojure_DOT_string_upper_case     = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("upper-case"))
+	kw_app_SLASH_name                                = lang.InternKeywordString("app/name")
+	kw_as                                            = lang.InternKeywordString("as")
+	kw_bri_DOT_core_DOT_telemetry_SLASH_span         = lang.InternKeywordString("bri.core.telemetry/span")
+	kw_bri_DOT_web_DOT_http_SLASH_route              = lang.InternKeywordString("bri.web.http/route")
+	kw_bri_SLASH_ctx                                 = lang.InternKeywordString("bri/ctx")
+	kw_column                                        = lang.InternKeywordString("column")
+	kw_doc                                           = lang.InternKeywordString("doc")
+	kw_end_column                                    = lang.InternKeywordString("end-column")
+	kw_end_line                                      = lang.InternKeywordString("end-line")
+	kw_file                                          = lang.InternKeywordString("file")
+	kw_headers                                       = lang.InternKeywordString("headers")
+	kw_line                                          = lang.InternKeywordString("line")
+	kw_name                                          = lang.InternKeywordString("name")
+	kw_otel                                          = lang.InternKeywordString("otel")
+	kw_private                                       = lang.InternKeywordString("private")
+	kw_request_SLASH_id                              = lang.InternKeywordString("request/id")
+	kw_request_method                                = lang.InternKeywordString("request-method")
+	kw_service_name                                  = lang.InternKeywordString("service-name")
+	kw_status                                        = lang.InternKeywordString("status")
+	kw_subject                                       = lang.InternKeywordString("subject")
+	kw_trace_SLASH_id                                = lang.InternKeywordString("trace/id")
+	kw_uri                                           = lang.InternKeywordString("uri")
+	kw_wrap                                          = lang.InternKeywordString("wrap")
+	sym_bri_DOT_core_DOT_config                      = lang.NewSymbol("bri.core.config")
+	sym_bri_DOT_core_DOT_config_SLASH_load_BANG_     = lang.NewSymbol("bri.core.config/load!")
+	sym_bri_DOT_core_DOT_telemetry                   = lang.NewSymbol("bri.core.telemetry")
+	sym_clojure_DOT_core                             = lang.NewSymbol("clojure.core")
+	sym_clojure_DOT_string                           = lang.NewSymbol("clojure.string")
+	sym_str                                          = lang.NewSymbol("str")
+	v_bri_DOT_core_DOT_telemetry_X_otel_end          = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("-otel-end")).SetPrivate()
+	v_bri_DOT_core_DOT_telemetry_X_otel_init         = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("-otel-init")).SetPrivate()
+	v_bri_DOT_core_DOT_telemetry_X_otel_shutdown     = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("-otel-shutdown")).SetPrivate()
+	v_bri_DOT_core_DOT_telemetry_X_otel_start        = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("-otel-start")).SetPrivate()
+	v_bri_DOT_core_DOT_telemetry_X_otel_traceid      = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("-otel-traceid")).SetPrivate()
+	v_bri_DOT_core_DOT_telemetry_X_otel_traceparent  = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("-otel-traceparent")).SetPrivate()
+	v_bri_DOT_core_DOT_telemetry_config_service_name = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("config-service-name")).SetPrivate()
+	v_bri_DOT_core_DOT_telemetry_current_traceparent = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("current-traceparent"))
+	v_bri_DOT_core_DOT_telemetry_init_BANG_          = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("init!"))
+	v_bri_DOT_core_DOT_telemetry_req_subject         = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("req-subject")).SetPrivate()
+	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_      = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("shutdown!"))
+	v_bri_DOT_core_DOT_telemetry_trace               = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("trace"))
+	v_bri_DOT_core_DOT_telemetry_with_tracing        = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("with-tracing"))
+	v_clojure_DOT_core_assoc                         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
+	v_clojure_DOT_core_deref                         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("deref"))
+	v_clojure_DOT_core_get                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
+	v_clojure_DOT_core_get_in                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get-in"))
+	v_clojure_DOT_core_in_ns                         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_into                          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("into"))
+	v_clojure_DOT_core_map_QMARK_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
+	v_clojure_DOT_core_name                          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("name"))
+	v_clojure_DOT_core_nil_QMARK_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nil?"))
+	v_clojure_DOT_core_refer                         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	v_clojure_DOT_core_require                       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
+	v_clojure_DOT_core_resolve                       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("resolve"))
+	v_clojure_DOT_core_str                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
+	v_clojure_DOT_core_swap_BANG_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("swap!"))
+	v_clojure_DOT_core_update                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("update"))
+	v_clojure_DOT_string_upper_case                  = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("upper-case"))
 )
 
 var loaded = false
@@ -76,11 +76,11 @@ func Load() {
 		return
 	}
 	loaded = true
-	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.otel")), lang.VarFile, "bri/otel.cljg"))
+	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.core.telemetry")), lang.VarFile, "bri/otel.cljg"))
 	defer lang.PopThreadBindings()
-	// (clojure.core/in-ns (quote bri.otel))
+	// (clojure.core/in-ns (quote bri.core.telemetry))
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
-	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_otel)
+	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_core_DOT_telemetry)
 	_ = tmp2
 	// (clojure.core/refer (quote clojure.core))
 	tmp3 := v_clojure_DOT_core_refer.Get()
@@ -90,8 +90,8 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (def config-service-name "Best-effort service.name from bri.config's app name — never th…
-	v_bri_DOT_otel_config_service_name.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(36), kw_private, true, kw_doc, "Best-effort service.name from bri.config's app name — never throws (a\n  missing/!invalid conf.edn just yields nil, and the Go side defaults)."))
+	// (def config-service-name "Best-effort service.name from bri.core.config's app name — nev…
+	v_bri_DOT_core_DOT_telemetry_config_service_name.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(36), kw_private, true, kw_doc, "Best-effort service.name from bri.core.config's app name — never throws (a\n  missing/!invalid conf.edn just yields nil, and the Go side defaults)."))
 	tmp7 := lang.FnFunc0(func() any {
 		var tmp8 any
 		_ = tmp8
@@ -109,13 +109,13 @@ func Load() {
 				}
 			}()
 			tmp10 := v_clojure_DOT_core_require.Get()
-			tmp11 := lang.Apply1(tmp10, sym_bri_DOT_config)
+			tmp11 := lang.Apply1(tmp10, sym_bri_DOT_core_DOT_config)
 			_ = tmp11
 			var tmp12 any
 			_ = tmp12
 			{
 				tmp13 := v_clojure_DOT_core_resolve.Get()
-				tmp14 := lang.Apply1(tmp13, sym_bri_DOT_config_SLASH_load_BANG_)
+				tmp14 := lang.Apply1(tmp13, sym_bri_DOT_core_DOT_config_SLASH_load_BANG_)
 				var load_BANG_15 any = tmp14
 				_ = load_BANG_15
 				var tmp16 any
@@ -182,22 +182,22 @@ func Load() {
 		}()
 		return tmp8
 	})
-	tmp34 := &lang.NamedFn0{Name: "bri.otel/config-service-name", Expects: "0: []", F: tmp7}
-	v_bri_DOT_otel_config_service_name.BindRoot(tmp34)
-	_ = v_bri_DOT_otel_config_service_name
+	tmp34 := &lang.NamedFn0{Name: "bri.core.telemetry/config-service-name", Expects: "0: []", F: tmp7}
+	v_bri_DOT_core_DOT_telemetry_config_service_name.BindRoot(tmp34)
+	_ = v_bri_DOT_core_DOT_telemetry_config_service_name
 	// (def init! "Initialize the tracer provider + OTLP exporter (idempotent — safe to call\n …
-	v_bri_DOT_otel_init_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(12), kw_doc, "Initialize the tracer provider + OTLP exporter (idempotent — safe to call\n  from every (otel/trace)). :service-name overrides the resolved name."))
+	v_bri_DOT_core_DOT_telemetry_init_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(12), kw_doc, "Initialize the tracer provider + OTLP exporter (idempotent — safe to call\n  from every (otel/trace)). :service-name overrides the resolved name."))
 	tmp35 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp36 := v_bri_DOT_otel_init_BANG_.Get()
+			tmp36 := v_bri_DOT_core_DOT_telemetry_init_BANG_.Get()
 			tmp37 := lang.NewMap()
 			tmp38 := lang.Apply1(tmp36, tmp37)
 			return tmp38
 		case 1:
 			opts39 := args[0]
 			_ = opts39
-			tmp40 := v_bri_DOT_otel_X_otel_init.Get()
+			tmp40 := v_bri_DOT_core_DOT_telemetry_X_otel_init.Get()
 			tmp41 := v_clojure_DOT_core_str.Get()
 			var tmp42 any
 			_ = tmp42
@@ -213,7 +213,7 @@ func Load() {
 					var tmp46 any
 					_ = tmp46
 					{
-						tmp47 := v_bri_DOT_otel_config_service_name.Get()
+						tmp47 := v_bri_DOT_core_DOT_telemetry_config_service_name.Get()
 						tmp48 := lang.Apply0(tmp47)
 						var or__2__auto__49 any = tmp48
 						_ = or__2__auto__49
@@ -235,23 +235,23 @@ func Load() {
 			_ = tmp52
 			return nil
 		default:
-			panic(lang.NewArityError(len(args), "bri.otel/init!", "0: [] or 1: [opts]"))
+			panic(lang.NewArityError(len(args), "bri.core.telemetry/init!", "0: [] or 1: [opts]"))
 		}
 	})
-	v_bri_DOT_otel_init_BANG_.BindRoot(tmp35)
-	_ = v_bri_DOT_otel_init_BANG_
+	v_bri_DOT_core_DOT_telemetry_init_BANG_.BindRoot(tmp35)
+	_ = v_bri_DOT_core_DOT_telemetry_init_BANG_
 	// (def shutdown! "Flush and stop the batch span processor. Add to serve's :drain so\n  buffe…
-	v_bri_DOT_otel_shutdown_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(16), kw_doc, "Flush and stop the batch span processor. Add to serve's :drain so\n  buffered spans reach the collector on SIGTERM: {:drain [otel/shutdown!]}."))
+	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(16), kw_doc, "Flush and stop the batch span processor. Add to serve's :drain so\n  buffered spans reach the collector on SIGTERM: {:drain [otel/shutdown!]}."))
 	tmp53 := lang.FnFunc0(func() any {
-		tmp54 := v_bri_DOT_otel_X_otel_shutdown.Get()
+		tmp54 := v_bri_DOT_core_DOT_telemetry_X_otel_shutdown.Get()
 		tmp55 := lang.Apply0(tmp54)
 		return tmp55
 	})
-	tmp56 := &lang.NamedFn0{Name: "bri.otel/shutdown!", Expects: "0: []", F: tmp53}
-	v_bri_DOT_otel_shutdown_BANG_.BindRoot(tmp56)
-	_ = v_bri_DOT_otel_shutdown_BANG_
+	tmp56 := &lang.NamedFn0{Name: "bri.core.telemetry/shutdown!", Expects: "0: []", F: tmp53}
+	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_.BindRoot(tmp56)
+	_ = v_bri_DOT_core_DOT_telemetry_shutdown_BANG_
 	// (def req-subject "The authenticated subject a guard recorded on the request's :bri/ctx\n  …
-	v_bri_DOT_otel_req_subject.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(28), kw_private, true, kw_doc, "The authenticated subject a guard recorded on the request's :bri/ctx\n  (mark-subject!), read AFTER handling — nil when no guard resolved one."))
+	v_bri_DOT_core_DOT_telemetry_req_subject.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(28), kw_private, true, kw_doc, "The authenticated subject a guard recorded on the request's :bri/ctx\n  (mark-subject!), read AFTER handling — nil when no guard resolved one."))
 	tmp57 := lang.FnFunc1(func(req58 any) any {
 		var tmp59 any
 		_ = tmp59
@@ -282,22 +282,22 @@ func Load() {
 		tmp69 := lang.Apply1(kw_subject, tmp59)
 		return tmp69
 	})
-	tmp70 := &lang.NamedFn1{Name: "bri.otel/req-subject", Expects: "1: [req]", F: tmp57}
-	v_bri_DOT_otel_req_subject.BindRoot(tmp70)
-	_ = v_bri_DOT_otel_req_subject
+	tmp70 := &lang.NamedFn1{Name: "bri.core.telemetry/req-subject", Expects: "1: [req]", F: tmp57}
+	v_bri_DOT_core_DOT_telemetry_req_subject.BindRoot(tmp70)
+	_ = v_bri_DOT_core_DOT_telemetry_req_subject
 	// (def trace "Tracing middleware: opens a SERVER span per request named after the\n  matched…
-	v_bri_DOT_otel_trace.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(12), kw_doc, "Tracing middleware: opens a SERVER span per request named after the\n  matched route PATTERN (low cardinality, not the raw path), adopts an\n  inbound W3C traceparent/tracestate so bri joins the caller's trace,\n  records method/route/status + the request-id and authenticated subject as\n  span attributes, sets span status from the HTTP status, and ends the span\n  on response. The span's trace-id is threaded into :trace/id and the shared\n  :bri/ctx so logs/metrics/traces correlate. Echoes the span's traceparent\n  on the response for downstream correlation.\n\n  Returns a {:name :otel :wrap fn} middleware value — compose it like any\n  other (conj a stack, or (otel/with-tracing stack))."))
+	v_bri_DOT_core_DOT_telemetry_trace.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(12), kw_doc, "Tracing middleware: opens a SERVER span per request named after the\n  matched route PATTERN (low cardinality, not the raw path), adopts an\n  inbound W3C traceparent/tracestate so bri joins the caller's trace,\n  records method/route/status + the request-id and authenticated subject as\n  span attributes, sets span status from the HTTP status, and ends the span\n  on response. The span's trace-id is threaded into :trace/id and the shared\n  :bri/ctx so logs/metrics/traces correlate. Echoes the span's traceparent\n  on the response for downstream correlation.\n\n  Returns a {:name :otel :wrap fn} middleware value — compose it like any\n  other (conj a stack, or (otel/with-tracing stack))."))
 	tmp71 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp72 := v_bri_DOT_otel_trace.Get()
+			tmp72 := v_bri_DOT_core_DOT_telemetry_trace.Get()
 			tmp73 := lang.NewMap()
 			tmp74 := lang.Apply1(tmp72, tmp73)
 			return tmp74
 		case 1:
 			opts75 := args[0]
 			_ = opts75
-			tmp76 := v_bri_DOT_otel_init_BANG_.Get()
+			tmp76 := v_bri_DOT_core_DOT_telemetry_init_BANG_.Get()
 			tmp77 := lang.Apply1(tmp76, opts75)
 			_ = tmp77
 			tmp78 := lang.FnFunc1(func(handler79 any) any {
@@ -347,7 +347,7 @@ func Load() {
 						var tmp97 any
 						_ = tmp97
 						{
-							tmp98 := lang.Apply1(kw_bri_DOT_http_SLASH_route, req81)
+							tmp98 := lang.Apply1(kw_bri_DOT_web_DOT_http_SLASH_route, req81)
 							var or__2__auto__99 any = tmp98
 							_ = or__2__auto__99
 							var tmp100 any
@@ -393,11 +393,11 @@ func Load() {
 						}
 						var rid120 any = tmp116
 						_ = rid120
-						tmp121 := v_bri_DOT_otel_X_otel_start.Get()
+						tmp121 := v_bri_DOT_core_DOT_telemetry_X_otel_start.Get()
 						var tmp122 any
 						_ = tmp122
 						{
-							tmp123 := lang.Apply1(kw_bri_DOT_http_SLASH_route, req81)
+							tmp123 := lang.Apply1(kw_bri_DOT_web_DOT_http_SLASH_route, req81)
 							var or__2__auto__124 any = tmp123
 							_ = or__2__auto__124
 							var tmp125 any
@@ -412,7 +412,7 @@ func Load() {
 						tmp126 := lang.Apply(tmp121, []any{route109, method115, tmp122, rid120, tp90, ts96})
 						var span127 any = tmp126
 						_ = span127
-						tmp128 := v_bri_DOT_otel_X_otel_traceid.Get()
+						tmp128 := v_bri_DOT_core_DOT_telemetry_X_otel_traceid.Get()
 						tmp129 := lang.Apply1(tmp128, span127)
 						var tid130 any = tmp129
 						_ = tid130
@@ -451,12 +451,12 @@ func Load() {
 									if rt.CatchMatches("Throwable", thrown) {
 										var t141 any = thrown
 										_ = t141
-										tmp142 := v_bri_DOT_otel_X_otel_end.Get()
+										tmp142 := v_bri_DOT_core_DOT_telemetry_X_otel_end.Get()
 										tmp143 := v_clojure_DOT_core_str.Get()
 										var tmp144 any
 										_ = tmp144
 										{
-											tmp145 := v_bri_DOT_otel_req_subject.Get()
+											tmp145 := v_bri_DOT_core_DOT_telemetry_req_subject.Get()
 											tmp146 := lang.Apply1(tmp145, req81)
 											var or__2__auto__147 any = tmp146
 											_ = or__2__auto__147
@@ -481,11 +481,11 @@ func Load() {
 							_ = tmp151
 							{
 								tmp152 := v_clojure_DOT_core_assoc.Get()
-								tmp153 := lang.Apply(tmp152, []any{req81, kw_trace_SLASH_id, tid130, kw_bri_DOT_otel_SLASH_span, span127})
+								tmp153 := lang.Apply(tmp152, []any{req81, kw_trace_SLASH_id, tid130, kw_bri_DOT_core_DOT_telemetry_SLASH_span, span127})
 								tmp154 := lang.Apply1(handler79, tmp153)
 								var res155 any = tmp154
 								_ = res155
-								tmp156 := v_bri_DOT_otel_X_otel_end.Get()
+								tmp156 := v_bri_DOT_core_DOT_telemetry_X_otel_end.Get()
 								var tmp157 any
 								_ = tmp157
 								{
@@ -505,7 +505,7 @@ func Load() {
 								var tmp162 any
 								_ = tmp162
 								{
-									tmp163 := v_bri_DOT_otel_req_subject.Get()
+									tmp163 := v_bri_DOT_core_DOT_telemetry_req_subject.Get()
 									tmp164 := lang.Apply1(tmp163, req81)
 									var or__2__auto__165 any = tmp164
 									_ = or__2__auto__165
@@ -547,7 +547,7 @@ func Load() {
 										var tmp180 any
 										_ = tmp180
 										{
-											tmp181 := v_bri_DOT_otel_X_otel_traceparent.Get()
+											tmp181 := v_bri_DOT_core_DOT_telemetry_X_otel_traceparent.Get()
 											tmp182 := lang.Apply1(tmp181, span127)
 											var or__2__auto__183 any = tmp182
 											_ = or__2__auto__183
@@ -584,19 +584,19 @@ func Load() {
 			tmp190 := lang.NewMap(kw_name, kw_otel, kw_wrap, tmp189)
 			return tmp190
 		default:
-			panic(lang.NewArityError(len(args), "bri.otel/trace", "0: [] or 1: [opts]"))
+			panic(lang.NewArityError(len(args), "bri.core.telemetry/trace", "0: [] or 1: [opts]"))
 		}
 	})
-	v_bri_DOT_otel_trace.BindRoot(tmp71)
-	_ = v_bri_DOT_otel_trace
+	v_bri_DOT_core_DOT_telemetry_trace.BindRoot(tmp71)
+	_ = v_bri_DOT_core_DOT_telemetry_trace
 	// (def with-tracing "Add the tracing middleware as the OUTERMOST entry of an existing stack\…
-	v_bri_DOT_otel_with_tracing.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(19), kw_doc, "Add the tracing middleware as the OUTERMOST entry of an existing stack\n  (so the span wraps request-id, logging, and the handler):\n  (http/serve routes {:middleware (otel/with-tracing (http/api-defaults))})."))
+	v_bri_DOT_core_DOT_telemetry_with_tracing.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(19), kw_doc, "Add the tracing middleware as the OUTERMOST entry of an existing stack\n  (so the span wraps request-id, logging, and the handler):\n  (http/serve routes {:middleware (otel/with-tracing (http/api-defaults))})."))
 	tmp191 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
 			stack192 := args[0]
 			_ = stack192
-			tmp193 := v_bri_DOT_otel_with_tracing.Get()
+			tmp193 := v_bri_DOT_core_DOT_telemetry_with_tracing.Get()
 			tmp194 := lang.NewMap()
 			tmp195 := lang.Apply2(tmp193, stack192, tmp194)
 			return tmp195
@@ -606,24 +606,24 @@ func Load() {
 			opts197 := args[1]
 			_ = opts197
 			tmp198 := v_clojure_DOT_core_into.Get()
-			tmp199 := v_bri_DOT_otel_trace.Get()
+			tmp199 := v_bri_DOT_core_DOT_telemetry_trace.Get()
 			tmp200 := lang.Apply1(tmp199, opts197)
 			tmp201 := lang.NewVector(tmp200)
 			tmp202 := lang.Apply2(tmp198, tmp201, stack196)
 			return tmp202
 		default:
-			panic(lang.NewArityError(len(args), "bri.otel/with-tracing", "1: [stack] or 2: [stack opts]"))
+			panic(lang.NewArityError(len(args), "bri.core.telemetry/with-tracing", "1: [stack] or 2: [stack opts]"))
 		}
 	})
-	v_bri_DOT_otel_with_tracing.BindRoot(tmp191)
-	_ = v_bri_DOT_otel_with_tracing
+	v_bri_DOT_core_DOT_telemetry_with_tracing.BindRoot(tmp191)
+	_ = v_bri_DOT_core_DOT_telemetry_with_tracing
 	// (def current-traceparent "The W3C traceparent for the request's active span — inject it …
-	v_bri_DOT_otel_current_traceparent.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(26), kw_doc, "The W3C traceparent for the request's active span — inject it into\n  OUTBOUND calls so downstream services join this trace. nil outside a\n  traced request."))
+	v_bri_DOT_core_DOT_telemetry_current_traceparent.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(26), kw_doc, "The W3C traceparent for the request's active span — inject it into\n  OUTBOUND calls so downstream services join this trace. nil outside a\n  traced request."))
 	tmp203 := lang.FnFunc1(func(req204 any) any {
 		var tmp205 any
 		_ = tmp205
 		{
-			tmp206 := lang.Apply1(kw_bri_DOT_otel_SLASH_span, req204)
+			tmp206 := lang.Apply1(kw_bri_DOT_core_DOT_telemetry_SLASH_span, req204)
 			var temp__5__auto__207 any = tmp206
 			_ = temp__5__auto__207
 			var tmp208 any
@@ -634,7 +634,7 @@ func Load() {
 				{
 					var span210 any = temp__5__auto__207
 					_ = span210
-					tmp211 := v_bri_DOT_otel_X_otel_traceparent.Get()
+					tmp211 := v_bri_DOT_core_DOT_telemetry_X_otel_traceparent.Get()
 					tmp212 := lang.Apply1(tmp211, span210)
 					tmp209 = tmp212
 				}
@@ -646,7 +646,7 @@ func Load() {
 		}
 		return tmp205
 	})
-	tmp213 := &lang.NamedFn1{Name: "bri.otel/current-traceparent", Expects: "1: [req]", F: tmp203}
-	v_bri_DOT_otel_current_traceparent.BindRoot(tmp213)
-	_ = v_bri_DOT_otel_current_traceparent
+	tmp213 := &lang.NamedFn1{Name: "bri.core.telemetry/current-traceparent", Expects: "1: [req]", F: tmp203}
+	v_bri_DOT_core_DOT_telemetry_current_traceparent.BindRoot(tmp213)
+	_ = v_bri_DOT_core_DOT_telemetry_current_traceparent
 }

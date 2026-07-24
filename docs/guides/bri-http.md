@@ -1,4 +1,4 @@
-# bri.http — the server guide
+# bri.web.http — the server guide
 
 The Ring contract on stdlib routing (ADR 0041 §4): a handler is a fn
 of request-map → response-map; middleware is handler → handler; routes
@@ -85,7 +85,7 @@ custom stack lacks `recover` or `csrf`.
   bodies → `:form-params`; map/vector response bodies → JSON; string
   bodies default to `text/html`.
 - **csrf** — gates SESSION-BEARING mutating requests on the token
-  `bri.html/form` mints (or the `x-csrf-token` header). Sessionless
+  `bri.web.html/form` mints (or the `x-csrf-token` header). Sessionless
   requests pass: the documented API posture — a JSON curl with no
   cookie has nothing to forge.
 

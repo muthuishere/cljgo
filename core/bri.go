@@ -7,7 +7,7 @@ package core
 
 import _ "embed"
 
-// BriHTTPSource is core/bri/http.cljg — bri.http: Ring-contract
+// BriHTTPSource is core/bri/http.cljg — bri.web.http: Ring-contract
 // handlers on stdlib net/http (routes-as-data → ServeMux), the
 // default-on middleware stack, param!/render/dir/health helpers, and
 // the in-process test client. The Go half lives in pkg/bri.
@@ -15,27 +15,27 @@ import _ "embed"
 //go:embed bri/http.cljg
 var BriHTTPSource string
 
-// BriHTMLSource is core/bri/html.cljg — bri.html: hiccup-style
+// BriHTMLSource is core/bri/html.cljg — bri.web.html: hiccup-style
 // data→escaped-HTML fns, html/page, html/form (CSRF token).
 //
 //go:embed bri/html.cljg
 var BriHTMLSource string
 
-// BriConfigSource is core/bri/config.cljg — bri.config: conf.edn
+// BriConfigSource is core/bri/config.cljg — bri.core.config: conf.edn
 // (:profiles selected by APP_PROFILE) → APP_* env, one plain map,
 // optional conf.schema.edn enforcement, `cljgo config` explain.
 //
 //go:embed bri/config.cljg
 var BriConfigSource string
 
-// BriAuditSource is core/bri/audit.cljg — bri.audit: the security
+// BriAuditSource is core/bri/audit.cljg — bri.core.audit: the security
 // audit trail (actor/action/target/ts/severity), structured-stderr
 // sink v1 with a clean one-fn seam (ADR 0069).
 //
 //go:embed bri/audit.cljg
 var BriAuditSource string
 
-// BriAuthSource is core/bri/auth.cljg — bri.auth: HS256 JWT (sign/
+// BriAuthSource is core/bri/auth.cljg — bri.core.security: HS256 JWT (sign/
 // verify/issue, alg pinned), argon2id passwords, the composable guard
 // family (guard/logged-in-only/role-only/user-only/admin-only) and
 // abuse protection (auto-ban), all Ring middleware (ADR 0069).
@@ -43,7 +43,7 @@ var BriAuditSource string
 //go:embed bri/auth.cljg
 var BriAuthSource string
 
-// BriDBSource is core/bri/db.cljg — bri.db: the one blessed data layer
+// BriDBSource is core/bri/db.cljg — bri.core.data: the one blessed data layer
 // (ADR 0072). connect/query/one/one!/exec!/insert!/update!/delete!/tx/
 // with-rollback/migrate! over two pure-Go drivers (modernc SQLite default,
 // pgx Postgres) behind one API. The Go half lives in pkg/bri (db.go).
@@ -51,19 +51,19 @@ var BriAuthSource string
 //go:embed bri/db.cljg
 var BriDBSource string
 
-// BriOtelSource is core/bri/otel.cljg — bri.otel: OPT-IN OpenTelemetry
+// BriOtelSource is core/bri/otel.cljg — bri.core.telemetry: OPT-IN OpenTelemetry
 // distributed tracing (ADR 0074). A server-span-per-request middleware
 // ((otel/trace)), W3C trace-context propagation, and an OTLP exporter,
 // bridging the existing request-id/metrics so logs, metrics, and traces
 // correlate. NOT in api-defaults — added explicitly. The Go half (the
 // OpenTelemetry SDK wiring) lives in the ISOLATED pkg/bri/otel, linked
-// only when an app requires bri.otel.
+// only when an app requires bri.core.telemetry.
 //
 //go:embed bri/otel.cljg
 var BriOtelSource string
 
 // BriCLISource is core/bri/cli.cljg — bri.cli: the CLI app-shape of bri
-// (ADR 0078). The defcommand/defcommands DSL (mirroring bri.http's
+// (ADR 0078). The defcommand/defcommands DSL (mirroring bri.web.http's
 // defroute/defroutes), the UNIFIED PARAMETER MODEL (one declaration → a CLI
 // flag AND, in a later increment, an interactive prompt), type coercion +
 // default string trim, composable validators, and cli/run (parse → resolve →

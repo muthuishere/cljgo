@@ -1,4 +1,4 @@
-;; bri.config — configuration is TWO layers into one plain map (ADR
+;; bri.core.config — configuration is TWO layers into one plain map (ADR
 ;; 0041 §4, openspec app-framework T1): conf.edn (whose :profiles
 ;; section, selected by APP_PROFILE, overlays the base map) → APP_* env.
 ;; Env mapping is deterministic: __ separates path segments, _ joins
@@ -11,7 +11,7 @@
 ;;
 ;; Go shims interned by pkg/bri before this loads: -read-file (nil when
 ;; the file is missing), -env-pairs (vector of [name value]), -getenv.
-(clojure.core/in-ns 'bri.config)
+(clojure.core/in-ns 'bri.core.config)
 (clojure.core/refer 'clojure.core)
 (require '[clojure.string :as str])
 (require '[clojure.edn :as edn])

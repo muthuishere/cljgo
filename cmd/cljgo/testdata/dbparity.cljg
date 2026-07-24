@@ -1,4 +1,4 @@
-;; dbparity.cljg — the DUAL-MODE parity fixture for bri.db (ADR 0072 dec 8;
+;; dbparity.cljg — the DUAL-MODE parity fixture for bri.core.data (ADR 0072 dec 8;
 ;; the ADR 0057/0058 constraint-filter #4 commitment). Exercises the whole
 ;; blessed surface — connect, insert!, tx, update!, delete!, query, one —
 ;; over an in-memory SQLite database, printing a DETERMINISTIC transcript
@@ -6,7 +6,7 @@
 ;; both interpreted (`cljgo run`) and AOT-compiled (`cljgo build`) and
 ;; asserts byte-identical output — a REPL↔binary divergence is a release
 ;; blocker (CLAUDE.md).
-(require '[bri.db :as db])
+(require '[bri.core.data :as db])
 
 (def conn (db/connect {:driver :sqlite :database ":memory:"}))
 (db/exec! conn "create table item (id integer primary key autoincrement, label text not null, qty integer)")

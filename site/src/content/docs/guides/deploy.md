@@ -13,7 +13,7 @@ CGO_ENABLED=0 GOOS=linux cljgo build -o server src/app/main.cljg   # for a Linux
 cljgo dist --target linux/amd64,linux/arm64  # or cross-compile a whole matrix at once (ADR 0077)
 ```
 
-The binary links the **compiled** core (never the interpreter), so it starts in single-digit milliseconds. It embeds nothing it doesn't need — an app that never requires `bri.otel` never links the OpenTelemetry SDK (ADR 0074), and a db-less app never links SQLite/pgx (ADR 0076). For shipping binaries to many platforms at once (releases, Homebrew), see [`cljgo dist`](/cljgo/guides/compile/).
+The binary links the **compiled** core (never the interpreter), so it starts in single-digit milliseconds. It embeds nothing it doesn't need — an app that never requires `bri.core.telemetry` never links the OpenTelemetry SDK (ADR 0074), and a db-less app never links SQLite/pgx (ADR 0076). For shipping binaries to many platforms at once (releases, Homebrew), see [`cljgo dist`](/cljgo/guides/compile/).
 
 ## The Dockerfile
 
@@ -48,7 +48,7 @@ docker run -p 3000:3000 app
 
 ## Config and secrets in the image
 
-`conf.edn` defaults `:port` to 3000; any key is overridden by an `APP_*` env var (the secrets-are-env doctrine), so the same image runs in every environment — see [bri.config](/cljgo/bri/config/):
+`conf.edn` defaults `:port` to 3000; any key is overridden by an `APP_*` env var (the secrets-are-env doctrine), so the same image runs in every environment — see [bri.core.config](/cljgo/bri/config/):
 
 ```bash
 docker run -p 3000:3000 \
@@ -58,11 +58,11 @@ docker run -p 3000:3000 \
   app
 ```
 
-Secrets never live in the image — they arrive as env at run time. `APP_DB_URL` flips [bri.db](/cljgo/bri/db/) from the zero-install SQLite default to Postgres with no code change; `APP_AUTH__SECRET` is the [bri.auth](/cljgo/bri/auth/) signing key that prod must set.
+Secrets never live in the image — they arrive as env at run time. `APP_DB_URL` flips [bri.core.data](/cljgo/bri/db/) from the zero-install SQLite default to Postgres with no code change; `APP_AUTH__SECRET` is the [bri.core.security](/cljgo/bri/auth/) signing key that prod must set.
 
 ## Migrations on deploy
 
-`(db/migrate! conn "migrations")` is idempotent and forward-only — run it on boot (the `delay` pattern) or as a one-shot before rollout. It is the same call in dev and prod; running it twice is a no-op. See [bri.db](/cljgo/bri/db/).
+`(db/migrate! conn "migrations")` is idempotent and forward-only — run it on boot (the `delay` pattern) or as a one-shot before rollout. It is the same call in dev and prod; running it twice is a no-op. See [bri.core.data](/cljgo/bri/db/).
 
 ## Ops endpoints
 
@@ -71,6 +71,6 @@ The API stack serves ops endpoints by default: `GET /healthz` (liveness), `GET /
 ## Where next
 
 - [Compile & ship binaries](/cljgo/guides/compile/) — the general `cljgo build` story
-- [bri.config](/cljgo/bri/config/) — profiles, `APP_*` env, and the schema
-- [bri.db](/cljgo/bri/db/) — SQLite by default, Postgres via `APP_DB_URL`
+- [bri.core.config](/cljgo/bri/config/) — profiles, `APP_*` env, and the schema
+- [bri.core.data](/cljgo/bri/db/) — SQLite by default, Postgres via `APP_DB_URL`
 - [Benchmarks](/cljgo/reference/benchmarks/) — the measured image / cold-start / RSS figures

@@ -8,133 +8,133 @@ import (
 )
 
 var (
-	kw_action                               = lang.InternKeywordString("action")
-	kw_actor                                = lang.InternKeywordString("actor")
-	kw_as                                   = lang.InternKeywordString("as")
-	kw_auth_SLASH_auto_banned               = lang.InternKeywordString("auth/auto-banned")
-	kw_auth_SLASH_banned_request            = lang.InternKeywordString("auth/banned-request")
-	kw_auth_SLASH_claims                    = lang.InternKeywordString("auth/claims")
-	kw_auth_SLASH_denied                    = lang.InternKeywordString("auth/denied")
-	kw_auth_SLASH_forbidden                 = lang.InternKeywordString("auth/forbidden")
-	kw_auth_SLASH_token_issued              = lang.InternKeywordString("auth/token-issued")
-	kw_auth_SLASH_unauthorized              = lang.InternKeywordString("auth/unauthorized")
-	kw_auto_ban                             = lang.InternKeywordString("auto-ban")
-	kw_banned_until                         = lang.InternKeywordString("banned-until")
-	kw_body                                 = lang.InternKeywordString("body")
-	kw_bri_SLASH_error                      = lang.InternKeywordString("bri/error")
-	kw_clock                                = lang.InternKeywordString("clock")
-	kw_column                               = lang.InternKeywordString("column")
-	kw_cooldown_ms                          = lang.InternKeywordString("cooldown-ms")
-	kw_count                                = lang.InternKeywordString("count")
-	kw_denials                              = lang.InternKeywordString("denials")
-	kw_doc                                  = lang.InternKeywordString("doc")
-	kw_else_                                = lang.InternKeywordString("else")
-	kw_end_column                           = lang.InternKeywordString("end-column")
-	kw_end_line                             = lang.InternKeywordString("end-line")
-	kw_error_                               = lang.InternKeywordString("error")
-	kw_exp                                  = lang.InternKeywordString("exp")
-	kw_exp_seconds                          = lang.InternKeywordString("exp-seconds")
-	kw_file                                 = lang.InternKeywordString("file")
-	kw_guard                                = lang.InternKeywordString("guard")
-	kw_headers                              = lang.InternKeywordString("headers")
-	kw_iat                                  = lang.InternKeywordString("iat")
-	kw_info                                 = lang.InternKeywordString("info")
-	kw_ip                                   = lang.InternKeywordString("ip")
-	kw_key                                  = lang.InternKeywordString("key")
-	kw_line                                 = lang.InternKeywordString("line")
-	kw_name                                 = lang.InternKeywordString("name")
-	kw_not_authorized                       = lang.InternKeywordString("not-authorized")
-	kw_now                                  = lang.InternKeywordString("now")
-	kw_private                              = lang.InternKeywordString("private")
-	kw_reason                               = lang.InternKeywordString("reason")
-	kw_request_SLASH_id                     = lang.InternKeywordString("request/id")
-	kw_role                                 = lang.InternKeywordString("role")
-	kw_secret                               = lang.InternKeywordString("secret")
-	kw_severity                             = lang.InternKeywordString("severity")
-	kw_should_ban_QMARK_                    = lang.InternKeywordString("should-ban?")
-	kw_status                               = lang.InternKeywordString("status")
-	kw_store                                = lang.InternKeywordString("store")
-	kw_sub                                  = lang.InternKeywordString("sub")
-	kw_target                               = lang.InternKeywordString("target")
-	kw_threshold                            = lang.InternKeywordString("threshold")
-	kw_unauthenticated                      = lang.InternKeywordString("unauthenticated")
-	kw_uri                                  = lang.InternKeywordString("uri")
-	kw_warning                              = lang.InternKeywordString("warning")
-	kw_window_ms                            = lang.InternKeywordString("window-ms")
-	kw_wrap                                 = lang.InternKeywordString("wrap")
-	sym_audit                               = lang.NewSymbol("audit")
-	sym_bri_DOT_audit                       = lang.NewSymbol("bri.audit")
-	sym_bri_DOT_auth                        = lang.NewSymbol("bri.auth")
-	sym_bri_DOT_http                        = lang.NewSymbol("bri.http")
-	sym_clojure_DOT_core                    = lang.NewSymbol("clojure.core")
-	sym_clojure_DOT_string                  = lang.NewSymbol("clojure.string")
-	sym_http                                = lang.NewSymbol("http")
-	sym_str                                 = lang.NewSymbol("str")
-	v_bri_DOT_audit_record                  = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("record"))
-	v_bri_DOT_auth_X_argon2_hash            = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("-argon2-hash")).SetPrivate()
-	v_bri_DOT_auth_X_argon2_verify          = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("-argon2-verify")).SetPrivate()
-	v_bri_DOT_auth_X_bcrypt_verify          = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("-bcrypt-verify")).SetPrivate()
-	v_bri_DOT_auth_X_getenv                 = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("-getenv")).SetPrivate()
-	v_bri_DOT_auth_X_jwt_sign               = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("-jwt-sign")).SetPrivate()
-	v_bri_DOT_auth_X_jwt_verify             = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("-jwt-verify")).SetPrivate()
-	v_bri_DOT_auth_X_now_millis             = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("-now-millis")).SetPrivate()
-	v_bri_DOT_auth_X_rand_token             = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("-rand-token")).SetPrivate()
-	v_bri_DOT_auth_admin_only               = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("admin-only"))
-	v_bri_DOT_auth_authenticate             = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("authenticate")).SetPrivate()
-	v_bri_DOT_auth_auto_ban                 = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("auto-ban"))
-	v_bri_DOT_auth_ban_store                = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("ban-store")).SetPrivate()
-	v_bri_DOT_auth_bearer                   = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("bearer")).SetPrivate()
-	v_bri_DOT_auth_check_password           = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("check-password"))
-	v_bri_DOT_auth_deny_401                 = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("deny-401")).SetPrivate()
-	v_bri_DOT_auth_deny_403                 = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("deny-403")).SetPrivate()
-	v_bri_DOT_auth_guard                    = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("guard"))
-	v_bri_DOT_auth_guard_claims             = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("guard-claims"))
-	v_bri_DOT_auth_hash_password            = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("hash-password"))
-	v_bri_DOT_auth_issue                    = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("issue"))
-	v_bri_DOT_auth_logged_in_only           = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("logged-in-only"))
-	v_bri_DOT_auth_now_seconds              = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("now-seconds")).SetPrivate()
-	v_bri_DOT_auth_process_secret           = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("process-secret")).SetPrivate()
-	v_bri_DOT_auth_resolve_secret           = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("resolve-secret")).SetPrivate()
-	v_bri_DOT_auth_role_only                = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("role-only"))
-	v_bri_DOT_auth_sign                     = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("sign"))
-	v_bri_DOT_auth_subject                  = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("subject"))
-	v_bri_DOT_auth_user_only                = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("user-only"))
-	v_bri_DOT_auth_verify                   = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("verify"))
-	v_bri_DOT_auth_verify_BANG_             = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("verify!"))
-	v_bri_DOT_auth_wrap_guard               = lang.InternVarName(lang.NewSymbol("bri.auth"), lang.NewSymbol("wrap-guard")).SetPrivate()
-	v_bri_DOT_http_client_key               = lang.InternVarName(lang.NewSymbol("bri.http"), lang.NewSymbol("client-key"))
-	v_bri_DOT_http_mark_subject_BANG_       = lang.InternVarName(lang.NewSymbol("bri.http"), lang.NewSymbol("mark-subject!"))
-	v_clojure_DOT_core_X_                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
-	v_clojure_DOT_core_X_EQ_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
-	v_clojure_DOT_core_X_GT_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol(">"))
-	v_clojure_DOT_core_X_GT__EQ_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol(">="))
-	v_clojure_DOT_core_X_LT_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("<"))
-	v_clojure_DOT_core_X_PLUS_              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("+"))
-	v_clojure_DOT_core_X_make_delay         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-make-delay")).SetPrivate()
-	v_clojure_DOT_core_assoc                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
-	v_clojure_DOT_core_atom                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("atom"))
-	v_clojure_DOT_core_boolean              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("boolean"))
-	v_clojure_DOT_core_conj                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("conj"))
-	v_clojure_DOT_core_contains_QMARK_      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("contains?"))
-	v_clojure_DOT_core_count                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("count"))
-	v_clojure_DOT_core_deref                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("deref"))
-	v_clojure_DOT_core_ex_info              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("ex-info"))
-	v_clojure_DOT_core_filterv              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("filterv"))
-	v_clojure_DOT_core_get                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
-	v_clojure_DOT_core_in_ns                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
-	v_clojure_DOT_core_map_QMARK_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
-	v_clojure_DOT_core_max_                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("max"))
-	v_clojure_DOT_core_name                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("name"))
-	v_clojure_DOT_core_nil_QMARK_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nil?"))
-	v_clojure_DOT_core_not                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("not"))
-	v_clojure_DOT_core_quot                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("quot"))
-	v_clojure_DOT_core_refer                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
-	v_clojure_DOT_core_require              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
-	v_clojure_DOT_core_reset_BANG_          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("reset!"))
-	v_clojure_DOT_core_str                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
-	v_clojure_DOT_core_string_QMARK_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("string?"))
-	v_clojure_DOT_core_subs                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("subs"))
-	v_clojure_DOT_string_starts_with_QMARK_ = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("starts-with?"))
+	kw_action                                   = lang.InternKeywordString("action")
+	kw_actor                                    = lang.InternKeywordString("actor")
+	kw_as                                       = lang.InternKeywordString("as")
+	kw_auth_SLASH_auto_banned                   = lang.InternKeywordString("auth/auto-banned")
+	kw_auth_SLASH_banned_request                = lang.InternKeywordString("auth/banned-request")
+	kw_auth_SLASH_claims                        = lang.InternKeywordString("auth/claims")
+	kw_auth_SLASH_denied                        = lang.InternKeywordString("auth/denied")
+	kw_auth_SLASH_forbidden                     = lang.InternKeywordString("auth/forbidden")
+	kw_auth_SLASH_token_issued                  = lang.InternKeywordString("auth/token-issued")
+	kw_auth_SLASH_unauthorized                  = lang.InternKeywordString("auth/unauthorized")
+	kw_auto_ban                                 = lang.InternKeywordString("auto-ban")
+	kw_banned_until                             = lang.InternKeywordString("banned-until")
+	kw_body                                     = lang.InternKeywordString("body")
+	kw_bri_SLASH_error                          = lang.InternKeywordString("bri/error")
+	kw_clock                                    = lang.InternKeywordString("clock")
+	kw_column                                   = lang.InternKeywordString("column")
+	kw_cooldown_ms                              = lang.InternKeywordString("cooldown-ms")
+	kw_count                                    = lang.InternKeywordString("count")
+	kw_denials                                  = lang.InternKeywordString("denials")
+	kw_doc                                      = lang.InternKeywordString("doc")
+	kw_else_                                    = lang.InternKeywordString("else")
+	kw_end_column                               = lang.InternKeywordString("end-column")
+	kw_end_line                                 = lang.InternKeywordString("end-line")
+	kw_error_                                   = lang.InternKeywordString("error")
+	kw_exp                                      = lang.InternKeywordString("exp")
+	kw_exp_seconds                              = lang.InternKeywordString("exp-seconds")
+	kw_file                                     = lang.InternKeywordString("file")
+	kw_guard                                    = lang.InternKeywordString("guard")
+	kw_headers                                  = lang.InternKeywordString("headers")
+	kw_iat                                      = lang.InternKeywordString("iat")
+	kw_info                                     = lang.InternKeywordString("info")
+	kw_ip                                       = lang.InternKeywordString("ip")
+	kw_key                                      = lang.InternKeywordString("key")
+	kw_line                                     = lang.InternKeywordString("line")
+	kw_name                                     = lang.InternKeywordString("name")
+	kw_not_authorized                           = lang.InternKeywordString("not-authorized")
+	kw_now                                      = lang.InternKeywordString("now")
+	kw_private                                  = lang.InternKeywordString("private")
+	kw_reason                                   = lang.InternKeywordString("reason")
+	kw_request_SLASH_id                         = lang.InternKeywordString("request/id")
+	kw_role                                     = lang.InternKeywordString("role")
+	kw_secret                                   = lang.InternKeywordString("secret")
+	kw_severity                                 = lang.InternKeywordString("severity")
+	kw_should_ban_QMARK_                        = lang.InternKeywordString("should-ban?")
+	kw_status                                   = lang.InternKeywordString("status")
+	kw_store                                    = lang.InternKeywordString("store")
+	kw_sub                                      = lang.InternKeywordString("sub")
+	kw_target                                   = lang.InternKeywordString("target")
+	kw_threshold                                = lang.InternKeywordString("threshold")
+	kw_unauthenticated                          = lang.InternKeywordString("unauthenticated")
+	kw_uri                                      = lang.InternKeywordString("uri")
+	kw_warning                                  = lang.InternKeywordString("warning")
+	kw_window_ms                                = lang.InternKeywordString("window-ms")
+	kw_wrap                                     = lang.InternKeywordString("wrap")
+	sym_audit                                   = lang.NewSymbol("audit")
+	sym_bri_DOT_core_DOT_audit                  = lang.NewSymbol("bri.core.audit")
+	sym_bri_DOT_core_DOT_security               = lang.NewSymbol("bri.core.security")
+	sym_bri_DOT_web_DOT_http                    = lang.NewSymbol("bri.web.http")
+	sym_clojure_DOT_core                        = lang.NewSymbol("clojure.core")
+	sym_clojure_DOT_string                      = lang.NewSymbol("clojure.string")
+	sym_http                                    = lang.NewSymbol("http")
+	sym_str                                     = lang.NewSymbol("str")
+	v_bri_DOT_core_DOT_audit_record             = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("record"))
+	v_bri_DOT_core_DOT_security_X_argon2_hash   = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("-argon2-hash")).SetPrivate()
+	v_bri_DOT_core_DOT_security_X_argon2_verify = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("-argon2-verify")).SetPrivate()
+	v_bri_DOT_core_DOT_security_X_bcrypt_verify = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("-bcrypt-verify")).SetPrivate()
+	v_bri_DOT_core_DOT_security_X_getenv        = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("-getenv")).SetPrivate()
+	v_bri_DOT_core_DOT_security_X_jwt_sign      = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("-jwt-sign")).SetPrivate()
+	v_bri_DOT_core_DOT_security_X_jwt_verify    = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("-jwt-verify")).SetPrivate()
+	v_bri_DOT_core_DOT_security_X_now_millis    = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("-now-millis")).SetPrivate()
+	v_bri_DOT_core_DOT_security_X_rand_token    = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("-rand-token")).SetPrivate()
+	v_bri_DOT_core_DOT_security_admin_only      = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("admin-only"))
+	v_bri_DOT_core_DOT_security_authenticate    = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("authenticate")).SetPrivate()
+	v_bri_DOT_core_DOT_security_auto_ban        = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("auto-ban"))
+	v_bri_DOT_core_DOT_security_ban_store       = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("ban-store")).SetPrivate()
+	v_bri_DOT_core_DOT_security_bearer          = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("bearer")).SetPrivate()
+	v_bri_DOT_core_DOT_security_check_password  = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("check-password"))
+	v_bri_DOT_core_DOT_security_deny_401        = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("deny-401")).SetPrivate()
+	v_bri_DOT_core_DOT_security_deny_403        = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("deny-403")).SetPrivate()
+	v_bri_DOT_core_DOT_security_guard           = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("guard"))
+	v_bri_DOT_core_DOT_security_guard_claims    = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("guard-claims"))
+	v_bri_DOT_core_DOT_security_hash_password   = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("hash-password"))
+	v_bri_DOT_core_DOT_security_issue           = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("issue"))
+	v_bri_DOT_core_DOT_security_logged_in_only  = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("logged-in-only"))
+	v_bri_DOT_core_DOT_security_now_seconds     = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("now-seconds")).SetPrivate()
+	v_bri_DOT_core_DOT_security_process_secret  = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("process-secret")).SetPrivate()
+	v_bri_DOT_core_DOT_security_resolve_secret  = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("resolve-secret")).SetPrivate()
+	v_bri_DOT_core_DOT_security_role_only       = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("role-only"))
+	v_bri_DOT_core_DOT_security_sign            = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("sign"))
+	v_bri_DOT_core_DOT_security_subject         = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("subject"))
+	v_bri_DOT_core_DOT_security_user_only       = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("user-only"))
+	v_bri_DOT_core_DOT_security_verify          = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("verify"))
+	v_bri_DOT_core_DOT_security_verify_BANG_    = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("verify!"))
+	v_bri_DOT_core_DOT_security_wrap_guard      = lang.InternVarName(lang.NewSymbol("bri.core.security"), lang.NewSymbol("wrap-guard")).SetPrivate()
+	v_bri_DOT_web_DOT_http_client_key           = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("client-key"))
+	v_bri_DOT_web_DOT_http_mark_subject_BANG_   = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("mark-subject!"))
+	v_clojure_DOT_core_X_                       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
+	v_clojure_DOT_core_X_EQ_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
+	v_clojure_DOT_core_X_GT_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol(">"))
+	v_clojure_DOT_core_X_GT__EQ_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol(">="))
+	v_clojure_DOT_core_X_LT_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("<"))
+	v_clojure_DOT_core_X_PLUS_                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("+"))
+	v_clojure_DOT_core_X_make_delay             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-make-delay")).SetPrivate()
+	v_clojure_DOT_core_assoc                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
+	v_clojure_DOT_core_atom                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("atom"))
+	v_clojure_DOT_core_boolean                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("boolean"))
+	v_clojure_DOT_core_conj                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("conj"))
+	v_clojure_DOT_core_contains_QMARK_          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("contains?"))
+	v_clojure_DOT_core_count                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("count"))
+	v_clojure_DOT_core_deref                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("deref"))
+	v_clojure_DOT_core_ex_info                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("ex-info"))
+	v_clojure_DOT_core_filterv                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("filterv"))
+	v_clojure_DOT_core_get                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
+	v_clojure_DOT_core_in_ns                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_map_QMARK_               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("map?"))
+	v_clojure_DOT_core_max_                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("max"))
+	v_clojure_DOT_core_name                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("name"))
+	v_clojure_DOT_core_nil_QMARK_               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nil?"))
+	v_clojure_DOT_core_not                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("not"))
+	v_clojure_DOT_core_quot                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("quot"))
+	v_clojure_DOT_core_refer                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	v_clojure_DOT_core_require                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
+	v_clojure_DOT_core_reset_BANG_              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("reset!"))
+	v_clojure_DOT_core_str                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
+	v_clojure_DOT_core_string_QMARK_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("string?"))
+	v_clojure_DOT_core_subs                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("subs"))
+	v_clojure_DOT_string_starts_with_QMARK_     = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("starts-with?"))
 )
 
 var loaded = false
@@ -145,11 +145,11 @@ func Load() {
 		return
 	}
 	loaded = true
-	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.auth")), lang.VarFile, "bri/auth.cljg"))
+	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.core.security")), lang.VarFile, "bri/auth.cljg"))
 	defer lang.PopThreadBindings()
-	// (clojure.core/in-ns (quote bri.auth))
+	// (clojure.core/in-ns (quote bri.core.security))
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
-	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_auth)
+	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_core_DOT_security)
 	_ = tmp2
 	// (clojure.core/refer (quote clojure.core))
 	tmp3 := v_clojure_DOT_core_refer.Get()
@@ -159,22 +159,22 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (require (quote [bri.audit :as audit]))
+	// (require (quote [bri.core.audit :as audit]))
 	tmp7 := v_clojure_DOT_core_require.Get()
-	tmp8 := lang.Apply1(tmp7, lang.NewVector(sym_bri_DOT_audit, kw_as, sym_audit))
+	tmp8 := lang.Apply1(tmp7, lang.NewVector(sym_bri_DOT_core_DOT_audit, kw_as, sym_audit))
 	_ = tmp8
-	// (require (quote [bri.http :as http]))
+	// (require (quote [bri.web.http :as http]))
 	tmp9 := v_clojure_DOT_core_require.Get()
-	tmp10 := lang.Apply1(tmp9, lang.NewVector(sym_bri_DOT_http, kw_as, sym_http))
+	tmp10 := lang.Apply1(tmp9, lang.NewVector(sym_bri_DOT_web_DOT_http, kw_as, sym_http))
 	_ = tmp10
 	// (def process-secret (delay (or (-getenv "APP_AUTH__SECRET") (-rand-token))))
-	v_bri_DOT_auth_process_secret.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(27), kw_column, int64(6), kw_end_line, int64(27), kw_end_column, int64(30), kw_private, true))
+	v_bri_DOT_core_DOT_security_process_secret.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(27), kw_column, int64(6), kw_end_line, int64(27), kw_end_column, int64(30), kw_private, true))
 	tmp11 := v_clojure_DOT_core_X_make_delay.Get()
 	tmp12 := lang.FnFunc0(func() any {
 		var tmp13 any
 		_ = tmp13
 		{
-			tmp14 := v_bri_DOT_auth_X_getenv.Get()
+			tmp14 := v_bri_DOT_core_DOT_security_X_getenv.Get()
 			tmp15 := lang.Apply1(tmp14, "APP_AUTH__SECRET")
 			var or__2__auto__16 any = tmp15
 			_ = or__2__auto__16
@@ -183,7 +183,7 @@ func Load() {
 			if lang.IsTruthy(or__2__auto__16) {
 				tmp17 = or__2__auto__16
 			} else {
-				tmp18 := v_bri_DOT_auth_X_rand_token.Get()
+				tmp18 := v_bri_DOT_core_DOT_security_X_rand_token.Get()
 				tmp19 := lang.Apply0(tmp18)
 				tmp17 = tmp19
 			}
@@ -193,10 +193,10 @@ func Load() {
 	})
 	tmp20 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp12}
 	tmp21 := lang.Apply1(tmp11, tmp20)
-	v_bri_DOT_auth_process_secret.BindRoot(tmp21)
-	_ = v_bri_DOT_auth_process_secret
+	v_bri_DOT_core_DOT_security_process_secret.BindRoot(tmp21)
+	_ = v_bri_DOT_core_DOT_security_process_secret
 	// (def resolve-secret (clojure.core/fn [opts] (or (:secret opts) (clojure.core/deref process…
-	v_bri_DOT_auth_resolve_secret.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(29), kw_column, int64(7), kw_end_line, int64(29), kw_end_column, int64(31), kw_private, true))
+	v_bri_DOT_core_DOT_security_resolve_secret.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(29), kw_column, int64(7), kw_end_line, int64(29), kw_end_column, int64(31), kw_private, true))
 	tmp22 := lang.FnFunc1(func(opts23 any) any {
 		var tmp24 any
 		_ = tmp24
@@ -210,7 +210,7 @@ func Load() {
 				tmp27 = or__2__auto__26
 			} else {
 				tmp28 := v_clojure_DOT_core_deref.Get()
-				tmp29 := v_bri_DOT_auth_process_secret.Get()
+				tmp29 := v_bri_DOT_core_DOT_security_process_secret.Get()
 				tmp30 := lang.Apply1(tmp28, tmp29)
 				tmp27 = tmp30
 			}
@@ -218,11 +218,11 @@ func Load() {
 		}
 		return tmp24
 	})
-	tmp31 := &lang.NamedFn1{Name: "bri.auth/resolve-secret", Expects: "1: [opts]", F: tmp22}
-	v_bri_DOT_auth_resolve_secret.BindRoot(tmp31)
-	_ = v_bri_DOT_auth_resolve_secret
+	tmp31 := &lang.NamedFn1{Name: "bri.core.security/resolve-secret", Expects: "1: [opts]", F: tmp22}
+	v_bri_DOT_core_DOT_security_resolve_secret.BindRoot(tmp31)
+	_ = v_bri_DOT_core_DOT_security_resolve_secret
 	// (def now-seconds (clojure.core/fn [opts] (or (:now opts) (quot (-now-millis) 1000))))
-	v_bri_DOT_auth_now_seconds.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(28), kw_private, true))
+	v_bri_DOT_core_DOT_security_now_seconds.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(28), kw_private, true))
 	tmp32 := lang.FnFunc1(func(opts33 any) any {
 		var tmp34 any
 		_ = tmp34
@@ -236,7 +236,7 @@ func Load() {
 				tmp37 = or__2__auto__36
 			} else {
 				tmp38 := v_clojure_DOT_core_quot.Get()
-				tmp39 := v_bri_DOT_auth_X_now_millis.Get()
+				tmp39 := v_bri_DOT_core_DOT_security_X_now_millis.Get()
 				tmp40 := lang.Apply0(tmp39)
 				tmp41 := lang.Apply2(tmp38, tmp40, int64(1000))
 				tmp37 = tmp41
@@ -245,17 +245,17 @@ func Load() {
 		}
 		return tmp34
 	})
-	tmp42 := &lang.NamedFn1{Name: "bri.auth/now-seconds", Expects: "1: [opts]", F: tmp32}
-	v_bri_DOT_auth_now_seconds.BindRoot(tmp42)
-	_ = v_bri_DOT_auth_now_seconds
+	tmp42 := &lang.NamedFn1{Name: "bri.core.security/now-seconds", Expects: "1: [opts]", F: tmp32}
+	v_bri_DOT_core_DOT_security_now_seconds.BindRoot(tmp42)
+	_ = v_bri_DOT_core_DOT_security_now_seconds
 	// (def sign "Sign claims into an HS256 token. iat and exp are injected (exp =\n  iat + :exp-…
-	v_bri_DOT_auth_sign.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(36), kw_column, int64(7), kw_end_line, int64(36), kw_end_column, int64(11), kw_doc, "Sign claims into an HS256 token. iat and exp are injected (exp =\n  iat + :exp-seconds, default 3600). Options: :exp-seconds, :secret\n  (defaults from APP_AUTH__SECRET), :now (epoch seconds, for tests).\n  One call is the common case: (sign {:sub \"u\" :role \"admin\"})."))
+	v_bri_DOT_core_DOT_security_sign.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(36), kw_column, int64(7), kw_end_line, int64(36), kw_end_column, int64(11), kw_doc, "Sign claims into an HS256 token. iat and exp are injected (exp =\n  iat + :exp-seconds, default 3600). Options: :exp-seconds, :secret\n  (defaults from APP_AUTH__SECRET), :now (epoch seconds, for tests).\n  One call is the common case: (sign {:sub \"u\" :role \"admin\"})."))
 	tmp43 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
 			claims44 := args[0]
 			_ = claims44
-			tmp45 := v_bri_DOT_auth_sign.Get()
+			tmp45 := v_bri_DOT_core_DOT_security_sign.Get()
 			tmp46 := lang.NewMap()
 			tmp47 := lang.Apply2(tmp45, claims44, tmp46)
 			return tmp47
@@ -267,7 +267,7 @@ func Load() {
 			var tmp50 any
 			_ = tmp50
 			{
-				tmp51 := v_bri_DOT_auth_now_seconds.Get()
+				tmp51 := v_bri_DOT_core_DOT_security_now_seconds.Get()
 				tmp52 := lang.Apply1(tmp51, opts49)
 				var now53 any = tmp52
 				_ = now53
@@ -291,27 +291,27 @@ func Load() {
 				tmp60 := lang.Apply(tmp54, []any{claims48, kw_iat, now53, kw_exp, tmp59})
 				var body61 any = tmp60
 				_ = body61
-				tmp62 := v_bri_DOT_auth_X_jwt_sign.Get()
-				tmp63 := v_bri_DOT_auth_resolve_secret.Get()
+				tmp62 := v_bri_DOT_core_DOT_security_X_jwt_sign.Get()
+				tmp63 := v_bri_DOT_core_DOT_security_resolve_secret.Get()
 				tmp64 := lang.Apply1(tmp63, opts49)
 				tmp65 := lang.Apply2(tmp62, tmp64, body61)
 				tmp50 = tmp65
 			}
 			return tmp50
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/sign", "1: [claims] or 2: [claims opts]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/sign", "1: [claims] or 2: [claims opts]"))
 		}
 	})
-	v_bri_DOT_auth_sign.BindRoot(tmp43)
-	_ = v_bri_DOT_auth_sign
+	v_bri_DOT_core_DOT_security_sign.BindRoot(tmp43)
+	_ = v_bri_DOT_core_DOT_security_sign
 	// (def verify "Verify an HS256 token: returns the claims map, or nil on a bad\n  signature, …
-	v_bri_DOT_auth_verify.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(13), kw_doc, "Verify an HS256 token: returns the claims map, or nil on a bad\n  signature, wrong algorithm, malformed token, or expiry. The algorithm\n  is pinned in the Go verifier; exp is checked here against :now (epoch\n  seconds, default wall-clock) so tests freeze the clock."))
+	v_bri_DOT_core_DOT_security_verify.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(13), kw_doc, "Verify an HS256 token: returns the claims map, or nil on a bad\n  signature, wrong algorithm, malformed token, or expiry. The algorithm\n  is pinned in the Go verifier; exp is checked here against :now (epoch\n  seconds, default wall-clock) so tests freeze the clock."))
 	tmp66 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
 			token67 := args[0]
 			_ = token67
-			tmp68 := v_bri_DOT_auth_verify.Get()
+			tmp68 := v_bri_DOT_core_DOT_security_verify.Get()
 			tmp69 := lang.NewMap()
 			tmp70 := lang.Apply2(tmp68, token67, tmp69)
 			return tmp70
@@ -333,8 +333,8 @@ func Load() {
 					var tmp78 any
 					_ = tmp78
 					if lang.IsTruthy(and__1__auto__77) {
-						tmp79 := v_bri_DOT_auth_X_jwt_verify.Get()
-						tmp80 := v_bri_DOT_auth_resolve_secret.Get()
+						tmp79 := v_bri_DOT_core_DOT_security_X_jwt_verify.Get()
+						tmp80 := v_bri_DOT_core_DOT_security_resolve_secret.Get()
 						tmp81 := lang.Apply1(tmp80, opts72)
 						tmp82 := lang.Apply2(tmp79, tmp81, token71)
 						tmp78 = tmp82
@@ -368,7 +368,7 @@ func Load() {
 							if lang.IsTruthy(or__2__auto__93) {
 								tmp94 = or__2__auto__93
 							} else {
-								tmp95 := v_bri_DOT_auth_now_seconds.Get()
+								tmp95 := v_bri_DOT_core_DOT_security_now_seconds.Get()
 								tmp96 := lang.Apply1(tmp95, opts72)
 								tmp97 := rt.LT2(v_clojure_DOT_core_X_LT_, tmp96, exp89)
 								tmp94 = tmp97
@@ -392,19 +392,19 @@ func Load() {
 			}
 			return tmp73
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/verify", "1: [token] or 2: [token opts]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/verify", "1: [token] or 2: [token opts]"))
 		}
 	})
-	v_bri_DOT_auth_verify.BindRoot(tmp66)
-	_ = v_bri_DOT_auth_verify
+	v_bri_DOT_core_DOT_security_verify.BindRoot(tmp66)
+	_ = v_bri_DOT_core_DOT_security_verify
 	// (def verify! "Like verify, but throws :auth/unauthorized (funnels to 401) instead of\n  re…
-	v_bri_DOT_auth_verify_BANG_.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(60), kw_column, int64(7), kw_end_line, int64(60), kw_end_column, int64(14), kw_doc, "Like verify, but throws :auth/unauthorized (funnels to 401) instead of\n  returning nil (the ADR 0014 ! convention)."))
+	v_bri_DOT_core_DOT_security_verify_BANG_.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(60), kw_column, int64(7), kw_end_line, int64(60), kw_end_column, int64(14), kw_doc, "Like verify, but throws :auth/unauthorized (funnels to 401) instead of\n  returning nil (the ADR 0014 ! convention)."))
 	tmp99 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
 			token100 := args[0]
 			_ = token100
-			tmp101 := v_bri_DOT_auth_verify_BANG_.Get()
+			tmp101 := v_bri_DOT_core_DOT_security_verify_BANG_.Get()
 			tmp102 := lang.NewMap()
 			tmp103 := lang.Apply2(tmp101, token100, tmp102)
 			return tmp103
@@ -416,7 +416,7 @@ func Load() {
 			var tmp106 any
 			_ = tmp106
 			{
-				tmp107 := v_bri_DOT_auth_verify.Get()
+				tmp107 := v_bri_DOT_core_DOT_security_verify.Get()
 				tmp108 := lang.Apply2(tmp107, token104, opts105)
 				var or__2__auto__109 any = tmp108
 				_ = or__2__auto__109
@@ -434,28 +434,28 @@ func Load() {
 			}
 			return tmp106
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/verify!", "1: [token] or 2: [token opts]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/verify!", "1: [token] or 2: [token opts]"))
 		}
 	})
-	v_bri_DOT_auth_verify_BANG_.BindRoot(tmp99)
-	_ = v_bri_DOT_auth_verify_BANG_
+	v_bri_DOT_core_DOT_security_verify_BANG_.BindRoot(tmp99)
+	_ = v_bri_DOT_core_DOT_security_verify_BANG_
 	// (def subject "The token subject (:sub) — the audit actor." (clojure.core/fn [claims] (:s…
-	v_bri_DOT_auth_subject.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(68), kw_column, int64(7), kw_end_line, int64(68), kw_end_column, int64(14), kw_doc, "The token subject (:sub) — the audit actor."))
+	v_bri_DOT_core_DOT_security_subject.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(68), kw_column, int64(7), kw_end_line, int64(68), kw_end_column, int64(14), kw_doc, "The token subject (:sub) — the audit actor."))
 	tmp114 := lang.FnFunc1(func(claims115 any) any {
 		tmp116 := lang.Apply1(kw_sub, claims115)
 		return tmp116
 	})
-	tmp117 := &lang.NamedFn1{Name: "bri.auth/subject", Expects: "1: [claims]", F: tmp114}
-	v_bri_DOT_auth_subject.BindRoot(tmp117)
-	_ = v_bri_DOT_auth_subject
+	tmp117 := &lang.NamedFn1{Name: "bri.core.security/subject", Expects: "1: [claims]", F: tmp114}
+	v_bri_DOT_core_DOT_security_subject.BindRoot(tmp117)
+	_ = v_bri_DOT_core_DOT_security_subject
 	// (def issue "Sign a token for a subject and AUDIT the issuance (login success).\n  (issue \…
-	v_bri_DOT_auth_issue.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(73), kw_column, int64(7), kw_end_line, int64(73), kw_end_column, int64(12), kw_doc, "Sign a token for a subject and AUDIT the issuance (login success).\n  (issue \"user-42\" {:role \"admin\"} {:exp-seconds 900})."))
+	v_bri_DOT_core_DOT_security_issue.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(73), kw_column, int64(7), kw_end_line, int64(73), kw_end_column, int64(12), kw_doc, "Sign a token for a subject and AUDIT the issuance (login success).\n  (issue \"user-42\" {:role \"admin\"} {:exp-seconds 900})."))
 	tmp118 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
 			sub119 := args[0]
 			_ = sub119
-			tmp120 := v_bri_DOT_auth_issue.Get()
+			tmp120 := v_bri_DOT_core_DOT_security_issue.Get()
 			tmp121 := lang.NewMap()
 			tmp122 := lang.NewMap()
 			tmp123 := lang.Apply3(tmp120, sub119, tmp121, tmp122)
@@ -465,7 +465,7 @@ func Load() {
 			_ = sub124
 			claims125 := args[1]
 			_ = claims125
-			tmp126 := v_bri_DOT_auth_issue.Get()
+			tmp126 := v_bri_DOT_core_DOT_security_issue.Get()
 			tmp127 := lang.NewMap()
 			tmp128 := lang.Apply3(tmp126, sub124, claims125, tmp127)
 			return tmp128
@@ -479,13 +479,13 @@ func Load() {
 			var tmp132 any
 			_ = tmp132
 			{
-				tmp133 := v_bri_DOT_auth_sign.Get()
+				tmp133 := v_bri_DOT_core_DOT_security_sign.Get()
 				tmp134 := v_clojure_DOT_core_assoc.Get()
 				tmp135 := lang.Apply3(tmp134, claims130, kw_sub, sub129)
 				tmp136 := lang.Apply2(tmp133, tmp135, opts131)
 				var tok137 any = tmp136
 				_ = tok137
-				tmp138 := v_bri_DOT_audit_record.Get()
+				tmp138 := v_bri_DOT_core_DOT_audit_record.Get()
 				tmp139 := lang.NewMap(kw_action, kw_auth_SLASH_token_issued, kw_actor, sub129, kw_severity, kw_info)
 				tmp140 := lang.Apply1(tmp138, tmp139)
 				_ = tmp140
@@ -493,23 +493,23 @@ func Load() {
 			}
 			return tmp132
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/issue", "1: [sub] or 2: [sub claims] or 3: [sub claims opts]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/issue", "1: [sub] or 2: [sub claims] or 3: [sub claims opts]"))
 		}
 	})
-	v_bri_DOT_auth_issue.BindRoot(tmp118)
-	_ = v_bri_DOT_auth_issue
+	v_bri_DOT_core_DOT_security_issue.BindRoot(tmp118)
+	_ = v_bri_DOT_core_DOT_security_issue
 	// (def hash-password "argon2id hash (OWASP params) as a self-describing PHC string.\n  DELIB…
-	v_bri_DOT_auth_hash_password.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(20), kw_doc, "argon2id hash (OWASP params) as a self-describing PHC string.\n  DELIBERATELY slow (~16 ms) — that is the anti-brute-force feature."))
+	v_bri_DOT_core_DOT_security_hash_password.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(20), kw_doc, "argon2id hash (OWASP params) as a self-describing PHC string.\n  DELIBERATELY slow (~16 ms) — that is the anti-brute-force feature."))
 	tmp141 := lang.FnFunc1(func(pw142 any) any {
-		tmp143 := v_bri_DOT_auth_X_argon2_hash.Get()
+		tmp143 := v_bri_DOT_core_DOT_security_X_argon2_hash.Get()
 		tmp144 := lang.Apply1(tmp143, pw142)
 		return tmp144
 	})
-	tmp145 := &lang.NamedFn1{Name: "bri.auth/hash-password", Expects: "1: [pw]", F: tmp141}
-	v_bri_DOT_auth_hash_password.BindRoot(tmp145)
-	_ = v_bri_DOT_auth_hash_password
+	tmp145 := &lang.NamedFn1{Name: "bri.core.security/hash-password", Expects: "1: [pw]", F: tmp141}
+	v_bri_DOT_core_DOT_security_hash_password.BindRoot(tmp145)
+	_ = v_bri_DOT_core_DOT_security_hash_password
 	// (def check-password "Verify a password against an argon2id ($argon2id$…) or legacy bcryp…
-	v_bri_DOT_auth_check_password.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(21), kw_doc, "Verify a password against an argon2id ($argon2id$…) or legacy bcrypt\n  ($2a$/$2b$…) hash. Constant-time; false on any mismatch or unknown\n  format."))
+	v_bri_DOT_core_DOT_security_check_password.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(21), kw_doc, "Verify a password against an argon2id ($argon2id$…) or legacy bcrypt\n  ($2a$/$2b$…) hash. Constant-time; false on any mismatch or unknown\n  format."))
 	tmp146 := lang.FnFunc2(func(pw147, hash148 any) any {
 		tmp149 := v_clojure_DOT_core_not.Get()
 		tmp150 := v_clojure_DOT_core_string_QMARK_.Get()
@@ -525,7 +525,7 @@ func Load() {
 			var tmp156 any
 			_ = tmp156
 			if lang.IsTruthy(tmp155) {
-				tmp157 := v_bri_DOT_auth_X_argon2_verify.Get()
+				tmp157 := v_bri_DOT_core_DOT_security_X_argon2_verify.Get()
 				tmp158 := lang.Apply2(tmp157, pw147, hash148)
 				tmp156 = tmp158
 			} else {
@@ -534,7 +534,7 @@ func Load() {
 				var tmp161 any
 				_ = tmp161
 				if lang.IsTruthy(tmp160) {
-					tmp162 := v_bri_DOT_auth_X_bcrypt_verify.Get()
+					tmp162 := v_bri_DOT_core_DOT_security_X_bcrypt_verify.Get()
 					tmp163 := lang.Apply2(tmp162, pw147, hash148)
 					tmp161 = tmp163
 				} else {
@@ -553,11 +553,11 @@ func Load() {
 		}
 		return tmp153
 	})
-	tmp165 := &lang.NamedFn2{Name: "bri.auth/check-password", Expects: "2: [pw hash]", F: tmp146}
-	v_bri_DOT_auth_check_password.BindRoot(tmp165)
-	_ = v_bri_DOT_auth_check_password
+	tmp165 := &lang.NamedFn2{Name: "bri.core.security/check-password", Expects: "2: [pw hash]", F: tmp146}
+	v_bri_DOT_core_DOT_security_check_password.BindRoot(tmp165)
+	_ = v_bri_DOT_core_DOT_security_check_password
 	// (def bearer (clojure.core/fn [req] (let [h (get (:headers req) "authorization")] (when (an…
-	v_bri_DOT_auth_bearer.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(102), kw_column, int64(7), kw_end_line, int64(102), kw_end_column, int64(23), kw_private, true))
+	v_bri_DOT_core_DOT_security_bearer.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(102), kw_column, int64(7), kw_end_line, int64(102), kw_end_column, int64(23), kw_private, true))
 	tmp166 := lang.FnFunc1(func(req167 any) any {
 		var tmp168 any
 		_ = tmp168
@@ -598,11 +598,11 @@ func Load() {
 		}
 		return tmp168
 	})
-	tmp183 := &lang.NamedFn1{Name: "bri.auth/bearer", Expects: "1: [req]", F: tmp166}
-	v_bri_DOT_auth_bearer.BindRoot(tmp183)
-	_ = v_bri_DOT_auth_bearer
+	tmp183 := &lang.NamedFn1{Name: "bri.core.security/bearer", Expects: "1: [req]", F: tmp166}
+	v_bri_DOT_core_DOT_security_bearer.BindRoot(tmp183)
+	_ = v_bri_DOT_core_DOT_security_bearer
 	// (def authenticate "Claims from the request: an already-populated :auth/claims, else the\n …
-	v_bri_DOT_auth_authenticate.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(107), kw_column, int64(7), kw_end_line, int64(107), kw_end_column, int64(29), kw_private, true, kw_doc, "Claims from the request: an already-populated :auth/claims, else the\n  Bearer token verified."))
+	v_bri_DOT_core_DOT_security_authenticate.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(107), kw_column, int64(7), kw_end_line, int64(107), kw_end_column, int64(29), kw_private, true, kw_doc, "Claims from the request: an already-populated :auth/claims, else the\n  Bearer token verified."))
 	tmp184 := lang.FnFunc1(func(req185 any) any {
 		var tmp186 any
 		_ = tmp186
@@ -618,7 +618,7 @@ func Load() {
 				var tmp190 any
 				_ = tmp190
 				{
-					tmp191 := v_bri_DOT_auth_bearer.Get()
+					tmp191 := v_bri_DOT_core_DOT_security_bearer.Get()
 					tmp192 := lang.Apply1(tmp191, req185)
 					var some__116193 any = tmp192
 					_ = some__116193
@@ -632,7 +632,7 @@ func Load() {
 						if lang.IsTruthy(tmp196) {
 							tmp197 = nil
 						} else {
-							tmp198 := v_bri_DOT_auth_verify.Get()
+							tmp198 := v_bri_DOT_core_DOT_security_verify.Get()
 							tmp199 := lang.Apply1(tmp198, some__116193)
 							tmp197 = tmp199
 						}
@@ -648,13 +648,13 @@ func Load() {
 		}
 		return tmp186
 	})
-	tmp201 := &lang.NamedFn1{Name: "bri.auth/authenticate", Expects: "1: [req]", F: tmp184}
-	v_bri_DOT_auth_authenticate.BindRoot(tmp201)
-	_ = v_bri_DOT_auth_authenticate
+	tmp201 := &lang.NamedFn1{Name: "bri.core.security/authenticate", Expects: "1: [req]", F: tmp184}
+	v_bri_DOT_core_DOT_security_authenticate.BindRoot(tmp201)
+	_ = v_bri_DOT_core_DOT_security_authenticate
 	// (def deny-401 (clojure.core/fn [req] (audit/record {:action :auth/denied, :severity :warni…
-	v_bri_DOT_auth_deny_401.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(25), kw_private, true))
+	v_bri_DOT_core_DOT_security_deny_401.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(25), kw_private, true))
 	tmp202 := lang.FnFunc1(func(req203 any) any {
-		tmp204 := v_bri_DOT_audit_record.Get()
+		tmp204 := v_bri_DOT_core_DOT_audit_record.Get()
 		tmp205 := lang.Apply1(kw_uri, req203)
 		tmp206 := lang.Apply1(kw_request_SLASH_id, req203)
 		tmp207 := lang.NewMap(kw_action, kw_auth_SLASH_denied, kw_severity, kw_warning, kw_reason, kw_unauthenticated, kw_target, tmp205, kw_request_SLASH_id, tmp206)
@@ -664,14 +664,14 @@ func Load() {
 		tmp210 := lang.NewMap(kw_status, int64(401), kw_body, tmp209)
 		return tmp210
 	})
-	tmp211 := &lang.NamedFn1{Name: "bri.auth/deny-401", Expects: "1: [req]", F: tmp202}
-	v_bri_DOT_auth_deny_401.BindRoot(tmp211)
-	_ = v_bri_DOT_auth_deny_401
+	tmp211 := &lang.NamedFn1{Name: "bri.core.security/deny-401", Expects: "1: [req]", F: tmp202}
+	v_bri_DOT_core_DOT_security_deny_401.BindRoot(tmp211)
+	_ = v_bri_DOT_core_DOT_security_deny_401
 	// (def deny-403 (clojure.core/fn [req claims] (audit/record {:action :auth/forbidden, :sever…
-	v_bri_DOT_auth_deny_403.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(118), kw_column, int64(7), kw_end_line, int64(118), kw_end_column, int64(25), kw_private, true))
+	v_bri_DOT_core_DOT_security_deny_403.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(118), kw_column, int64(7), kw_end_line, int64(118), kw_end_column, int64(25), kw_private, true))
 	tmp212 := lang.FnFunc2(func(req213, claims214 any) any {
-		tmp215 := v_bri_DOT_audit_record.Get()
-		tmp216 := v_bri_DOT_auth_subject.Get()
+		tmp215 := v_bri_DOT_core_DOT_audit_record.Get()
+		tmp216 := v_bri_DOT_core_DOT_security_subject.Get()
 		tmp217 := lang.Apply1(tmp216, claims214)
 		tmp218 := lang.Apply1(kw_uri, req213)
 		tmp219 := lang.Apply1(kw_request_SLASH_id, req213)
@@ -682,17 +682,17 @@ func Load() {
 		tmp223 := lang.NewMap(kw_status, int64(403), kw_body, tmp222)
 		return tmp223
 	})
-	tmp224 := &lang.NamedFn2{Name: "bri.auth/deny-403", Expects: "2: [req claims]", F: tmp212}
-	v_bri_DOT_auth_deny_403.BindRoot(tmp224)
-	_ = v_bri_DOT_auth_deny_403
+	tmp224 := &lang.NamedFn2{Name: "bri.core.security/deny-403", Expects: "2: [req claims]", F: tmp212}
+	v_bri_DOT_core_DOT_security_deny_403.BindRoot(tmp224)
+	_ = v_bri_DOT_core_DOT_security_deny_403
 	// (def wrap-guard (clojure.core/fn [req-pred handler] (fn [req] (let [claims (authenticate r…
-	v_bri_DOT_auth_wrap_guard.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(123), kw_column, int64(7), kw_end_line, int64(123), kw_end_column, int64(27), kw_private, true))
+	v_bri_DOT_core_DOT_security_wrap_guard.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(123), kw_column, int64(7), kw_end_line, int64(123), kw_end_column, int64(27), kw_private, true))
 	tmp225 := lang.FnFunc2(func(req_pred226, handler227 any) any {
 		tmp228 := lang.FnFunc1(func(req229 any) any {
 			var tmp230 any
 			_ = tmp230
 			{
-				tmp231 := v_bri_DOT_auth_authenticate.Get()
+				tmp231 := v_bri_DOT_core_DOT_security_authenticate.Get()
 				tmp232 := lang.Apply1(tmp231, req229)
 				var claims233 any = tmp232
 				_ = claims233
@@ -701,7 +701,7 @@ func Load() {
 				var tmp236 any
 				_ = tmp236
 				if lang.IsTruthy(tmp235) {
-					tmp237 := v_bri_DOT_auth_deny_401.Get()
+					tmp237 := v_bri_DOT_core_DOT_security_deny_401.Get()
 					tmp238 := lang.Apply1(tmp237, req229)
 					tmp236 = tmp238
 				} else {
@@ -712,8 +712,8 @@ func Load() {
 						tmp241 := lang.Apply3(tmp240, req229, kw_auth_SLASH_claims, claims233)
 						var req_SINGLEQUOTE_242 any = tmp241
 						_ = req_SINGLEQUOTE_242
-						tmp243 := v_bri_DOT_http_mark_subject_BANG_.Get()
-						tmp244 := v_bri_DOT_auth_subject.Get()
+						tmp243 := v_bri_DOT_web_DOT_http_mark_subject_BANG_.Get()
+						tmp244 := v_bri_DOT_core_DOT_security_subject.Get()
 						tmp245 := lang.Apply1(tmp244, claims233)
 						tmp246 := lang.Apply2(tmp243, req_SINGLEQUOTE_242, tmp245)
 						_ = tmp246
@@ -743,7 +743,7 @@ func Load() {
 							tmp253 := lang.Apply1(handler227, req_SINGLEQUOTE_242)
 							tmp252 = tmp253
 						} else {
-							tmp254 := v_bri_DOT_auth_deny_403.Get()
+							tmp254 := v_bri_DOT_core_DOT_security_deny_403.Get()
 							tmp255 := lang.Apply2(tmp254, req_SINGLEQUOTE_242, claims233)
 							tmp252 = tmp255
 						}
@@ -758,18 +758,18 @@ func Load() {
 		tmp256 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp228}
 		return tmp256
 	})
-	tmp257 := &lang.NamedFn2{Name: "bri.auth/wrap-guard", Expects: "2: [req-pred handler]", F: tmp225}
-	v_bri_DOT_auth_wrap_guard.BindRoot(tmp257)
-	_ = v_bri_DOT_auth_wrap_guard
+	tmp257 := &lang.NamedFn2{Name: "bri.core.security/wrap-guard", Expects: "2: [req-pred handler]", F: tmp225}
+	v_bri_DOT_core_DOT_security_wrap_guard.BindRoot(tmp257)
+	_ = v_bri_DOT_core_DOT_security_wrap_guard
 	// (def guard "The GENERAL authorization guard and the framework's authz seam:\n  (guard req-…
-	v_bri_DOT_auth_guard.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(134), kw_column, int64(7), kw_end_line, int64(134), kw_end_column, int64(12), kw_doc, "The GENERAL authorization guard and the framework's authz seam:\n  (guard req-pred) → middleware; (guard req-pred handler) → wrapped\n  handler. req-pred is (req -> boolean) with :auth/claims populated. No/\n  invalid token → 401; authenticated but pred false → 403 (RFC 6750).\n  logged-in-only / role-only / user-only / admin-only are all thin\n  specializations of this. Tenant check in one line:\n  (guard #(= (get-in % [:auth/claims :org]) (get-in % [:path-params :org])))."))
+	v_bri_DOT_core_DOT_security_guard.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(134), kw_column, int64(7), kw_end_line, int64(134), kw_end_column, int64(12), kw_doc, "The GENERAL authorization guard and the framework's authz seam:\n  (guard req-pred) → middleware; (guard req-pred handler) → wrapped\n  handler. req-pred is (req -> boolean) with :auth/claims populated. No/\n  invalid token → 401; authenticated but pred false → 403 (RFC 6750).\n  logged-in-only / role-only / user-only / admin-only are all thin\n  specializations of this. Tenant check in one line:\n  (guard #(= (get-in % [:auth/claims :org]) (get-in % [:path-params :org])))."))
 	tmp258 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
 			req_pred259 := args[0]
 			_ = req_pred259
 			tmp260 := lang.FnFunc1(func(h261 any) any {
-				tmp262 := v_bri_DOT_auth_wrap_guard.Get()
+				tmp262 := v_bri_DOT_core_DOT_security_wrap_guard.Get()
 				tmp263 := lang.Apply2(tmp262, req_pred259, h261)
 				return tmp263
 			})
@@ -781,23 +781,23 @@ func Load() {
 			_ = req_pred266
 			handler267 := args[1]
 			_ = handler267
-			tmp268 := v_bri_DOT_auth_wrap_guard.Get()
+			tmp268 := v_bri_DOT_core_DOT_security_wrap_guard.Get()
 			tmp269 := lang.Apply2(tmp268, req_pred266, handler267)
 			return tmp269
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/guard", "1: [req-pred] or 2: [req-pred handler]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/guard", "1: [req-pred] or 2: [req-pred handler]"))
 		}
 	})
-	v_bri_DOT_auth_guard.BindRoot(tmp258)
-	_ = v_bri_DOT_auth_guard
+	v_bri_DOT_core_DOT_security_guard.BindRoot(tmp258)
+	_ = v_bri_DOT_core_DOT_security_guard
 	// (def guard-claims "guard whose predicate sees the CLAIMS map directly (the common case)." …
-	v_bri_DOT_auth_guard_claims.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(145), kw_column, int64(7), kw_end_line, int64(145), kw_end_column, int64(19), kw_doc, "guard whose predicate sees the CLAIMS map directly (the common case)."))
+	v_bri_DOT_core_DOT_security_guard_claims.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(145), kw_column, int64(7), kw_end_line, int64(145), kw_end_column, int64(19), kw_doc, "guard whose predicate sees the CLAIMS map directly (the common case)."))
 	tmp270 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
 			claims_pred271 := args[0]
 			_ = claims_pred271
-			tmp272 := v_bri_DOT_auth_guard.Get()
+			tmp272 := v_bri_DOT_core_DOT_security_guard.Get()
 			tmp273 := lang.FnFunc1(func(req274 any) any {
 				tmp275 := lang.Apply1(kw_auth_SLASH_claims, req274)
 				tmp276 := lang.Apply1(claims_pred271, tmp275)
@@ -811,7 +811,7 @@ func Load() {
 			_ = claims_pred279
 			handler280 := args[1]
 			_ = handler280
-			tmp281 := v_bri_DOT_auth_guard.Get()
+			tmp281 := v_bri_DOT_core_DOT_security_guard.Get()
 			tmp282 := lang.FnFunc1(func(req283 any) any {
 				tmp284 := lang.Apply1(kw_auth_SLASH_claims, req283)
 				tmp285 := lang.Apply1(claims_pred279, tmp284)
@@ -821,17 +821,17 @@ func Load() {
 			tmp287 := lang.Apply2(tmp281, tmp286, handler280)
 			return tmp287
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/guard-claims", "1: [claims-pred] or 2: [claims-pred handler]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/guard-claims", "1: [claims-pred] or 2: [claims-pred handler]"))
 		}
 	})
-	v_bri_DOT_auth_guard_claims.BindRoot(tmp270)
-	_ = v_bri_DOT_auth_guard_claims
+	v_bri_DOT_core_DOT_security_guard_claims.BindRoot(tmp270)
+	_ = v_bri_DOT_core_DOT_security_guard_claims
 	// (def logged-in-only "Require a valid token (any claims). 401 otherwise." (clojure.core/fn …
-	v_bri_DOT_auth_logged_in_only.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(150), kw_column, int64(7), kw_end_line, int64(150), kw_end_column, int64(21), kw_doc, "Require a valid token (any claims). 401 otherwise."))
+	v_bri_DOT_core_DOT_security_logged_in_only.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(150), kw_column, int64(7), kw_end_line, int64(150), kw_end_column, int64(21), kw_doc, "Require a valid token (any claims). 401 otherwise."))
 	tmp288 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp289 := v_bri_DOT_auth_guard.Get()
+			tmp289 := v_bri_DOT_core_DOT_security_guard.Get()
 			tmp290 := lang.FnFunc1(func(X_291 any) any {
 				return true
 			})
@@ -841,7 +841,7 @@ func Load() {
 		case 1:
 			handler294 := args[0]
 			_ = handler294
-			tmp295 := v_bri_DOT_auth_guard.Get()
+			tmp295 := v_bri_DOT_core_DOT_security_guard.Get()
 			tmp296 := lang.FnFunc1(func(X_297 any) any {
 				return true
 			})
@@ -849,19 +849,19 @@ func Load() {
 			tmp299 := lang.Apply2(tmp295, tmp298, handler294)
 			return tmp299
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/logged-in-only", "0: [] or 1: [handler]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/logged-in-only", "0: [] or 1: [handler]"))
 		}
 	})
-	v_bri_DOT_auth_logged_in_only.BindRoot(tmp288)
-	_ = v_bri_DOT_auth_logged_in_only
+	v_bri_DOT_core_DOT_security_logged_in_only.BindRoot(tmp288)
+	_ = v_bri_DOT_core_DOT_security_logged_in_only
 	// (def role-only "Require the token's :role to equal role. 401 (no token) or 403 (wrong\n  r…
-	v_bri_DOT_auth_role_only.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(155), kw_column, int64(7), kw_end_line, int64(155), kw_end_column, int64(16), kw_doc, "Require the token's :role to equal role. 401 (no token) or 403 (wrong\n  role)."))
+	v_bri_DOT_core_DOT_security_role_only.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(155), kw_column, int64(7), kw_end_line, int64(155), kw_end_column, int64(16), kw_doc, "Require the token's :role to equal role. 401 (no token) or 403 (wrong\n  role)."))
 	tmp300 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
 			role301 := args[0]
 			_ = role301
-			tmp302 := v_bri_DOT_auth_guard_claims.Get()
+			tmp302 := v_bri_DOT_core_DOT_security_guard_claims.Get()
 			tmp303 := lang.FnFunc1(func(c304 any) any {
 				tmp305 := v_clojure_DOT_core_name.Get()
 				tmp306 := lang.Apply1(tmp305, role301)
@@ -879,7 +879,7 @@ func Load() {
 			_ = role313
 			handler314 := args[1]
 			_ = handler314
-			tmp315 := v_bri_DOT_auth_guard_claims.Get()
+			tmp315 := v_bri_DOT_core_DOT_security_guard_claims.Get()
 			tmp316 := lang.FnFunc1(func(c317 any) any {
 				tmp318 := v_clojure_DOT_core_name.Get()
 				tmp319 := lang.Apply1(tmp318, role313)
@@ -893,64 +893,64 @@ func Load() {
 			tmp325 := lang.Apply2(tmp315, tmp324, handler314)
 			return tmp325
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/role-only", "1: [role] or 2: [role handler]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/role-only", "1: [role] or 2: [role handler]"))
 		}
 	})
-	v_bri_DOT_auth_role_only.BindRoot(tmp300)
-	_ = v_bri_DOT_auth_role_only
+	v_bri_DOT_core_DOT_security_role_only.BindRoot(tmp300)
+	_ = v_bri_DOT_core_DOT_security_role_only
 	// (def user-only "Sugar: (role-only :user)." (clojure.core/fn ([] (role-only "user")) ([hand…
-	v_bri_DOT_auth_user_only.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(161), kw_column, int64(7), kw_end_line, int64(161), kw_end_column, int64(16), kw_doc, "Sugar: (role-only :user)."))
+	v_bri_DOT_core_DOT_security_user_only.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(161), kw_column, int64(7), kw_end_line, int64(161), kw_end_column, int64(16), kw_doc, "Sugar: (role-only :user)."))
 	tmp326 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp327 := v_bri_DOT_auth_role_only.Get()
+			tmp327 := v_bri_DOT_core_DOT_security_role_only.Get()
 			tmp328 := lang.Apply1(tmp327, "user")
 			return tmp328
 		case 1:
 			handler329 := args[0]
 			_ = handler329
-			tmp330 := v_bri_DOT_auth_role_only.Get()
+			tmp330 := v_bri_DOT_core_DOT_security_role_only.Get()
 			tmp331 := lang.Apply2(tmp330, "user", handler329)
 			return tmp331
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/user-only", "0: [] or 1: [handler]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/user-only", "0: [] or 1: [handler]"))
 		}
 	})
-	v_bri_DOT_auth_user_only.BindRoot(tmp326)
-	_ = v_bri_DOT_auth_user_only
+	v_bri_DOT_core_DOT_security_user_only.BindRoot(tmp326)
+	_ = v_bri_DOT_core_DOT_security_user_only
 	// (def admin-only "Sugar: (role-only :admin)." (clojure.core/fn ([] (role-only "admin")) ([h…
-	v_bri_DOT_auth_admin_only.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(166), kw_column, int64(7), kw_end_line, int64(166), kw_end_column, int64(17), kw_doc, "Sugar: (role-only :admin)."))
+	v_bri_DOT_core_DOT_security_admin_only.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(166), kw_column, int64(7), kw_end_line, int64(166), kw_end_column, int64(17), kw_doc, "Sugar: (role-only :admin)."))
 	tmp332 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp333 := v_bri_DOT_auth_role_only.Get()
+			tmp333 := v_bri_DOT_core_DOT_security_role_only.Get()
 			tmp334 := lang.Apply1(tmp333, "admin")
 			return tmp334
 		case 1:
 			handler335 := args[0]
 			_ = handler335
-			tmp336 := v_bri_DOT_auth_role_only.Get()
+			tmp336 := v_bri_DOT_core_DOT_security_role_only.Get()
 			tmp337 := lang.Apply2(tmp336, "admin", handler335)
 			return tmp337
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/admin-only", "0: [] or 1: [handler]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/admin-only", "0: [] or 1: [handler]"))
 		}
 	})
-	v_bri_DOT_auth_admin_only.BindRoot(tmp332)
-	_ = v_bri_DOT_auth_admin_only
+	v_bri_DOT_core_DOT_security_admin_only.BindRoot(tmp332)
+	_ = v_bri_DOT_core_DOT_security_admin_only
 	// (def ban-store (atom {}))
-	v_bri_DOT_auth_ban_store.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(180), kw_column, int64(6), kw_end_line, int64(180), kw_end_column, int64(25), kw_private, true))
+	v_bri_DOT_core_DOT_security_ban_store.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(180), kw_column, int64(6), kw_end_line, int64(180), kw_end_column, int64(25), kw_private, true))
 	tmp338 := v_clojure_DOT_core_atom.Get()
 	tmp339 := lang.NewMap()
 	tmp340 := lang.Apply1(tmp338, tmp339)
-	v_bri_DOT_auth_ban_store.BindRoot(tmp340)
-	_ = v_bri_DOT_auth_ban_store
+	v_bri_DOT_core_DOT_security_ban_store.BindRoot(tmp340)
+	_ = v_bri_DOT_core_DOT_security_ban_store
 	// (def auto-ban "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),\n  :co…
-	v_bri_DOT_auth_auto_ban.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(182), kw_column, int64(7), kw_end_line, int64(182), kw_end_column, int64(15), kw_doc, "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),\n  :cooldown-ms (300000), :key (:ip | :subject | (fn [req] key)),\n  :should-ban? ((fn [denial-count req] boolean) — custom ban policy),\n  :clock ((fn [] millis), for tests), :store (atom, for test isolation)."))
+	v_bri_DOT_core_DOT_security_auto_ban.SetMeta(lang.NewMap(kw_file, "bri/auth.cljg", kw_line, int64(182), kw_column, int64(7), kw_end_line, int64(182), kw_end_column, int64(15), kw_doc, "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),\n  :cooldown-ms (300000), :key (:ip | :subject | (fn [req] key)),\n  :should-ban? ((fn [denial-count req] boolean) — custom ban policy),\n  :clock ((fn [] millis), for tests), :store (atom, for test isolation)."))
 	tmp341 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp342 := v_bri_DOT_auth_auto_ban.Get()
+			tmp342 := v_bri_DOT_core_DOT_security_auto_ban.Get()
 			tmp343 := lang.NewMap()
 			tmp344 := lang.Apply1(tmp342, tmp343)
 			return tmp344
@@ -1023,7 +1023,7 @@ func Load() {
 						tmp365 = or__2__auto__364
 					} else {
 						tmp366 := lang.FnFunc0(func() any {
-							tmp367 := v_bri_DOT_auth_X_now_millis.Get()
+							tmp367 := v_bri_DOT_core_DOT_security_X_now_millis.Get()
 							tmp368 := lang.Apply0(tmp367)
 							return tmp368
 						})
@@ -1045,7 +1045,7 @@ func Load() {
 					if lang.IsTruthy(or__2__auto__373) {
 						tmp374 = or__2__auto__373
 					} else {
-						tmp375 := v_bri_DOT_auth_ban_store.Get()
+						tmp375 := v_bri_DOT_core_DOT_security_ban_store.Get()
 						tmp374 = tmp375
 					}
 					tmp371 = tmp374
@@ -1097,7 +1097,7 @@ func Load() {
 						var tmp397 any
 						_ = tmp397
 						{
-							tmp398 := v_bri_DOT_http_client_key.Get()
+							tmp398 := v_bri_DOT_web_DOT_http_client_key.Get()
 							tmp399 := lang.Apply2(tmp398, req396, key_opts382)
 							var ck400 any = tmp399
 							_ = ck400
@@ -1144,7 +1144,7 @@ func Load() {
 							var tmp417 any
 							_ = tmp417
 							if lang.IsTruthy(tmp408) {
-								tmp418 := v_bri_DOT_audit_record.Get()
+								tmp418 := v_bri_DOT_core_DOT_audit_record.Get()
 								tmp419 := lang.Apply1(kw_banned_until, st407)
 								tmp420 := rt.Sub2(v_clojure_DOT_core_X_, tmp419, now402)
 								tmp421 := lang.Apply1(kw_request_SLASH_id, req396)
@@ -1210,7 +1210,7 @@ func Load() {
 												tmp467 := lang.Apply3(tmp461, tmp463, ck400, tmp466)
 												tmp468 := lang.Apply2(tmp460, store376, tmp467)
 												_ = tmp468
-												tmp469 := v_bri_DOT_audit_record.Get()
+												tmp469 := v_bri_DOT_core_DOT_audit_record.Get()
 												tmp470 := v_clojure_DOT_core_count.Get()
 												tmp471 := lang.Apply1(tmp470, recent455)
 												tmp472 := lang.Apply1(kw_request_SLASH_id, req396)
@@ -1267,9 +1267,9 @@ func Load() {
 			}
 			return tmp346
 		default:
-			panic(lang.NewArityError(len(args), "bri.auth/auto-ban", "0: [] or 1: [opts]"))
+			panic(lang.NewArityError(len(args), "bri.core.security/auto-ban", "0: [] or 1: [opts]"))
 		}
 	})
-	v_bri_DOT_auth_auto_ban.BindRoot(tmp341)
-	_ = v_bri_DOT_auth_auto_ban
+	v_bri_DOT_core_DOT_security_auto_ban.BindRoot(tmp341)
+	_ = v_bri_DOT_core_DOT_security_auto_ban
 }

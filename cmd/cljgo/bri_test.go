@@ -139,7 +139,7 @@ func runIn(dir, bin string, args ...string) (string, error) {
 }
 
 // The one-person-framework promise, end to end through the REAL binary
-// (ADR 0073, reconciled with bri.db ADR 0072): `cljgo new --template web`,
+// (ADR 0073, reconciled with bri.core.data ADR 0072): `cljgo new --template web`,
 // then `cljgo generate resource Note …`, then `cljgo test` is GREEN — a
 // working, authenticated, DB-backed CRUD scaffolded and passing its own
 // suite against a fresh in-memory database, with zero hand-editing.
@@ -156,7 +156,7 @@ func TestGenerateResourceRunsGreen(t *testing.T) {
 	if out, err := runIn(app, bin, "generate", "resource", "Note", "title:string", "body:text"); err != nil {
 		t.Fatalf("cljgo generate resource: %v\n%s", err, out)
 	}
-	// The generated CRUD suite runs against a fresh in-memory bri.db.
+	// The generated CRUD suite runs against a fresh in-memory bri.core.data.
 	if out, err := runIn(app, bin, "test"); err != nil {
 		t.Fatalf("cljgo test on the generated resource was not green: %v\n%s", err, out)
 	}
@@ -183,9 +183,9 @@ func TestExampleWebApiSuite(t *testing.T) {
 }
 
 // The shipped examples/notes-db project (a persistent notes CRUD on
-// bri.db, ADR 0072) is REAL source too: every gate run runs its
+// bri.core.data, ADR 0072) is REAL source too: every gate run runs its
 // in-process suite through the built binary. It is the thing people copy
-// to get a database-backed API, so a rot in bri.db — a renamed verb, a
+// to get a database-backed API, so a rot in bri.core.data — a renamed verb, a
 // broken migration, a lost snake→kebab mapping — turns this red. The
 // dual-mode (interpreted vs compiled) proof lives in TestBriDBParity.
 func TestExampleNotesDBSuite(t *testing.T) {
@@ -308,7 +308,7 @@ func TestBriNewDevTest(t *testing.T) {
 		t.Fatal("no .nrepl-port written by cljgo dev")
 	}
 	nreplEval(t, nreplPort,
-		`(in-ns 'app.main) (defn home [_req] (bri.http/ok (bri.html/page [:h1 "redefined live"])))`)
+		`(in-ns 'app.main) (defn home [_req] (bri.web.http/ok (bri.web.html/page [:h1 "redefined live"])))`)
 	if code, body := get("/"); code != 200 || !strings.Contains(body, "redefined live") {
 		t.Fatalf("after nREPL re-def: %d %q — the live-var story is broken", code, body)
 	}

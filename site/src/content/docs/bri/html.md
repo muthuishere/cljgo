@@ -1,9 +1,9 @@
 ---
-title: "bri.html"
+title: "bri.web.html"
 description: "HTML as a function over data: hiccup-style vectors in, escaped HTML out — plus full documents, CSRF-carrying forms, and an explicit raw-HTML opt-out."
 ---
 
-HTML is a **function** over data: hiccup-style vectors in, escaped HTML out. No template language, no layouts, no partials, no asset pipeline — `html/form` is the deliberate outer boundary of the surface, and CSS is a file in `public/` served by `(bri.http/dir "public")` (see [bri.http](/cljgo/bri/http/)).
+HTML is a **function** over data: hiccup-style vectors in, escaped HTML out. No template language, no layouts, no partials, no asset pipeline — `html/form` is the deliberate outer boundary of the surface, and CSS is a file in `public/` served by `(bri.web.http/dir "public")` (see [bri.web.http](/cljgo/bri/http/)).
 
 ## Elements
 
@@ -46,10 +46,10 @@ emits the full `<!doctype html>` document — charset, viewport, title, and the 
 
 `html/form` **mints the CSRF token** (a hidden `__csrf` field) from the request the csrf middleware bound — which is why the browser POST passes the [default middleware stack](/cljgo/bri/http/). `{:get "/search"}` makes a GET form (no token needed); other opts keys pass through as attributes. It returns hiccup data: compose it, then `render`/`page` it.
 
-JSON is equally first-class: return a map/vector body and the `negotiate` middleware encodes it (see [bri.http](/cljgo/bri/http/)).
+JSON is equally first-class: return a map/vector body and the `negotiate` middleware encodes it (see [bri.web.http](/cljgo/bri/http/)).
 
 ## Where next
 
-- [bri.http](/cljgo/bri/http/) — the handlers and middleware these pages flow through
-- [bri.config](/cljgo/bri/config/) — profiles, env overlay, the schema
+- [bri.web.http](/cljgo/bri/http/) — the handlers and middleware these pages flow through
+- [bri.core.config](/cljgo/bri/config/) — profiles, env overlay, the schema
 - [Tutorial](/cljgo/bri/tutorial/) — build the app these pieces belong to

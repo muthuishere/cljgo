@@ -8,45 +8,45 @@ import (
 )
 
 var (
-	kw_as                             = lang.InternKeywordString("as")
-	kw_audit                          = lang.InternKeywordString("audit")
-	kw_column                         = lang.InternKeywordString("column")
-	kw_doc                            = lang.InternKeywordString("doc")
-	kw_dynamic                        = lang.InternKeywordString("dynamic")
-	kw_end_column                     = lang.InternKeywordString("end-column")
-	kw_end_line                       = lang.InternKeywordString("end-line")
-	kw_file                           = lang.InternKeywordString("file")
-	kw_info                           = lang.InternKeywordString("info")
-	kw_kind                           = lang.InternKeywordString("kind")
-	kw_line                           = lang.InternKeywordString("line")
-	kw_private                        = lang.InternKeywordString("private")
-	kw_severity                       = lang.InternKeywordString("severity")
-	kw_sub                            = lang.InternKeywordString("sub")
-	kw_ts                             = lang.InternKeywordString("ts")
-	sym_bri_DOT_audit                 = lang.NewSymbol("bri.audit")
-	sym_clojure_DOT_core              = lang.NewSymbol("clojure.core")
-	sym_clojure_DOT_string            = lang.NewSymbol("clojure.string")
-	sym_str                           = lang.NewSymbol("str")
-	v_bri_DOT_audit_X_STAR_sink_STAR_ = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("*sink*")).SetDynamic()
-	v_bri_DOT_audit_X_eprintln        = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("-eprintln")).SetPrivate()
-	v_bri_DOT_audit_X_getenv          = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("-getenv")).SetPrivate()
-	v_bri_DOT_audit_X_json_encode     = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("-json-encode")).SetPrivate()
-	v_bri_DOT_audit_X_now_millis      = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("-now-millis")).SetPrivate()
-	v_bri_DOT_audit_default_sink      = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("default-sink")).SetPrivate()
-	v_bri_DOT_audit_dev_QMARK_        = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("dev?")).SetPrivate()
-	v_bri_DOT_audit_process_sink      = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("process-sink")).SetPrivate()
-	v_bri_DOT_audit_record            = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("record"))
-	v_bri_DOT_audit_set_sink_BANG_    = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("set-sink!"))
-	v_bri_DOT_audit_subject           = lang.InternVarName(lang.NewSymbol("bri.audit"), lang.NewSymbol("subject"))
-	v_clojure_DOT_core_X_EQ_          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
-	v_clojure_DOT_core_atom           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("atom"))
-	v_clojure_DOT_core_deref          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("deref"))
-	v_clojure_DOT_core_in_ns          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
-	v_clojure_DOT_core_merge          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("merge"))
-	v_clojure_DOT_core_pr_str         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("pr-str"))
-	v_clojure_DOT_core_refer          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
-	v_clojure_DOT_core_require        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
-	v_clojure_DOT_core_reset_BANG_    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("reset!"))
+	kw_as                                      = lang.InternKeywordString("as")
+	kw_audit                                   = lang.InternKeywordString("audit")
+	kw_column                                  = lang.InternKeywordString("column")
+	kw_doc                                     = lang.InternKeywordString("doc")
+	kw_dynamic                                 = lang.InternKeywordString("dynamic")
+	kw_end_column                              = lang.InternKeywordString("end-column")
+	kw_end_line                                = lang.InternKeywordString("end-line")
+	kw_file                                    = lang.InternKeywordString("file")
+	kw_info                                    = lang.InternKeywordString("info")
+	kw_kind                                    = lang.InternKeywordString("kind")
+	kw_line                                    = lang.InternKeywordString("line")
+	kw_private                                 = lang.InternKeywordString("private")
+	kw_severity                                = lang.InternKeywordString("severity")
+	kw_sub                                     = lang.InternKeywordString("sub")
+	kw_ts                                      = lang.InternKeywordString("ts")
+	sym_bri_DOT_core_DOT_audit                 = lang.NewSymbol("bri.core.audit")
+	sym_clojure_DOT_core                       = lang.NewSymbol("clojure.core")
+	sym_clojure_DOT_string                     = lang.NewSymbol("clojure.string")
+	sym_str                                    = lang.NewSymbol("str")
+	v_bri_DOT_core_DOT_audit_X_STAR_sink_STAR_ = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("*sink*")).SetDynamic()
+	v_bri_DOT_core_DOT_audit_X_eprintln        = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("-eprintln")).SetPrivate()
+	v_bri_DOT_core_DOT_audit_X_getenv          = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("-getenv")).SetPrivate()
+	v_bri_DOT_core_DOT_audit_X_json_encode     = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("-json-encode")).SetPrivate()
+	v_bri_DOT_core_DOT_audit_X_now_millis      = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("-now-millis")).SetPrivate()
+	v_bri_DOT_core_DOT_audit_default_sink      = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("default-sink")).SetPrivate()
+	v_bri_DOT_core_DOT_audit_dev_QMARK_        = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("dev?")).SetPrivate()
+	v_bri_DOT_core_DOT_audit_process_sink      = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("process-sink")).SetPrivate()
+	v_bri_DOT_core_DOT_audit_record            = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("record"))
+	v_bri_DOT_core_DOT_audit_set_sink_BANG_    = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("set-sink!"))
+	v_bri_DOT_core_DOT_audit_subject           = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("subject"))
+	v_clojure_DOT_core_X_EQ_                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
+	v_clojure_DOT_core_atom                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("atom"))
+	v_clojure_DOT_core_deref                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("deref"))
+	v_clojure_DOT_core_in_ns                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_merge                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("merge"))
+	v_clojure_DOT_core_pr_str                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("pr-str"))
+	v_clojure_DOT_core_refer                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	v_clojure_DOT_core_require                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
+	v_clojure_DOT_core_reset_BANG_             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("reset!"))
 )
 
 var loaded = false
@@ -57,11 +57,11 @@ func Load() {
 		return
 	}
 	loaded = true
-	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.audit")), lang.VarFile, "bri/audit.cljg"))
+	lang.PushThreadBindings(lang.NewMap(lang.VarCurrentNS, lang.FindOrCreateNamespace(lang.NewSymbol("bri.core.audit")), lang.VarFile, "bri/audit.cljg"))
 	defer lang.PopThreadBindings()
-	// (clojure.core/in-ns (quote bri.audit))
+	// (clojure.core/in-ns (quote bri.core.audit))
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
-	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_audit)
+	tmp2 := lang.Apply1(tmp1, sym_bri_DOT_core_DOT_audit)
 	_ = tmp2
 	// (clojure.core/refer (quote clojure.core))
 	tmp3 := v_clojure_DOT_core_refer.Get()
@@ -72,70 +72,70 @@ func Load() {
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
 	// (def dev? (clojure.core/fn [] (= "1" (-getenv "BRI_DEV"))))
-	v_bri_DOT_audit_dev_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(16), kw_column, int64(7), kw_end_line, int64(16), kw_end_column, int64(21), kw_private, true))
+	v_bri_DOT_core_DOT_audit_dev_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(16), kw_column, int64(7), kw_end_line, int64(16), kw_end_column, int64(21), kw_private, true))
 	tmp7 := lang.FnFunc0(func() any {
-		tmp8 := v_bri_DOT_audit_X_getenv.Get()
+		tmp8 := v_bri_DOT_core_DOT_audit_X_getenv.Get()
 		tmp9 := lang.Apply1(tmp8, "BRI_DEV")
 		tmp10 := rt.EQ2(v_clojure_DOT_core_X_EQ_, "1", tmp9)
 		return tmp10
 	})
-	tmp11 := &lang.NamedFn0{Name: "bri.audit/dev?", Expects: "0: []", F: tmp7}
-	v_bri_DOT_audit_dev_QMARK_.BindRoot(tmp11)
-	_ = v_bri_DOT_audit_dev_QMARK_
+	tmp11 := &lang.NamedFn0{Name: "bri.core.audit/dev?", Expects: "0: []", F: tmp7}
+	v_bri_DOT_core_DOT_audit_dev_QMARK_.BindRoot(tmp11)
+	_ = v_bri_DOT_core_DOT_audit_dev_QMARK_
 	// (def *sink* "When thread-bound, receives every event map (used by tests to capture\n  dete…
-	v_bri_DOT_audit_X_STAR_sink_STAR_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(19), kw_column, int64(6), kw_end_line, int64(19), kw_end_column, int64(22), kw_dynamic, true, kw_doc, "When thread-bound, receives every event map (used by tests to capture\n  deterministically). nil = fall through to the process sink."))
-	v_bri_DOT_audit_X_STAR_sink_STAR_.BindRoot(nil)
-	_ = v_bri_DOT_audit_X_STAR_sink_STAR_
+	v_bri_DOT_core_DOT_audit_X_STAR_sink_STAR_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(19), kw_column, int64(6), kw_end_line, int64(19), kw_end_column, int64(22), kw_dynamic, true, kw_doc, "When thread-bound, receives every event map (used by tests to capture\n  deterministically). nil = fall through to the process sink."))
+	v_bri_DOT_core_DOT_audit_X_STAR_sink_STAR_.BindRoot(nil)
+	_ = v_bri_DOT_core_DOT_audit_X_STAR_sink_STAR_
 	// (def process-sink (atom nil))
-	v_bri_DOT_audit_process_sink.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(24), kw_column, int64(6), kw_end_line, int64(24), kw_end_column, int64(28), kw_private, true))
+	v_bri_DOT_core_DOT_audit_process_sink.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(24), kw_column, int64(6), kw_end_line, int64(24), kw_end_column, int64(28), kw_private, true))
 	tmp12 := v_clojure_DOT_core_atom.Get()
 	tmp13 := lang.Apply1(tmp12, nil)
-	v_bri_DOT_audit_process_sink.BindRoot(tmp13)
-	_ = v_bri_DOT_audit_process_sink
+	v_bri_DOT_core_DOT_audit_process_sink.BindRoot(tmp13)
+	_ = v_bri_DOT_core_DOT_audit_process_sink
 	// (def set-sink! "Install the process-wide audit sink: a fn of the event map. The T2\n  seam…
-	v_bri_DOT_audit_set_sink_BANG_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(16), kw_doc, "Install the process-wide audit sink: a fn of the event map. The T2\n  seam — point it at bri.db + notify.Send. Passing nil restores the\n  default structured-stderr sink."))
+	v_bri_DOT_core_DOT_audit_set_sink_BANG_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(16), kw_doc, "Install the process-wide audit sink: a fn of the event map. The T2\n  seam — point it at bri.core.data + notify.Send. Passing nil restores the\n  default structured-stderr sink."))
 	tmp14 := lang.FnFunc1(func(f15 any) any {
 		tmp16 := v_clojure_DOT_core_reset_BANG_.Get()
-		tmp17 := v_bri_DOT_audit_process_sink.Get()
+		tmp17 := v_bri_DOT_core_DOT_audit_process_sink.Get()
 		tmp18 := lang.Apply2(tmp16, tmp17, f15)
 		return tmp18
 	})
-	tmp19 := &lang.NamedFn1{Name: "bri.audit/set-sink!", Expects: "1: [f]", F: tmp14}
-	v_bri_DOT_audit_set_sink_BANG_.BindRoot(tmp19)
-	_ = v_bri_DOT_audit_set_sink_BANG_
+	tmp19 := &lang.NamedFn1{Name: "bri.core.audit/set-sink!", Expects: "1: [f]", F: tmp14}
+	v_bri_DOT_core_DOT_audit_set_sink_BANG_.BindRoot(tmp19)
+	_ = v_bri_DOT_core_DOT_audit_set_sink_BANG_
 	// (def default-sink (clojure.core/fn [ev] (if (dev?) (-eprintln (pr-str ev)) (-eprintln (-js…
-	v_bri_DOT_audit_default_sink.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(29), kw_private, true))
+	v_bri_DOT_core_DOT_audit_default_sink.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(29), kw_private, true))
 	tmp20 := lang.FnFunc1(func(ev21 any) any {
-		tmp22 := v_bri_DOT_audit_dev_QMARK_.Get()
+		tmp22 := v_bri_DOT_core_DOT_audit_dev_QMARK_.Get()
 		tmp23 := lang.Apply0(tmp22)
 		var tmp24 any
 		_ = tmp24
 		if lang.IsTruthy(tmp23) {
-			tmp25 := v_bri_DOT_audit_X_eprintln.Get()
+			tmp25 := v_bri_DOT_core_DOT_audit_X_eprintln.Get()
 			tmp26 := v_clojure_DOT_core_pr_str.Get()
 			tmp27 := lang.Apply1(tmp26, ev21)
 			tmp28 := lang.Apply1(tmp25, tmp27)
 			tmp24 = tmp28
 		} else {
-			tmp29 := v_bri_DOT_audit_X_eprintln.Get()
-			tmp30 := v_bri_DOT_audit_X_json_encode.Get()
+			tmp29 := v_bri_DOT_core_DOT_audit_X_eprintln.Get()
+			tmp30 := v_bri_DOT_core_DOT_audit_X_json_encode.Get()
 			tmp31 := lang.Apply1(tmp30, ev21)
 			tmp32 := lang.Apply1(tmp29, tmp31)
 			tmp24 = tmp32
 		}
 		return tmp24
 	})
-	tmp33 := &lang.NamedFn1{Name: "bri.audit/default-sink", Expects: "1: [ev]", F: tmp20}
-	v_bri_DOT_audit_default_sink.BindRoot(tmp33)
-	_ = v_bri_DOT_audit_default_sink
+	tmp33 := &lang.NamedFn1{Name: "bri.core.audit/default-sink", Expects: "1: [ev]", F: tmp20}
+	v_bri_DOT_core_DOT_audit_default_sink.BindRoot(tmp33)
+	_ = v_bri_DOT_core_DOT_audit_default_sink
 	// (def record "Record ONE audit event. Merges a :ts (epoch millis), :kind :audit and\n  a de…
-	v_bri_DOT_audit_record.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(13), kw_doc, "Record ONE audit event. Merges a :ts (epoch millis), :kind :audit and\n  a default :severity :info; the caller supplies :action (required by\n  convention), :actor (subject or client key), :target, and any extra\n  keys. Returns the completed event. Routing: a thread-bound *sink* wins\n  (tests), else the process sink, else structured stderr."))
+	v_bri_DOT_core_DOT_audit_record.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(13), kw_doc, "Record ONE audit event. Merges a :ts (epoch millis), :kind :audit and\n  a default :severity :info; the caller supplies :action (required by\n  convention), :actor (subject or client key), :target, and any extra\n  keys. Returns the completed event. Routing: a thread-bound *sink* wins\n  (tests), else the process sink, else structured stderr."))
 	tmp34 := lang.FnFunc1(func(ev35 any) any {
 		var tmp36 any
 		_ = tmp36
 		{
 			tmp37 := v_clojure_DOT_core_merge.Get()
-			tmp38 := v_bri_DOT_audit_X_now_millis.Get()
+			tmp38 := v_bri_DOT_core_DOT_audit_X_now_millis.Get()
 			tmp39 := lang.Apply0(tmp38)
 			tmp40 := lang.NewMap(kw_ts, tmp39, kw_kind, kw_audit, kw_severity, kw_info)
 			tmp41 := lang.Apply2(tmp37, tmp40, ev35)
@@ -144,7 +144,7 @@ func Load() {
 			var tmp43 any
 			_ = tmp43
 			{
-				tmp44 := v_bri_DOT_audit_X_STAR_sink_STAR_.Get()
+				tmp44 := v_bri_DOT_core_DOT_audit_X_STAR_sink_STAR_.Get()
 				var or__2__auto__45 any = tmp44
 				_ = or__2__auto__45
 				var tmp46 any
@@ -156,7 +156,7 @@ func Load() {
 					_ = tmp47
 					{
 						tmp48 := v_clojure_DOT_core_deref.Get()
-						tmp49 := v_bri_DOT_audit_process_sink.Get()
+						tmp49 := v_bri_DOT_core_DOT_audit_process_sink.Get()
 						tmp50 := lang.Apply1(tmp48, tmp49)
 						var or__2__auto__51 any = tmp50
 						_ = or__2__auto__51
@@ -165,7 +165,7 @@ func Load() {
 						if lang.IsTruthy(or__2__auto__51) {
 							tmp52 = or__2__auto__51
 						} else {
-							tmp53 := v_bri_DOT_audit_default_sink.Get()
+							tmp53 := v_bri_DOT_core_DOT_audit_default_sink.Get()
 							tmp52 = tmp53
 						}
 						tmp47 = tmp52
@@ -182,16 +182,16 @@ func Load() {
 		}
 		return tmp36
 	})
-	tmp56 := &lang.NamedFn1{Name: "bri.audit/record", Expects: "1: [ev]", F: tmp34}
-	v_bri_DOT_audit_record.BindRoot(tmp56)
-	_ = v_bri_DOT_audit_record
+	tmp56 := &lang.NamedFn1{Name: "bri.core.audit/record", Expects: "1: [ev]", F: tmp34}
+	v_bri_DOT_core_DOT_audit_record.BindRoot(tmp56)
+	_ = v_bri_DOT_core_DOT_audit_record
 	// (def subject "The audit actor for a claims map — the JWT subject." (clojure.core/fn [cla…
-	v_bri_DOT_audit_subject.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(14), kw_doc, "The audit actor for a claims map — the JWT subject."))
+	v_bri_DOT_core_DOT_audit_subject.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(14), kw_doc, "The audit actor for a claims map — the JWT subject."))
 	tmp57 := lang.FnFunc1(func(claims58 any) any {
 		tmp59 := lang.Apply1(kw_sub, claims58)
 		return tmp59
 	})
-	tmp60 := &lang.NamedFn1{Name: "bri.audit/subject", Expects: "1: [claims]", F: tmp57}
-	v_bri_DOT_audit_subject.BindRoot(tmp60)
-	_ = v_bri_DOT_audit_subject
+	tmp60 := &lang.NamedFn1{Name: "bri.core.audit/subject", Expects: "1: [claims]", F: tmp57}
+	v_bri_DOT_core_DOT_audit_subject.BindRoot(tmp60)
+	_ = v_bri_DOT_core_DOT_audit_subject
 }

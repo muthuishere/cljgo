@@ -10,7 +10,7 @@
 ;;
 ;; Loaded as a bri namespace (ADR 0041): like every core/bri/*.cljg there is
 ;; NO (ns …) form — it opens with the fully-qualified in-ns + refer. The refer
-;; EXCLUDES min/max/range/not (the same way bri.http excludes its own `ok`),
+;; EXCLUDES min/max/range/not (the same way bri.web.http excludes its own `ok`),
 ;; so these validator names shadow clojure.core cleanly behind the `v/` alias;
 ;; bodies call the core originals fully-qualified.
 (clojure.core/in-ns 'bri.cli.validate)

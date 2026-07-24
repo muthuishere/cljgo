@@ -43,7 +43,7 @@ type Options struct {
 	PrintLastValue bool
 	// UsesBri marks a program that requires a bri.* namespace (ADR 0071).
 	// When set, the emitted main package blank-imports pkg/briaot — the
-	// AOT-compiled bri framework — so the replayed (require 'bri.http)
+	// AOT-compiled bri framework — so the replayed (require 'bri.web.http)
 	// resolves at runtime to real net/http + the framework fns with no
 	// interpreter linked. WriteProgram sets it from Program.UsesBri, which
 	// CompileProgram records when a bri lib provider fires during discovery.
@@ -52,7 +52,7 @@ type Options struct {
 	// OPT-IN bri namespaces the program required (ADR 0074). These are
 	// EXCLUDED from the always-linked umbrella pkg/briaot; the emitted main
 	// package blank-imports each of them ADDITIVELY, so their heavy
-	// dependency (the OpenTelemetry SDK for bri.otel) links ONLY when the
+	// dependency (the OpenTelemetry SDK for bri.core.telemetry) links ONLY when the
 	// app requires the namespace. WriteProgram sets it from
 	// Program.OptInBriPkgs, recorded when an opt-in bri provider fires
 	// during discovery.
@@ -269,12 +269,12 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		fmt.Fprintf(&out, "_ %q\n", runtimeModule+"/pkg/coreaot")
 		// The AOT-compiled bri framework (ADR 0071): a bri app blank-imports
 		// pkg/briaot so its init() registers a lib provider per bri namespace
-		// — the replayed (require 'bri.http) then resolves to the compiled
+		// — the replayed (require 'bri.web.http) then resolves to the compiled
 		// framework + Go shims, no interpreter linked.
 		if opts.UsesBri {
 			fmt.Fprintf(&out, "_ %q\n", runtimeModule+"/pkg/briaot")
 		}
-		// ADR 0074: an OPT-IN bri namespace (bri.otel) is NOT in the umbrella
+		// ADR 0074: an OPT-IN bri namespace (bri.core.telemetry) is NOT in the umbrella
 		// pkg/briaot. Blank-import its sub-package additively so its provider
 		// registers and its isolated heavy dependency links — but ONLY here,
 		// where the app actually required it.

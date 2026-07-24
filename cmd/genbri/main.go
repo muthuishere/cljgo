@@ -1,5 +1,5 @@
 // Command genbri AOT-compiles the bri application framework's Clojure
-// half — core/bri/*.cljg (bri.http/config/audit/html/auth) — into the Go
+// half — core/bri/*.cljg (bri.web.http/config/audit/html/auth) — into the Go
 // packages under pkg/briaot (ADR 0071, mirroring cmd/gencore / ADR 0046).
 // It is the generator behind `go generate ./pkg/briaot`; its output is
 // checked in, and pkg/briaot's drift test re-runs it into a temp dir and
@@ -160,7 +160,7 @@ func compileSpec(ev *eval.Evaluator, s bri.Spec) ([]*ast.Node, error) {
 // provider per bri namespace (ADR 0042 §2). Each provider installs the
 // namespace's Go shims (pkg/bri, the shim implementation both modes share)
 // then runs the AOT-compiled forms (the sub-package's guarded Load), so a
-// compiled binary's (require 'bri.http) resolves to real net/http + the
+// compiled binary's (require 'bri.web.http) resolves to real net/http + the
 // framework fns with no interpreter linked (ADR 0071).
 func writeLoader(dir string) error {
 	const mod = "github.com/muthuishere/cljgo"
@@ -171,10 +171,10 @@ func writeLoader(dir string) error {
 // bri namespace (core/bri/*.cljg — bri.Specs()), each a Load() that runs
 // that namespace's top-level forms, plus a lib provider per namespace that
 // installs the Go shims before running it. Blank-importing this package
-// into a compiled binary is what makes (require 'bri.http) resolve WITHOUT
+// into a compiled binary is what makes (require 'bri.web.http) resolve WITHOUT
 // the tree-walk interpreter (ADR 0071, mirroring pkg/coreaot / ADR 0046).
 // The emitter blank-imports it into a bri app's main package when the app
-// uses bri (pkg/emit UsesBri). OPT-IN namespaces (ADR 0074, e.g. bri.otel)
+// uses bri (pkg/emit UsesBri). OPT-IN namespaces (ADR 0074, e.g. bri.core.telemetry)
 // are EXCLUDED here — they self-register from their own sub-package and are
 // blank-imported by the emitter only when the app requires them, so their
 // heavy dependency never links into this umbrella.
@@ -195,7 +195,7 @@ import (
 	b.WriteString(`)
 
 // init registers a lib provider per bri namespace: the replayed
-// (require 'bri.http) in a compiled binary triggers the matching loader at
+// (require 'bri.web.http) in a compiled binary triggers the matching loader at
 // its source position (the providers are guarded — each sub-package's Load
 // is load-once, and InstallShimsInto is idempotent re-interning).
 func init() {

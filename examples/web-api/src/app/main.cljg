@@ -17,9 +17,9 @@
 ;;   GET  /api/me                                         (whoami, from the token)
 ;;   GET  /api/admin/stats                                (admin only)
 (ns app.main
-  (:require [bri.http :as http :refer [GET POST DELETE]]
-            [bri.auth :as auth]
-            [bri.config :as config]))
+  (:require [bri.web.http :as http :refer [GET POST DELETE]]
+            [bri.core.security :as auth]
+            [bri.core.config :as config]))
 
 (def cfg (config/load!))   ; conf.edn (+ :profiles by APP_PROFILE) + APP_* env.
 

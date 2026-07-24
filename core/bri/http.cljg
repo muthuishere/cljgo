@@ -1,6 +1,6 @@
-;; bri.http — Ring-contract handlers on stdlib net/http (ADR 0041 §4,
+;; bri.web.http — Ring-contract handlers on stdlib net/http (ADR 0041 §4,
 ;; openspec app-framework T1). Loaded lazily by pkg/bri's lib provider
-;; on the first (require 'bri.http); before this source evaluates, the
+;; on the first (require 'bri.web.http); before this source evaluates, the
 ;; provider interns the private Go host shims it leans on:
 ;;
 ;;   -serve -request -json-encode -json-decode -form-decode -hmac-sign
@@ -12,13 +12,13 @@
 ;; strings — no router of our own. `#'var` handlers deref PER REQUEST
 ;; (live REPL web dev); omitting :middleware applies (defaults) — the
 ;; safe stack is what you didn't type.
-;; :exclude ok — bri.http/ok is the 200-response helper the golden page
+;; :exclude ok — bri.web.http/ok is the 200-response helper the golden page
 ;; blesses ((http/ok ...)); clojure.core/ok (the Result constructor)
 ;; stays reachable fully qualified. Excluding the refer keeps the
 ;; precedence principle's letter (nothing in core is shadowed for USER
 ;; code — http/ok is namespace-qualified by construction) and kills the
 ;; replace warning at load.
-(clojure.core/in-ns 'bri.http)
+(clojure.core/in-ns 'bri.web.http)
 (clojure.core/refer 'clojure.core :exclude '[ok])
 (require '[clojure.string :as str])
 (require '[clojure.edn :as edn])
@@ -99,14 +99,14 @@
   "Static file handler for a directory, served by Go's http.FileServer.
   Mount under a trailing-slash pattern: [\"GET /static/\" (dir \"public\")]."
   [path]
-  {:bri.http/dir path})
+  {:bri.web.http/dir path})
 
 (defn managed
   "Mark a bri-produced plain-fn handler so dev mode does not warn
   about it (the liveness warning is for USER handlers that forgot the
   #'var; a bri helper's closure is deliberate)."
   [f]
-  {:bri.http/handler f})
+  {:bri.web.http/handler f})
 
 (defn health
   "A health handler. T1 edition: reports the process up; deps whose
@@ -178,13 +178,13 @@
 
 ;; --- CSRF ------------------------------------------------------------------
 (def ^:dynamic *csrf-token*
-  ;; Bound per request by the csrf middleware; bri.html/form mints it
+  ;; Bound per request by the csrf middleware; bri.web.html/form mints it
   ;; into forms. nil outside a request.
   nil)
 
 (defn form-token
   "The CSRF token for the current request (bound by the csrf
-  middleware). bri.html/form calls this; user code can too, for
+  middleware). bri.web.html/form calls this; user code can too, for
   hand-rolled forms or JS that sets the x-csrf-token header."
   []
   *csrf-token*)
@@ -193,14 +193,14 @@
   (contains? #{:post :put :patch :delete} (:request-method req)))
 
 (defn ^:private csrf-ok? [req]
-  (let [expected (get (:session req) :bri.http/csrf-token)
+  (let [expected (get (:session req) :bri.web.http/csrf-token)
         given    (or (get (:form-params req) :__csrf)
                      (get (:headers req) "x-csrf-token"))]
     (and (string? expected) (string? given) (-const-eq expected given))))
 
 (def csrf
   "Default middleware: gates SESSION-BEARING mutating requests on a
-  token minted into forms by bri.html/form (or sent as the
+  token minted into forms by bri.web.html/form (or sent as the
   x-csrf-token header). Sessionless requests pass — the documented API
   posture: a JSON curl with no cookie has nothing to forge. Sits inside
   :sessions and :json (which parses form bodies)."
@@ -211,14 +211,14 @@
                {:status 403
                 :headers {"content-type" "text/plain; charset=utf-8"}
                 :body "invalid or missing CSRF token"}
-               (let [token (or (get (:session req) :bri.http/csrf-token) (-rand-token))
+               (let [token (or (get (:session req) :bri.web.http/csrf-token) (-rand-token))
                      res   (binding [*csrf-token* token]
-                             (handler (assoc-in req [:session :bri.http/csrf-token] token)))]
+                             (handler (assoc-in req [:session :bri.web.http/csrf-token] token)))]
                  ;; Persist the token whenever the response writes a
                  ;; session (a fresh session started, or one continues) so
                  ;; the NEXT request's form post verifies.
                  (if (and (map? res) (contains? res :session) (some? (:session res)))
-                   (assoc-in res [:session :bri.http/csrf-token] token)
+                   (assoc-in res [:session :bri.web.http/csrf-token] token)
                    res)))))})
 
 (defn start-session
@@ -254,7 +254,7 @@
                    res (handler req)]
                (when (or (result? res) (and (map? res) (result? (:body res))))
                  (throw (ex-info (str "handler returned a bare Result — Result values cross "
-                                      "the http boundary only through (bri.http/render ...)")
+                                      "the http boundary only through (bri.web.http/render ...)")
                                  {:bri/error :else})))
                (cond
                  (nil? res)
@@ -327,9 +327,9 @@
 (defn ^:private warn-custom-stack [stack]
   (let [names (set (stack-names stack))]
     (when-not (contains? names :recover)
-      (println (str "bri.http WARNING: custom :middleware stack lacks :recover"
-                    " — the safe default stacks include it (see (bri.http/defaults)"
-                    " / (bri.http/api-defaults))")))))
+      (println (str "bri.web.http WARNING: custom :middleware stack lacks :recover"
+                    " — the safe default stacks include it (see (bri.web.http/defaults)"
+                    " / (bri.web.http/api-defaults))")))))
 
 ;; --- routes → mounted handlers -----------------------------------------------
 (defn ^:private wrap-stack [stack handler]
@@ -342,20 +342,20 @@
   [pattern h]
   (cond
     (var? h) (fn [req] ((deref h) req))
-    (and (map? h) (:bri.http/handler h)) (:bri.http/handler h)
+    (and (map? h) (:bri.web.http/handler h)) (:bri.web.http/handler h)
     :else (do (when (dev?)
-                (println (str "bri.http WARNING: route " (pr-str pattern)
+                (println (str "bri.web.http WARNING: route " (pr-str pattern)
                               " holds a plain fn, not a #'var — re-defs at the REPL will NOT update it")))
               (fn [req] (h req)))))
 
 (defn ^:private mount
   "Compile routes-as-data + a middleware stack into [pattern handler-fn]
-  pairs for the Go adapter ({:bri.http/dir ...} markers pass through)."
+  pairs for the Go adapter ({:bri.web.http/dir ...} markers pass through)."
   [routes stack]
   (mapv (fn [route]
           (let [pattern (nth route 0)
                 h       (nth route 1)]
-            (if (and (map? h) (contains? h :bri.http/dir))
+            (if (and (map? h) (contains? h :bri.web.http/dir))
               [pattern h]
               [pattern (wrap-stack stack (base-handler pattern h))])))
         routes))
@@ -393,9 +393,9 @@
                              (str "  " (format "%-24s" pattern) " "
                                   (cond
                                     (var? h) (pr-str h)
-                                    (and (map? h) (:bri.http/dir h))
-                                    (str "(http/dir " (pr-str (:bri.http/dir h)) ")")
-                                    (and (map? h) (:bri.http/handler h)) "(bri handler)"
+                                    (and (map? h) (:bri.web.http/dir h))
+                                    (str "(http/dir " (pr-str (:bri.web.http/dir h)) ")")
+                                    (and (map? h) (:bri.web.http/handler h)) "(bri handler)"
                                     :else "(plain fn — not live)")
                                   "\n")))
                          routes)))))
@@ -729,7 +729,7 @@
              (let [t0  (-now-millis)
                    res (handler req)
                    ms  (double (- (-now-millis) t0))]
-               (-metrics-observe (or (:bri.http/route req)
+               (-metrics-observe (or (:bri.web.http/route req)
                                      (str (str/upper-case (name (:request-method req))) " " (:uri req)))
                                  (or (:status res) 200) ms)
                res)))})
@@ -830,8 +830,8 @@
   of opts, or false to drop it)."
   ([] (api-defaults {}))
   ([opts]
-   (require 'bri.auth)
-   (let [auto-ban (deref (resolve 'bri.auth/auto-ban))
+   (require 'bri.core.security)
+   (let [auto-ban (deref (resolve 'bri.core.security/auto-ban))
          base     [request-id logging (recover) (cors (or (:cors opts) {})) metrics]
          base     (if (false? (:auto-ban opts))
                     base

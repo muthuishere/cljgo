@@ -116,7 +116,7 @@ func metricsRender() string {
 	return b.String()
 }
 
-// installAuditShims interns bri.audit's private Go primitives — the
+// installAuditShims interns bri.core.audit's private Go primitives — the
 // structured-line sink (stderr, v1) plus JSON/clock/env helpers.
 func installAuditShims(def func(name string, fn func(args ...any) any)) {
 	def("-eprintln", func(args ...any) any {

@@ -1,16 +1,16 @@
 ---
-title: "bri.db"
+title: "bri.core.data"
 description: "The one blessed data layer: connect, query, transact, and migrate over pure-Go SQLite or Postgres — parametrized by construction, plain maps out, identical interpreted and AOT-compiled."
 ---
 
-`bri.db` is cljgo's one blessed data layer (ADR 0072). It is API-first and injection-safe by construction — the blessed form is a SQL string plus positional `?` params, never string-concatenated values — and it behaves **identically** interpreted (`cljgo dev`) and AOT-compiled to a `CGO_ENABLED=0` static binary. Two pure-Go drivers sit behind one API: [`modernc.org/sqlite`](https://pkg.go.dev/modernc.org/sqlite) (the zero-install default, ADR 0057) and [`pgx`](https://github.com/jackc/pgx) (production Postgres, ADR 0058) — a driver swap, not an API fork.
+`bri.core.data` is cljgo's one blessed data layer (ADR 0072). It is API-first and injection-safe by construction — the blessed form is a SQL string plus positional `?` params, never string-concatenated values — and it behaves **identically** interpreted (`cljgo dev`) and AOT-compiled to a `CGO_ENABLED=0` static binary. Two pure-Go drivers sit behind one API: [`modernc.org/sqlite`](https://pkg.go.dev/modernc.org/sqlite) (the zero-install default, ADR 0057) and [`pgx`](https://github.com/jackc/pgx) (production Postgres, ADR 0058) — a driver swap, not an API fork.
 
-If you want the whole thing wired for you, `cljgo generate resource` scaffolds a migration + model + handlers + a green CRUD test over `bri.db` in one command — see [the resource generator](/cljgo/guides/generate/).
+If you want the whole thing wired for you, `cljgo generate resource` scaffolds a migration + model + handlers + a green CRUD test over `bri.core.data` in one command — see [the resource generator](/cljgo/guides/generate/).
 
 ## Connect
 
 ```clojure
-(require '[bri.db :as db])
+(require '[bri.core.data :as db])
 
 (def conn (db/connect {:driver :sqlite :database "app.db"}))
 ```
@@ -28,7 +28,7 @@ With **no** `:driver`, an `APP_DB_URL` starting `postgres` selects pgx; otherwis
 (db/connect)              ; APP_DB_URL=postgres://… → pgx
 ```
 
-`bri.db` normalizes placeholders (`?` → `$n` for Postgres) and column names (snake_case ↔ kebab-case) — but **not** SQL dialect (the ADR 0057 seam), so DDL stays yours.
+`bri.core.data` normalizes placeholders (`?` → `$n` for Postgres) and column names (snake_case ↔ kebab-case) — but **not** SQL dialect (the ADR 0057 seam), so DDL stays yours.
 
 ## Read
 
@@ -39,10 +39,10 @@ Queries are parametrized SQL — a string plus **variadic** positional params �
 ;; => [{:id 7 :text "hi" :created-at "2026-…"}]
 
 (db/one  conn "select * from notes where id = ?" 7)   ; the first row, or nil
-(db/one! conn "select * from notes where id = ?" 7)   ; or throws :bri.db/not-found
+(db/one! conn "select * from notes where id = ?" 7)   ; or throws :bri.core.data/not-found
 ```
 
-`db/one!` throws an ex-info tagged `:bri.db/not-found` — which the [bri.http error funnel](/cljgo/bri/http/) maps straight to a 404. That is the whole "row missing → 404" story: no `if-let`, no handler code.
+`db/one!` throws an ex-info tagged `:bri.core.data/not-found` — which the [bri.web.http error funnel](/cljgo/bri/http/) maps straight to a 404. That is the whole "row missing → 404" story: no `if-let`, no handler code.
 
 ## Write
 
@@ -118,7 +118,7 @@ Open the connection lazily. `cljgo build`'s discovery pass **evaluates** top-lev
 | `(db/close! conn)` | close the pool |
 | `(db/query conn sql & params)` | parametrized SELECT → vector of kebab-keyword maps |
 | `(db/one conn sql & params)` | first row, or `nil` |
-| `(db/one! conn sql & params)` | first row, or throws `:bri.db/not-found` (→ 404) |
+| `(db/one! conn sql & params)` | first row, or throws `:bri.core.data/not-found` (→ 404) |
 | `(db/exec! conn sql & params)` | write → `{:rows-affected :last-insert-id}` |
 | `(db/insert! conn table row)` | data-shaped INSERT (kebab→snake) |
 | `(db/update! conn table set-map where-map)` | data-shaped UPDATE |
@@ -131,8 +131,8 @@ Open the connection lazily. `cljgo build`'s discovery pass **evaluates** top-lev
 
 ## Where next
 
-- [The resource generator](/cljgo/guides/generate/) — scaffold a full CRUD slice over `bri.db` in one command
-- [bri.http](/cljgo/bri/http/) — the error funnel that turns `:bri.db/not-found` into a 404
-- [bri.auth](/cljgo/bri/auth/) — guarding the handlers that call your model
-- [bri.config](/cljgo/bri/config/) — where `APP_DB_URL` and the `:db` key come from
+- [The resource generator](/cljgo/guides/generate/) — scaffold a full CRUD slice over `bri.core.data` in one command
+- [bri.web.http](/cljgo/bri/http/) — the error funnel that turns `:bri.core.data/not-found` into a 404
+- [bri.core.security](/cljgo/bri/auth/) — guarding the handlers that call your model
+- [bri.core.config](/cljgo/bri/config/) — where `APP_DB_URL` and the `:db` key come from
 - [Deploy](/cljgo/guides/deploy/) — ship the whole thing as one static binary

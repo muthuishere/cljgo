@@ -32,13 +32,13 @@ cljgo g Note title:string body:text        # `g` is the alias
 generated resource note (/api/notes)
   create  db/migrations/<utc>_create_notes.sql
   create  src/app/db.cljg            # the shared datasource — created ONCE, never clobbered
-  create  src/app/notes.cljg         # coerce + model (parametrized bri.db) + handlers + routes
+  create  src/app/notes.cljg         # coerce + model (parametrized bri.core.data) + handlers + routes
   create  test/app/notes_test.cljg   # a green CRUD suite (fresh in-memory DB)
   splice  src/app/main.cljg  (require app.notes + routes)
 ```
 
-- Every route is authenticated (bri.auth); `delete` is `admin-only`.
-- The model is the only place that touches bri.db (ADR 0072); every query is
+- Every route is authenticated (bri.core.security); `delete` is `admin-only`.
+- The model is the only place that touches bri.core.data (ADR 0072); every query is
   parametrized. `src/app/notes.cljg` is YOURS to edit — the generator never
   rewrites an existing resource (pass `--force` to overwrite).
 - Persistence is the zero-install SQLite default; `:test` profile uses an

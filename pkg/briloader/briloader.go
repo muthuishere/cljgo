@@ -1,7 +1,7 @@
 // Package briloader is the INTERPRETER's half of bri loading (ADR 0041,
 // ADR 0071). It reads and evaluates the embedded bri.* sources through a
 // live evaluator, registered lazily via the lib-provider registry, so a
-// `cljgo dev` / REPL session can (require 'bri.http) and get the shims +
+// `cljgo dev` / REPL session can (require 'bri.web.http) and get the shims +
 // framework fns on demand — the boot budget (ADR 0024) untouched.
 //
 // It is split from pkg/bri (which stays pure Go, no interpreter) so the
@@ -21,7 +21,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/bri"
 	// Blank-import every OptIn namespace's isolated shim package (ADR 0074,
 	// ADR 0076) so its init() registers the shim installer before an
-	// interpreted (require 'bri.otel)/(require 'bri.db) interns the private
+	// interpreted (require 'bri.core.telemetry)/(require 'bri.core.data) interns the private
 	// vars. briloader is the REPL / `cljgo dev` half — it already links the
 	// whole interpreter, so linking the heavy deps (the OpenTelemetry SDK, the
 	// SQLite + pgx drivers) here does not touch the AOT user-binary zero-cost
@@ -64,7 +64,7 @@ func Register(e *eval.Evaluator) {
 
 // providerLoad evaluates one bri namespace's embedded source once per
 // process (the loaded flag is set BEFORE evaluating so the
-// bri.html → bri.http require chain re-enters cleanly).
+// bri.web.html → bri.web.http require chain re-enters cleanly).
 func providerLoad(s bri.Spec) {
 	mu.Lock()
 	if loaded[s.Name] {

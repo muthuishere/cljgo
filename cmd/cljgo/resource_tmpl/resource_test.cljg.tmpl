@@ -2,15 +2,15 @@
 ;; client (no socket), the same mount + middleware path the real server
 ;; runs. `cljgo test`.
 ;;
-;; These exercise the full CRUD over bri.db (ADR 0072) against a fresh
+;; These exercise the full CRUD over bri.core.data (ADR 0072) against a fresh
 ;; in-memory database (the :test profile), plus the guards and typed-param
 ;; funnel — a working resource out of the box.
 (ns {{.Ns}}-test
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [clojure.string :as str]
-            [bri.http :as http]
-            [bri.auth :as auth]
-            [bri.db :as db]
+            [bri.web.http :as http]
+            [bri.core.security :as auth]
+            [bri.core.data :as db]
             [app.db :as adb]
             [{{.Ns}} :as {{.Alias}}]))
 

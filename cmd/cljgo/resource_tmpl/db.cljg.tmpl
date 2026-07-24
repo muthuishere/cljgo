@@ -1,11 +1,11 @@
 ;; app.db — the app's single datasource. `cljgo generate resource` creates
 ;; this once; every generated resource model reads @app.db/ds.
 ;;
-;; This is the ONE place the bri.db connection is wired (ADR 0072).
-;; bri.db defaults to sqlite with zero install (ADR 0057).
+;; This is the ONE place the bri.core.data connection is wired (ADR 0072).
+;; bri.core.data defaults to sqlite with zero install (ADR 0057).
 (ns app.db
-  (:require [bri.db :as db]
-            [bri.config :as config]))
+  (:require [bri.core.data :as db]
+            [bri.core.config :as config]))
 
 (def cfg (config/load!))
 

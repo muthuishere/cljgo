@@ -1,6 +1,6 @@
 (ns examples.routes
   "ADR 0069 — bri's Compojure-style routing and reader conditionals."
-  (:require [bri.http :as http])
+  (:require [bri.web.http :as http])
   (:require-go [net/http :as nethttp]))
 
 ;; Route table. defroutes is a macro; the all-caps method names are fns.

@@ -1,10 +1,10 @@
-# bri.html — the HTML guide
+# bri.web.html — the HTML guide
 
 HTML is a FUNCTION over data (ADR 0041 §4): hiccup-style vectors in,
 escaped HTML out. No template language, no layouts, no partials, no
 asset pipeline — `html/form` is the deliberate outer boundary of the
 surface, and CSS is a file in `public/` served by
-`(bri.http/dir "public")`.
+`(bri.web.http/dir "public")`.
 
 ## Elements
 

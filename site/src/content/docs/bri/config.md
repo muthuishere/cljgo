@@ -1,5 +1,5 @@
 ---
-title: "bri.config"
+title: "bri.core.config"
 description: "Configuration in bri: one plain EDN map, a :profiles section, a deterministic APP_* env overlay, and an optional schema that is enforced when present."
 ---
 
@@ -68,5 +68,5 @@ Every key, its effective value, and the layer that won (default < file < profile
 ## Where next
 
 - [Tutorial](/cljgo/bri/tutorial/) — the full 15-minute walkthrough where `config/load!` fits
-- [bri.http](/cljgo/bri/http/) — the server that consumes `(:port cfg)` and `APP_SESSION_KEY`
-- [bri.html](/cljgo/bri/html/) — pages and forms
+- [bri.web.http](/cljgo/bri/http/) — the server that consumes `(:port cfg)` and `APP_SESSION_KEY`
+- [bri.web.html](/cljgo/bri/html/) — pages and forms

@@ -16,7 +16,7 @@ CGO_ENABLED=0 GOOS=linux cljgo build -o server src/app/main.cljg   # Linux image
 ```
 
 Links the compiled core (not the interpreter) → single-digit-ms start.
-Conditional linking (ADR 0074): an app that never requires `bri.otel`
+Conditional linking (ADR 0074): an app that never requires `bri.core.telemetry`
 never links the OTel SDK.
 
 ## Dockerfile
@@ -52,7 +52,7 @@ docker run -p 3000:3000 app
 
 `conf.edn` defaults `:port` 3000; any key is overridden by an `APP_*` env
 var (secrets-are-env) — the same image runs everywhere. `APP_DB_URL` flips
-bri.db to Postgres with no code change; `APP_AUTH__SECRET` is the JWT key
+bri.core.data to Postgres with no code change; `APP_AUTH__SECRET` is the JWT key
 prod must set.
 
 ```bash

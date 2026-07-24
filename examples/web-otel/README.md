@@ -8,8 +8,8 @@ the one thing that is **opt-in** — **distributed tracing**.
 
 ```clojure
 (ns app.main
-  (:require [bri.http :as http]
-            [bri.otel :as otel]))          ; 1. require it
+  (:require [bri.web.http :as http]
+            [bri.core.telemetry :as otel]))          ; 1. require it
 
 (http/serve routes {:port 3000
                     :middleware (otel/with-tracing (http/api-defaults))   ; 2. wrap the stack
@@ -17,7 +17,7 @@ the one thing that is **opt-in** — **distributed tracing**.
 ```
 
 Or drop the middleware onto any stack: `(conj (http/api-defaults) (otel/trace))`.
-It is **never** in `api-defaults` — a bri app that doesn't require `bri.otel`
+It is **never** in `api-defaults` — a bri app that doesn't require `bri.core.telemetry`
 never links the OpenTelemetry SDK (~6 MB smaller, zero otel symbols).
 
 ## What you get
@@ -60,7 +60,7 @@ matches the span's `bri.request_id`.
 |-----|---------|
 | `OTEL_EXPORTER_OTLP_ENDPOINT` / `APP_OTEL_EXPORTER_OTLP_ENDPOINT` | collector URL (OTLP/HTTP) |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` / `APP_OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` (default) |
-| `OTEL_SERVICE_NAME` / `APP_OTEL_SERVICE_NAME` | `service.name` (else the bri.config app name, else `bri-app`) |
+| `OTEL_SERVICE_NAME` / `APP_OTEL_SERVICE_NAME` | `service.name` (else the bri.core.config app name, else `bri-app`) |
 | `APP_OTEL_STDOUT=1` | export spans to stdout (demos; no collector) |
 
 With no endpoint configured, requests are still traced (spans opened/ended) —

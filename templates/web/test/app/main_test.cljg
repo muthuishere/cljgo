@@ -4,8 +4,8 @@
 (ns app.main-test
   (:require [clojure.test :refer [deftest is]]
             [clojure.string :as str]
-            [bri.http :as http]
-            [bri.auth :as auth]
+            [bri.web.http :as http]
+            [bri.core.security :as auth]
             [app.main :as main]))
 
 (def stack (http/api-defaults))

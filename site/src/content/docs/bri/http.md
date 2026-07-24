@@ -1,5 +1,5 @@
 ---
-title: "bri.http"
+title: "bri.web.http"
 description: "The Ring contract on Go's stdlib routing: handlers as functions, routes as data, a default middleware stack, one documented error funnel, and an in-process test client."
 ---
 
@@ -70,9 +70,9 @@ It is a plain **vector** of `{:name kw :wrap fn}` entries — inspect it, `conj`
 
 - **access-log** — one line per request.
 - **recover** — THE error funnel (below).
-- **sessions** — signed cookies (HMAC-SHA256; key from `APP_SESSION_KEY`, or per-process random in dev). Read as `:session`; attach one with `(http/start-session res {...})`. (`APP_SESSION_KEY` is env-only — see [bri.config](/cljgo/bri/config/).)
+- **sessions** — signed cookies (HMAC-SHA256; key from `APP_SESSION_KEY`, or per-process random in dev). Read as `:session`; attach one with `(http/start-session res {...})`. (`APP_SESSION_KEY` is env-only — see [bri.core.config](/cljgo/bri/config/).)
 - **negotiate** (`:json` in the stack) — JSON bodies → `:json`, form bodies → `:form-params`; map/vector response bodies → JSON; string bodies default to `text/html`.
-- **csrf** — gates session-bearing mutating requests on the token [`bri.html/form`](/cljgo/bri/html/) mints (or the `x-csrf-token` header). Sessionless requests pass: the documented API posture — a JSON curl with no cookie has nothing to forge.
+- **csrf** — gates session-bearing mutating requests on the token [`bri.web.html/form`](/cljgo/bri/html/) mints (or the `x-csrf-token` header). Sessionless requests pass: the documented API posture — a JSON curl with no cookie has nothing to forge.
 
 ## Errors: one blessed surface, one documented funnel
 
@@ -117,7 +117,7 @@ The adapter is a thin shim over `net/http` (pkg/bri). When you outgrow the bless
 
 ## Where next
 
-- [bri.html](/cljgo/bri/html/) — render the pages your handlers return; how forms carry the CSRF token
-- [bri.config](/cljgo/bri/config/) — where `:port` and `APP_SESSION_KEY` come from
+- [bri.web.html](/cljgo/bri/html/) — render the pages your handlers return; how forms carry the CSRF token
+- [bri.core.config](/cljgo/bri/config/) — where `:port` and `APP_SESSION_KEY` come from
 - [Tutorial](/cljgo/bri/tutorial/) — the whole app on one page, end to end
 - [Go interop](/cljgo/guides/interop/) — for when you reach past the shim into `net/http` itself
