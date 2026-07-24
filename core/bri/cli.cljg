@@ -122,6 +122,34 @@
   [p raw]
   (validate! p (coerce p raw)))
 
+;; --- :multi (a value COLLECTS into a vector) --------------------------------
+
+(defn- multi-param? [p] (boolean (:multi p)))
+
+(defn- element-param
+  "A single-element view of a :multi param. The element type is :of (default
+  :keyword when :one-of is set — matching :enum — else :string); it carries the
+  param's :one-of + :trim for per-element coercion, but NOT its :validate,
+  which runs on the whole vector."
+  [p]
+  {:name   (:name p)
+   :type   (or (:of p) (when (seq (:one-of p)) :keyword) :string)
+   :one-of (:one-of p)
+   :trim   (:trim p)})
+
+(defn- supplied-multi
+  "Coerce a comma-separated raw (or an already-sequential value) into a vector,
+  coercing each element by :of + :one-of, then running the param's validators
+  on the whole vector. `--tags a,b,c` -> [coerced …]; blank -> []."
+  [p raw]
+  (let [ep    (element-param p)
+        parts (cond
+                (sequential? raw)      raw
+                (str/blank? (str raw)) []
+                :else                  (str/split (str raw) #","))
+        vals  (mapv (fn [s] (coerce ep (str/trim (str s)))) parts)]
+    (validate! p vals)))
+
 ;; --- argv parsing -----------------------------------------------------------
 
 (defn- bool-param? [p] (= :bool (:type p :string)))
@@ -442,6 +470,20 @@
       (:required p)           (required-missing p)
       :else                   nil)))
 
+(defn- multiselect-flow
+  "Multiselect widget over a :one-of :multi param's choices → the vector of
+  chosen (validated) values; a cancel falls to :default, else required-error,
+  else []."
+  [p]
+  (let [choices (vec (:one-of p))
+        labels  (mapv (fn [c] (if (keyword? c) (name c) (str c))) choices)
+        idxs    (run-widget (multiselect-widget (widget-title p) labels))]
+    (cond
+      (some? idxs)            (validate! p (mapv (fn [i] (nth choices i)) idxs))
+      (contains? p :default)  (:default p)
+      (:required p)           (required-missing p)
+      :else                   [])))
+
 (defn- editor-flow
   "Editor widget → the entered text, coerced (trimmed) + validated like any
   supplied value."
@@ -473,17 +515,46 @@
 
 ;; --- parameter resolution (the unified model's runtime) ---------------------
 
+(defn- resolve-multi
+  "Resolve a :multi param to a vector: a repeated/comma flag -> :env -> the
+  multiselect widget (a :one-of param on a real TTY) -> :default -> required
+  -error -> []. Multi params are flag/env/prompt driven (no positional)."
+  [p flags]
+  (let [fname (name (:name p))]
+    (cond
+      (contains? flags fname)
+      (supplied-multi p (get flags fname))
+
+      (some? (env-raw p))
+      (supplied-multi p (env-raw p))
+
+      (and (nil? *prompt*) (-tty?) (seq (:one-of p)))
+      (multiselect-flow p)
+
+      (contains? p :default)
+      (:default p)
+
+      (:required p)
+      (throw (ex-info (str "missing required argument: --" fname
+                           (when (:about p) (str " (" (:about p) ")")))
+                      {:bri/error :bri.cli/missing :param (:name p)}))
+
+      :else [])))
+
 (defn- resolve-param
   "Resolve one parameter to its value, in precedence order (ADR 0078):
   flag -> positional -> :env -> prompt-if-interactive -> :default -> required
-  -error. A bool with no flag is its :default (false); the one exception is a
-  REQUIRED bool on a real TTY, which asks with the confirm widget. Every
-  user-supplied path (flag/positional/env/prompt) runs the param's coercion +
-  validators."
+  -error. A :multi param collects into a vector (resolve-multi). A bool with no
+  flag is its :default (false); the one exception is a REQUIRED bool on a real
+  TTY, which asks with the confirm widget. Every user-supplied path
+  (flag/positional/env/prompt) runs the param's coercion + validators."
   [p flags pos-atom]
   (let [k    (:name p)
         fname (name k)]
     (cond
+      (multi-param? p)
+      (resolve-multi p flags)
+
       (contains? flags fname)
       (supplied p (get flags fname))
 
@@ -521,8 +592,10 @@
 ;; --- help + version rendering -----------------------------------------------
 
 (defn- type-label [p]
-  (if-let [c (:one-of p)] (str "{" (str/join "|" (map #(subs (str %) 1) c)) "}")
-      (name (:type p :string))))
+  (let [base (if-let [c (:one-of p)]
+               (str "{" (str/join "|" (map #(subs (str %) 1) c)) "}")
+               (name (:type p :string)))]
+    (if (:multi p) (str base "...") base)))
 
 (defn- command-usage [app cmd]
   (let [lines (map (fn [p]
