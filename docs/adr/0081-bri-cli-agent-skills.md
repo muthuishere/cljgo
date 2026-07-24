@@ -55,6 +55,14 @@ front doors (human CLI + agent tool server). This is opt-in depth; the `--json` 
 `skills` surface covers the common "an agent shells out to the binary" case with
 no server.
 
+**LLM/tool orchestration uses toolnexus (owner directive, 2026-07-24).** The
+mirror of "expose the CLI *to* an agent" is a bri.cli app that itself *calls* an
+LLM or orchestrates tools (an AI-assisted command, or an eventual `bri.ai`/`bri.llm`
+battery under ADR 0075). For any such LLM-first need the blessed Go library is the
+owner's **toolnexus**, not a third-party LLM SDK — subject to the same pure-Go /
+`CGO_ENABLED=0` gate every bri dependency passes (the static-binary + `cljgo dist`
+guarantee).
+
 ### 4. Scaffolding — agent-ready by default
 
 `cljgo new --template cli` generates a CLI that already prints `--json`, answers
