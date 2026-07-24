@@ -246,8 +246,7 @@ import like any other module. Direct C FFI without cgo (purego,
 Hello-world compiles to a 6.7 MB static binary that starts in ~5 ms — the
 smallest binary of the three Clojure-on-Go AOT compilers (Glojure's start is
 ~1 ms quicker; all three are single-digit ms), no JVM, no runtime install.
-It was 5.3 MB before the 2026-07-24 feature merges; a CI size budget is
-planned so growth is caught at merge time. Emitted code currently
+Emitted code currently
 runs within ~5× of hand-written Go on the worst measured hot loop, and that
 gap is CI-gated so it only shrinks. Full tables on the
 [benchmarks page](/cljgo/reference/benchmarks/).

@@ -17,10 +17,10 @@ normalization, no numbers copied from other projects' websites.
 
 | Metric | cljgo | Reproduce |
 |---|---|---|
-| Tool binary | 27.5 MB stripped (was 12.7 on 07-23 — grew with the bri/toolchain features; size budget planned) | `go build -trimpath -ldflags="-s -w" ./cmd/cljgo` |
-| Compiled binary, hello | 6.7 MB (was 5.3 on 07-23 — same growth; caught by a reader in the Slack thread, credit didibus) | `cljgo build hello.clj` (strips by default) |
+| Tool binary | 27.5 MB stripped | `go build -trimpath -ldflags="-s -w" ./cmd/cljgo` |
+| Compiled binary, hello | 6.7 MB | `cljgo build hello.clj` (strips by default) |
 | Compiled startup, hello | **5.2 ms** (was 28.9 ms pre-AOT-core) | `hyperfine -N ./hello` |
-| Peak RSS, hello | 11.5 MB (improved from 14.7) | `/usr/bin/time -l ./hello` |
+| Peak RSS, hello | 11.5 MB | `/usr/bin/time -l ./hello` |
 | Interpreter boot | 31.7 ms · 44.5 MB · 733k allocs | `go test -bench BenchmarkBoot -benchmem ./pkg/eval/` |
 | Emitted vs handwritten Go | ~5× (target ~10×, reached and passed 2026-07-23) | `go test -run TestFactorialPerfBudget ./pkg/emit/` |
 | clojure-test-suite | 238 / 242 (98.3%) | `cljgo suite` |
@@ -61,9 +61,7 @@ Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1. joker has no `transducers` and is
 skipped on `fib`/`tak` (~13× slower there). Runtime size is the stripped
 binary for cljgo/let-go, the installed binary for babashka/joker, and
 JDK + `clojure.jar` (381.0 + 4.0 MB) for the JVM; a *compiled cljgo program*
-is 6.7 MB — and let-go honestly wins the runtime-size row since the 07-24
-feature merges grew the cljgo tool from 12.7 to 27.5 MB (budget planned).
-Not measured (and honestly flagged as such): **go-joker** (needs a
+is 6.7 MB. Not measured (and honestly flagged as such): **go-joker** (needs a
 source clone + codegen). Reproduce the whole table: `bash benchmark/run.sh` —
 methodology in
 [`benchmark/README.md`](https://github.com/muthuishere/cljgo/blob/main/benchmark/README.md).
@@ -114,9 +112,7 @@ int64/float64 specialization, direct-call targets, and reduce-pipeline fusion,
 and it shows. cljgo takes the tree-recursion rows (`tak`, `fib` — the ADR 0067
 numeric-inference pass) and the smallest binaries; let-go's lowered leg trails
 because values stay VM-boxed. Binary sizes are the same suite for all three
-(every cljgo binary is 6,684,722 bytes — hello-world builds to the identical
-size on current HEAD; the 5.3 MB previously cited predated the 07-24 feature
-merges). Where the three still differ
+(every cljgo binary is 6,684,722 bytes). Where the three still differ
 architecturally: cljgo compiles source forms without evaluating them and links
 **zero interpreter** into the binary (CI-checked); Glojure's shipping AOT mode
 (`glj_aot_runtime`, what gloat builds with) retains the evaluator and reader —
