@@ -114,6 +114,12 @@ func Specs() []Spec {
 		// heavy dep to isolate; the prompt POLICY is portable Clojure.
 		{Name: "bri.cli.validate", File: "bri/cli_validate.cljg", Pkg: "briclivalidate", Source: &core.BriCLIValidateSource, install: nil},
 		{Name: "bri.cli", File: "bri/cli.cljg", Pkg: "bricli", Source: &core.BriCLISource, install: installCLIShims},
+		// bri.core.secrets is OPT-IN (ADR 0086/0074): its shims pull the OS-keychain
+		// client (go-keyring + D-Bus/wincred transports), which must not link
+		// into a bri app that never touches a secret store. Its shims live in
+		// the isolated pkg/bri/secrets (ShimImport), registering their installer
+		// via RegisterInstaller when linked.
+		{Name: "bri.core.secrets", File: "bri/secrets.cljg", Pkg: "brisecrets", Source: &core.BriSecretsSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/secrets"},
 	}
 }
 

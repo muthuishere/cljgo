@@ -73,6 +73,17 @@ var BriOtelSource string
 //go:embed bri/cli.cljg
 var BriCLISource string
 
+// BriSecretsSource is core/bri/secrets.cljg — bri.core.secrets: the OPT-IN
+// pluggable secret store (ADR 0086, realizing ADR 0060 / spike S39). Fetch a
+// secret by URI scheme (env://KEY, keychain://service/account) with a
+// left→right fallback chain; secrets are MASKED by default (the raw value
+// lives in metadata, never printed) and unwrapped only by an explicit
+// `reveal`. The Go half (the pure-Go OS-keychain client) lives in the
+// ISOLATED pkg/bri/secrets, linked only when an app requires this namespace.
+//
+//go:embed bri/secrets.cljg
+var BriSecretsSource string
+
 // BriCLIValidateSource is core/bri/cli_validate.cljg — bri.cli.validate: the
 // built-in validator constructors for bri.cli parameters (ADR 0078 §3),
 // conventionally aliased `v` (v/min, v/max, v/matches, v/email, v/one-of,
