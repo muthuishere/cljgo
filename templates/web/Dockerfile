@@ -10,7 +10,7 @@
 #
 # Bump CLJGO_VERSION to move to a newer cljgo (the app's go.mod pins the
 # matching runtime, fetched from the Go module proxy — no repo checkout).
-ARG CLJGO_VERSION=v0.5.0
+ARG CLJGO_VERSION=v0.6.0
 
 FROM golang:1.26 AS build
 ARG CLJGO_VERSION
