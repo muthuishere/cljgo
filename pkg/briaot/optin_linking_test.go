@@ -73,3 +73,23 @@ func TestDbIsOptIn(t *testing.T) {
 		t.Error("pkg/briaot/bridb does NOT link modernc.org/sqlite — the opt-in namespace cannot reach a database")
 	}
 }
+
+// TestSecretsIsOptIn is ADR 0086's zero-cost proof: the OS-keychain client
+// (zalando/go-keyring + its godbus transport) must NOT link into a bri binary
+// that never touches a secret store. The always-linked packages (+ the other
+// opt-in sub-packages) must have ZERO go-keyring/godbus packages in their
+// closure; only pkg/briaot/brisecrets carries the keychain client.
+func TestSecretsIsOptIn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping go list -deps in -short mode")
+	}
+	keyring, dbus := "github.com/zalando/go-keyring", "github.com/godbus/dbus"
+	for _, pkg := range append(append([]string{}, alwaysLinked...), "pkg/briaot/bridb", "pkg/briaot/briotel") {
+		if depsLinkAny(t, pkg, keyring, dbus) {
+			t.Errorf("%s links go-keyring — bri.core.secrets is no longer zero-cost (ADR 0086); a secrets-less bri binary now carries the keychain client", pkg)
+		}
+	}
+	if !depsLinkAny(t, "pkg/briaot/brisecrets", keyring) {
+		t.Error("pkg/briaot/brisecrets does NOT link go-keyring — the opt-in namespace cannot reach a secret store")
+	}
+}
