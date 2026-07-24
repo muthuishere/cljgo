@@ -36,3 +36,6 @@ scheduled_tasks.lock
 
 # agent worktrees (runtime, branches merged into main)
 .claude/worktrees/
+
+# marketing drafts (local only, never published from repo)
+marketing/

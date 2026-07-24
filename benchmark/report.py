@@ -2,11 +2,15 @@
 """Render benchmark/.build/results/*.json (hyperfine exports) into a markdown
 table. Columns are the two cljgo legs first, then comparables. Best wall-clock
 per row is bolded. Missing cells (runtime not installed / skipped) show as —."""
-import json, os
+import json, os, sys
 
-OUT = os.path.join(os.path.dirname(__file__), ".build", "results")
+AOT = "--aot" in sys.argv
+OUT = os.path.join(os.path.dirname(__file__), ".build", "results-aot" if AOT else "results")
 BENCHES = ["tak", "fib", "loop-recur", "persistent-map", "map-filter", "transducers", "reduce"]
-ORDER = ["cljgo-run", "cljgo-aot", "let-go", "babashka", "joker", "clojure-jvm"]
+if AOT:
+    ORDER = ["cljgo-aot", "glojure-aot", "letgo-aot"]
+else:
+    ORDER = ["cljgo-run", "cljgo-aot", "let-go", "glojure", "babashka", "joker", "clojure-jvm"]
 
 
 def load(name):
@@ -41,3 +45,19 @@ for n in ["startup"] + BENCHES:
             s = f"**{s}**"
         cells.append(s)
     print(f"| `{n}` | " + " | ".join(cells) + " |")
+
+if AOT:
+    print("""
+All three columns are native binaries compiled from the same programs
+(hyperfine, 3 warmup / 10 timed runs, wall-clock mean, startup included;
+compile time not measured). `cljgo-aot` = `cljgo build`. `glojure-aot` =
+gloat `-E glj` (Glojure Clojure→Go→native). `letgo-aot` = gloat `-E lglvm`
+(let-go IR lowered to Go with the VM runtime linked — gloat's pure `lgl`
+engine is not implemented yet). Interpreted legs (cljgo run, glj, lg,
+babashka, joker, Clojure JVM) are deliberately absent here; see
+`results.md` for that comparison.
+
+Measured 2026-07-24: cljgo @HEAD (repo Go toolchain) · gloat v0.1.62
+pinning Glojure v0.7.0 and let-go v1.12.2 (gloat builds with its own
+pinned Go toolchain). let-go's `transducers` needed gloat's pure-retry
+fallback (its LG-overrides pass failed to build).""")
