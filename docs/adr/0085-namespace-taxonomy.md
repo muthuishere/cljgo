@@ -28,19 +28,23 @@ line: `clj.fs` — not `bri.fs` — because a filesystem is not a framework conc
    **mechanism** — framework-agnostic, useful to *any* cljgo program (not just a bri
    app). This is the "Bun stdlib" tier. cljgo-specific (these do not exist in JVM
    Clojure), so they live under `clj.*`, NOT `clojure.*`, to avoid polluting the
-   JVM-compatible namespace.
+   JVM-compatible namespace. **Bundled by concern** (like Go's `io`/`net`/`os`), not
+   a flat list — the everyday tiers plus an advanced **`clj.native`** bundle for the
+   heavy/niche system primitives:
 
-   | namespace | what | source |
+   | bundle | leaves | what |
    |---|---|---|
-   | `clj.fs` | filesystem: read/write/atomic/temp/glob/copy/**watch** | new |
-   | `clj.process` | subprocess / pipeline (run/pipe/capture/stream) | new |
-   | `clj.term` | terminal: color/ANSI/raw-mode/size/keys + the render loop | s47 |
-   | `clj.http` | outbound HTTP client: retry/timeout/circuit | new |
-   | `clj.os` | env · signals · **service** (install/start/stop) · **cron** · ipc/single-instance · **notify** · **clipboard** | ADR 0083 |
-   | `clj.ffi` | purego native FFI — call any `.so`/`.dylib`/`.dll` at runtime | ADR 0084 |
-   | `clj.simd` | SIMD kernels (Go-asm + portable fallback, feature-detected) | ADR 0084 |
-   | `clj.gpu` | GPU compute (on `clj.ffi`) | ADR 0084 |
-   | `clj.openapi` | parse / emit OpenAPI specs | new |
+   | **`clj.io`** | `clj.io.fs`, `clj.io.process` | filesystem (read/write/atomic/temp/glob/copy/**watch**) · subprocess/pipeline |
+   | **`clj.net`** | `clj.net.http`, `clj.net.openapi` | outbound HTTP client (retry/timeout/circuit) · parse/emit OpenAPI |
+   | **`clj.term`** | `clj.term` | terminal: color/ANSI/raw-mode/size/keys + the s47 render loop |
+   | **`clj.os`** | `clj.os` | env · signals · **service** (install/start/stop) · **cron** · ipc/single-instance · **notify** · **clipboard** |
+   | **`clj.native`** | `clj.native.ffi`, `clj.native.simd`, `clj.native.gpu` | *(advanced / "extra")* purego FFI to any `.so`/`.dylib`/`.dll` · SIMD kernels (Go-asm + fallback) · GPU compute |
+
+   The everyday tiers (`clj.io`/`clj.net`/`clj.term`/`clj.os`) are what a normal
+   script reaches for; **`clj.native`** is the opt-in advanced bundle (the owner's
+   "clj.extra") — a program never links FFI/SIMD/GPU unless it asks. Each leaf is
+   still opt-in linked; the bundle is naming, not a link unit. Sources: `clj.term`
+   ← s47; `clj.os` ← ADR 0083; `clj.native.*` ← ADR 0084; the rest new.
 
 3. **`bri.*` — the application framework.** Opinionated **policy** for building
    apps, on top of `clojure.*` + `clj.*`. Split by role:
@@ -102,8 +106,8 @@ byte-stable conformance outputs that mention a namespace update in lockstep.
   http), usable without bri at all — the Bun-stdlib half of the pitch — while
   `bri.*` stays the opinionated framework.
 - The ADR 0083 primitive catalog re-homes: `bri.service`/`cron`/`notify` → `clj.os`;
-  `bri.sys` → `clj.ffi`/`clj.simd`/`clj.gpu`; `bri.secrets` → `bri.core.security`;
-  `bri.openapi` parse → `clj.openapi`. Nothing orphaned.
+  `bri.sys` → `clj.native.ffi`/`clj.native.simd`/`clj.native.gpu`; `bri.secrets` →
+  `bri.core.security`; `bri.openapi` parse → `clj.net.openapi`. Nothing orphaned.
 - New primitives are born in the right umbrella from day one.
 
 ## Not chosen
