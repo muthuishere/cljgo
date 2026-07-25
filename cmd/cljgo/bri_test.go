@@ -138,6 +138,58 @@ func runIn(dir, bin string, args ...string) (string, error) {
 	return string(out), err
 }
 
+// TestMigrateCLI drives `cljgo migrate` end to end (app-framework task 2.3).
+// Runs against the zero-install SQLite default (ADR 0057), so it is hermetic and
+// cross-platform. Two independent apps keep the assertions robust against the
+// second-granularity version scheme (two migrations minted in the same wall-clock
+// second would share a version — a property of the timestamp naming, not tested here).
+func TestMigrateCLI(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+
+	// --- app 1: the apply flow, over a real generated migration ----------------
+	work := t.TempDir()
+	if out, err := runIn(work, bin, "new", "--template", "web", "demo"); err != nil {
+		t.Fatalf("cljgo new: %v\n%s", err, out)
+	}
+	app := filepath.Join(work, "demo")
+	if out, err := runIn(app, bin, "generate", "resource", "Note", "title:string", "body:text"); err != nil {
+		t.Fatalf("cljgo generate resource: %v\n%s", err, out)
+	}
+	// status before applying: the create_notes migration is pending
+	if out, err := runIn(app, bin, "migrate", "status"); err != nil || !strings.Contains(out, "pending (1)") {
+		t.Fatalf("migrate status (pre): err=%v out=%q, want pending (1)", err, out)
+	}
+	// up applies exactly one new migration
+	if out, err := runIn(app, bin, "migrate", "up"); err != nil || !strings.Contains(out, "applied 1 new") {
+		t.Fatalf("migrate up: err=%v out=%q, want applied 1 new", err, out)
+	}
+	// idempotent: a second up applies nothing
+	if out, err := runIn(app, bin, "migrate", "up"); err != nil || !strings.Contains(out, "applied 0 new") {
+		t.Fatalf("migrate up (2nd): err=%v out=%q, want applied 0 new", err, out)
+	}
+	// status after: nothing pending
+	if out, err := runIn(app, bin, "migrate", "status"); err != nil || !strings.Contains(out, "pending (0)") {
+		t.Fatalf("migrate status (post): err=%v out=%q, want pending (0)", err, out)
+	}
+
+	// --- app 2: `migrate new` writes a stub that then shows pending -------------
+	work2 := t.TempDir()
+	if out, err := runIn(work2, bin, "new", "--template", "web", "demo2"); err != nil {
+		t.Fatalf("cljgo new (2): %v\n%s", err, out)
+	}
+	app2 := filepath.Join(work2, "demo2")
+	if out, err := runIn(app2, bin, "migrate", "new", "create widgets"); err != nil ||
+		!strings.Contains(out, "create_widgets.sql") {
+		t.Fatalf("migrate new: err=%v out=%q, want a create_widgets.sql path", err, out)
+	}
+	if out, err := runIn(app2, bin, "migrate", "status"); err != nil || !strings.Contains(out, "pending (1)") {
+		t.Fatalf("migrate status (after new): err=%v out=%q, want pending (1)", err, out)
+	}
+}
+
 // The one-person-framework promise, end to end through the REAL binary
 // (ADR 0073, reconciled with bri.core.data ADR 0072): `cljgo new --template web`,
 // then `cljgo generate resource Note …`, then `cljgo test` is GREEN — a
