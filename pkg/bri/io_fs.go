@@ -1,0 +1,224 @@
+// io_fs.go — the Go half of cljg.io's filesystem surface (ADR 0089): the
+// structural file/path/directory ops clojure.core lacks (slurp/spit stay core).
+// Thin shims over stdlib os + path/filepath — pure Go, so CGO_ENABLED=0 +
+// cljgo dist hold, and a non-OptIn namespace (no dependency to isolate). The
+// ergonomic API (exists?/mkdirs/copy!/path/…) is portable Clojure
+// (core/cljg/io.cljg). Interned as :private vars into cljg.io.
+//
+// cljg.io rides the same name-generic embedded-namespace registry as bri and
+// cljg.net.http / cljg.os (the pkg/bri package name is a legacy of bri being the
+// first tenant — ADR 0087 §1).
+package bri
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+
+	"github.com/muthuishere/cljgo/pkg/lang"
+)
+
+// installIOShims interns cljg.io's private Go filesystem primitives.
+func installIOShims(def func(name string, fn func(args ...any) any)) {
+	// -fs-stat path -> {:dir? :file? :size :modified} or nil when absent.
+	def("-fs-stat", func(args ...any) any {
+		fi, err := os.Stat(asString(one("-fs-stat", args)))
+		if err != nil {
+			return nil // absent (or unreadable) is nil, not an error — callers ask exists?/size
+		}
+		return lang.NewMap(
+			lang.NewKeyword("dir?"), fi.IsDir(),
+			lang.NewKeyword("file?"), fi.Mode().IsRegular(),
+			lang.NewKeyword("size"), fi.Size(),
+			lang.NewKeyword("modified"), fi.ModTime().UnixMilli(),
+		)
+	})
+	// -fs-list path -> vector of ENTRY NAMES (not full paths), sorted.
+	def("-fs-list", func(args ...any) any {
+		ents, err := os.ReadDir(asString(one("-fs-list", args)))
+		if err != nil {
+			panic(fmt.Errorf("cljg.io: list %q: %w", one("-fs-list", args), err))
+		}
+		out := make([]any, len(ents))
+		for i, e := range ents {
+			out[i] = e.Name()
+		}
+		return lang.NewVectorOwning(out)
+	})
+	// -fs-mkdir path -> nil (mkdir -p: creates parents, no error if it exists).
+	def("-fs-mkdir", func(args ...any) any {
+		p := asString(one("-fs-mkdir", args))
+		if err := os.MkdirAll(p, 0o755); err != nil {
+			panic(fmt.Errorf("cljg.io: mkdirs %q: %w", p, err))
+		}
+		return nil
+	})
+	// -fs-delete (path recursive?) -> nil. recursive? true removes a tree;
+	// false removes a single file/empty dir. Missing path is not an error.
+	def("-fs-delete", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("-fs-delete expects 2 args (path recursive?), got %d", len(args)))
+		}
+		p := asString(args[0])
+		var err error
+		if args[1] != nil && args[1] != false {
+			err = os.RemoveAll(p)
+		} else {
+			err = os.Remove(p)
+			if os.IsNotExist(err) {
+				err = nil
+			}
+		}
+		if err != nil {
+			panic(fmt.Errorf("cljg.io: delete %q: %w", p, err))
+		}
+		return nil
+	})
+	// -fs-copy (src dst) -> nil. Copies file contents + mode (not a tree).
+	def("-fs-copy", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("-fs-copy expects 2 args (src dst), got %d", len(args)))
+		}
+		src, dst := asString(args[0]), asString(args[1])
+		if err := copyFile(src, dst); err != nil {
+			panic(fmt.Errorf("cljg.io: copy %q -> %q: %w", src, dst, err))
+		}
+		return nil
+	})
+	// -fs-move (src dst) -> nil. Rename, falling back to copy+delete across
+	// filesystems (os.Rename fails with EXDEV on a cross-device move).
+	def("-fs-move", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("-fs-move expects 2 args (src dst), got %d", len(args)))
+		}
+		src, dst := asString(args[0]), asString(args[1])
+		if err := os.Rename(src, dst); err != nil {
+			if copyErr := copyFile(src, dst); copyErr != nil {
+				panic(fmt.Errorf("cljg.io: move %q -> %q: %w", src, dst, err))
+			}
+			if rmErr := os.Remove(src); rmErr != nil {
+				panic(fmt.Errorf("cljg.io: move %q -> %q (removing src): %w", src, dst, rmErr))
+			}
+		}
+		return nil
+	})
+	// -fs-glob pattern -> vector of matching paths (filepath.Glob semantics), sorted.
+	def("-fs-glob", func(args ...any) any {
+		pat := asString(one("-fs-glob", args))
+		m, err := filepath.Glob(pat)
+		if err != nil {
+			panic(fmt.Errorf("cljg.io: glob %q: %w", pat, err))
+		}
+		out := make([]any, len(m))
+		for i, p := range m {
+			out[i] = p
+		}
+		return lang.NewVectorOwning(out)
+	})
+	// -fs-walk root -> vector of every path under root (root included), depth-first.
+	def("-fs-walk", func(args ...any) any {
+		root := asString(one("-fs-walk", args))
+		var out []any
+		err := filepath.Walk(root, func(p string, _ os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			out = append(out, p)
+			return nil
+		})
+		if err != nil {
+			panic(fmt.Errorf("cljg.io: walk %q: %w", root, err))
+		}
+		return lang.NewVectorOwning(out)
+	})
+	// -fs-temp-file (prefix suffix) -> path of a freshly created temp file.
+	def("-fs-temp-file", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("-fs-temp-file expects 2 args (prefix suffix), got %d", len(args)))
+		}
+		f, err := os.CreateTemp("", asString(args[0])+"*"+asString(args[1]))
+		if err != nil {
+			panic(fmt.Errorf("cljg.io: temp-file: %w", err))
+		}
+		name := f.Name()
+		f.Close()
+		return name
+	})
+	// -fs-temp-dir prefix -> path of a freshly created temp directory.
+	def("-fs-temp-dir", func(args ...any) any {
+		d, err := os.MkdirTemp("", asString(one("-fs-temp-dir", args)))
+		if err != nil {
+			panic(fmt.Errorf("cljg.io: temp-dir: %w", err))
+		}
+		return d
+	})
+	// -fs-home -> the current user's home directory.
+	def("-fs-home", func(args ...any) any {
+		h, err := os.UserHomeDir()
+		if err != nil {
+			panic(fmt.Errorf("cljg.io: home: %w", err))
+		}
+		return h
+	})
+	// -fs-cwd -> the current working directory.
+	def("-fs-cwd", func(args ...any) any {
+		wd, err := os.Getwd()
+		if err != nil {
+			panic(fmt.Errorf("cljg.io: cwd: %w", err))
+		}
+		return wd
+	})
+
+	// --- path math (host filepath semantics) ---------------------------------
+	// -path-abs path -> absolute, cleaned path (resolved against cwd).
+	def("-path-abs", func(args ...any) any {
+		abs, err := filepath.Abs(asString(one("-path-abs", args)))
+		if err != nil {
+			panic(fmt.Errorf("cljg.io: absolute: %w", err))
+		}
+		return abs
+	})
+	// -path-join [segments…] -> the segments joined + cleaned with the host separator.
+	def("-path-join", func(args ...any) any {
+		segs := toStringSlice(one("-path-join", args))
+		return filepath.Join(segs...)
+	})
+	// -path-base path -> the final element (filename).
+	def("-path-base", func(args ...any) any { return filepath.Base(asString(one("-path-base", args))) })
+	// -path-dir path -> everything but the final element (parent).
+	def("-path-dir", func(args ...any) any { return filepath.Dir(asString(one("-path-dir", args))) })
+	// -path-ext path -> the extension including the dot ("" if none).
+	def("-path-ext", func(args ...any) any { return filepath.Ext(asString(one("-path-ext", args))) })
+}
+
+// copyFile copies src to dst, preserving the source file mode.
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	fi, err := in.Stat()
+	if err != nil {
+		return err
+	}
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fi.Mode())
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(out, in); err != nil {
+		out.Close()
+		return err
+	}
+	return out.Close()
+}
+
+// toStringSlice coerces a cljgo sequential (vector/seq) of strings to []string.
+func toStringSlice(v any) []string {
+	var out []string
+	for s := lang.Seq(v); s != nil; s = lang.Next(s) {
+		out = append(out, asString(lang.First(s)))
+	}
+	return out
+}

@@ -134,6 +134,10 @@ func Specs() []Spec {
 		// cljg.os — OS primitives (ADR 0088), this increment the cron scheduler.
 		// Pure-Go over stdlib time (os_cron.go), non-OptIn.
 		{Name: "cljg.os", File: "cljg/os.cljg", Pkg: "cljgos", Source: &core.CljgOSSource, install: installOSShims},
+		// cljg.io — filesystem primitives (ADR 0089), this increment the
+		// structural file/path/directory ops clojure.core lacks. Pure-Go over
+		// stdlib os + path/filepath (io_fs.go), non-OptIn.
+		{Name: "cljg.io", File: "cljg/io.cljg", Pkg: "cljgio", Source: &core.CljgIOSource, install: installIOShims},
 	}
 }
 

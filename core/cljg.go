@@ -18,3 +18,12 @@ var CljgNetHTTPSource string
 //
 //go:embed cljg/os.cljg
 var CljgOSSource string
+
+// CljgIOSource is core/cljg/io.cljg — cljg.io: filesystem primitives (ADR 0089).
+// This increment is the structural file/path/directory surface clojure.core
+// lacks (slurp/spit stay core); its Go half (pkg/bri/io_fs.go, installIOShims) is
+// thin shims over stdlib os + path/filepath, the ergonomic API portable Clojure.
+// Process exec is the reserved next increment.
+//
+//go:embed cljg/io.cljg
+var CljgIOSource string
