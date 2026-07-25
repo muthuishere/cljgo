@@ -422,6 +422,64 @@ func TestCLIMultiselectWidget(t *testing.T) {
 // TestCLIMultiParam: a :multi param collects a comma-separated flag (or env)
 // into a vector, coercing each element by :of + :one-of and validating the
 // whole vector; an unset :multi is [] (or its :default).
+// TestCLIPublicPromptAPI: the ergonomic ask/ask-secret/select/confirm/
+// multiselect wrappers, driven through the *prompt* seam (no TTY). They reuse
+// the same widgets + validators as command params, and return their :default
+// when headless (no *prompt*, no TTY).
+func TestCLIPublicPromptAPI(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[bri.cli :as cli] '[bri.cli.validate :as v])`)
+
+	// ask: a scripted answer, coerced/validated
+	if got := evalString(t, d, `(binding [cli/*prompt* (fn [_ _] "  Ada  ")]
+	                              (cli/ask "Name?"))`); got != "Ada" {
+		t.Errorf("ask = %q, want Ada (trimmed)", got)
+	}
+	// ask with :int type coerces
+	if got := eval(t, d, `(binding [cli/*prompt* (fn [_ _] "42")] (cli/ask "Age?" {:type :int}))`); got != int64(42) {
+		t.Errorf("ask :int = %v, want 42", got)
+	}
+	// ask-secret passes secret?=true to the backend
+	if got := evalString(t, d, `(let [seen (atom nil)]
+	                              (binding [cli/*prompt* (fn [_ s?] (reset! seen s?) "hunter2")]
+	                                (str (cli/ask-secret "Password?") "|" @seen)))`); got != "hunter2|true" {
+		t.Errorf("ask-secret = %q, want hunter2|true", got)
+	}
+	// ask re-prompts on a failed validator (first too short, then ok)
+	if got := evalString(t, d, `(let [q (atom ["a" "abcd"])]
+	                              (binding [cli/*prompt* (fn [_ _] (let [x (first @q)] (swap! q rest) x))]
+	                                (cli/ask "Slug?" {:validate (v/min-len 2)})))`); got != "abcd" {
+		t.Errorf("ask re-prompt = %q, want abcd", got)
+	}
+	// select: a typed choice → the keyword value, validated against :one-of
+	if got := eval(t, d, `(binding [cli/*prompt* (fn [_ _] "beta")]
+	                        (cli/select "Channel?" [:stable :beta]))`); got != eval(t, d, `:beta`) {
+		t.Errorf("select = %v, want :beta", got)
+	}
+	// confirm: yes/no
+	if got := eval(t, d, `(binding [cli/*prompt* (fn [_ _] "yes")] (cli/confirm "OK?"))`); got != true {
+		t.Errorf("confirm yes = %v, want true", got)
+	}
+	if got := eval(t, d, `(binding [cli/*prompt* (fn [_ _] "no")] (cli/confirm "OK?"))`); got != false {
+		t.Errorf("confirm no = %v, want false", got)
+	}
+	// multiselect: a comma answer → a vector of validated choices
+	if got := evalString(t, d, `(binding [cli/*prompt* (fn [_ _] "a,c")]
+	                              (pr-str (cli/multiselect "Pick" [:a :b :c])))`); got != `[:a :c]` {
+		t.Errorf("multiselect = %s, want [:a :c]", got)
+	}
+	// headless (no *prompt*, no TTY) returns the :default
+	if got := evalString(t, d, `(cli/ask "Name?" {:default "anon"})`); got != "anon" {
+		t.Errorf("headless ask = %q, want anon (the default)", got)
+	}
+	if got := evalString(t, d, `(pr-str (cli/multiselect "Pick" [:a :b] {:default [:a]}))`); got != `[:a]` {
+		t.Errorf("headless multiselect = %s, want [:a]", got)
+	}
+	if got := eval(t, d, `(cli/confirm "OK?" {:default true})`); got != true {
+		t.Errorf("headless confirm = %v, want true (default)", got)
+	}
+}
+
 func TestCLIMultiParam(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `(require '[bri.cli :as cli] '[bri.cli.validate :as v])
