@@ -124,18 +124,18 @@ func Load() {
 			tmp12 := v_clojure_DOT_core_str.Get()
 			tmp13 := v_clojure_DOT_string_join.Get()
 			tmp14 := v_clojure_DOT_core_map_.Get()
-			tmp15 := lang.FnFunc1(func(p__13316 any) any {
+			tmp15 := lang.FnFunc1(func(p__14716 any) any {
 				var tmp17 any
 				_ = tmp17
 				{
-					var vec__13418 any = p__13316
-					_ = vec__13418
+					var vec__14818 any = p__14716
+					_ = vec__14818
 					tmp19 := v_clojure_DOT_core_nth.Get()
-					tmp20 := lang.Apply3(tmp19, vec__13418, int64(0), nil)
+					tmp20 := lang.Apply3(tmp19, vec__14818, int64(0), nil)
 					var k21 any = tmp20
 					_ = k21
 					tmp22 := v_clojure_DOT_core_nth.Get()
-					tmp23 := lang.Apply3(tmp22, vec__13418, int64(1), nil)
+					tmp23 := lang.Apply3(tmp22, vec__14818, int64(1), nil)
 					var v24 any = tmp23
 					_ = v24
 					tmp25 := v_clojure_DOT_core_str.Get()
@@ -152,7 +152,7 @@ func Load() {
 				}
 				return tmp17
 			})
-			tmp35 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__133]", F: tmp15}
+			tmp35 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__147]", F: tmp15}
 			tmp36 := lang.Apply2(tmp14, tmp35, m8)
 			tmp37 := lang.Apply2(tmp13, "&", tmp36)
 			tmp38 := lang.Apply2(tmp12, "?", tmp37)
@@ -208,18 +208,18 @@ func Load() {
 					if lang.IsTruthy(tmp64) {
 						tmp66 := v_clojure_DOT_string_join.Get()
 						tmp67 := v_clojure_DOT_core_map_.Get()
-						tmp68 := lang.FnFunc1(func(p__13769 any) any {
+						tmp68 := lang.FnFunc1(func(p__15169 any) any {
 							var tmp70 any
 							_ = tmp70
 							{
-								var vec__13871 any = p__13769
-								_ = vec__13871
+								var vec__15271 any = p__15169
+								_ = vec__15271
 								tmp72 := v_clojure_DOT_core_nth.Get()
-								tmp73 := lang.Apply3(tmp72, vec__13871, int64(0), nil)
+								tmp73 := lang.Apply3(tmp72, vec__15271, int64(0), nil)
 								var k74 any = tmp73
 								_ = k74
 								tmp75 := v_clojure_DOT_core_nth.Get()
-								tmp76 := lang.Apply3(tmp75, vec__13871, int64(1), nil)
+								tmp76 := lang.Apply3(tmp75, vec__15271, int64(1), nil)
 								var v77 any = tmp76
 								_ = v77
 								tmp78 := v_clojure_DOT_core_str.Get()
@@ -236,7 +236,7 @@ func Load() {
 							}
 							return tmp70
 						})
-						tmp88 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__137]", F: tmp68}
+						tmp88 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__151]", F: tmp68}
 						tmp89 := lang.Apply1(kw_form, opts41)
 						tmp90 := lang.Apply2(tmp67, tmp88, tmp89)
 						tmp91 := lang.Apply2(tmp66, "&", tmp90)
@@ -277,18 +277,18 @@ func Load() {
 			if lang.IsTruthy(and__1__auto__100) {
 				tmp102 := v_clojure_DOT_core_not.Get()
 				tmp103 := v_clojure_DOT_core_some.Get()
-				tmp104 := lang.FnFunc1(func(p__141105 any) any {
+				tmp104 := lang.FnFunc1(func(p__155105 any) any {
 					var tmp106 any
 					_ = tmp106
 					{
-						var vec__142107 any = p__141105
-						_ = vec__142107
+						var vec__156107 any = p__155105
+						_ = vec__156107
 						tmp108 := v_clojure_DOT_core_nth.Get()
-						tmp109 := lang.Apply3(tmp108, vec__142107, int64(0), nil)
+						tmp109 := lang.Apply3(tmp108, vec__156107, int64(0), nil)
 						var k110 any = tmp109
 						_ = k110
 						tmp111 := v_clojure_DOT_core_nth.Get()
-						tmp112 := lang.Apply3(tmp111, vec__142107, int64(1), nil)
+						tmp112 := lang.Apply3(tmp111, vec__156107, int64(1), nil)
 						var X_113 any = tmp112
 						_ = X_113
 						tmp114 := v_clojure_DOT_string_lower_case.Get()
@@ -300,7 +300,7 @@ func Load() {
 					}
 					return tmp106
 				})
-				tmp119 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__141]", F: tmp104}
+				tmp119 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__155]", F: tmp104}
 				tmp120 := lang.Apply2(tmp103, tmp119, headers97)
 				tmp121 := lang.Apply1(tmp102, tmp120)
 				tmp101 = tmp121
@@ -397,14 +397,14 @@ func Load() {
 			_ = url160
 			tmp161 := v_cljg_DOT_net_DOT_http_body_PLUS_type.Get()
 			tmp162 := lang.Apply1(tmp161, opts150)
-			var vec__145163 any = tmp162
-			_ = vec__145163
+			var vec__159163 any = tmp162
+			_ = vec__159163
 			tmp164 := v_clojure_DOT_core_nth.Get()
-			tmp165 := lang.Apply3(tmp164, vec__145163, int64(0), nil)
+			tmp165 := lang.Apply3(tmp164, vec__159163, int64(0), nil)
 			var b166 any = tmp165
 			_ = b166
 			tmp167 := v_clojure_DOT_core_nth.Get()
-			tmp168 := lang.Apply3(tmp167, vec__145163, int64(1), nil)
+			tmp168 := lang.Apply3(tmp167, vec__159163, int64(1), nil)
 			var ct169 any = tmp168
 			_ = ct169
 			tmp170 := v_cljg_DOT_net_DOT_http_with_content_type.Get()

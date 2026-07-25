@@ -14,8 +14,11 @@
 ;; Private Go shims interned by pkg/bri before this loads: -db-open
 ;; -db-close -db-query -db-exec -db-begin -db-commit -db-rollback
 ;; -db-migration-files -db-now -getenv.
+;; `cast` is defined here (callers write db/cast) so it is EXCLUDED from the
+;; clojure.core refer — it never shadows clojure.core/cast globally (the
+;; precedence principle; same pattern as cljg.net.http/get).
 (clojure.core/in-ns 'bri.core.data)
-(clojure.core/refer 'clojure.core)
+(clojure.core/refer 'clojure.core :exclude '[cast])
 (require '[clojure.string :as str])
 
 ;; --- handles ----------------------------------------------------------------
@@ -89,6 +92,75 @@
   "Kebab-case keyword key → snake_case column name."
   [k]
   (str/replace (name k) "-" "_"))
+
+;; --- casts: the input gate (app-framework task 2.2) -------------------------
+;; `(cast row schema)` validates + coerces untrusted input against a schema and
+;; DROPS any key not declared in the schema — mass assignment is structurally off
+;; the path (a request can never set columns the schema didn't name). Returns
+;; (ok clean-row) / (err {field message}); `cast!` returns the clean row or throws.
+;; schema is {field → type-keyword}: :string :int :long :double :bool :keyword
+;; :any. Only keys PRESENT in `row` are processed (a partial cast — missing
+;; fields are simply not set). Coercion mirrors form input (strings → numbers/bools).
+
+(defn ^:private coerce-bool [v]
+  (cond
+    (boolean? v) v
+    (nil? v)     false
+    (string? v)  (contains? #{"true" "1" "yes" "on"} (str/lower-case (str/trim v)))
+    :else        (boolean v)))
+
+(defn ^:private coerce-field
+  "Coerce one value against a `type` keyword. Returns [:ok v'] | [:err message]."
+  [type v]
+  (case type
+    :any     [:ok v]
+    :string  [:ok (when (some? v) (str v))]
+    :keyword [:ok (when (some? v) (keyword v))]
+    (:int :long) (cond
+                   (integer? v) [:ok (long v)]
+                   (number? v)  [:ok (long v)]
+                   (string? v)  (if-let [n (parse-long (str/trim v))] [:ok n] [:err "expected an integer"])
+                   :else        [:err "expected an integer"])
+    :double  (cond
+               (number? v) [:ok (double v)]
+               (string? v) (if-let [n (parse-double (str/trim v))] [:ok n] [:err "expected a number"])
+               :else       [:err "expected a number"])
+    :bool    [:ok (coerce-bool v)]
+    [:err (str "unknown cast type " (pr-str type))]))
+
+(defn ^:private cast*
+  "The engine: reduce `row` against `schema`, dropping undeclared keys. Returns
+  [clean-row errors-map]."
+  [row schema]
+  (reduce (fn [[clean errs] f]
+            (if (contains? row f)
+              (let [[tag v] (coerce-field (get schema f) (get row f))]
+                (if (= tag :ok)
+                  [(assoc clean f v) errs]
+                  [clean (assoc errs f v)]))
+              [clean errs]))
+          [{} {}]
+          (keys schema)))
+
+(defn cast
+  "Validate + coerce `row` against `schema` ({field → type-keyword}), DROPPING any
+  key not in the schema (mass assignment structurally off the path). Returns
+  (ok clean-row) or (err {field message}). Only keys present in `row` are
+  processed. Types: :string :int :long :double :bool :keyword :any."
+  [row schema]
+  (let [[clean errs] (cast* row schema)]
+    (if (empty? errs) (ok clean) (err errs))))
+
+(defn cast!
+  "Like `cast`, but returns the clean row on success and THROWS
+  bri.core.data/cast (ex-info with :errors) on any validation failure — the
+  fail-fast form for a controller that treats bad input as a 400."
+  [row schema]
+  (let [[clean errs] (cast* row schema)]
+    (if (empty? errs)
+      clean
+      (throw (ex-info "bri.core.data/cast: input failed validation"
+                      {:bri.core.data/error :bri.core.data/cast :errors errs})))))
 
 (defn insert!
   "Insert one row from a map (kebab keys → snake columns), parametrized.

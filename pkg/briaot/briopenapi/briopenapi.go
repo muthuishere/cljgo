@@ -290,33 +290,33 @@ func Load() {
 	v_bri_DOT_web_DOT_openapi_op_entries.SetMeta(lang.NewMap(kw_file, "bri/openapi.cljg", kw_line, int64(60), kw_column, int64(8), kw_end_line, int64(60), kw_end_column, int64(18), kw_private, true, kw_doc, "Walk the spec's :paths → a seq of {:id :method :path :params :body?} maps, one\n  per operation. :id is the operationId (keyword) when present, else a synthesized\n  method+path keyword. :params is the declared parameters vector."))
 	tmp70 := lang.FnFunc1(func(spec71 any) any {
 		tmp72 := v_clojure_DOT_core_mapcat.Get()
-		tmp73 := lang.FnFunc1(func(p__15274 any) any {
+		tmp73 := lang.FnFunc1(func(p__16674 any) any {
 			var tmp75 any
 			_ = tmp75
 			{
-				var vec__15376 any = p__15274
-				_ = vec__15376
+				var vec__16776 any = p__16674
+				_ = vec__16776
 				tmp77 := v_clojure_DOT_core_nth.Get()
-				tmp78 := lang.Apply3(tmp77, vec__15376, int64(0), nil)
+				tmp78 := lang.Apply3(tmp77, vec__16776, int64(0), nil)
 				var path79 any = tmp78
 				_ = path79
 				tmp80 := v_clojure_DOT_core_nth.Get()
-				tmp81 := lang.Apply3(tmp80, vec__15376, int64(1), nil)
+				tmp81 := lang.Apply3(tmp80, vec__16776, int64(1), nil)
 				var item82 any = tmp81
 				_ = item82
 				tmp83 := v_clojure_DOT_core_keep.Get()
-				tmp84 := lang.FnFunc1(func(p__15685 any) any {
+				tmp84 := lang.FnFunc1(func(p__17085 any) any {
 					var tmp86 any
 					_ = tmp86
 					{
-						var vec__15787 any = p__15685
-						_ = vec__15787
+						var vec__17187 any = p__17085
+						_ = vec__17187
 						tmp88 := v_clojure_DOT_core_nth.Get()
-						tmp89 := lang.Apply3(tmp88, vec__15787, int64(0), nil)
+						tmp89 := lang.Apply3(tmp88, vec__17187, int64(0), nil)
 						var m90 any = tmp89
 						_ = m90
 						tmp91 := v_clojure_DOT_core_nth.Get()
-						tmp92 := lang.Apply3(tmp91, vec__15787, int64(1), nil)
+						tmp92 := lang.Apply3(tmp91, vec__17187, int64(1), nil)
 						var op93 any = tmp92
 						_ = op93
 						var tmp94 any
@@ -392,13 +392,13 @@ func Load() {
 					}
 					return tmp86
 				})
-				tmp131 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__156]", F: tmp84}
+				tmp131 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__170]", F: tmp84}
 				tmp132 := lang.Apply2(tmp83, tmp131, item82)
 				tmp75 = tmp132
 			}
 			return tmp75
 		})
-		tmp133 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__152]", F: tmp73}
+		tmp133 := &lang.NamedFn1{Name: "fn", Expects: "1: [p__166]", F: tmp73}
 		tmp134 := lang.Apply1(kw_paths, spec71)
 		tmp135 := lang.Apply2(tmp72, tmp133, tmp134)
 		return tmp135
@@ -699,8 +699,8 @@ func Load() {
 			_ = tmp291
 			{
 				tmp292 := lang.NewMap()
-				var cond__160293 any = tmp292
-				_ = cond__160293
+				var cond__174293 any = tmp292
+				_ = cond__174293
 				var tmp294 any
 				_ = tmp294
 				{
@@ -712,13 +712,13 @@ func Load() {
 						tmp298 := v_clojure_DOT_core_str.Get()
 						tmp299 := lang.Apply1(kw_token, opts287)
 						tmp300 := lang.Apply2(tmp298, "Bearer ", tmp299)
-						tmp301 := lang.Apply3(tmp297, cond__160293, "Authorization", tmp300)
+						tmp301 := lang.Apply3(tmp297, cond__174293, "Authorization", tmp300)
 						tmp296 = tmp301
 					} else {
-						tmp296 = cond__160293
+						tmp296 = cond__174293
 					}
-					var cond__161302 any = tmp296
-					_ = cond__161302
+					var cond__175302 any = tmp296
+					_ = cond__175302
 					var tmp303 any
 					_ = tmp303
 					{
@@ -729,13 +729,13 @@ func Load() {
 							tmp306 := v_clojure_DOT_core_assoc.Get()
 							tmp307 := lang.Apply1(kw_auth_fn, opts287)
 							tmp308 := lang.Apply0(tmp307)
-							tmp309 := lang.Apply3(tmp306, cond__161302, "Authorization", tmp308)
+							tmp309 := lang.Apply3(tmp306, cond__175302, "Authorization", tmp308)
 							tmp305 = tmp309
 						} else {
-							tmp305 = cond__161302
+							tmp305 = cond__175302
 						}
-						var cond__162310 any = tmp305
-						_ = cond__162310
+						var cond__176310 any = tmp305
+						_ = cond__176310
 						var tmp311 any
 						_ = tmp311
 						{
@@ -762,14 +762,14 @@ func Load() {
 								tmp319 := v_clojure_DOT_core_assoc.Get()
 								tmp320 := lang.Apply1(kw_name, ak290)
 								tmp321 := lang.Apply1(kw_value, ak290)
-								tmp322 := lang.Apply3(tmp319, cond__162310, tmp320, tmp321)
+								tmp322 := lang.Apply3(tmp319, cond__176310, tmp320, tmp321)
 								tmp318 = tmp322
 							} else {
-								tmp318 = cond__162310
+								tmp318 = cond__176310
 							}
-							var cond__163323 any = tmp318
-							_ = cond__163323
-							tmp311 = cond__163323
+							var cond__177323 any = tmp318
+							_ = cond__177323
+							tmp311 = cond__177323
 						}
 						tmp303 = tmp311
 					}
@@ -888,18 +888,18 @@ func Load() {
 					var rest373 any = tmp372
 					_ = rest373
 					tmp374 := v_clojure_DOT_core_reduce.Get()
-					tmp375 := lang.FnFunc2(func(acc376, p__164377 any) any {
+					tmp375 := lang.FnFunc2(func(acc376, p__178377 any) any {
 						var tmp378 any
 						_ = tmp378
 						{
-							var vec__165379 any = p__164377
-							_ = vec__165379
+							var vec__179379 any = p__178377
+							_ = vec__179379
 							tmp380 := v_clojure_DOT_core_nth.Get()
-							tmp381 := lang.Apply3(tmp380, vec__165379, int64(0), nil)
+							tmp381 := lang.Apply3(tmp380, vec__179379, int64(0), nil)
 							var k382 any = tmp381
 							_ = k382
 							tmp383 := v_clojure_DOT_core_nth.Get()
-							tmp384 := lang.Apply3(tmp383, vec__165379, int64(1), nil)
+							tmp384 := lang.Apply3(tmp383, vec__179379, int64(1), nil)
 							var v385 any = tmp384
 							_ = v385
 							var tmp386 any
@@ -949,7 +949,7 @@ func Load() {
 						}
 						return tmp378
 					})
-					tmp406 := &lang.NamedFn2{Name: "fn", Expects: "2: [acc p__164]", F: tmp375}
+					tmp406 := &lang.NamedFn2{Name: "fn", Expects: "2: [acc p__178]", F: tmp375}
 					tmp407 := lang.NewMap()
 					tmp408 := lang.NewMap()
 					tmp409 := lang.NewMap(kw_headers, tmp407, kw_query, tmp408)
@@ -983,8 +983,8 @@ func Load() {
 						tmp432 := lang.Apply1(tmp431, opts413)
 						tmp433 := lang.Apply2(tmp429, tmp430, tmp432)
 						tmp434 := lang.NewMap(kw_method, tmp422, kw_url, url420, kw_headers, tmp428, kw_query, tmp433)
-						var cond__168435 any = tmp434
-						_ = cond__168435
+						var cond__182435 any = tmp434
+						_ = cond__182435
 						var tmp436 any
 						_ = tmp436
 						{
@@ -992,13 +992,13 @@ func Load() {
 							_ = tmp437
 							if lang.IsTruthy(body370) {
 								tmp438 := v_clojure_DOT_core_assoc.Get()
-								tmp439 := lang.Apply3(tmp438, cond__168435, kw_json, body370)
+								tmp439 := lang.Apply3(tmp438, cond__182435, kw_json, body370)
 								tmp437 = tmp439
 							} else {
-								tmp437 = cond__168435
+								tmp437 = cond__182435
 							}
-							var cond__169440 any = tmp437
-							_ = cond__169440
+							var cond__183440 any = tmp437
+							_ = cond__183440
 							var tmp441 any
 							_ = tmp441
 							{
@@ -1008,13 +1008,13 @@ func Load() {
 								if lang.IsTruthy(tmp442) {
 									tmp444 := v_clojure_DOT_core_assoc.Get()
 									tmp445 := lang.Apply1(kw_timeout, opts413)
-									tmp446 := lang.Apply3(tmp444, cond__169440, kw_timeout, tmp445)
+									tmp446 := lang.Apply3(tmp444, cond__183440, kw_timeout, tmp445)
 									tmp443 = tmp446
 								} else {
-									tmp443 = cond__169440
+									tmp443 = cond__183440
 								}
-								var cond__170447 any = tmp443
-								_ = cond__170447
+								var cond__184447 any = tmp443
+								_ = cond__184447
 								var tmp448 any
 								_ = tmp448
 								{
@@ -1024,14 +1024,14 @@ func Load() {
 									if lang.IsTruthy(tmp449) {
 										tmp451 := v_clojure_DOT_core_assoc.Get()
 										tmp452 := lang.Apply1(kw_retry, opts413)
-										tmp453 := lang.Apply3(tmp451, cond__170447, kw_retry, tmp452)
+										tmp453 := lang.Apply3(tmp451, cond__184447, kw_retry, tmp452)
 										tmp450 = tmp453
 									} else {
-										tmp450 = cond__170447
+										tmp450 = cond__184447
 									}
-									var cond__171454 any = tmp450
-									_ = cond__171454
-									tmp448 = cond__171454
+									var cond__185454 any = tmp450
+									_ = cond__185454
+									tmp448 = cond__185454
 								}
 								tmp441 = tmp448
 							}
