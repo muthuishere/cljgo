@@ -1,0 +1,77 @@
+;; cljg.os — OS-level primitives (ADR 0088). This increment: the cron
+;; SCHEDULER, so a cljgo daemon can run periodic work. The next-fire math is a
+;; Go shim over stdlib time (deterministic, tested); the scheduler loop here is
+;; portable Clojure over three host primitives. (Service install/start/stop
+;; across systemd/launchd/SCM is the reserved next increment, ADR 0088 §3.)
+;;
+;;   (require '[cljg.os :as os])
+;;   (os/cron-next "*/5 * * * *" (os/now))   ; next fire (epoch ms)
+;;   (def j (os/job "0 9 * * 1-5" #(sync!)))  ; weekday 09:00
+;;   (os/run [j])                             ; blocking scheduler loop (the daemon)
+;;   (os/run [j] {:max-ticks 3})              ; bounded — tests / one-shots
+;;
+;; A standard 5-field cron: min hour day-of-month month day-of-week, with
+;; * , ranges (a-b), lists (a,b) and steps (*/n). Private Go shims interned
+;; before this loads: -now-millis -sleep-millis -cron-next.
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file.
+(clojure.core/in-ns 'cljg.os)
+(clojure.core/refer 'clojure.core)
+
+(defn now
+  "Current time as epoch milliseconds."
+  []
+  (-now-millis))
+
+(defn cron-next
+  "The next fire time (epoch ms) STRICTLY after `from` (epoch ms) for a 5-field
+  cron `expr`. Pure/deterministic — throws on a malformed expression."
+  [expr from]
+  (-cron-next expr from))
+
+(defn job
+  "A scheduled job: a cron expression + a 0-arg fn to run each fire. opts may
+  carry :name (for errors). Usually passed to `run`."
+  ([expr f] (job expr f {}))
+  ([expr f opts]
+   (merge {:cljg.os/job true :cron expr :fn f} opts)))
+
+(defn- soonest
+  "The [job next-ms] pair due first, given `from`."
+  [jobs from]
+  (->> jobs
+       (map (fn [j] [j (cron-next (:cron j) from)]))
+       (sort-by second)
+       first))
+
+(defn- run-job
+  "Run one job's fn, converting a thrown error into a printed warning so one
+  bad tick never kills the scheduler."
+  [j]
+  (try ((:fn j))
+       (catch Throwable e
+         (binding [*out* *err*]
+           (println (str "cljg.os: job " (or (:name j) (:cron j)) " failed: " (ex-message e)))))))
+
+(defn run
+  "Run the scheduler over `jobs` (job values), sleeping until the soonest due
+  fire, running every job due at that minute, and repeating. Blocking — a
+  daemon's main loop. opts:
+    :max-ticks n  stop after n fires (default: run forever; use for tests/one-shots)
+  Returns the number of ticks run."
+  ([jobs] (run jobs {}))
+  ([jobs opts]
+   (let [maxt (:max-ticks opts)]
+     (loop [ticks 0]
+       (if (and maxt (>= ticks maxt))
+         ticks
+         (let [from (now)
+               [_ due-ms] (soonest jobs from)
+               wait (max 0 (- due-ms from))]
+           (-sleep-millis wait)
+           ;; run every job whose next fire is this same minute
+           (doseq [j jobs]
+             (when (= due-ms (cron-next (:cron j) from))
+               (run-job j)))
+           (recur (inc ticks))))))))
