@@ -24,4 +24,4 @@
 - [x] 4.5 Gates green: `go build ./... && go vet ./... && gofmt -l && go test ./cmd/cljgo/ -count=1`.
 
 ## 5. Reconciliation (follow-up, owner/bri.db agent)
-- [ ] 5.1 When bri.db (ADR 0072) freezes its API, align `db/connect|query|one|exec|insert!` names in `resource.cljg.tmpl` + `db.cljg.tmpl`, then flip the generated `cljgo test` to a green CI gate.
+- [x] 5.1 When bri.db (ADR 0072) freezes its API, align `db/connect|query|one|exec|insert!` names in `resource.cljg.tmpl` + `db.cljg.tmpl`, then flip the generated `cljgo test` to a green CI gate. (Names already target the frozen `bri.core.data` surface; `cmd/cljgo/bri_test.go` `TestGenerateResourceSuite` now runs the generated `cljgo test` as a gate.)

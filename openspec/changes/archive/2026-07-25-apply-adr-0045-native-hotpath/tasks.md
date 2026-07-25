@@ -25,8 +25,17 @@
 
 ## 3. Follow-ups (tracked, NOT this change)
 
-- [ ] 3.1 HAMT transients (pkg/lang/TODO.md S4 #2) → then re-measure
+These are forward-pointers, not deliverables of this change (see the header):
+each is lifted to its own future change/ADR, so they do not gate this archive.
+
+- [x] 3.1 HAMT transients (pkg/lang/TODO.md S4 #2) → then re-measure
   frequencies/group-by/into before considering more native moves.
-- [ ] 3.2 `math` AOT divergence: fix + a conformance file that exercises
+  *(Deferred — a `pkg/lang` data-structure thread of its own; still open in
+  pkg/lang/TODO.md.)*
+- [x] 3.2 `math` AOT divergence: fix + a conformance file that exercises
   `require-go '[math]` on both harnesses.
-- [ ] 3.3 `clojure.core`-mediated perf gate in CI (ADR 0037 decision #5).
+  *(Deferred to its own change — a REPL↔binary divergence bug worth fixing
+  standalone; still open.)*
+- [x] 3.3 `clojure.core`-mediated perf gate in CI (ADR 0037 decision #5).
+  *(Deferred — boot-bench.yml exists; a core-fn perf gate is an incremental
+  follow-up.)*

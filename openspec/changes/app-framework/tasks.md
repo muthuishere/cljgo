@@ -151,7 +151,7 @@
 
 ## 2. T2 — data layer, dev database, migrations, deployment
 
-- [ ] 2.1 `bri.db`: `connect!` (pgx pool via require-go, sane pool
+- [x] 2.1 `bri.db`: `connect!` (pgx pool via require-go, sane pool
       sizing + timeouts default, validates-now/dials-on-first-use —
       the no-I/O-at-load contract), `query`/`one`/`insert`/`update`/
       `delete`/`tx` returning Result, `!` variants throwing
@@ -159,6 +159,10 @@
       strings THE blessed input form. NAMES DOCTRINE implemented and
       conformance-tested: snake_case ↔ kebab-case both directions,
       nothing else renamed.
+      *(SHIPPED as `bri.core.data` — renamed under the ADR 0085 taxonomy —
+      in `core/bri/db.cljg` + `pkg/bri/db/`, ADRs 0072/0057/0058.
+      connect/query/one/one!/exec!/insert!/update!/delete!/tx +
+      snake↔kebab present.)*
 - [ ] 2.2 Casts: `(db/cast row schema)` → `(ok row)`/`(err {field
       msg})`, `cast!` throwing — the DAY-ONE input gate (golden page
       casts before insert; undeclared keys dropped/rejected — mass
@@ -168,10 +172,14 @@
 - [ ] 2.3 Migrations: `cljgo migrate [new|up|status]`, SQL files,
       UTC-timestamp names, applied-table; additive-only doctrine
       doc. `cljgo dev` gains migration application.
-- [ ] 2.4 Dev database: embedded Postgres (require-go module, data
+- [x] 2.4 Dev database: embedded Postgres (require-go module, data
       under `.dev/pg/`) provisioned by `cljgo dev` when APP_DB_URL
       is unset — zero install, dev/prod parity. Documented
       alternative: point APP_DB_URL at your own server.
+      *(SUPERSEDED by ADR 0057: embedded Postgres replaced with the pure-Go
+      modernc.org/sqlite zero-install default (`.dev/app.db`); the intent —
+      zero-install dev db, dev/prod parity via a driver swap to pgx — is met
+      without provisioning Postgres.)*
 - [ ] 2.5 Deployment: `cljgo build` embeds `public/` + `migrations/`
       (ADR 0021 comptime embed); generated `-main` answers
       `migrate`; clean-host scenario tested (binary + env only).
@@ -207,6 +215,29 @@
       generator and page now byte-identical; the complete app
       becomes `examples/bri-app/` + the site demo; full gates +
       conformance + perf budgets green.
+
+## Reconciliation (2026-07-25)
+
+The T2 **data core** shipped under the ADR 0085 namespace taxonomy (which
+renamed `bri.db → bri.core.data`, `bri.http → bri.web.http`, etc., *after*
+these tasks were written):
+
+- **2.1 — DONE** as `bri.core.data` (`core/bri/db.cljg` + `pkg/bri/db/`, ADRs
+  0072/0057/0058).
+- **2.4 — SUPERSEDED** by ADR 0057 (pure-Go SQLite default replaces embedded
+  Postgres; same zero-install intent).
+- Library halves of **2.3** (`migrate!`/`migrate-status` + migration-file gen in
+  `cmd/cljgo/generate.go`) and **2.6** (`with-rollback`, ADR 0058) also landed;
+  each still has an unbuilt CLI/generator half, so those tasks stay open.
+
+**Genuinely remaining, NOT closed here:** 2.2 (`db/cast`/`cast!` input gate),
+2.3 (`cljgo migrate` subcommand + `cljgo dev` apply), 2.5 (build-embed
+`public/`+`migrations/`, `-main migrate` arm, clean-host deploy), 2.6
+(APP_PROFILE=test sandbox + generated db test + T2 generator page), and all of
+**T3** (`bri.core.jobs` + `:memory` backend + `bri.core.cache` — unbuilt, and
+not yet placed in the ADR 0085 taxonomy). Recommended split: a focused
+T2-completion change, and a separate T3 jobs+cache change fronted by an ADR that
+places those namespaces. This umbrella stays OPEN until those land.
 
 ## Out of scope (sequenced later, per round 3)
 
