@@ -1,7 +1,7 @@
 ;; cljg.io — filesystem primitives (ADR 0089). The structural file/path/dir
 ;; ops clojure.core lacks: slurp/spit stay clojure.core (the precedence
 ;; principle — cljg.io never shadows them), this namespace adds everything
-;; AROUND them. Process exec (sh/exec) is the reserved next increment.
+;; AROUND them: filesystem structure + process exec.
 ;;
 ;;   (require '[cljg.io :as io])
 ;;   (io/exists? "x")      (io/directory? "d")   (io/list-files "d")
@@ -9,16 +9,20 @@
 ;;   (io/glob "src/*.clj") (io/walk "d")         (io/path "a" "b")
 ;;   (io/parent "a/b")     (io/filename "a/b.c") (io/extension "a/b.c")
 ;;   (io/home)             (io/cwd)              (io/temp-dir)
+;;   (io/sh "git" "rev-parse" "HEAD")            ; {:out :err :exit :timed-out?}
+;;   (io/exec ["cat"] {:in "hi" :timeout-ms 500})
+;;   (io/sh! ["make" "build"] {:dir "app"})      ; throws on non-zero exit
 ;;
-;; Private Go shims interned before this loads (pkg/bri/io_fs.go): -fs-stat
-;; -fs-list -fs-mkdir -fs-delete -fs-copy -fs-move -fs-glob -fs-walk
-;; -fs-temp-file -fs-temp-dir -fs-home -fs-cwd -path-abs -path-join -path-base
-;; -path-dir -path-ext.
+;; Private Go shims interned before this loads: -fs-stat -fs-list -fs-mkdir
+;; -fs-delete -fs-copy -fs-move -fs-glob -fs-walk -fs-temp-file -fs-temp-dir
+;; -fs-home -fs-cwd -path-abs -path-join -path-base -path-dir -path-ext
+;; (pkg/bri/io_fs.go) and -proc-exec (pkg/bri/io_proc.go).
 ;;
 ;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
 ;; fully-qualified in-ns + refer open the file.
 (clojure.core/in-ns 'cljg.io)
 (clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
 
 ;; --- stat / predicates -------------------------------------------------------
 
@@ -144,3 +148,41 @@
   shapes the name."
   ([] (temp-dir "cljg"))
   ([prefix] (-fs-temp-dir prefix)))
+
+;; --- process exec (ADR 0089 §3) ----------------------------------------------
+;; Private Go shim interned before this loads (pkg/bri/io_proc.go): -proc-exec.
+
+(defn exec
+  "Run a subprocess and return {:out :err :exit :timed-out?} — never throwing on
+  a non-zero exit (that's a normal result; use `sh!` to throw). `command` is a
+  vector [cmd arg…]. opts (optional):
+    :in         a string fed to the process's stdin
+    :env        {name value} merged onto the current environment
+    :dir        the working directory
+    :timeout-ms kill the process after n ms (:timed-out? true, :exit -1)
+  A missing/unrunnable binary throws (it never ran)."
+  ([command] (exec command {}))
+  ([command opts] (-proc-exec (vec command) opts)))
+
+(defn sh
+  "Convenience over `exec` for the common shape: pass the command + args as
+  varargs, get the same {:out :err :exit :timed-out?} map back.
+    (sh \"git\" \"rev-parse\" \"HEAD\")
+  For stdin/env/dir/timeout use `exec` with an opts map."
+  [& command]
+  (exec (vec command)))
+
+(defn sh!
+  "Like `sh`, but THROWS (ex-info) if the command exits non-zero or times out —
+  for the script style where a failed step should abort. Returns the same result
+  map on success. Takes a command vector + optional opts (like `exec`)."
+  ([command] (sh! command {}))
+  ([command opts]
+   (let [{:keys [exit err timed-out?] :as r} (exec command opts)]
+     (when (not= 0 exit)
+       (throw (ex-info (str "cljg.io: command failed"
+                            (when timed-out? " (timed out)")
+                            " (exit " exit "): " (str/join " " command)
+                            (when (seq err) (str "\n" err)))
+                       (assoc r :command (vec command)))))
+     r)))

@@ -6,10 +6,14 @@
 package bri_test
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestCljgIO(t *testing.T) {
@@ -115,6 +119,111 @@ func TestCljgIOPaths(t *testing.T) {
 	}
 	if got := evalString(t, d, `(cio/cwd)`); got == "" {
 		t.Errorf("cwd was empty")
+	}
+}
+
+// TestHelperProcess is the standard Go cross-platform subprocess: re-invoked as
+// the child of the exec tests below (guarded by GO_WANT_HELPER_PROCESS so it is
+// inert as a normal test). It reads a mode after "--" and behaves as a tiny,
+// portable command — echo/cat/toerr/sleep/printenv — so cljg.io's exec is
+// exercised on macOS/Linux/Windows with no external binary dependency.
+func TestHelperProcess(t *testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		return
+	}
+	args := os.Args
+	i := 0
+	for ; i < len(args); i++ {
+		if args[i] == "--" {
+			i++
+			break
+		}
+	}
+	rest := args[i:]
+	mode := ""
+	if len(rest) > 0 {
+		mode = rest[0]
+	}
+	switch mode {
+	case "echo":
+		fmt.Fprint(os.Stdout, strings.Join(rest[1:], " "))
+	case "toerr":
+		fmt.Fprint(os.Stderr, strings.Join(rest[1:], " "))
+		os.Exit(3)
+	case "cat":
+		io.Copy(os.Stdout, os.Stdin)
+	case "sleep":
+		ms, _ := strconv.Atoi(rest[1])
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+	case "printenv":
+		fmt.Fprint(os.Stdout, os.Getenv(rest[1]))
+	}
+	os.Exit(0)
+}
+
+func TestCljgIOExec(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[cljg.io :as cio])`)
+
+	self := filepath.ToSlash(os.Args[0])
+	// cmd builds a Clojure vector literal invoking this test binary as the helper.
+	cmd := func(parts ...string) string {
+		var b strings.Builder
+		b.WriteString("[")
+		for _, p := range append([]string{self, "-test.run=TestHelperProcess", "--"}, parts...) {
+			fmt.Fprintf(&b, " %q", p)
+		}
+		b.WriteString("]")
+		return b.String()
+	}
+	// every exec must carry the helper marker in its env
+	base := `{:env {"GO_WANT_HELPER_PROCESS" "1"}}`
+
+	// stdout capture + zero exit
+	if got := evalString(t, d, `(:out (cio/exec `+cmd("echo", "hello", "world")+` `+base+`))`); got != "hello world" {
+		t.Errorf("exec echo :out = %q, want %q", got, "hello world")
+	}
+	if got := evalString(t, d, `(str (:exit (cio/exec `+cmd("echo", "x")+` `+base+`)))`); got != "0" {
+		t.Errorf("exec echo :exit = %q, want 0", got)
+	}
+
+	// non-zero exit is a NORMAL result (exec does not throw), stderr captured
+	res := evalString(t, d, `(let [r (cio/exec `+cmd("toerr", "boom")+` `+base+`)] (str (:exit r) "|" (:err r)))`)
+	if res != "3|boom" {
+		t.Errorf("exec toerr = %q, want %q", res, "3|boom")
+	}
+
+	// stdin via :in
+	catOpts := `{:env {"GO_WANT_HELPER_PROCESS" "1"} :in "piped-data"}`
+	if got := evalString(t, d, `(:out (cio/exec `+cmd("cat")+` `+catOpts+`))`); got != "piped-data" {
+		t.Errorf("exec cat :in = %q, want %q", got, "piped-data")
+	}
+
+	// :env is merged onto the current environment
+	envOpts := `{:env {"GO_WANT_HELPER_PROCESS" "1" "CLJGIO_FOO" "bar"}}`
+	if got := evalString(t, d, `(:out (cio/exec `+cmd("printenv", "CLJGIO_FOO")+` `+envOpts+`))`); got != "bar" {
+		t.Errorf("exec printenv :env = %q, want %q", got, "bar")
+	}
+
+	// :timeout-ms kills a slow process
+	toOpts := `{:env {"GO_WANT_HELPER_PROCESS" "1"} :timeout-ms 150}`
+	to := evalString(t, d, `(let [r (cio/exec `+cmd("sleep", "3000")+` `+toOpts+`)] (str (:timed-out? r) "|" (:exit r)))`)
+	if to != "true|-1" {
+		t.Errorf("exec timeout = %q, want %q", to, "true|-1")
+	}
+
+	// sh! THROWS on non-zero exit
+	if msg := evalErr(t, d, `(cio/sh! `+cmd("toerr", "nope")+` `+base+`)`); !strings.Contains(msg, "exit 3") {
+		t.Errorf("sh! on non-zero exit error = %q, want it to mention exit 3", msg)
+	}
+	// sh! returns the result map on success
+	if got := evalString(t, d, `(:out (cio/sh! `+cmd("echo", "ok")+` `+base+`))`); got != "ok" {
+		t.Errorf("sh! success :out = %q, want ok", got)
+	}
+
+	// a missing binary THROWS (it never ran) — distinct from a non-zero exit
+	if msg := evalErr(t, d, `(cio/exec ["cljgo-no-such-binary-xyzzy"] {})`); !strings.Contains(msg, "exec") {
+		t.Errorf("missing binary error = %q, want it to mention exec", msg)
 	}
 }
 

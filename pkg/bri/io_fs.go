@@ -190,6 +190,8 @@ func installIOShims(def func(name string, fn func(args ...any) any)) {
 	def("-path-dir", func(args ...any) any { return filepath.Dir(asString(one("-path-dir", args))) })
 	// -path-ext path -> the extension including the dot ("" if none).
 	def("-path-ext", func(args ...any) any { return filepath.Ext(asString(one("-path-ext", args))) })
+
+	installProcShims(def) // cljg.io also owns process exec (io_proc.go)
 }
 
 // copyFile copies src to dst, preserving the source file mode.
