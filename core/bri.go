@@ -112,3 +112,13 @@ var BriCLIAuthSource string
 //
 //go:embed bri/openapi.cljg
 var BriOpenAPISource string
+
+// BriCLIAPISource is core/bri/cli_api.cljg — bri.cli.api: an OpenAPI client that
+// logs in AUTOMATICALLY (ADR 0091, realizing ADR 0080). Pure composition of
+// bri.web.openapi (client + :auth-fn seam), bri.cli.auth (credential core → OS
+// keychain), and bri.cli prompts — no Go shims. A new namespace (not bri.cli) so
+// requiring it opts into the transitive keychain link while plain bri.cli apps
+// stay lean.
+//
+//go:embed bri/cli_api.cljg
+var BriCLIAPISource string

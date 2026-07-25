@@ -143,6 +143,12 @@ func Specs() []Spec {
 		// registered AFTER cljg.net.http — its top-level require must resolve
 		// against already-loaded vars. Non-OptIn (net/http is stdlib).
 		{Name: "bri.web.openapi", File: "bri/openapi.cljg", Pkg: "briopenapi", Source: &core.BriOpenAPISource, install: nil},
+		// bri.cli.api — an OpenAPI client with automatic login (ADR 0091,
+		// realizing ADR 0080). Pure composition of bri.web.openapi + bri.cli.auth
+		// + bri.cli (no Go shims), so it is registered AFTER all three — its
+		// top-level requires must resolve. Its own namespace (not bri.cli) so the
+		// transitive keychain link is opt-in.
+		{Name: "bri.cli.api", File: "bri/cli_api.cljg", Pkg: "bricliapi", Source: &core.BriCLIAPISource, install: nil},
 	}
 }
 
