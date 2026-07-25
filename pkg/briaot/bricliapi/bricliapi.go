@@ -8,81 +8,117 @@ import (
 )
 
 var (
-	kw_as                                         = lang.InternKeywordString("as")
-	kw_auth                                       = lang.InternKeywordString("auth")
-	kw_auth_fn                                    = lang.InternKeywordString("auth-fn")
-	kw_body                                       = lang.InternKeywordString("body")
-	kw_boot                                       = lang.InternKeywordString("boot")
-	kw_bri_DOT_cli_DOT_api_SLASH_api              = lang.InternKeywordString("bri.cli.api/api")
-	kw_bri_DOT_cli_DOT_api_SLASH_login_failed     = lang.InternKeywordString("bri.cli.api/login-failed")
-	kw_bri_DOT_cli_DOT_api_SLASH_unknown_strategy = lang.InternKeywordString("bri.cli.api/unknown-strategy")
-	kw_bri_SLASH_error                            = lang.InternKeywordString("bri/error")
-	kw_client                                     = lang.InternKeywordString("client")
-	kw_column                                     = lang.InternKeywordString("column")
-	kw_doc                                        = lang.InternKeywordString("doc")
-	kw_end_column                                 = lang.InternKeywordString("end-column")
-	kw_end_line                                   = lang.InternKeywordString("end-line")
-	kw_file                                       = lang.InternKeywordString("file")
-	kw_key                                        = lang.InternKeywordString("key")
-	kw_line                                       = lang.InternKeywordString("line")
-	kw_login                                      = lang.InternKeywordString("login")
-	kw_op                                         = lang.InternKeywordString("op")
-	kw_opts                                       = lang.InternKeywordString("opts")
-	kw_password                                   = lang.InternKeywordString("password")
-	kw_password_field                             = lang.InternKeywordString("password-field")
-	kw_password_label                             = lang.InternKeywordString("password-label")
-	kw_private                                    = lang.InternKeywordString("private")
-	kw_service                                    = lang.InternKeywordString("service")
-	kw_status                                     = lang.InternKeywordString("status")
-	kw_strategy                                   = lang.InternKeywordString("strategy")
-	kw_token                                      = lang.InternKeywordString("token")
-	kw_token_path                                 = lang.InternKeywordString("token-path")
-	kw_username                                   = lang.InternKeywordString("username")
-	kw_username_field                             = lang.InternKeywordString("username-field")
-	kw_username_label                             = lang.InternKeywordString("username-label")
-	sym_auth                                      = lang.NewSymbol("auth")
-	sym_bri_DOT_cli                               = lang.NewSymbol("bri.cli")
-	sym_bri_DOT_cli_DOT_api                       = lang.NewSymbol("bri.cli.api")
-	sym_bri_DOT_cli_DOT_auth                      = lang.NewSymbol("bri.cli.auth")
-	sym_bri_DOT_web_DOT_openapi                   = lang.NewSymbol("bri.web.openapi")
-	sym_cli                                       = lang.NewSymbol("cli")
-	sym_clojure_DOT_core                          = lang.NewSymbol("clojure.core")
-	sym_clojure_DOT_string                        = lang.NewSymbol("clojure.string")
-	sym_openapi                                   = lang.NewSymbol("openapi")
-	sym_str                                       = lang.NewSymbol("str")
-	v_bri_DOT_cli_DOT_api_acquire_BANG_           = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("acquire!")).SetPrivate()
-	v_bri_DOT_cli_DOT_api_api                     = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("api"))
-	v_bri_DOT_cli_DOT_api_auth_value              = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("auth-value")).SetPrivate()
-	v_bri_DOT_cli_DOT_api_authed_QMARK_           = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("authed?"))
-	v_bri_DOT_cli_DOT_api_call                    = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("call"))
-	v_bri_DOT_cli_DOT_api_control_keys            = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("control-keys")).SetPrivate()
-	v_bri_DOT_cli_DOT_api_login                   = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("login"))
-	v_bri_DOT_cli_DOT_api_logout                  = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("logout"))
-	v_bri_DOT_cli_DOT_api_operations              = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("operations"))
-	v_bri_DOT_cli_DOT_api_result                  = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("result"))
-	v_bri_DOT_cli_DOT_auth_auth_header            = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("auth-header"))
-	v_bri_DOT_cli_DOT_auth_authed_QMARK_          = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("authed?"))
-	v_bri_DOT_cli_DOT_auth_login                  = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("login"))
-	v_bri_DOT_cli_DOT_auth_logout                 = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("logout"))
-	v_bri_DOT_cli_ask                             = lang.InternVarName(lang.NewSymbol("bri.cli"), lang.NewSymbol("ask"))
-	v_bri_DOT_cli_ask_secret                      = lang.InternVarName(lang.NewSymbol("bri.cli"), lang.NewSymbol("ask-secret"))
-	v_bri_DOT_web_DOT_openapi_call                = lang.InternVarName(lang.NewSymbol("bri.web.openapi"), lang.NewSymbol("call"))
-	v_bri_DOT_web_DOT_openapi_client              = lang.InternVarName(lang.NewSymbol("bri.web.openapi"), lang.NewSymbol("client"))
-	v_bri_DOT_web_DOT_openapi_operations          = lang.InternVarName(lang.NewSymbol("bri.web.openapi"), lang.NewSymbol("operations"))
-	v_bri_DOT_web_DOT_openapi_result              = lang.InternVarName(lang.NewSymbol("bri.web.openapi"), lang.NewSymbol("result"))
-	v_clojure_DOT_core_X_EQ_                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
-	v_clojure_DOT_core_apply                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
-	v_clojure_DOT_core_assoc                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
-	v_clojure_DOT_core_assoc_in                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc-in"))
-	v_clojure_DOT_core_dissoc                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("dissoc"))
-	v_clojure_DOT_core_ex_info                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("ex-info"))
-	v_clojure_DOT_core_get                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
-	v_clojure_DOT_core_get_in                     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get-in"))
-	v_clojure_DOT_core_in_ns                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
-	v_clojure_DOT_core_refer                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
-	v_clojure_DOT_core_require                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
-	v_clojure_DOT_core_str                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
-	v_clojure_DOT_string_blank_QMARK_             = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("blank?"))
+	kw_access_token                                    = lang.InternKeywordString("access_token")
+	kw_as                                              = lang.InternKeywordString("as")
+	kw_auth                                            = lang.InternKeywordString("auth")
+	kw_auth_fn                                         = lang.InternKeywordString("auth-fn")
+	kw_body                                            = lang.InternKeywordString("body")
+	kw_boot                                            = lang.InternKeywordString("boot")
+	kw_bri_DOT_cli_DOT_api_SLASH_api                   = lang.InternKeywordString("bri.cli.api/api")
+	kw_bri_DOT_cli_DOT_api_SLASH_device_failed         = lang.InternKeywordString("bri.cli.api/device-failed")
+	kw_bri_DOT_cli_DOT_api_SLASH_device_misconfigured  = lang.InternKeywordString("bri.cli.api/device-misconfigured")
+	kw_bri_DOT_cli_DOT_api_SLASH_device_request_failed = lang.InternKeywordString("bri.cli.api/device-request-failed")
+	kw_bri_DOT_cli_DOT_api_SLASH_device_timeout        = lang.InternKeywordString("bri.cli.api/device-timeout")
+	kw_bri_DOT_cli_DOT_api_SLASH_login_failed          = lang.InternKeywordString("bri.cli.api/login-failed")
+	kw_bri_DOT_cli_DOT_api_SLASH_unknown_strategy      = lang.InternKeywordString("bri.cli.api/unknown-strategy")
+	kw_bri_SLASH_error                                 = lang.InternKeywordString("bri/error")
+	kw_client                                          = lang.InternKeywordString("client")
+	kw_client_id                                       = lang.InternKeywordString("client-id")
+	kw_column                                          = lang.InternKeywordString("column")
+	kw_device                                          = lang.InternKeywordString("device")
+	kw_device_code                                     = lang.InternKeywordString("device_code")
+	kw_device_url                                      = lang.InternKeywordString("device-url")
+	kw_doc                                             = lang.InternKeywordString("doc")
+	kw_else_                                           = lang.InternKeywordString("else")
+	kw_end_column                                      = lang.InternKeywordString("end-column")
+	kw_end_line                                        = lang.InternKeywordString("end-line")
+	kw_error_                                          = lang.InternKeywordString("error")
+	kw_expires_in                                      = lang.InternKeywordString("expires_in")
+	kw_file                                            = lang.InternKeywordString("file")
+	kw_form                                            = lang.InternKeywordString("form")
+	kw_interval                                        = lang.InternKeywordString("interval")
+	kw_key                                             = lang.InternKeywordString("key")
+	kw_line                                            = lang.InternKeywordString("line")
+	kw_login                                           = lang.InternKeywordString("login")
+	kw_ok_QMARK_                                       = lang.InternKeywordString("ok?")
+	kw_op                                              = lang.InternKeywordString("op")
+	kw_opts                                            = lang.InternKeywordString("opts")
+	kw_password                                        = lang.InternKeywordString("password")
+	kw_password_field                                  = lang.InternKeywordString("password-field")
+	kw_password_label                                  = lang.InternKeywordString("password-label")
+	kw_poll_interval_ms                                = lang.InternKeywordString("poll-interval-ms")
+	kw_private                                         = lang.InternKeywordString("private")
+	kw_scope                                           = lang.InternKeywordString("scope")
+	kw_service                                         = lang.InternKeywordString("service")
+	kw_status                                          = lang.InternKeywordString("status")
+	kw_strategy                                        = lang.InternKeywordString("strategy")
+	kw_token                                           = lang.InternKeywordString("token")
+	kw_token_path                                      = lang.InternKeywordString("token-path")
+	kw_token_url                                       = lang.InternKeywordString("token-url")
+	kw_user_code                                       = lang.InternKeywordString("user_code")
+	kw_username                                        = lang.InternKeywordString("username")
+	kw_username_field                                  = lang.InternKeywordString("username-field")
+	kw_username_label                                  = lang.InternKeywordString("username-label")
+	kw_verification_uri                                = lang.InternKeywordString("verification_uri")
+	kw_verification_uri_complete                       = lang.InternKeywordString("verification_uri_complete")
+	sym_auth                                           = lang.NewSymbol("auth")
+	sym_bri_DOT_cli                                    = lang.NewSymbol("bri.cli")
+	sym_bri_DOT_cli_DOT_api                            = lang.NewSymbol("bri.cli.api")
+	sym_bri_DOT_cli_DOT_auth                           = lang.NewSymbol("bri.cli.auth")
+	sym_bri_DOT_web_DOT_openapi                        = lang.NewSymbol("bri.web.openapi")
+	sym_cli                                            = lang.NewSymbol("cli")
+	sym_cljg_DOT_net_DOT_http                          = lang.NewSymbol("cljg.net.http")
+	sym_clojure_DOT_core                               = lang.NewSymbol("clojure.core")
+	sym_clojure_DOT_string                             = lang.NewSymbol("clojure.string")
+	sym_http                                           = lang.NewSymbol("http")
+	sym_openapi                                        = lang.NewSymbol("openapi")
+	sym_str                                            = lang.NewSymbol("str")
+	v_bri_DOT_cli_DOT_api_acquire_BANG_                = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("acquire!")).SetPrivate()
+	v_bri_DOT_cli_DOT_api_api                          = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("api"))
+	v_bri_DOT_cli_DOT_api_auth_value                   = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("auth-value")).SetPrivate()
+	v_bri_DOT_cli_DOT_api_authed_QMARK_                = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("authed?"))
+	v_bri_DOT_cli_DOT_api_call                         = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("call"))
+	v_bri_DOT_cli_DOT_api_control_keys                 = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("control-keys")).SetPrivate()
+	v_bri_DOT_cli_DOT_api_device_acquire_BANG_         = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("device-acquire!")).SetPrivate()
+	v_bri_DOT_cli_DOT_api_login                        = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("login"))
+	v_bri_DOT_cli_DOT_api_logout                       = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("logout"))
+	v_bri_DOT_cli_DOT_api_operations                   = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("operations"))
+	v_bri_DOT_cli_DOT_api_result                       = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("result"))
+	v_bri_DOT_cli_DOT_auth_auth_header                 = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("auth-header"))
+	v_bri_DOT_cli_DOT_auth_authed_QMARK_               = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("authed?"))
+	v_bri_DOT_cli_DOT_auth_login                       = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("login"))
+	v_bri_DOT_cli_DOT_auth_logout                      = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("logout"))
+	v_bri_DOT_cli_ask                                  = lang.InternVarName(lang.NewSymbol("bri.cli"), lang.NewSymbol("ask"))
+	v_bri_DOT_cli_ask_secret                           = lang.InternVarName(lang.NewSymbol("bri.cli"), lang.NewSymbol("ask-secret"))
+	v_bri_DOT_web_DOT_openapi_call                     = lang.InternVarName(lang.NewSymbol("bri.web.openapi"), lang.NewSymbol("call"))
+	v_bri_DOT_web_DOT_openapi_client                   = lang.InternVarName(lang.NewSymbol("bri.web.openapi"), lang.NewSymbol("client"))
+	v_bri_DOT_web_DOT_openapi_operations               = lang.InternVarName(lang.NewSymbol("bri.web.openapi"), lang.NewSymbol("operations"))
+	v_bri_DOT_web_DOT_openapi_result                   = lang.InternVarName(lang.NewSymbol("bri.web.openapi"), lang.NewSymbol("result"))
+	v_cljg_DOT_net_DOT_http_json_body                  = lang.InternVarName(lang.NewSymbol("cljg.net.http"), lang.NewSymbol("json-body"))
+	v_cljg_DOT_net_DOT_http_post                       = lang.InternVarName(lang.NewSymbol("cljg.net.http"), lang.NewSymbol("post"))
+	v_clojure_DOT_core_X_EQ_                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
+	v_clojure_DOT_core_X_LT__EQ_                       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("<="))
+	v_clojure_DOT_core_X_PLUS_                         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("+"))
+	v_clojure_DOT_core_X_STAR_                         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*"))
+	v_clojure_DOT_core_X_sleep_ms                      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-sleep-ms")).SetPrivate()
+	v_clojure_DOT_core_apply                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
+	v_clojure_DOT_core_assoc                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
+	v_clojure_DOT_core_assoc_in                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc-in"))
+	v_clojure_DOT_core_dec                             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("dec"))
+	v_clojure_DOT_core_dissoc                          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("dissoc"))
+	v_clojure_DOT_core_ex_info                         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("ex-info"))
+	v_clojure_DOT_core_get                             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get"))
+	v_clojure_DOT_core_get_in                          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("get-in"))
+	v_clojure_DOT_core_in_ns                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_long                            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("long"))
+	v_clojure_DOT_core_max_                            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("max"))
+	v_clojure_DOT_core_not                             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("not"))
+	v_clojure_DOT_core_println_                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("println"))
+	v_clojure_DOT_core_quot                            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("quot"))
+	v_clojure_DOT_core_refer                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	v_clojure_DOT_core_require                         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("require"))
+	v_clojure_DOT_core_str                             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
+	v_clojure_DOT_string_blank_QMARK_                  = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("blank?"))
 )
 
 var loaded = false
@@ -107,367 +143,714 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (require (quote [bri.cli :as cli]))
+	// (require (quote [cljg.net.http :as http]))
 	tmp7 := v_clojure_DOT_core_require.Get()
-	tmp8 := lang.Apply1(tmp7, lang.NewVector(sym_bri_DOT_cli, kw_as, sym_cli))
+	tmp8 := lang.Apply1(tmp7, lang.NewVector(sym_cljg_DOT_net_DOT_http, kw_as, sym_http))
 	_ = tmp8
-	// (require (quote [bri.web.openapi :as openapi]))
+	// (require (quote [bri.cli :as cli]))
 	tmp9 := v_clojure_DOT_core_require.Get()
-	tmp10 := lang.Apply1(tmp9, lang.NewVector(sym_bri_DOT_web_DOT_openapi, kw_as, sym_openapi))
+	tmp10 := lang.Apply1(tmp9, lang.NewVector(sym_bri_DOT_cli, kw_as, sym_cli))
 	_ = tmp10
-	// (require (quote [bri.cli.auth :as auth]))
+	// (require (quote [bri.web.openapi :as openapi]))
 	tmp11 := v_clojure_DOT_core_require.Get()
-	tmp12 := lang.Apply1(tmp11, lang.NewVector(sym_bri_DOT_cli_DOT_auth, kw_as, sym_auth))
+	tmp12 := lang.Apply1(tmp11, lang.NewVector(sym_bri_DOT_web_DOT_openapi, kw_as, sym_openapi))
 	_ = tmp12
-	// (def control-keys [:auth :service :login :username-label :password-label])
-	v_bri_DOT_cli_DOT_api_control_keys.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(28), kw_column, int64(6), kw_end_line, int64(28), kw_end_column, int64(28), kw_private, true))
-	tmp13 := lang.NewVector(kw_auth, kw_service, kw_login, kw_username_label, kw_password_label)
-	v_bri_DOT_cli_DOT_api_control_keys.BindRoot(tmp13)
+	// (require (quote [bri.cli.auth :as auth]))
+	tmp13 := v_clojure_DOT_core_require.Get()
+	tmp14 := lang.Apply1(tmp13, lang.NewVector(sym_bri_DOT_cli_DOT_auth, kw_as, sym_auth))
+	_ = tmp14
+	// (def control-keys [:auth :service :login :username-label :password-label :device :poll-int…
+	v_bri_DOT_cli_DOT_api_control_keys.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(29), kw_column, int64(6), kw_end_line, int64(29), kw_end_column, int64(28), kw_private, true))
+	tmp15 := lang.NewVector(kw_auth, kw_service, kw_login, kw_username_label, kw_password_label, kw_device, kw_poll_interval_ms)
+	v_bri_DOT_cli_DOT_api_control_keys.BindRoot(tmp15)
 	_ = v_bri_DOT_cli_DOT_api_control_keys
-	// (def acquire! "Obtain + cache a credential for `service` per `strategy`, using `boot` (a\n…
-	v_bri_DOT_cli_DOT_api_acquire_BANG_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(30), kw_column, int64(8), kw_end_line, int64(30), kw_end_column, int64(16), kw_private, true, kw_doc, "Obtain + cache a credential for `service` per `strategy`, using `boot` (a\n  no-auth bri.web.openapi client) for the :password token exchange."))
-	tmp14 := lang.FnFunc4(func(service15, strategy16, boot17, opts18 any) any {
+	// (def device-acquire! "OAuth 2.0 Device Authorization Grant (RFC 8628, ADR 0092): the 'bett…
+	v_bri_DOT_cli_DOT_api_device_acquire_BANG_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(32), kw_column, int64(8), kw_end_line, int64(32), kw_end_column, int64(23), kw_private, true, kw_doc, "OAuth 2.0 Device Authorization Grant (RFC 8628, ADR 0092): the 'better way' —\n  NO secret is ever typed into the terminal. Ask the authorization server for a\n  short user code, show the user a URL + code to authorize in a browser, then poll\n  the token endpoint until an access token drops out; cache it like any credential.\n\n  `(:device opts)` carries the endpoints (none of them secret):\n    :device-url  the device authorization endpoint (REQUIRED)\n    :token-url   the token endpoint (REQUIRED)\n    :client-id   the public client id (REQUIRED, not a secret)\n    :scope       optional space-separated scopes\n  `:poll-interval-ms` (opts) overrides the server's poll interval (tests use ms)."))
+	tmp16 := lang.FnFunc2(func(service17, opts18 any) any {
 		var tmp19 any
 		_ = tmp19
 		{
-			var case__17220 any = strategy16
-			_ = case__17220
-			tmp21 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__17220, kw_token)
-			var tmp22 any
-			_ = tmp22
-			if tmp21 {
-				tmp23 := v_bri_DOT_cli_DOT_auth_login.Get()
-				tmp24 := lang.Apply2(tmp23, service15, opts18)
-				tmp22 = tmp24
-			} else {
-				tmp25 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__17220, kw_password)
-				var tmp26 any
-				_ = tmp26
-				if tmp25 {
-					var tmp27 any
-					_ = tmp27
+			tmp20 := lang.Apply1(kw_device, opts18)
+			var dc21 any = tmp20
+			_ = dc21
+			tmp22 := lang.Apply1(kw_device_url, dc21)
+			var device_url23 any = tmp22
+			_ = device_url23
+			tmp24 := lang.Apply1(kw_token_url, dc21)
+			var token_url25 any = tmp24
+			_ = token_url25
+			tmp26 := lang.Apply1(kw_client_id, dc21)
+			var client_id27 any = tmp26
+			_ = client_id27
+			var tmp28 any
+			_ = tmp28
+			{
+				var and__1__auto__29 any = device_url23
+				_ = and__1__auto__29
+				var tmp30 any
+				_ = tmp30
+				if lang.IsTruthy(and__1__auto__29) {
+					var tmp31 any
+					_ = tmp31
 					{
-						tmp28 := lang.Apply1(kw_login, opts18)
-						var lc29 any = tmp28
-						_ = lc29
-						tmp30 := lang.Apply1(kw_op, lc29)
-						var tmp31 any
-						_ = tmp31
-						if lang.IsTruthy(tmp30) {
-							tmp31 = nil
+						var and__1__auto__32 any = token_url25
+						_ = and__1__auto__32
+						var tmp33 any
+						_ = tmp33
+						if lang.IsTruthy(and__1__auto__32) {
+							tmp33 = client_id27
 						} else {
-							tmp32 := v_clojure_DOT_core_ex_info.Get()
-							tmp33 := lang.NewMap(kw_opts, opts18)
-							tmp34 := lang.Apply2(tmp32, "bri.cli.api: :password auth needs :login {:op …}", tmp33)
-							panic(rt.Throw(tmp34))
+							tmp33 = and__1__auto__32
 						}
-						_ = tmp31
-						var tmp35 any
-						_ = tmp35
-						{
-							tmp36 := v_bri_DOT_cli_ask.Get()
-							tmp37 := lang.Apply2(kw_username_label, opts18, "Username")
-							tmp38 := lang.Apply1(tmp36, tmp37)
-							var u39 any = tmp38
-							_ = u39
-							tmp40 := v_bri_DOT_cli_ask_secret.Get()
-							tmp41 := lang.Apply2(kw_password_label, opts18, "Password")
-							tmp42 := lang.Apply1(tmp40, tmp41)
-							var p43 any = tmp42
-							_ = p43
-							tmp44 := v_bri_DOT_web_DOT_openapi_call.Get()
-							tmp45 := lang.Apply1(kw_op, lc29)
-							tmp46 := lang.Apply2(kw_username_field, lc29, kw_username)
-							tmp47 := lang.Apply2(kw_password_field, lc29, kw_password)
-							tmp48 := lang.NewMap(tmp46, u39, tmp47, p43)
-							tmp49 := lang.NewMap(kw_body, tmp48)
-							tmp50 := lang.Apply3(tmp44, boot17, tmp45, tmp49)
-							var resp51 any = tmp50
-							_ = resp51
-							tmp52 := v_clojure_DOT_core_get_in.Get()
-							tmp53 := v_bri_DOT_web_DOT_openapi_result.Get()
-							tmp54 := lang.Apply1(tmp53, resp51)
-							tmp55 := lang.NewVector(kw_token)
-							tmp56 := lang.Apply2(kw_token_path, lc29, tmp55)
-							tmp57 := lang.Apply2(tmp52, tmp54, tmp56)
-							var tok58 any = tmp57
-							_ = tok58
-							tmp59 := v_clojure_DOT_string_blank_QMARK_.Get()
-							tmp60 := v_clojure_DOT_core_str.Get()
-							tmp61 := lang.Apply1(tmp60, tok58)
-							tmp62 := lang.Apply1(tmp59, tmp61)
-							var tmp63 any
-							_ = tmp63
-							if lang.IsTruthy(tmp62) {
-								tmp64 := v_clojure_DOT_core_ex_info.Get()
-								tmp65 := v_clojure_DOT_core_str.Get()
-								tmp66 := lang.Apply2(tmp65, "bri.cli.api: login failed for ", service15)
-								tmp67 := lang.Apply1(kw_status, resp51)
-								tmp68 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_cli_DOT_api_SLASH_login_failed, kw_service, service15, kw_status, tmp67)
-								tmp69 := lang.Apply2(tmp64, tmp66, tmp68)
-								panic(rt.Throw(tmp69))
-							} else {
-								tmp63 = nil
-							}
-							_ = tmp63
-							tmp70 := v_bri_DOT_cli_DOT_auth_login.Get()
-							tmp71 := v_clojure_DOT_core_assoc.Get()
-							tmp72 := v_clojure_DOT_core_str.Get()
-							tmp73 := lang.Apply1(tmp72, tok58)
-							tmp74 := lang.Apply3(tmp71, opts18, kw_key, tmp73)
-							tmp75 := lang.Apply2(tmp70, service15, tmp74)
-							tmp35 = tmp75
-						}
-						tmp27 = tmp35
+						tmp31 = tmp33
 					}
-					tmp26 = tmp27
+					tmp30 = tmp31
 				} else {
-					tmp76 := v_clojure_DOT_core_ex_info.Get()
-					tmp77 := v_clojure_DOT_core_str.Get()
-					tmp78 := lang.Apply2(tmp77, "bri.cli.api: unknown :auth strategy ", strategy16)
-					tmp79 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_cli_DOT_api_SLASH_unknown_strategy, kw_auth, strategy16)
-					tmp80 := lang.Apply2(tmp76, tmp78, tmp79)
-					panic(rt.Throw(tmp80))
+					tmp30 = and__1__auto__29
 				}
-				tmp22 = tmp26
+				tmp28 = tmp30
 			}
-			tmp19 = tmp22
+			var tmp34 any
+			_ = tmp34
+			if lang.IsTruthy(tmp28) {
+				tmp34 = nil
+			} else {
+				tmp35 := v_clojure_DOT_core_ex_info.Get()
+				tmp36 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_cli_DOT_api_SLASH_device_misconfigured, kw_service, service17)
+				tmp37 := lang.Apply2(tmp35, "bri.cli.api: :device auth needs :device {:device-url :token-url :client-id}", tmp36)
+				panic(rt.Throw(tmp37))
+			}
+			_ = tmp34
+			var tmp38 any
+			_ = tmp38
+			{
+				tmp39 := v_cljg_DOT_net_DOT_http_post.Get()
+				tmp40 := lang.Apply1(kw_scope, dc21)
+				var tmp41 any
+				_ = tmp41
+				if lang.IsTruthy(tmp40) {
+					tmp42 := lang.Apply1(kw_scope, dc21)
+					tmp43 := lang.NewMap("client_id", client_id27, "scope", tmp42)
+					tmp41 = tmp43
+				} else {
+					tmp44 := lang.NewMap("client_id", client_id27)
+					tmp41 = tmp44
+				}
+				tmp45 := lang.NewMap(kw_form, tmp41)
+				tmp46 := lang.Apply2(tmp39, device_url23, tmp45)
+				var init47 any = tmp46
+				_ = init47
+				tmp48 := v_cljg_DOT_net_DOT_http_json_body.Get()
+				tmp49 := lang.Apply1(tmp48, init47)
+				var da50 any = tmp49
+				_ = da50
+				tmp51 := lang.Apply1(kw_ok_QMARK_, init47)
+				var tmp52 any
+				_ = tmp52
+				if lang.IsTruthy(tmp51) {
+					tmp52 = nil
+				} else {
+					tmp53 := v_clojure_DOT_core_ex_info.Get()
+					tmp54 := v_clojure_DOT_core_str.Get()
+					tmp55 := lang.Apply2(tmp54, "bri.cli.api: device authorization request failed for ", service17)
+					tmp56 := lang.Apply1(kw_status, init47)
+					tmp57 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_cli_DOT_api_SLASH_device_request_failed, kw_service, service17, kw_status, tmp56)
+					tmp58 := lang.Apply2(tmp53, tmp55, tmp57)
+					panic(rt.Throw(tmp58))
+				}
+				_ = tmp52
+				var tmp59 any
+				_ = tmp59
+				{
+					tmp60 := v_clojure_DOT_core_str.Get()
+					tmp61 := lang.Apply1(kw_device_code, da50)
+					tmp62 := lang.Apply1(tmp60, tmp61)
+					var device_code63 any = tmp62
+					_ = device_code63
+					tmp64 := v_clojure_DOT_core_str.Get()
+					tmp65 := lang.Apply1(kw_user_code, da50)
+					tmp66 := lang.Apply1(tmp64, tmp65)
+					var user_code67 any = tmp66
+					_ = user_code67
+					tmp68 := v_clojure_DOT_core_str.Get()
+					tmp69 := lang.Apply1(kw_verification_uri, da50)
+					tmp70 := lang.Apply1(tmp68, tmp69)
+					var vuri71 any = tmp70
+					_ = vuri71
+					tmp72 := lang.Apply1(kw_verification_uri_complete, da50)
+					var vuri_full73 any = tmp72
+					_ = vuri_full73
+					var tmp74 any
+					_ = tmp74
+					{
+						tmp75 := lang.Apply1(kw_poll_interval_ms, opts18)
+						var or__2__auto__76 any = tmp75
+						_ = or__2__auto__76
+						var tmp77 any
+						_ = tmp77
+						if lang.IsTruthy(or__2__auto__76) {
+							tmp77 = or__2__auto__76
+						} else {
+							tmp78 := v_clojure_DOT_core_long.Get()
+							var tmp79 any
+							_ = tmp79
+							{
+								tmp80 := lang.Apply1(kw_interval, da50)
+								var or__2__auto__81 any = tmp80
+								_ = or__2__auto__81
+								var tmp82 any
+								_ = tmp82
+								if lang.IsTruthy(or__2__auto__81) {
+									tmp82 = or__2__auto__81
+								} else {
+									tmp82 = int64(5)
+								}
+								tmp79 = tmp82
+							}
+							tmp83 := lang.Apply1(tmp78, tmp79)
+							tmp84 := rt.Mul2(v_clojure_DOT_core_X_STAR_, int64(1000), tmp83)
+							tmp77 = tmp84
+						}
+						tmp74 = tmp77
+					}
+					var interval_ms85 any = tmp74
+					_ = interval_ms85
+					tmp86 := v_clojure_DOT_core_long.Get()
+					var tmp87 any
+					_ = tmp87
+					{
+						tmp88 := lang.Apply1(kw_expires_in, da50)
+						var or__2__auto__89 any = tmp88
+						_ = or__2__auto__89
+						var tmp90 any
+						_ = tmp90
+						if lang.IsTruthy(or__2__auto__89) {
+							tmp90 = or__2__auto__89
+						} else {
+							tmp90 = int64(900)
+						}
+						tmp87 = tmp90
+					}
+					tmp91 := lang.Apply1(tmp86, tmp87)
+					tmp92 := rt.Mul2(v_clojure_DOT_core_X_STAR_, int64(1000), tmp91)
+					var expires_ms93 any = tmp92
+					_ = expires_ms93
+					tmp94 := v_clojure_DOT_core_max_.Get()
+					tmp95 := v_clojure_DOT_core_quot.Get()
+					tmp96 := v_clojure_DOT_core_max_.Get()
+					tmp97 := lang.Apply2(tmp96, int64(1), interval_ms85)
+					tmp98 := lang.Apply2(tmp95, expires_ms93, tmp97)
+					tmp99 := lang.Apply2(tmp94, int64(1), tmp98)
+					var max_polls100 any = tmp99
+					_ = max_polls100
+					tmp101 := v_clojure_DOT_core_println_.Get()
+					tmp102 := v_clojure_DOT_core_str.Get()
+					tmp103 := lang.Apply4(tmp102, "To authorize ", service17, ", visit: ", vuri71)
+					tmp104 := lang.Apply1(tmp101, tmp103)
+					_ = tmp104
+					tmp105 := v_clojure_DOT_core_println_.Get()
+					tmp106 := v_clojure_DOT_core_str.Get()
+					tmp107 := lang.Apply2(tmp106, "and enter the code: ", user_code67)
+					tmp108 := lang.Apply1(tmp105, tmp107)
+					_ = tmp108
+					var tmp109 any
+					_ = tmp109
+					if lang.IsTruthy(vuri_full73) {
+						tmp110 := v_clojure_DOT_core_println_.Get()
+						tmp111 := v_clojure_DOT_core_str.Get()
+						tmp112 := lang.Apply3(tmp111, "(or open directly: ", vuri_full73, ")")
+						tmp113 := lang.Apply1(tmp110, tmp112)
+						tmp109 = tmp113
+					} else {
+						tmp109 = nil
+					}
+					_ = tmp109
+					var tmp114 any
+					_ = tmp114
+					{
+						var polls115 any = max_polls100
+						_ = polls115
+						var wait116 any = interval_ms85
+						_ = wait116
+					loop117:
+						for {
+							tmp118 := rt.LEBool(v_clojure_DOT_core_X_LT__EQ_, polls115, int64(0))
+							var tmp119 any
+							_ = tmp119
+							if tmp118 {
+								tmp120 := v_clojure_DOT_core_ex_info.Get()
+								tmp121 := v_clojure_DOT_core_str.Get()
+								tmp122 := lang.Apply2(tmp121, "bri.cli.api: device authorization timed out for ", service17)
+								tmp123 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_cli_DOT_api_SLASH_device_timeout, kw_service, service17)
+								tmp124 := lang.Apply2(tmp120, tmp122, tmp123)
+								panic(rt.Throw(tmp124))
+							} else {
+								tmp119 = nil
+							}
+							_ = tmp119
+							tmp125 := v_clojure_DOT_core_X_sleep_ms.Get()
+							tmp126 := lang.Apply1(tmp125, wait116)
+							_ = tmp126
+							var tmp127 any
+							_ = tmp127
+							{
+								tmp128 := v_cljg_DOT_net_DOT_http_post.Get()
+								tmp129 := lang.NewMap("grant_type", "urn:ietf:params:oauth:grant-type:device_code", "device_code", device_code63, "client_id", client_id27)
+								tmp130 := lang.NewMap(kw_form, tmp129)
+								tmp131 := lang.Apply2(tmp128, token_url25, tmp130)
+								var tr132 any = tmp131
+								_ = tr132
+								tmp133 := v_cljg_DOT_net_DOT_http_json_body.Get()
+								tmp134 := lang.Apply1(tmp133, tr132)
+								var body135 any = tmp134
+								_ = body135
+								tmp136 := lang.Apply1(kw_access_token, body135)
+								var tok137 any = tmp136
+								_ = tok137
+								tmp138 := lang.Apply1(kw_error_, body135)
+								var err139 any = tmp138
+								_ = err139
+								tmp140 := v_clojure_DOT_core_not.Get()
+								tmp141 := v_clojure_DOT_string_blank_QMARK_.Get()
+								tmp142 := v_clojure_DOT_core_str.Get()
+								tmp143 := lang.Apply1(tmp142, tok137)
+								tmp144 := lang.Apply1(tmp141, tmp143)
+								tmp145 := lang.Apply1(tmp140, tmp144)
+								var tmp146 any
+								_ = tmp146
+								if lang.IsTruthy(tmp145) {
+									tmp147 := v_bri_DOT_cli_DOT_auth_login.Get()
+									tmp148 := v_clojure_DOT_core_assoc.Get()
+									tmp149 := v_clojure_DOT_core_str.Get()
+									tmp150 := lang.Apply1(tmp149, tok137)
+									tmp151 := lang.Apply3(tmp148, opts18, kw_key, tmp150)
+									tmp152 := lang.Apply2(tmp147, service17, tmp151)
+									tmp146 = tmp152
+								} else {
+									tmp153 := rt.EQBool(v_clojure_DOT_core_X_EQ_, "authorization_pending", err139)
+									var tmp154 any
+									_ = tmp154
+									if tmp153 {
+										tmp155 := v_clojure_DOT_core_dec.Get()
+										tmp156 := lang.Apply1(tmp155, polls115)
+										var tmp157 any = tmp156
+										var tmp158 any = wait116
+										polls115 = tmp157
+										wait116 = tmp158
+										continue loop117
+									} else {
+										tmp159 := rt.EQBool(v_clojure_DOT_core_X_EQ_, "slow_down", err139)
+										var tmp160 any
+										_ = tmp160
+										if tmp159 {
+											tmp161 := v_clojure_DOT_core_dec.Get()
+											tmp162 := lang.Apply1(tmp161, polls115)
+											var tmp163 any = tmp162
+											tmp164 := rt.Add2(v_clojure_DOT_core_X_PLUS_, wait116, int64(5000))
+											var tmp165 any = tmp164
+											polls115 = tmp163
+											wait116 = tmp165
+											continue loop117
+										} else {
+											var tmp166 any
+											_ = tmp166
+											if lang.IsTruthy(kw_else_) {
+												tmp167 := v_clojure_DOT_core_ex_info.Get()
+												tmp168 := v_clojure_DOT_core_str.Get()
+												var tmp169 any
+												_ = tmp169
+												if lang.IsTruthy(err139) {
+													tmp170 := v_clojure_DOT_core_str.Get()
+													tmp171 := lang.Apply2(tmp170, ": ", err139)
+													tmp169 = tmp171
+												} else {
+													tmp169 = nil
+												}
+												tmp172 := lang.Apply3(tmp168, "bri.cli.api: device authorization failed for ", service17, tmp169)
+												tmp173 := lang.Apply1(kw_status, tr132)
+												tmp174 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_cli_DOT_api_SLASH_device_failed, kw_service, service17, kw_error_, err139, kw_status, tmp173)
+												tmp175 := lang.Apply2(tmp167, tmp172, tmp174)
+												panic(rt.Throw(tmp175))
+											} else {
+												tmp166 = nil
+											}
+											tmp160 = tmp166
+										}
+										tmp154 = tmp160
+									}
+									tmp146 = tmp154
+								}
+								tmp127 = tmp146
+							}
+							tmp114 = tmp127
+							break loop117
+						}
+					}
+					tmp59 = tmp114
+				}
+				tmp38 = tmp59
+			}
+			tmp19 = tmp38
 		}
 		return tmp19
 	})
-	tmp81 := &lang.NamedFn4{Name: "bri.cli.api/acquire!", Expects: "4: [service strategy boot opts]", F: tmp14}
-	v_bri_DOT_cli_DOT_api_acquire_BANG_.BindRoot(tmp81)
+	tmp176 := &lang.NamedFn2{Name: "bri.cli.api/device-acquire!", Expects: "2: [service opts]", F: tmp16}
+	v_bri_DOT_cli_DOT_api_device_acquire_BANG_.BindRoot(tmp176)
+	_ = v_bri_DOT_cli_DOT_api_device_acquire_BANG_
+	// (def acquire! "Obtain + cache a credential for `service` per `strategy`, using `boot` (a\n…
+	v_bri_DOT_cli_DOT_api_acquire_BANG_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(97), kw_column, int64(8), kw_end_line, int64(97), kw_end_column, int64(16), kw_private, true, kw_doc, "Obtain + cache a credential for `service` per `strategy`, using `boot` (a\n  no-auth bri.web.openapi client) for the :password token exchange."))
+	tmp177 := lang.FnFunc4(func(service178, strategy179, boot180, opts181 any) any {
+		var tmp182 any
+		_ = tmp182
+		{
+			var case__172183 any = strategy179
+			_ = case__172183
+			tmp184 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__172183, kw_token)
+			var tmp185 any
+			_ = tmp185
+			if tmp184 {
+				tmp186 := v_bri_DOT_cli_DOT_auth_login.Get()
+				tmp187 := lang.Apply2(tmp186, service178, opts181)
+				tmp185 = tmp187
+			} else {
+				tmp188 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__172183, kw_password)
+				var tmp189 any
+				_ = tmp189
+				if tmp188 {
+					var tmp190 any
+					_ = tmp190
+					{
+						tmp191 := lang.Apply1(kw_login, opts181)
+						var lc192 any = tmp191
+						_ = lc192
+						tmp193 := lang.Apply1(kw_op, lc192)
+						var tmp194 any
+						_ = tmp194
+						if lang.IsTruthy(tmp193) {
+							tmp194 = nil
+						} else {
+							tmp195 := v_clojure_DOT_core_ex_info.Get()
+							tmp196 := lang.NewMap(kw_opts, opts181)
+							tmp197 := lang.Apply2(tmp195, "bri.cli.api: :password auth needs :login {:op …}", tmp196)
+							panic(rt.Throw(tmp197))
+						}
+						_ = tmp194
+						var tmp198 any
+						_ = tmp198
+						{
+							tmp199 := v_bri_DOT_cli_ask.Get()
+							tmp200 := lang.Apply2(kw_username_label, opts181, "Username")
+							tmp201 := lang.Apply1(tmp199, tmp200)
+							var u202 any = tmp201
+							_ = u202
+							tmp203 := v_bri_DOT_cli_ask_secret.Get()
+							tmp204 := lang.Apply2(kw_password_label, opts181, "Password")
+							tmp205 := lang.Apply1(tmp203, tmp204)
+							var p206 any = tmp205
+							_ = p206
+							tmp207 := v_bri_DOT_web_DOT_openapi_call.Get()
+							tmp208 := lang.Apply1(kw_op, lc192)
+							tmp209 := lang.Apply2(kw_username_field, lc192, kw_username)
+							tmp210 := lang.Apply2(kw_password_field, lc192, kw_password)
+							tmp211 := lang.NewMap(tmp209, u202, tmp210, p206)
+							tmp212 := lang.NewMap(kw_body, tmp211)
+							tmp213 := lang.Apply3(tmp207, boot180, tmp208, tmp212)
+							var resp214 any = tmp213
+							_ = resp214
+							tmp215 := v_clojure_DOT_core_get_in.Get()
+							tmp216 := v_bri_DOT_web_DOT_openapi_result.Get()
+							tmp217 := lang.Apply1(tmp216, resp214)
+							tmp218 := lang.NewVector(kw_token)
+							tmp219 := lang.Apply2(kw_token_path, lc192, tmp218)
+							tmp220 := lang.Apply2(tmp215, tmp217, tmp219)
+							var tok221 any = tmp220
+							_ = tok221
+							tmp222 := v_clojure_DOT_string_blank_QMARK_.Get()
+							tmp223 := v_clojure_DOT_core_str.Get()
+							tmp224 := lang.Apply1(tmp223, tok221)
+							tmp225 := lang.Apply1(tmp222, tmp224)
+							var tmp226 any
+							_ = tmp226
+							if lang.IsTruthy(tmp225) {
+								tmp227 := v_clojure_DOT_core_ex_info.Get()
+								tmp228 := v_clojure_DOT_core_str.Get()
+								tmp229 := lang.Apply2(tmp228, "bri.cli.api: login failed for ", service178)
+								tmp230 := lang.Apply1(kw_status, resp214)
+								tmp231 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_cli_DOT_api_SLASH_login_failed, kw_service, service178, kw_status, tmp230)
+								tmp232 := lang.Apply2(tmp227, tmp229, tmp231)
+								panic(rt.Throw(tmp232))
+							} else {
+								tmp226 = nil
+							}
+							_ = tmp226
+							tmp233 := v_bri_DOT_cli_DOT_auth_login.Get()
+							tmp234 := v_clojure_DOT_core_assoc.Get()
+							tmp235 := v_clojure_DOT_core_str.Get()
+							tmp236 := lang.Apply1(tmp235, tok221)
+							tmp237 := lang.Apply3(tmp234, opts181, kw_key, tmp236)
+							tmp238 := lang.Apply2(tmp233, service178, tmp237)
+							tmp198 = tmp238
+						}
+						tmp190 = tmp198
+					}
+					tmp189 = tmp190
+				} else {
+					tmp239 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__172183, kw_device)
+					var tmp240 any
+					_ = tmp240
+					if tmp239 {
+						tmp241 := v_bri_DOT_cli_DOT_api_device_acquire_BANG_.Get()
+						tmp242 := lang.Apply2(tmp241, service178, opts181)
+						tmp240 = tmp242
+					} else {
+						tmp243 := v_clojure_DOT_core_ex_info.Get()
+						tmp244 := v_clojure_DOT_core_str.Get()
+						tmp245 := lang.Apply2(tmp244, "bri.cli.api: unknown :auth strategy ", strategy179)
+						tmp246 := lang.NewMap(kw_bri_SLASH_error, kw_bri_DOT_cli_DOT_api_SLASH_unknown_strategy, kw_auth, strategy179)
+						tmp247 := lang.Apply2(tmp243, tmp245, tmp246)
+						panic(rt.Throw(tmp247))
+					}
+					tmp189 = tmp240
+				}
+				tmp185 = tmp189
+			}
+			tmp182 = tmp185
+		}
+		return tmp182
+	})
+	tmp248 := &lang.NamedFn4{Name: "bri.cli.api/acquire!", Expects: "4: [service strategy boot opts]", F: tmp177}
+	v_bri_DOT_cli_DOT_api_acquire_BANG_.BindRoot(tmp248)
 	_ = v_bri_DOT_cli_DOT_api_acquire_BANG_
 	// (def auth-value "The openapi :auth-fn: ensure a credential (logging in if absent) and retu…
-	v_bri_DOT_cli_DOT_api_auth_value.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(57), kw_column, int64(8), kw_end_line, int64(57), kw_end_column, int64(18), kw_private, true, kw_doc, "The openapi :auth-fn: ensure a credential (logging in if absent) and return the\n  Authorization value to attach."))
-	tmp82 := lang.FnFunc4(func(service83, strategy84, boot85, opts86 any) any {
-		tmp87 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
-		tmp88 := lang.Apply2(tmp87, service83, opts86)
-		var tmp89 any
-		_ = tmp89
-		if lang.IsTruthy(tmp88) {
-			tmp89 = nil
+	v_bri_DOT_cli_DOT_api_auth_value.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(127), kw_column, int64(8), kw_end_line, int64(127), kw_end_column, int64(18), kw_private, true, kw_doc, "The openapi :auth-fn: ensure a credential (logging in if absent) and return the\n  Authorization value to attach."))
+	tmp249 := lang.FnFunc4(func(service250, strategy251, boot252, opts253 any) any {
+		tmp254 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
+		tmp255 := lang.Apply2(tmp254, service250, opts253)
+		var tmp256 any
+		_ = tmp256
+		if lang.IsTruthy(tmp255) {
+			tmp256 = nil
 		} else {
-			tmp90 := v_bri_DOT_cli_DOT_api_acquire_BANG_.Get()
-			tmp91 := lang.Apply4(tmp90, service83, strategy84, boot85, opts86)
-			tmp89 = tmp91
+			tmp257 := v_bri_DOT_cli_DOT_api_acquire_BANG_.Get()
+			tmp258 := lang.Apply4(tmp257, service250, strategy251, boot252, opts253)
+			tmp256 = tmp258
 		}
-		_ = tmp89
-		tmp92 := v_clojure_DOT_core_get.Get()
-		tmp93 := v_bri_DOT_cli_DOT_auth_auth_header.Get()
-		tmp94 := lang.Apply2(tmp93, service83, opts86)
-		tmp95 := lang.Apply2(tmp92, tmp94, "Authorization")
-		return tmp95
+		_ = tmp256
+		tmp259 := v_clojure_DOT_core_get.Get()
+		tmp260 := v_bri_DOT_cli_DOT_auth_auth_header.Get()
+		tmp261 := lang.Apply2(tmp260, service250, opts253)
+		tmp262 := lang.Apply2(tmp259, tmp261, "Authorization")
+		return tmp262
 	})
-	tmp96 := &lang.NamedFn4{Name: "bri.cli.api/auth-value", Expects: "4: [service strategy boot opts]", F: tmp82}
-	v_bri_DOT_cli_DOT_api_auth_value.BindRoot(tmp96)
+	tmp263 := &lang.NamedFn4{Name: "bri.cli.api/auth-value", Expects: "4: [service strategy boot opts]", F: tmp249}
+	v_bri_DOT_cli_DOT_api_auth_value.BindRoot(tmp263)
 	_ = v_bri_DOT_cli_DOT_api_auth_value
 	// (def api "Build an OpenAPI client with AUTOMATIC login. The first authenticated call with\…
-	v_bri_DOT_cli_DOT_api_api.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(10), kw_doc, "Build an OpenAPI client with AUTOMATIC login. The first authenticated call with\n  no cached credential logs in (per :auth strategy), caches it in the OS keychain\n  (bri.cli.auth), and attaches it; later runs reuse it; a 401 drops the stale\n  credential and re-logs in once.\n\n  `spec` is anything bri.web.openapi/client accepts (map | JSON string | URL |\n  file). opts:\n    :service   keychain service name (REQUIRED)\n    :auth      :token (default — API key, prompted once) | :password\n    :login     for :password: {:op <login-operation> :username-field :password-field\n               :token-path [:token]}\n    :account :label :username-label :password-label   (prompt/store tuning)\n    …plus every bri.web.openapi client opt (:base-url :headers :timeout :retry)."))
-	tmp97 := lang.FnFunc(func(args ...any) any {
+	v_bri_DOT_cli_DOT_api_api.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(10), kw_doc, "Build an OpenAPI client with AUTOMATIC login. The first authenticated call with\n  no cached credential logs in (per :auth strategy), caches it in the OS keychain\n  (bri.cli.auth), and attaches it; later runs reuse it; a 401 drops the stale\n  credential and re-logs in once.\n\n  `spec` is anything bri.web.openapi/client accepts (map | JSON string | URL |\n  file). opts:\n    :service   keychain service name (REQUIRED)\n    :auth      :token (default — API key, prompted once) | :password | :device\n    :login     for :password: {:op <login-operation> :username-field :password-field\n               :token-path [:token]}\n    :device    for :device (OAuth 2.0 device flow, RFC 8628 — no secret typed into\n               the terminal): {:device-url … :token-url … :client-id … :scope …}\n    :account :label :username-label :password-label   (prompt/store tuning)\n    …plus every bri.web.openapi client opt (:base-url :headers :timeout :retry)."))
+	tmp264 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			spec98 := args[0]
-			_ = spec98
-			tmp99 := v_bri_DOT_cli_DOT_api_api.Get()
-			tmp100 := lang.NewMap()
-			tmp101 := lang.Apply2(tmp99, spec98, tmp100)
-			return tmp101
+			spec265 := args[0]
+			_ = spec265
+			tmp266 := v_bri_DOT_cli_DOT_api_api.Get()
+			tmp267 := lang.NewMap()
+			tmp268 := lang.Apply2(tmp266, spec265, tmp267)
+			return tmp268
 		case 2:
-			spec102 := args[0]
-			_ = spec102
-			opts103 := args[1]
-			_ = opts103
-			var tmp104 any
-			_ = tmp104
+			spec269 := args[0]
+			_ = spec269
+			opts270 := args[1]
+			_ = opts270
+			var tmp271 any
+			_ = tmp271
 			{
-				var tmp105 any
-				_ = tmp105
+				var tmp272 any
+				_ = tmp272
 				{
-					tmp106 := lang.Apply1(kw_service, opts103)
-					var or__2__auto__107 any = tmp106
-					_ = or__2__auto__107
-					var tmp108 any
-					_ = tmp108
-					if lang.IsTruthy(or__2__auto__107) {
-						tmp108 = or__2__auto__107
+					tmp273 := lang.Apply1(kw_service, opts270)
+					var or__2__auto__274 any = tmp273
+					_ = or__2__auto__274
+					var tmp275 any
+					_ = tmp275
+					if lang.IsTruthy(or__2__auto__274) {
+						tmp275 = or__2__auto__274
 					} else {
-						tmp109 := v_clojure_DOT_core_ex_info.Get()
-						tmp110 := lang.NewMap(kw_opts, opts103)
-						tmp111 := lang.Apply2(tmp109, "bri.cli.api: :service is required", tmp110)
-						panic(rt.Throw(tmp111))
+						tmp276 := v_clojure_DOT_core_ex_info.Get()
+						tmp277 := lang.NewMap(kw_opts, opts270)
+						tmp278 := lang.Apply2(tmp276, "bri.cli.api: :service is required", tmp277)
+						panic(rt.Throw(tmp278))
 					}
-					tmp105 = tmp108
+					tmp272 = tmp275
 				}
-				var service112 any = tmp105
-				_ = service112
-				tmp113 := lang.Apply2(kw_auth, opts103, kw_token)
-				var strategy114 any = tmp113
-				_ = strategy114
-				tmp115 := v_bri_DOT_web_DOT_openapi_client.Get()
-				tmp116 := v_clojure_DOT_core_apply.Get()
-				tmp117 := v_clojure_DOT_core_dissoc.Get()
-				tmp118 := v_bri_DOT_cli_DOT_api_control_keys.Get()
-				tmp119 := lang.Apply3(tmp116, tmp117, opts103, tmp118)
-				tmp120 := lang.Apply2(tmp115, spec102, tmp119)
-				var boot121 any = tmp120
-				_ = boot121
-				tmp122 := lang.FnFunc0(func() any {
-					tmp123 := v_bri_DOT_cli_DOT_api_auth_value.Get()
-					tmp124 := lang.Apply4(tmp123, service112, strategy114, boot121, opts103)
-					return tmp124
+				var service279 any = tmp272
+				_ = service279
+				tmp280 := lang.Apply2(kw_auth, opts270, kw_token)
+				var strategy281 any = tmp280
+				_ = strategy281
+				tmp282 := v_bri_DOT_web_DOT_openapi_client.Get()
+				tmp283 := v_clojure_DOT_core_apply.Get()
+				tmp284 := v_clojure_DOT_core_dissoc.Get()
+				tmp285 := v_bri_DOT_cli_DOT_api_control_keys.Get()
+				tmp286 := lang.Apply3(tmp283, tmp284, opts270, tmp285)
+				tmp287 := lang.Apply2(tmp282, spec269, tmp286)
+				var boot288 any = tmp287
+				_ = boot288
+				tmp289 := lang.FnFunc0(func() any {
+					tmp290 := v_bri_DOT_cli_DOT_api_auth_value.Get()
+					tmp291 := lang.Apply4(tmp290, service279, strategy281, boot288, opts270)
+					return tmp291
 				})
-				tmp125 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp122}
-				var auth_fn126 any = tmp125
-				_ = auth_fn126
-				tmp127 := v_clojure_DOT_core_assoc_in.Get()
-				tmp128 := lang.NewVector(kw_opts, kw_auth_fn)
-				tmp129 := lang.Apply3(tmp127, boot121, tmp128, auth_fn126)
-				var client130 any = tmp129
-				_ = client130
-				tmp131 := lang.NewMap(kw_bri_DOT_cli_DOT_api_SLASH_api, true, kw_client, client130, kw_boot, boot121, kw_service, service112, kw_strategy, strategy114, kw_opts, opts103)
-				tmp104 = tmp131
+				tmp292 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp289}
+				var auth_fn293 any = tmp292
+				_ = auth_fn293
+				tmp294 := v_clojure_DOT_core_assoc_in.Get()
+				tmp295 := lang.NewVector(kw_opts, kw_auth_fn)
+				tmp296 := lang.Apply3(tmp294, boot288, tmp295, auth_fn293)
+				var client297 any = tmp296
+				_ = client297
+				tmp298 := lang.NewMap(kw_bri_DOT_cli_DOT_api_SLASH_api, true, kw_client, client297, kw_boot, boot288, kw_service, service279, kw_strategy, strategy281, kw_opts, opts270)
+				tmp271 = tmp298
 			}
-			return tmp104
+			return tmp271
 		default:
 			panic(lang.NewArityError(len(args), "bri.cli.api/api", "1: [spec] or 2: [spec opts]"))
 		}
 	})
-	v_bri_DOT_cli_DOT_api_api.BindRoot(tmp97)
+	v_bri_DOT_cli_DOT_api_api.BindRoot(tmp264)
 	_ = v_bri_DOT_cli_DOT_api_api
 	// (def operations "The client's operation-id keywords (from the spec)." (clojure.core/fn [a]…
-	v_bri_DOT_cli_DOT_api_operations.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(17), kw_doc, "The client's operation-id keywords (from the spec)."))
-	tmp132 := lang.FnFunc1(func(a133 any) any {
-		tmp134 := v_bri_DOT_web_DOT_openapi_operations.Get()
-		tmp135 := lang.Apply1(kw_client, a133)
-		tmp136 := lang.Apply1(tmp134, tmp135)
-		return tmp136
+	v_bri_DOT_cli_DOT_api_operations.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(162), kw_column, int64(7), kw_end_line, int64(162), kw_end_column, int64(17), kw_doc, "The client's operation-id keywords (from the spec)."))
+	tmp299 := lang.FnFunc1(func(a300 any) any {
+		tmp301 := v_bri_DOT_web_DOT_openapi_operations.Get()
+		tmp302 := lang.Apply1(kw_client, a300)
+		tmp303 := lang.Apply1(tmp301, tmp302)
+		return tmp303
 	})
-	tmp137 := &lang.NamedFn1{Name: "bri.cli.api/operations", Expects: "1: [a]", F: tmp132}
-	v_bri_DOT_cli_DOT_api_operations.BindRoot(tmp137)
+	tmp304 := &lang.NamedFn1{Name: "bri.cli.api/operations", Expects: "1: [a]", F: tmp299}
+	v_bri_DOT_cli_DOT_api_operations.BindRoot(tmp304)
 	_ = v_bri_DOT_cli_DOT_api_operations
 	// (def call "Invoke operation `id` with automatic auth. On a 401 the stale credential is\n  …
-	v_bri_DOT_cli_DOT_api_call.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(95), kw_column, int64(7), kw_end_line, int64(95), kw_end_column, int64(11), kw_doc, "Invoke operation `id` with automatic auth. On a 401 the stale credential is\n  dropped and the call retried once (the retry re-logs in via :auth-fn)."))
-	tmp138 := lang.FnFunc(func(args ...any) any {
+	v_bri_DOT_cli_DOT_api_call.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(167), kw_column, int64(7), kw_end_line, int64(167), kw_end_column, int64(11), kw_doc, "Invoke operation `id` with automatic auth. On a 401 the stale credential is\n  dropped and the call retried once (the retry re-logs in via :auth-fn)."))
+	tmp305 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
-			a139 := args[0]
-			_ = a139
-			id140 := args[1]
-			_ = id140
-			tmp141 := v_bri_DOT_cli_DOT_api_call.Get()
-			tmp142 := lang.NewMap()
-			tmp143 := lang.Apply3(tmp141, a139, id140, tmp142)
-			return tmp143
+			a306 := args[0]
+			_ = a306
+			id307 := args[1]
+			_ = id307
+			tmp308 := v_bri_DOT_cli_DOT_api_call.Get()
+			tmp309 := lang.NewMap()
+			tmp310 := lang.Apply3(tmp308, a306, id307, tmp309)
+			return tmp310
 		case 3:
-			a144 := args[0]
-			_ = a144
-			id145 := args[1]
-			_ = id145
-			args146 := args[2]
-			_ = args146
-			var tmp147 any
-			_ = tmp147
+			a311 := args[0]
+			_ = a311
+			id312 := args[1]
+			_ = id312
+			args313 := args[2]
+			_ = args313
+			var tmp314 any
+			_ = tmp314
 			{
-				tmp148 := v_bri_DOT_web_DOT_openapi_call.Get()
-				tmp149 := lang.Apply1(kw_client, a144)
-				tmp150 := lang.Apply3(tmp148, tmp149, id145, args146)
-				var resp151 any = tmp150
-				_ = resp151
-				var tmp152 any
-				_ = tmp152
+				tmp315 := v_bri_DOT_web_DOT_openapi_call.Get()
+				tmp316 := lang.Apply1(kw_client, a311)
+				tmp317 := lang.Apply3(tmp315, tmp316, id312, args313)
+				var resp318 any = tmp317
+				_ = resp318
+				var tmp319 any
+				_ = tmp319
 				{
-					tmp153 := lang.Apply1(kw_status, resp151)
-					tmp154 := rt.EQ2(v_clojure_DOT_core_X_EQ_, int64(401), tmp153)
-					var and__1__auto__155 any = tmp154
-					_ = and__1__auto__155
-					var tmp156 any
-					_ = tmp156
-					if lang.IsTruthy(and__1__auto__155) {
-						tmp157 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
-						tmp158 := lang.Apply1(kw_service, a144)
-						tmp159 := lang.Apply1(kw_opts, a144)
-						tmp160 := lang.Apply2(tmp157, tmp158, tmp159)
-						tmp156 = tmp160
+					tmp320 := lang.Apply1(kw_status, resp318)
+					tmp321 := rt.EQ2(v_clojure_DOT_core_X_EQ_, int64(401), tmp320)
+					var and__1__auto__322 any = tmp321
+					_ = and__1__auto__322
+					var tmp323 any
+					_ = tmp323
+					if lang.IsTruthy(and__1__auto__322) {
+						tmp324 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
+						tmp325 := lang.Apply1(kw_service, a311)
+						tmp326 := lang.Apply1(kw_opts, a311)
+						tmp327 := lang.Apply2(tmp324, tmp325, tmp326)
+						tmp323 = tmp327
 					} else {
-						tmp156 = and__1__auto__155
+						tmp323 = and__1__auto__322
 					}
-					tmp152 = tmp156
+					tmp319 = tmp323
 				}
-				var tmp161 any
-				_ = tmp161
-				if lang.IsTruthy(tmp152) {
-					tmp162 := v_bri_DOT_cli_DOT_auth_logout.Get()
-					tmp163 := lang.Apply1(kw_service, a144)
-					tmp164 := lang.Apply1(kw_opts, a144)
-					tmp165 := lang.Apply2(tmp162, tmp163, tmp164)
-					_ = tmp165
-					tmp166 := v_bri_DOT_web_DOT_openapi_call.Get()
-					tmp167 := lang.Apply1(kw_client, a144)
-					tmp168 := lang.Apply3(tmp166, tmp167, id145, args146)
-					tmp161 = tmp168
+				var tmp328 any
+				_ = tmp328
+				if lang.IsTruthy(tmp319) {
+					tmp329 := v_bri_DOT_cli_DOT_auth_logout.Get()
+					tmp330 := lang.Apply1(kw_service, a311)
+					tmp331 := lang.Apply1(kw_opts, a311)
+					tmp332 := lang.Apply2(tmp329, tmp330, tmp331)
+					_ = tmp332
+					tmp333 := v_bri_DOT_web_DOT_openapi_call.Get()
+					tmp334 := lang.Apply1(kw_client, a311)
+					tmp335 := lang.Apply3(tmp333, tmp334, id312, args313)
+					tmp328 = tmp335
 				} else {
-					tmp161 = resp151
+					tmp328 = resp318
 				}
-				tmp147 = tmp161
+				tmp314 = tmp328
 			}
-			return tmp147
+			return tmp314
 		default:
 			panic(lang.NewArityError(len(args), "bri.cli.api/call", "2: [a id] or 3: [a id args]"))
 		}
 	})
-	v_bri_DOT_cli_DOT_api_call.BindRoot(tmp138)
+	v_bri_DOT_cli_DOT_api_call.BindRoot(tmp305)
 	_ = v_bri_DOT_cli_DOT_api_call
 	// (def result "Decode a response's JSON body (bri.web.openapi/result)." (clojure.core/fn [re…
-	v_bri_DOT_cli_DOT_api_result.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(106), kw_column, int64(7), kw_end_line, int64(106), kw_end_column, int64(13), kw_doc, "Decode a response's JSON body (bri.web.openapi/result)."))
-	tmp169 := lang.FnFunc1(func(resp170 any) any {
-		tmp171 := v_bri_DOT_web_DOT_openapi_result.Get()
-		tmp172 := lang.Apply1(tmp171, resp170)
-		return tmp172
+	v_bri_DOT_cli_DOT_api_result.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(178), kw_column, int64(7), kw_end_line, int64(178), kw_end_column, int64(13), kw_doc, "Decode a response's JSON body (bri.web.openapi/result)."))
+	tmp336 := lang.FnFunc1(func(resp337 any) any {
+		tmp338 := v_bri_DOT_web_DOT_openapi_result.Get()
+		tmp339 := lang.Apply1(tmp338, resp337)
+		return tmp339
 	})
-	tmp173 := &lang.NamedFn1{Name: "bri.cli.api/result", Expects: "1: [resp]", F: tmp169}
-	v_bri_DOT_cli_DOT_api_result.BindRoot(tmp173)
+	tmp340 := &lang.NamedFn1{Name: "bri.cli.api/result", Expects: "1: [resp]", F: tmp336}
+	v_bri_DOT_cli_DOT_api_result.BindRoot(tmp340)
 	_ = v_bri_DOT_cli_DOT_api_result
 	// (def login "Force a (re)login now, caching the credential. Returns the service." (clojure.…
-	v_bri_DOT_cli_DOT_api_login.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(111), kw_column, int64(7), kw_end_line, int64(111), kw_end_column, int64(12), kw_doc, "Force a (re)login now, caching the credential. Returns the service."))
-	tmp174 := lang.FnFunc1(func(a175 any) any {
-		tmp176 := v_bri_DOT_cli_DOT_api_acquire_BANG_.Get()
-		tmp177 := lang.Apply1(kw_service, a175)
-		tmp178 := lang.Apply1(kw_strategy, a175)
-		tmp179 := lang.Apply1(kw_boot, a175)
-		tmp180 := lang.Apply1(kw_opts, a175)
-		tmp181 := lang.Apply4(tmp176, tmp177, tmp178, tmp179, tmp180)
-		_ = tmp181
-		tmp182 := lang.Apply1(kw_service, a175)
-		return tmp182
+	v_bri_DOT_cli_DOT_api_login.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(12), kw_doc, "Force a (re)login now, caching the credential. Returns the service."))
+	tmp341 := lang.FnFunc1(func(a342 any) any {
+		tmp343 := v_bri_DOT_cli_DOT_api_acquire_BANG_.Get()
+		tmp344 := lang.Apply1(kw_service, a342)
+		tmp345 := lang.Apply1(kw_strategy, a342)
+		tmp346 := lang.Apply1(kw_boot, a342)
+		tmp347 := lang.Apply1(kw_opts, a342)
+		tmp348 := lang.Apply4(tmp343, tmp344, tmp345, tmp346, tmp347)
+		_ = tmp348
+		tmp349 := lang.Apply1(kw_service, a342)
+		return tmp349
 	})
-	tmp183 := &lang.NamedFn1{Name: "bri.cli.api/login", Expects: "1: [a]", F: tmp174}
-	v_bri_DOT_cli_DOT_api_login.BindRoot(tmp183)
+	tmp350 := &lang.NamedFn1{Name: "bri.cli.api/login", Expects: "1: [a]", F: tmp341}
+	v_bri_DOT_cli_DOT_api_login.BindRoot(tmp350)
 	_ = v_bri_DOT_cli_DOT_api_login
 	// (def logout "Forget the cached credential. Returns the service." (clojure.core/fn [a] (aut…
-	v_bri_DOT_cli_DOT_api_logout.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(117), kw_column, int64(7), kw_end_line, int64(117), kw_end_column, int64(13), kw_doc, "Forget the cached credential. Returns the service."))
-	tmp184 := lang.FnFunc1(func(a185 any) any {
-		tmp186 := v_bri_DOT_cli_DOT_auth_logout.Get()
-		tmp187 := lang.Apply1(kw_service, a185)
-		tmp188 := lang.Apply1(kw_opts, a185)
-		tmp189 := lang.Apply2(tmp186, tmp187, tmp188)
-		_ = tmp189
-		tmp190 := lang.Apply1(kw_service, a185)
-		return tmp190
+	v_bri_DOT_cli_DOT_api_logout.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(189), kw_column, int64(7), kw_end_line, int64(189), kw_end_column, int64(13), kw_doc, "Forget the cached credential. Returns the service."))
+	tmp351 := lang.FnFunc1(func(a352 any) any {
+		tmp353 := v_bri_DOT_cli_DOT_auth_logout.Get()
+		tmp354 := lang.Apply1(kw_service, a352)
+		tmp355 := lang.Apply1(kw_opts, a352)
+		tmp356 := lang.Apply2(tmp353, tmp354, tmp355)
+		_ = tmp356
+		tmp357 := lang.Apply1(kw_service, a352)
+		return tmp357
 	})
-	tmp191 := &lang.NamedFn1{Name: "bri.cli.api/logout", Expects: "1: [a]", F: tmp184}
-	v_bri_DOT_cli_DOT_api_logout.BindRoot(tmp191)
+	tmp358 := &lang.NamedFn1{Name: "bri.cli.api/logout", Expects: "1: [a]", F: tmp351}
+	v_bri_DOT_cli_DOT_api_logout.BindRoot(tmp358)
 	_ = v_bri_DOT_cli_DOT_api_logout
 	// (def authed? "Is there a cached credential for the api's service?" (clojure.core/fn [a] (a…
-	v_bri_DOT_cli_DOT_api_authed_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(123), kw_column, int64(7), kw_end_line, int64(123), kw_end_column, int64(14), kw_doc, "Is there a cached credential for the api's service?"))
-	tmp192 := lang.FnFunc1(func(a193 any) any {
-		tmp194 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
-		tmp195 := lang.Apply1(kw_service, a193)
-		tmp196 := lang.Apply1(kw_opts, a193)
-		tmp197 := lang.Apply2(tmp194, tmp195, tmp196)
-		return tmp197
+	v_bri_DOT_cli_DOT_api_authed_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(195), kw_column, int64(7), kw_end_line, int64(195), kw_end_column, int64(14), kw_doc, "Is there a cached credential for the api's service?"))
+	tmp359 := lang.FnFunc1(func(a360 any) any {
+		tmp361 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
+		tmp362 := lang.Apply1(kw_service, a360)
+		tmp363 := lang.Apply1(kw_opts, a360)
+		tmp364 := lang.Apply2(tmp361, tmp362, tmp363)
+		return tmp364
 	})
-	tmp198 := &lang.NamedFn1{Name: "bri.cli.api/authed?", Expects: "1: [a]", F: tmp192}
-	v_bri_DOT_cli_DOT_api_authed_QMARK_.BindRoot(tmp198)
+	tmp365 := &lang.NamedFn1{Name: "bri.cli.api/authed?", Expects: "1: [a]", F: tmp359}
+	v_bri_DOT_cli_DOT_api_authed_QMARK_.BindRoot(tmp365)
 	_ = v_bri_DOT_cli_DOT_api_authed_QMARK_
 }

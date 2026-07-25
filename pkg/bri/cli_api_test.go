@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/muthuishere/cljgo/pkg/repl"
@@ -65,6 +66,22 @@ func newAPIServer(t *testing.T) *httptest.Server {
 		}
 		w.WriteHeader(401)
 		fmt.Fprint(w, `{"error":"bad creds"}`)
+	})
+	// RFC 8628 device flow: /device issues the codes, /token returns
+	// authorization_pending for the first two polls then grants "device-jwt".
+	var polls int32
+	mux.HandleFunc("POST /device", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"device_code":"dev-123","user_code":"WDJB-MJHT",
+          "verification_uri":%q,"verification_uri_complete":%q,
+          "interval":0,"expires_in":900}`, base+"/activate", base+"/activate?code=WDJB-MJHT")
+	})
+	mux.HandleFunc("POST /token", func(w http.ResponseWriter, r *http.Request) {
+		if atomic.AddInt32(&polls, 1) < 3 {
+			w.WriteHeader(400)
+			fmt.Fprint(w, `{"error":"authorization_pending"}`)
+			return
+		}
+		fmt.Fprint(w, `{"access_token":"device-jwt","token_type":"Bearer"}`)
 	})
 	srv := httptest.NewServer(mux)
 	base = srv.URL
@@ -129,6 +146,29 @@ func TestCliApiPasswordStrategy(t *testing.T) {
 	if msg := evalErr(t, d, `(binding [cli/*prompt* (fn [_ secret?] (if secret? "wrong" "alice"))]
 	                           (capi/call a :getMe {}))`); !strings.Contains(msg, "login failed") {
 		t.Errorf("bad-password error = %q, want it to mention login failed", msg)
+	}
+}
+
+func TestCliApiDeviceStrategy(t *testing.T) {
+	d := stubbedAPIDriver(t)
+	srv := newAPIServer(t)
+	// :device — no secret is prompted; the flow polls /token until it grants.
+	// :poll-interval-ms 2 keeps the (three-poll) loop to a few ms.
+	eval(t, d, `(def a (capi/api "`+srv.URL+`/openapi.json"
+	                             {:service "svc4" :auth :device
+	                              :device {:device-url "`+srv.URL+`/device"
+	                                       :token-url  "`+srv.URL+`/token"
+	                                       :client-id  "cli-abc"}
+	                              :poll-interval-ms 2}))`)
+	// the first call runs the device grant (browser-authorized), caches the
+	// access token, and attaches it — with NO prompt bound at all
+	got := evalString(t, d, `(:auth (capi/result (capi/call a :getMe {})))`)
+	if got != "Bearer device-jwt" {
+		t.Errorf("device-strategy auth = %q, want %q", got, "Bearer device-jwt")
+	}
+	// the granted token is cached (no second device dance)
+	if got := eval(t, d, `(capi/authed? a)`); got != true {
+		t.Errorf("authed? after device login = %v, want true", got)
 	}
 }
 

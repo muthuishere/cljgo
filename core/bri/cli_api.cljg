@@ -19,13 +19,80 @@
 (clojure.core/in-ns 'bri.cli.api)
 (clojure.core/refer 'clojure.core)
 (require '[clojure.string :as str])
+(require '[cljg.net.http :as http])
 (require '[bri.cli :as cli])
 (require '[bri.web.openapi :as openapi])
 (require '[bri.cli.auth :as auth])
 
 ;; opts keys that steer bri.cli.api itself (stripped before building the
 ;; bri.web.openapi client, which owns the rest: :base-url :headers :timeout :retry).
-(def ^:private control-keys [:auth :service :login :username-label :password-label])
+(def ^:private control-keys
+  [:auth :service :login :username-label :password-label :device :poll-interval-ms])
+
+(defn- device-acquire!
+  "OAuth 2.0 Device Authorization Grant (RFC 8628, ADR 0092): the 'better way' —
+  NO secret is ever typed into the terminal. Ask the authorization server for a
+  short user code, show the user a URL + code to authorize in a browser, then poll
+  the token endpoint until an access token drops out; cache it like any credential.
+
+  `(:device opts)` carries the endpoints (none of them secret):
+    :device-url  the device authorization endpoint (REQUIRED)
+    :token-url   the token endpoint (REQUIRED)
+    :client-id   the public client id (REQUIRED, not a secret)
+    :scope       optional space-separated scopes
+  `:poll-interval-ms` (opts) overrides the server's poll interval (tests use ms)."
+  [service opts]
+  (let [dc         (:device opts)
+        device-url (:device-url dc)
+        token-url  (:token-url dc)
+        client-id  (:client-id dc)]
+    (when-not (and device-url token-url client-id)
+      (throw (ex-info "bri.cli.api: :device auth needs :device {:device-url :token-url :client-id}"
+                      {:bri/error :bri.cli.api/device-misconfigured :service service})))
+    (let [init (http/post device-url
+                          {:form (if (:scope dc)
+                                   {"client_id" client-id "scope" (:scope dc)}
+                                   {"client_id" client-id})})
+          da   (http/json-body init)]
+      (when-not (:ok? init)
+        (throw (ex-info (str "bri.cli.api: device authorization request failed for " service)
+                        {:bri/error :bri.cli.api/device-request-failed
+                         :service service :status (:status init)})))
+      (let [device-code (str (:device_code da))
+            user-code   (str (:user_code da))
+            vuri        (str (:verification_uri da))
+            vuri-full   (:verification_uri_complete da)
+            interval-ms (or (:poll-interval-ms opts) (* 1000 (long (or (:interval da) 5))))
+            expires-ms  (* 1000 (long (or (:expires_in da) 900)))
+            max-polls   (max 1 (quot expires-ms (max 1 interval-ms)))]
+        ;; instruct the user — no prompt, no echo, no secret entered
+        (println (str "To authorize " service ", visit: " vuri))
+        (println (str "and enter the code: " user-code))
+        (when vuri-full
+          (println (str "(or open directly: " vuri-full ")")))
+        ;; poll the token endpoint until authorized / denied / expired
+        (loop [polls max-polls
+               wait  interval-ms]
+          (when (<= polls 0)
+            (throw (ex-info (str "bri.cli.api: device authorization timed out for " service)
+                            {:bri/error :bri.cli.api/device-timeout :service service})))
+          (clojure.core/-sleep-ms wait)
+          (let [tr   (http/post token-url
+                                {:form {"grant_type"  "urn:ietf:params:oauth:grant-type:device_code"
+                                        "device_code" device-code
+                                        "client_id"   client-id}})
+                body (http/json-body tr)
+                tok  (:access_token body)
+                err  (:error body)]
+            (cond
+              (not (str/blank? (str tok)))   (auth/login service (assoc opts :key (str tok)))
+              (= "authorization_pending" err) (recur (dec polls) wait)
+              (= "slow_down" err)             (recur (dec polls) (+ wait 5000))
+              :else
+              (throw (ex-info (str "bri.cli.api: device authorization failed for " service
+                                   (when err (str ": " err)))
+                              {:bri/error :bri.cli.api/device-failed
+                               :service service :error err :status (:status tr)})))))))))
 
 (defn- acquire!
   "Obtain + cache a credential for `service` per `strategy`, using `boot` (a
@@ -51,6 +118,9 @@
                           {:bri/error :bri.cli.api/login-failed
                            :service service :status (:status resp)})))
         (auth/login service (assoc opts :key (str tok)))))
+    ;; OAuth 2.0 device flow (RFC 8628, ADR 0092): browser-authorized, no secret
+    ;; typed into the terminal. Talks to the issuer's endpoints, not a spec op.
+    :device (device-acquire! service opts)
     (throw (ex-info (str "bri.cli.api: unknown :auth strategy " strategy)
                     {:bri/error :bri.cli.api/unknown-strategy :auth strategy}))))
 
@@ -71,9 +141,11 @@
   `spec` is anything bri.web.openapi/client accepts (map | JSON string | URL |
   file). opts:
     :service   keychain service name (REQUIRED)
-    :auth      :token (default — API key, prompted once) | :password
+    :auth      :token (default — API key, prompted once) | :password | :device
     :login     for :password: {:op <login-operation> :username-field :password-field
                :token-path [:token]}
+    :device    for :device (OAuth 2.0 device flow, RFC 8628 — no secret typed into
+               the terminal): {:device-url … :token-url … :client-id … :scope …}
     :account :label :username-label :password-label   (prompt/store tuning)
     …plus every bri.web.openapi client opt (:base-url :headers :timeout :retry)."
   ([spec] (api spec {}))
