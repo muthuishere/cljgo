@@ -1,0 +1,126 @@
+;; bri.cli.api — an OpenAPI client that logs in AUTOMATICALLY (ADR 0091,
+;; realizing ADR 0080). Composes bri.web.openapi (the spec-driven client + its
+;; :auth-fn seam), bri.cli.auth (credential core → OS keychain), and bri.cli
+;; prompts: a command that needs auth just works — obtain a credential, cache it
+;; in the OS keychain, attach it, refresh it on 401 — with no hand-rolled token
+;; store.
+;;
+;;   (require '[bri.cli.api :as api])
+;;   (def a (api/api spec {:service "my-api" :auth :token}))   ; API key, prompted once
+;;   (api/call a :list-notes {:limit 20})                      ; logs in on first need
+;;   (api/login a)  (api/logout a)  (api/authed? a)            ; explicit lifecycle
+;;
+;; A NEW namespace (not bri.cli): requiring it opts into the transitive keychain
+;; link (bri.cli.auth → opt-in bri.core.secrets), so a plain bri.cli app stays
+;; lean (ADR 0091 §1). Registered after bri.web.openapi in bri.Specs().
+;;
+;; Loaded as a bri namespace (ADR 0041): NO (ns …) form — the fully-qualified
+;; in-ns + refer open the file, then the requires.
+(clojure.core/in-ns 'bri.cli.api)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+(require '[bri.cli :as cli])
+(require '[bri.web.openapi :as openapi])
+(require '[bri.cli.auth :as auth])
+
+;; opts keys that steer bri.cli.api itself (stripped before building the
+;; bri.web.openapi client, which owns the rest: :base-url :headers :timeout :retry).
+(def ^:private control-keys [:auth :service :login :username-label :password-label])
+
+(defn- acquire!
+  "Obtain + cache a credential for `service` per `strategy`, using `boot` (a
+  no-auth bri.web.openapi client) for the :password token exchange."
+  [service strategy boot opts]
+  (case strategy
+    ;; API key / PAT: prompt once with echo off (bri.cli/ask-secret), cache.
+    :token (auth/login service opts)
+    ;; username + password → token, exchanged at a spec operation (no-auth boot
+    ;; client, so the exchange does not recurse through :auth-fn), then cached.
+    :password
+    (let [lc (:login opts)]
+      (when-not (:op lc)
+        (throw (ex-info "bri.cli.api: :password auth needs :login {:op …}" {:opts opts})))
+      (let [u    (cli/ask (:username-label opts "Username"))
+            p    (cli/ask-secret (:password-label opts "Password"))
+            resp (openapi/call boot (:op lc)
+                               {:body {(:username-field lc :username) u
+                                       (:password-field lc :password) p}})
+            tok  (get-in (openapi/result resp) (:token-path lc [:token]))]
+        (when (str/blank? (str tok))
+          (throw (ex-info (str "bri.cli.api: login failed for " service)
+                          {:bri/error :bri.cli.api/login-failed
+                           :service service :status (:status resp)})))
+        (auth/login service (assoc opts :key (str tok)))))
+    (throw (ex-info (str "bri.cli.api: unknown :auth strategy " strategy)
+                    {:bri/error :bri.cli.api/unknown-strategy :auth strategy}))))
+
+(defn- auth-value
+  "The openapi :auth-fn: ensure a credential (logging in if absent) and return the
+  Authorization value to attach."
+  [service strategy boot opts]
+  (when-not (auth/authed? service opts)
+    (acquire! service strategy boot opts))
+  (get (auth/auth-header service opts) "Authorization"))
+
+(defn api
+  "Build an OpenAPI client with AUTOMATIC login. The first authenticated call with
+  no cached credential logs in (per :auth strategy), caches it in the OS keychain
+  (bri.cli.auth), and attaches it; later runs reuse it; a 401 drops the stale
+  credential and re-logs in once.
+
+  `spec` is anything bri.web.openapi/client accepts (map | JSON string | URL |
+  file). opts:
+    :service   keychain service name (REQUIRED)
+    :auth      :token (default — API key, prompted once) | :password
+    :login     for :password: {:op <login-operation> :username-field :password-field
+               :token-path [:token]}
+    :account :label :username-label :password-label   (prompt/store tuning)
+    …plus every bri.web.openapi client opt (:base-url :headers :timeout :retry)."
+  ([spec] (api spec {}))
+  ([spec opts]
+   (let [service  (or (:service opts)
+                      (throw (ex-info "bri.cli.api: :service is required" {:opts opts})))
+         strategy (:auth opts :token)
+         boot     (openapi/client spec (apply dissoc opts control-keys))
+         auth-fn  (fn [] (auth-value service strategy boot opts))
+         client   (assoc-in boot [:opts :auth-fn] auth-fn)]
+     {:bri.cli.api/api true :client client :boot boot
+      :service service :strategy strategy :opts opts})))
+
+(defn operations
+  "The client's operation-id keywords (from the spec)."
+  [a]
+  (openapi/operations (:client a)))
+
+(defn call
+  "Invoke operation `id` with automatic auth. On a 401 the stale credential is
+  dropped and the call retried once (the retry re-logs in via :auth-fn)."
+  ([a id] (call a id {}))
+  ([a id args]
+   (let [resp (openapi/call (:client a) id args)]
+     (if (and (= 401 (:status resp)) (auth/authed? (:service a) (:opts a)))
+       (do (auth/logout (:service a) (:opts a))
+           (openapi/call (:client a) id args))
+       resp))))
+
+(defn result
+  "Decode a response's JSON body (bri.web.openapi/result)."
+  [resp]
+  (openapi/result resp))
+
+(defn login
+  "Force a (re)login now, caching the credential. Returns the service."
+  [a]
+  (acquire! (:service a) (:strategy a) (:boot a) (:opts a))
+  (:service a))
+
+(defn logout
+  "Forget the cached credential. Returns the service."
+  [a]
+  (auth/logout (:service a) (:opts a))
+  (:service a))
+
+(defn authed?
+  "Is there a cached credential for the api's service?"
+  [a]
+  (auth/authed? (:service a) (:opts a)))

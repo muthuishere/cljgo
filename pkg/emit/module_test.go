@@ -361,3 +361,31 @@ func TestBriCliAuthLinksSecretsTransitively(t *testing.T) {
 		t.Fatalf("requiring bri.cli.auth must transitively link brisecrets (the opt-in keychain); OptInBriPkgs=%v", prog.OptInBriPkgs)
 	}
 }
+
+// TestBriCliApiLinksSecretsTransitively is ADR 0091's proof that an app requiring
+// bri.cli.api — which requires bri.cli.auth → the OPT-IN bri.core.secrets — links
+// the keychain sub-package via the transitive opt-in fire (module.go). This is why
+// bri.cli.api is its OWN namespace: a plain bri.cli app must NOT link the keychain,
+// but one that opts into auto-login auth does.
+func TestBriCliApiLinksSecretsTransitively(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "app.clj")
+	if err := os.WriteFile(src, []byte("(require '[bri.cli.api :as api])\n(defn -main [& _] (println (api/operations {:client {:ops {}}})))\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	snap := namespaceSnapshot()
+	defer removeNewNamespaces(snap)
+	prog, err := CompileProgram(src)
+	if err != nil {
+		t.Fatalf("CompileProgram: %v", err)
+	}
+	found := false
+	for _, p := range prog.OptInBriPkgs {
+		if p == "brisecrets" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("requiring bri.cli.api must transitively link brisecrets (the opt-in keychain); OptInBriPkgs=%v", prog.OptInBriPkgs)
+	}
+}
