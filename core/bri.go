@@ -113,6 +113,14 @@ var BriCLIAuthSource string
 //go:embed bri/openapi.cljg
 var BriOpenAPISource string
 
+// BriCacheSource is core/bri/cache.cljg — bri.core.cache: the fundamental
+// in-process cache (ADR 0093) — a TTL map with singleflight behind the `Cache`
+// protocol. Pure Clojure over atoms + promise/swap-vals! + cljg.os/now; no Go
+// shim, no dependency. Users bring their own backend by implementing `Cache`.
+//
+//go:embed bri/cache.cljg
+var BriCacheSource string
+
 // BriCLIAPISource is core/bri/cli_api.cljg — bri.cli.api: an OpenAPI client that
 // logs in AUTOMATICALLY (ADR 0091, realizing ADR 0080). Pure composition of
 // bri.web.openapi (client + :auth-fn seam), bri.cli.auth (credential core → OS
