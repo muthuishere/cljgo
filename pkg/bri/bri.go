@@ -120,6 +120,11 @@ func Specs() []Spec {
 		// the isolated pkg/bri/secrets (ShimImport), registering their installer
 		// via RegisterInstaller when linked.
 		{Name: "bri.core.secrets", File: "bri/secrets.cljg", Pkg: "brisecrets", Source: &core.BriSecretsSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/secrets"},
+		// bri.cli.auth is PURE CLOJURE (no Go shims) but transitively requires
+		// bri.core.secrets — so an app that requires it links the (opt-in)
+		// keychain client, while a CLI that never uses auth does not (the
+		// transitive opt-in fire in emit/module.go).
+		{Name: "bri.cli.auth", File: "bri/cli_auth.cljg", Pkg: "bricliauth", Source: &core.BriCLIAuthSource, install: nil},
 	}
 }
 

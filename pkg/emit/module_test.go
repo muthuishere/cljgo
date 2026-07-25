@@ -333,3 +333,31 @@ func TestCompileFileRefusesMultiNS(t *testing.T) {
 		t.Fatalf("expected single-file refusal naming CompileProgram, got %v", err)
 	}
 }
+
+// TestBriCliAuthLinksSecretsTransitively is ADR 0080/0086's proof that an app
+// requiring bri.cli.auth — which itself requires the OPT-IN bri.core.secrets —
+// links the keychain sub-package via the TRANSITIVE opt-in fire (module.go).
+// A CLI that uses auth gets the keychain client; one that never touches auth
+// does not. This is the load-bearing check the auth namespace depends on.
+func TestBriCliAuthLinksSecretsTransitively(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "app.clj")
+	if err := os.WriteFile(src, []byte("(require '[bri.cli.auth :as auth])\n(defn -main [& _] (println (auth/authed? \"x\")))\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	snap := namespaceSnapshot()
+	defer removeNewNamespaces(snap)
+	prog, err := CompileProgram(src)
+	if err != nil {
+		t.Fatalf("CompileProgram: %v", err)
+	}
+	found := false
+	for _, p := range prog.OptInBriPkgs {
+		if p == "brisecrets" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("requiring bri.cli.auth must transitively link brisecrets (the opt-in keychain); OptInBriPkgs=%v", prog.OptInBriPkgs)
+	}
+}

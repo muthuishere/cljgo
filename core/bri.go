@@ -92,3 +92,13 @@ var BriSecretsSource string
 //
 //go:embed bri/cli_validate.cljg
 var BriCLIValidateSource string
+
+// BriCLIAuthSource is core/bri/cli_auth.cljg — bri.cli.auth: built-in
+// credential auth (ADR 0080, credential core). Prompt for an API key with echo
+// off (bri.cli/ask-secret), store it in the OS keychain (bri.core.secrets), and
+// build the Authorization header. Requiring it transitively requires the
+// opt-in bri.core.secrets, so the keychain client links only into a CLI that
+// uses auth.
+//
+//go:embed bri/cli_auth.cljg
+var BriCLIAuthSource string

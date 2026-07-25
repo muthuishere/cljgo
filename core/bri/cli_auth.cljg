@@ -1,0 +1,79 @@
+;; bri.cli.auth — built-in credential auth for CLIs (ADR 0080, credential core).
+;; Ties the two halves shipped in increment 2 together: prompt for an API key
+;; with echo OFF (bri.cli/ask-secret) → store it in the OS keychain
+;; (bri.core.secrets) → read it back → build the Authorization header. So a CLI
+;; that talks to an API "just works": log in once, the credential is saved to
+;; the OS credential store, and every later run attaches it.
+;;
+;;   (require '[bri.cli.auth :as auth])
+;;   (auth/login "my-api")                 ; prompts "API key for my-api:" (echo off)
+;;   (auth/login "my-api" {:key "sk-…"})   ; or store a key you already have
+;;   (auth/token "my-api")                 ; => masked secret, or nil
+;;   (auth/authed? "my-api")               ; => true/false
+;;   (auth/auth-header "my-api")           ; => {"Authorization" "Bearer sk-…"} or nil
+;;   (auth/logout "my-api")                ; forget the credential
+;;
+;; The credential is masked-by-default everywhere (bri.core.secrets): token
+;; returns a masked secret; only `auth-header` (and secrets/reveal) unwrap the
+;; plaintext, at the point you actually attach it to a request.
+;;
+;; OPT-IN linking (ADR 0074/0076): requiring bri.cli.auth transitively requires
+;; bri.core.secrets, so the keychain client links only into a CLI that uses
+;; auth (emit/module.go fires the opt-in provider transitively). The full
+;; OpenAPI auto-login client (ADR 0080) waits on an outbound HTTP client
+;; (cljg.net.http); this is the credential core it will build on.
+;;
+;; Loaded as a bri namespace (ADR 0041): NO (ns …) form — the fully-qualified
+;; in-ns + refer open the file, then the requires.
+(clojure.core/in-ns 'bri.cli.auth)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+(require '[bri.cli :as cli])
+(require '[bri.core.secrets :as secrets])
+
+(def ^:private default-account "token")
+
+(defn- account [opts] (:account opts default-account))
+
+(defn login
+  "Obtain and store a credential for `service` in the OS keychain. With no
+  :key, prompts for it with terminal echo off (bri.cli/ask-secret). Returns
+  `service`. opts: :key (skip the prompt), :account (default \"token\"),
+  :label (prompt text). Throws bri.cli.auth/no-credential on an empty value."
+  ([service] (login service {}))
+  ([service opts]
+   (let [key (or (:key opts)
+                 (cli/ask-secret (or (:label opts) (str "API key for " service))))]
+     (when (str/blank? (str key))
+       (throw (ex-info (str "bri.cli.auth/login: no credential provided for " service)
+                       {:bri/error :bri.cli.auth/no-credential :service service})))
+     (secrets/set service (account opts) (str key))
+     service)))
+
+(defn token
+  "The stored credential for `service` as a MASKED secret (use
+  bri.core.secrets/reveal for the plaintext), or nil if not logged in."
+  ([service] (token service {}))
+  ([service opts] (secrets/get service (account opts))))
+
+(defn authed?
+  "Is there a stored credential for `service`?"
+  ([service] (authed? service {}))
+  ([service opts] (boolean (token service opts))))
+
+(defn logout
+  "Remove the stored credential for `service`. Returns `service`."
+  ([service] (logout service {}))
+  ([service opts] (secrets/delete service (account opts)) service))
+
+(defn auth-header
+  "Build an Authorization header map from the stored credential, or nil if not
+  logged in. This is an explicit UNMASK point — the plaintext credential enters
+  the returned map so you can attach it to a request. opts: :scheme (default
+  \"Bearer\"; use \"\" for a bare token, e.g. an API-key header value)."
+  ([service] (auth-header service {}))
+  ([service opts]
+   (when-let [t (token service opts)]
+     (let [scheme (:scheme opts "Bearer")
+           raw    (secrets/reveal t)]
+       {"Authorization" (if (str/blank? scheme) raw (str scheme " " raw))}))))
