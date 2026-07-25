@@ -131,6 +131,9 @@ func Specs() []Spec {
 		// Go half (net_http.go) is one request shim over pure-Go net/http, so
 		// it is a normal non-OptIn namespace (net/http is stdlib, no dep).
 		{Name: "cljg.net.http", File: "cljg/net_http.cljg", Pkg: "cljgnethttp", Source: &core.CljgNetHTTPSource, install: installNetHTTPShims},
+		// cljg.os — OS primitives (ADR 0088), this increment the cron scheduler.
+		// Pure-Go over stdlib time (os_cron.go), non-OptIn.
+		{Name: "cljg.os", File: "cljg/os.cljg", Pkg: "cljgos", Source: &core.CljgOSSource, install: installOSShims},
 	}
 }
 

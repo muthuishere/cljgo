@@ -10,3 +10,11 @@ import _ "embed"
 //
 //go:embed cljg/net_http.cljg
 var CljgNetHTTPSource string
+
+// CljgOSSource is core/cljg/os.cljg — cljg.os: OS-level primitives (ADR 0088).
+// This increment is the cron SCHEDULER (next-fire math is a Go shim over stdlib
+// time in pkg/bri/os_cron.go; the loop is portable Clojure). Service management
+// is the reserved next increment.
+//
+//go:embed cljg/os.cljg
+var CljgOSSource string
