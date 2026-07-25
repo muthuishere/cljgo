@@ -15,6 +15,7 @@ The overlay is kept in step with `../../tree-sitter/highlights.scm` and covers:
 | 0036 / 0050 | `:cljgo` / `:default` reader-conditional selectors |
 | 0040 | `go` / `go*` / `go-loop` / `thread` / `alt!` / `alt!!` and the channel, buffer, pipeline, mult/mix/pub surface |
 | 0069 | `defroute` / `defroutes` and the HTTP methods |
+| 0078 / 0080 | `defcommand` / `defcommands` |
 
 `map` / `merge` / `reduce` / `take` / `into` / `transduce` are **deliberately
 excluded** — they are `clojure.core.async` names that shadow `clojure.core`,

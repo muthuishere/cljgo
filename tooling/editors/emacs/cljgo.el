@@ -43,8 +43,10 @@
   (put-clojure-indent 'alt!! 0)
 
   ;; bri routing (ADR 0069) — Compojure-style, same indent as Compojure.
-  (put-clojure-indent 'defroutes 'defun)
-  (put-clojure-indent 'defroute 'defun)
+  ;; The DEFINING forms (defroute/defroutes, defcommand/defcommands, and the
+  ;; clojure.core definers) are generated from tooling/definers.json into
+  ;; generated/definers.el — `(require 'definers)` and call
+  ;; `cljgo--apply-definer-indents`. Add new definers there, not here.
   (put-clojure-indent 'context 2)
   (put-clojure-indent 'GET 2)
   (put-clojure-indent 'POST 2)

@@ -25,6 +25,7 @@ import (
 	briconfig "github.com/muthuishere/cljgo/pkg/briaot/briconfig"
 	brihtml "github.com/muthuishere/cljgo/pkg/briaot/brihtml"
 	brihttp "github.com/muthuishere/cljgo/pkg/briaot/brihttp"
+	briopenapi "github.com/muthuishere/cljgo/pkg/briaot/briopenapi"
 	cljgio "github.com/muthuishere/cljgo/pkg/briaot/cljgio"
 	cljgnethttp "github.com/muthuishere/cljgo/pkg/briaot/cljgnethttp"
 	cljgos "github.com/muthuishere/cljgo/pkg/briaot/cljgos"
@@ -47,6 +48,7 @@ func init() {
 	rt.RegisterLib("cljg.net.http", loadCljgnethttp)
 	rt.RegisterLib("cljg.os", loadCljgos)
 	rt.RegisterLib("cljg.io", loadCljgio)
+	rt.RegisterLib("bri.web.openapi", loadBriopenapi)
 }
 
 // installShims interns the named bri namespace's Go shims as :private vars
@@ -72,3 +74,4 @@ func loadBricliauth()     { installShims("bri.cli.auth"); bricliauth.Load() }
 func loadCljgnethttp()    { installShims("cljg.net.http"); cljgnethttp.Load() }
 func loadCljgos()         { installShims("cljg.os"); cljgos.Load() }
 func loadCljgio()         { installShims("cljg.io"); cljgio.Load() }
+func loadBriopenapi()     { installShims("bri.web.openapi"); briopenapi.Load() }

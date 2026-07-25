@@ -1,0 +1,61 @@
+{
+  "_comment": [
+    "SINGLE SOURCE OF TRUTH for cljgo's defining forms.",
+    "",
+    "Clojure has no declaration node type — `(defn f …)` is an ordinary list",
+    "whose HEAD symbol carries the meaning and whose SECOND element is the",
+    "name. Every consumer (editors + ctx-optimize) therefore needs the same",
+    "list of head symbols, and keeping four copies in sync by hand is how they",
+    "drift. Edit THIS file, then run:",
+    "",
+    "    go run ./tooling/gen-editors",
+    "",
+    "which regenerates the tree-sitter query fragment, the VS Code TextMate",
+    "rule, the Emacs indent rules, and the ctx-optimize pack.",
+    "",
+    "`kind` is the ctx-optimize node kind. `indent` is the Emacs/clojure-mode",
+    "indent spec. Adding your own project's definers is the supported path —",
+    "see tooling/ctx-optimize/README.md."
+  ],
+
+  "_not_definers": [
+    "core.async's go / go-loop / thread / alt! / alt!! are CONTROL FLOW, not",
+    "defining forms — they bind nothing at the top level, so they belong in",
+    "highlights.scm (they are there) and NOT here. The macros themselves are",
+    "picked up normally, because core/async.cljg writes them as",
+    "(defmacro go-loop …).",
+    "",
+    "Likewise `default` / `defaults` / `default-on` appear in head position in",
+    "this corpus but are ordinary fns whose names merely start with 'def'.",
+    "Matching is exact-text, so they are never mistaken for definers."
+  ],
+
+  "clojure_core": [
+    { "head": "ns",           "kind": "module",    "indent": "defun" },
+    { "head": "in-ns",             "kind": "module", "indent": "defun", "quoted_name": true },
+    { "head": "clojure.core/in-ns", "kind": "module", "indent": "defun", "quoted_name": true },
+    { "head": "def",          "kind": "variable",  "indent": "defun" },
+    { "head": "defonce",      "kind": "variable",  "indent": "defun" },
+    { "head": "defn",         "kind": "function",  "indent": "defun" },
+    { "head": "defn-",        "kind": "function",  "indent": "defun" },
+    { "head": "defmacro",     "kind": "macro",     "indent": "defun" },
+    { "head": "definline",    "kind": "function",  "indent": "defun" },
+    { "head": "defmulti",     "kind": "function",  "indent": "defun" },
+    { "head": "defmethod",    "kind": "function",  "indent": "defun" },
+    { "head": "defprotocol",  "kind": "interface", "indent": "defun" },
+    { "head": "defrecord",    "kind": "class",     "indent": "defun" },
+    { "head": "deftype",      "kind": "class",     "indent": "defun" },
+    { "head": "defstruct",    "kind": "class",     "indent": "defun" },
+    { "head": "deftest",      "kind": "test",      "indent": "defun" }
+  ],
+
+  "bri": [
+    { "head": "defroute",     "kind": "variable",  "indent": "defun", "adr": "0069" },
+    { "head": "defroutes",    "kind": "variable",  "indent": "defun", "adr": "0069" },
+    { "head": "defcommand",   "kind": "function",  "indent": "defun", "adr": "0078" },
+    { "head": "defcommands",  "kind": "variable",  "indent": "defun", "adr": "0080" }
+  ],
+
+  "skip_inside": ["quoting_lit", "syn_quoting_lit", "dis_expr"],
+  "exts": [".cljgo", ".cljg", ".clj", ".cljc"]
+}

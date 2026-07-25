@@ -37,6 +37,13 @@
         "language": "cljgo",
         "scopeName": "source.cljgo",
         "path": "./syntaxes/cljgo.tmLanguage.json"
+      },
+      {
+        "scopeName": "cljgo.definers.injection",
+        "path": "./generated/definers.json",
+        "injectTo": [
+          "source.cljgo"
+        ]
       }
     ]
   }

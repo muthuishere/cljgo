@@ -1,0 +1,209 @@
+;; bri.web.openapi — an OpenAPI-driven typed HTTP client (ADR 0090, realizing the
+;; bri.openapi battery of ADR 0075 under the ADR 0085 taxonomy). The spec IS the
+;; contract: operations, parameters (and where each goes), and auth are declared,
+;; so a client built from it routes params + attaches auth with no per-endpoint
+;; code. Pure Clojure over cljg.net.http — NO Go shims (JSON decoding reuses
+;; cljg.net.http/json-body). Composes the whole net.http stack (retry, timeout,
+;; encoding).
+;;
+;;   (require '[bri.web.openapi :as api])
+;;   (def c (api/client spec {:base-url "https://api.example.com" :token "abc"}))
+;;   (api/operations c)                       ; sorted op-id keywords
+;;   (api/call c :getUser {:id 42})           ; {id} → path, auth attached
+;;   (api/result (api/call c :listNotes {}))  ; decode a JSON response body
+;;
+;; `spec` is a parsed map, a JSON string, or a URL / file path. Auth options:
+;; :token (Bearer), :api-key {:name :in :value}, :auth-fn (per-request Bearer) —
+;; the :auth-fn seam is where ADR 0080's login-backed auth composes in without a
+;; hard require of bri.cli.auth (opt-in keychain stays opt-in).
+;;
+;; Loaded as an embedded namespace (ADR 0041/0085): NO (ns …) form — the
+;; fully-qualified in-ns + refer + requires open the file. Registered AFTER
+;; cljg.net.http in bri.Specs() (its vars must exist when this require resolves).
+(clojure.core/in-ns 'bri.web.openapi)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+(require '[cljg.net.http :as http])
+
+;; --- loading the spec -------------------------------------------------------
+
+(defn- parse-spec
+  "Coerce `spec` to a Clojure map: a map is returned as-is; a string that looks
+  like JSON is decoded; any other string is treated as a URL (http/https) or a
+  file path and its contents fetched/read then decoded."
+  [spec]
+  (cond
+    (map? spec) spec
+    (string? spec)
+    (let [s (str/trim spec)]
+      (cond
+        (str/starts-with? s "{")         (http/json-body {:body s})
+        (or (str/starts-with? s "http://")
+            (str/starts-with? s "https://")) (http/json-body (http/get s))
+        :else                            (http/json-body {:body (slurp s)})))
+    :else (throw (ex-info "bri.web.openapi: spec must be a map, JSON string, URL, or file path"
+                          {:spec spec}))))
+
+;; --- indexing operations ----------------------------------------------------
+
+(def ^:private http-methods #{"get" "put" "post" "delete" "patch" "head" "options"})
+
+(defn- path-str
+  "Reconstruct a path string from a spec :paths key. JSON decoding interns object
+  keys as keywords, and a path like \"/users/{id}\" splits on its slashes — so
+  (name k) drops the leading slash. Rebuild from the printed keyword and force the
+  leading slash every OpenAPI path has."
+  [k]
+  (let [s (if (keyword? k) (subs (str k) 1) (str k))]
+    (if (str/starts-with? s "/") s (str "/" s))))
+
+(defn- op-entries
+  "Walk the spec's :paths → a seq of {:id :method :path :params :body?} maps, one
+  per operation. :id is the operationId (keyword) when present, else a synthesized
+  method+path keyword. :params is the declared parameters vector."
+  [spec]
+  (mapcat
+   (fn [[path item]]
+     (keep
+      (fn [[m op]]
+        (let [mm (str/lower-case (name m))]
+          (when (http-methods mm)
+            (let [ps (path-str path)
+                  id (if-let [oid (:operationId op)]
+                       (keyword oid)
+                       (keyword (str mm "-" (str/replace ps #"[^A-Za-z0-9]+" "-"))))]
+              {:id     id
+               :method (keyword mm)
+               :path   ps
+               :params (vec (:parameters op))
+               :body?  (contains? op :requestBody)}))))
+      item))
+   (:paths spec)))
+
+(defn client
+  "Build an API client from `spec` (a parsed map, JSON string, URL, or file path)
+  and `opts`. opts:
+    :base-url  override the spec's servers[0].url
+    :headers   {name value} sent on every request
+    :timeout   ms (default cljg.net.http's 30000)     :retry n
+    :token     string → Authorization: Bearer <token>
+    :api-key   {:name :in(:header|:query) :value}
+    :auth-fn   (fn [] auth-value) → Authorization header, evaluated PER request
+                 (the ADR 0080 login seam)."
+  ([spec] (client spec {}))
+  ([spec opts]
+   (let [parsed (parse-spec spec)
+         base   (or (:base-url opts)
+                    (get-in parsed [:servers 0 :url])
+                    (:base-url parsed))
+         ops    (into {} (map (juxt :id identity)) (op-entries parsed))]
+     (when-not base
+       (throw (ex-info "bri.web.openapi: no :base-url and the spec declares no servers" {})))
+     {:bri.web.openapi/client true
+      :base-url (str/replace base #"/+$" "")
+      :spec     parsed
+      :ops      ops
+      :opts     (dissoc opts :base-url)})))
+
+(defn operations
+  "A sorted vector of the client's operation-id keywords."
+  [client]
+  (vec (sort (keys (:ops client)))))
+
+(defn operation
+  "The declared shape of one operation {:id :method :path :params :body?}, or nil
+  if the client has no such operation id."
+  [client id]
+  (get-in client [:ops id]))
+
+;; --- request assembly -------------------------------------------------------
+
+(defn- param-locations
+  "name(string) → :in keyword ({:path :query :header}) from an operation's
+  declared parameters."
+  [op]
+  (into {} (map (fn [p] [(:name p) (keyword (:in p))])) (:params op)))
+
+(defn- path-vars
+  "The set of {name} template variables in `path` — plain scan (no regex, so it
+  runs identically interpreted and AOT-compiled)."
+  [path]
+  (loop [s path acc #{}]
+    (let [i (str/index-of s "{")]
+      (if (nil? i)
+        acc
+        (let [j (str/index-of s "}" i)]
+          (if (nil? j)
+            acc
+            (recur (subs s (inc j)) (conj acc (subs s (inc i) j)))))))))
+
+(defn- fill-path
+  "Substitute {name} templates in `path` from `args` (keyword or string keys).
+  Throws naming any path variable left unfilled."
+  [path args]
+  (reduce (fn [p n]
+            (let [v (or (get args (keyword n)) (get args n))]
+              (when (nil? v)
+                (throw (ex-info (str "bri.web.openapi: missing path parameter :" n)
+                                {:path path :param n})))
+              (str/replace p (str "{" n "}") (str v))))
+          path
+          (path-vars path)))
+
+(defn- auth-headers
+  "The Authorization / api-key headers implied by the client opts (evaluating
+  :auth-fn now, per request)."
+  [opts]
+  (let [ak (:api-key opts)]
+    (cond-> {}
+      (:token opts)   (assoc "Authorization" (str "Bearer " (:token opts)))
+      (:auth-fn opts) (assoc "Authorization" ((:auth-fn opts)))
+      (and ak (not= :query (:in ak))) (assoc (:name ak) (:value ak)))))
+
+(defn- api-key-query [opts]
+  (let [ak (:api-key opts)]
+    (when (and ak (= :query (:in ak))) {(:name ak) (:value ak)})))
+
+(defn call
+  "Invoke operation `id` on `client` with `args` (a map). Each arg is routed by
+  the operation's declared parameter location: a path template {name} is
+  substituted, a declared :query/:header param is placed accordingly, an undeclared
+  key defaults to a query param, and :body is sent as the JSON request body. Auth
+  from the client opts is attached. Returns a cljg.net.http response
+  {:status :headers :body :ok?}. Throws if `id` is unknown or a path param is missing."
+  ([client id] (call client id {}))
+  ([client id args]
+   (let [op (operation client id)]
+     (when-not op
+       (throw (ex-info (str "bri.web.openapi: no operation " id)
+                       {:id id :available (operations client)})))
+     (let [locs   (param-locations op)
+           pvars  (path-vars (:path op))
+           body   (:body args)
+           rest   (dissoc args :body)
+           ;; split remaining args into header / query by declared location
+           ;; (path vars are consumed by fill-path; unknown → query)
+           groups (reduce (fn [acc [k v]]
+                            (let [nm (name k)]
+                              (cond
+                                (contains? pvars nm)        acc
+                                (= :header (get locs nm))   (assoc-in acc [:headers nm] (str v))
+                                :else                       (assoc-in acc [:query nm] v))))
+                          {:headers {} :query {}}
+                          rest)
+           opts   (:opts client)
+           url    (str (:base-url client) (fill-path (:path op) args))
+           req    (cond-> {:method (:method op)
+                           :url    url
+                           :headers (merge (:headers opts) (auth-headers opts) (:headers groups))
+                           :query   (merge (:query groups) (api-key-query opts))}
+                    body            (assoc :json body)
+                    (:timeout opts) (assoc :timeout (:timeout opts))
+                    (:retry opts)   (assoc :retry (:retry opts)))]
+       (http/request req)))))
+
+(defn result
+  "Decode a response's JSON body (the common case for an OpenAPI JSON API).
+  Sugar for cljg.net.http/json-body."
+  [resp]
+  (http/json-body resp))

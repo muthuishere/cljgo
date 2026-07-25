@@ -141,17 +141,16 @@
   (#match? @_async_ns "^(async|a|clojure\\.core\\.async)$"))
 
 ;; ---------------------------------------------------------------------------
-;; bri routing (ADR 0069): Compojure-style routes. `defroute`/`defroutes` are
-;; macros; the all-caps method names are ordinary fns in head position
-;; (core/bri/http.cljg).
+;; bri routing (ADR 0069): the all-caps method names are ordinary fns in head
+;; position (core/bri/http.cljg).
+;;
+;; NOTE: the DEFINING forms — `defroute`/`defroutes` (ADR 0069),
+;; `defcommand`/`defcommands` (ADR 0078/0080), and every clojure.core definer —
+;; are NOT listed here. They live in `tooling/definers.json` and are generated
+;; into `generated/definers.scm`, because ctx-optimize and the VS Code and
+;; Emacs configs need the same list and four hand-kept copies drift. Load both
+;; files; add a new definer there, not here.
 ;; ---------------------------------------------------------------------------
-(list_lit
-  .
-  (sym_lit
-    !namespace
-    name: (sym_name) @keyword
-    (#match? @keyword "^defroutes?$")))
-
 (list_lit
   .
   (sym_lit

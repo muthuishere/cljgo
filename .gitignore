@@ -39,3 +39,9 @@ scheduled_tasks.lock
 
 # marketing drafts (local only, never published from repo)
 marketing/
+
+# ctx-optimize: the pack CONFIG is committed (it is cljgo's definer table);
+# the compiled grammar and the generated store are not.
+.ctxoptimize/grammars/*.wasm
+.ctxoptimize/store/
+.ctxoptimize/wiki/

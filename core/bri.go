@@ -102,3 +102,13 @@ var BriCLIValidateSource string
 //
 //go:embed bri/cli_auth.cljg
 var BriCLIAuthSource string
+
+// BriOpenAPISource is core/bri/openapi.cljg — bri.web.openapi: an OpenAPI-driven
+// typed HTTP client (ADR 0090, realizing ADR 0075's bri.openapi battery under the
+// ADR 0085 taxonomy). Pure Clojure over cljg.net.http — no Go shims; the spec is
+// the contract, so a client built from it routes params + attaches auth with no
+// per-endpoint code. The :auth-fn seam is where ADR 0080's login-backed auth
+// composes in without hard-requiring bri.cli.auth.
+//
+//go:embed bri/openapi.cljg
+var BriOpenAPISource string
