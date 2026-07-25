@@ -267,14 +267,14 @@ func Load() {
 								})
 								tmp75 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp68}
 								tmp76 := lang.Apply2(tmp67, inflight44, tmp75)
-								var vec__17377 any = tmp76
-								_ = vec__17377
+								var vec__18777 any = tmp76
+								_ = vec__18777
 								tmp78 := v_clojure_DOT_core_nth.Get()
-								tmp79 := lang.Apply3(tmp78, vec__17377, int64(0), nil)
+								tmp79 := lang.Apply3(tmp78, vec__18777, int64(0), nil)
 								var X_80 any = tmp79
 								_ = X_80
 								tmp81 := v_clojure_DOT_core_nth.Get()
-								tmp82 := lang.Apply3(tmp81, vec__17377, int64(1), nil)
+								tmp82 := lang.Apply3(tmp81, vec__18777, int64(1), nil)
 								var after83 any = tmp82
 								_ = after83
 								tmp84 := v_clojure_DOT_core_identical_QMARK_.Get()
@@ -407,28 +407,28 @@ func Load() {
 			tmp136 := lang.Apply1(tmp134, tmp135)
 			return tmp136
 		case 1:
-			p__176137 := args[0]
-			_ = p__176137
+			p__190137 := args[0]
+			_ = p__190137
 			var tmp138 any
 			_ = tmp138
 			{
-				var map__177139 any = p__176137
-				_ = map__177139
+				var map__191139 any = p__190137
+				_ = map__191139
 				tmp140 := v_clojure_DOT_core_seq_QMARK_.Get()
-				tmp141 := lang.Apply1(tmp140, map__177139)
+				tmp141 := lang.Apply1(tmp140, map__191139)
 				var tmp142 any
 				_ = tmp142
 				if lang.IsTruthy(tmp141) {
 					tmp143 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-					tmp144 := lang.Apply1(tmp143, map__177139)
+					tmp144 := lang.Apply1(tmp143, map__191139)
 					tmp142 = tmp144
 				} else {
-					tmp142 = map__177139
+					tmp142 = map__191139
 				}
-				var map__177145 any = tmp142
-				_ = map__177145
+				var map__191145 any = tmp142
+				_ = map__191145
 				tmp146 := v_clojure_DOT_core_get.Get()
-				tmp147 := lang.Apply3(tmp146, map__177145, kw_ttl, int64(60))
+				tmp147 := lang.Apply3(tmp146, map__191145, kw_ttl, int64(60))
 				var ttl148 any = tmp147
 				_ = ttl148
 				var tmp149 any
@@ -495,7 +495,7 @@ func Load() {
 			}
 			return tmp138
 		default:
-			panic(lang.NewArityError(len(args), "bri.core.cache/local", "0: [] or 1: [p__176]"))
+			panic(lang.NewArityError(len(args), "bri.core.cache/local", "0: [] or 1: [p__190]"))
 		}
 	})
 	v_bri_DOT_core_DOT_cache_local.BindRoot(tmp133)

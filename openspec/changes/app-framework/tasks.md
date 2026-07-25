@@ -163,12 +163,18 @@
       in `core/bri/db.cljg` + `pkg/bri/db/`, ADRs 0072/0057/0058.
       connect/query/one/one!/exec!/insert!/update!/delete!/tx +
       snake↔kebab present.)*
-- [ ] 2.2 Casts: `(db/cast row schema)` → `(ok row)`/`(err {field
+- [~] 2.2 Casts: `(db/cast row schema)` → `(ok row)`/`(err {field
       msg})`, `cast!` throwing — the DAY-ONE input gate (golden page
       casts before insert; undeclared keys dropped/rejected — mass
       assignment structurally off the path); `let?` + `http/render`
       composition test end-to-end (the railway signup from the
       golden page).
+      *(SHIPPED: `bri.core.data/cast` → (ok clean)/(err {field msg}) + `cast!`
+      throwing, in `core/bri/db.cljg`. Coerces :string/:int/:long/:double/:bool/
+      :keyword/:any and DROPS undeclared keys (mass assignment off the path).
+      Dual-harness: `pkg/bri/cast_test.go` + folded into the `dbparity` REPL↔binary
+      gate. The `let?`+`http/render` railway end-to-end + golden-page wiring rides
+      with the 2.6 generator-page edition, still pending.)*
 - [x] 2.3 Migrations: `cljgo migrate [new|up|status]`, SQL files,
       UTC-timestamp names, applied-table; additive-only doctrine
       doc. `cljgo dev` gains migration application.

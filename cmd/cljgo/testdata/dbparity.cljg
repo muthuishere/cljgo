@@ -28,3 +28,10 @@
   (println "row" (:id r) (:label r) (:qty r)))
 (println "one" (:label (db/one conn "select label from item where qty = ?" 9)))
 (println "count" (:n (db/one conn "select count(*) as n from item")))
+
+;; cast: the input gate (task 2.2) — coerce strings, drop the undeclared :admin
+;; key (mass assignment off the path), and surface a validation error.
+(let [clean (db/cast! {:label "delta" :qty "4" :admin "1"} {:label :string :qty :int})]
+  (println "cast" (:label clean) (:qty clean) "admin?" (contains? clean :admin)))
+(println "cast-err" (:qty (:errors (try (db/cast! {:qty "nope"} {:qty :int})
+                                        (catch Throwable e (ex-data e))))))
