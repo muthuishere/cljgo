@@ -149,6 +149,14 @@ func Specs() []Spec {
 		// top-level requires must resolve. Its own namespace (not bri.cli) so the
 		// transitive keychain link is opt-in.
 		{Name: "bri.cli.api", File: "bri/cli_api.cljg", Pkg: "bricliapi", Source: &core.BriCLIAPISource, install: nil},
+		// bri.core.cache — the fundamental in-process cache (ADR 0093): a TTL map
+		// with singleflight behind the `Cache` protocol. Pure Clojure (install:
+		// nil, like bri.web.html) over atoms + promise + cljg.os/now, so it is
+		// registered AFTER cljg.os (its (require [cljg.os]) for the clock must
+		// resolve). No Go shim, no dependency — links free, inert until called.
+		// Placed LAST (nothing requires it) so it does not shift the gensym
+		// numbering of the namespaces genbri emits before it.
+		{Name: "bri.core.cache", File: "bri/cache.cljg", Pkg: "bricache", Source: &core.BriCacheSource, install: nil},
 	}
 }
 

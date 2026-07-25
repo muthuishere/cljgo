@@ -210,10 +210,16 @@
       ADR 0040 (the S20 seam) — TESTS ONLY (dev runs the real
       Postgres backend on the embedded dev db: parity);
       drain-and-assert helper.
-- [ ] 3.3 `bri.cache`: `local` (TTL in seconds + singleflight),
+- [~] 3.3 `bri.cache`: `local` (TTL in seconds + singleflight),
       `fetch`/`put`/`evict`, constructor-enforced namespace; `redis`
       impl of the same protocol (rueidis via require-go). Stampede
       test (N concurrent fetches, one fill). Jobs + cache guides
+      *(SHIPPED as `bri.core.cache` (ADR 0093): the `local` fundamental —
+      TTL + singleflight `fetch`/`put`/`evict`/`clear` behind the `Cache`
+      PROTOCOL (interface), pure Clojure, zero deps. Stampede test proves
+      one-fill-under-20. **`redis` DEFERRED** — owner ruling: "no new deps;
+      give fundamentals, users bring the backend" — a user implements `Cache`
+      for their own store. Guides/production-checklist still pending.)*
       gate the tier; production checklist (drain, pool sizing,
       timeouts) lands here. Generator updated: full golden page —
       generator and page now byte-identical; the complete app
