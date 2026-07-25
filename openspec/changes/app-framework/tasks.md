@@ -190,10 +190,17 @@
       modernc.org/sqlite zero-install default (`.dev/app.db`); the intent —
       zero-install dev db, dev/prod parity via a driver swap to pgx — is met
       without provisioning Postgres.)*
-- [ ] 2.5 Deployment: `cljgo build` embeds `public/` + `migrations/`
+- [~] 2.5 Deployment: `cljgo build` embeds `public/` + `migrations/`
       (ADR 0021 comptime embed); generated `-main` answers
       `migrate`; clean-host scenario tested (binary + env only).
       Deployment guide gates the tier.
+      *(SHIPPED: generated `-main` answers `migrate` — `cljgo generate resource`
+      splices a `"migrate"` arm (a `case` on the first arg) into -main, so the
+      COMPILED binary runs `./app migrate && ./app`; a bare DB-less app keeps only
+      the default and never links a database. e2e `TestDeployMigrateArm` (builds
+      the app binary, runs `./app migrate`). STILL PENDING: `cljgo build`
+      comptime-embed of `public/`+`migrations/` into the binary, and a
+      clean-host deploy guide/test.)*
 - [ ] 2.6 Test sandbox: under APP_PROFILE=test the pool wraps each
       test in a rolled-back transaction (Ecto-Sandbox model, same
       pool var, no with-redefs); per-test fixture + generated db

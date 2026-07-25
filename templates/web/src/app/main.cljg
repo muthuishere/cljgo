@@ -56,8 +56,14 @@
     ;; cljgo:resource-routes — `cljgo generate resource` splices route values here
     ))
 
-(defn -main [& _args]
-  ;; (api-defaults) is default-on: request-ids, structured logging, the
-  ;; error funnel, CORS, metrics (GET /metrics), abuse protection, and JSON
-  ;; negotiation — plus /healthz + /readyz. Zero security code in the app.
-  (http/serve routes {:port (:port cfg) :middleware (http/api-defaults)}))
+(defn -main [& args]
+  ;; `./app <cmd>` dispatches on the first arg; with none (or an unknown one) it
+  ;; runs the server. `cljgo generate resource` splices a `"migrate"` arm above
+  ;; the marker (so `./app migrate && ./app` deploys) — a DB-less app keeps only
+  ;; the default and never links a database.
+  (case (first args)
+    ;; cljgo:resource-main — `cljgo generate resource` splices command arms here
+    ;; (api-defaults) is default-on: request-ids, structured logging, the
+    ;; error funnel, CORS, metrics (GET /metrics), abuse protection, and JSON
+    ;; negotiation — plus /healthz + /readyz. Zero security code in the app.
+    (http/serve routes {:port (:port cfg) :middleware (http/api-defaults)})))
