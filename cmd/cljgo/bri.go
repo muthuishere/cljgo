@@ -252,6 +252,17 @@ func runDev(args []string) int {
 	if code := evalAppFile(d, appMain); code != 0 {
 		return code
 	}
+	// Apply pending migrations on startup so `cljgo dev` always serves against an
+	// up-to-date schema (app-framework task 2.3). Only when a migrations dir
+	// exists — a CLI/library app without one is untouched.
+	if _, err := os.Stat(migrationsDir); err == nil {
+		if out, err := d.EvalString(migrateUpForm, "cljgo-dev-migrate"); err != nil {
+			fmt.Fprintln(os.Stderr, "cljgo dev: migrate:", err)
+			return 1
+		} else if s, _ := out.(string); s != "" {
+			fmt.Fprintln(os.Stderr, s)
+		}
+	}
 	if _, err := d.EvalString("(app.main/-main)", "cljgo-dev"); err != nil {
 		fmt.Fprintln(os.Stderr, "cljgo dev:", err)
 		return 1

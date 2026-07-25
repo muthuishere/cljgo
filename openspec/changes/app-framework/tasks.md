@@ -169,9 +169,13 @@
       assignment structurally off the path); `let?` + `http/render`
       composition test end-to-end (the railway signup from the
       golden page).
-- [ ] 2.3 Migrations: `cljgo migrate [new|up|status]`, SQL files,
+- [x] 2.3 Migrations: `cljgo migrate [new|up|status]`, SQL files,
       UTC-timestamp names, applied-table; additive-only doctrine
       doc. `cljgo dev` gains migration application.
+      *(SHIPPED: `cmd/cljgo/migrate.go` — `up`/`status`/`new <name>` over
+      `bri.core.data/migrate!`+`migrate-status`; `cljgo dev` auto-applies
+      pending migrations on startup; additive-only doctrine in the generated
+      stub. e2e `TestMigrateCLI`.)*
 - [x] 2.4 Dev database: embedded Postgres (require-go module, data
       under `.dev/pg/`) provisioned by `cljgo dev` when APP_DB_URL
       is unset — zero install, dev/prod parity. Documented
@@ -231,13 +235,19 @@ these tasks were written):
   each still has an unbuilt CLI/generator half, so those tasks stay open.
 
 **Genuinely remaining, NOT closed here:** 2.2 (`db/cast`/`cast!` input gate),
-2.3 (`cljgo migrate` subcommand + `cljgo dev` apply), 2.5 (build-embed
-`public/`+`migrations/`, `-main migrate` arm, clean-host deploy), 2.6
-(APP_PROFILE=test sandbox + generated db test + T2 generator page), and all of
-**T3** (`bri.core.jobs` + `:memory` backend + `bri.core.cache` — unbuilt, and
-not yet placed in the ADR 0085 taxonomy). Recommended split: a focused
-T2-completion change, and a separate T3 jobs+cache change fronted by an ADR that
-places those namespaces. This umbrella stays OPEN until those land.
+2.5 (build-embed `public/`+`migrations/`, `-main migrate` arm, clean-host
+deploy), 2.6 (APP_PROFILE=test sandbox + generated db test + T2 generator page),
+and all of **T3** (`bri.core.jobs` + `:memory` backend + `bri.core.cache` —
+unbuilt, and not yet placed in the ADR 0085 taxonomy). Recommended split: a
+focused T2-completion change, and a separate T3 jobs+cache change fronted by an
+ADR that places those namespaces. This umbrella stays OPEN until those land.
+
+*Progress 2026-07-25:* **2.3 migrations DONE** (`cljgo migrate up|status|new` +
+`cljgo dev` auto-apply; `cmd/cljgo/migrate.go`, `TestMigrateCLI`). **T3 has
+owner-gated forks** (a new rueidis dependency for the redis cache backend; job
+retry/visibility/schema semantics; the cache namespace link-split) — captured in
+a design brief for owner ratification before implementation, per the
+"prove-before-force" doctrine; NOT built dark.
 
 ## Out of scope (sequenced later, per round 3)
 
