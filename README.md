@@ -100,6 +100,14 @@ Editor REPL: `cljgo nrepl`, then connect Calva ("Connect to a running
 REPL") or CIDER (`cider-connect-clj`) to the printed port — `.nrepl-port`
 makes it auto-discoverable.
 
+Editor syntax, indentation and code indexing: **[`tooling/`](tooling/)**.
+cljgo adds zero new syntax (ADR 0017 §2: *adopt, don't fork*), so Neovim,
+Emacs, VS Code, Helix and Zed all use the stock Clojure grammar plus a small
+query pack. Every defining form — `defn`, `def`, bri's `defroute` /
+`defcommand`, and any your app adds — lives in one file,
+[`tooling/definers.json`](tooling/definers.json); `go run ./tooling/gen-editors`
+regenerates all five consumers (four editors + the ctx-optimize pack) from it.
+
 Errors carry registered codes with explain pages: `cljgo check file.clj
 --json` for structured diagnostics, `cljgo explain A2004` for the long-form
 page (ADRs 0015/0048).
@@ -270,6 +278,14 @@ cljgo stands on work by people who solved the hard parts first.
 - **[ClojureScript](https://github.com/clojure/clojurescript)** — the model
   this project follows: a compiler that emits host source, with the AST "op"
   vocabulary cljgo's analyzer keeps.
+- **[Bun](https://bun.sh)** — the model for the batteries: db, secrets,
+  auth, http, otel curated and shipped as part of core (`pkg/bri`,
+  `core/bri/`), not assembled from a dependency hunt.
+- **[Zig](https://ziglang.org)** — the model for the build: `build.cljgo` is
+  a program, not a data file.
+- **[gloat](https://github.com/gloathub/gloat)** — Ingy döt Net's automation
+  tool for Glojure/let-go AOT builds. Used directly (not vendored) to build
+  the Glojure and let-go binaries in `benchmark/results-aot.md`.
 
 ## License
 
