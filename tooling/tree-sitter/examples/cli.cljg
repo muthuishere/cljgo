@@ -1,0 +1,24 @@
+(ns examples.cli
+  "ADR 0078 / 0080 — bri's CLI: the unified parameter model."
+  (:require [bri.cli :as cli]))
+
+;; defcommand reads like a defn: name, docstring (its :about), a parameter
+;; vector of `name {opts}` pairs, then a body using the params directly.
+(defcommand add "Add an item"
+  [text     {:type :string :about "item text"}
+   priority {:type :int    :about "1-5" :default 3}]
+  (println "added" text "@" priority))
+
+(defcommand ls "List items"
+  [all {:type :bool :about "include done" :default false}]
+  (doseq [i (list-items {:all all})]
+    (println (:id i) (:text i))))
+
+;; defcommands names the app from meta + command vars, mirroring defroutes.
+(defcommands app
+  {:name "todo" :version "1.0"}
+  add
+  ls)
+
+(defn -main [& args]
+  (cli/run app args))
