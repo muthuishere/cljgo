@@ -419,6 +419,51 @@ func TestCLIMultiselectWidget(t *testing.T) {
 	}
 }
 
+// TestCLIMultiParam: a :multi param collects a comma-separated flag (or env)
+// into a vector, coercing each element by :of + :one-of and validating the
+// whole vector; an unset :multi is [] (or its :default).
+func TestCLIMultiParam(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[bri.cli :as cli] '[bri.cli.validate :as v])
+	  (cli/defcommand build "Build"
+	    [tags     {:type :string :multi true :about "labels"}
+	     nums     {:multi true :of :int :about "ints"}
+	     features {:multi true :one-of [:a :b :c] :about "features"}]
+	    {:tags tags :nums nums :features features})
+	  (cli/defcommands app {:name "b"} build)`)
+
+	// comma-separated → a vector of trimmed strings
+	if got := evalString(t, d, `(pr-str (:tags (cli/parse app ["build" "--tags" "x, y ,z"])))`); got != `["x" "y" "z"]` {
+		t.Errorf("multi string = %s, want [\"x\" \"y\" \"z\"]", got)
+	}
+	// :of coerces each element (ints)
+	if got := evalString(t, d, `(pr-str (:nums (cli/parse app ["build" "--nums" "1,2,3"])))`); got != `[1 2 3]` {
+		t.Errorf("multi int = %s, want [1 2 3]", got)
+	}
+	// :one-of coerces each to a keyword and validates membership
+	if got := evalString(t, d, `(pr-str (:features (cli/parse app ["build" "--features" "a,c"])))`); got != `[:a :c]` {
+		t.Errorf("multi one-of = %s, want [:a :c]", got)
+	}
+	// an out-of-set element is rejected, naming the value
+	if msg := evalErr(t, d, `(cli/parse app ["build" "--features" "a,zzz"])`); !strings.Contains(msg, "one of") {
+		t.Errorf("multi one-of bad element = %q, want it to name the allowed set", msg)
+	}
+	// an unset :multi is an empty vector, not nil
+	if got := evalString(t, d, `(pr-str (:tags (cli/parse app ["build"])))`); got != `[]` {
+		t.Errorf("unset multi = %s, want []", got)
+	}
+	// a whole-vector validator runs on the collected value
+	eval(t, d, `(cli/defcommand pick "" [xs {:multi true :one-of [:a :b :c]
+	                                          :validate (fn [v] (when (> (count v) 2) "at most 2"))}] {:xs xs})
+	            (cli/defcommands papp {:name "p"} pick)`)
+	if msg := evalErr(t, d, `(cli/parse papp ["pick" "--xs" "a,b,c"])`); !strings.Contains(msg, "at most 2") {
+		t.Errorf("multi vector validator = %q", msg)
+	}
+	if got := evalString(t, d, `(pr-str (:xs (cli/parse papp ["pick" "--xs" "a,b"])))`); got != `[:a :b]` {
+		t.Errorf("multi vector valid = %s, want [:a :b]", got)
+	}
+}
+
 // TestCLIEditorWidget: the multi-line buffer — insert, newline, backspace
 // (incl. line-join), arrow-nav — all pure index math through the loop.
 func TestCLIEditorWidget(t *testing.T) {
