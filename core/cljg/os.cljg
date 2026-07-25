@@ -75,3 +75,43 @@
              (when (= due-ms (cron-next (:cron j) from))
                (run-job j)))
            (recur (inc ticks))))))))
+
+;; --- service management (ADR 0088 §3): run a binary as an OS service --------
+;; Install/start/stop/status across systemd (Linux) · launchd (macOS) · Windows
+;; SCM, from one spec. The unit/plist RENDER is pure (service-unit); the
+;; operations shell out to the platform's service tool. Private Go shims:
+;; -service-render -service-install -service-op.
+
+(defn service
+  "A service spec. Keys: :name (required), :exec (binary path, required),
+  :args [..], :description, :env {..}, :working-dir, :scope (:user default |
+  :system — :system needs root on Linux)."
+  [m]
+  (merge {:cljg.os/service true :scope :user} m))
+
+(defn service-unit
+  "Render the exact platform service definition text (systemd unit / launchd
+  plist) install would write for `spec`. Pure — good for review and tests.
+  Optional `os` (\"linux\"/\"darwin\"/\"windows\") cross-renders for a target
+  other than the host; Windows returns \"\" (its SCM is not file-based)."
+  ([spec] (-service-render spec ""))
+  ([spec os] (-service-render spec os)))
+
+(defn service-install
+  "Install `spec` as an OS service on the current platform (write the unit/
+  plist + enable via systemctl/launchctl, or sc.exe on Windows) and start it.
+  Returns nil. Needs the platform's privileges (:user scope avoids root on
+  Linux)."
+  [spec]
+  (-service-install spec)
+  nil)
+
+(defn service-start  "Start an installed service by name."     [name] (-service-op "start" name) nil)
+(defn service-stop   "Stop a running service by name."         [name] (-service-op "stop" name) nil)
+(defn service-uninstall "Stop + remove a service by name."     [name] (-service-op "uninstall" name) nil)
+
+(defn service-status
+  "The platform status string for a service (e.g. \"active\"), or nil if it is
+  not installed / not running."
+  [name]
+  (-service-op "status" name))

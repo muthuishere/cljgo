@@ -9,6 +9,7 @@ import (
 
 var (
 	kw_cljg_DOT_os_SLASH_job            = lang.InternKeywordString("cljg.os/job")
+	kw_cljg_DOT_os_SLASH_service        = lang.InternKeywordString("cljg.os/service")
 	kw_column                           = lang.InternKeywordString("column")
 	kw_cron                             = lang.InternKeywordString("cron")
 	kw_doc                              = lang.InternKeywordString("doc")
@@ -20,16 +21,28 @@ var (
 	kw_max_ticks                        = lang.InternKeywordString("max-ticks")
 	kw_name                             = lang.InternKeywordString("name")
 	kw_private                          = lang.InternKeywordString("private")
+	kw_scope                            = lang.InternKeywordString("scope")
+	kw_user                             = lang.InternKeywordString("user")
 	sym_cljg_DOT_os                     = lang.NewSymbol("cljg.os")
 	sym_clojure_DOT_core                = lang.NewSymbol("clojure.core")
 	v_cljg_DOT_os_X_cron_next           = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("-cron-next")).SetPrivate()
 	v_cljg_DOT_os_X_now_millis          = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("-now-millis")).SetPrivate()
+	v_cljg_DOT_os_X_service_install     = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("-service-install")).SetPrivate()
+	v_cljg_DOT_os_X_service_op          = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("-service-op")).SetPrivate()
+	v_cljg_DOT_os_X_service_render      = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("-service-render")).SetPrivate()
 	v_cljg_DOT_os_X_sleep_millis        = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("-sleep-millis")).SetPrivate()
 	v_cljg_DOT_os_cron_next             = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("cron-next"))
 	v_cljg_DOT_os_job                   = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("job"))
 	v_cljg_DOT_os_now                   = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("now"))
 	v_cljg_DOT_os_run                   = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("run"))
 	v_cljg_DOT_os_run_job               = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("run-job")).SetPrivate()
+	v_cljg_DOT_os_service               = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("service"))
+	v_cljg_DOT_os_service_install       = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("service-install"))
+	v_cljg_DOT_os_service_start         = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("service-start"))
+	v_cljg_DOT_os_service_status        = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("service-status"))
+	v_cljg_DOT_os_service_stop          = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("service-stop"))
+	v_cljg_DOT_os_service_uninstall     = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("service-uninstall"))
+	v_cljg_DOT_os_service_unit          = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("service-unit"))
 	v_cljg_DOT_os_soonest               = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("soonest")).SetPrivate()
 	v_clojure_DOT_core_X_               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
 	v_clojure_DOT_core_X_EQ_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
@@ -474,4 +487,93 @@ func Load() {
 	})
 	v_cljg_DOT_os_run.BindRoot(tmp65)
 	_ = v_cljg_DOT_os_run
+	// (def service "A service spec. Keys: :name (required), :exec (binary path, required),\n  :a…
+	v_cljg_DOT_os_service.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(14), kw_doc, "A service spec. Keys: :name (required), :exec (binary path, required),\n  :args [..], :description, :env {..}, :working-dir, :scope (:user default |\n  :system — :system needs root on Linux)."))
+	tmp177 := lang.FnFunc1(func(m178 any) any {
+		tmp179 := v_clojure_DOT_core_merge.Get()
+		tmp180 := lang.NewMap(kw_cljg_DOT_os_SLASH_service, true, kw_scope, kw_user)
+		tmp181 := lang.Apply2(tmp179, tmp180, m178)
+		return tmp181
+	})
+	tmp182 := &lang.NamedFn1{Name: "cljg.os/service", Expects: "1: [m]", F: tmp177}
+	v_cljg_DOT_os_service.BindRoot(tmp182)
+	_ = v_cljg_DOT_os_service
+	// (def service-unit "Render the exact platform service definition text (systemd unit / launc…
+	v_cljg_DOT_os_service_unit.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(92), kw_column, int64(7), kw_end_line, int64(92), kw_end_column, int64(19), kw_doc, "Render the exact platform service definition text (systemd unit / launchd\n  plist) install would write for `spec`. Pure — good for review and tests.\n  Optional `os` (\"linux\"/\"darwin\"/\"windows\") cross-renders for a target\n  other than the host; Windows returns \"\" (its SCM is not file-based)."))
+	tmp183 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		case 1:
+			spec184 := args[0]
+			_ = spec184
+			tmp185 := v_cljg_DOT_os_X_service_render.Get()
+			tmp186 := lang.Apply2(tmp185, spec184, "")
+			return tmp186
+		case 2:
+			spec187 := args[0]
+			_ = spec187
+			os188 := args[1]
+			_ = os188
+			tmp189 := v_cljg_DOT_os_X_service_render.Get()
+			tmp190 := lang.Apply2(tmp189, spec187, os188)
+			return tmp190
+		default:
+			panic(lang.NewArityError(len(args), "cljg.os/service-unit", "1: [spec] or 2: [spec os]"))
+		}
+	})
+	v_cljg_DOT_os_service_unit.BindRoot(tmp183)
+	_ = v_cljg_DOT_os_service_unit
+	// (def service-install "Install `spec` as an OS service on the current platform (write the u…
+	v_cljg_DOT_os_service_install.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(22), kw_doc, "Install `spec` as an OS service on the current platform (write the unit/\n  plist + enable via systemctl/launchctl, or sc.exe on Windows) and start it.\n  Returns nil. Needs the platform's privileges (:user scope avoids root on\n  Linux)."))
+	tmp191 := lang.FnFunc1(func(spec192 any) any {
+		tmp193 := v_cljg_DOT_os_X_service_install.Get()
+		tmp194 := lang.Apply1(tmp193, spec192)
+		_ = tmp194
+		return nil
+	})
+	tmp195 := &lang.NamedFn1{Name: "cljg.os/service-install", Expects: "1: [spec]", F: tmp191}
+	v_cljg_DOT_os_service_install.BindRoot(tmp195)
+	_ = v_cljg_DOT_os_service_install
+	// (def service-start "Start an installed service by name." (clojure.core/fn [name] (-service…
+	v_cljg_DOT_os_service_start.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(20), kw_doc, "Start an installed service by name."))
+	tmp196 := lang.FnFunc1(func(name197 any) any {
+		tmp198 := v_cljg_DOT_os_X_service_op.Get()
+		tmp199 := lang.Apply2(tmp198, "start", name197)
+		_ = tmp199
+		return nil
+	})
+	tmp200 := &lang.NamedFn1{Name: "cljg.os/service-start", Expects: "1: [name]", F: tmp196}
+	v_cljg_DOT_os_service_start.BindRoot(tmp200)
+	_ = v_cljg_DOT_os_service_start
+	// (def service-stop "Stop a running service by name." (clojure.core/fn [name] (-service-op "…
+	v_cljg_DOT_os_service_stop.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(110), kw_column, int64(7), kw_end_line, int64(110), kw_end_column, int64(19), kw_doc, "Stop a running service by name."))
+	tmp201 := lang.FnFunc1(func(name202 any) any {
+		tmp203 := v_cljg_DOT_os_X_service_op.Get()
+		tmp204 := lang.Apply2(tmp203, "stop", name202)
+		_ = tmp204
+		return nil
+	})
+	tmp205 := &lang.NamedFn1{Name: "cljg.os/service-stop", Expects: "1: [name]", F: tmp201}
+	v_cljg_DOT_os_service_stop.BindRoot(tmp205)
+	_ = v_cljg_DOT_os_service_stop
+	// (def service-uninstall "Stop + remove a service by name." (clojure.core/fn [name] (-servic…
+	v_cljg_DOT_os_service_uninstall.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(111), kw_column, int64(7), kw_end_line, int64(111), kw_end_column, int64(24), kw_doc, "Stop + remove a service by name."))
+	tmp206 := lang.FnFunc1(func(name207 any) any {
+		tmp208 := v_cljg_DOT_os_X_service_op.Get()
+		tmp209 := lang.Apply2(tmp208, "uninstall", name207)
+		_ = tmp209
+		return nil
+	})
+	tmp210 := &lang.NamedFn1{Name: "cljg.os/service-uninstall", Expects: "1: [name]", F: tmp206}
+	v_cljg_DOT_os_service_uninstall.BindRoot(tmp210)
+	_ = v_cljg_DOT_os_service_uninstall
+	// (def service-status "The platform status string for a service (e.g. \"active\"), or nil if…
+	v_cljg_DOT_os_service_status.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(21), kw_doc, "The platform status string for a service (e.g. \"active\"), or nil if it is\n  not installed / not running."))
+	tmp211 := lang.FnFunc1(func(name212 any) any {
+		tmp213 := v_cljg_DOT_os_X_service_op.Get()
+		tmp214 := lang.Apply2(tmp213, "status", name212)
+		return tmp214
+	})
+	tmp215 := &lang.NamedFn1{Name: "cljg.os/service-status", Expects: "1: [name]", F: tmp211}
+	v_cljg_DOT_os_service_status.BindRoot(tmp215)
+	_ = v_cljg_DOT_os_service_status
 }
