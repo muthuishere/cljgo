@@ -507,6 +507,74 @@
     (use-editor? p) (editor-flow p)
     :else           (prompt-text p)))
 
+;; --- the public prompt API (ADR 0078: the inputs, usable outside a command) --
+;; Ergonomic wrappers over the SAME widgets + validators the unified parameter
+;; model uses — so an app can prompt directly, not only through command params.
+;; Each shows the rich widget on a real TTY and falls back to a free-text line
+;; otherwise (headless-safe and testable via the *prompt* seam). `opts` mirror a
+;; parameter's map: :default :validate :required :type :trim :tries (and :secret
+;; for ask). With no TTY and no *prompt* backend, each returns its :default.
+
+(defn- prompt-spec
+  "Synthesize a one-off parameter from a label + opts for the prompt flows."
+  [label opts]
+  (merge {:name (or (:name opts) :input) :prompt label} opts))
+
+(defn ask
+  "Prompt for a line of text; returns the coerced + validated value. opts:
+  :default :validate :required :type (default :string) :trim :secret :tries."
+  ([label] (ask label {}))
+  ([label opts]
+   (if (interactive?)
+     (prompt-param (prompt-spec label opts))
+     (:default opts))))
+
+(defn ask-secret
+  "Prompt for a secret with terminal echo OFF; returns the string."
+  ([label] (ask-secret label {}))
+  ([label opts] (ask label (assoc opts :secret true))))
+
+(defn ask-editor
+  "Prompt for multi-line text via the editor widget; returns the string."
+  ([label] (ask-editor label {}))
+  ([label opts]
+   (if (interactive?)
+     (prompt-param (prompt-spec label (assoc opts :type :multiline)))
+     (:default opts))))
+
+(defn select
+  "Prompt to choose ONE of `choices` (a vector); returns the chosen value.
+  Arrow-key widget on a real TTY, a typed answer otherwise."
+  ([label choices] (select label choices {}))
+  ([label choices opts]
+   (if (interactive?)
+     (prompt-param (prompt-spec label (assoc opts :one-of (vec choices)
+                                             :type (:type opts :enum))))
+     (:default opts))))
+
+(defn confirm
+  "Prompt a yes/no; returns true or false. opts: :default (default false)."
+  ([label] (confirm label {}))
+  ([label opts]
+   (let [p (prompt-spec label (assoc opts :type :bool))]
+     (cond
+       (not (interactive?))          (:default opts false)
+       (and (nil? *prompt*) (-tty?)) (confirm-flow p)
+       :else (let [raw (prompt-raw p)]
+               (if (str/blank? (str raw)) (:default opts false) (coerce p raw)))))))
+
+(defn multiselect
+  "Prompt to choose ANY of `choices`; returns a vector of chosen values.
+  Multiselect widget on a real TTY, a comma-separated answer otherwise."
+  ([label choices] (multiselect label choices {}))
+  ([label choices opts]
+   (let [p (prompt-spec label (assoc opts :one-of (vec choices) :multi true
+                                     :of (:of opts :keyword)))]
+     (cond
+       (not (interactive?))          (:default opts [])
+       (and (nil? *prompt*) (-tty?)) (multiselect-flow p)
+       :else                         (supplied-multi p (prompt-raw p))))))
+
 (defn- env-raw
   "The param's :env value (an env-var name, string or keyword) if set, else
   nil — resolved through the -getenv host shim."
