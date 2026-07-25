@@ -283,6 +283,48 @@ func TestGenerateResourceSuite(t *testing.T) {
 	}
 }
 
+// TestDeployMigrateArm proves the deploy story (app-framework task 2.5): after
+// `cljgo generate resource`, the generated -main gains a `migrate` arm, so the
+// COMPILED app binary runs `./app migrate` to apply pending migrations before
+// serving (`./app migrate && ./app`). Runs against the zero-install SQLite
+// default, hermetic and cross-platform.
+func TestDeployMigrateArm(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+	work := t.TempDir()
+	if out, err := runIn(work, bin, "new", "--template", "web", "demo"); err != nil {
+		t.Fatalf("cljgo new: %v\n%s", err, out)
+	}
+	app := filepath.Join(work, "demo")
+	if out, err := runIn(app, bin, "generate", "resource", "Note", "title:string", "body:text"); err != nil {
+		t.Fatalf("cljgo generate resource: %v\n%s", err, out)
+	}
+	// the migrate arm is spliced into -main
+	if m := readFile(t, filepath.Join(app, "src", "app", "main.cljg")); !strings.Contains(m, `"migrate" (let [db (bri.core.data/connect`) {
+		t.Fatalf("generated -main missing the migrate arm:\n%s", m)
+	}
+
+	// build the app to a binary and run `./app migrate`
+	appBin := filepath.Join(app, "demoapp"+emit.ExeSuffix)
+	build := exec.Command(bin, "build", "-o", appBin, filepath.Join("src", "app", "main.cljg"))
+	build.Dir = app
+	build.Env = append(os.Environ(), "CLJGO_SRC="+repoRoot(t), "CGO_ENABLED=0")
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("cljgo build (app binary): %v\n%s", err, out)
+	}
+	migrate := exec.Command(appBin, "migrate")
+	migrate.Dir = app
+	if out, err := migrate.CombinedOutput(); err != nil || !strings.Contains(string(out), "migrations applied") {
+		t.Fatalf("./app migrate: err=%v out=%q, want \"migrations applied\"", err, out)
+	}
+	// and the migration is now applied (nothing pending)
+	if out, err := runIn(app, bin, "migrate", "status"); err != nil || !strings.Contains(out, "pending (0)") {
+		t.Fatalf("migrate status after ./app migrate: err=%v out=%q, want pending (0)", err, out)
+	}
+}
+
 func TestBriNewDevTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping binary build in -short mode")

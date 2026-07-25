@@ -342,7 +342,19 @@ func renderResourceTemplate(name string, d resourceData) (string, error) {
 const (
 	markerRequires = ";; cljgo:resource-requires"
 	markerRoutes   = ";; cljgo:resource-routes"
+	markerMain     = ";; cljgo:resource-main"
 )
+
+// migrateArm is the `./app migrate` command spliced into -main the first time a
+// resource is generated (app-framework task 2.5): it applies db/migrations over
+// the app's datasource then returns, so `./app migrate && ./app` deploys. It
+// references bri.core.data, which the generated app already links (via app.db).
+const migrateArm = `"migrate" (let [db (bri.core.data/connect (get cfg :db {}))] ` +
+	`(bri.core.data/migrate! db "db/migrations") (bri.core.data/close! db) ` +
+	`(println "migrations applied"))`
+
+// migrateSentinel is the idempotency probe (the arm's stable prefix).
+const migrateSentinel = `"migrate" (let [db (bri.core.data/connect`
 
 // spliceMain inserts the resource's require and routes value into
 // app.main above the two documented comment markers (ADR 0073 §4). It is
@@ -367,6 +379,14 @@ func spliceMain(content string, d resourceData) (string, error) {
 			return "", markerMissingErr(markerRoutes, "    ")
 		}
 		out = spliced
+	}
+	// The `./app migrate` arm is spliced ONCE (idempotent) and only when the
+	// template carries the marker — an app scaffolded before this feature has no
+	// markerMain, so it is left untouched (server-only -main still works).
+	if !strings.Contains(out, migrateSentinel) {
+		if spliced, ok := insertAboveMarker(out, markerMain, migrateArm); ok {
+			out = spliced
+		}
 	}
 	return out, nil
 }
