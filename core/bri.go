@@ -121,6 +121,14 @@ var BriOpenAPISource string
 //go:embed bri/cache.cljg
 var BriCacheSource string
 
+// BriJobsSource is core/bri/jobs.cljg — bri.core.jobs: the fundamental
+// in-process job queue (ADR 0094) — a core.async worker pool behind the `Queue`
+// protocol. Pure Clojure over clojure.core.async (ADR 0040) + an atom; no Go
+// shim, no dependency. Users bring a durable backend by implementing `Queue`.
+//
+//go:embed bri/jobs.cljg
+var BriJobsSource string
+
 // BriCLIAPISource is core/bri/cli_api.cljg — bri.cli.api: an OpenAPI client that
 // logs in AUTOMATICALLY (ADR 0091, realizing ADR 0080). Pure composition of
 // bri.web.openapi (client + :auth-fn seam), bri.cli.auth (credential core → OS

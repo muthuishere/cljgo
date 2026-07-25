@@ -157,6 +157,13 @@ func Specs() []Spec {
 		// Placed LAST (nothing requires it) so it does not shift the gensym
 		// numbering of the namespaces genbri emits before it.
 		{Name: "bri.core.cache", File: "bri/cache.cljg", Pkg: "bricache", Source: &core.BriCacheSource, install: nil},
+		// bri.core.jobs — the fundamental in-process job queue (ADR 0094): a
+		// core.async worker pool behind the `Queue` protocol. Pure Clojure
+		// (install: nil) over clojure.core.async (a core namespace, always
+		// resolvable) + an atom. No Go shim, no dependency. Also placed at the end
+		// (nothing requires it) to keep the gensym numbering of earlier emitted
+		// namespaces stable.
+		{Name: "bri.core.jobs", File: "bri/jobs.cljg", Pkg: "brijobs", Source: &core.BriJobsSource, install: nil},
 	}
 }
 

@@ -198,7 +198,7 @@
 
 ## 3. T3 — jobs + cache
 
-- [ ] 3.1 `bri.jobs`: `queue` (pure registry VALUE; handler values
+- [~] 3.1 `bri.jobs`: `queue` (pure registry VALUE; handler values
       are vars, derefed at dispatch — live like http), `start!`
       (called in -main; goroutine workers, LISTEN/NOTIFY + poll
       fallback; returns a drainable handle for `:drain`),
@@ -206,10 +206,20 @@
       type against the registry — typos fail at the call site),
       retries/backoff, unique jobs, per-type concurrency, cron rows.
       Jobs table = state-of-record in the app's Postgres.
-- [ ] 3.2 `:memory` backend: same API on core.async channels per
+      *(FUNDAMENTAL shipped as `bri.core.jobs` (ADR 0094): `local` worker
+      pool + typed dispatch (var handlers stay live) + drain + error capture,
+      behind the `Queue` PROTOCOL. **Postgres/durable backend DEFERRED** —
+      owner ruling: "no new deps; give fundamentals, users bring the backend" —
+      a user implements `Queue` over their own Postgres for transactional
+      enqueue/retries/cron. Guides still pending.)*
+- [x] 3.2 `:memory` backend: same API on core.async channels per
       ADR 0040 (the S20 seam) — TESTS ONLY (dev runs the real
       Postgres backend on the embedded dev db: parity);
       drain-and-assert helper.
+      *(This IS the shipped fundamental `bri.core.jobs/local` — core.async
+      worker pool with a drain-and-assert seam (`drain`). Under the "no deps"
+      ruling it is promoted from tests-only to THE built-in backend; durability
+      is a user's `Queue` impl, ADR 0094.)*
 - [~] 3.3 `bri.cache`: `local` (TTL in seconds + singleflight),
       `fetch`/`put`/`evict`, constructor-enforced namespace; `redis`
       impl of the same protocol (rueidis via require-go). Stampede
