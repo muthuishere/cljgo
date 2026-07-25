@@ -6,6 +6,7 @@
 package bri_test
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -44,5 +45,35 @@ func TestCljgOsScheduler(t *testing.T) {
 	    (str @ok))`)
 	if survived != "2" {
 		t.Errorf("a throwing job killed the scheduler; good job ran %s times, want 2", survived)
+	}
+}
+
+// TestCljgOsServiceRender: the service-unit render flows spec → text through
+// the shim (cross-rendering both platforms). Install/start/stop shell out and
+// are not run in CI.
+func TestCljgOsServiceRender(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[cljg.os :as cos])`)
+
+	// systemd (linux) from a spec built with cos/service
+	unit := evalString(t, d, `(cos/service-unit
+	                            (cos/service {:name "d" :exec "/bin/d" :args ["--serve"]
+	                                          :env {"K" "v"} :description "D"})
+	                            "linux")`)
+	for _, want := range []string{"ExecStart=/bin/d --serve", "Description=D", "Environment=K=v", "WantedBy=default.target"} {
+		if !strings.Contains(unit, want) {
+			t.Errorf("service-unit (linux) missing %q:\n%s", want, unit)
+		}
+	}
+
+	// launchd (darwin) from the same surface
+	plist := evalString(t, d, `(cos/service-unit (cos/service {:name "d" :exec "/bin/d"}) "darwin")`)
+	if !strings.Contains(plist, "<key>Label</key>") || !strings.Contains(plist, "<string>d</string>") {
+		t.Errorf("service-unit (darwin) not a plist:\n%s", plist)
+	}
+
+	// a spec without :exec is a named error
+	if msg := evalErr(t, d, `(cos/service-unit (cos/service {:name "d"}))`); !strings.Contains(msg, ":name and :exec") {
+		t.Errorf("missing :exec error = %q", msg)
 	}
 }

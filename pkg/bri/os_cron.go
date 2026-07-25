@@ -35,6 +35,7 @@ func installOSShims(def func(name string, fn func(args ...any) any)) {
 		}
 		return next
 	})
+	installServiceShims(def) // cljg.os also owns service management (os_service.go)
 }
 
 // cronField is the set of allowed values for one cron position.
