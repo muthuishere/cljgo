@@ -88,6 +88,6 @@ run, cited in a comment.
 
 ## 4. Wrap-up
 
-- [ ] 4.1 design/05 §4 updated to cite ADR 0040 + final numbers; S19
+- [x] 4.1 design/05 §4 updated to cite ADR 0040 + final numbers; S19
   spike remains frozen. `openspec archive core-async-first-class` after
   owner sign-off. Gates green.

@@ -205,6 +205,16 @@ parameter type's zero value.
 
 ## 4. Concurrency
 
+> **Ratified by [ADR 0040](../docs/adr/0040-core-async-on-go-channels.md)** and
+> shipped as the `core-async-first-class` change; the S19 spike
+> (`spikes/s19-core-async/`) is the frozen oracle. **Measured wrapper tax**
+> (S19, darwin/arm64; `pkg/lang/chan_budget_test.go`): rendezvous 137.3 ns vs
+> 100.5 ns raw (1.37×), buffered 31.0 vs 25.9 ns (1.20×), `alts!` n=2 101.5 ns
+> vs 31.6 ns static `select` (3.2×). The tax is budgeted as a **ratio** to raw
+> Go channels (ADR 0024 host-relative discipline), CI-enforced at ≤ 1.5× raw
+> (`CLJGO_CHAN_TAX_MAX`) and `alts!` ≤ 5× a static select (`CLJGO_ALTS_TAX_MAX`)
+> — catching a pathological regression, not scheduler noise.
+
 ### The structural win: no IOC transform
 
 core.async's `go` macro is a CPS/state-machine rewrite that exists solely

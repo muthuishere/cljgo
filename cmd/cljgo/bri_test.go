@@ -202,6 +202,35 @@ func TestExampleNotesDBSuite(t *testing.T) {
 	}
 }
 
+// TestGenerateResourceSuite scaffolds a web app, generates a resource, and runs
+// the generated `cljgo test` end to end — the green CI gate task 5.1 (ADR 0073)
+// asked for once bri.core.data's API froze. TestGenerateResource (generate_test.go)
+// validates the emitted source + splice; this proves the generated CRUD suite
+// (db/query|one|insert!|exec! over bri.core.data) actually PASSES under the binary.
+func TestGenerateResourceSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+	work := t.TempDir()
+
+	if out, err := runIn(work, bin, "new", "--template", "web", "demo"); err != nil {
+		t.Fatalf("cljgo new: %v\n%s", err, out)
+	}
+	app := filepath.Join(work, "demo")
+
+	if out, err := runIn(app, bin, "generate", "resource", "Note", "title:string", "body:text"); err != nil {
+		t.Fatalf("cljgo generate resource: %v\n%s", err, out)
+	}
+	if _, err := os.Stat(filepath.Join(app, "test", "app", "notes_test.cljg")); err != nil {
+		t.Fatalf("generated resource test missing: %v", err)
+	}
+	// the generated resource's own suite must pass under `cljgo test`
+	if out, err := runIn(app, bin, "test"); err != nil {
+		t.Fatalf("cljgo test (generated resource suite): %v\n%s", err, out)
+	}
+}
+
 func TestBriNewDevTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping binary build in -short mode")
