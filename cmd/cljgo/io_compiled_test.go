@@ -28,7 +28,11 @@ const ioApp = `(require '[cljg.io :as io])
     (println "glob" (count (io/glob (io/path d "*.txt"))))
     (println "ext" (io/extension f))
     (io/delete-tree! d)
-    (println "gone" (not (io/exists? d)))))
+    (println "gone" (not (io/exists? d)))
+    ;; process exec (ADR 0089 §3): git --version is on every CI runner + dev box
+    (let [r (io/sh "git" "--version")]
+      (println "gitexit" (:exit r))
+      (println "gitout" (> (count (:out r)) 0)))))
 `
 
 func TestCljgIOCompiled(t *testing.T) {
@@ -54,6 +58,7 @@ func TestCljgIOCompiled(t *testing.T) {
 	got := strings.TrimSpace(string(out))
 	want := strings.Join([]string{
 		"size 2", "file? true", "count 2", "glob 2", "ext .txt", "gone true",
+		"gitexit 0", "gitout true",
 	}, "\n")
 	if got != want {
 		t.Fatalf("compiled cljg.io output =\n%q\nwant\n%q", got, want)

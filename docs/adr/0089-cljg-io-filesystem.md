@@ -53,12 +53,16 @@ namespace, and `CGO_ENABLED=0` + `cljgo dist` hold. It rides the same name-gener
 embedded registry (ADR 0087 §1). Path shims use `filepath`, so join/parent/ext follow
 host separators; a Clojure-hosted build would reimplement them the same way.
 
-### 3. Process exec — reserved (next increment)
+### 3. Process exec (realized — increment 2)
 
-`cljg.io` will add `sh` / `exec` — run a subprocess, capture `{:out :err :exit}`, with
-`:in` (stdin), `:env`, `:dir`, `:timeout` — over pure-Go `os/exec`. Fully testable
-(run `echo`, assert capture), but a distinct surface; deferred here to keep this
-increment focused on the filesystem.
+`cljg.io` adds `exec` / `sh` / `sh!` — run a subprocess and capture
+`{:out :err :exit :timed-out?}` — over pure-Go `os/exec` + `context` (one shim,
+`-proc-exec`; the sugar is portable Clojure). opts: `:in` (stdin), `:env` (merged onto
+the current environment), `:dir` (working directory), `:timeout-ms` (kill after n ms →
+`:timed-out? true`, `:exit -1`). A **non-zero exit is a normal result** (`exec`/`sh`
+never throw on it); `sh!` is the throwing variant for the script style where a failed
+step aborts. A missing/unrunnable binary throws (it never ran). Fully CI-testable (run
+`echo`/`cat`, assert capture, stdin, exit code, env, timeout).
 
 ## Consequences
 
