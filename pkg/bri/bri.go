@@ -125,6 +125,12 @@ func Specs() []Spec {
 		// keychain client, while a CLI that never uses auth does not (the
 		// transitive opt-in fire in emit/module.go).
 		{Name: "bri.cli.auth", File: "bri/cli_auth.cljg", Pkg: "bricliauth", Source: &core.BriCLIAuthSource, install: nil},
+		// cljg.net.http is the first cljg.* stdlib namespace (ADR 0087) — the
+		// outbound HTTP client. It rides this same name-generic registry (the
+		// pkg/bri package name is a legacy of bri being the first tenant). Its
+		// Go half (net_http.go) is one request shim over pure-Go net/http, so
+		// it is a normal non-OptIn namespace (net/http is stdlib, no dep).
+		{Name: "cljg.net.http", File: "cljg/net_http.cljg", Pkg: "cljgnethttp", Source: &core.CljgNetHTTPSource, install: installNetHTTPShims},
 	}
 }
 
