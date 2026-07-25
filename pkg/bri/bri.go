@@ -138,6 +138,11 @@ func Specs() []Spec {
 		// structural file/path/directory ops clojure.core lacks. Pure-Go over
 		// stdlib os + path/filepath (io_fs.go), non-OptIn.
 		{Name: "cljg.io", File: "cljg/io.cljg", Pkg: "cljgio", Source: &core.CljgIOSource, install: installIOShims},
+		// bri.web.openapi — an OpenAPI-driven typed HTTP client (ADR 0090). Pure
+		// Clojure over cljg.net.http (no Go shims, like bri.web.html), so it is
+		// registered AFTER cljg.net.http — its top-level require must resolve
+		// against already-loaded vars. Non-OptIn (net/http is stdlib).
+		{Name: "bri.web.openapi", File: "bri/openapi.cljg", Pkg: "briopenapi", Source: &core.BriOpenAPISource, install: nil},
 	}
 }
 
