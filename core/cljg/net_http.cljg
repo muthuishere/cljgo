@@ -1,0 +1,115 @@
+;; cljg.net.http — the outbound HTTP client (ADR 0087), the first namespace in
+;; cljgo's cljg.* stdlib tier. General mechanism (any program wants an HTTP
+;; client), so it lives under cljg.*, not bri.*.
+;;
+;;   (require '[cljg.net.http :as http])
+;;   (http/get  "https://api.x/things")
+;;   (http/get  url {:headers {"Authorization" "Bearer …"} :query {"q" "x"} :timeout 5000})
+;;   (http/post url {:json {:name "x"}})          ; JSON-encode + content-type
+;;   (http/post url {:form {"a" "b"}})            ; x-www-form-urlencoded
+;;   (http/request {:method :put :url url :edn {…} :retry 2})
+;;   (http/json-body (http/get url))              ; parse a JSON response body
+;;
+;; A response is {:status :headers :body :ok?} — :body a string, :ok? a 2xx.
+;; The Go half is one request shim (net/http, pure Go) plus JSON/url encode;
+;; everything else here is portable Clojure, so it runs identically interpreted
+;; and AOT-compiled. Private Go shims interned before this loads: -http-do
+;; -json-encode -json-decode -url-encode.
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file. `get` is defined here (callers
+;; write http/get) so it is excluded from the clojure.core refer — it never
+;; shadows core globally (precedence principle).
+(clojure.core/in-ns 'cljg.net.http)
+(clojure.core/refer 'clojure.core :exclude '[get])
+(require '[clojure.string :as str])
+
+(def ^:private default-timeout 30000)
+
+;; --- encoding ---------------------------------------------------------------
+
+(defn- encode-query
+  "Build a `?a=b&c=d` string from a map (values url-encoded), or \"\" if empty."
+  [m]
+  (if (seq m)
+    (str "?" (str/join "&" (map (fn [[k v]]
+                                  (str (-url-encode (name k)) "=" (-url-encode (str v))))
+                                m)))
+    ""))
+
+(defn- body+type
+  "From the request opts, return [body-string content-type-or-nil]. Exactly one
+  of :body/:json/:edn/:form is honored (in that precedence)."
+  [opts]
+  (cond
+    (contains? opts :body) [(str (:body opts)) nil]
+    (contains? opts :json) [(-json-encode (:json opts)) "application/json"]
+    (contains? opts :edn)  [(pr-str (:edn opts)) "application/edn"]
+    (contains? opts :form) [(str/join "&" (map (fn [[k v]]
+                                                 (str (-url-encode (name k)) "=" (-url-encode (str v))))
+                                               (:form opts)))
+                            "application/x-www-form-urlencoded"]
+    :else [nil nil]))
+
+(defn- with-content-type [headers ctype]
+  (if (and ctype (not (some (fn [[k _]] (= "content-type" (str/lower-case (name k)))) headers)))
+    (assoc headers "Content-Type" ctype)
+    headers))
+
+;; --- the core request + retry ----------------------------------------------
+
+(defn- do-once
+  "One request → a response map with :ok? added."
+  [method url headers body timeout]
+  (let [resp (-http-do (str/upper-case (name method)) url (or headers {}) body timeout)]
+    (assoc resp :ok? (<= 200 (:status resp) 299))))
+
+(defn request
+  "Perform an HTTP request. opts:
+    :method  keyword/string (default :get)   :url  the URL (or pass as 1st arg via the verbs)
+    :headers map {name value}                :query map → query string
+    :body    raw string | :json data | :edn data | :form map   (one; that precedence)
+    :timeout ms (default 30000)              :retry n (default 0), backoff on transport error + 5xx
+  Returns {:status :headers :body :ok?} — :body a string. Retries re-raise the
+  last error / return the last 5xx after n attempts."
+  [opts]
+  (let [method  (:method opts :get)
+        url     (str (:url opts) (encode-query (:query opts)))
+        [b ct]  (body+type opts)
+        headers (with-content-type (or (:headers opts) {}) ct)
+        timeout (:timeout opts default-timeout)
+        tries   (inc (:retry opts 0))]
+    (loop [n tries]
+      (let [res (try {:v (do-once method url headers b timeout)}
+                     (catch Throwable e {:err e}))]
+        (cond
+          ;; a transport error: retry if attempts remain, else re-raise
+          (:err res) (if (> n 1) (recur (dec n)) (throw (:err res)))
+          ;; a 5xx: retry if attempts remain, else return it
+          (and (>= (:status (:v res)) 500) (> n 1)) (recur (dec n))
+          :else (:v res))))))
+
+;; --- the verbs (sugar over request) -----------------------------------------
+
+(defn- verb [method url opts] (request (assoc opts :method method :url url)))
+
+(defn get    ([url] (get url {}))    ([url opts] (verb :get url opts)))
+(defn post   ([url] (post url {}))   ([url opts] (verb :post url opts)))
+(defn put    ([url] (put url {}))    ([url opts] (verb :put url opts)))
+(defn delete ([url] (delete url {})) ([url opts] (verb :delete url opts)))
+(defn patch  ([url] (patch url {}))  ([url opts] (verb :patch url opts)))
+(defn head   ([url] (head url {}))   ([url opts] (verb :head url opts)))
+
+;; --- response body decoding -------------------------------------------------
+;; (a 2xx check is just (:ok? resp) — the key is set on every response; no
+;; `ok?` fn here, as clojure.core/ok? is the ADR 0014 Result predicate.)
+
+(defn json-body
+  "Parse a response's :body as JSON (object keys → keywords, ints → longs)."
+  [resp]
+  (-json-decode (:body resp)))
+
+(defn edn-body
+  "Parse a response's :body as EDN."
+  [resp]
+  (clojure.edn/read-string (:body resp)))
