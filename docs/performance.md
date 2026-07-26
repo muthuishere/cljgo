@@ -13,10 +13,10 @@ With `hello.clj` = `(println "hi")`:
 
 | | cljgo | reproduce |
 |---|---|---|
-| Tool binary | 12.7 MB stripped | `go build -trimpath -ldflags="-s -w" ./cmd/cljgo` |
-| Compiled binary, hello | 5.3 MB | `cljgo build hello.clj` (strips by default) |
+| Tool binary | 27.5 MB stripped | `go build -trimpath -ldflags="-s -w" ./cmd/cljgo` |
+| Compiled binary, hello | 6.7 MB | `cljgo build hello.clj` (strips by default) |
 | Compiled startup, hello | 5.0 ms | `hyperfine -N ./hello` |
-| Peak RSS, hello | 14.7 MB | `/usr/bin/time -l ./hello` |
+| Peak RSS, hello | 11.5 MB | `/usr/bin/time -l ./hello` |
 | Interpreter boot | 31.7 ms · 44.5 MB · 733k allocs | `go test -bench BenchmarkBoot -benchmem ./pkg/eval/` |
 | clojure-test-suite | 238/242 (98.3%) | `cljgo suite` |
 
@@ -71,19 +71,23 @@ bold. `cljgo run` is the interpreter, `cljgo` is the AOT binary (`cljgo build`)
 | `map-filter` | 39.9 ms | 5.1 ms | **4.8 ms** | 10.0 ms | 8.4 ms | 311.5 ms |
 | `transducers` | 89.0 ms | 16.4 ms | 25.4 ms | **13.0 ms** | — | 315.9 ms |
 | `reduce` | 61.4 ms | 26.0 ms | 22.8 ms | **20.0 ms** | 1.46 s | 302.5 ms |
-| runtime size | — | **12.7 MB** | 13 MB | 67.9 MB | 27.4 MB | 385.0 MB |
+| runtime size | — | **27.5 MB** | 13 MB | 67.9 MB | 27.4 MB | 385.0 MB |
 
 Versions: cljgo @HEAD (post-ADR-0067), let-go v1.11.1 (tag, built from source),
 babashka v1.12.218, joker v1.9.0, Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1.
 `joker` has no `transducers` and is skipped on `fib`/`tak` (~13× slower there).
 Runtime size is the stripped binary for cljgo / let-go, the installed binary for
 babashka / joker, and JDK + `clojure.jar` (381.0 + 4.0 MB) for the JVM; a
-*compiled cljgo program* is 5.3 MB. All seven benchmarks produce identical
+*compiled cljgo program* is 6.7 MB. All seven benchmarks produce identical
 values across all five runtimes (`persistent-map` differs only in hash-map print
 order, so it is compared on `[count, sum-keys, sum-vals, (get m 9999)]`).
-Not measured: **gloat** (its module exposes no installable package path) and
-**go-joker** (needs a source clone + codegen) — let-go's published M1 Pro data
-puts gloat at 12.7× let-go on `fib` and 5.4× on `reduce`.
+**Glojure** has since been measured directly in the compiled-Clojure-on-Go
+AOT-vs-AOT head-to-head on the
+[benchmarks page](https://muthuishere.github.io/cljgo/reference/benchmarks/) —
+and it honestly **wins 6 of 8 rows** there (its codegen does reduce-pipeline fusion
+and float64/int64 specialization cljgo hasn't shipped yet); cljgo takes the
+tree-recursion rows and the smallest binaries. Still not measured here:
+**go-joker** (needs a source clone + codegen).
 
 ### Two honest reads
 
@@ -145,7 +149,8 @@ compiled program. Measured then: 5.3 → 4.6 MB stripped — the tree-walker
 left, but ~13k lines of compiled core arrived, and what remains is the
 runtime a compiled binary genuinely needs (`pkg/lang`'s data structures and
 numeric tower, `pkg/corelib`'s ~700 symbols, the reader). Dual-body emission
-(ADR 0067) has since grown it back to **5.3 MB**. Size from here is a
+(ADR 0067) plus the fundamentals batches have since grown it to **6.7 MB**.
+Size from here is a
 dead-code and dual-body-trimming problem, not an AOT-core problem; ADR 0046
 records the ~2 MB prediction as superseded by measurement.
 

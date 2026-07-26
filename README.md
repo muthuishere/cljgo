@@ -30,7 +30,7 @@ binary, with byte-identical output on both paths.
 4. **High performance in both modes** — a feature, gated in CI like tests,
    not asserted.
 5. **Single-file deployment** — `cljgo build` produces one static binary
-   (5.3 MB for hello, ~5 ms startup), no JVM, no runtime install.
+   (6.7 MB for hello, ~5 ms startup), no JVM, no runtime install.
 
 ## Install
 
