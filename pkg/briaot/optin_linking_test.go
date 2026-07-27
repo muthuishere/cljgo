@@ -35,7 +35,7 @@ var alwaysLinked = []string{"pkg/briaot", "pkg/bri", "pkg/briaot/brihttp"}
 
 // TestOtelIsOptIn is ADR 0074's zero-cost proof: the OpenTelemetry SDK must
 // NOT link into a bri binary that does not require tracing. The always-linked
-// packages (+ the OTHER opt-in sub-package, bridb) must have ZERO
+// packages (+ the OTHER opt-in sub-package, cljgdatacast) must have ZERO
 // "go.opentelemetry.io" packages in their closure; only pkg/briaot/briotel
 // carries the SDK.
 func TestOtelIsOptIn(t *testing.T) {
@@ -106,7 +106,7 @@ func TestDataJSONIsOptIn(t *testing.T) {
 		t.Skip("skipping go list -deps in -short mode")
 	}
 	const codec = "github.com/muthuishere/cljgo/pkg/bri/cljson"
-	others := append(append([]string{}, alwaysLinked...), "pkg/briaot/bridb", "pkg/briaot/briotel", "pkg/briaot/brisecrets")
+	others := append(append([]string{}, alwaysLinked...), "pkg/briaot/cljgdatacast", "pkg/briaot/briotel", "pkg/briaot/cljgsecrets")
 	for _, pkg := range others {
 		if depsLinkAny(t, pkg, codec) {
 			t.Errorf("%s links pkg/bri/cljson — clojure.data.json is no longer zero-cost (ADR 0097); a JSON-less bri binary now carries the codec", pkg)
