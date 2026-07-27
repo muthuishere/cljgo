@@ -65,10 +65,16 @@ func Register(e *eval.Evaluator) {
 
 // providerLoad evaluates one bri namespace's embedded source once per
 // process (the loaded flag is set BEFORE evaluating so the
-// bri.web.html → bri.web.http require chain re-enters cleanly).
+// bri.web.html → bri.web.http require chain re-enters cleanly). The guard
+// also requires the namespace to STILL EXIST: a host that tears namespaces
+// down and re-requires (the conformance harness removes every new namespace
+// between files, ADR 0007's per-file isolation) must get a fresh load, not a
+// no-op against a namespace that is no longer there. During a live load chain
+// the namespace exists (its (in-ns …) ran first), so cycle re-entrancy still
+// short-circuits.
 func providerLoad(s bri.Spec) {
 	mu.Lock()
-	if loaded[s.Name] {
+	if loaded[s.Name] && lang.FindNamespace(lang.NewSymbol(s.Name)) != nil {
 		mu.Unlock()
 		return
 	}

@@ -27,3 +27,22 @@ var CljgOSSource string
 //
 //go:embed cljg/io.cljg
 var CljgIOSource string
+
+// CljgSystemSource is core/cljg/system.cljg — cljg.system: process +
+// environment primitives (ADR 0101). Read one env var / the whole
+// environment, exit the process, and see the argument vector; its Go half
+// (pkg/bri/cljg_system.go, installSystemShims) is thin shims over stdlib os
+// (Getenv/Environ/Exit/Args). Values are RETURNED as data, never printed
+// (owner secret doctrine). Non-OptIn (os is stdlib).
+//
+//go:embed cljg/system.cljg
+var CljgSystemSource string
+
+// CljgDateSource is core/cljg/date.cljg — cljg.date: time primitives (ADR
+// 0101). A public monotonic nano-time (promoting the `time` macro's private
+// -nano-time source), wall-clock now, and since/since-ms elapsed helpers; its
+// Go half (pkg/bri/cljg_date.go, installDateShims) is thin shims over stdlib
+// time. Non-OptIn (time is stdlib).
+//
+//go:embed cljg/date.cljg
+var CljgDateSource string

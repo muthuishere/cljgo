@@ -164,6 +164,16 @@ func Specs() []Spec {
 		// (nothing requires it) to keep the gensym numbering of earlier emitted
 		// namespaces stable.
 		{Name: "bri.core.jobs", File: "bri/jobs.cljg", Pkg: "brijobs", Source: &core.BriJobsSource, install: nil},
+		// cljg.system — process + environment primitives (ADR 0101): getenv /
+		// environ / exit / args. Pure-Go shims over stdlib os (cljg_system.go),
+		// non-OptIn. Placed LAST (nothing requires it) so it does not shift the
+		// gensym numbering of the namespaces genbri emits before it.
+		{Name: "cljg.system", File: "cljg/system.cljg", Pkg: "cljgsystem", Source: &core.CljgSystemSource, install: installSystemShims},
+		// cljg.date — time primitives (ADR 0101): a public monotonic nano-time
+		// (promoting the `time` macro's private source), wall-clock now, and
+		// since/since-ms. Pure-Go shims over stdlib time (cljg_date.go), non-OptIn.
+		// Also placed at the end to keep earlier namespaces' gensym numbering stable.
+		{Name: "cljg.date", File: "cljg/date.cljg", Pkg: "cljgdate", Source: &core.CljgDateSource, install: installDateShims},
 	}
 }
 
