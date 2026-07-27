@@ -27,3 +27,23 @@ var CljgOSSource string
 //
 //go:embed cljg/io.cljg
 var CljgIOSource string
+
+// CljgStreamSource is core/cljg/stream.cljg — cljg.stream: the ONE reducible
+// stream abstraction (ADR 0101, spike s56), shared by cljg.process and
+// cljg.net.http. A readable stream is Seqable (reduce/into/doseq over chunks in
+// constant memory) plus read-line/read-bytes/close; a writable stream is
+// buffered write + close. Its Go half (pkg/bri/stream.go, installStreamShims)
+// is thin shims over stdlib bufio/io; the surface is portable Clojure.
+//
+//go:embed cljg/stream.cljg
+var CljgStreamSource string
+
+// CljgProcessSource is core/cljg/process.cljg — cljg.process: streaming
+// subprocess spawn (ADR 0101). `spawn` keeps a child process live with
+// stdin/stdout/stderr wired to cljg.stream handles ({:in :out :err :wait
+// :kill}); cljg.io's run-to-completion exec/sh/sh! stay in cljg.io. Its Go half
+// (pkg/bri/proc_spawn.go, installProcSpawnShims) is a thin shim over os/exec's
+// StdinPipe/StdoutPipe/StderrPipe.
+//
+//go:embed cljg/process.cljg
+var CljgProcessSource string

@@ -164,6 +164,21 @@ func Specs() []Spec {
 		// (nothing requires it) to keep the gensym numbering of earlier emitted
 		// namespaces stable.
 		{Name: "bri.core.jobs", File: "bri/jobs.cljg", Pkg: "brijobs", Source: &core.BriJobsSource, install: nil},
+		// cljg.stream — the ONE reducible stream abstraction (ADR 0101, spike
+		// s56): a readable stream (Seqable → reduce/into/doseq over chunks in
+		// constant memory, plus read-line/read-bytes/close) over a Go io.Reader
+		// and a writable stream (write/close) over a Go io.Writer. Pure-Go over
+		// stdlib bufio/io (stream.go), non-OptIn. Shared by cljg.process and
+		// cljg.net.http (:as :stream). Placed LAST (nothing this list requires
+		// it) so it does not shift the gensym numbering of earlier namespaces.
+		{Name: "cljg.stream", File: "cljg/stream.cljg", Pkg: "cljgstream", Source: &core.CljgStreamSource, install: installStreamShims},
+		// cljg.process — streaming subprocess spawn (ADR 0101): spawn returns a
+		// live handle {:in <writable> :out <readable> :err <readable> :wait
+		// :kill} backed by exec.Cmd StdinPipe/StdoutPipe/StderrPipe (proc_spawn.go),
+		// its pipes wrapped as cljg.stream handles. Pure-Go over os/exec,
+		// non-OptIn. cljg.io's run-to-completion exec/sh/sh! stay in cljg.io.
+		// Also placed LAST to keep earlier gensym numbering stable.
+		{Name: "cljg.process", File: "cljg/process.cljg", Pkg: "cljgprocess", Source: &core.CljgProcessSource, install: installProcSpawnShims},
 	}
 }
 

@@ -6,6 +6,7 @@
 package bri_test
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -152,6 +153,25 @@ func TestHelperProcess(t *testing.T) {
 		os.Exit(3)
 	case "cat":
 		io.Copy(os.Stdout, os.Stdin)
+	case "upcaselines":
+		// read stdin a line at a time, echo each UPPER-CASED and flushed
+		// immediately (no EOF needed) — exercises cljg.process bidirectional
+		// streaming through the live pipes (ADR 0101).
+		sc := bufio.NewScanner(os.Stdin)
+		w := bufio.NewWriter(os.Stdout)
+		for sc.Scan() {
+			w.WriteString(strings.ToUpper(sc.Text()))
+			w.WriteByte('\n')
+			w.Flush()
+		}
+	case "count":
+		// emit N lines "line-1".."line-N" to stdout (for stream-reduce tests).
+		n, _ := strconv.Atoi(rest[1])
+		w := bufio.NewWriter(os.Stdout)
+		for i := 1; i <= n; i++ {
+			fmt.Fprintf(w, "line-%d\n", i)
+		}
+		w.Flush()
 	case "sleep":
 		ms, _ := strconv.Atoi(rest[1])
 		time.Sleep(time.Duration(ms) * time.Millisecond)
