@@ -40,13 +40,13 @@ Never hand-edit generated briaot files — run `go generate ./pkg/briaot`.
 
 ## 5. cljg.http/serve extraction (most delicate — behavior frozen)
 
-- [ ] 5.1 `core/cljg/http.cljg` — serve (port+handler, req map in/resp map out), TLS opts, stop (graceful Shutdown). Go shim carved from pkg/bri/http.go -serve into `pkg/bri/cljg_http.go` (installCljgHTTPShims); bri keeps its json/form/hmac helpers.
-- [ ] 5.2 `bri.web.http` requires cljg.http and delegates its serve/listen plumbing to it; routing/middleware/ops/var-deref live-reload logic UNCHANGED.
-- [ ] 5.3 Spec row + embed + regenerate (cljg.http BEFORE bri.web.http in Specs() so requires resolve).
-- [ ] 5.4 Conformance: new cljg.http serve round-trip test (loopback GET via cljg.net.http); ALL existing bri.web conformance + templates/web stay byte-identical — zero diffs allowed.
+- [x] 5.1 `core/cljg/http.cljg` — serve (port+handler, req map in/resp map out), TLS opts, stop (graceful Shutdown). Go shim carved from pkg/bri/http.go -serve into `pkg/bri/cljg_http.go` (installCljgHTTPShims); bri keeps its json/form/hmac helpers.
+- [x] 5.2 `bri.web.http` requires cljg.http and delegates its serve/listen plumbing to it; routing/middleware/ops/var-deref live-reload logic UNCHANGED.
+- [x] 5.3 Spec row + embed + regenerate (cljg.http BEFORE bri.web.http in Specs() so requires resolve).
+- [x] 5.4 Conformance: new cljg.http serve round-trip test (loopback GET via cljg.net.http); ALL existing bri.web conformance + templates/web stay byte-identical — zero diffs allowed.
 
 ## 6. Close-out
 
-- [ ] 6.1 Full gate green on the merged branch; TestGeneratedBriIsUpToDate passes.
-- [ ] 6.2 ADR 0103 status → accepted (Wave 1); note bri.ws/bri.grpc deferred.
+- [x] 6.1 Full gate green on the merged branch; TestGeneratedBriIsUpToDate passes.
+- [x] 6.2 ADR 0103 status → accepted (Wave 1); note bri.ws/bri.grpc deferred.
 - [ ] 6.3 Archive this change per openspec flow.

@@ -1,6 +1,6 @@
 # ADR 0103 — `cljg.*` Bun-complete: transport, security & util primitives
 
-Date: 2026-07-28 · Status: **proposed** (owner-directed, 2026-07-28: *"like Bun …
+Date: 2026-07-28 · Status: **accepted (Wave 1 shipped 2026-07-28; bri.ws/bri.grpc deferred)** — was proposed (owner-directed, 2026-07-28: *"like Bun …
 move auth as cljg.security and add password hash / save-in-keychain /
 retrieve-from-keychain … grpc can go to bri, socket to cljg.socket"*). Extends
 the taxonomy of **ADR 0085** and the lazy + opt-in doctrine of **ADR 0096/0101**.
