@@ -13,10 +13,10 @@ Never hand-edit generated briaot files — run `go generate ./pkg/briaot`.
 
 ## 2. cljg.net.dns (stdlib, additive)
 
-- [ ] 2.1 `core/cljg/net_dns.cljg` — lookup/reverse/mx/txt/srv/cname/ns.
-- [ ] 2.2 Go shim `pkg/bri/cljg_dns.go` (installDNSShims), Resolver{PreferGo:true}.
-- [ ] 2.3 Spec row + embed + regenerate.
-- [ ] 2.4 Conformance: shape-only tests that don't require network (e.g. localhost lookup + error shape), dual harness.
+- [x] 2.1 `core/cljg/net_dns.cljg` — lookup/reverse/mx/txt/srv/cname/ns.
+- [x] 2.2 Go shim `pkg/bri/cljg_dns.go` (installDNSShims), Resolver{PreferGo:true}.
+- [x] 2.3 Spec row + embed + regenerate.
+- [x] 2.4 Conformance: shape-only tests that don't require network (e.g. localhost lookup + error shape), dual harness.
 
 ## 3. cljg.compress (stdlib, additive)
 

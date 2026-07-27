@@ -1,0 +1,73 @@
+;; cljg.net.dns — DNS lookups (ADR 0103 wave 1, spike s60): the Bun.dns
+;; analog. Seven record types over the stdlib pure-Go resolver
+;; (net.Resolver{PreferGo:true} — never the cgo getaddrinfo path, so behavior
+;; is identical CGO=1/CGO=0, interpreted and compiled). Zero dependencies.
+;;
+;;   (require '[cljg.net.dns :as dns])
+;;   (dns/lookup "example.com")           ; ["93.184.215.14" "2606:2800:..."] (sorted)
+;;   (dns/reverse "8.8.8.8")              ; ["dns.google"]
+;;   (dns/mx "gmail.com")                 ; [{:host "..." :preference 5} ...]
+;;   (dns/txt "example.com")              ; ["v=spf1 ..."]
+;;   (dns/srv "imaps" "tcp" "gmail.com")  ; [{:target "..." :port 993 :priority 5 :weight 0} ...]
+;;   (dns/cname "www.github.com")         ; "github.com"
+;;   (dns/ns-records "example.com")       ; ["a.iana-servers.net" ...] (sorted)
+;;
+;; Everything is DATA — vectors of strings or maps, hostnames without the DNS
+;; trailing dot. A failed lookup throws an ex-info naming the host, with
+;; ex-data {:type :cljg.net.dns/error :query <kw> :host <name>} — never a raw
+;; Go panic. Raw record types (SOA/CAA/DNSSEC) and custom nameservers are out
+;; of scope (s60 VERDICT: stdlib covers the whole Bun.dns surface; miekg/dns
+;; stays deferred).
+;;
+;; Private Go shims interned before this loads (pkg/bri/cljg_dns.go):
+;; -dns-lookup -dns-reverse -dns-mx -dns-txt -dns-srv -dns-cname -dns-ns.
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file. `reverse` is defined here
+;; (callers write dns/reverse) so it is excluded from the clojure.core refer —
+;; it never shadows core globally (precedence principle). `ns-records` (not
+;; `ns`) for the same reason.
+(clojure.core/in-ns 'cljg.net.dns)
+(clojure.core/refer 'clojure.core :exclude '[reverse])
+
+(defn lookup
+  "Resolve `host`'s A/AAAA records: a sorted vector of IP strings (IPv4
+  dotted-quad and/or IPv6). Throws ex-info naming the host on failure."
+  [host]
+  (-dns-lookup host))
+
+(defn reverse
+  "Reverse (PTR) lookup of the IP string `ip`: a sorted vector of hostnames
+  (no trailing dot)."
+  [ip]
+  (-dns-reverse ip))
+
+(defn mx
+  "MX records for `domain`: a vector of {:host string :preference int} maps,
+  sorted by preference (lowest first)."
+  [domain]
+  (-dns-mx domain))
+
+(defn txt
+  "TXT records for `domain`: a vector of strings."
+  [domain]
+  (-dns-txt domain))
+
+(defn srv
+  "SRV records for `service`/`proto` under `domain` (e.g. \"imaps\" \"tcp\"
+  \"gmail.com\" ⇒ _imaps._tcp.gmail.com): a vector of {:target string :port
+  int :priority int :weight int} maps in RFC 2782 order."
+  [service proto domain]
+  (-dns-srv service proto domain))
+
+(defn cname
+  "The canonical name for `domain` (no trailing dot). A host with no CNAME
+  record returns its own name."
+  [domain]
+  (-dns-cname domain))
+
+(defn ns-records
+  "NS records for `domain`: a sorted vector of nameserver hostnames. Named
+  ns-records, not ns — clojure.core/ns is first-class (precedence principle)."
+  [domain]
+  (-dns-ns domain))

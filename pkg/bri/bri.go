@@ -222,6 +222,12 @@ func Specs() []Spec {
 		// non-OptIn. Placed LAST (nothing requires it) to keep the gensym
 		// numbering of earlier emitted namespaces stable.
 		{Name: "cljg.socket", File: "cljg/socket.cljg", Pkg: "cljgsocket", Source: &core.CljgSocketSource, install: installSocketShims},
+		// cljg.net.dns — DNS lookups (ADR 0103 wave 1, spike s60): the Bun.dns
+		// analog. lookup/reverse/mx/txt/srv/cname/ns-records over the stdlib
+		// pure-Go resolver (net.Resolver{PreferGo:true} — identical CGO=1/CGO=0,
+		// cljg_dns.go). Stdlib net only, so non-OptIn; placed LAST so it does
+		// not shift the gensym numbering of earlier emitted namespaces.
+		{Name: "cljg.net.dns", File: "cljg/net_dns.cljg", Pkg: "cljgnetdns", Source: &core.CljgNetDNSSource, install: installDNSShims},
 	}
 }
 

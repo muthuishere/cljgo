@@ -131,3 +131,9 @@ var CljgSecuritySource string
 //
 //go:embed cljg/socket.cljg
 var CljgSocketSource string
+// CljgNetDNSSource is core/cljg/net_dns.cljg — cljg.net.dns: DNS lookups (ADR
+// 0103, spike s60), the Bun.dns analog. lookup/reverse/mx/txt/srv/cname/
+// ns-records over the stdlib pure-Go resolver (PreferGo). Non-OptIn.
+//
+//go:embed cljg/net_dns.cljg
+var CljgNetDNSSource string
