@@ -30,6 +30,7 @@ import (
 	cljgcache "github.com/muthuishere/cljgo/pkg/briaot/cljgcache"
 	cljgdatacsv "github.com/muthuishere/cljgo/pkg/briaot/cljgdatacsv"
 	cljgdate "github.com/muthuishere/cljgo/pkg/briaot/cljgdate"
+	cljghttp "github.com/muthuishere/cljgo/pkg/briaot/cljghttp"
 	cljgio "github.com/muthuishere/cljgo/pkg/briaot/cljgio"
 	cljgjobs "github.com/muthuishere/cljgo/pkg/briaot/cljgjobs"
 	cljgnethttp "github.com/muthuishere/cljgo/pkg/briaot/cljgnethttp"
@@ -47,6 +48,7 @@ import (
 // its source position (the providers are guarded — each sub-package's Load
 // is load-once, and InstallShimsInto is idempotent re-interning).
 func init() {
+	rt.RegisterLib("cljg.http", loadCljghttp)
 	rt.RegisterLib("bri.web.http", loadBrihttp)
 	rt.RegisterLib("bri.core.config", loadBriconfig)
 	rt.RegisterLib("bri.core.audit", loadBriaudit)
@@ -83,6 +85,7 @@ func installShims(name string) {
 	}
 }
 
+func loadCljghttp()       { installShims("cljg.http"); cljghttp.Load() }
 func loadBrihttp()        { installShims("bri.web.http"); brihttp.Load() }
 func loadBriconfig()      { installShims("bri.core.config"); briconfig.Load() }
 func loadBriaudit()       { installShims("bri.core.audit"); briaudit.Load() }

@@ -88,6 +88,14 @@ func RegisterInstaller(name string, install func(def func(name string, fn func(a
 // registered from it too.
 func Specs() []Spec {
 	return []Spec{
+		// cljg.http — the raw HTTP server primitive (ADR 0103 wave 1), carved
+		// out of bri.web.http. Registered FIRST (not last like other new
+		// namespaces): genbri compiles specs strictly in this order with a
+		// panicking LibLoader, so bri.web.http's top-level
+		// (require '[cljg.http]) can only resolve against an EARLIER row. The
+		// resulting deterministic gensym renumbering across the later
+		// generated briaot files is accepted (one-time cascade).
+		{Name: "cljg.http", File: "cljg/http.cljg", Pkg: "cljghttp", Source: &core.CljgHTTPSource, install: installCljgHTTPShims},
 		{Name: "bri.web.http", File: "bri/http.cljg", Pkg: "brihttp", Source: &core.BriHTTPSource, install: installHTTPShims},
 		{Name: "bri.core.config", File: "bri/config.cljg", Pkg: "briconfig", Source: &core.BriConfigSource, install: installConfigShims},
 		{Name: "bri.core.audit", File: "bri/audit.cljg", Pkg: "briaudit", Source: &core.BriAuditSource, install: installAuditShims},

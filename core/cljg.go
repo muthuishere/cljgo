@@ -2,6 +2,16 @@ package core
 
 import _ "embed"
 
+// CljgHTTPSource is core/cljg/http.cljg — cljg.http: the raw HTTP server
+// primitive (ADR 0103 wave 1), extracted from bri.web.http. serve (port +
+// handler fn, request map in / response map out — the same Ring shape
+// bri.web.http speaks at the Go boundary), TLS opts, addr, graceful stop.
+// Its Go half (pkg/bri/cljg_http.go, installCljgHTTPShims) owns the shared
+// http.Server core bri.web.http's -serve also rides.
+//
+//go:embed cljg/http.cljg
+var CljgHTTPSource string
+
 // CljgNetHTTPSource is core/cljg/net_http.cljg — cljg.net.http: the outbound
 // HTTP client (ADR 0087), the first namespace in cljgo's cljg.* stdlib tier.
 // General mechanism (any program wants an HTTP client), pure-Go over net/http.

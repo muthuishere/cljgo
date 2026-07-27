@@ -16,7 +16,6 @@
 package bri
 
 import (
-	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
@@ -262,7 +261,7 @@ func requestMap(r *http.Request, paramNames []string, pattern string) any {
 		body = string(b)
 	}
 	pm := lang.NewMap(params...)
-	return lang.NewMap(
+	kvs := []any{
 		kwRequestMethod, lang.NewKeyword(strings.ToLower(r.Method)),
 		kwURI, r.URL.Path,
 		kwQueryString, r.URL.RawQuery,
@@ -272,8 +271,14 @@ func requestMap(r *http.Request, paramNames []string, pattern string) any {
 		kwQueryParams, lang.NewMap(query...),
 		kwBody, body,
 		kwRemoteAddr, r.RemoteAddr,
-		kwRoutePattern, pattern, // low-cardinality label for metrics/logging
-	)
+	}
+	if pattern != "" {
+		// low-cardinality label for metrics/logging; bri's mux always has a
+		// pattern — the raw cljg.http server (no routes) passes "" and the
+		// framework-namespaced key stays out of its request maps.
+		kvs = append(kvs, kwRoutePattern, pattern)
+	}
+	return lang.NewMap(kvs...)
 }
 
 func writeResponse(w http.ResponseWriter, res any) {
@@ -339,20 +344,14 @@ func serveShim(args ...any) any {
 	}
 	actual := ln.Addr().(*net.TCPAddr).Port
 
-	srv := &http.Server{
-		Handler: mux,
-		// Production timeouts default ON (ADR 0041: the safe stack is
-		// what you didn't type).
-		ReadHeaderTimeout: 10 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      30 * time.Second,
-		IdleTimeout:       60 * time.Second,
-	}
+	// The server core (production timeouts, graceful Shutdown) is the raw
+	// primitive shared with cljg.http/serve (cljg_http.go, ADR 0103) —
+	// carved out of this shim; the framework behavior around it (blocking,
+	// SIGTERM drain, :drain handles, the listening line) stays here.
+	srv := newHTTPServer(mux)
 
 	drain := func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = srv.Shutdown(ctx) // in-flight requests finish (deadline), listener closes
+		shutdownServer(srv) // in-flight requests finish (deadline), listener closes
 		for s := lang.Seq(lang.Get(opts, kwDrain)); s != nil; s = lang.Next(s) {
 			if h, ok := lang.First(s).(lang.IFn); ok {
 				h.Invoke()
