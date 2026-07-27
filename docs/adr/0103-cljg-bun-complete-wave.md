@@ -26,7 +26,7 @@ service definitions) is `bri.*` policy.
 |---|---|---|
 | **`cljg.http`** | `Bun.serve` | **Extract** the raw HTTP server (bind port + handler fn, TLS/HTTP2 from Go `net/http`) out of `bri.web.http` into `cljg.http/serve`. `bri.web` (routing-as-data, hiccup, middleware) is **rebuilt on top** — the framework keeps its opinion, the server becomes a primitive. |
 | **`cljg.socket`** | `Bun.listen` | New: TCP + UDP `listen`/`dial`/`accept`, connections as `cljg.stream` handles (ADR 0101). |
-| **`cljg.ws`** | Bun WebSocket | New: the raw websocket **connection** primitive (upgrade + bidirectional frames), a `cljg.stream`-shaped duplex. `bri.web` may add ws-route sugar on top; the connection itself is mechanism. |
+| **`bri.ws`** | Bun WebSocket | New, in **`bri`** (owner call 2026-07-28, revising the earlier `cljg.ws` placement): websocket rides the framework tier alongside `bri.grpc` — the upgrade lives in the web framework's world, not the primitive tier. Built on coder/websocket (spike s63), a `cljg.stream`-shaped duplex, later with grpc. |
 | **`cljg.security`** | `Bun.password`/`Bun.hash`/crypto | **Rename** `bri.auth` → `cljg.security` and complete it: password `hash`/`verify` (argon2/bcrypt), `hmac`, `sha*`/`blake`, secure `random`/`token`, `uuid`, base64/hex — plus **`save-to-keychain`/`get-from-keychain`** (OS keychain write+read, the primitive `cljg.secrets`' `keychain://` resolver builds on). JWT sign/verify stays here. This is the same "primitive mislabeled as framework" fix as the HTTP server. |
 | **`cljg.net.dns`** | `Bun.dns` | New: `resolve`/`lookup`/`reverse` over Go `net`. |
 | **`cljg.compress`** | zlib | New: gzip/deflate/zstd encode+decode, streaming over `cljg.stream`. |
@@ -73,11 +73,12 @@ nothing dropped. Full triage + go.mod impact + wave sequencing:
 
 ## Process (staged — not one mega-change)
 
-1. **Wave 1 (now):** `cljg.security` (rename + password + keychain), `cljg.socket`,
-   `cljg.net.dns`, `cljg.compress` — additive + one rename, tractable in parallel.
-2. **Wave 2:** `cljg.http/serve` extraction (delicate `bri.web` rewire — its own
-   ADR + care) and `cljg.ws`.
-3. **Wave 3:** `bri.grpc` (protobuf codegen — the heaviest, own ADR).
+1. **Wave 1 (now — owner-final scope 2026-07-28, "http/serve is core and also
+   socket"):** `cljg.security` (rename + password + keychain), `cljg.socket`,
+   `cljg.net.dns`, `cljg.compress`, **and `cljg.http/serve`** (extraction from
+   `bri.web.http`, delicate rewire).
+2. **Later, with bri:** `bri.ws` and `bri.grpc` — both framework-tier (owner
+   call), both spike-proven (s63/s64), both opt-in-linked when they land.
 
 Each namespace ships lazy + opt-in with oracle-or-cljgo-frozen conformance and
 dual-harness parity, gates green. **Feasibility spikes are DONE (s57–s64, all
