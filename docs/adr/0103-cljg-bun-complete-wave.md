@@ -53,6 +53,24 @@ thin Clojure API.
 - **Deliberately deferred / not mirrored**: `Bun.s3`, `Bun.redis` (bring-your-own
   backend behind `cljg.cache`), TS/JSX, HTMLRewriter, node-compat.
 
+## Feasibility — confirmed pure-Go, CGO=0 (2026-07-28, spikes s57–s64)
+
+Before building, all 8 capabilities were spiked as self-contained Go modules,
+**each compiled AND run under `CGO_ENABLED=0`** — every one green, zero cgo,
+nothing dropped. Full triage + go.mod impact + wave sequencing:
+`spikes/RESULTS-adr-0103-feasibility.md`.
+
+- **Stdlib freebies (0 deps):** `cljg.socket`, `cljg.net.dns`, `cljg.http/serve`
+  (core; h2c needs x/net).
+- **Pure-Go dep (permissive):** `cljg.security` (x/crypto, golang-jwt),
+  keychain (go-keyring **+ mandatory age encrypted-file fallback** — native
+  keychain is NEEDS-DAEMON on headless Linux), `cljg.ws` (coder/websocket, zero
+  transitive), `cljg.compress` zstd/brotli (klauspost, andybalholm — opt-in).
+- **Killer de-risk:** `bri.grpc` runs a real unary RPC with **no `protoc`, no
+  codegen** — `.proto` compiled in-process (bufbuild/protocompile) + served via
+  dynamicpb. Heavy (~12 MB) → **opt-in per-namespace link only** (ADR 0074).
+- All deps BSD/MIT/ISC/Apache-2.0, verified cgo-free (no `import "C"`, no C src).
+
 ## Process (staged — not one mega-change)
 
 1. **Wave 1 (now):** `cljg.security` (rename + password + keychain), `cljg.socket`,
@@ -62,5 +80,7 @@ thin Clojure API.
 3. **Wave 3:** `bri.grpc` (protobuf codegen — the heaviest, own ADR).
 
 Each namespace ships lazy + opt-in with oracle-or-cljgo-frozen conformance and
-dual-harness parity, gates green. Spikes only where a real risk exists (grpc
-codegen, ws framing).
+dual-harness parity, gates green. **Feasibility spikes are DONE (s57–s64, all
+green — see the section above);** refined build order is Wave A (stdlib
+freebies) → B (security) → C (keychain, reuses B's x/crypto) → D (ws) → E
+(compress + grpc, opt-in-linked, quarantined from default binary size).
