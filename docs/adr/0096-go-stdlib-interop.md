@@ -170,6 +170,64 @@ What decision 3 still covers is narrower and real: `(require-go '[net/http])`
 itself **returns cleanly and interns nothing**, so the failure surfaces later at
 the call site rather than at the form that caused it.
 
+## Every issue found while porting koine (2026-07-27)
+
+koine was built against cljgo as a tier-1 host alongside JVM Clojure, Glojure
+and let-go. Porting it surfaced the following. Each row says whether **this**
+ADR fixes it. Everything was measured against cljgo 0.1.0-dev (installed *and*
+in-repo binaries); nothing here is inferred from documentation.
+
+| # | issue | evidence | severity | fixed by 0096? |
+|---|---|---|---|---|
+| 1 | **No environment-variable access at all.** `cljg.os` is cron/service only; no `System/getenv`; `(getenv …)` unresolvable; `require-go '[os]` fails | probed all four routes | **blocker** — kills `${ENV_VAR}` expansion, hence all remote-MCP auth | **yes** — `os.Getenv` |
+| 2 | **No streaming subprocess.** `cljg.io/exec` takes `:in` as a *string* and returns after exit | `core/cljg/io.cljg:155` | **blocker** — kills MCP stdio transport | **yes** — `exec.Cmd.StdinPipe` |
+| 3 | **No streaming HTTP response.** The only shim ends in `io.ReadAll` + `defer resp.Body.Close()`; namespace exposes no other entry | `pkg/bri/net_http.go` | **blocker** — kills streaming LLM responses | **yes** — `resp.Body` |
+| 4 | **No public monotonic clock or sleep.** `-nano-time` is a real `time.Since(bootInstant)`; `-sleep-ms` likewise — both `defPrivate` into `clojure.core`, unresolvable | `pkg/corelib/macro_support_builtins.go:6` | major — durations wrong across an NTP step | **yes** — `time.Since` / `time.Sleep` |
+| 5 | **`require-go` returns cleanly and interns nothing.** `(require-go '[net/http])` succeeds; the later `http/Get` fails `no such namespace: http` | measured | major — a clean return reads as a successful capability probe; cost real debugging time | **yes** — decision 3 |
+| 6 | **core.async aliases are referred into the `user` ns only.** `<!!` `timeout` `chan` `go` resolve in a script but fail at **compile time** inside any `(ns …)` file | `pkg/corelib/chan_builtins.go:632`, applied by `InitUserNS` | major — a working script is a misleading probe for library code | **no** — separate |
+| 7 | **Inconsistent private visibility.** Privates in the `cljg.os` *namespace* ARE reachable fully-qualified (`cljg.os/-sleep-millis`); privates in `clojure.core` are not | measured | minor — confusing, and tempts dependence on non-contract vars | **no** — separate |
+| 8 | **`(str e)` on an exception prints `#object[*lang.ExceptionInfo]`** | measured | minor — a test asserting on error *text* silently passes. `ex-message` works | **no** — separate |
+| 9 | **No process exit code.** No `System/exit` equivalent found | measured | minor — but every CLI needs one | partially — `os.Exit` |
+| 10 | **`cljg.io` lacks `mkdir-p`, `rename`, `stat` (mtime/size), `temp-dir`, binary `read-bytes`/`write-bytes`** | `core/cljg/io.cljg` publics | major — `rename` is what makes a crash-safe write possible (write temp, rename); needed by durable task stores | **yes** — `os` + `path/filepath` |
+| 11 | Cannot consume from Clojars | — | — | **already addressed by ADR 0095** (proposed same day, S50/S51 closed MET) |
+
+Nine of eleven are closed by this ADR, seven of them purely because Go's stdlib
+already has the primitive. That ratio is the argument for doing interop
+properly rather than writing `cljg.*` shims one at a time.
+
+**Not cljgo's bug, recorded for context:** `file-seq` takes a string path on
+cljgo and a `java.io.File` on the JVM. Both are defensible; the divergence is
+absorbed by koine's seam. Listed only so it is not rediscovered.
+
+## Effort
+
+Measured against the code, not estimated in the abstract.
+
+| decision | scope | size | confidence |
+|---|---|---|---|
+| **1 — AOT stdlib** | `isThirdPartyGoPath` has exactly **3 call sites, all in `pkg/eval/host.go`** (:26, :61, :168) | **~½ day** inc. conformance | **high** — the spike proved the downstream go/packages path works end-to-end |
+| **3 — loud `require-go`** | `unlinkedGoError` already exists; only the form-level check is new | **~2 hours** | high |
+| **2 — interpreted registry** | `cmd/genhost`; precedent `genbri` = 235 lines, `gencore` = 147 | **3–5 days** | **medium** |
+
+Decision 2 carries the only real unknown, and it is not the generator. The
+interpreter must **reflect-call arbitrary Go signatures**. Today's seed registry
+is all simple shapes (`string → string`); `net/http` brings interfaces, structs,
+func-typed parameters and channels. Whether the existing reflect call path
+handles those is unverified, and it is exactly the kind of unknown that turns
+three days into ten. **Spike one hostile signature before committing to it.**
+
+## Sequencing
+
+1. **Decisions 1 + 3 together** — under a day, one file, three call sites.
+2. **Re-run koine's `./run-conformance.sh`.** If cljgo's named errors turn into
+   passes, all four blockers (issues 1–4) are closed **with no koine change at
+   all** — the seam absorbs it and consumers never see it.
+3. **Then reassess decision 2.** It buys only the `cljgo run` dev loop: if
+   programs are compiled, decision 1 alone is sufficient. It costs 6–10× more
+   than steps 1–2 combined, so it should be scheduled on its own merits rather
+   than carried along.
+4. Issues 6–8 are independent of this ADR and can go whenever.
+
 ## Open questions
 
 1. Should the interpreted default set be smaller? It is a CLI-size decision, not
