@@ -34,6 +34,7 @@ import (
 	// compileSpec interns the private vars (ADR 0074). genbri is a build
 	// tool — linking the OpenTelemetry SDK here is free of the user-binary
 	// zero-cost constraint.
+	_ "github.com/muthuishere/cljgo/pkg/bri/cljson"
 	_ "github.com/muthuishere/cljgo/pkg/bri/otel"
 	"github.com/muthuishere/cljgo/pkg/emit"
 	"github.com/muthuishere/cljgo/pkg/eval"

@@ -29,9 +29,12 @@ import (
 	brihttp "github.com/muthuishere/cljgo/pkg/briaot/brihttp"
 	brijobs "github.com/muthuishere/cljgo/pkg/briaot/brijobs"
 	briopenapi "github.com/muthuishere/cljgo/pkg/briaot/briopenapi"
+	cljgdatacsv "github.com/muthuishere/cljgo/pkg/briaot/cljgdatacsv"
 	cljgio "github.com/muthuishere/cljgo/pkg/briaot/cljgio"
 	cljgnethttp "github.com/muthuishere/cljgo/pkg/briaot/cljgnethttp"
 	cljgos "github.com/muthuishere/cljgo/pkg/briaot/cljgos"
+	corematch "github.com/muthuishere/cljgo/pkg/briaot/corematch"
+	toolscli "github.com/muthuishere/cljgo/pkg/briaot/toolscli"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 )
 
@@ -55,6 +58,9 @@ func init() {
 	rt.RegisterLib("bri.cli.api", loadBricliapi)
 	rt.RegisterLib("bri.core.cache", loadBricache)
 	rt.RegisterLib("bri.core.jobs", loadBrijobs)
+	rt.RegisterLib("clojure.tools.cli", loadToolscli)
+	rt.RegisterLib("clojure.data.csv", loadCljgdatacsv)
+	rt.RegisterLib("clojure.core.match", loadCorematch)
 }
 
 // installShims interns the named bri namespace's Go shims as :private vars
@@ -84,3 +90,6 @@ func loadBriopenapi()     { installShims("bri.web.openapi"); briopenapi.Load() }
 func loadBricliapi()      { installShims("bri.cli.api"); bricliapi.Load() }
 func loadBricache()       { installShims("bri.core.cache"); bricache.Load() }
 func loadBrijobs()        { installShims("bri.core.jobs"); brijobs.Load() }
+func loadToolscli()       { installShims("clojure.tools.cli"); toolscli.Load() }
+func loadCljgdatacsv()    { installShims("clojure.data.csv"); cljgdatacsv.Load() }
+func loadCorematch()      { installShims("clojure.core.match"); corematch.Load() }

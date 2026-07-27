@@ -164,6 +164,25 @@ func Specs() []Spec {
 		// (nothing requires it) to keep the gensym numbering of earlier emitted
 		// namespaces stable.
 		{Name: "bri.core.jobs", File: "bri/jobs.cljg", Pkg: "brijobs", Source: &core.BriJobsSource, install: nil},
+		// --- org.clojure contrib, natively (ADR 0097) — all LAST, so they do not
+		// shift the gensym numbering of the namespaces genbri emits before them;
+		// all LAZY + opt-in, NOT boot sources: a binary that never requires one
+		// pays zero bytes (ADR 0097 mandate B). A clojure.*-named namespace rides
+		// this same name-generic registry (cljg.io already proves a non-bri name
+		// does). ---
+		// clojure.tools.cli — GNU-style option parser, pure Clojure over
+		// clojure.string; arg parsing is one-shot, no Go host needed.
+		{Name: "clojure.tools.cli", File: "tools_cli.cljg", Pkg: "toolscli", Source: &core.ClojureToolsCLISource, install: nil},
+		// clojure.data.csv — reader/writer, pure Clojure over clojure.string/escape.
+		{Name: "clojure.data.csv", File: "data_csv.cljg", Pkg: "cljgdatacsv", Source: &core.CljDataCSVSource, install: nil},
+		// clojure.data.json — Go host JSON codec (-json-read/-json-write in the
+		// isolated pkg/bri/cljson) under a thin Clojure option layer; OptIn so the
+		// codec links only when required (mandate A: fast path is Go).
+		{Name: "clojure.data.json", File: "clojure/data_json.cljg", Pkg: "cljjson", Source: &core.DataJSONSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/cljson"},
+		// clojure.core.match — match/matchv/matchm/match-let over a real Maranget
+		// decision-tree compiler (the Go host primitive -match-compile, match.go);
+		// macroexpand-time only, so a compiled binary links zero match runtime.
+		{Name: "clojure.core.match", File: "match.cljg", Pkg: "corematch", Source: &core.CoreMatchSource, install: installMatchShims},
 	}
 }
 

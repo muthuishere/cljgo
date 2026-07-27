@@ -27,3 +27,13 @@ var CljgOSSource string
 //
 //go:embed cljg/io.cljg
 var CljgIOSource string
+
+// CljDataCSVSource is core/data_csv.cljg — clojure.data.csv (ADR 0097): a
+// native cljgo port of org.clojure/data.csv 1.1.0. read-csv/write-csv over a
+// PURE STRING surface (cljgo has no java.io.Reader/Writer), pure Clojure over
+// clojure.string/escape — NO Go shim. Loaded LAZILY (rides the same
+// name-generic registry as cljg.io, bri.Specs()); NOT a boot source, so a
+// binary that never requires it pays zero bytes.
+//
+//go:embed data_csv.cljg
+var CljDataCSVSource string

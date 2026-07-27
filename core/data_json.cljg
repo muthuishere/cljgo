@@ -1,0 +1,79 @@
+;; data_json.cljg — cljgo's clojure.data.json (ADR 0097), the org.clojure
+;; contrib JSON codec brought in NATIVELY. It is the exact clojure.data.json
+;; public API — read-str / read / write-str / write — but the hot scan/emit
+;; path is a GO HOST PRIMITIVE (pkg/bri/cljson, -json-read / -json-write),
+;; not a pure-Clojure reader: the performance mandate (MANDATE A) rejects the
+;; slow pure draft as tier-1. This namespace is THIN — it owns only the option
+;; keys, defaulting them and handing an already-resolved option map to the
+;; primitive.
+;;
+;; LAZY + OPT-IN (MANDATE B / ADR 0074): loaded on the first
+;; (require '[clojure.data.json]) in the interpreter, and opt-in-LINKED in AOT
+;; (its Go codec lives in the isolated pkg/bri/cljson, blank-imported by
+;; pkg/briaot/cljjson only when the app requires this namespace) — a binary
+;; that never requires it pays zero bytes. NOT a boot source.
+;;
+;; Astral-plane text (emoji, runes > U+FFFF) round-trips byte-identically to
+;; the JVM: the Go codec decodes \uXXXX\uXXXX surrogate pairs on read and
+;; re-encodes them on write (:escape-unicode). The pure draft's known BMP-only
+;; divergence is closed.
+;;
+;; Private Go shims interned before this loads: -json-read -json-write
+;; (pkg/bri/cljson/cljson.go).
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file.
+(clojure.core/in-ns 'clojure.data.json)
+;; :exclude read exactly like JVM clojure.data.json's (:refer-clojure :exclude
+;; [read]) — clojure.core/read exists, and a plain refer would warn-and-replace
+;; it when this namespace defines its own read.
+(clojure.core/refer 'clojure.core :exclude '[read])
+
+;; --- reading -----------------------------------------------------------------
+
+(defn read-str
+  "Reads one JSON value from the String `s`. Returns the parsed value:
+  JSON objects become maps (string keys by default), arrays become vectors,
+  strings/numbers/true/false/null become the natural cljgo values (integers are
+  longs, promoting to bigint on overflow; fractionals are doubles).
+
+  Options (keyword args):
+    :key-fn      fn applied to each object key string
+    :value-fn    fn applied as (value-fn key value) to each object value
+    :bigdec      when true, parse decimal literals as bigdec (default false)
+    :eof-error?  when false, return :eof-value at end-of-input instead of
+                 throwing (default true)
+    :eof-value   the value returned at EOF when :eof-error? is false"
+  [s & opts]
+  (-json-read s (apply hash-map opts)))
+
+(defn read
+  "Reads one JSON value from `reader` (a stream, e.g. *in*). Same options as
+  read-str. Exactly one value is consumed; the rest of the stream is left
+  intact."
+  [reader & opts]
+  (-json-read reader (apply hash-map opts)))
+
+;; --- writing -----------------------------------------------------------------
+
+(defn write-str
+  "Converts `x` to a JSON-formatted String. Maps become objects, sequential
+  collections become arrays, keywords/symbols become their name, longs/bigints/
+  doubles/bigdecs become numbers, nil becomes null.
+
+  Options (keyword args):
+    :escape-unicode        \\uXXXX-escape non-ASCII characters (default true)
+    :escape-js-separators  escape U+2028/U+2029 (default true)
+    :escape-slash          escape '/' as '\\/' (default true)
+    :indent                pretty-print with 2-space indentation (default false)
+    :key-fn                fn applied to each map key before writing
+    :value-fn              fn applied as (value-fn key value) to each value
+    :default-write-fn      fn applied to a value of an unknown type"
+  [x & opts]
+  (-json-write x (apply hash-map opts) nil))
+
+(defn write
+  "Writes `x` as JSON to `writer` (a stream). Same options as write-str.
+  Returns nil."
+  [x writer & opts]
+  (-json-write x (apply hash-map opts) writer))

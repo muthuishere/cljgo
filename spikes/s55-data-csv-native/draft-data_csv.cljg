@@ -1,0 +1,196 @@
+;; draft-data_csv.cljg — cljgo-native port of clojure.data.csv (spike s55,
+;; ADR 0097 tier-1). This is a DRAFT living under the spike dir; it is not
+;; wired into the loader / coreaot yet (see VERDICT.md integration steps).
+;;
+;; Upstream: org.clojure/data.csv 1.1.0, clojure/data/csv.clj (Jonas Enlund).
+;; EPL-1.0 — header preserved below.
+;;
+;; ─────────────────────────────────────────────────────────────────────
+;; Copyright (c) Jonas Enlund. All rights reserved.  The use and
+;; distribution terms for this software are covered by the Eclipse
+;; Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;; which can be found in the file epl-v10.html at the root of this
+;; distribution.  By using this software in any fashion, you are
+;; agreeing to be bound by the terms of this license.  You must not
+;; remove this notice, or any other, from this software.
+;; ─────────────────────────────────────────────────────────────────────
+;;
+;; cljgo port notes (what changed from upstream, and why):
+;;   * The JVM version reads through a java.io.PushbackReader (over a
+;;     StringReader or an arbitrary Reader) and accumulates cells in a
+;;     StringBuilder. cljgo has no JVM. The reader is re-expressed as a
+;;     tiny PURE-CLOJURE one-char-pushback reader over a String (`pb-reader`
+;;     below), and cells accumulate in an immutable string. The char-code
+;;     state machine (lf / cr / eof / sep / quote sentinels, CRLF folding,
+;;     doubled-quote un-escaping) is ported VERBATIM in shape — same condp
+;;     branches, same sentinels — so behavior is identical.
+;;   * The public API, namespace, arglists and OPTION KEYS are unchanged:
+;;       (read-csv  input & {:keys [separator quote]})
+;;       (write-csv writer data & {:keys [separator quote quote? newline]})
+;;   * The writer half wrote through a java.io.Writer. Here `write-csv`
+;;     binds *out* to `writer` and emits with `print`, so the idiomatic
+;;     cljgo sink is (with-out-str (write-csv *out* data ...)) — identical
+;;     bytes to the JVM StringWriter path. A real streaming file/socket
+;;     Writer needs a host writer abstraction (flagged in VERDICT.md).
+;;   * java.io.Reader input (streaming, non-String) is NOT ported natively:
+;;     it requires a host streaming char-reader (a NEW cljg.io host fn).
+;;     read-csv throws a clear error for non-String input rather than
+;;     silently diverging. String input — the common case — is native.
+;;   * Error MESSAGES on malformed input use ex-info (cljgo has no
+;;     java.io.EOFException and no %c format); the message text is a close
+;;     paraphrase, not byte-frozen. Happy paths are byte-identical & frozen.
+
+(clojure.core/in-ns 'clojure.data.csv)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+
+;; ── Reading ──────────────────────────────────────────────────────────
+
+(def ^{:private true} lf  (int \newline))
+(def ^{:private true} cr  (int \return))
+(def ^{:private true} eof -1)
+
+;; pb-reader: a pure-Clojure stand-in for java.io.PushbackReader with a
+;; one-slot pushback buffer, over an in-memory String. `rd` returns the
+;; next char CODE (int) or `eof` (-1) and advances; `unrd` pushes a code
+;; back so the next `rd` returns it — mirroring PushbackReader exactly,
+;; including pushing back `eof` (a subsequent read stays at eof). The
+;; pushback slot holds an int code or nil (= empty); code 0 is truthy in
+;; Clojure so `(nil? pb)` — not `(if pb)` — decides emptiness.
+(defn- pb-reader [s]
+  (atom {:s s :n (count s) :i 0 :pb nil}))
+
+(defn- rd [r]
+  (let [{:keys [s n i pb]} @r]
+    (if (nil? pb)
+      (if (< i n)
+        (do (swap! r assoc :i (inc i)) (int (nth s i)))
+        eof)
+      (do (swap! r assoc :pb nil) pb))))
+
+(defn- unrd [r ch]
+  (swap! r assoc :pb ch)
+  nil)
+
+;; read-quoted-cell / read-cell return [cell-string sentinel] where
+;; sentinel is :sep | :eol | :eof — same three the JVM version signaled
+;; through its return value + mutated StringBuilder.
+(defn- read-quoted-cell [r acc sep quote]
+  (let [ch (rd r)]
+    (condp == ch
+      quote (let [next-ch (rd r)]
+              (condp == next-ch
+                quote (recur r (str acc (char quote)) sep quote)
+                sep   [acc :sep]
+                lf    [acc :eol]
+                cr    (let [nn (rd r)]
+                        (when (not= nn lf) (unrd r nn))
+                        [acc :eol])
+                eof   [acc :eof]
+                (throw (ex-info (str "CSV error (unexpected character: " (char next-ch) ")")
+                                {:char next-ch}))))
+      eof (throw (ex-info "CSV error (unexpected end of file)" {}))
+      (recur r (str acc (char ch)) sep quote))))
+
+(defn- read-cell [r sep quote]
+  (let [first-ch (rd r)]
+    (if (== first-ch quote)
+      (read-quoted-cell r "" sep quote)
+      (loop [ch first-ch acc ""]
+        (condp == ch
+          sep [acc :sep]
+          lf  [acc :eol]
+          cr  (let [nn (rd r)]
+                (when (not= nn lf) (unrd r nn))
+                [acc :eol])
+          eof [acc :eof]
+          (recur (rd r) (str acc (char ch))))))))
+
+(defn- read-record [r sep quote]
+  (loop [record (transient [])]
+    (let [[cell sentinel] (read-cell r sep quote)]
+      (if (= sentinel :sep)
+        (recur (conj! record cell))
+        [(persistent! (conj! record cell)) sentinel]))))
+
+(defn- read-csv-lazy [r sep quote]
+  (lazy-seq
+   (let [[record sentinel] (read-record r sep quote)]
+     (case sentinel
+       :eol (cons record (read-csv-lazy r sep quote))
+       :eof (when-not (= record [""])
+              (cons record nil))))))
+
+(defn read-csv
+  "Reads CSV-data from input (a String) into a lazy sequence of vectors.
+
+   Valid options are
+     :separator (default \\,)
+     :quote (default \\\")
+
+   NOTE (cljgo): only String input is supported natively; streaming
+   java.io.Reader input needs a host char-reader and is not yet available."
+  [input & options]
+  (let [{:keys [separator quote] :or {separator \, quote \"}} options
+        r (if (string? input)
+            (pb-reader input)
+            (throw (ex-info "clojure.data.csv/read-csv: only String input is supported natively (streaming Reader needs a host char-reader)"
+                            {:input-type (type input)})))]
+    (read-csv-lazy r (int separator) (int quote))))
+
+;; ── Writing ──────────────────────────────────────────────────────────
+;; Emits to *out*; write-csv binds *out* to `writer`. In the write path
+;; `quote` and `sep` stay CHARS (not int codes), matching upstream.
+
+(defn- write-cell [obj sep quote quote?]
+  (let [string     (str obj)
+        must-quote (quote? string)]
+    (when must-quote (print quote))
+    (print (if must-quote
+             (str/escape string {quote (str quote quote)})
+             string))
+    (when must-quote (print quote))))
+
+(defn- write-record [record sep quote quote?]
+  (loop [record record]
+    (when-first [cell record]
+      (write-cell cell sep quote quote?)
+      (when-let [more (next record)]
+        (print sep)
+        (recur more)))))
+
+(defn- write-csv*
+  [records sep quote quote? newline]
+  (loop [records records]
+    (when-first [record records]
+      (write-record record sep quote quote?)
+      (print newline)
+      (recur (next records)))))
+
+(defn write-csv
+  "Writes data to writer in CSV-format.
+
+   Valid options are
+     :separator (Default \\,)
+     :quote (Default \\\")
+     :quote? (A predicate function which determines if a string should be
+              quoted. Defaults to quoting only when necessary.)
+     :newline (:lf (default) or :cr+lf)
+
+   NOTE (cljgo): `writer` is bound to *out* and cells are emitted with
+   `print`; capture with (with-out-str (write-csv *out* data ...))."
+  [writer data & options]
+  (let [opts      (apply hash-map options)
+        separator (or (:separator opts) \,)
+        quote     (or (:quote opts) \")
+        quote?    (or (:quote? opts)
+                      (let [should-quote #{separator quote \return \newline}]
+                        #(some should-quote %)))
+        newline   (or (:newline opts) :lf)]
+    (binding [*out* writer]
+      (write-csv* data
+                  separator
+                  quote
+                  quote?
+                  ({:lf "\n" :cr+lf "\r\n"} newline)))
+    nil))

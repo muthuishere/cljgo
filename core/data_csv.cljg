@@ -1,0 +1,171 @@
+;; Copyright (c) Jonas Enlund. All rights reserved.  The use and
+;; distribution terms for this software are covered by the Eclipse
+;; Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;; which can be found in the file epl-v10.html at the root of this
+;; distribution.  By using this software in any fashion, you are
+;; agreeing to be bound by the terms of this license.  You must not
+;; remove this notice, or any other, from this software.
+;;
+;; clojure.data.csv — Reading and writing comma separated values (ADR 0097).
+;; A native cljgo port of org.clojure/data.csv 1.1.0. The upstream reader is
+;; a PushbackReader state machine and the writer targets a java.io.Writer;
+;; cljgo has neither Java IO type, so this port presents a PURE STRING SURFACE
+;; (owner Mandate A: full completeness under a thin idiomatic API, no degraded
+;; secondary version):
+;;
+;;   (require '[clojure.data.csv :as csv])
+;;   (csv/read-csv "a,b\n1,2")            ; => (["a" "b"] ["1" "2"])  (lazy)
+;;   (csv/read-csv s :separator \; :quote \')
+;;   (csv/write-csv [["a" "b"] ["1" "2"]]) ; => "a,b\n1,2\n"  (a String)
+;;   (csv/write-csv data :separator \; :quote? some-pred :newline :cr+lf)
+;;
+;; read-csv semantics (cell/record splitting, quote-doubling, CR/CRLF/LF line
+;; endings, the trailing-empty-record drop) are frozen byte-for-byte against
+;; the JVM oracle (conformance/tests/data-csv-*.clj). write-csv returns the
+;; exact string the JVM writes to a java.io.StringWriter. Malformed-input error
+;; text is cljgo's own (there is no JVM StringReader to mirror).
+;;
+;; Loaded LAZILY as an embedded namespace (ADR 0041/0087, riding the same
+;; name-generic registry as cljg.io): NO (ns …) form — the fully-qualified
+;; in-ns + refer open the file, then the require of clojure.string (a boot
+;; namespace, always resolvable). NOT a boot source (Mandate B): it links only
+;; when an app requires it, and pays zero bytes otherwise.
+(clojure.core/in-ns 'clojure.data.csv)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.string :as str])
+
+;; --- Reading -----------------------------------------------------------------
+;;
+;; A pure-String state machine mirroring the upstream PushbackReader loop. Each
+;; reader fn takes the source string `s`, its length `n`, and the current index
+;; `i`, and returns [cell-string sentinel next-index]. The sentinel is one of
+;; :sep (a separator ended the cell), :eol (a line ending ended it), or :eof
+;; (end of input ended it) — the same three the upstream `read-cell` returns.
+
+(defn- read-quoted-cell
+  "Read a quoted cell; `i` points just past the opening quote. A doubled quote
+  is a literal quote; the closing quote must be followed by a separator, a line
+  ending, or end of input (else it is malformed input)."
+  [s n i sep quote]
+  (loop [i i, acc []]
+    (if (>= i n)
+      (throw (ex-info "clojure.data.csv: unexpected end of input inside a quoted field"
+                      {:error :unterminated-quote}))
+      (let [ch (nth s i)]
+        (if (= ch quote)
+          (let [j (inc i)]
+            (if (>= j n)
+              [(apply str acc) :eof j]
+              (let [nc (nth s j)]
+                (cond
+                  (= nc quote)      (recur (inc j) (conj acc quote))
+                  (= nc sep)        [(apply str acc) :sep (inc j)]
+                  (= nc \newline)   [(apply str acc) :eol (inc j)]
+                  (= nc \return)    (let [k (inc j)]
+                                      (if (and (< k n) (= (nth s k) \newline))
+                                        [(apply str acc) :eol (inc k)]
+                                        [(apply str acc) :eol k]))
+                  :else (throw (ex-info (str "clojure.data.csv: unexpected character after a "
+                                             "closing quote: " (pr-str nc))
+                                        {:error :unexpected-char :char nc :index j}))))))
+          (recur (inc i) (conj acc ch)))))))
+
+(defn- read-cell
+  "Read one cell starting at `i`. A cell beginning with the quote char is a
+  quoted cell; otherwise it runs until a separator, a line ending, or EOF."
+  [s n i sep quote]
+  (if (and (< i n) (= (nth s i) quote))
+    (read-quoted-cell s n (inc i) sep quote)
+    (loop [j i]
+      (if (>= j n)
+        [(subs s i j) :eof j]
+        (let [ch (nth s j)]
+          (cond
+            (= ch sep)      [(subs s i j) :sep (inc j)]
+            (= ch \newline) [(subs s i j) :eol (inc j)]
+            (= ch \return)  (let [k (inc j)]
+                              (if (and (< k n) (= (nth s k) \newline))
+                                [(subs s i j) :eol (inc k)]
+                                [(subs s i j) :eol k]))
+            :else (recur (inc j))))))))
+
+(defn- read-record
+  "Read one record (a vector of cell strings) starting at `i`, consuming cells
+  until one ends in a line ending or EOF. Returns [record sentinel next-index]."
+  [s n i sep quote]
+  (loop [i i, record []]
+    (let [[cell sentinel next-i] (read-cell s n i sep quote)]
+      (if (= sentinel :sep)
+        (recur next-i (conj record cell))
+        [(conj record cell) sentinel next-i]))))
+
+(defn- read-csv-from
+  "The lazy record producer over source string `s` from index `i`."
+  [s n i sep quote]
+  (lazy-seq
+   (let [[record sentinel next-i] (read-record s n i sep quote)]
+     (case sentinel
+       :eol (cons record (read-csv-from s n next-i sep quote))
+       :eof (when-not (= record [""])
+              (cons record nil))))))
+
+(defn read-csv
+  "Reads CSV-data from `input` (a String) into a lazy sequence of vectors of
+  strings, one vector per record.
+
+  Valid options are
+    :separator (default \\,)
+    :quote     (default \\\")"
+  [input & options]
+  (when-not (string? input)
+    (throw (ex-info (str "clojure.data.csv/read-csv: input must be a string, got: "
+                         (pr-str input))
+                    {:error :not-a-string})))
+  (let [opts (apply hash-map options)
+        sep   (get opts :separator \,)
+        quote (get opts :quote \")]
+    (read-csv-from input (count input) 0 sep quote)))
+
+;; --- Writing -----------------------------------------------------------------
+
+(defn- write-cell
+  "Render one cell to its CSV field string, quoting (and doubling embedded
+  quotes) when `quote?` says the rendered string needs it."
+  [obj sep quote quote?]
+  (let [string     (str obj)
+        must-quote (quote? string)]
+    (if must-quote
+      (str quote (str/escape string {quote (str quote quote)}) quote)
+      string)))
+
+(defn- write-record
+  "Render one record (a seq of cells) to a CSV line (no trailing newline)."
+  [record sep quote quote?]
+  (str/join (str sep) (map #(write-cell % sep quote quote?) record)))
+
+(defn write-csv
+  "Writes `data` (a seq of seqs of cells) to CSV format and returns the result
+  as a String (cljgo has no java.io.Writer — the pure-String surface, Mandate
+  A). The returned string is byte-identical to what the JVM data.csv writes to
+  a java.io.StringWriter.
+
+  Valid options are
+    :separator (default \\,)
+    :quote     (default \\\")
+    :quote?    (a predicate on the rendered field string deciding whether it
+                must be quoted; defaults to quoting only when the field
+                contains the separator, the quote, CR, or LF)
+    :newline   (:lf (default) or :cr+lf)"
+  [data & options]
+  (let [opts      (apply hash-map options)
+        separator (or (:separator opts) \,)
+        quote     (or (:quote opts) \")
+        quote?    (or (:quote? opts)
+                      (let [should-quote #{separator quote \return \newline}]
+                        #(some should-quote %)))
+        newline   (or (:newline opts) :lf)
+        nl        ({:lf "\n" :cr+lf "\r\n"} newline)]
+    (apply str
+           (mapcat (fn [record]
+                     [(write-record record separator quote quote?) nl])
+                   data))))

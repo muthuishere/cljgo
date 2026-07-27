@@ -93,3 +93,26 @@ func TestSecretsIsOptIn(t *testing.T) {
 		t.Error("pkg/briaot/brisecrets does NOT link go-keyring — the opt-in namespace cannot reach a secret store")
 	}
 }
+
+// TestDataJSONIsOptIn is ADR 0097's zero-cost proof (MANDATE B): the JSON codec
+// (pkg/bri/cljson) must NOT link into a bri binary that never requires
+// clojure.data.json. Its Go codec pulls no heavy dependency, but the opt-in
+// mechanism still guarantees strict per-namespace linking — the umbrella and
+// every other sub-package must have ZERO pkg/bri/cljson in their closure; only
+// pkg/briaot/cljjson (blank-imported by the emitter when the app requires the
+// namespace) carries it.
+func TestDataJSONIsOptIn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping go list -deps in -short mode")
+	}
+	const codec = "github.com/muthuishere/cljgo/pkg/bri/cljson"
+	others := append(append([]string{}, alwaysLinked...), "pkg/briaot/bridb", "pkg/briaot/briotel", "pkg/briaot/brisecrets")
+	for _, pkg := range others {
+		if depsLinkAny(t, pkg, codec) {
+			t.Errorf("%s links pkg/bri/cljson — clojure.data.json is no longer zero-cost (ADR 0097); a JSON-less bri binary now carries the codec", pkg)
+		}
+	}
+	if !depsLinkAny(t, "pkg/briaot/cljjson", codec) {
+		t.Error("pkg/briaot/cljjson does NOT link pkg/bri/cljson — the opt-in namespace cannot read/write JSON")
+	}
+}
