@@ -155,23 +155,20 @@ uuid: c6ffa7e5-3149-469f-98a3-f24fbd62a1e1
 So the zero-bindings go/packages path works, and decision 1 really is the small
 change it claims to be.
 
-**But the same source diverges between modes.** During `cljgo build`'s own
-interpreter pass the identical program printed:
+**Correction to an earlier draft of this ADR.** That draft reported a
+REPL-vs-binary divergence, because the same program printed an empty string
+under `cljgo build`'s interpreter pass. That was a misreading: the empty result
+is `e.HostUnlinkedTolerant` behaving exactly as designed — during the AOT
+discovery pass, arguments run for their side effects and the unlinked host call
+is a deliberate compile-time no-op, since the emitted binary makes the real
+call (`pkg/eval/host.go:26-31, 61-68`). Outside that pass the same code returns
+`unlinkedGoError` (ADR 0053 decision 2), which is what `cljgo run` actually
+does. There is **no divergence**: `cljgo run` errors loudly, `cljgo build`
+produces a working binary. No bug here.
 
-```
-uuid:            <- empty. The unlinked host call silently returned nil.
-```
-
-That is a **REPL-vs-binary divergence shipping today** — the failure mode ADR
-0007 and the dual-harness conformance suite exist to prevent — and it is
-independent of this ADR. `(require-go '[github.com/google/uuid :as uuid])`
-followed by `(uuid/NewString)` yields a real UUID compiled and `nil`
-interpreted, with no error either way.
-
-Decision 3 covers it: an unlinked host call MUST be loud. Recommend fixing that
-**before**, or at least alongside, decisions 1 and 2 — widening stdlib access
-without it multiplies the number of ways a program can behave differently in the
-REPL than in its binary.
+What decision 3 still covers is narrower and real: `(require-go '[net/http])`
+itself **returns cleanly and interns nothing**, so the failure surfaces later at
+the call site rather than at the form that caused it.
 
 ## Open questions
 
