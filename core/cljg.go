@@ -124,3 +124,10 @@ var CljgProcessSource string
 //
 //go:embed cljg/security.cljg
 var CljgSecuritySource string
+
+// CljgSocketSource is core/cljg/socket.cljg — cljg.socket: raw sockets (ADR
+// 0103, spike s59). TCP/unix listen+accept+dial (plain or TLS) with
+// connections as cljg.stream-composable duplex handles, plus UDP datagrams.
+//
+//go:embed cljg/socket.cljg
+var CljgSocketSource string
