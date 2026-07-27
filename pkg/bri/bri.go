@@ -199,6 +199,11 @@ func Specs() []Spec {
 		// cljg.process — streaming subprocess: spawn -> {:in :out :err :wait :kill}
 		// over exec.Cmd pipes wrapped as cljg.stream handles.
 		{Name: "cljg.process", File: "cljg/process.cljg", Pkg: "cljgprocess", Source: &core.CljgProcessSource, install: installProcSpawnShims},
+		// cljg.compress — stdlib gzip/deflate/zlib compress+decompress (ADR
+		// 0103 wave 1, spike s61) over Go's compress/*; decompress-on-read
+		// streaming wraps cljg.stream readables (registered AFTER cljg.stream
+		// so its handles exist). zstd/brotli deferred to an opt-in package.
+		{Name: "cljg.compress", File: "cljg/compress.cljg", Pkg: "cljgcompress", Source: &core.CljgCompressSource, install: installCompressShims},
 	}
 }
 
