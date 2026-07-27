@@ -94,6 +94,34 @@ func TestSecretsIsOptIn(t *testing.T) {
 	}
 }
 
+// TestSecurityKeychainIsOptIn is ADR 0103's zero-cost proof: cljg.security's
+// keychain trio (go-keyring + filippo.io/age, in the isolated pkg/bri/security)
+// must NOT link into a binary that never requires cljg.security. The
+// always-linked packages (+ the other opt-in sub-packages) must have ZERO
+// go-keyring/godbus/age packages in their closure; pkg/briaot/cljgsecurity —
+// blank-imported by the emitter only when the app requires cljg.security —
+// DOES carry them (its provider.go blank-imports pkg/bri/security). The
+// crypto/JWT half (stdlib + x/crypto) stays in always-linked pkg/bri by
+// design; only the keychain deps are gated.
+func TestSecurityKeychainIsOptIn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping go list -deps in -short mode")
+	}
+	shim := "github.com/muthuishere/cljgo/pkg/bri/security"
+	keyring, agepkg := "github.com/zalando/go-keyring", "filippo.io/age"
+	for _, pkg := range append(append([]string{}, alwaysLinked...), "pkg/briaot/cljgdatacast", "pkg/briaot/briotel") {
+		if depsLinkAny(t, pkg, shim, agepkg) {
+			t.Errorf("%s links pkg/bri/security (keyring/age) — cljg.security's keychain is no longer zero-cost (ADR 0103)", pkg)
+		}
+	}
+	if !depsLinkAny(t, "pkg/briaot/cljgsecurity", keyring) {
+		t.Error("pkg/briaot/cljgsecurity does NOT link go-keyring — cljg.security cannot reach the native keychain")
+	}
+	if !depsLinkAny(t, "pkg/briaot/cljgsecurity", agepkg) {
+		t.Error("pkg/briaot/cljgsecurity does NOT link filippo.io/age — cljg.security has no encrypted-file fallback")
+	}
+}
+
 // TestDataJSONIsOptIn is ADR 0097's zero-cost proof (MANDATE B): the JSON codec
 // (pkg/bri/cljson) must NOT link into a bri binary that never requires
 // clojure.data.json. Its Go codec pulls no heavy dependency, but the opt-in

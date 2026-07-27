@@ -1,4 +1,4 @@
-# bri.core.security — API-first security
+# cljg.security — API-first security
 
 Security in one blessed way (ADR 0069): HS256 JWTs (algorithm PINNED
 server-side — the token's own `alg` is never trusted), argon2id passwords,
@@ -14,7 +14,7 @@ Full guide on the site: https://muthuishere.github.io/cljgo/bri/auth/
 ## JWT
 
 ```clojure
-(require '[bri.core.security :as auth])
+(require '[cljg.security :as auth])
 
 (auth/sign {:sub "u" :role "admin"})            ; iat/exp injected; exp default 3600s
 (auth/verify token)     ; → claims, or nil (bad sig / wrong alg / malformed / expired)
@@ -71,6 +71,27 @@ cap). After `:threshold` denials (401/403) inside `:window-ms`, ban for
 ```
 
 In-process store (single-instance); swap `:store` for a shared backing.
+
+## Crypto + keychain primitives (ADR 0103)
+
+```clojure
+(auth/sha256 "abc")            ; lowercase hex digest
+(auth/hmac "key" "message")    ; HMAC-SHA256, hex
+(auth/random 16)               ; 16 secure random bytes as 32 hex chars
+(auth/token)                   ; 256-bit URL-safe random token
+(auth/uuid)                    ; random v4 UUID
+(auth/base64 s) (auth/base64-decode s)   ; nil on invalid input
+(auth/hex s)    (auth/hex-decode s)      ; nil on invalid input
+
+;; the s65 unified keychain: native OS store when reachable, machine-local
+;; age-encrypted file fallback otherwise ({:backend :auto|:native|:file})
+(auth/save-to-keychain "my-app" "api-token" secret)   ; → :native or :file
+(auth/get-from-keychain "my-app" "api-token")         ; → value, or nil
+(auth/delete-from-keychain "my-app" "api-token")
+```
+
+Keychain deps (go-keyring + age) live in an isolated opt-in package — a
+binary that never requires `cljg.security` links none of it.
 
 ## From bri.web.http (default-on in the relevant stack)
 

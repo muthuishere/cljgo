@@ -30,6 +30,7 @@ import (
 	_ "github.com/muthuishere/cljgo/pkg/bri/db"
 	_ "github.com/muthuishere/cljgo/pkg/bri/otel"
 	_ "github.com/muthuishere/cljgo/pkg/bri/secrets"
+	_ "github.com/muthuishere/cljgo/pkg/bri/security"
 	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"

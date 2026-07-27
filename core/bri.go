@@ -35,14 +35,6 @@ var BriConfigSource string
 //go:embed bri/audit.cljg
 var BriAuditSource string
 
-// BriAuthSource is core/bri/auth.cljg — bri.core.security: HS256 JWT (sign/
-// verify/issue, alg pinned), argon2id passwords, the composable guard
-// family (guard/logged-in-only/role-only/user-only/admin-only) and
-// abuse protection (auto-ban), all Ring middleware (ADR 0069).
-//
-//go:embed bri/auth.cljg
-var BriAuthSource string
-
 // BriOtelSource is core/bri/otel.cljg — bri.core.telemetry: OPT-IN OpenTelemetry
 // distributed tracing (ADR 0074). A server-span-per-request middleware
 // ((otel/trace)), W3C trace-context propagation, and an OTLP exporter,

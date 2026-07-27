@@ -1,9 +1,16 @@
-;; bri.core.security — API-first security in ONE blessed way (ADR 0069). JWT
-;; HS256 (algorithm PINNED server-side — the token's own alg header is
-;; never trusted), argon2id passwords (bcrypt-verify for legacy), a
-;; composable guard family that is plain Ring middleware (handler ->
-;; handler, so `->` composes them), and abuse protection (auto-ban).
-;; Every security decision (401/403/ban/token-issued) is audited.
+;; cljg.security — the security PRIMITIVE namespace (ADR 0103, renamed from
+;; bri.core.security — same "primitive mislabeled as framework" fix as
+;; cljg.http/serve). JWT HS256 (algorithm PINNED server-side — the token's
+;; own alg header is never trusted), argon2id passwords (bcrypt-verify for
+;; legacy), a composable guard family that is plain Ring middleware
+;; (handler -> handler, so `->` composes them), abuse protection
+;; (auto-ban), and — the Bun.password/Bun.hash/crypto tier — sha256, hmac,
+;; secure random/token, uuid, base64/hex, plus the s65 UNIFIED keychain:
+;; save-to-keychain / get-from-keychain / delete-from-keychain over the
+;; native OS credential store with a machine-local age-encrypted-file
+;; fallback (headless boxes, CI), selectable via {:backend
+;; :auto|:native|:file}. Every security decision
+;; (401/403/ban/token-issued) is audited.
 ;;
 ;; Perf (spike s44, Apple M5 Pro): sign ~350 ns, verify ~760 ns (both
 ;; 2-3x faster + a third of the allocs vs golang-jwt/v5); the guard
@@ -11,10 +18,14 @@
 ;; request. argon2id is DELIBERATELY ~16 ms — slow is correct for
 ;; passwords; never SIMD-fast.
 ;;
-;; Private Go shims interned before this loads: -jwt-sign -jwt-verify
-;; -argon2-hash -argon2-verify -bcrypt-verify -rand-token -now-millis
-;; -getenv.
-(clojure.core/in-ns 'bri.core.security)
+;; Private Go shims interned before this loads (crypto/JWT from pkg/bri
+;; security.go; the -keychain-* trio from the ISOLATED opt-in
+;; pkg/bri/security so the keyring client never links unrequired):
+;; -jwt-sign -jwt-verify -argon2-hash -argon2-verify -bcrypt-verify
+;; -rand-token -now-millis -getenv -sha256 -hmac-sha256 -secure-random
+;; -uuid -b64-encode -b64-decode -hex-encode -hex-decode -keychain-set
+;; -keychain-get -keychain-del.
+(clojure.core/in-ns 'cljg.security)
 (clojure.core/refer 'clojure.core)
 (require '[clojure.string :as str])
 (require '[bri.core.audit :as audit])
@@ -97,6 +108,84 @@
     (str/starts-with? hash "$argon2") (-argon2-verify pw hash)
     (str/starts-with? hash "$2")      (-bcrypt-verify pw hash)
     :else false))
+
+;; --- crypto primitives (the Bun.hash/crypto tier, ADR 0103) ------------
+(defn sha256
+  "SHA-256 digest of a string, as lowercase hex."
+  [s]
+  (-sha256 s))
+
+(defn hmac
+  "HMAC-SHA256 of message with key, as lowercase hex."
+  [key message]
+  (-hmac-sha256 key message))
+
+(defn random
+  "n cryptographically secure random bytes (crypto/rand), as lowercase
+  hex (a 2n-char string)."
+  [n]
+  (-secure-random n))
+
+(defn token
+  "A 256-bit URL-safe random token (crypto/rand, base64url) — session
+  ids, API keys, CSRF tokens."
+  []
+  (-rand-token))
+
+(defn uuid
+  "A random (v4) UUID string from crypto/rand."
+  []
+  (-uuid))
+
+(defn base64
+  "Standard base64 of a string."
+  [s]
+  (-b64-encode s))
+
+(defn base64-decode
+  "Decode standard base64 back to the string, or nil on invalid input."
+  [s]
+  (-b64-decode s))
+
+(defn hex
+  "Lowercase hex of a string's bytes."
+  [s]
+  (-hex-encode s))
+
+(defn hex-decode
+  "Decode hex back to the string, or nil on invalid input."
+  [s]
+  (-hex-decode s))
+
+;; --- keychain (s65 unified store: native OS keychain, age-file fallback) ---
+;; The opts map takes {:backend :auto|:native|:file} (default :auto —
+;; probe the native store, fall back to the machine-local age-encrypted
+;; file under the user config dir). save/delete RETURN the backend that
+;; served the call (:native or :file) so callers can report it; get
+;; returns the value, or nil when absent (both backends).
+(defn ^:private backend-name [opts]
+  (name (or (:backend opts) :auto)))
+
+(defn save-to-keychain
+  "Store secret value under (service, account). Returns the backend
+  keyword that stored it (:native or :file). The value is never printed
+  or logged."
+  ([service account value] (save-to-keychain service account value {}))
+  ([service account value opts]
+   (keyword (-keychain-set (str service) (str account) (str value) (backend-name opts)))))
+
+(defn get-from-keychain
+  "The secret for (service, account), or nil when absent."
+  ([service account] (get-from-keychain service account {}))
+  ([service account opts]
+   (-keychain-get (str service) (str account) (backend-name opts))))
+
+(defn delete-from-keychain
+  "Delete (service, account); absent is a no-op. Returns the backend
+  keyword that handled it (:native or :file)."
+  ([service account] (delete-from-keychain service account {}))
+  ([service account opts]
+   (keyword (-keychain-del (str service) (str account) (backend-name opts)))))
 
 ;; --- guards (composable Ring middleware) -------------------------------
 (defn ^:private bearer [req]

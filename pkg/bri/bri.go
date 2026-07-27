@@ -39,6 +39,8 @@ import (
 // before the source evaluates. install is nil for a pure-Clojure
 // namespace (bri.web.html) or for an OptIn namespace whose shims live in an
 // isolated package that registers itself via RegisterInstaller (bri.core.telemetry).
+// A namespace may carry BOTH (cljg.security, ADR 0103): cheap stdlib shims
+// here plus a heavy opt-in trio via the registry — InstallShimsInto runs both.
 type Spec struct {
 	Name    string  // "bri.web.http"
 	File    string  // "bri/http.cljg" (bound to *file* while loading)
@@ -82,7 +84,7 @@ func RegisterInstaller(name string, install func(def func(name string, fn func(a
 
 // Specs returns the bri namespaces in DEPENDENCY-SAFE load order:
 // bri.web.http first (nothing bri depends on it at load time), then the
-// namespaces that require it (bri.web.html) or bri.core.audit (bri.core.security). genbri
+// namespaces that require it (bri.web.html) or bri.core.audit (cljg.security). genbri
 // compiles them in this order — each namespace's vars must exist before a
 // later one's top-level require resolves — and pkg/briaot's providers are
 // registered from it too.
@@ -100,7 +102,13 @@ func Specs() []Spec {
 		{Name: "bri.core.config", File: "bri/config.cljg", Pkg: "briconfig", Source: &core.BriConfigSource, install: installConfigShims},
 		{Name: "bri.core.audit", File: "bri/audit.cljg", Pkg: "briaudit", Source: &core.BriAuditSource, install: installAuditShims},
 		{Name: "bri.web.html", File: "bri/html.cljg", Pkg: "brihtml", Source: &core.BriHTMLSource, install: nil},
-		{Name: "bri.core.security", File: "bri/auth.cljg", Pkg: "briauth", Source: &core.BriAuthSource, install: installAuthShims},
+		// cljg.security (ADR 0103, renamed IN PLACE from bri.core.security — it
+		// still requires bri.web.http + bri.core.audit above). Its crypto/JWT
+		// shims stay in pkg/bri (install), but its keychain trio pulls the
+		// OS-keyring client + age, so it is ALSO OptIn: the isolated
+		// pkg/bri/security (ShimImport) registers the keychain installer via
+		// RegisterInstaller when linked, and InstallShimsInto runs BOTH.
+		{Name: "cljg.security", File: "cljg/security.cljg", Pkg: "cljgsecurity", Source: &core.CljgSecuritySource, install: installSecurityShims, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/security"},
 		// cljg.data.cast is OPT-IN (ADR 0076): its shims pull the SQLite + pgx drivers
 		// (~7 MB), which must not link into an app that never touches a
 		// database. Like bri.core.telemetry it is excluded from the umbrella pkg/briaot;
@@ -217,20 +225,26 @@ func Specs() []Spec {
 // namespace's forms, so the private -serve/-jwt-sign/… vars are bound in
 // either mode. A namespace with no shims (bri.web.html) is a no-op.
 func InstallShimsInto(s Spec) {
-	install := s.install
-	if install == nil {
-		// An OptIn namespace's installer arrives through the registry, set by
-		// its isolated shim package's init() when that package is linked (ADR
-		// 0074). A pure-Clojure namespace (bri.web.html) has neither — a no-op.
-		install = installers[s.Name]
-	}
-	if install == nil {
+	// A namespace may have a direct installer (s.install, shims in pkg/bri),
+	// a registry installer set by its isolated shim package's init() when that
+	// package is linked (ADR 0074), or — cljg.security (ADR 0103) — BOTH: its
+	// crypto/JWT shims are stdlib-cheap and stay in pkg/bri while its keychain
+	// trio rides the opt-in registry. Run every installer present; a
+	// pure-Clojure namespace (bri.web.html) has neither — a no-op.
+	direct, registered := s.install, installers[s.Name]
+	if direct == nil && registered == nil {
 		return
 	}
 	ns := lang.FindOrCreateNamespace(lang.NewSymbol(s.Name))
-	install(func(name string, fn func(args ...any) any) {
+	def := func(name string, fn func(args ...any) any) {
 		v := ns.Intern(lang.NewSymbol(name))
 		v.BindRoot(lang.NewFnFunc(fn))
 		v.SetMeta(v.Meta().Assoc(lang.KWPrivate, true).(lang.IPersistentMap))
-	})
+	}
+	if direct != nil {
+		direct(def)
+	}
+	if registered != nil {
+		registered(def)
+	}
 }

@@ -3,6 +3,7 @@ module github.com/muthuishere/cljgo
 go 1.26
 
 require (
+	filippo.io/age v1.3.1
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/zalando/go-keyring v0.2.8
 	go.opentelemetry.io/otel v1.44.0
@@ -17,6 +18,7 @@ require (
 )
 
 require (
+	filippo.io/hpke v0.4.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect

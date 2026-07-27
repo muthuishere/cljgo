@@ -8,7 +8,7 @@
 (ns app.main
   (:require [bri.web.http :as http :refer [GET POST]]
             [bri.web.html :as html]
-            [bri.core.security :as auth]
+            [cljg.security :as auth]
             [bri.core.config :as config]
             ;; cljgo:resource-requires — `cljgo generate resource` splices requires here
             ))
