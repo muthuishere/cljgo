@@ -11,7 +11,7 @@
 ;;   (api/login a)  (api/logout a)  (api/authed? a)            ; explicit lifecycle
 ;;
 ;; A NEW namespace (not bri.cli): requiring it opts into the transitive keychain
-;; link (bri.cli.auth → opt-in bri.core.secrets), so a plain bri.cli app stays
+;; link (bri.cli.auth → opt-in cljg.secrets), so a plain bri.cli app stays
 ;; lean (ADR 0091 §1). Registered after bri.web.openapi in bri.Specs().
 ;;
 ;; Loaded as a bri namespace (ADR 0041): NO (ns …) form — the fully-qualified

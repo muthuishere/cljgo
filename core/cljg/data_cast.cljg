@@ -1,4 +1,4 @@
-;; bri.core.data — the ONE blessed data layer (ADR 0072, realizing ADR 0041 §4
+;; cljg.data.cast — the ONE blessed data layer (ADR 0072, realizing ADR 0041 §4
 ;; Data T2). Connect, query, transact, migrate — API-first, functional,
 ;; injection-safe by construction, and IDENTICAL interpreted (cljgo dev)
 ;; vs AOT-compiled (CGO_ENABLED=0 static binary). Two pure-Go drivers
@@ -7,7 +7,7 @@
 ;; fork.
 ;;
 ;; The blessed form is a SQL STRING plus positional `?` params (never
-;; string-concatenated values). bri.core.data normalizes placeholders (`?`→`$n`
+;; string-concatenated values). cljg.data.cast normalizes placeholders (`?`→`$n`
 ;; for Postgres) and column names (snake_case ↔ kebab-case), but NOT SQL
 ;; dialect (the ADR 0057 seam).
 ;;
@@ -17,15 +17,15 @@
 ;; `cast` is defined here (callers write db/cast) so it is EXCLUDED from the
 ;; clojure.core refer — it never shadows clojure.core/cast globally (the
 ;; precedence principle; same pattern as cljg.net.http/get).
-(clojure.core/in-ns 'bri.core.data)
+(clojure.core/in-ns 'cljg.data.cast)
 (clojure.core/refer 'clojure.core :exclude '[cast])
 (require '[clojure.string :as str])
 
 ;; --- handles ----------------------------------------------------------------
-;; A connection is a plain map {:bri.core.data/handle H :driver kw}; a tx conn is
+;; A connection is a plain map {:cljg.data.cast/handle H :driver kw}; a tx conn is
 ;; the same map with the tx handle swapped in and :tx true. Every verb
 ;; reads the opaque handle out of it, so a db and a tx drive one API.
-(defn ^:private handle [db] (:bri.core.data/handle db))
+(defn ^:private handle [db] (:cljg.data.cast/handle db))
 
 (defn connect
   "Open a connection pool. opts:
@@ -45,9 +45,9 @@
                   (or url (:database opts))
                   (or (:database opts) ".dev/app.db"))]
      (when (nil? dsn)
-       (throw (ex-info "bri.core.data/connect: no Postgres URL (:url or APP_DB_URL)"
-                       {:bri.core.data/error :bri.core.data/no-url})))
-     {:bri.core.data/handle (-db-open (name driver) dsn) :driver driver})))
+       (throw (ex-info "cljg.data.cast/connect: no Postgres URL (:url or APP_DB_URL)"
+                       {:cljg.data.cast/error :cljg.data.cast/no-url})))
+     {:cljg.data.cast/handle (-db-open (name driver) dsn) :driver driver})))
 
 (defn close!
   "Close a connection pool (a no-op on a tx handle)."
@@ -74,12 +74,12 @@
   (first (-db-query (handle db) sql (vec params))))
 
 (defn one!
-  "Like `one`, but throws an ex-info tagged :bri.core.data/not-found when no row
+  "Like `one`, but throws an ex-info tagged :cljg.data.cast/not-found when no row
   matches (the ADR 0041 funnel → 404)."
   [db sql & params]
   (or (first (-db-query (handle db) sql (vec params)))
-      (throw (ex-info "bri.core.data/one!: no matching row"
-                      {:bri.core.data/error :bri.core.data/not-found :sql sql}))))
+      (throw (ex-info "cljg.data.cast/one!: no matching row"
+                      {:cljg.data.cast/error :cljg.data.cast/not-found :sql sql}))))
 
 ;; --- writes -----------------------------------------------------------------
 (defn exec!
@@ -153,14 +153,14 @@
 
 (defn cast!
   "Like `cast`, but returns the clean row on success and THROWS
-  bri.core.data/cast (ex-info with :errors) on any validation failure — the
+  cljg.data.cast/cast (ex-info with :errors) on any validation failure — the
   fail-fast form for a controller that treats bad input as a 400."
   [row schema]
   (let [[clean errs] (cast* row schema)]
     (if (empty? errs)
       clean
-      (throw (ex-info "bri.core.data/cast: input failed validation"
-                      {:bri.core.data/error :bri.core.data/cast :errors errs})))))
+      (throw (ex-info "cljg.data.cast/cast: input failed validation"
+                      {:cljg.data.cast/error :cljg.data.cast/cast :errors errs})))))
 
 (defn insert!
   "Insert one row from a map (kebab keys → snake columns), parametrized.
@@ -204,7 +204,7 @@
   [db f]
   (if (:tx db)
     (f db)
-    (let [t (assoc db :bri.core.data/handle (-db-begin (handle db)) :tx true)]
+    (let [t (assoc db :cljg.data.cast/handle (-db-begin (handle db)) :tx true)]
       (try
         (let [result (f t)]
           (-db-commit (handle t))
@@ -217,7 +217,7 @@
   "Run (f tx-conn) in a transaction that is ALWAYS rolled back — the
   per-test sandbox (Ecto-Sandbox shape, ADR 0058). Returns (f tx-conn)."
   [db f]
-  (let [t (assoc db :bri.core.data/handle (-db-begin (handle db)) :tx true)]
+  (let [t (assoc db :cljg.data.cast/handle (-db-begin (handle db)) :tx true)]
     (try
       (f t)
       (finally

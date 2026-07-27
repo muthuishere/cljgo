@@ -1,4 +1,4 @@
-// cache_test.go — the bri.core.cache behavior suite (ADR 0093). No JVM oracle
+// cache_test.go — the cljg.cache behavior suite (ADR 0093). No JVM oracle
 // (a cljgo fundamental). Covers the pure ops, singleflight under a real goroutine
 // stampede, lazy TTL expiry, and — crucially — that a USER backend implementing
 // the `Cache` protocol works through the same public fns (the "interface for all"
@@ -9,7 +9,7 @@ import "testing"
 
 func TestBriCoreCache(t *testing.T) {
 	d := newDriver(t)
-	eval(t, d, `(require '[bri.core.cache :as kv])`)
+	eval(t, d, `(require '[cljg.cache :as kv])`)
 	eval(t, d, `(def c (kv/local {:ttl 60}))`)
 
 	// fetch fills on a miss, then serves the cached value (the second fn is ignored)

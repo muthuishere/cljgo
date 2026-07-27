@@ -1,4 +1,4 @@
-# bri.core.data — the data layer
+# cljg.data.cast — the data layer
 
 The one blessed data layer (ADR 0072): connect, query, transact, migrate
 over pure-Go SQLite (zero-install default, ADR 0057) or Postgres via pgx
@@ -11,7 +11,7 @@ Full guide on the site: https://muthuishere.github.io/cljgo/bri/db/
 ## Connect
 
 ```clojure
-(require '[bri.core.data :as db])
+(require '[cljg.data.cast :as db])
 
 (def conn (db/connect {:driver :sqlite :database "app.db"}))  ; ":memory:" for tests
 (db/connect {:driver :postgres :url "postgres://localhost/app"})
@@ -31,10 +31,10 @@ not (the ADR 0057 seam).
 ;; => [{:id 7 :text "hi"}]   (snake columns → kebab keyword keys)
 
 (db/one  conn "select * from notes where id = ?" 7)   ; first row, or nil
-(db/one! conn "select * from notes where id = ?" 7)   ; or throws :bri.core.data/not-found
+(db/one! conn "select * from notes where id = ?" 7)   ; or throws :cljg.data.cast/not-found
 ```
 
-`db/one!` throws `:bri.core.data/not-found`, which the bri.web.http error funnel maps
+`db/one!` throws `:cljg.data.cast/not-found`, which the bri.web.http error funnel maps
 to a 404 — no handler code.
 
 ## Write
@@ -76,6 +76,6 @@ on first use, at run time, not build time.
 
 ## See also
 
-- `docs/guides/resource-generator.md` — scaffold a full CRUD slice over bri.core.data
-- `docs/guides/bri-http.md` — the error funnel that turns `:bri.core.data/not-found` into 404
+- `docs/guides/resource-generator.md` — scaffold a full CRUD slice over cljg.data.cast
+- `docs/guides/bri-http.md` — the error funnel that turns `:cljg.data.cast/not-found` into 404
 - `examples/notes-db/` — a runnable persistent CRUD service

@@ -43,7 +43,7 @@ func TestOtelIsOptIn(t *testing.T) {
 		t.Skip("skipping go list -deps in -short mode")
 	}
 	const otel = "go.opentelemetry.io/"
-	for _, pkg := range append(append([]string{}, alwaysLinked...), "pkg/briaot/bridb") {
+	for _, pkg := range append(append([]string{}, alwaysLinked...), "pkg/briaot/cljgdatacast") {
 		if depsLinkAny(t, pkg, otel) {
 			t.Errorf("%s links the OpenTelemetry SDK — bri.otel is no longer zero-cost (ADR 0074); a non-tracing bri binary now carries the SDK", pkg)
 		}
@@ -57,7 +57,7 @@ func TestOtelIsOptIn(t *testing.T) {
 // NOT link into a bri binary that never touches a database. The always-linked
 // packages (+ the OTHER opt-in sub-package, briotel) must have ZERO
 // modernc.org/sqlite or jackc/pgx packages in their closure; only
-// pkg/briaot/bridb carries the drivers. This closes the ADR 0072 tradeoff
+// pkg/briaot/cljgdatacast carries the drivers. This closes the ADR 0072 tradeoff
 // where every bri binary linked SQLite whether or not it used the database.
 func TestDbIsOptIn(t *testing.T) {
 	if testing.Short() {
@@ -69,8 +69,8 @@ func TestDbIsOptIn(t *testing.T) {
 			t.Errorf("%s links the SQLite/pgx drivers — bri.db is no longer zero-cost (ADR 0076); a db-less bri binary now carries ~7 MB of drivers", pkg)
 		}
 	}
-	if !depsLinkAny(t, "pkg/briaot/bridb", sqlite) {
-		t.Error("pkg/briaot/bridb does NOT link modernc.org/sqlite — the opt-in namespace cannot reach a database")
+	if !depsLinkAny(t, "pkg/briaot/cljgdatacast", sqlite) {
+		t.Error("pkg/briaot/cljgdatacast does NOT link modernc.org/sqlite — the opt-in namespace cannot reach a database")
 	}
 }
 
@@ -78,19 +78,19 @@ func TestDbIsOptIn(t *testing.T) {
 // (zalando/go-keyring + its godbus transport) must NOT link into a bri binary
 // that never touches a secret store. The always-linked packages (+ the other
 // opt-in sub-packages) must have ZERO go-keyring/godbus packages in their
-// closure; only pkg/briaot/brisecrets carries the keychain client.
+// closure; only pkg/briaot/cljgsecrets carries the keychain client.
 func TestSecretsIsOptIn(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping go list -deps in -short mode")
 	}
 	keyring, dbus := "github.com/zalando/go-keyring", "github.com/godbus/dbus"
-	for _, pkg := range append(append([]string{}, alwaysLinked...), "pkg/briaot/bridb", "pkg/briaot/briotel") {
+	for _, pkg := range append(append([]string{}, alwaysLinked...), "pkg/briaot/cljgdatacast", "pkg/briaot/briotel") {
 		if depsLinkAny(t, pkg, keyring, dbus) {
-			t.Errorf("%s links go-keyring — bri.core.secrets is no longer zero-cost (ADR 0086); a secrets-less bri binary now carries the keychain client", pkg)
+			t.Errorf("%s links go-keyring — cljg.secrets is no longer zero-cost (ADR 0086); a secrets-less bri binary now carries the keychain client", pkg)
 		}
 	}
-	if !depsLinkAny(t, "pkg/briaot/brisecrets", keyring) {
-		t.Error("pkg/briaot/brisecrets does NOT link go-keyring — the opt-in namespace cannot reach a secret store")
+	if !depsLinkAny(t, "pkg/briaot/cljgsecrets", keyring) {
+		t.Error("pkg/briaot/cljgsecrets does NOT link go-keyring — the opt-in namespace cannot reach a secret store")
 	}
 }
 

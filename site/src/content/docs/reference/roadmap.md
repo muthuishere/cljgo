@@ -30,10 +30,10 @@ The original build-order roadmap
 | bri T0–T1 | ✅ | The app framework — `cljgo new`/`cljgo dev`, HTTP + hiccup HTML + routes/middleware, sessions + CSRF, layered config |
 | bri security | ✅ | API-first security ([bri.core.security](/cljgo/bri/auth/), ADR 0069): pinned HS256 JWT, argon2id passwords, composable guards, rate-limit + auto-ban, CORS, audited decisions, Compojure-style router |
 | bri AOT + Docker | ✅ | bri AOT-compiles to one static `CGO_ENABLED=0` binary, byte-identical to interpreted; `cljgo new --template web` ships a scratch-image [Dockerfile](/cljgo/guides/deploy/) (~15 MB) (ADR 0071) |
-| bri T2 — data | ✅ | [bri.core.data](/cljgo/bri/db/) (ADR 0072): pure-Go SQLite (zero-install default) + Postgres (pgx), parametrized queries, data-shaped writers, transactions, forward-only migrations — one API, driver swap |
+| bri T2 — data | ✅ | [cljg.data.cast](/cljgo/bri/db/) (ADR 0072): pure-Go SQLite (zero-install default) + Postgres (pgx), parametrized queries, data-shaped writers, transactions, forward-only migrations — one API, driver swap |
 | resource generator | ✅ | [`cljgo generate resource`](/cljgo/guides/generate/) (ADR 0073): migration + model + handlers + routes + a green CRUD test, spliced into `main` at markers |
 | bri.core.telemetry | ✅ | Opt-in [OpenTelemetry tracing](/cljgo/bri/otel/) (ADR 0074): server span per request, W3C trace-context, OTLP exporter — linked only when required |
-| bri.core.data opt-in | ✅ | bri.core.data linking is opt-in (ADR 0076): the SQLite/pgx drivers link only when an app requires `bri.core.data`, so a db-less web binary drops ~8 MB — the same zero-cost mechanism as bri.core.telemetry |
+| cljg.data.cast opt-in | ✅ | cljg.data.cast linking is opt-in (ADR 0076): the SQLite/pgx drivers link only when an app requires `cljg.data.cast`, so a db-less web binary drops ~8 MB — the same zero-cost mechanism as bri.core.telemetry |
 | `cljgo dist` | ✅ | [Cross-compile to every platform](/cljgo/guides/compile/) in one command (ADR 0077): pure-Go/`CGO_ENABLED=0` means no cross-toolchain — `dist/` gets a native binary per OS/arch + `checksums.txt` |
 | core batches | ✅ | Numeric tower, transients, JVM-compatible hashing, `reify`, tagged literals/reader conditionals, richer error rendering, suite ratchet |
 | Next | ◦ | See below |
@@ -64,7 +64,7 @@ batteries included, zero-config — Bun's ergonomics with Go's delivery and no
 runtime to distribute. Go is a near-perfect host for the list, so the
 batteries stay native-fast and keep the single static binary:
 
-- **Data** — [`bri.core.data`](/cljgo/bri/db/): pure-Go SQLite as the zero-install
+- **Data** — [`cljg.data.cast`](/cljgo/bri/db/): pure-Go SQLite as the zero-install
   default DB, Postgres (pgx) for production, forward-only migrations. *(shipped,
   ADR 0072)*
 - **Observability** — Prometheus metrics + structured logs + request-ids

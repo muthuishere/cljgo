@@ -93,12 +93,13 @@ func Specs() []Spec {
 		{Name: "bri.core.audit", File: "bri/audit.cljg", Pkg: "briaudit", Source: &core.BriAuditSource, install: installAuditShims},
 		{Name: "bri.web.html", File: "bri/html.cljg", Pkg: "brihtml", Source: &core.BriHTMLSource, install: nil},
 		{Name: "bri.core.security", File: "bri/auth.cljg", Pkg: "briauth", Source: &core.BriAuthSource, install: installAuthShims},
-		// bri.core.data is OPT-IN (ADR 0076): its shims pull the SQLite + pgx drivers
-		// (~7 MB), which must not link into a bri app that never touches a
+		// cljg.data.cast is OPT-IN (ADR 0076): its shims pull the SQLite + pgx drivers
+		// (~7 MB), which must not link into an app that never touches a
 		// database. Like bri.core.telemetry it is excluded from the umbrella pkg/briaot;
 		// its shims live in the isolated pkg/bri/db (ShimImport), which registers
-		// its installer via RegisterInstaller when linked.
-		{Name: "bri.core.data", File: "bri/db.cljg", Pkg: "bridb", Source: &core.BriDBSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/db"},
+		// its installer via RegisterInstaller when linked. Re-homed to
+		// cljg.data.cast by ADR 0102 (framework-agnostic mechanism).
+		{Name: "cljg.data.cast", File: "cljg/data_cast.cljg", Pkg: "cljgdatacast", Source: &core.CljgDataCastSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/db"},
 		// bri.core.telemetry is OPT-IN (ADR 0074): its shims pull the OpenTelemetry SDK,
 		// which must not link into a bri app that does not require tracing. It
 		// is excluded from the umbrella pkg/briaot; its shims live in the
@@ -114,14 +115,15 @@ func Specs() []Spec {
 		// heavy dep to isolate; the prompt POLICY is portable Clojure.
 		{Name: "bri.cli.validate", File: "bri/cli_validate.cljg", Pkg: "briclivalidate", Source: &core.BriCLIValidateSource, install: nil},
 		{Name: "bri.cli", File: "bri/cli.cljg", Pkg: "bricli", Source: &core.BriCLISource, install: installCLIShims},
-		// bri.core.secrets is OPT-IN (ADR 0086/0074): its shims pull the OS-keychain
+		// cljg.secrets is OPT-IN (ADR 0086/0074): its shims pull the OS-keychain
 		// client (go-keyring + D-Bus/wincred transports), which must not link
-		// into a bri app that never touches a secret store. Its shims live in
+		// into an app that never touches a secret store. Its shims live in
 		// the isolated pkg/bri/secrets (ShimImport), registering their installer
-		// via RegisterInstaller when linked.
-		{Name: "bri.core.secrets", File: "bri/secrets.cljg", Pkg: "brisecrets", Source: &core.BriSecretsSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/secrets"},
+		// via RegisterInstaller when linked. Re-homed to cljg.secrets by
+		// ADR 0102 (framework-agnostic mechanism).
+		{Name: "cljg.secrets", File: "cljg/secrets.cljg", Pkg: "cljgsecrets", Source: &core.CljgSecretsSource, install: nil, OptIn: true, ShimImport: "github.com/muthuishere/cljgo/pkg/bri/secrets"},
 		// bri.cli.auth is PURE CLOJURE (no Go shims) but transitively requires
-		// bri.core.secrets — so an app that requires it links the (opt-in)
+		// cljg.secrets — so an app that requires it links the (opt-in)
 		// keychain client, while a CLI that never uses auth does not (the
 		// transitive opt-in fire in emit/module.go).
 		{Name: "bri.cli.auth", File: "bri/cli_auth.cljg", Pkg: "bricliauth", Source: &core.BriCLIAuthSource, install: nil},
@@ -149,21 +151,22 @@ func Specs() []Spec {
 		// top-level requires must resolve. Its own namespace (not bri.cli) so the
 		// transitive keychain link is opt-in.
 		{Name: "bri.cli.api", File: "bri/cli_api.cljg", Pkg: "bricliapi", Source: &core.BriCLIAPISource, install: nil},
-		// bri.core.cache — the fundamental in-process cache (ADR 0093): a TTL map
-		// with singleflight behind the `Cache` protocol. Pure Clojure (install:
-		// nil, like bri.web.html) over atoms + promise + cljg.os/now, so it is
-		// registered AFTER cljg.os (its (require [cljg.os]) for the clock must
-		// resolve). No Go shim, no dependency — links free, inert until called.
-		// Placed LAST (nothing requires it) so it does not shift the gensym
-		// numbering of the namespaces genbri emits before it.
-		{Name: "bri.core.cache", File: "bri/cache.cljg", Pkg: "bricache", Source: &core.BriCacheSource, install: nil},
-		// bri.core.jobs — the fundamental in-process job queue (ADR 0094): a
-		// core.async worker pool behind the `Queue` protocol. Pure Clojure
-		// (install: nil) over clojure.core.async (a core namespace, always
-		// resolvable) + an atom. No Go shim, no dependency. Also placed at the end
-		// (nothing requires it) to keep the gensym numbering of earlier emitted
-		// namespaces stable.
-		{Name: "bri.core.jobs", File: "bri/jobs.cljg", Pkg: "brijobs", Source: &core.BriJobsSource, install: nil},
+		// cljg.cache — the fundamental in-process cache (ADR 0093, re-homed to
+		// cljg.* by ADR 0102): a TTL map with singleflight behind the `Cache`
+		// protocol. Pure Clojure (install: nil, like bri.web.html) over atoms +
+		// promise + cljg.os/now, so it is registered AFTER cljg.os (its
+		// (require [cljg.os]) for the clock must resolve). No Go shim, no
+		// dependency — links free, inert until called. Placed LAST (nothing
+		// requires it) so it does not shift the gensym numbering of the
+		// namespaces genbri emits before it.
+		{Name: "cljg.cache", File: "cljg/cache.cljg", Pkg: "cljgcache", Source: &core.CljgCacheSource, install: nil},
+		// cljg.jobs — the fundamental in-process job queue (ADR 0094, re-homed to
+		// cljg.* by ADR 0102): a core.async worker pool behind the `Queue`
+		// protocol. Pure Clojure (install: nil) over clojure.core.async (a core
+		// namespace, always resolvable) + an atom. No Go shim, no dependency. Also
+		// placed at the end (nothing requires it) to keep the gensym numbering of
+		// earlier emitted namespaces stable.
+		{Name: "cljg.jobs", File: "cljg/jobs.cljg", Pkg: "cljgjobs", Source: &core.CljgJobsSource, install: nil},
 		// --- org.clojure contrib, natively (ADR 0097) — all LAST, so they do not
 		// shift the gensym numbering of the namespaces genbri emits before them;
 		// all LAZY + opt-in, NOT boot sources: a binary that never requires one

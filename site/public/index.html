@@ -800,11 +800,11 @@ hello from the project
         zero-config — Bun's ergonomics with Go's delivery and no runtime to distribute. Some of this has shipped,
         some is still ahead; the batteries stay native-fast and keep the single static binary:</p>
       <ul class="clean" style="margin:0 0 18px">
-        <li><b>Data</b> — <code>bri.core.data</code>: a pure-Go SQLite as the zero-install default DB, Postgres (pgx)
+        <li><b>Data</b> — <code>cljg.data.cast</code>: a pure-Go SQLite as the zero-install default DB, Postgres (pgx)
           for production, mass-assignment-safe casts, and migrations (<code>cljgo migrate up/status/new</code>, auto-applied
           in dev). <span style="opacity:.6">(bri T2, shipped)</span></li>
         <li><b>Jobs &amp; cache</b> — shipped as pure zero-dependency fundamentals: an in-process core.async job queue
-          (<code>bri.core.jobs</code>) and a TTL/singleflight cache (<code>bri.core.cache</code>), each behind a
+          (<code>cljg.jobs</code>) and a TTL/singleflight cache (<code>cljg.cache</code>), each behind a
           protocol you can <code>reify</code>. A durable Postgres queue or Redis cache stays a <em>you-bring-it</em>
           backend, not a bundled dependency. <span style="opacity:.6">(bri T3, shipped)</span></li>
         <li><b>A curated Go-native stdlib</b> — secrets (OS keychain), streaming file I/O, crypto/hashing, http-client,

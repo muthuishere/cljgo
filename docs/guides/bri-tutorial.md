@@ -147,5 +147,5 @@ $ cljgo routes      ; every route + the effective middleware stack
 - [bri.web.html](bri-html.md) — pages, forms, escaping
 - [bri.core.config](bri-config.md) — profiles, env, the schema
 
-The data layer (`bri.core.data`, migrations, the embedded dev Postgres) and
+The data layer (`cljg.data.cast`, migrations, the embedded dev Postgres) and
 jobs/cache land in the next tiers of the app-framework change.

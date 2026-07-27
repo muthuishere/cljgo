@@ -159,7 +159,7 @@
       strings THE blessed input form. NAMES DOCTRINE implemented and
       conformance-tested: snake_case ↔ kebab-case both directions,
       nothing else renamed.
-      *(SHIPPED as `bri.core.data` — renamed under the ADR 0085 taxonomy —
+      *(SHIPPED as `cljg.data.cast` — renamed under the ADR 0085 taxonomy —
       in `core/bri/db.cljg` + `pkg/bri/db/`, ADRs 0072/0057/0058.
       connect/query/one/one!/exec!/insert!/update!/delete!/tx +
       snake↔kebab present.)*
@@ -169,7 +169,7 @@
       assignment structurally off the path); `let?` + `http/render`
       composition test end-to-end (the railway signup from the
       golden page).
-      *(SHIPPED: `bri.core.data/cast` → (ok clean)/(err {field msg}) + `cast!`
+      *(SHIPPED: `cljg.data.cast/cast` → (ok clean)/(err {field msg}) + `cast!`
       throwing, in `core/bri/db.cljg`. Coerces :string/:int/:long/:double/:bool/
       :keyword/:any and DROPS undeclared keys (mass assignment off the path).
       Dual-harness: `pkg/bri/cast_test.go` + folded into the `dbparity` REPL↔binary
@@ -179,7 +179,7 @@
       UTC-timestamp names, applied-table; additive-only doctrine
       doc. `cljgo dev` gains migration application.
       *(SHIPPED: `cmd/cljgo/migrate.go` — `up`/`status`/`new <name>` over
-      `bri.core.data/migrate!`+`migrate-status`; `cljgo dev` auto-applies
+      `cljg.data.cast/migrate!`+`migrate-status`; `cljgo dev` auto-applies
       pending migrations on startup; additive-only doctrine in the generated
       stub. e2e `TestMigrateCLI`.)*
 - [x] 2.4 Dev database: embedded Postgres (require-go module, data
@@ -219,7 +219,7 @@
       type against the registry — typos fail at the call site),
       retries/backoff, unique jobs, per-type concurrency, cron rows.
       Jobs table = state-of-record in the app's Postgres.
-      *(FUNDAMENTAL shipped as `bri.core.jobs` (ADR 0094): `local` worker
+      *(FUNDAMENTAL shipped as `cljg.jobs` (ADR 0094): `local` worker
       pool + typed dispatch (var handlers stay live) + drain + error capture,
       behind the `Queue` PROTOCOL. **Postgres/durable backend DEFERRED** —
       owner ruling: "no new deps; give fundamentals, users bring the backend" —
@@ -229,7 +229,7 @@
       ADR 0040 (the S20 seam) — TESTS ONLY (dev runs the real
       Postgres backend on the embedded dev db: parity);
       drain-and-assert helper.
-      *(This IS the shipped fundamental `bri.core.jobs/local` — core.async
+      *(This IS the shipped fundamental `cljg.jobs/local` — core.async
       worker pool with a drain-and-assert seam (`drain`). Under the "no deps"
       ruling it is promoted from tests-only to THE built-in backend; durability
       is a user's `Queue` impl, ADR 0094.)*
@@ -237,7 +237,7 @@
       `fetch`/`put`/`evict`, constructor-enforced namespace; `redis`
       impl of the same protocol (rueidis via require-go). Stampede
       test (N concurrent fetches, one fill). Jobs + cache guides
-      *(SHIPPED as `bri.core.cache` (ADR 0093): the `local` fundamental —
+      *(SHIPPED as `cljg.cache` (ADR 0093): the `local` fundamental —
       TTL + singleflight `fetch`/`put`/`evict`/`clear` behind the `Cache`
       PROTOCOL (interface), pure Clojure, zero deps. Stampede test proves
       one-fill-under-20. **`redis` DEFERRED** — owner ruling: "no new deps;
@@ -252,10 +252,10 @@
 ## Reconciliation (2026-07-25)
 
 The T2 **data core** shipped under the ADR 0085 namespace taxonomy (which
-renamed `bri.db → bri.core.data`, `bri.http → bri.web.http`, etc., *after*
+renamed `bri.db → cljg.data.cast`, `bri.http → bri.web.http`, etc., *after*
 these tasks were written):
 
-- **2.1 — DONE** as `bri.core.data` (`core/bri/db.cljg` + `pkg/bri/db/`, ADRs
+- **2.1 — DONE** as `cljg.data.cast` (`core/bri/db.cljg` + `pkg/bri/db/`, ADRs
   0072/0057/0058).
 - **2.4 — SUPERSEDED** by ADR 0057 (pure-Go SQLite default replaces embedded
   Postgres; same zero-install intent).
@@ -266,7 +266,7 @@ these tasks were written):
 **Genuinely remaining, NOT closed here:** 2.2 (`db/cast`/`cast!` input gate),
 2.5 (build-embed `public/`+`migrations/`, `-main migrate` arm, clean-host
 deploy), 2.6 (APP_PROFILE=test sandbox + generated db test + T2 generator page),
-and all of **T3** (`bri.core.jobs` + `:memory` backend + `bri.core.cache` —
+and all of **T3** (`cljg.jobs` + `:memory` backend + `cljg.cache` —
 unbuilt, and not yet placed in the ADR 0085 taxonomy). Recommended split: a
 focused T2-completion change, and a separate T3 jobs+cache change fronted by an
 ADR that places those namespaces. This umbrella stays OPEN until those land.

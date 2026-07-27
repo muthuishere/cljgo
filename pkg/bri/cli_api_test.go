@@ -25,15 +25,15 @@ func stubbedAPIDriver(t *testing.T) *repl.Driver {
 	d := newDriver(t)
 	eval(t, d, `
 	  (require '[bri.cli.api :as capi] '[bri.cli :as cli]
-	           '[bri.cli.auth :as cauth] '[bri.core.secrets :as secrets])
-	  (clojure.core/in-ns 'bri.core.secrets)
+	           '[bri.cli.auth :as cauth] '[cljg.secrets :as secrets])
+	  (clojure.core/in-ns 'cljg.secrets)
 	  (def kc (atom {}))
 	  (defn -keychain-set [s a v] (swap! kc assoc [s a] v) nil)
 	  (defn -keychain-get [s a] (@kc [s a]))
 	  (defn -keychain-del [s a] (swap! kc dissoc [s a]) nil)
 	  (clojure.core/in-ns 'user)
 	  (require '[bri.cli.api :as capi] '[bri.cli :as cli]
-	           '[bri.cli.auth :as cauth] '[bri.core.secrets :as secrets])`)
+	           '[bri.cli.auth :as cauth] '[cljg.secrets :as secrets])`)
 	return d
 }
 

@@ -19,7 +19,6 @@ import (
 	bri "github.com/muthuishere/cljgo/pkg/bri"
 	briaudit "github.com/muthuishere/cljgo/pkg/briaot/briaudit"
 	briauth "github.com/muthuishere/cljgo/pkg/briaot/briauth"
-	bricache "github.com/muthuishere/cljgo/pkg/briaot/bricache"
 	bricli "github.com/muthuishere/cljgo/pkg/briaot/bricli"
 	bricliapi "github.com/muthuishere/cljgo/pkg/briaot/bricliapi"
 	bricliauth "github.com/muthuishere/cljgo/pkg/briaot/bricliauth"
@@ -27,10 +26,11 @@ import (
 	briconfig "github.com/muthuishere/cljgo/pkg/briaot/briconfig"
 	brihtml "github.com/muthuishere/cljgo/pkg/briaot/brihtml"
 	brihttp "github.com/muthuishere/cljgo/pkg/briaot/brihttp"
-	brijobs "github.com/muthuishere/cljgo/pkg/briaot/brijobs"
 	briopenapi "github.com/muthuishere/cljgo/pkg/briaot/briopenapi"
+	cljgcache "github.com/muthuishere/cljgo/pkg/briaot/cljgcache"
 	cljgdatacsv "github.com/muthuishere/cljgo/pkg/briaot/cljgdatacsv"
 	cljgio "github.com/muthuishere/cljgo/pkg/briaot/cljgio"
+	cljgjobs "github.com/muthuishere/cljgo/pkg/briaot/cljgjobs"
 	cljgnethttp "github.com/muthuishere/cljgo/pkg/briaot/cljgnethttp"
 	cljgos "github.com/muthuishere/cljgo/pkg/briaot/cljgos"
 	corematch "github.com/muthuishere/cljgo/pkg/briaot/corematch"
@@ -56,8 +56,8 @@ func init() {
 	rt.RegisterLib("cljg.io", loadCljgio)
 	rt.RegisterLib("bri.web.openapi", loadBriopenapi)
 	rt.RegisterLib("bri.cli.api", loadBricliapi)
-	rt.RegisterLib("bri.core.cache", loadBricache)
-	rt.RegisterLib("bri.core.jobs", loadBrijobs)
+	rt.RegisterLib("cljg.cache", loadCljgcache)
+	rt.RegisterLib("cljg.jobs", loadCljgjobs)
 	rt.RegisterLib("clojure.tools.cli", loadToolscli)
 	rt.RegisterLib("clojure.data.csv", loadCljgdatacsv)
 	rt.RegisterLib("clojure.core.match", loadCorematch)
@@ -88,8 +88,8 @@ func loadCljgos()         { installShims("cljg.os"); cljgos.Load() }
 func loadCljgio()         { installShims("cljg.io"); cljgio.Load() }
 func loadBriopenapi()     { installShims("bri.web.openapi"); briopenapi.Load() }
 func loadBricliapi()      { installShims("bri.cli.api"); bricliapi.Load() }
-func loadBricache()       { installShims("bri.core.cache"); bricache.Load() }
-func loadBrijobs()        { installShims("bri.core.jobs"); brijobs.Load() }
+func loadCljgcache()      { installShims("cljg.cache"); cljgcache.Load() }
+func loadCljgjobs()       { installShims("cljg.jobs"); cljgjobs.Load() }
 func loadToolscli()       { installShims("clojure.tools.cli"); toolscli.Load() }
 func loadCljgdatacsv()    { installShims("clojure.data.csv"); cljgdatacsv.Load() }
 func loadCorematch()      { installShims("clojure.core.match"); corematch.Load() }

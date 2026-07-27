@@ -1,4 +1,4 @@
-;; bri.core.cache — the fundamental in-process cache (ADR 0093): a TTL map with
+;; cljg.cache — the fundamental in-process cache (ADR 0093): a TTL map with
 ;; SINGLEFLIGHT (a stampede of concurrent misses for one key fills exactly once).
 ;; Pure Clojure over atoms + promise/swap-vals! + cljg.os/now — NO Go shim, NO
 ;; dependency.
@@ -8,7 +8,7 @@
 ;; same fetch/put/evict/clear (owner: "provide interfaces for all — we give the
 ;; fundamentals, users bring the backend").
 ;;
-;;   (require '[bri.core.cache :as cache])
+;;   (require '[cljg.cache :as cache])
 ;;   (def c (cache/local {:ttl 300}))
 ;;   (cache/fetch c :user/42 #(load-user 42))   ; miss → fill once under a stampede
 ;;   (cache/put c :user/42 u) (cache/evict c :user/42) (cache/clear c)
@@ -16,7 +16,7 @@
 ;;
 ;; Loaded as a bri namespace (ADR 0041): NO (ns …) form — the fully-qualified
 ;; in-ns + refer open the file, then the require.
-(clojure.core/in-ns 'bri.core.cache)
+(clojure.core/in-ns 'cljg.cache)
 (clojure.core/refer 'clojure.core)
 (require '[cljg.os :as os])
 

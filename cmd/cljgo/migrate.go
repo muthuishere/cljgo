@@ -1,5 +1,5 @@
 // migrate.go — `cljgo migrate [up|status|new <name>]` (ADR 0072 / app-framework
-// task 2.3). The library half lives in bri.core.data (migrate! / migrate-status
+// task 2.3). The library half lives in cljg.data.cast (migrate! / migrate-status
 // over db/migrations); this is the CLI that drives it from the app directory,
 // mirroring the runConfig/runRoutes pattern (a repl driver + a small bootstrap
 // form that requires the bri namespaces and calls in). `new` is a Go-side file
@@ -27,21 +27,21 @@ const migrationsDir = "db/migrations"
 // datasource is the app's own (get cfg :db) — the zero-install SQLite default
 // (ADR 0057) unless conf.edn/APP_DB_URL points elsewhere.
 const migrateUpForm = `(do
-  (require 'bri.core.config 'bri.core.data 'clojure.string)
+  (require 'bri.core.config 'cljg.data.cast 'clojure.string)
   (let [cfg    (bri.core.config/load!)
-        db     (bri.core.data/connect (get cfg :db {}))
-        before (count (:applied (bri.core.data/migrate-status db "db/migrations")))
-        st     (bri.core.data/migrate! db "db/migrations")]
-    (bri.core.data/close! db)
+        db     (cljg.data.cast/connect (get cfg :db {}))
+        before (count (:applied (cljg.data.cast/migrate-status db "db/migrations")))
+        st     (cljg.data.cast/migrate! db "db/migrations")]
+    (cljg.data.cast/close! db)
     (str "migrate: applied " (- (count (:applied st)) before) " new"
          " (" (count (:applied st)) " total, " (count (:pending st)) " pending)")))`
 
 const migrateStatusForm = `(do
-  (require 'bri.core.config 'bri.core.data 'clojure.string)
+  (require 'bri.core.config 'cljg.data.cast 'clojure.string)
   (let [cfg (bri.core.config/load!)
-        db  (bri.core.data/connect (get cfg :db {}))
-        st  (bri.core.data/migrate-status db "db/migrations")]
-    (bri.core.data/close! db)
+        db  (cljg.data.cast/connect (get cfg :db {}))
+        st  (cljg.data.cast/migrate-status db "db/migrations")]
+    (cljg.data.cast/close! db)
     (str "applied (" (count (:applied st)) "): "
          (clojure.string/join ", " (:applied st)) "\n"
          "pending (" (count (:pending st)) "): "

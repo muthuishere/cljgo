@@ -141,7 +141,7 @@ published number is what the suite gives as it ships (analysis:
 | **Diagnostics** | ✅ | Banded error codes + explain pages, `cljgo check --json`, `cljgo explain <code>` (ADRs 0015/0048) |
 | **nREPL** | ✅ | `cljgo nrepl` — Calva/CIDER connect; babashka's 13-op surface, per-session `*ns*`/`*1`/`*out*` streaming, `.nrepl-port` (ADR 0031) |
 | **Projects & toolkit** | ✅ | `cljgo new` (real runnable templates: lib/cli/web, ADR 0047), dependency resolution + lockfile (`build.cljgo`/`build.lock.edn`, ADRs 0052/0053), `cljgo publish go\|clojars` (0054), `.clj`/`.cljg`/`.cljgo` (0055), `cljgo dist` cross-compiles to every platform + checksums (0077); app scaffolding `cljgo dev`/`config`/`routes` (ADR 0041 T0/T1) |
-| **Web framework (bri)** | ✅ | API-first HTTP + Compojure-style router, JWT/argon2 security, composable guards, rate-limit + auto-ban, CORS/CSRF/sessions (ADR 0069); `bri.core.data` data layer — pure-Go SQLite + Postgres, transactions, migrations (0072); `cljgo generate resource` → migration + model + handlers + routes + green CRUD test (0073); Prometheus `/metrics` + structured logs + request-ids default-on, opt-in OpenTelemetry (`bri.core.telemetry`, 0074); AOT-compiled to one static `CGO_ENABLED=0` binary + scratch Dockerfile (0071) — see [below](#web-framework-bri--one-static-binary-tiny-docker-image) |
+| **Web framework (bri)** | ✅ | API-first HTTP + Compojure-style router, JWT/argon2 security, composable guards, rate-limit + auto-ban, CORS/CSRF/sessions (ADR 0069); `cljg.data.cast` data layer — pure-Go SQLite + Postgres, transactions, migrations (0072); `cljgo generate resource` → migration + model + handlers + routes + green CRUD test (0073); Prometheus `/metrics` + structured logs + request-ids default-on, opt-in OpenTelemetry (`bri.core.telemetry`, 0074); AOT-compiled to one static `CGO_ENABLED=0` binary + scratch Dockerfile (0071) — see [below](#web-framework-bri--one-static-binary-tiny-docker-image) |
 | **AOT core** | ✅ | Compiled binaries link the **compiled** `core.clj`, never the interpreter — `pkg/eval` 155 → **0** symbols in the link set (ADR 0046) |
 | **Perf campaign** | ✅ | ADRs 0063–0067: chunk-aware seq ops, IFn2 reduce seam, direct-call emission, sealed-core guard elision, int64 numeric inference — emitted factorial ~35× → **4.8×** handwritten Go ([details](#performance)) |
 | Next | ◦ | ADR 0067 follow-ups (float64, multi-arity/variadic specialization, capturing-closure lift); `reduce`/`transducers` vs babashka's core (the two rows still lost); app framework T2 (ADR 0041); C FFI purego (ADR 0044, proposed, spike S21); batteries direction (ADRs 0056–0062, ratified on `feat/batteries` — decisions recorded, **not shipped**) |
@@ -183,7 +183,7 @@ campaign history: [`docs/performance.md`](docs/performance.md)** (reproduce with
 
 bri is cljgo's batteries-included web framework (ADR 0041/0069): API-first,
 JWT auth, composable guards, CORS + CSRF, rate-limit + auto-ban, a
-Compojure-style router, a **data layer** (`bri.core.data` — pure-Go SQLite + Postgres,
+Compojure-style router, a **data layer** (`cljg.data.cast` — pure-Go SQLite + Postgres,
 migrations, transactions; ADR 0072), and a **resource generator** (`cljgo
 generate resource Note title:string` → migration + model + handlers + routes +
 a green CRUD test; ADR 0073). Observability is default-on — Prometheus

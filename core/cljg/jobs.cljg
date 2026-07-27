@@ -1,4 +1,4 @@
-;; bri.core.jobs — the fundamental in-process job queue (ADR 0094): a core.async
+;; cljg.jobs — the fundamental in-process job queue (ADR 0094): a core.async
 ;; worker pool that runs typed job handlers off a channel. Pure Clojure over
 ;; clojure.core.async (ADR 0040, already shipped) + an atom for the outstanding
 ;; count — NO Go shim, NO dependency.
@@ -8,7 +8,7 @@
 ;; the SAME protocol and passes it to the same submit/drain/stop/errors (owner:
 ;; "provide interfaces for all — we give the fundamentals, users bring the backend").
 ;;
-;;   (require '[bri.core.jobs :as jobs])
+;;   (require '[cljg.jobs :as jobs])
 ;;   (def q (jobs/local {:email/welcome (fn [{:keys [to]}] (send-welcome to))}))
 ;;   (jobs/submit q :email/welcome {:to "a@b.c"})   ; a worker runs the handler
 ;;   (jobs/drain q)                                  ; block until all jobs finish
@@ -17,7 +17,7 @@
 ;;
 ;; Loaded as a bri namespace (ADR 0041): NO (ns …) form — the fully-qualified
 ;; in-ns + refer open the file, then the require.
-(clojure.core/in-ns 'bri.core.jobs)
+(clojure.core/in-ns 'cljg.jobs)
 (clojure.core/refer 'clojure.core)
 (require '[clojure.core.async :as a])
 

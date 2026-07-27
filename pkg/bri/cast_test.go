@@ -1,4 +1,4 @@
-// cast_test.go — the bri.core.data cast/cast! input-gate suite (ADR 0072 /
+// cast_test.go — the cljg.data.cast cast/cast! input-gate suite (ADR 0072 /
 // app-framework task 2.2). No JVM oracle. cast validates + coerces untrusted
 // input against a schema, DROPS undeclared keys (mass assignment off the path),
 // and returns ok/err; cast! throws. Pure — needs no DB connection, so it loads
@@ -9,7 +9,7 @@ import "testing"
 
 func TestBriCoreDataCast(t *testing.T) {
 	d := newDriver(t)
-	eval(t, d, `(require '[bri.core.data :as dd])`)
+	eval(t, d, `(require '[cljg.data.cast :as dd])`)
 	eval(t, d, `(def schema {:title :string :views :int :done :bool})`)
 
 	// good input: strings coerced to their declared types
