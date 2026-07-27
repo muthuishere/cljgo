@@ -25,8 +25,8 @@ var (
 	kw_service                                  = lang.InternKeywordString("service")
 	sym_bri_DOT_cli                             = lang.NewSymbol("bri.cli")
 	sym_bri_DOT_cli_DOT_auth                    = lang.NewSymbol("bri.cli.auth")
-	sym_bri_DOT_core_DOT_secrets                = lang.NewSymbol("bri.core.secrets")
 	sym_cli                                     = lang.NewSymbol("cli")
+	sym_cljg_DOT_secrets                        = lang.NewSymbol("cljg.secrets")
 	sym_clojure_DOT_core                        = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                      = lang.NewSymbol("clojure.string")
 	sym_secrets                                 = lang.NewSymbol("secrets")
@@ -39,10 +39,10 @@ var (
 	v_bri_DOT_cli_DOT_auth_logout               = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("logout"))
 	v_bri_DOT_cli_DOT_auth_token                = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("token"))
 	v_bri_DOT_cli_ask_secret                    = lang.InternVarName(lang.NewSymbol("bri.cli"), lang.NewSymbol("ask-secret"))
-	v_bri_DOT_core_DOT_secrets_delete_          = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("delete"))
-	v_bri_DOT_core_DOT_secrets_get              = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("get"))
-	v_bri_DOT_core_DOT_secrets_reveal           = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("reveal"))
-	v_bri_DOT_core_DOT_secrets_set              = lang.InternVarName(lang.NewSymbol("bri.core.secrets"), lang.NewSymbol("set"))
+	v_cljg_DOT_secrets_delete_                  = lang.InternVarName(lang.NewSymbol("cljg.secrets"), lang.NewSymbol("delete"))
+	v_cljg_DOT_secrets_get                      = lang.InternVarName(lang.NewSymbol("cljg.secrets"), lang.NewSymbol("get"))
+	v_cljg_DOT_secrets_reveal                   = lang.InternVarName(lang.NewSymbol("cljg.secrets"), lang.NewSymbol("reveal"))
+	v_cljg_DOT_secrets_set                      = lang.InternVarName(lang.NewSymbol("cljg.secrets"), lang.NewSymbol("set"))
 	v_clojure_DOT_core_boolean                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("boolean"))
 	v_clojure_DOT_core_ex_info                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("ex-info"))
 	v_clojure_DOT_core_in_ns                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
@@ -78,9 +78,9 @@ func Load() {
 	tmp7 := v_clojure_DOT_core_require.Get()
 	tmp8 := lang.Apply1(tmp7, lang.NewVector(sym_bri_DOT_cli, kw_as, sym_cli))
 	_ = tmp8
-	// (require (quote [bri.core.secrets :as secrets]))
+	// (require (quote [cljg.secrets :as secrets]))
 	tmp9 := v_clojure_DOT_core_require.Get()
-	tmp10 := lang.Apply1(tmp9, lang.NewVector(sym_bri_DOT_core_DOT_secrets, kw_as, sym_secrets))
+	tmp10 := lang.Apply1(tmp9, lang.NewVector(sym_cljg_DOT_secrets, kw_as, sym_secrets))
 	_ = tmp10
 	// (def default-account "token")
 	v_bri_DOT_cli_DOT_auth_default_account.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(34), kw_column, int64(6), kw_end_line, int64(34), kw_end_column, int64(31), kw_private, true))
@@ -168,7 +168,7 @@ func Load() {
 					tmp41 = nil
 				}
 				_ = tmp41
-				tmp47 := v_bri_DOT_core_DOT_secrets_set.Get()
+				tmp47 := v_cljg_DOT_secrets_set.Get()
 				tmp48 := v_bri_DOT_cli_DOT_auth_account.Get()
 				tmp49 := lang.Apply1(tmp48, opts22)
 				tmp50 := v_clojure_DOT_core_str.Get()
@@ -184,8 +184,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_DOT_auth_login.BindRoot(tmp16)
 	_ = v_bri_DOT_cli_DOT_auth_login
-	// (def token "The stored credential for `service` as a MASKED secret (use\n  bri.core.secret…
-	v_bri_DOT_cli_DOT_auth_token.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(12), kw_doc, "The stored credential for `service` as a MASKED secret (use\n  bri.core.secrets/reveal for the plaintext), or nil if not logged in."))
+	// (def token "The stored credential for `service` as a MASKED secret (use\n  cljg.secrets/re…
+	v_bri_DOT_cli_DOT_auth_token.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(12), kw_doc, "The stored credential for `service` as a MASKED secret (use\n  cljg.secrets/reveal for the plaintext), or nil if not logged in."))
 	tmp53 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -200,7 +200,7 @@ func Load() {
 			_ = service58
 			opts59 := args[1]
 			_ = opts59
-			tmp60 := v_bri_DOT_core_DOT_secrets_get.Get()
+			tmp60 := v_cljg_DOT_secrets_get.Get()
 			tmp61 := v_bri_DOT_cli_DOT_auth_account.Get()
 			tmp62 := lang.Apply1(tmp61, opts59)
 			tmp63 := lang.Apply2(tmp60, service58, tmp62)
@@ -254,7 +254,7 @@ func Load() {
 			_ = service80
 			opts81 := args[1]
 			_ = opts81
-			tmp82 := v_bri_DOT_core_DOT_secrets_delete_.Get()
+			tmp82 := v_cljg_DOT_secrets_delete_.Get()
 			tmp83 := v_bri_DOT_cli_DOT_auth_account.Get()
 			tmp84 := lang.Apply1(tmp83, opts81)
 			tmp85 := lang.Apply2(tmp82, service80, tmp84)
@@ -303,7 +303,7 @@ func Load() {
 							tmp101 := lang.Apply2(kw_scheme, opts92, "Bearer")
 							var scheme102 any = tmp101
 							_ = scheme102
-							tmp103 := v_bri_DOT_core_DOT_secrets_reveal.Get()
+							tmp103 := v_cljg_DOT_secrets_reveal.Get()
 							tmp104 := lang.Apply1(tmp103, t99)
 							var raw105 any = tmp104
 							_ = raw105

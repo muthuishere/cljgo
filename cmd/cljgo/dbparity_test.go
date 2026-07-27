@@ -1,11 +1,11 @@
-// dbparity_test.go — the bri.core.data dual-mode parity gate (ADR 0072 dec 8).
+// dbparity_test.go — the cljg.data.cast dual-mode parity gate (ADR 0072 dec 8).
 // testdata/dbparity.cljg drives the whole blessed data surface (connect,
 // insert!, tx commit + rollback, update!, delete!, query, one) over an
 // in-memory SQLite database and prints a deterministic transcript. This
 // test runs it BOTH interpreted (`cljgo run`) and AOT-compiled (`cljgo
 // build`) and asserts byte-identical output. A REPL↔binary divergence is
 // the release blocker (CLAUDE.md); any diff here fails the build. It is
-// also the proof a bri.core.data app links CGO_ENABLED=0 (modernc SQLite is pure
+// also the proof a cljg.data.cast app links CGO_ENABLED=0 (modernc SQLite is pure
 // Go) — the whole point of ADR 0057.
 package main
 
@@ -44,11 +44,11 @@ func TestBriDBParity(t *testing.T) {
 	}
 	compiled, err := exec.Command(out).Output()
 	if err != nil {
-		t.Fatalf("running the compiled bri.core.data binary: %v", err)
+		t.Fatalf("running the compiled cljg.data.cast binary: %v", err)
 	}
 
 	if string(interp) != string(compiled) {
-		t.Fatalf("bri.core.data REPL↔binary divergence (release blocker):\n--- interpreted ---\n%s\n--- compiled ---\n%s",
+		t.Fatalf("cljg.data.cast REPL↔binary divergence (release blocker):\n--- interpreted ---\n%s\n--- compiled ---\n%s",
 			interp, compiled)
 	}
 
@@ -57,6 +57,6 @@ func TestBriDBParity(t *testing.T) {
 	want := "row 2 beta 9\nrow 3 gamma 1\none beta\ncount 2\n" +
 		"cast delta 4 admin? false\ncast-err expected an integer\n"
 	if string(compiled) != want {
-		t.Fatalf("bri.core.data parity transcript =\n%q\nwant\n%q", compiled, want)
+		t.Fatalf("cljg.data.cast parity transcript =\n%q\nwant\n%q", compiled, want)
 	}
 }

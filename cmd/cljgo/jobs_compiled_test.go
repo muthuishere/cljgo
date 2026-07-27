@@ -1,4 +1,4 @@
-// jobs_compiled_test.go — proves bri.core.jobs (ADR 0094) LINKS and works in an
+// jobs_compiled_test.go — proves cljg.jobs (ADR 0094) LINKS and works in an
 // AOT-compiled binary. Behavior (worker pool, drain, error capture, the Queue
 // interface) is covered interpreted in pkg/bri/jobs_test.go; here a compiled app
 // runs a worker pool over core.async and drains, proving the whole namespace —
@@ -15,7 +15,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/emit"
 )
 
-const jobsApp = `(require '[bri.core.jobs :as jobs])
+const jobsApp = `(require '[cljg.jobs :as jobs])
 (defn -main [& _]
   (let [done (atom 0)
         q    (jobs/local {:tick (fn [_] (swap! done inc))} {:workers 3})]
@@ -39,13 +39,13 @@ func TestBriCoreJobsCompiled(t *testing.T) {
 	build := exec.Command(bin, "build", "-o", app, src)
 	build.Env = append(os.Environ(), "CLJGO_SRC="+repoRoot(t), "CGO_ENABLED=0")
 	if out, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("cljgo build (bri.core.jobs app): %v\n%s", err, out)
+		t.Fatalf("cljgo build (cljg.jobs app): %v\n%s", err, out)
 	}
 	out, err := exec.Command(app).CombinedOutput()
 	if err != nil {
-		t.Fatalf("running the compiled bri.core.jobs binary: %v\n%s", err, out)
+		t.Fatalf("running the compiled cljg.jobs binary: %v\n%s", err, out)
 	}
 	if got := strings.TrimSpace(string(out)); !strings.Contains(got, "jobs 20") {
-		t.Fatalf("compiled bri.core.jobs output =\n%q\nwant it to contain %q", got, "jobs 20")
+		t.Fatalf("compiled cljg.jobs output =\n%q\nwant it to contain %q", got, "jobs 20")
 	}
 }

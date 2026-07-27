@@ -10,7 +10,7 @@
 // reader-validates every emitted file, and checks the splice — the ADR
 // 0047 anti-rot guarantee applied to the generator's output.
 //
-// bri.core.data (ADR 0072) is the data layer the generated model calls; this
+// cljg.data.cast (ADR 0072) is the data layer the generated model calls; this
 // command does NOT implement it. Every db call site is confined to the
 // generated resource's model section plus the one generated app.db ns, so
 // a reconciliation pass aligns exact names in one place.
@@ -348,13 +348,13 @@ const (
 // migrateArm is the `./app migrate` command spliced into -main the first time a
 // resource is generated (app-framework task 2.5): it applies db/migrations over
 // the app's datasource then returns, so `./app migrate && ./app` deploys. It
-// references bri.core.data, which the generated app already links (via app.db).
-const migrateArm = `"migrate" (let [db (bri.core.data/connect (get cfg :db {}))] ` +
-	`(bri.core.data/migrate! db "db/migrations") (bri.core.data/close! db) ` +
+// references cljg.data.cast, which the generated app already links (via app.db).
+const migrateArm = `"migrate" (let [db (cljg.data.cast/connect (get cfg :db {}))] ` +
+	`(cljg.data.cast/migrate! db "db/migrations") (cljg.data.cast/close! db) ` +
 	`(println "migrations applied"))`
 
 // migrateSentinel is the idempotency probe (the arm's stable prefix).
-const migrateSentinel = `"migrate" (let [db (bri.core.data/connect`
+const migrateSentinel = `"migrate" (let [db (cljg.data.cast/connect`
 
 // spliceMain inserts the resource's require and routes value into
 // app.main above the two documented comment markers (ADR 0073 §4). It is

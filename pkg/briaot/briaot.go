@@ -19,7 +19,6 @@ import (
 	bri "github.com/muthuishere/cljgo/pkg/bri"
 	briaudit "github.com/muthuishere/cljgo/pkg/briaot/briaudit"
 	briauth "github.com/muthuishere/cljgo/pkg/briaot/briauth"
-	bricache "github.com/muthuishere/cljgo/pkg/briaot/bricache"
 	bricli "github.com/muthuishere/cljgo/pkg/briaot/bricli"
 	bricliapi "github.com/muthuishere/cljgo/pkg/briaot/bricliapi"
 	bricliauth "github.com/muthuishere/cljgo/pkg/briaot/bricliauth"
@@ -27,9 +26,10 @@ import (
 	briconfig "github.com/muthuishere/cljgo/pkg/briaot/briconfig"
 	brihtml "github.com/muthuishere/cljgo/pkg/briaot/brihtml"
 	brihttp "github.com/muthuishere/cljgo/pkg/briaot/brihttp"
-	brijobs "github.com/muthuishere/cljgo/pkg/briaot/brijobs"
 	briopenapi "github.com/muthuishere/cljgo/pkg/briaot/briopenapi"
+	cljgcache "github.com/muthuishere/cljgo/pkg/briaot/cljgcache"
 	cljgio "github.com/muthuishere/cljgo/pkg/briaot/cljgio"
+	cljgjobs "github.com/muthuishere/cljgo/pkg/briaot/cljgjobs"
 	cljgnethttp "github.com/muthuishere/cljgo/pkg/briaot/cljgnethttp"
 	cljgos "github.com/muthuishere/cljgo/pkg/briaot/cljgos"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
@@ -53,8 +53,8 @@ func init() {
 	rt.RegisterLib("cljg.io", loadCljgio)
 	rt.RegisterLib("bri.web.openapi", loadBriopenapi)
 	rt.RegisterLib("bri.cli.api", loadBricliapi)
-	rt.RegisterLib("bri.core.cache", loadBricache)
-	rt.RegisterLib("bri.core.jobs", loadBrijobs)
+	rt.RegisterLib("cljg.cache", loadCljgcache)
+	rt.RegisterLib("cljg.jobs", loadCljgjobs)
 }
 
 // installShims interns the named bri namespace's Go shims as :private vars
@@ -82,5 +82,5 @@ func loadCljgos()         { installShims("cljg.os"); cljgos.Load() }
 func loadCljgio()         { installShims("cljg.io"); cljgio.Load() }
 func loadBriopenapi()     { installShims("bri.web.openapi"); briopenapi.Load() }
 func loadBricliapi()      { installShims("bri.cli.api"); bricliapi.Load() }
-func loadBricache()       { installShims("bri.core.cache"); bricache.Load() }
-func loadBrijobs()        { installShims("bri.core.jobs"); brijobs.Load() }
+func loadCljgcache()      { installShims("cljg.cache"); cljgcache.Load() }
+func loadCljgjobs()       { installShims("cljg.jobs"); cljgjobs.Load() }

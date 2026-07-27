@@ -1,4 +1,4 @@
-// secrets_test.go — white-box provider tests for bri.core.secrets (ADR 0086).
+// secrets_test.go — white-box provider tests for cljg.secrets (ADR 0086).
 // These exercise the scalar fetch/store boundary directly (no interpreter):
 // the env provider, URI parsing/dispatch, the read-only guard, and that the
 // keychain scheme RESOLVES. A live keychain round-trip is NOT run — CI has no

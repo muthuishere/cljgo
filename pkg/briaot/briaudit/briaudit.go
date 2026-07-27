@@ -93,7 +93,7 @@ func Load() {
 	v_bri_DOT_core_DOT_audit_process_sink.BindRoot(tmp13)
 	_ = v_bri_DOT_core_DOT_audit_process_sink
 	// (def set-sink! "Install the process-wide audit sink: a fn of the event map. The T2\n  seam…
-	v_bri_DOT_core_DOT_audit_set_sink_BANG_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(16), kw_doc, "Install the process-wide audit sink: a fn of the event map. The T2\n  seam — point it at bri.core.data + notify.Send. Passing nil restores the\n  default structured-stderr sink."))
+	v_bri_DOT_core_DOT_audit_set_sink_BANG_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(16), kw_doc, "Install the process-wide audit sink: a fn of the event map. The T2\n  seam — point it at cljg.data.cast + notify.Send. Passing nil restores the\n  default structured-stderr sink."))
 	tmp14 := lang.FnFunc1(func(f15 any) any {
 		tmp16 := v_clojure_DOT_core_reset_BANG_.Get()
 		tmp17 := v_bri_DOT_core_DOT_audit_process_sink.Get()

@@ -21,7 +21,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/bri"
 	// Blank-import every OptIn namespace's isolated shim package (ADR 0074,
 	// ADR 0076) so its init() registers the shim installer before an
-	// interpreted (require 'bri.core.telemetry)/(require 'bri.core.data) interns the private
+	// interpreted (require 'bri.core.telemetry)/(require 'cljg.data.cast) interns the private
 	// vars. briloader is the REPL / `cljgo dev` half — it already links the
 	// whole interpreter, so linking the heavy deps (the OpenTelemetry SDK, the
 	// SQLite + pgx drivers) here does not touch the AOT user-binary zero-cost

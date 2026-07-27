@@ -1,6 +1,6 @@
-# notes-db — a persistent CRUD API on bri.core.data
+# notes-db — a persistent CRUD API on cljg.data.cast
 
-A real, persistent notes service in cljgo: `bri.web.http` routes over **`bri.core.data`**
+A real, persistent notes service in cljgo: `bri.web.http` routes over **`cljg.data.cast`**
 (ADR 0072), the one blessed data layer. GET/POST/DELETE persist to **SQLite**
 — the zero-install default (ADR 0057, pure-Go `modernc.org/sqlite`, no cgo) —
 and the *identical code* drives **Postgres** via pgx (ADR 0058) when you set
@@ -25,7 +25,7 @@ DELETE /api/notes/{id}       -> 204
 ## The data layer, in one screen
 
 ```clojure
-(require '[bri.core.data :as db])
+(require '[cljg.data.cast :as db])
 
 ;; connect — SQLite file by default, ":memory:" for tests, pgx via APP_DB_URL
 (def conn (db/connect {:database "notes.db"}))
@@ -38,7 +38,7 @@ DELETE /api/notes/{id}       -> 204
 ;; => [{:id 7 :text "hi" :created-at "2026-…"}]
 
 (db/one  conn "select * from notes where id = ?" 7)   ; first row or nil
-(db/one! conn "select * from notes where id = ?" 7)   ; or throws :bri.core.data/not-found
+(db/one! conn "select * from notes where id = ?" 7)   ; or throws :cljg.data.cast/not-found
 
 ;; data-shaped writers build parametrized SQL from a map (kebab → snake)
 (db/insert! conn :notes {:text "buy milk" :created-at (db/now)})  ; :last-insert-id

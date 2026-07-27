@@ -1,5 +1,5 @@
 ;; app.main — a REAL persistent notes CRUD in cljgo: bri.web.http routes over
-;; bri.core.data (ADR 0072). GET/POST/DELETE persist to SQLite — the zero-install
+;; cljg.data.cast (ADR 0072). GET/POST/DELETE persist to SQLite — the zero-install
 ;; default (ADR 0057) — through the ONE blessed data layer: parametrized
 ;; SQL, plain maps out, migrations forward-only. Set APP_DB_URL=postgres://…
 ;; and the identical code drives pgx (ADR 0058) — a driver swap, not a fork.
@@ -15,12 +15,12 @@
 ;;   DELETE /api/notes/{id}       -> 204
 (ns app.main
   (:require [bri.web.http :as http :refer [GET POST DELETE]]
-            [bri.core.data :as db]
+            [cljg.data.cast :as db]
             [bri.core.config :as config]))
 
 (def cfg (config/load!))
 
-;; --- the database: bri.core.data over SQLite (or Postgres via APP_DB_URL) --------
+;; --- the database: cljg.data.cast over SQLite (or Postgres via APP_DB_URL) --------
 ;; APP_DB_URL wins when set (postgres://…); otherwise the SQLite file at
 ;; :db-path (":memory:" in the :test profile, so the suite is hermetic).
 ;;

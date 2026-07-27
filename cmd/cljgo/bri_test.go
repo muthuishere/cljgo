@@ -191,7 +191,7 @@ func TestMigrateCLI(t *testing.T) {
 }
 
 // The one-person-framework promise, end to end through the REAL binary
-// (ADR 0073, reconciled with bri.core.data ADR 0072): `cljgo new --template web`,
+// (ADR 0073, reconciled with cljg.data.cast ADR 0072): `cljgo new --template web`,
 // then `cljgo generate resource Note …`, then `cljgo test` is GREEN — a
 // working, authenticated, DB-backed CRUD scaffolded and passing its own
 // suite against a fresh in-memory database, with zero hand-editing.
@@ -208,7 +208,7 @@ func TestGenerateResourceRunsGreen(t *testing.T) {
 	if out, err := runIn(app, bin, "generate", "resource", "Note", "title:string", "body:text"); err != nil {
 		t.Fatalf("cljgo generate resource: %v\n%s", err, out)
 	}
-	// The generated CRUD suite runs against a fresh in-memory bri.core.data.
+	// The generated CRUD suite runs against a fresh in-memory cljg.data.cast.
 	if out, err := runIn(app, bin, "test"); err != nil {
 		t.Fatalf("cljgo test on the generated resource was not green: %v\n%s", err, out)
 	}
@@ -235,9 +235,9 @@ func TestExampleWebApiSuite(t *testing.T) {
 }
 
 // The shipped examples/notes-db project (a persistent notes CRUD on
-// bri.core.data, ADR 0072) is REAL source too: every gate run runs its
+// cljg.data.cast, ADR 0072) is REAL source too: every gate run runs its
 // in-process suite through the built binary. It is the thing people copy
-// to get a database-backed API, so a rot in bri.core.data — a renamed verb, a
+// to get a database-backed API, so a rot in cljg.data.cast — a renamed verb, a
 // broken migration, a lost snake→kebab mapping — turns this red. The
 // dual-mode (interpreted vs compiled) proof lives in TestBriDBParity.
 func TestExampleNotesDBSuite(t *testing.T) {
@@ -256,9 +256,9 @@ func TestExampleNotesDBSuite(t *testing.T) {
 
 // TestGenerateResourceSuite scaffolds a web app, generates a resource, and runs
 // the generated `cljgo test` end to end — the green CI gate task 5.1 (ADR 0073)
-// asked for once bri.core.data's API froze. TestGenerateResource (generate_test.go)
+// asked for once cljg.data.cast's API froze. TestGenerateResource (generate_test.go)
 // validates the emitted source + splice; this proves the generated CRUD suite
-// (db/query|one|insert!|exec! over bri.core.data) actually PASSES under the binary.
+// (db/query|one|insert!|exec! over cljg.data.cast) actually PASSES under the binary.
 func TestGenerateResourceSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping binary build in -short mode")
@@ -302,7 +302,7 @@ func TestDeployMigrateArm(t *testing.T) {
 		t.Fatalf("cljgo generate resource: %v\n%s", err, out)
 	}
 	// the migrate arm is spliced into -main
-	if m := readFile(t, filepath.Join(app, "src", "app", "main.cljg")); !strings.Contains(m, `"migrate" (let [db (bri.core.data/connect`) {
+	if m := readFile(t, filepath.Join(app, "src", "app", "main.cljg")); !strings.Contains(m, `"migrate" (let [db (cljg.data.cast/connect`) {
 		t.Fatalf("generated -main missing the migrate arm:\n%s", m)
 	}
 

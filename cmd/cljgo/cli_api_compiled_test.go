@@ -4,7 +4,7 @@
 // interpreted with a stubbed keychain in pkg/bri/cli_api_test.go); here the
 // compiled app loads the spec by URL and lists operations, proving the whole
 // composition (bri.cli.api → bri.web.openapi → cljg.net.http → bri.cli →
-// bri.cli.auth → bri.core.secrets) links + boots, and CGO_ENABLED=0 holds even
+// bri.cli.auth → cljg.secrets) links + boots, and CGO_ENABLED=0 holds even
 // with the keychain client linked in.
 package main
 

@@ -58,11 +58,11 @@ docker run -p 3000:3000 \
   app
 ```
 
-Secrets never live in the image — they arrive as env at run time. `APP_DB_URL` flips [bri.core.data](/cljgo/bri/db/) from the zero-install SQLite default to Postgres with no code change; `APP_AUTH__SECRET` is the [bri.core.security](/cljgo/bri/auth/) signing key that prod must set.
+Secrets never live in the image — they arrive as env at run time. `APP_DB_URL` flips [cljg.data.cast](/cljgo/bri/db/) from the zero-install SQLite default to Postgres with no code change; `APP_AUTH__SECRET` is the [bri.core.security](/cljgo/bri/auth/) signing key that prod must set.
 
 ## Migrations on deploy
 
-`(db/migrate! conn "migrations")` is idempotent and forward-only — run it on boot (the `delay` pattern) or as a one-shot before rollout. It is the same call in dev and prod; running it twice is a no-op. See [bri.core.data](/cljgo/bri/db/).
+`(db/migrate! conn "migrations")` is idempotent and forward-only — run it on boot (the `delay` pattern) or as a one-shot before rollout. It is the same call in dev and prod; running it twice is a no-op. See [cljg.data.cast](/cljgo/bri/db/).
 
 ## Ops endpoints
 
@@ -72,5 +72,5 @@ The API stack serves ops endpoints by default: `GET /healthz` (liveness), `GET /
 
 - [Compile & ship binaries](/cljgo/guides/compile/) — the general `cljgo build` story
 - [bri.core.config](/cljgo/bri/config/) — profiles, `APP_*` env, and the schema
-- [bri.core.data](/cljgo/bri/db/) — SQLite by default, Postgres via `APP_DB_URL`
+- [cljg.data.cast](/cljgo/bri/db/) — SQLite by default, Postgres via `APP_DB_URL`
 - [Benchmarks](/cljgo/reference/benchmarks/) — the measured image / cold-start / RSS figures

@@ -103,6 +103,6 @@ These live in [bri.web.http](/cljgo/bri/http/) and are on by default in the rele
 ## Where next
 
 - [bri.web.http](/cljgo/bri/http/) — the middleware stack, rate-limit, CORS, CSRF, the error funnel
-- [bri.core.data](/cljgo/bri/db/) — the model layer your guarded handlers call
+- [cljg.data.cast](/cljgo/bri/db/) — the model layer your guarded handlers call
 - [bri.core.telemetry](/cljgo/bri/otel/) — opt-in tracing that records the authenticated subject on each span
 - [bri.core.config](/cljgo/bri/config/) — where `APP_AUTH__SECRET` and `APP_SESSION_KEY` come from

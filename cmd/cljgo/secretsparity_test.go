@@ -1,8 +1,8 @@
-// secretsparity_test.go — the bri.core.secrets dual-mode parity gate (ADR 0086).
+// secretsparity_test.go — the cljg.secrets dual-mode parity gate (ADR 0086).
 // testdata/secretsparity.cljg drives the masked-secret surface over the env
 // provider; this runs it BOTH interpreted (`cljgo run`) and AOT-compiled
 // (`cljgo build`) and asserts byte-identical output. A REPL↔binary divergence
-// is the release blocker (CLAUDE.md). It is also the proof a bri.core.secrets app
+// is the release blocker (CLAUDE.md). It is also the proof a cljg.secrets app
 // LINKS opt-in and compiles CGO_ENABLED=0 (go-keyring is pure Go — ADR 0086),
 // and that the plaintext never leaks into a printed surface.
 package main
@@ -41,23 +41,23 @@ func TestBriSecretsParity(t *testing.T) {
 	build := exec.Command(bin, "build", "-o", out, src)
 	build.Env = append(os.Environ(), "CLJGO_SRC="+repoRoot(t))
 	if b, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("cljgo build (bri.core.secrets app): %v\n%s", err, b)
+		t.Fatalf("cljgo build (cljg.secrets app): %v\n%s", err, b)
 	}
 	runBin := exec.Command(out)
 	runBin.Env = withSecret
 	compiled, err := runBin.Output()
 	if err != nil {
-		t.Fatalf("running the compiled bri.core.secrets binary: %v", err)
+		t.Fatalf("running the compiled cljg.secrets binary: %v", err)
 	}
 
 	if string(interp) != string(compiled) {
-		t.Fatalf("bri.core.secrets REPL↔binary divergence (release blocker):\n--- interpreted ---\n%s\n--- compiled ---\n%s",
+		t.Fatalf("cljg.secrets REPL↔binary divergence (release blocker):\n--- interpreted ---\n%s\n--- compiled ---\n%s",
 			interp, compiled)
 	}
 
 	want := "masked len=5 ***…ha\nrevealed alpha\nchain alpha\nmiss nil\nsecret? true\n"
 	if string(compiled) != want {
-		t.Fatalf("bri.core.secrets parity transcript =\n%q\nwant\n%q", compiled, want)
+		t.Fatalf("cljg.secrets parity transcript =\n%q\nwant\n%q", compiled, want)
 	}
 	// the masked line must not carry the plaintext (only the last-2 tail)
 	if strings.Contains(strings.SplitN(string(compiled), "\n", 2)[0], "alpha") {
