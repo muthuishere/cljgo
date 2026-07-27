@@ -7,7 +7,7 @@
 ;; it freely; `cljgo generate resource` never rewrites an existing one.
 (ns {{.Ns}}
   (:require [bri.web.http :as http :refer [GET POST PUT DELETE]]
-            [bri.core.security :as auth]
+            [cljg.security :as auth]
             [cljg.data.cast :as db]
             [app.db :as adb]))
 

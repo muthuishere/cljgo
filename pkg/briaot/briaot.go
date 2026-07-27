@@ -18,7 +18,6 @@ package briaot
 import (
 	bri "github.com/muthuishere/cljgo/pkg/bri"
 	briaudit "github.com/muthuishere/cljgo/pkg/briaot/briaudit"
-	briauth "github.com/muthuishere/cljgo/pkg/briaot/briauth"
 	bricli "github.com/muthuishere/cljgo/pkg/briaot/bricli"
 	bricliapi "github.com/muthuishere/cljgo/pkg/briaot/bricliapi"
 	bricliauth "github.com/muthuishere/cljgo/pkg/briaot/bricliauth"
@@ -51,7 +50,6 @@ func init() {
 	rt.RegisterLib("bri.core.config", loadBriconfig)
 	rt.RegisterLib("bri.core.audit", loadBriaudit)
 	rt.RegisterLib("bri.web.html", loadBrihtml)
-	rt.RegisterLib("bri.core.security", loadBriauth)
 	rt.RegisterLib("bri.cli.validate", loadBriclivalidate)
 	rt.RegisterLib("bri.cli", loadBricli)
 	rt.RegisterLib("bri.cli.auth", loadBricliauth)
@@ -87,7 +85,6 @@ func loadBrihttp()        { installShims("bri.web.http"); brihttp.Load() }
 func loadBriconfig()      { installShims("bri.core.config"); briconfig.Load() }
 func loadBriaudit()       { installShims("bri.core.audit"); briaudit.Load() }
 func loadBrihtml()        { installShims("bri.web.html"); brihtml.Load() }
-func loadBriauth()        { installShims("bri.core.security"); briauth.Load() }
 func loadBriclivalidate() { installShims("bri.cli.validate"); briclivalidate.Load() }
 func loadBricli()         { installShims("bri.cli"); bricli.Load() }
 func loadBricliauth()     { installShims("bri.cli.auth"); bricliauth.Load() }

@@ -36,6 +36,7 @@ import (
 	// zero-cost constraint.
 	_ "github.com/muthuishere/cljgo/pkg/bri/cljson"
 	_ "github.com/muthuishere/cljgo/pkg/bri/otel"
+	_ "github.com/muthuishere/cljgo/pkg/bri/security"
 	"github.com/muthuishere/cljgo/pkg/emit"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"

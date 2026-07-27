@@ -27,16 +27,16 @@ Never hand-edit generated briaot files — run `go generate ./pkg/briaot`.
 
 ## 4. cljg.security (rename + complete — careful)
 
-- [ ] 4.1 Move `core/bri/auth.cljg` → `core/cljg/security.cljg`; in-ns → 'cljg.security; embed moves core/bri.go → core/cljg.go (CljgSecuritySource).
-- [ ] 4.2 Rename spec row IN PLACE (bri.go:95, keep position): OptIn:true, ShimImport pkg/bri/security, install:installSecurityShims (renamed installAuthShims stays in pkg/bri).
-- [ ] 4.3 InstallShimsInto runs BOTH s.install AND registry installer (currently either/or) — backward compatible.
-- [ ] 4.4 New isolated `pkg/bri/security` pkg: keychain shims (-keychain-set/-get/-del) with s65 unified store (go-keyring native probe → age file fallback; machine key 0600). RegisterInstaller("cljg.security", ...). Never log values.
-- [ ] 4.5 Add crypto shims to pkg/bri: -sha256, -hmac-sha256, -secure-random, -uuid, -b64-encode/-decode, -hex-encode/-decode (argon2 + rand-token exist).
-- [ ] 4.6 cljg/security.cljg public API: hash-password/check-password, sha256, hmac, random, token, uuid, base64(+decode), hex(+decode), save-to-keychain/get-from-keychain/delete-from-keychain (:backend :auto|:native|:file). JWT sign/verify/issue/guard family unchanged.
-- [ ] 4.7 genbri + briloader blank imports for pkg/bri/security; regenerate (old briauth dir goes away → cljgsecurity).
-- [ ] 4.8 Rename ALL bri.core.security callers (grep-gate empty over core pkg cmd templates examples conformance docs).
-- [ ] 4.9 Extend optin_linking_test: cljgsecurity links go-keyring; always-linked pkgs do NOT.
-- [ ] 4.10 Conformance: sha256/hmac known vectors; hash/check-password round-trip (freeze cljgo, argon2 salted); keychain gated behind env var (CI has no keychain), dual harness.
+- [x] 4.1 Move `core/bri/auth.cljg` → `core/cljg/security.cljg`; in-ns → 'cljg.security; embed moves core/bri.go → core/cljg.go (CljgSecuritySource).
+- [x] 4.2 Rename spec row IN PLACE (bri.go:95, keep position): OptIn:true, ShimImport pkg/bri/security, install:installSecurityShims (renamed installAuthShims stays in pkg/bri).
+- [x] 4.3 InstallShimsInto runs BOTH s.install AND registry installer (currently either/or) — backward compatible.
+- [x] 4.4 New isolated `pkg/bri/security` pkg: keychain shims (-keychain-set/-get/-del) with s65 unified store (go-keyring native probe → age file fallback; machine key 0600). RegisterInstaller("cljg.security", ...). Never log values.
+- [x] 4.5 Add crypto shims to pkg/bri: -sha256, -hmac-sha256, -secure-random, -uuid, -b64-encode/-decode, -hex-encode/-decode (argon2 + rand-token exist).
+- [x] 4.6 cljg/security.cljg public API: hash-password/check-password, sha256, hmac, random, token, uuid, base64(+decode), hex(+decode), save-to-keychain/get-from-keychain/delete-from-keychain (:backend :auto|:native|:file). JWT sign/verify/issue/guard family unchanged.
+- [x] 4.7 genbri + briloader blank imports for pkg/bri/security; regenerate (old briauth dir goes away → cljgsecurity).
+- [x] 4.8 Rename ALL bri.core.security callers (grep-gate empty over core pkg cmd templates examples conformance docs).
+- [x] 4.9 Extend optin_linking_test: cljgsecurity links go-keyring; always-linked pkgs do NOT.
+- [x] 4.10 Conformance: sha256/hmac known vectors; hash/check-password round-trip (freeze cljgo, argon2 salted); keychain gated behind env var (CI has no keychain), dual harness.
 
 ## 5. cljg.http/serve extraction (most delicate — behavior frozen)
 

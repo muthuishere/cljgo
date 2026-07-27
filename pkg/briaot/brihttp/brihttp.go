@@ -100,10 +100,10 @@ var (
 	re_1755                                        = &reader.Regex{Pattern: ","}
 	re_281                                         = &reader.Regex{Pattern: ";"}
 	re_447                                         = &reader.Regex{Pattern: ";"}
-	sym_bri_DOT_core_DOT_security                  = lang.NewSymbol("bri.core.security")
-	sym_bri_DOT_core_DOT_security_SLASH_auto_ban   = lang.NewSymbol("bri.core.security/auto-ban")
 	sym_bri_DOT_web_DOT_http                       = lang.NewSymbol("bri.web.http")
 	sym_bri_DOT_web_DOT_http_SLASH_routes          = lang.NewSymbol("bri.web.http/routes")
+	sym_cljg_DOT_security                          = lang.NewSymbol("cljg.security")
+	sym_cljg_DOT_security_SLASH_auto_ban           = lang.NewSymbol("cljg.security/auto-ban")
 	sym_clojure_DOT_core                           = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_edn                            = lang.NewSymbol("clojure.edn")
 	sym_clojure_DOT_string                         = lang.NewSymbol("clojure.string")
@@ -4643,14 +4643,14 @@ func Load() {
 			opts1986 := args[0]
 			_ = opts1986
 			tmp1987 := v_clojure_DOT_core_require.Get()
-			tmp1988 := lang.Apply1(tmp1987, sym_bri_DOT_core_DOT_security)
+			tmp1988 := lang.Apply1(tmp1987, sym_cljg_DOT_security)
 			_ = tmp1988
 			var tmp1989 any
 			_ = tmp1989
 			{
 				tmp1990 := v_clojure_DOT_core_deref.Get()
 				tmp1991 := v_clojure_DOT_core_resolve.Get()
-				tmp1992 := lang.Apply1(tmp1991, sym_bri_DOT_core_DOT_security_SLASH_auto_ban)
+				tmp1992 := lang.Apply1(tmp1991, sym_cljg_DOT_security_SLASH_auto_ban)
 				tmp1993 := lang.Apply1(tmp1990, tmp1992)
 				var auto_ban1994 any = tmp1993
 				_ = auto_ban1994

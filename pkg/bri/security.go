@@ -1,4 +1,6 @@
-// auth.go — bri.core.security's Go half: the S44-blessed security primitives.
+// security.go — cljg.security's Go half (ADR 0103, renamed from auth.go /
+// bri.core.security): the S44-blessed security primitives plus the
+// Bun.hash/crypto tier.
 //
 //   - JWT HS256, HAND-ROLLED on stdlib crypto/sha256 (S44 VERDICT: 2–3×
 //     faster than golang-jwt/v5, ⅓ the allocs, zero external JWT dep).
@@ -9,10 +11,16 @@
 //     blessed default, bcrypt-verify for importing legacy hashes. Both
 //     pure Go (golang.org/x/crypto) — ADR 0056 CGO_ENABLED=0 holds.
 //     These are DELIBERATELY slow (~15–45 ms); never SIMD-fast.
+//   - Crypto primitives (ADR 0103): sha256, hmac-sha256, secure-random,
+//     uuid v4, base64/hex codecs — all stdlib crypto/encoding, no deps.
 //
-// Interned as :private vars into bri.core.security on first (require 'bri.core.security),
+// The KEYCHAIN trio (-keychain-set/-get/-del) is NOT here: it pulls
+// go-keyring + age, so it lives in the ISOLATED opt-in pkg/bri/security
+// (RegisterInstaller), keeping always-linked packages keyring-free.
+//
+// Interned as :private vars into cljg.security on first (require 'cljg.security),
 // same lazy lib-provider path as bri.web.http (see bri.go). exp/iat live in
-// the Clojure half (bri/auth.cljg) so tests can freeze the clock.
+// the Clojure half (cljg/security.cljg) so tests can freeze the clock.
 package bri
 
 import (
@@ -21,6 +29,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -38,8 +47,9 @@ const jwtFixedHeader = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
 
 var jwtB64 = base64.RawURLEncoding
 
-// installAuthShims interns bri.core.security's private Go primitives.
-func installAuthShims(def func(name string, fn func(args ...any) any)) {
+// installSecurityShims interns cljg.security's private Go primitives (the
+// stdlib/x-crypto half — the opt-in keychain trio arrives via the registry).
+func installSecurityShims(def func(name string, fn func(args ...any) any)) {
 	def("-jwt-sign", func(args ...any) any {
 		if len(args) != 2 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: -jwt-sign", len(args)))
@@ -70,6 +80,64 @@ func installAuthShims(def func(name string, fn func(args ...any) any)) {
 	def("-rand-token", func(args ...any) any { return randToken() })
 	def("-now-millis", func(args ...any) any { return nowMillis() })
 	def("-getenv", getenvShim)
+
+	// --- crypto primitives (ADR 0103) ---------------------------------------
+	def("-sha256", func(args ...any) any {
+		sum := sha256.Sum256([]byte(asString(one("-sha256", args))))
+		return hex.EncodeToString(sum[:])
+	})
+	def("-hmac-sha256", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -hmac-sha256 (expects 2: [key message])", len(args)))
+		}
+		mac := hmac.New(sha256.New, []byte(asString(args[0])))
+		mac.Write([]byte(asString(args[1])))
+		return hex.EncodeToString(mac.Sum(nil))
+	})
+	def("-secure-random", func(args ...any) any {
+		n := asInt(one("-secure-random", args))
+		if n <= 0 {
+			panic(fmt.Errorf("cljg.security/random: expected a positive byte count, got %d", n))
+		}
+		b := make([]byte, n)
+		if _, err := rand.Read(b); err != nil {
+			panic(fmt.Errorf("-secure-random: %w", err))
+		}
+		return hex.EncodeToString(b)
+	})
+	def("-uuid", func(args ...any) any { return uuidV4() })
+	def("-b64-encode", func(args ...any) any {
+		return base64.StdEncoding.EncodeToString([]byte(asString(one("-b64-encode", args))))
+	})
+	def("-b64-decode", func(args ...any) any {
+		b, err := base64.StdEncoding.DecodeString(asString(one("-b64-decode", args)))
+		if err != nil {
+			return nil
+		}
+		return string(b)
+	})
+	def("-hex-encode", func(args ...any) any {
+		return hex.EncodeToString([]byte(asString(one("-hex-encode", args))))
+	})
+	def("-hex-decode", func(args ...any) any {
+		b, err := hex.DecodeString(asString(one("-hex-decode", args)))
+		if err != nil {
+			return nil
+		}
+		return string(b)
+	})
+}
+
+// uuidV4 is a random (version 4, variant 10) UUID from crypto/rand —
+// xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx.
+func uuidV4() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		panic(fmt.Errorf("-uuid: %w", err))
+	}
+	b[6] = (b[6] & 0x0f) | 0x40 // version 4
+	b[8] = (b[8] & 0x3f) | 0x80 // variant 10
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }
 
 // --- JWT HS256 (hand-rolled, alg-pinned) ------------------------------------

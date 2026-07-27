@@ -102,3 +102,15 @@ var CljgStreamSource string
 //
 //go:embed cljg/process.cljg
 var CljgProcessSource string
+
+// CljgSecuritySource is core/cljg/security.cljg — cljg.security: the security
+// primitive namespace (ADR 0103, renamed from bri.core.security): HS256 JWT
+// (sign/verify/issue, alg pinned), argon2id passwords, the composable guard
+// family + auto-ban (Ring middleware), sha256/hmac/random/token/uuid/
+// base64/hex, and the s65 unified keychain (save/get/delete, native OS store
+// with an age-encrypted-file fallback). Crypto/JWT shims live in pkg/bri
+// (security.go); the keychain trio lives in the ISOLATED opt-in
+// pkg/bri/security so the keyring client links only when required.
+//
+//go:embed cljg/security.cljg
+var CljgSecuritySource string

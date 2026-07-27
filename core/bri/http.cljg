@@ -830,8 +830,8 @@
   of opts, or false to drop it)."
   ([] (api-defaults {}))
   ([opts]
-   (require 'bri.core.security)
-   (let [auto-ban (deref (resolve 'bri.core.security/auto-ban))
+   (require 'cljg.security)
+   (let [auto-ban (deref (resolve 'cljg.security/auto-ban))
          base     [request-id logging (recover) (cors (or (:cors opts) {})) metrics]
          base     (if (false? (:auto-ban opts))
                     base

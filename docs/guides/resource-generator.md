@@ -37,7 +37,7 @@ generated resource note (/api/notes)
   splice  src/app/main.cljg  (require app.notes + routes)
 ```
 
-- Every route is authenticated (bri.core.security); `delete` is `admin-only`.
+- Every route is authenticated (cljg.security); `delete` is `admin-only`.
 - The model is the only place that touches cljg.data.cast (ADR 0072); every query is
   parametrized. `src/app/notes.cljg` is YOURS to edit — the generator never
   rewrites an existing resource (pass `--force` to overwrite).
