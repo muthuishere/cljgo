@@ -228,6 +228,11 @@ func Specs() []Spec {
 		// cljg_dns.go). Stdlib net only, so non-OptIn; placed LAST so it does
 		// not shift the gensym numbering of earlier emitted namespaces.
 		{Name: "cljg.net.dns", File: "cljg/net_dns.cljg", Pkg: "cljgnetdns", Source: &core.CljgNetDNSSource, install: installDNSShims},
+		// cljg.compress — stdlib gzip/deflate/zlib compress+decompress (ADR
+		// 0103 wave 1, spike s61) over Go's compress/*; decompress-on-read
+		// streaming wraps cljg.stream readables (registered AFTER cljg.stream
+		// so its handles exist). zstd/brotli deferred to an opt-in package.
+		{Name: "cljg.compress", File: "cljg/compress.cljg", Pkg: "cljgcompress", Source: &core.CljgCompressSource, install: installCompressShims},
 	}
 }
 

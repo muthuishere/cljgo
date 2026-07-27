@@ -131,9 +131,19 @@ var CljgSecuritySource string
 //
 //go:embed cljg/socket.cljg
 var CljgSocketSource string
+
 // CljgNetDNSSource is core/cljg/net_dns.cljg — cljg.net.dns: DNS lookups (ADR
 // 0103, spike s60), the Bun.dns analog. lookup/reverse/mx/txt/srv/cname/
 // ns-records over the stdlib pure-Go resolver (PreferGo). Non-OptIn.
 //
 //go:embed cljg/net_dns.cljg
 var CljgNetDNSSource string
+
+// CljgCompressSource is core/cljg/compress.cljg — cljg.compress: stdlib
+// compression codecs (ADR 0103 wave 1, spike s61) — gzip/deflate/zlib
+// compress+decompress over Go's compress/* (pure stdlib, zero deps), plus
+// decompress-on-read streaming wrappers composing with cljg.stream.
+// zstd/brotli are DEFERRED to a later opt-in package (binary-size cost).
+//
+//go:embed cljg/compress.cljg
+var CljgCompressSource string

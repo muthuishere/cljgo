@@ -20,10 +20,10 @@ Never hand-edit generated briaot files — run `go generate ./pkg/briaot`.
 
 ## 3. cljg.compress (stdlib, additive)
 
-- [ ] 3.1 `core/cljg/compress.cljg` — gzip/deflate/zlib compress+decompress (string + bytes), streaming over cljg.stream.
-- [ ] 3.2 Go shim `pkg/bri/cljg_compress.go` (installCompressShims).
-- [ ] 3.3 Spec row + embed + regenerate.
-- [ ] 3.4 Conformance: round-trip equality for all three codecs, dual harness.
+- [x] 3.1 `core/cljg/compress.cljg` — gzip/deflate/zlib compress+decompress (string + bytes), streaming over cljg.stream.
+- [x] 3.2 Go shim `pkg/bri/cljg_compress.go` (installCompressShims).
+- [x] 3.3 Spec row + embed + regenerate.
+- [x] 3.4 Conformance: round-trip equality for all three codecs, dual harness.
 
 ## 4. cljg.security (rename + complete — careful)
 
