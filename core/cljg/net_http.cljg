@@ -14,7 +14,8 @@
 ;; The Go half is one request shim (net/http, pure Go) plus JSON/url encode;
 ;; everything else here is portable Clojure, so it runs identically interpreted
 ;; and AOT-compiled. Private Go shims interned before this loads: -http-do
-;; -json-encode -json-decode -url-encode.
+;; -http-stream -json-encode -json-decode -url-encode. (-http-stream backs
+;; {:as :stream}: a live cljg.stream body handle, ADR 0101.)
 ;;
 ;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
 ;; fully-qualified in-ns + refer open the file. `get` is defined here (callers
@@ -59,9 +60,13 @@
 ;; --- the core request + retry ----------------------------------------------
 
 (defn- do-once
-  "One request → a response map with :ok? added."
-  [method url headers body timeout]
-  (let [resp (-http-do (str/upper-case (name method)) url (or headers {}) body timeout)]
+  "One request → a response map with :ok? added. With `as` = :stream the :body is
+  a cljg.stream READABLE handle over the LIVE response body (constant-memory
+  streaming; the caller closes it) instead of a fully-buffered string; any other
+  `as` keeps the default buffered-string body."
+  [method url headers body timeout as]
+  (let [shim (if (= as :stream) -http-stream -http-do)
+        resp (shim (str/upper-case (name method)) url (or headers {}) body timeout)]
     (assoc resp :ok? (<= 200 (:status resp) 299))))
 
 (defn request
@@ -70,23 +75,28 @@
     :headers map {name value}                :query map → query string
     :body    raw string | :json data | :edn data | :form map   (one; that precedence)
     :timeout ms (default 30000)              :retry n (default 0), backoff on transport error + 5xx
-  Returns {:status :headers :body :ok?} — :body a string. Retries re-raise the
-  last error / return the last 5xx after n attempts."
+    :as      :stream → :body is a cljg.stream readable handle over the live body
+             (opt-in; buffered string is the default)
+  Returns {:status :headers :body :ok?} — :body a string, or a cljg.stream
+  readable handle when :as :stream (the caller closes it). Retries re-raise the
+  last error / return the last 5xx after n attempts; a streaming response is not
+  retried on 5xx (its body handle is live), only on a transport error."
   [opts]
   (let [method  (:method opts :get)
         url     (str (:url opts) (encode-query (:query opts)))
         [b ct]  (body+type opts)
         headers (with-content-type (or (:headers opts) {}) ct)
         timeout (:timeout opts default-timeout)
+        as      (:as opts)
         tries   (inc (:retry opts 0))]
     (loop [n tries]
-      (let [res (try {:v (do-once method url headers b timeout)}
+      (let [res (try {:v (do-once method url headers b timeout as)}
                      (catch Throwable e {:err e}))]
         (cond
           ;; a transport error: retry if attempts remain, else re-raise
           (:err res) (if (> n 1) (recur (dec n)) (throw (:err res)))
-          ;; a 5xx: retry if attempts remain, else return it
-          (and (>= (:status (:v res)) 500) (> n 1)) (recur (dec n))
+          ;; a 5xx (buffered only): retry if attempts remain, else return it
+          (and (not= as :stream) (>= (:status (:v res)) 500) (> n 1)) (recur (dec n))
           :else (:v res))))))
 
 ;; --- the verbs (sugar over request) -----------------------------------------

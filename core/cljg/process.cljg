@@ -1,0 +1,53 @@
+;; cljg.process — streaming subprocess spawn (ADR 0101). Where cljg.io's
+;; exec/sh/sh! run a command to completion and buffer its output, `spawn` keeps
+;; the process LIVE and hands back live pipes, so the caller streams into and
+;; out of it a line/chunk at a time (the cat / less / ffmpeg / long-running
+;; child shape):
+;;
+;;   (require '[cljg.process :as proc] '[cljg.stream :as st])
+;;   (let [p (proc/spawn ["cat"])]
+;;     (st/write-line (:in p) "hello")   ; write to the child's stdin
+;;     (st/close (:in p))                ; EOF → cat drains and exits
+;;     (println (st/read-line (:out p))) ; read the child's stdout  => hello
+;;     ((:wait p)))                      ; block for exit, => 0
+;;
+;; The handle is {:in <writable> :out <readable> :err <readable>
+;;                :wait (fn [] -> exit-code) :kill (fn [] -> nil)}.
+;; :in / :out / :err are cljg.stream handles (require cljg.stream to read/write
+;; them); :wait blocks until the process exits and returns its exit code (a
+;; non-zero exit is a normal result); :kill force-terminates it.
+;;
+;; The Go half (pkg/bri/proc_spawn.go) is a thin shim over os/exec's
+;; StdinPipe/StdoutPipe/StderrPipe; the pipes are wrapped as the same
+;; Readable/Writable handles cljg.stream and cljg.net.http use (ONE stream
+;; abstraction — spike s56). Everything here is portable Clojure, so it runs
+;; identically interpreted and AOT-compiled. Private Go shims interned before
+;; this loads: -proc-spawn -proc-wait -proc-kill.
+;;
+;; (cljg.io's run-to-completion exec/sh/sh! stay in cljg.io — ADR 0101 makes
+;; cljg.process the home for the STREAMING capability; folding exec/sh here is a
+;; documented, deferred consolidation, not a half-move.)
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file.
+(clojure.core/in-ns 'cljg.process)
+(clojure.core/refer 'clojure.core)
+
+(defn spawn
+  "Start a subprocess and return a live handle:
+    {:in <writable> :out <readable> :err <readable>
+     :wait (fn [] -> exit-code) :kill (fn [] -> nil)}
+  `command` is a vector [cmd arg…]. opts (optional):
+    :env {name value}  merged onto the current environment
+    :dir path          the working directory
+  The child runs concurrently; stream into :in and out of :out/:err with
+  cljg.stream, then call :wait (blocks for exit, returns the exit code) or :kill.
+  A missing/unrunnable binary throws (it never started)."
+  ([command] (spawn command {}))
+  ([command opts]
+   (let [{:keys [in out err -handle]} (-proc-spawn (vec command) opts)]
+     {:in   in
+      :out  out
+      :err  err
+      :wait (fn [] (-proc-wait -handle))
+      :kill (fn [] (-proc-kill -handle))})))

@@ -34,6 +34,8 @@ import (
 	cljgjobs "github.com/muthuishere/cljgo/pkg/briaot/cljgjobs"
 	cljgnethttp "github.com/muthuishere/cljgo/pkg/briaot/cljgnethttp"
 	cljgos "github.com/muthuishere/cljgo/pkg/briaot/cljgos"
+	cljgprocess "github.com/muthuishere/cljgo/pkg/briaot/cljgprocess"
+	cljgstream "github.com/muthuishere/cljgo/pkg/briaot/cljgstream"
 	cljgsystem "github.com/muthuishere/cljgo/pkg/briaot/cljgsystem"
 	corematch "github.com/muthuishere/cljgo/pkg/briaot/corematch"
 	toolscli "github.com/muthuishere/cljgo/pkg/briaot/toolscli"
@@ -65,6 +67,8 @@ func init() {
 	rt.RegisterLib("clojure.core.match", loadCorematch)
 	rt.RegisterLib("cljg.system", loadCljgsystem)
 	rt.RegisterLib("cljg.date", loadCljgdate)
+	rt.RegisterLib("cljg.stream", loadCljgstream)
+	rt.RegisterLib("cljg.process", loadCljgprocess)
 }
 
 // installShims interns the named bri namespace's Go shims as :private vars
@@ -99,3 +103,5 @@ func loadCljgdatacsv()    { installShims("clojure.data.csv"); cljgdatacsv.Load()
 func loadCorematch()      { installShims("clojure.core.match"); corematch.Load() }
 func loadCljgsystem()     { installShims("cljg.system"); cljgsystem.Load() }
 func loadCljgdate()       { installShims("cljg.date"); cljgdate.Load() }
+func loadCljgstream()     { installShims("cljg.stream"); cljgstream.Load() }
+func loadCljgprocess()    { installShims("cljg.process"); cljgprocess.Load() }

@@ -89,3 +89,16 @@ var CljgSystemSource string
 //
 //go:embed cljg/date.cljg
 var CljgDateSource string
+
+// CljgStreamSource is core/cljg/stream.cljg — cljg.stream: the reducible
+// readable/writable stream handle (ADR 0101, spike s56) over Go io.Reader/
+// io.Writer, reused by cljg.process and cljg.net.http :as :stream.
+//
+//go:embed cljg/stream.cljg
+var CljgStreamSource string
+
+// CljgProcessSource is core/cljg/process.cljg — cljg.process: streaming
+// subprocess spawn (ADR 0101) over exec.Cmd pipes wrapped as cljg.stream.
+//
+//go:embed cljg/process.cljg
+var CljgProcessSource string

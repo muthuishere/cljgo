@@ -192,6 +192,13 @@ func Specs() []Spec {
 		{Name: "cljg.system", File: "cljg/system.cljg", Pkg: "cljgsystem", Source: &core.CljgSystemSource, install: installSystemShims},
 		// cljg.date — public monotonic nano-time + wall-clock now/since over stdlib time.
 		{Name: "cljg.date", File: "cljg/date.cljg", Pkg: "cljgdate", Source: &core.CljgDateSource, install: installDateShims},
+		// cljg.stream — the reducible readable/writable stream handle (ADR 0101,
+		// spike s56): a Seqable over a Go io.Reader (reduce/into/transduce) + a
+		// writable over io.Writer. Reused by cljg.process pipes and cljg.net.http.
+		{Name: "cljg.stream", File: "cljg/stream.cljg", Pkg: "cljgstream", Source: &core.CljgStreamSource, install: installStreamShims},
+		// cljg.process — streaming subprocess: spawn -> {:in :out :err :wait :kill}
+		// over exec.Cmd pipes wrapped as cljg.stream handles.
+		{Name: "cljg.process", File: "cljg/process.cljg", Pkg: "cljgprocess", Source: &core.CljgProcessSource, install: installProcSpawnShims},
 	}
 }
 
