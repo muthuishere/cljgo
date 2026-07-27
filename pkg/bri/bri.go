@@ -199,6 +199,13 @@ func Specs() []Spec {
 		// cljg.process — streaming subprocess: spawn -> {:in :out :err :wait :kill}
 		// over exec.Cmd pipes wrapped as cljg.stream handles.
 		{Name: "cljg.process", File: "cljg/process.cljg", Pkg: "cljgprocess", Source: &core.CljgProcessSource, install: installProcSpawnShims},
+		// cljg.socket — raw sockets (ADR 0103, spike s59): TCP/unix listen +
+		// accept + dial (plain or TLS via crypto/tls) with connections as
+		// cljg.stream-composable duplex handles (a net.Conn is an
+		// io.ReadWriteCloser), plus UDP datagrams. Stdlib net only, so
+		// non-OptIn. Placed LAST (nothing requires it) to keep the gensym
+		// numbering of earlier emitted namespaces stable.
+		{Name: "cljg.socket", File: "cljg/socket.cljg", Pkg: "cljgsocket", Source: &core.CljgSocketSource, install: installSocketShims},
 	}
 }
 

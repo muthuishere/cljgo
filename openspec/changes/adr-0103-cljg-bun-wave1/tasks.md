@@ -6,10 +6,10 @@ Never hand-edit generated briaot files — run `go generate ./pkg/briaot`.
 
 ## 1. cljg.socket (stdlib, additive — easiest)
 
-- [ ] 1.1 `core/cljg/socket.cljg` (satellite preamble in-ns style) — listen/accept/dial/close for tcp+udp+unix; conn as duplex map composing cljg.stream; TLS via opts.
-- [ ] 1.2 Go shim `pkg/bri/cljg_socket.go` (installSocketShims) over stdlib net + crypto/tls.
-- [ ] 1.3 Spec row (LAST in Specs()) + embed in core/cljg.go + `go generate ./pkg/briaot`.
-- [ ] 1.4 Conformance: loopback TCP echo + UDP round-trip (self-contained, no network), dual harness.
+- [x] 1.1 `core/cljg/socket.cljg` (satellite preamble in-ns style) — listen/accept/dial/close for tcp+udp+unix; conn as duplex map composing cljg.stream; TLS via opts.
+- [x] 1.2 Go shim `pkg/bri/cljg_socket.go` (installSocketShims) over stdlib net + crypto/tls.
+- [x] 1.3 Spec row (LAST in Specs()) + embed in core/cljg.go + `go generate ./pkg/briaot`.
+- [x] 1.4 Conformance: loopback TCP echo + UDP round-trip (self-contained, no network), dual harness.
 
 ## 2. cljg.net.dns (stdlib, additive)
 
