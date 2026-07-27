@@ -75,3 +75,17 @@ var CljgSecretsSource string
 //
 //go:embed cljg/data_cast.cljg
 var CljgDataCastSource string
+
+// CljgSystemSource is core/cljg/system.cljg — cljg.system: process +
+// environment primitives (ADR 0101). getenv/environ/exit/args over stdlib os;
+// values RETURNED as data, never printed (owner secret doctrine). Non-OptIn.
+//
+//go:embed cljg/system.cljg
+var CljgSystemSource string
+
+// CljgDateSource is core/cljg/date.cljg — cljg.date: time primitives (ADR
+// 0101). Public monotonic nano-time (promoting the `time` macro's private
+// -nano-time technique), wall-clock now, and since/since-ms. Non-OptIn.
+//
+//go:embed cljg/date.cljg
+var CljgDateSource string

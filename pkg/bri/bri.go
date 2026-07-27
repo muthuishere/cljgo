@@ -186,6 +186,12 @@ func Specs() []Spec {
 		// decision-tree compiler (the Go host primitive -match-compile, match.go);
 		// macroexpand-time only, so a compiled binary links zero match runtime.
 		{Name: "clojure.core.match", File: "match.cljg", Pkg: "corematch", Source: &core.CoreMatchSource, install: installMatchShims},
+		// --- cljg.* native stdlib gaps (ADR 0101) — lazy + opt-in, Go-host over
+		// stdlib os/time; non-OptIn (stdlib pulls no heavy dep). ---
+		// cljg.system — env (getenv/environ), exit, args over stdlib os.
+		{Name: "cljg.system", File: "cljg/system.cljg", Pkg: "cljgsystem", Source: &core.CljgSystemSource, install: installSystemShims},
+		// cljg.date — public monotonic nano-time + wall-clock now/since over stdlib time.
+		{Name: "cljg.date", File: "cljg/date.cljg", Pkg: "cljgdate", Source: &core.CljgDateSource, install: installDateShims},
 	}
 }
 

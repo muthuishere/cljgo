@@ -1,0 +1,48 @@
+;; cljg.date — time primitives (ADR 0101). Two clocks clojure.core does not
+;; surface directly: a MONOTONIC nanosecond stopwatch for measuring elapsed
+;; durations (immune to wall-clock adjustments) and the wall-clock epoch. The
+;; `time` macro keeps its private -nano-time in clojure.core; this namespace
+;; promotes the same monotonic source to a public cljg.date/nano-time and adds
+;; the wall clock + elapsed helpers.
+;;
+;;   (require '[cljg.date :as date])
+;;   (date/now)                        ; wall-clock epoch milliseconds
+;;   (let [t0 (date/nano-time)] ... (date/since t0))   ; elapsed nanos so far
+;;   (date/since t0 t1)                ; elapsed nanos between two readings
+;;   (date/since-ms t0 t1)            ; the same, in milliseconds (a double)
+;;
+;; nano-time returns MONOTONIC nanoseconds since process start — only the
+;; DIFFERENCE of two readings is meaningful; never treat it as a wall-clock
+;; time. For wall time use `now`.
+;;
+;; Private Go shims interned before this loads (pkg/bri/cljg_date.go):
+;; -nano-time -now-millis.
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file.
+(clojure.core/in-ns 'cljg.date)
+(clojure.core/refer 'clojure.core)
+
+(defn nano-time
+  "Monotonic nanoseconds since process start (the System/nanoTime analog).
+  Only the difference of two readings is meaningful — pair with `since`."
+  []
+  (-nano-time))
+
+(defn now
+  "The current wall-clock time as epoch milliseconds (the System/currentTimeMillis
+  analog)."
+  []
+  (-now-millis))
+
+(defn since
+  "Elapsed nanoseconds. With one reading `t0` (from `nano-time`), the elapsed
+  nanos from `t0` until now. With two readings, `t1` - `t0`."
+  ([t0] (- (nano-time) t0))
+  ([t0 t1] (- t1 t0)))
+
+(defn since-ms
+  "Elapsed milliseconds (a double) — `since` divided by 1e6. One reading
+  measures until now; two measure the interval between them."
+  ([t0] (/ (double (since t0)) 1000000.0))
+  ([t0 t1] (/ (double (since t0 t1)) 1000000.0)))
