@@ -6,6 +6,7 @@ A2005 def name is not a symbol
 A2006 malformed binding vector
 A2007 invalid binding form
 A2008 conflicting fn overloads
+A2009 no such namespace
 G5000 uncategorized compiler error
 G5001 value is not a number
 G5002 value is not a function

@@ -362,6 +362,14 @@ func (e *CompilerError) Error() string {
 	return fmt.Sprintf("compiler error at %s:%d:%d: %v", e.file, e.line, e.col, e.err)
 }
 
+// Unwrap exposes the wrapped cause so errors.As/Is see it — the seam a
+// raise-site diag.Carrier (an enriched analysis error carrying fixes, e.g.
+// the Java-static did-you-mean of corelib.ResolveVar) travels through: the
+// analyzer wraps every resolution failure in a CompilerError for position,
+// and without Unwrap the carrier's structured detail was invisible to
+// diag.FromError.
+func (e *CompilerError) Unwrap() error { return e.err }
+
 ////////////////////////////////////////////////////////////////////////////////
 // TODO: Revisit
 

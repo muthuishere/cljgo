@@ -10,6 +10,7 @@
 ;;   (sys/environ)                    ; {name value} — the whole environment
 ;;   (sys/args)                       ; ["/path/to/prog" "arg1" ...]
 ;;   (sys/exit)   (sys/exit 1)        ; terminate the process (status 0 default)
+;;   (sys/sleep 100)                  ; block this thread for 100 ms (Thread/sleep)
 ;;
 ;; SECURITY: getenv/environ RETURN values as data — they never print or log a
 ;; value (owner doctrine: a secret's value must not leak into output). Read a
@@ -44,6 +45,21 @@
   keeps *command-line-args*."
   []
   (-args))
+
+(defn sleep
+  "Block the current thread for `ms` milliseconds, then return nil — the
+  Thread/sleep analog (cljgo runs on Go, so there is no Thread class; this is
+  Go's time.Sleep). `ms` is an integer count of milliseconds; 0 or negative
+  returns immediately. The sleep is not interruptible.
+
+  Oracle (clojure 1.12.5, 2026-07-28): (Thread/sleep 5) => nil, and a 50 ms
+  sleep advances System/nanoTime by at least 40 ms — the same contract this
+  fn freezes in conformance/tests/cljg-system-sleep.clj."
+  [ms]
+  ;; clojure.core/-sleep-ms is the existing private time.Sleep seam (the
+  ;; portability shim's substrate, corelib/misc_builtins.go) — reused rather
+  ;; than adding a second host shim, so this namespace stays shim-free here.
+  (clojure.core/-sleep-ms ms))
 
 (defn exit
   "Terminate the process immediately with integer exit `status` (default 0).

@@ -21,7 +21,7 @@ func ResolveVar(sym *lang.Symbol) (*lang.Var, error) {
 			ns = lang.FindNamespace(nsSym)
 		}
 		if ns == nil {
-			return nil, fmt.Errorf("no such namespace: %s", sym.Namespace())
+			return nil, newNoSuchNamespaceError(sym)
 		}
 		v := ns.FindInternedVar(lang.NewSymbol(sym.Name()))
 		if v == nil {
