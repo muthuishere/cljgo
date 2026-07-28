@@ -37,6 +37,17 @@
     (binding [t/*report-counters* (atom t/initial-report-counters)]
       (t/test-vars [#'it-fails-loudly]))))
 
+;; This file DELIBERATELY runs failing assertions — it exists to freeze the
+;; failure-report TEXT, not to report a failing suite. Those failures still
+;; bump clojure.test's PROCESS-level tally (`-process-failures`), and since
+;; ADR 0105 task 2.1 a non-zero tally exits the process 1 in BOTH legs. That
+;; is correct and must stay: a red suite has to fail CI. So this file clears
+;; the tally it intentionally dirtied, otherwise the compiled leg exits 1 and
+;; the dual harness reads a deliberate fixture as a real failure.
+;; `*report-counters*` above is per-run and does NOT cover this — the process
+;; tally is a separate atom bumped in do-report, the one choke point.
+(reset! t/-process-failures 0)
+
 ;; the report is compared line by line so the frozen value stays readable
-(str/split-lines (str/replace report "#=(var user/it-fails-loudly)" "<VAR>"))
-;; expect: ["" "FAIL in <VAR> fails loudly " "expected: (clojure.core/= (+ 1 2) 4)" "  actual: (not (clojure.core/= 3 4))" "" "FAIL in <VAR> fails loudly " "expected: (cljx.test/to-contain? [\"ravi\"] \"asha\")" "  actual: (not (cljx.test/to-contain? [\"ravi\"] \"asha\"))" "" "FAIL in <VAR> fails loudly " "expected: (cljx.test/to-match? \"abc\" #\"zz\")" "  actual: (not (cljx.test/to-match? \"abc\" #\"zz\"))" "" "FAIL in <VAR> fails loudly " "expected: (cljx.test/message-matches? (cljx.test/caught-message (clojure.core/fn [] (+ 1 1))) \"boom\")" "  actual: (not (cljx.test/message-matches? \"<no exception thrown>\" \"boom\"))" "" "FAIL in <VAR> fails loudly " "expected: (clojure.core/nil? 1)" "  actual: (not (clojure.core/nil? 1))" ";; captured output — fails loudly" "side effect line" ";; end captured output"]
+(str/split-lines report)
+;; expect: ["" "FAIL in (it-fails-loudly) fails loudly " "expected: (clojure.core/= (+ 1 2) 4)" "  actual: (not (clojure.core/= 3 4))" "" "FAIL in (it-fails-loudly) fails loudly " "expected: (cljx.test/to-contain? [\"ravi\"] \"asha\")" "  actual: (not (cljx.test/to-contain? [\"ravi\"] \"asha\"))" "" "FAIL in (it-fails-loudly) fails loudly " "expected: (cljx.test/to-match? \"abc\" #\"zz\")" "  actual: (not (cljx.test/to-match? \"abc\" #\"zz\"))" "" "FAIL in (it-fails-loudly) fails loudly " "expected: (cljx.test/message-matches? (cljx.test/caught-message (clojure.core/fn [] (+ 1 1))) \"boom\")" "  actual: (not (cljx.test/message-matches? \"<no exception thrown>\" \"boom\"))" "" "FAIL in (it-fails-loudly) fails loudly " "expected: (clojure.core/nil? 1)" "  actual: (not (clojure.core/nil? 1))" ";; captured output — fails loudly" "side effect line" ";; end captured output"]
