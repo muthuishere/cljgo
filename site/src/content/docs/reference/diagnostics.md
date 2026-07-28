@@ -102,6 +102,8 @@ I4xxx bands are reserved but have no registered codes yet.
 | G5005 | value is not a collection | M5 |
 | G5006 | divide by zero | M5 |
 | G5007 | no value supplied for key | M5 |
+| G5008 | sql params passed as a collection | M5 |
+| G5009 | collection value in a row map | M5 |
 
 One stability guarantee worth knowing: the rendered `.Error()` string stays
 byte-stable — the conformance suite freezes it — and the extra detail (locus,
