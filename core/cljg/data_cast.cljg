@@ -166,6 +166,18 @@
       (throw (ex-info "cljg.data.cast/cast: input failed validation"
                       {:cljg.data.cast/error :cljg.data.cast/cast :errors errs})))))
 
+;; --- row-map writes ---------------------------------------------------------
+;; insert!/update!/delete! BUILD the params themselves out of the caller's
+;; map(s), so they call -db-exec directly (never `exec!`): the shim then knows
+;; the verb the user actually wrote AND that each param is a column value, not
+;; a varargs param. A collection inside a row map is therefore diagnosed as
+;; G5009 ("column :a of the row map is a vector"), not as the G5008 varargs
+;; misuse the user never committed.
+(defn ^:private col-label
+  "Names the row-map slot a param came from, for the params guard."
+  [part k]
+  (str "column " (pr-str k) " of the " part))
+
 (defn insert!
   "Insert one row from a map (kebab keys → snake columns), parametrized.
   Returns {:rows-affected :last-insert-id} (SQLite fills :last-insert-id)."
@@ -174,7 +186,8 @@
         sql  (str "insert into " (name table)
                   " (" (str/join ", " (map col-name cols)) ")"
                   " values (" (str/join ", " (map (constantly "?") cols)) ")")]
-    (apply exec! db sql (map #(get row %) cols))))
+    (-db-exec (handle db) sql (vec (map #(get row %) cols)) "insert!"
+              (vec (map (partial col-label "row map") cols)))))
 
 (defn update!
   "Update rows matching where-map with set-map (both kebab→snake),
@@ -186,8 +199,12 @@
         where-cl   (str/join " and " (map #(str (col-name %) " = ?") where-cols))
         sql        (str "update " (name table) " set " set-cl
                         (when (seq where-cols) (str " where " where-cl)))]
-    (apply exec! db sql (concat (map #(get set-map %) set-cols)
-                                (map #(get where-map %) where-cols)))))
+    (-db-exec (handle db) sql
+              (vec (concat (map #(get set-map %) set-cols)
+                           (map #(get where-map %) where-cols)))
+              "update!"
+              (vec (concat (map (partial col-label "set map") set-cols)
+                           (map (partial col-label "where map") where-cols))))))
 
 (defn delete!
   "Delete rows matching where-map (kebab→snake), parametrized.
@@ -197,7 +214,8 @@
         where-cl   (str/join " and " (map #(str (col-name %) " = ?") where-cols))
         sql        (str "delete from " (name table)
                         (when (seq where-cols) (str " where " where-cl)))]
-    (apply exec! db sql (map #(get where-map %) where-cols))))
+    (-db-exec (handle db) sql (vec (map #(get where-map %) where-cols)) "delete!"
+              (vec (map (partial col-label "where map") where-cols)))))
 
 ;; --- transactions -----------------------------------------------------------
 (defn tx

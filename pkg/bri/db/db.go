@@ -99,22 +99,27 @@ func installDBShims(def func(name string, fn func(args ...any) any)) {
 		return nil
 	})
 	// The optional 4th arg is the PUBLIC cljg.data.cast fn the call came from
-	// (query/one/one!/exec!). It exists purely so the params guard in
-	// driverArgs can name the fn the user actually wrote instead of the
-	// private shim; omitting it keeps the historical 3-arg contract.
+	// (query/one/one!/exec!/insert!/update!/delete!). It exists purely so the
+	// params guard in driverArgs can name the fn the user actually wrote
+	// instead of the private shim; omitting it keeps the historical 3-arg
+	// contract. The optional 5th arg is a vector of per-param LABELS — the
+	// row-map verbs (insert!/update!/delete!) build their params themselves
+	// out of a map, so a bad value there is a column value, not a varargs
+	// param, and the label ("column :a of the row map") is what the guard
+	// names. No labels ⇒ the params came straight from the user as varargs.
 	def("-db-query", func(args ...any) any {
-		if len(args) != 3 && len(args) != 4 {
-			panic(fmt.Errorf("wrong number of args (%d) passed to: -db-query (expects 3: [handle sql params] or 4: [handle sql params verb])", len(args)))
+		if len(args) < 3 || len(args) > 5 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -db-query (expects 3: [handle sql params], 4: [handle sql params verb] or 5: [handle sql params verb labels])", len(args)))
 		}
 		q, driver := handleOf(args[0])
-		return dbQuery(q, driver, asString(args[1]), args[2], verbOf(args, "query"))
+		return dbQuery(q, driver, asString(args[1]), args[2], siteOf(args, "query"))
 	})
 	def("-db-exec", func(args ...any) any {
-		if len(args) != 3 && len(args) != 4 {
-			panic(fmt.Errorf("wrong number of args (%d) passed to: -db-exec (expects 3: [handle sql params] or 4: [handle sql params verb])", len(args)))
+		if len(args) < 3 || len(args) > 5 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -db-exec (expects 3: [handle sql params], 4: [handle sql params verb] or 5: [handle sql params verb labels])", len(args)))
 		}
 		q, driver := handleOf(args[0])
-		return dbExec(q, driver, asString(args[1]), args[2], verbOf(args, "exec!"))
+		return dbExec(q, driver, asString(args[1]), args[2], siteOf(args, "exec!"))
 	})
 	def("-db-begin", func(args ...any) any {
 		h, ok := one("-db-begin", args).(*dbHandle)
@@ -148,16 +153,42 @@ func installDBShims(def func(name string, fn func(args ...any) any)) {
 	def("-getenv", getenvShim)
 }
 
-// verbOf reads the optional trailing verb argument of -db-query/-db-exec,
-// falling back to def when the caller used the 3-arg form.
-func verbOf(args []any, def string) string {
-	if len(args) < 4 {
-		return def
+// paramSite describes WHERE the params of one -db-query/-db-exec call came
+// from, so a bad param is diagnosed as the call the USER wrote. verb is the
+// public cljg.data.cast fn; labels (when present, one per param) name the
+// row-map slot each param was taken from — the row-map verbs assemble the
+// params themselves, so "you passed a collection as a varargs param" is
+// simply false on that path.
+type paramSite struct {
+	verb   string
+	labels []string
+}
+
+// label returns the row-map label of the i-th (1-based) param, or "" when the
+// params were the caller's own varargs.
+func (s paramSite) label(i int) string {
+	if i-1 < 0 || i-1 >= len(s.labels) {
+		return ""
 	}
-	if s, ok := args[3].(string); ok && s != "" {
-		return s
+	return s.labels[i-1]
+}
+
+// siteOf reads the optional trailing verb + labels arguments of
+// -db-query/-db-exec, falling back to def when the caller used the 3-arg form.
+func siteOf(args []any, def string) paramSite {
+	site := paramSite{verb: def}
+	if len(args) >= 4 {
+		if s, ok := args[3].(string); ok && s != "" {
+			site.verb = s
+		}
 	}
-	return def
+	if len(args) >= 5 {
+		for s := lang.Seq(args[4]); s != nil; s = lang.Next(s) {
+			l, _ := lang.First(s).(string)
+			site.labels = append(site.labels, l)
+		}
+	}
+	return site
 }
 
 // dbOpen resolves a driver name + DSN into a live pool. SQLite gets WAL +
@@ -203,8 +234,8 @@ func dbOpen(driver, dsn string) any {
 
 // dbQuery runs a parametrized SELECT and returns a Clojure vector of maps
 // (snake_case columns → kebab-case keyword keys).
-func dbQuery(q querier, driver, query string, paramsColl any, verb string) any {
-	rows, err := q.Query(rewritePlaceholders(query, driver), driverArgs(verb, paramsColl)...)
+func dbQuery(q querier, driver, query string, paramsColl any, site paramSite) any {
+	rows, err := q.Query(rewritePlaceholders(query, driver), driverArgs(site, paramsColl)...)
 	if err != nil {
 		panic(fmt.Errorf("cljg.data.cast: query: %w", err))
 	}
@@ -241,8 +272,8 @@ func dbQuery(q querier, driver, query string, paramsColl any, verb string) any {
 
 // dbExec runs a parametrized write and returns {:rows-affected n
 // :last-insert-id id} (last-insert-id is nil where the driver has none).
-func dbExec(q querier, driver, query string, paramsColl any, verb string) any {
-	res, err := q.Exec(rewritePlaceholders(query, driver), driverArgs(verb, paramsColl)...)
+func dbExec(q querier, driver, query string, paramsColl any, site paramSite) any {
+	res, err := q.Exec(rewritePlaceholders(query, driver), driverArgs(site, paramsColl)...)
 	if err != nil {
 		panic(fmt.Errorf("cljg.data.cast: exec: %w", err))
 	}
@@ -299,26 +330,42 @@ func migrationFiles(dir string) any {
 // database/sql args. Keywords pass as their name; the tagged/plain
 // scalars pass straight through.
 //
-// verb is the cljg.data.cast fn the params came from, so the params guard
-// below can name it. A SQL param is always a scalar: a collection reaching
-// here means the caller bundled the params into one collection instead of
-// passing them as the varargs the API takes — the natural first guess, and
-// until 2026-07-28 it died opaquely inside database/sql as
-// `converting argument $1 type: unsupported type lang.Vector, a struct`
-// (docs/known-issues-2026-07-28.md §9). Fail at the API boundary instead,
-// naming the fn and the shape it wanted.
-func driverArgs(verb string, coll any) []any {
+// site is the cljg.data.cast call the params came from, so the guard below can
+// name the fn the USER wrote and diagnose the shape THAT fn takes. A SQL param
+// is always a scalar, but a collection reaching here means one of two very
+// different mistakes:
+//
+//   - varargs framing (query/one/one!/exec!, no labels): the caller bundled the
+//     params into one collection instead of passing them as the varargs the API
+//     takes — the natural first guess, and until 2026-07-28 it died opaquely
+//     inside database/sql as `converting argument $1 type: unsupported type
+//     lang.Vector, a struct` (docs/known-issues-2026-07-28.md §9). G5008, and
+//     `apply` is the fix.
+//   - row-map framing (insert!/update!/delete!, labelled): the caller passed a
+//     legal call shape and put a collection INSIDE the row/set/where map. There
+//     is no varargs param to spread and `apply` fixes nothing, so this is its
+//     own diagnosis (G5009), naming the column and carrying no Fix — an absent
+//     Fix beats a wrong one.
+func driverArgs(site paramSite, coll any) []any {
 	var args []any
 	i := 0
 	for s := lang.Seq(coll); s != nil; s = lang.Next(s) {
 		i++
 		v := lang.First(s)
 		if kind := collKind(v); kind != "" {
+			if label := site.label(i); label != "" {
+				panic(&lang.CodedError{
+					Code: "G5009",
+					Msg: fmt.Sprintf("cljg.data.cast/%s: %s is a %s — a column value must be a scalar SQL param "+
+						"(expects a string, number, boolean, keyword or nil, found a %s)",
+						site.verb, label, kind, kind),
+				})
+			}
 			panic(&lang.CodedError{
 				Code: "G5008",
 				Msg: fmt.Sprintf("cljg.data.cast/%s: param %d is a %s — SQL params are varargs, not a collection "+
 					"(expects [db sql & params], found a %s passed as one param); "+
-					"spread it with (apply %s db sql params)", verb, i, kind, kind, verb),
+					"spread it with (apply %s db sql params)", site.verb, i, kind, kind, site.verb),
 			})
 		}
 		args = append(args, clojureToDriver(v))

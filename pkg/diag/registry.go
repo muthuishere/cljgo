@@ -85,6 +85,7 @@ var registry = []Entry{
 	{Code: "G5006", Title: "divide by zero", Since: "M5"},
 	{Code: "G5007", Title: "no value supplied for key", Since: "M5"},
 	{Code: "G5008", Title: "sql params passed as a collection", Since: "M5"},
+	{Code: "G5009", Title: "collection value in a row map", Since: "M5"},
 }
 
 // Lookup returns the registry entry for code.

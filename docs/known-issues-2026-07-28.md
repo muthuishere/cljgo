@@ -133,11 +133,25 @@ enrichment now only re-labels an error its OWN callee raised
 a struct` (G5007). The vector is the natural guess; the error gives no hint.
 
 Fixed: `cljg.data.cast` rejects a collection param at the API boundary with the
-new **G5008** diagnostic, naming the verb the user actually called and the
-shape it wanted — `cljg.data.cast/exec!: param 1 is a vector — SQL params are
-varargs, not a collection (expects [db sql & params], found a vector passed as
-one param); spread it with (apply exec! db sql params)`. Frozen in both
-harnesses by `cmd/cljgo/testdata/dbparity.cljg`.
+new **G5008** diagnostic, naming the varargs verb and the shape it wanted —
+`cljg.data.cast/exec!: param 1 is a vector — SQL params are varargs, not a
+collection (expects [db sql & params], found a vector passed as one param);
+spread it with (apply exec! db sql params)`. Frozen in both harnesses by
+`cmd/cljgo/testdata/dbparity.cljg`.
+
+**Follow-up, same day — the first cut over-fired.** As shipped, the guard blamed
+`exec!` and prescribed `apply` for EVERY collection reaching the driver,
+including one the user put inside an `insert!`/`update!`/`delete!` ROW MAP
+(`(db/insert! conn :t {:a ["x" "y"]})`), where the varargs framing is simply
+false: the user never wrote `exec!`, never passed a varargs param, and `apply`
+fixes nothing. That broke the two doctrine rules the fix invoked as its win
+(name the thing; suggestions are Fixes, not prose). The row-map verbs now call
+`-db-exec` directly with their own verb + per-param column labels, so that path
+gets its own diagnosis, **G5009** — `cljg.data.cast/insert!: column :a of the
+row map is a vector — a column value must be a scalar SQL param (expects a
+string, number, boolean, keyword or nil, found a vector)` — with no Fix at all
+(an absent Fix beats a wrong one). Both shapes are frozen in both harnesses by
+`cmd/cljgo/testdata/dbparity.cljg` + `pkg/bri/db_params_guard_test.go`.
 
 ## P2 — gaps
 
