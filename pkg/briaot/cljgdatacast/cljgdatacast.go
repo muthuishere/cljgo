@@ -327,7 +327,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_now.BindRoot(tmp67)
 	_ = v_cljg_DOT_data_DOT_cast_now
 	// (def query "Run a parametrized SELECT — SQL string + positional `?` params — and\n  re…
-	v_cljg_DOT_data_DOT_cast_query.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(12), kw_doc, "Run a parametrized SELECT — SQL string + positional `?` params — and\n  return a vector of maps (snake_case columns → kebab-case keyword keys)."))
+	v_cljg_DOT_data_DOT_cast_query.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(12), kw_doc, "Run a parametrized SELECT — SQL string + positional `?` params — and\n  return a vector of maps (snake_case columns → kebab-case keyword keys).\n  params are VARARGS: (query db sql p1 p2), not (query db sql [p1 p2]) —\n  spread a collection with (apply query db sql params)."))
 	tmp68 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -348,14 +348,14 @@ func Load() {
 			tmp74 := lang.Apply1(tmp73, db69)
 			tmp75 := v_clojure_DOT_core_vec.Get()
 			tmp76 := lang.Apply1(tmp75, params71)
-			tmp77 := lang.Apply3(tmp72, tmp74, sql70, tmp76)
+			tmp77 := lang.Apply4(tmp72, tmp74, sql70, tmp76, "query")
 			return tmp77
 		}
 	})
 	v_cljg_DOT_data_DOT_cast_query.BindRoot(tmp68)
 	_ = v_cljg_DOT_data_DOT_cast_query
 	// (def one "The first row of (query …) as a map, or nil." (clojure.core/fn [db sql & param…
-	v_cljg_DOT_data_DOT_cast_one.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(10), kw_doc, "The first row of (query …) as a map, or nil."))
+	v_cljg_DOT_data_DOT_cast_one.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(73), kw_column, int64(7), kw_end_line, int64(73), kw_end_column, int64(10), kw_doc, "The first row of (query …) as a map, or nil."))
 	tmp78 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -377,7 +377,7 @@ func Load() {
 			tmp85 := lang.Apply1(tmp84, db79)
 			tmp86 := v_clojure_DOT_core_vec.Get()
 			tmp87 := lang.Apply1(tmp86, params81)
-			tmp88 := lang.Apply3(tmp83, tmp85, sql80, tmp87)
+			tmp88 := lang.Apply4(tmp83, tmp85, sql80, tmp87, "one")
 			tmp89 := lang.Apply1(tmp82, tmp88)
 			return tmp89
 		}
@@ -385,7 +385,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_one.BindRoot(tmp78)
 	_ = v_cljg_DOT_data_DOT_cast_one
 	// (def one! "Like `one`, but throws an ex-info tagged :cljg.data.cast/not-found when no row\…
-	v_cljg_DOT_data_DOT_cast_one_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(11), kw_doc, "Like `one`, but throws an ex-info tagged :cljg.data.cast/not-found when no row\n  matches (the ADR 0041 funnel → 404)."))
+	v_cljg_DOT_data_DOT_cast_one_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(78), kw_column, int64(7), kw_end_line, int64(78), kw_end_column, int64(11), kw_doc, "Like `one`, but throws an ex-info tagged :cljg.data.cast/not-found when no row\n  matches (the ADR 0041 funnel → 404)."))
 	tmp90 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -410,7 +410,7 @@ func Load() {
 				tmp98 := lang.Apply1(tmp97, db91)
 				tmp99 := v_clojure_DOT_core_vec.Get()
 				tmp100 := lang.Apply1(tmp99, params93)
-				tmp101 := lang.Apply3(tmp96, tmp98, sql92, tmp100)
+				tmp101 := lang.Apply4(tmp96, tmp98, sql92, tmp100, "one!")
 				tmp102 := lang.Apply1(tmp95, tmp101)
 				var or__2__auto__103 any = tmp102
 				_ = or__2__auto__103
@@ -432,7 +432,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_one_BANG_.BindRoot(tmp90)
 	_ = v_cljg_DOT_data_DOT_cast_one_BANG_
 	// (def exec! "Run a parametrized write (INSERT/UPDATE/DELETE/DDL). Returns\n  {:rows-affecte…
-	v_cljg_DOT_data_DOT_cast_exec_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(12), kw_doc, "Run a parametrized write (INSERT/UPDATE/DELETE/DDL). Returns\n  {:rows-affected n :last-insert-id id}."))
+	v_cljg_DOT_data_DOT_cast_exec_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(87), kw_column, int64(7), kw_end_line, int64(87), kw_end_column, int64(12), kw_doc, "Run a parametrized write (INSERT/UPDATE/DELETE/DDL). Returns\n  {:rows-affected n :last-insert-id id}.\n  params are VARARGS: (exec! db sql p1 p2), not (exec! db sql [p1 p2]) —\n  spread a collection with (apply exec! db sql params)."))
 	tmp108 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -453,14 +453,14 @@ func Load() {
 			tmp114 := lang.Apply1(tmp113, db109)
 			tmp115 := v_clojure_DOT_core_vec.Get()
 			tmp116 := lang.Apply1(tmp115, params111)
-			tmp117 := lang.Apply3(tmp112, tmp114, sql110, tmp116)
+			tmp117 := lang.Apply4(tmp112, tmp114, sql110, tmp116, "exec!")
 			return tmp117
 		}
 	})
 	v_cljg_DOT_data_DOT_cast_exec_BANG_.BindRoot(tmp108)
 	_ = v_cljg_DOT_data_DOT_cast_exec_BANG_
 	// (def col-name "Kebab-case keyword key → snake_case column name." (clojure.core/fn [k] (s…
-	v_cljg_DOT_data_DOT_cast_col_name.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(91), kw_column, int64(7), kw_end_line, int64(91), kw_end_column, int64(25), kw_private, true, kw_doc, "Kebab-case keyword key → snake_case column name."))
+	v_cljg_DOT_data_DOT_cast_col_name.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(95), kw_column, int64(7), kw_end_line, int64(95), kw_end_column, int64(25), kw_private, true, kw_doc, "Kebab-case keyword key → snake_case column name."))
 	tmp118 := lang.FnFunc1(func(k119 any) any {
 		tmp120 := v_clojure_DOT_string_replace.Get()
 		tmp121 := v_clojure_DOT_core_name.Get()
@@ -472,7 +472,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_col_name.BindRoot(tmp124)
 	_ = v_cljg_DOT_data_DOT_cast_col_name
 	// (def coerce-bool (clojure.core/fn [v] (cond (boolean? v) v (nil? v) false (string? v) (con…
-	v_cljg_DOT_data_DOT_cast_coerce_bool.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(105), kw_column, int64(7), kw_end_line, int64(105), kw_end_column, int64(28), kw_private, true))
+	v_cljg_DOT_data_DOT_cast_coerce_bool.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(28), kw_private, true))
 	tmp125 := lang.FnFunc1(func(v126 any) any {
 		tmp127 := v_clojure_DOT_core_boolean_QMARK_.Get()
 		tmp128 := lang.Apply1(tmp127, v126)
@@ -523,7 +523,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_coerce_bool.BindRoot(tmp146)
 	_ = v_cljg_DOT_data_DOT_cast_coerce_bool
 	// (def coerce-field "Coerce one value against a `type` keyword. Returns [:ok v'] | [:err mes…
-	v_cljg_DOT_data_DOT_cast_coerce_field.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(29), kw_private, true, kw_doc, "Coerce one value against a `type` keyword. Returns [:ok v'] | [:err message]."))
+	v_cljg_DOT_data_DOT_cast_coerce_field.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(116), kw_column, int64(7), kw_end_line, int64(116), kw_end_column, int64(29), kw_private, true, kw_doc, "Coerce one value against a `type` keyword. Returns [:ok v'] | [:err message]."))
 	tmp147 := lang.FnFunc2(func(type_148, v149 any) any {
 		var tmp150 any
 		_ = tmp150
@@ -758,7 +758,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_coerce_field.BindRoot(tmp239)
 	_ = v_cljg_DOT_data_DOT_cast_coerce_field
 	// (def cast* "The engine: reduce `row` against `schema`, dropping undeclared keys. Returns\n…
-	v_cljg_DOT_data_DOT_cast_cast_STAR_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(131), kw_column, int64(7), kw_end_line, int64(131), kw_end_column, int64(22), kw_private, true, kw_doc, "The engine: reduce `row` against `schema`, dropping undeclared keys. Returns\n  [clean-row errors-map]."))
+	v_cljg_DOT_data_DOT_cast_cast_STAR_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(22), kw_private, true, kw_doc, "The engine: reduce `row` against `schema`, dropping undeclared keys. Returns\n  [clean-row errors-map]."))
 	tmp240 := lang.FnFunc2(func(row241, schema242 any) any {
 		tmp243 := v_clojure_DOT_core_reduce.Get()
 		tmp244 := lang.FnFunc2(func(p__119245, f246 any) any {
@@ -837,7 +837,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_cast_STAR_.BindRoot(tmp288)
 	_ = v_cljg_DOT_data_DOT_cast_cast_STAR_
 	// (def cast "Validate + coerce `row` against `schema` ({field → type-keyword}), DROPPING a…
-	v_cljg_DOT_data_DOT_cast_cast.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(145), kw_column, int64(7), kw_end_line, int64(145), kw_end_column, int64(11), kw_doc, "Validate + coerce `row` against `schema` ({field → type-keyword}), DROPPING any\n  key not in the schema (mass assignment structurally off the path). Returns\n  (ok clean-row) or (err {field message}). Only keys present in `row` are\n  processed. Types: :string :int :long :double :bool :keyword :any."))
+	v_cljg_DOT_data_DOT_cast_cast.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(149), kw_column, int64(7), kw_end_line, int64(149), kw_end_column, int64(11), kw_doc, "Validate + coerce `row` against `schema` ({field → type-keyword}), DROPPING any\n  key not in the schema (mass assignment structurally off the path). Returns\n  (ok clean-row) or (err {field message}). Only keys present in `row` are\n  processed. Types: :string :int :long :double :bool :keyword :any."))
 	tmp289 := lang.FnFunc2(func(row290, schema291 any) any {
 		var tmp292 any
 		_ = tmp292
@@ -875,7 +875,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_cast.BindRoot(tmp309)
 	_ = v_cljg_DOT_data_DOT_cast_cast
 	// (def cast! "Like `cast`, but returns the clean row on success and THROWS\n  cljg.data.cast…
-	v_cljg_DOT_data_DOT_cast_cast_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(154), kw_column, int64(7), kw_end_line, int64(154), kw_end_column, int64(12), kw_doc, "Like `cast`, but returns the clean row on success and THROWS\n  cljg.data.cast/cast (ex-info with :errors) on any validation failure — the\n  fail-fast form for a controller that treats bad input as a 400."))
+	v_cljg_DOT_data_DOT_cast_cast_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(158), kw_column, int64(7), kw_end_line, int64(158), kw_end_column, int64(12), kw_doc, "Like `cast`, but returns the clean row on success and THROWS\n  cljg.data.cast/cast (ex-info with :errors) on any validation failure — the\n  fail-fast form for a controller that treats bad input as a 400."))
 	tmp310 := lang.FnFunc2(func(row311, schema312 any) any {
 		var tmp313 any
 		_ = tmp313
@@ -912,7 +912,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_cast_BANG_.BindRoot(tmp329)
 	_ = v_cljg_DOT_data_DOT_cast_cast_BANG_
 	// (def insert! "Insert one row from a map (kebab keys → snake columns), parametrized.\n  R…
-	v_cljg_DOT_data_DOT_cast_insert_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(165), kw_column, int64(7), kw_end_line, int64(165), kw_end_column, int64(14), kw_doc, "Insert one row from a map (kebab keys → snake columns), parametrized.\n  Returns {:rows-affected :last-insert-id} (SQLite fills :last-insert-id)."))
+	v_cljg_DOT_data_DOT_cast_insert_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(169), kw_column, int64(7), kw_end_line, int64(169), kw_end_column, int64(14), kw_doc, "Insert one row from a map (kebab keys → snake columns), parametrized.\n  Returns {:rows-affected :last-insert-id} (SQLite fills :last-insert-id)."))
 	tmp330 := lang.FnFunc3(func(db331, table332, row333 any) any {
 		var tmp334 any
 		_ = tmp334
@@ -957,7 +957,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_insert_BANG_.BindRoot(tmp364)
 	_ = v_cljg_DOT_data_DOT_cast_insert_BANG_
 	// (def update! "Update rows matching where-map with set-map (both kebab→snake),\n  paramet…
-	v_cljg_DOT_data_DOT_cast_update_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(175), kw_column, int64(7), kw_end_line, int64(175), kw_end_column, int64(14), kw_doc, "Update rows matching where-map with set-map (both kebab→snake),\n  parametrized. Returns {:rows-affected …}."))
+	v_cljg_DOT_data_DOT_cast_update_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(179), kw_column, int64(7), kw_end_line, int64(179), kw_end_column, int64(14), kw_doc, "Update rows matching where-map with set-map (both kebab→snake),\n  parametrized. Returns {:rows-affected …}."))
 	tmp365 := lang.FnFunc4(func(db366, table367, set_map368, where_map369 any) any {
 		var tmp370 any
 		_ = tmp370
@@ -1044,7 +1044,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_update_BANG_.BindRoot(tmp430)
 	_ = v_cljg_DOT_data_DOT_cast_update_BANG_
 	// (def delete! "Delete rows matching where-map (kebab→snake), parametrized.\n  Returns {:r…
-	v_cljg_DOT_data_DOT_cast_delete_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(188), kw_column, int64(7), kw_end_line, int64(188), kw_end_column, int64(14), kw_doc, "Delete rows matching where-map (kebab→snake), parametrized.\n  Returns {:rows-affected …}."))
+	v_cljg_DOT_data_DOT_cast_delete_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(192), kw_column, int64(7), kw_end_line, int64(192), kw_end_column, int64(14), kw_doc, "Delete rows matching where-map (kebab→snake), parametrized.\n  Returns {:rows-affected …}."))
 	tmp431 := lang.FnFunc3(func(db432, table433, where_map434 any) any {
 		var tmp435 any
 		_ = tmp435
@@ -1103,7 +1103,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_delete_BANG_.BindRoot(tmp471)
 	_ = v_cljg_DOT_data_DOT_cast_delete_BANG_
 	// (def tx "Run (f tx-conn) in a transaction: COMMIT on normal return, ROLL BACK\n  on any th…
-	v_cljg_DOT_data_DOT_cast_tx.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(199), kw_column, int64(7), kw_end_line, int64(199), kw_end_column, int64(9), kw_doc, "Run (f tx-conn) in a transaction: COMMIT on normal return, ROLL BACK\n  on any throw (re-raising). tx-conn drives the identical read/write\n  verbs. Called on a tx handle, runs inline (no nested savepoints on the\n  blessed path)."))
+	v_cljg_DOT_data_DOT_cast_tx.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(203), kw_column, int64(7), kw_end_line, int64(203), kw_end_column, int64(9), kw_doc, "Run (f tx-conn) in a transaction: COMMIT on normal return, ROLL BACK\n  on any throw (re-raising). tx-conn drives the identical read/write\n  verbs. Called on a tx handle, runs inline (no nested savepoints on the\n  blessed path)."))
 	tmp472 := lang.FnFunc2(func(db473, f474 any) any {
 		tmp475 := lang.Apply1(kw_tx, db473)
 		var tmp476 any
@@ -1167,7 +1167,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_tx.BindRoot(tmp499)
 	_ = v_cljg_DOT_data_DOT_cast_tx
 	// (def with-rollback "Run (f tx-conn) in a transaction that is ALWAYS rolled back — the\n …
-	v_cljg_DOT_data_DOT_cast_with_rollback.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(216), kw_column, int64(7), kw_end_line, int64(216), kw_end_column, int64(20), kw_doc, "Run (f tx-conn) in a transaction that is ALWAYS rolled back — the\n  per-test sandbox (Ecto-Sandbox shape, ADR 0058). Returns (f tx-conn)."))
+	v_cljg_DOT_data_DOT_cast_with_rollback.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(220), kw_column, int64(7), kw_end_line, int64(220), kw_end_column, int64(20), kw_doc, "Run (f tx-conn) in a transaction that is ALWAYS rolled back — the\n  per-test sandbox (Ecto-Sandbox shape, ADR 0058). Returns (f tx-conn)."))
 	tmp500 := lang.FnFunc2(func(db501, f502 any) any {
 		var tmp503 any
 		_ = tmp503
@@ -1201,7 +1201,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_with_rollback.BindRoot(tmp517)
 	_ = v_cljg_DOT_data_DOT_cast_with_rollback
 	// (def ensure-migrations-table! (clojure.core/fn [db] (exec! db (str "create table if not ex…
-	v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(229), kw_column, int64(7), kw_end_line, int64(229), kw_end_column, int64(41), kw_private, true))
+	v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(233), kw_column, int64(7), kw_end_line, int64(233), kw_end_column, int64(41), kw_private, true))
 	tmp518 := lang.FnFunc1(func(db519 any) any {
 		tmp520 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
 		tmp521 := v_clojure_DOT_core_str.Get()
@@ -1213,7 +1213,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.BindRoot(tmp524)
 	_ = v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_
 	// (def applied-set (clojure.core/fn [db] (set (map :version (query db "select version from s…
-	v_cljg_DOT_data_DOT_cast_applied_set.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(233), kw_column, int64(7), kw_end_line, int64(233), kw_end_column, int64(28), kw_private, true))
+	v_cljg_DOT_data_DOT_cast_applied_set.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(237), kw_column, int64(7), kw_end_line, int64(237), kw_end_column, int64(28), kw_private, true))
 	tmp525 := lang.FnFunc1(func(db526 any) any {
 		tmp527 := v_clojure_DOT_core_set.Get()
 		tmp528 := v_clojure_DOT_core_map_.Get()
@@ -1227,7 +1227,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_applied_set.BindRoot(tmp533)
 	_ = v_cljg_DOT_data_DOT_cast_applied_set
 	// (def migrate-status "Return {:applied [versions…] :pending [versions…]} for `dir`." (c…
-	v_cljg_DOT_data_DOT_cast_migrate_status.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(236), kw_column, int64(7), kw_end_line, int64(236), kw_end_column, int64(21), kw_doc, "Return {:applied [versions…] :pending [versions…]} for `dir`."))
+	v_cljg_DOT_data_DOT_cast_migrate_status.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(240), kw_column, int64(7), kw_end_line, int64(240), kw_end_column, int64(21), kw_doc, "Return {:applied [versions…] :pending [versions…]} for `dir`."))
 	tmp534 := lang.FnFunc2(func(db535, dir536 any) any {
 		tmp537 := v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.Get()
 		tmp538 := lang.Apply1(tmp537, db535)
@@ -1272,7 +1272,7 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_migrate_status.BindRoot(tmp566)
 	_ = v_cljg_DOT_data_DOT_cast_migrate_status
 	// (def migrate! "Apply every pending migration in `dir` (ascending version order, each\n  in…
-	v_cljg_DOT_data_DOT_cast_migrate_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(247), kw_column, int64(7), kw_end_line, int64(247), kw_end_column, int64(15), kw_doc, "Apply every pending migration in `dir` (ascending version order, each\n  in its own transaction), idempotently. Returns the post-run\n  (migrate-status …)."))
+	v_cljg_DOT_data_DOT_cast_migrate_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(251), kw_column, int64(7), kw_end_line, int64(251), kw_end_column, int64(15), kw_doc, "Apply every pending migration in `dir` (ascending version order, each\n  in its own transaction), idempotently. Returns the post-run\n  (migrate-status …)."))
 	tmp567 := lang.FnFunc2(func(db568, dir569 any) any {
 		tmp570 := v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.Get()
 		tmp571 := lang.Apply1(tmp570, db568)

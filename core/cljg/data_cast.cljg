@@ -64,29 +64,33 @@
 ;; --- reads ------------------------------------------------------------------
 (defn query
   "Run a parametrized SELECT — SQL string + positional `?` params — and
-  return a vector of maps (snake_case columns → kebab-case keyword keys)."
+  return a vector of maps (snake_case columns → kebab-case keyword keys).
+  params are VARARGS: (query db sql p1 p2), not (query db sql [p1 p2]) —
+  spread a collection with (apply query db sql params)."
   [db sql & params]
-  (-db-query (handle db) sql (vec params)))
+  (-db-query (handle db) sql (vec params) "query"))
 
 (defn one
   "The first row of (query …) as a map, or nil."
   [db sql & params]
-  (first (-db-query (handle db) sql (vec params))))
+  (first (-db-query (handle db) sql (vec params) "one")))
 
 (defn one!
   "Like `one`, but throws an ex-info tagged :cljg.data.cast/not-found when no row
   matches (the ADR 0041 funnel → 404)."
   [db sql & params]
-  (or (first (-db-query (handle db) sql (vec params)))
+  (or (first (-db-query (handle db) sql (vec params) "one!"))
       (throw (ex-info "cljg.data.cast/one!: no matching row"
                       {:cljg.data.cast/error :cljg.data.cast/not-found :sql sql}))))
 
 ;; --- writes -----------------------------------------------------------------
 (defn exec!
   "Run a parametrized write (INSERT/UPDATE/DELETE/DDL). Returns
-  {:rows-affected n :last-insert-id id}."
+  {:rows-affected n :last-insert-id id}.
+  params are VARARGS: (exec! db sql p1 p2), not (exec! db sql [p1 p2]) —
+  spread a collection with (apply exec! db sql params)."
   [db sql & params]
-  (-db-exec (handle db) sql (vec params)))
+  (-db-exec (handle db) sql (vec params) "exec!"))
 
 (defn ^:private col-name
   "Kebab-case keyword key → snake_case column name."

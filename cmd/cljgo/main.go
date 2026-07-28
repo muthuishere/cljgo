@@ -12,6 +12,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/muthuishere/cljgo/pkg/build"
 	"github.com/muthuishere/cljgo/pkg/deps"
+	"github.com/muthuishere/cljgo/pkg/diag"
 	"github.com/muthuishere/cljgo/pkg/emit"
 	"github.com/muthuishere/cljgo/pkg/emit/rt"
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -302,7 +304,7 @@ func runBuild(args []string) int {
 	}
 	genDir, err := emit.Build(src, outPath, *gen, emit.Options{RuntimeDir: *runtimeDir})
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Fprintln(os.Stderr, "error:", buildErrText(err))
 		return 1
 	}
 	if *gen == "" && genDir != "" {
@@ -326,10 +328,26 @@ func runProjectBuild(step, runtimeDir string, keepGen bool) int {
 		return 1
 	}
 	if err := plan.Run(step, emit.Options{RuntimeDir: runtimeDir}, keepGen); err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Fprintln(os.Stderr, "error:", buildErrText(err))
 		return 1
 	}
 	return 0
+}
+
+// buildErrText renders a build failure the way `cljgo run` renders the same
+// failure. A build error that came from the user's Clojure source
+// (emit.CompileError) goes through the ONE shared renderer — so the named
+// fn, the expected-vs-found arity, the source locus and the `help:` explain
+// pointer all survive the build phase instead of being flattened to the bare
+// message (docs/known-issues-2026-07-28.md §8). Infrastructure failures (a
+// missing file, a `go build` link error) keep their plain text, exactly as
+// `cljgo run` prints its os.Open failure plainly.
+func buildErrText(err error) string {
+	var ce *emit.CompileError
+	if errors.As(err, &ce) {
+		return diag.RenderError(err)
+	}
+	return err.Error()
 }
 
 // isSourceFile reports whether arg names a cljgo source file (the

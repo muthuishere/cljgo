@@ -158,7 +158,10 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	entry := &CompiledNS{Path: srcPath}
 	mc.stack = []*CompiledNS{entry}
 	if entry.Forms, err = compileStream(ev, f, srcPath); err != nil {
-		return nil, err
+		// Mark it as a SOURCE error so the CLI renders it through diag.Render
+		// (issue 8): everything raised in here came from the user's Clojure,
+		// including the requires the capture loader compiled recursively.
+		return nil, &CompileError{Err: err}
 	}
 	return &Program{Entry: entry, Deps: mc.order, UsesBri: usesBri, OptInBriPkgs: optInBriPkgs}, nil
 }

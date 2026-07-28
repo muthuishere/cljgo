@@ -13,6 +13,23 @@ import (
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
+// CompileError marks a build failure that came from READING, ANALYZING or
+// EVALUATING the user's Clojure source — as opposed to an infrastructure
+// failure of the build itself (a missing file, a `go build` link error).
+// It carries no text of its own: Error() and Unwrap() are transparent, so
+// the wrapped value's message stays byte-stable and errors.As still finds
+// the diag.Carrier / lang.ArityError inside.
+//
+// It exists so `cljgo build` can route exactly the errors `cljgo run`
+// routes through the ONE shared renderer (diag.Render) — before this, the
+// build phase printed a bare err.Error() and silently dropped the
+// expected/found, location and `help:` detail the run phase showed for the
+// SAME call in the SAME file (docs/known-issues-2026-07-28.md §8).
+type CompileError struct{ Err error }
+
+func (e *CompileError) Error() string { return e.Err.Error() }
+func (e *CompileError) Unwrap() error { return e.Err }
+
 // CompileFile reads, analyzes AND EVALUATES a .clj file, returning the
 // analyzed top-level nodes for emission. Compile time = eval time
 // (ADR 0002): each form is evaluated as it is compiled — through the
