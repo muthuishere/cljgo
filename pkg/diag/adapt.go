@@ -50,6 +50,17 @@ func FromError(err error) Diagnostic {
 	var c Carrier
 	if errors.As(err, &c) {
 		if d, ok := c.Diagnostic(); ok {
+			// A carrier raised during ANALYSIS has no position of its own —
+			// the analyzer supplies it by wrapping the error in a
+			// lang.CompilerError. Read that position back so the enriched
+			// diagnostic keeps its locus instead of trading it for its fixes.
+			if d.Location.File == "" && d.Location.Line == 0 {
+				if m := compilerErrRe.FindStringSubmatch(err.Error()); m != nil {
+					line, _ := strconv.Atoi(m[2])
+					col, _ := strconv.Atoi(m[3])
+					d.Location = Location{File: m[1], Line: line, Column: col}
+				}
+			}
 			return d
 		}
 	}
@@ -267,6 +278,8 @@ func classify(band Band, msg string) string {
 		case has("variadic overload") || has("overloads with same arity") ||
 			has("fixed arity function"):
 			return "A2008"
+		case has("no such namespace"):
+			return "A2009"
 		}
 	}
 	return ""
