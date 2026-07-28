@@ -1,0 +1,103 @@
+# Known issues — found 2026-07-28 (QA sweep + book authoring + spike s66)
+
+Every item below was **reproduced against a real build**, and every JVM claim
+was verified against the real `clojure` CLI (1.12.5) — not memory. Nothing here
+is fixed yet. These should clear before a version bump.
+
+## P1 — JVM divergences in shipped code
+
+### 1. `clojure.core.match` map patterns break across rows with different key sets
+Shipped in the contrib wave (ADR 0097). Repro:
+
+```clojure
+(match [e]
+  [{:kind :click :button "left"}] "left click"
+  [{:kind :click}]                "other click"
+  :else                           "unknown")
+```
+
+| input | cljgo | JVM core.match 1.1.0 |
+|---|---|---|
+| `{:kind :click :button "left"}` | `"left click"` | `"left click"` |
+| `{:kind :click :button "right"}` | **`"unknown"`** | `"other click"` |
+| `{:kind :scroll}` | `"unknown"` | `"unknown"` |
+
+The second row is apparently required to carry `:button` too — the column
+key-union handling in the Maranget compiler (`pkg/bri/match.go`) looks wrong.
+Each pattern works in isolation; only the multi-row column breaks. **No
+conformance file covers this.**
+
+### 2. `for` does not support `:when` / `:while`
+```clojure
+(for [n (range 1 11) :when (even? n)] n)
+```
+- cljgo: `error: macroexpanding let: Unsupported binding form: :when`
+- JVM: `(2 4 6 8 10)`
+
+`:when`/`:while` are standard `for` modifiers — this is a core gap, and the
+natural translation of a Python list comprehension (hit while writing the
+"Coming from Python" page).
+
+### 3. Functions cannot carry metadata
+```clojure
+(with-meta (fn [] 1) {:tag :mock})
+```
+- cljgo: `error: value of type *eval.evalFn can't have metadata`
+- JVM: returns the fn; `(meta f)` → `{:tag :mock}` (fns implement `IObj`)
+
+Found by spike s66. Worked around there with a registry keyed by fn identity.
+Owned by the `cljx/fnmeta` work in the ADR 0105 change.
+
+### 4. `extend-protocol` does not resolve fully-qualified class names
+`java.lang.String` → `No implementation of method: describe of protocol:
+user.Describe found for: String`, while bare `String`/`Long` work. Java
+arrivals will type the qualified name.
+
+## P1 — correctness of the test story
+
+### 5. Compiled test binaries exit 0 when tests fail
+CI goes green on red. Interpreted `cljgo test` exits 1 correctly. There is also
+no `cljgo test --compiled` at all. Owned by the `cljx/runner` work (ADR 0105).
+
+## P2 — error-message quality (error doctrine says these should be better)
+
+### 6. `.getMessage` on a host error fails
+`(try (/ 1 0) (catch Throwable t (.getMessage t)))` → `no method getMessage on
+*lang.ArithmeticError`. `ex-message` works. Every JVM-trained user (and LLM)
+writes `.getMessage` first — implement it or emit a did-you-mean `Fix`.
+
+### 7. `Integer/parseInt` unresolved AND misdiagnosed
+→ `error: no such namespace: Integer`. It is a class, not a namespace, so the
+diagnosis is wrong. `parse-long` works. THE idiom in every `tools.cli` example
+— deserves a `Fix` pointing at `parse-long`.
+
+### 8. Build-time arity error drops fields the run-time one has
+Same file, same call: `cljgo run` gives
+`wrong number of args (3) passed to: e2/f (expects 1: [x]) at err2.clj:3:1` +
+`help:`; `cljgo build` gives only `wrong number of args (3) passed to: e2/f`.
+The build-phase renderer skips expected/location/help.
+
+### 9. `cljg.data.cast/exec!` params are varargs; the vector form fails opaquely
+`(db/exec! conn "insert … values (?)" ["x"])` → `unsupported type lang.Vector,
+a struct` (G5007). The vector is the natural guess; the error gives no hint.
+
+## P2 — gaps
+
+### 10. No `sleep`
+No `Thread/sleep` (`no such namespace: Thread`) and no equivalent in `core/` or
+`cljg.*`. Decide whether it belongs in `cljg.system`.
+
+### 11. No public writer for `binding [*out* …]`
+`java.io.StringWriter` is unavailable; capture requires the private
+`(clojure.core/-string-writer)`. `with-out-str` works for whole-body capture.
+`cljx.test` makes this moot for tests, but the primitive is still missing.
+
+## Quirks (work as designed, but surprise people)
+
+- `clojure.data.csv/write-csv` is `(write-csv data & opts) → String`, not
+  upstream's `(write-csv writer data & opts)`; upstream-shaped calls die with
+  `invalid map. must have even number of inputs`. Deliberate + documented in
+  `core/data_csv.cljg`, but every JVM snippet breaks.
+- `cljgo run file.clj` does not call `-main`; the built binary does.
+- Sets have no iteration order (correct, but book examples must not imply one).
+- A dev-built `cljgo` needs `CLJGO_SRC` set for `cljgo build`.
