@@ -4,11 +4,16 @@ Gate: `CGO_ENABLED=0 go build ./... && go vet ./... && gofmt -l pkg cmd conforma
 Never hand-edit generated briaot files — run `go generate ./pkg/briaot`.
 
 ## 1. cljx.test core namespace
-- [ ] 1.1 `core/cljx/test.cljg` — satellite preamble; mock/calls/call-count/called?/called-with?; spy/stub/with-spies over with-redefs; capturing + printed/printed?; expect matcher family over clojure.test `is`; describe/it over deftest/testing; before-each/after-each/before-all/after-all over use-fixtures.
-- [ ] 1.2 Registry scoping: per-test, cleared between tests (no global leak) — see spike s66 finding 2.
-- [ ] 1.3 Embed in `core/cljx.go`; Specs() row LAST (`cljx.test`, Pkg `cljxtest`, no shim); `go generate ./pkg/briaot`.
-- [ ] 1.4 Output capture wired as the DEFAULT for cljx tests (not opt-in).
-- [ ] 1.5 Conformance `conformance/tests/cljx-test-*.clj`: mock recording, spy forward+restore, stub, capture (+compose), expect failure message shape. Dual harness.
+- [x] 1.1 `core/cljx/test.cljg` — satellite preamble; mock/calls/call-count/called?/called-with?; spy/stub/with-spies over with-redefs; capturing + printed/printed?; expect matcher family over clojure.test `is`; describe/it over deftest/testing; before-each/after-each/before-all/after-all over use-fixtures. Plus with-frozen-time/advance! over cljg.date.
+- [x] 1.2 Registry scoping — solved by REMOVING the registry. s66's fn-keyed
+  registry is unsound in compiled mode: a compiled fn has no stable identity
+  ((= f1 f2) is TRUE for distinct closures, (identical? f1 f1) is FALSE), so
+  neither `=` nor `identical?` can key it. Took s66 finding 2's stated
+  alternative — the sentinel-arg protocol (`:cljx.test/call-log`): each mock
+  closes over its own log, so there is no global state to leak or clear.
+- [x] 1.3 Embed in `core/cljx.go`; Specs() row LAST (`cljx.test`, Pkg `cljxtest`, no shim); `go generate ./pkg/briaot`.
+- [x] 1.4 Output capture wired as the DEFAULT for cljx tests (not opt-in), with the installed clojure.test reporter routed PAST the capture buffer so FAIL lines are not swallowed, and the captured output replayed under a failing test.
+- [x] 1.5 Conformance `conformance/tests/cljx-test-*.clj` — mock-recording (+ no-leak), spy-stub (forward/replace/restore-on-throw), capture (+ stub compose), expect-matchers, expect-failure-message (+ capture replay), hooks-and-time. All six dual harness (eval + compiled, byte-identical).
 
 ## 2. Runner correctness
 - [ ] 2.1 Compiled test binaries exit non-zero on failure (QA bug: currently exit 0 — CI green on red).

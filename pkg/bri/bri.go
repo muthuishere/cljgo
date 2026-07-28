@@ -233,6 +233,13 @@ func Specs() []Spec {
 		// streaming wraps cljg.stream readables (registered AFTER cljg.stream
 		// so its handles exist). zstd/brotli deferred to an opt-in package.
 		{Name: "cljg.compress", File: "cljg/compress.cljg", Pkg: "cljgcompress", Source: &core.CljgCompressSource, install: installCompressShims},
+		// cljx.test — Bun-flavoured first-class testing (ADR 0105), the first
+		// member of the cljx.* developer-experience tier. PURE CLOJURE over
+		// clojure.test + clojure.string + cljg.date (registered after
+		// cljg.date so its top-level require resolves against an earlier
+		// row): no Go shim, non-OptIn, and LAST so it does not shift the
+		// gensym numbering of any earlier emitted namespace.
+		{Name: "cljx.test", File: "cljx/test.cljg", Pkg: "cljxtest", Source: &core.CljxTestSource, install: nil},
 	}
 }
 
