@@ -1,0 +1,153 @@
+// Spike s67-docs-by-example: prototype of the ADR 0104 conformance→by-example
+// generator. Reads curated conformance/tests/*.clj files (already CI-frozen,
+// dual-harness-run examples) and emits numbered Rust-By-Example-style MDX
+// pages into site/src/content/docs/by-example/. Rules proven here:
+//   - the leading ;;-comment block becomes the prose intro (oracle:/covers:
+//     bookkeeping lines dropped — they are QA metadata, not teaching prose),
+//   - the code body renders as a runnable snippet,
+//   - the trailing ";; expect:" line renders as the real output block,
+//   - nav labels are HUMAN topic names (owner: namespaces stay buried).
+//
+// Hand-written pages (hello-world, …) live beside generated ones; generated
+// files carry a DO-NOT-EDIT banner. The production home for this is
+// cmd/gendocs (ADR 0104 wave D1).
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+type page struct {
+	src   string // conformance file (relative to repo root)
+	num   int
+	slug  string
+	label string // human nav label — never a namespace
+	title string
+	lead  string // one-line teaching hook placed above the mined prose
+}
+
+var pages = []page{
+	{src: "conformance/tests/arithmetic.clj", num: 2, slug: "values-and-arithmetic",
+		label: "Values & arithmetic", title: "Values & arithmetic",
+		lead: "Everything is an expression: operators are ordinary functions that take any number of arguments, and comparisons chain."},
+	{src: "conformance/tests/destructure-map.clj", num: 3, slug: "destructuring",
+		label: "Destructuring", title: "Destructuring",
+		lead: "Pull values out of maps right in the binding position — with defaults for what's missing."},
+	{src: "conformance/tests/atoms-cas-swap-vals.clj", num: 4, slug: "state-with-atoms",
+		label: "State with atoms", title: "State with atoms",
+		lead: "Mutable state lives in an atom; you change it with a pure function and every change is atomic."},
+	{src: "conformance/tests/cljg-compress-roundtrip.clj", num: 5, slug: "compression",
+		label: "Compression", title: "Compression",
+		lead: "gzip, deflate and zlib are built in — compress a value, get it back, stream it. No dependency, works in a 6 MB static binary."},
+	{src: "conformance/tests/cljg-security-password.clj", num: 6, slug: "passwords",
+		label: "Passwords", title: "Hashing passwords",
+		lead: "Password hashing is one function call — argon2id, the modern default, salted for you."},
+	{src: "conformance/tests/cljg-http-serve.clj", num: 7, slug: "serve-http",
+		label: "Serve HTTP", title: "Serve HTTP",
+		lead: "A web server is a function from request map to response map, bound to a port. That's the whole model."},
+}
+
+func main() {
+	root := ".."
+	if len(os.Args) > 1 {
+		root = os.Args[1]
+	}
+	outDir := filepath.Join(root, "site/src/content/docs/by-example")
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		fail(err)
+	}
+	for _, p := range pages {
+		prose, code, expect, err := parse(filepath.Join(root, p.src))
+		if err != nil {
+			fail(fmt.Errorf("%s: %w", p.src, err))
+		}
+		mdx := render(p, prose, code, expect)
+		out := filepath.Join(outDir, fmt.Sprintf("%02d-%s.md", p.num, p.slug))
+		if err := os.WriteFile(out, []byte(mdx), 0o644); err != nil {
+			fail(err)
+		}
+		fmt.Printf("generated %s (from %s)\n", out, p.src)
+	}
+}
+
+// parse splits a conformance file into leading comment prose, the code body,
+// and the frozen ";; expect:" output.
+func parse(path string) (prose []string, code []string, expect string, err error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	lines := strings.Split(string(b), "\n")
+	inHeader := true
+	for _, ln := range lines {
+		trimmed := strings.TrimSpace(ln)
+		switch {
+		case strings.HasPrefix(trimmed, ";; expect:"):
+			expect = strings.TrimSpace(strings.TrimPrefix(trimmed, ";; expect:"))
+		case inHeader && strings.HasPrefix(trimmed, ";;"):
+			t := strings.TrimSpace(strings.TrimPrefix(trimmed, ";;"))
+			// QA bookkeeping lines are not teaching prose.
+			low := strings.ToLower(t)
+			if strings.HasPrefix(low, "oracle:") || strings.HasPrefix(low, "covers:") ||
+				strings.HasPrefix(low, "(jvm clojure") || strings.Contains(low, "dual harness") ||
+				strings.Contains(low, "frozen against") || strings.Contains(low, "repl-vs-binary") {
+				continue
+			}
+			prose = append(prose, t)
+		case trimmed == "" && inHeader:
+			// blank line inside header: keep as paragraph break marker
+			if len(prose) > 0 && prose[len(prose)-1] != "" {
+				prose = append(prose, "")
+			}
+		default:
+			inHeader = false
+			if !strings.HasPrefix(trimmed, ";; expect:") {
+				code = append(code, ln)
+			}
+		}
+	}
+	// trim trailing blank code lines
+	for len(code) > 0 && strings.TrimSpace(code[len(code)-1]) == "" {
+		code = code[:len(code)-1]
+	}
+	return prose, code, expect, nil
+}
+
+func render(p page, prose []string, code []string, expect string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, `---
+title: "%s"
+sidebar:
+  label: "%d. %s"
+  order: %d
+---
+
+<!-- GENERATED by spikes/s67-docs-by-example (ADR 0104) from %s — do not edit.
+     The example below is a frozen conformance test: CI runs it in BOTH the
+     interpreter and a compiled binary on every commit, so it cannot rot. -->
+
+%s
+
+`, p.title, p.num, p.label, p.num, p.src, p.lead)
+	if para := strings.TrimSpace(strings.Join(prose, "\n")); para != "" {
+		// join wrapped comment lines into paragraphs on blank markers
+		for _, chunk := range strings.Split(para, "\n\n") {
+			b.WriteString(strings.ReplaceAll(chunk, "\n", " "))
+			b.WriteString("\n\n")
+		}
+	}
+	fmt.Fprintf(&b, "```clojure\n%s\n```\n\n", strings.Join(code, "\n"))
+	if expect != "" {
+		fmt.Fprintf(&b, "Output:\n\n```clojure\n%s\n```\n\n", expect)
+	}
+	b.WriteString("Run it yourself — save as `ex.clj` and:\n\n```bash\ncljgo run ex.clj      # interpreted, instant\ncljgo build           # or ship it as a static binary\n```\n")
+	return b.String()
+}
+
+func fail(err error) {
+	fmt.Fprintln(os.Stderr, "error:", err)
+	os.Exit(1)
+}

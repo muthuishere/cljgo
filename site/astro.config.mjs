@@ -55,6 +55,12 @@ export default defineConfig({
 					],
 				},
 				{
+					// ADR 0104 spike s67 — Rust-By-Example-style numbered course.
+					// Labels are human topic names; namespaces stay inside the pages.
+					label: 'By example',
+					items: [{ autogenerate: { directory: 'by-example' } }],
+				},
+				{
 					label: 'Build an app — bri',
 					items: [
 						{ label: 'Your first app (15 min)', slug: 'bri/tutorial' },
