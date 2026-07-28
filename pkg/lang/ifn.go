@@ -29,8 +29,7 @@ func (f FnFunc) Meta() IPersistentMap {
 }
 
 func (f FnFunc) WithMeta(meta IPersistentMap) any {
-	// no-op
-	return f
+	return FnWithMeta(f, meta)
 }
 
 // FnFunc0 is a zero-argument function implementing IFn with no []any allocation.
@@ -50,7 +49,7 @@ func (f FnFunc0) ApplyTo(args ISeq) any {
 }
 
 func (f FnFunc0) Meta() IPersistentMap          { return nil }
-func (f FnFunc0) WithMeta(_ IPersistentMap) any { return f }
+func (f FnFunc0) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
 
 // FnFunc1 is a one-argument function implementing IFn with no []any allocation.
 type FnFunc1 func(any) any
@@ -69,7 +68,7 @@ func (f FnFunc1) ApplyTo(args ISeq) any {
 }
 
 func (f FnFunc1) Meta() IPersistentMap          { return nil }
-func (f FnFunc1) WithMeta(_ IPersistentMap) any { return f }
+func (f FnFunc1) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
 
 // FnFunc2 is a two-argument function implementing IFn with no []any allocation.
 type FnFunc2 func(any, any) any
@@ -88,7 +87,7 @@ func (f FnFunc2) ApplyTo(args ISeq) any {
 }
 
 func (f FnFunc2) Meta() IPersistentMap          { return nil }
-func (f FnFunc2) WithMeta(_ IPersistentMap) any { return f }
+func (f FnFunc2) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
 
 // FnFunc3 is a three-argument function implementing IFn with no []any allocation.
 type FnFunc3 func(any, any, any) any
@@ -107,7 +106,7 @@ func (f FnFunc3) ApplyTo(args ISeq) any {
 }
 
 func (f FnFunc3) Meta() IPersistentMap          { return nil }
-func (f FnFunc3) WithMeta(_ IPersistentMap) any { return f }
+func (f FnFunc3) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
 
 // FnFunc4 is a four-argument function implementing IFn with no []any allocation.
 type FnFunc4 func(any, any, any, any) any
@@ -126,7 +125,7 @@ func (f FnFunc4) ApplyTo(args ISeq) any {
 }
 
 func (f FnFunc4) Meta() IPersistentMap          { return nil }
-func (f FnFunc4) WithMeta(_ IPersistentMap) any { return f }
+func (f FnFunc4) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
 
 // NamedFn0..NamedFn4 wrap the corresponding FnFuncN closure with the fn's
 // display name ("user/f") and expects label ("1: [x]") so an arity
@@ -162,7 +161,7 @@ func (f *NamedFn0) Invoke(args ...any) any {
 func (f *NamedFn0) ApplyTo(args ISeq) any         { return f.Invoke(seqToSlice(args)...) }
 func (f *NamedFn0) String() string                { return "#object[" + f.Name + "]" }
 func (f *NamedFn0) Meta() IPersistentMap          { return nil }
-func (f *NamedFn0) WithMeta(_ IPersistentMap) any { return f }
+func (f *NamedFn0) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
 
 // NamedFn1 is a one-argument closure carrying its arity-error name.
 type NamedFn1 struct {
@@ -181,7 +180,7 @@ func (f *NamedFn1) Invoke(args ...any) any {
 func (f *NamedFn1) ApplyTo(args ISeq) any         { return f.Invoke(seqToSlice(args)...) }
 func (f *NamedFn1) String() string                { return "#object[" + f.Name + "]" }
 func (f *NamedFn1) Meta() IPersistentMap          { return nil }
-func (f *NamedFn1) WithMeta(_ IPersistentMap) any { return f }
+func (f *NamedFn1) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
 
 // NamedFn2 is a two-argument closure carrying its arity-error name.
 type NamedFn2 struct {
@@ -203,7 +202,7 @@ func (f *NamedFn2) Invoke2(a, b any) any { return f.F(a, b) }
 func (f *NamedFn2) ApplyTo(args ISeq) any         { return f.Invoke(seqToSlice(args)...) }
 func (f *NamedFn2) String() string                { return "#object[" + f.Name + "]" }
 func (f *NamedFn2) Meta() IPersistentMap          { return nil }
-func (f *NamedFn2) WithMeta(_ IPersistentMap) any { return f }
+func (f *NamedFn2) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
 
 // NamedFn3 is a three-argument closure carrying its arity-error name.
 type NamedFn3 struct {
@@ -222,7 +221,7 @@ func (f *NamedFn3) Invoke(args ...any) any {
 func (f *NamedFn3) ApplyTo(args ISeq) any         { return f.Invoke(seqToSlice(args)...) }
 func (f *NamedFn3) String() string                { return "#object[" + f.Name + "]" }
 func (f *NamedFn3) Meta() IPersistentMap          { return nil }
-func (f *NamedFn3) WithMeta(_ IPersistentMap) any { return f }
+func (f *NamedFn3) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
 
 // NamedFn4 is a four-argument closure carrying its arity-error name.
 type NamedFn4 struct {
@@ -241,4 +240,4 @@ func (f *NamedFn4) Invoke(args ...any) any {
 func (f *NamedFn4) ApplyTo(args ISeq) any         { return f.Invoke(seqToSlice(args)...) }
 func (f *NamedFn4) String() string                { return "#object[" + f.Name + "]" }
 func (f *NamedFn4) Meta() IPersistentMap          { return nil }
-func (f *NamedFn4) WithMeta(_ IPersistentMap) any { return f }
+func (f *NamedFn4) WithMeta(m IPersistentMap) any { return FnWithMeta(f, m) }
