@@ -152,7 +152,29 @@ func compileMatch(varsForm, clausesForm any) any {
 	return list(cc("let"), lang.NewVectorOwning(letBinds), body)
 }
 
-type compiler struct{}
+type compiler struct {
+	// mapSub is the set of sub-occurrence gensyms bound by (get occ k
+	// ::not-found). The sentinel is an INTERNAL value: core.match applies
+	// value patterns and :guards to it, but the JVM binds nil into the
+	// action body when an absent key's value is bound (verified against
+	// core.match 1.1.0: `(match [m] [{:a (x :guard keyword?)}] [:kw x
+	// (nil? x)] :else :none)` on {} => [:kw nil true] — the guard saw the
+	// sentinel and passed, yet x is nil). withLet consults this set so the
+	// sentinel can never escape into user code.
+	mapSub map[*lang.Symbol]bool
+}
+
+func (c *compiler) markMapSub(g *lang.Symbol) {
+	if c.mapSub == nil {
+		c.mapSub = map[*lang.Symbol]bool{}
+	}
+	c.mapSub[g] = true
+}
+
+func (c *compiler) isMapSub(occ any) bool {
+	s, ok := occ.(*lang.Symbol)
+	return ok && c.mapSub[s]
+}
 
 func (c *compiler) gensym(prefix string) *lang.Symbol {
 	n := atomic.AddInt64(&gensymCounter, 1)
@@ -378,13 +400,15 @@ func (c *compiler) compile(occs []any, rows []row, fail any) (any, bool) {
 		// Key-existence tests go LAST — see row.presence.
 		guards = append(guards, r0.presence...)
 		if len(guards) == 0 {
-			return withLet(binds, r0.action), false // remaining rows unreachable
+			return c.withLet(binds, c.unsentinel(binds, r0.action)), false // remaining rows unreachable
 		}
 		// Guards must see the row's bindings, so the let wraps the whole test:
 		// (let [binds…] (if (and guards…) action <fall-through>)).
 		rest, restUsed := c.compile(occs, rows[1:], fail)
-		inner := list(sym("if"), andForm(guards), r0.action, rest)
-		return withLet(binds, inner), restUsed
+		// Only the ACTION is unsentinel-ed; the guards above it must still
+		// see the raw ::not-found occurrence.
+		inner := list(sym("if"), andForm(guards), c.unsentinel(binds, r0.action), rest)
+		return c.withLet(binds, inner), restUsed
 	}
 
 	// Dispatch on column `col`: gather its distinct head constructors, build a
@@ -609,6 +633,7 @@ func (c *compiler) expandOccs(occ any, ct ctor) (subOccs []any, letPairs []any) 
 	case pMap:
 		for _, k := range ct.keys {
 			g := c.gensym("m")
+			c.markMapSub(g)
 			subOccs = append(subOccs, g)
 			// (get occ k ::not-found), not (get occ k): an absent key must be
 			// distinguishable from a nil value, and the sentinel is what a
@@ -748,13 +773,46 @@ func defaultMatrix(rows []row, col int, occ any) []row {
 
 // --- form helpers ------------------------------------------------------------
 
-func withLet(binds []bind, action any) any {
+// withLet emits the clause's binding let. The occurrences are bound RAW —
+// a map sub-occurrence still carries the ::not-found sentinel here, because
+// the row's :guards are evaluated INSIDE this let and core.match applies
+// guards to the sentinel (that is what makes `even?` throw on an absent key).
+func (c *compiler) withLet(binds []bind, action any) any {
 	if len(binds) == 0 {
 		return action
 	}
 	pairs := make([]any, 0, len(binds)*2)
 	for _, b := range binds {
 		pairs = append(pairs, b.sym, b.occ)
+	}
+	return list(cc("let"), lang.NewVectorOwning(pairs), action)
+}
+
+// unsentinel re-binds, for the ACTION body only, every symbol whose value came
+// from a map sub-occurrence, mapping the sentinel to nil.
+//
+// The guard and the binding see DIFFERENT values on the JVM, verified against
+// core.match 1.1.0:
+//
+//	(match [m] [{:a (x :guard keyword?)}] [:kw x (nil? x)] :else :none)
+//	{} => [:kw nil true]
+//
+// The guard received ::not-found (keyword? passed, so the row matched), yet x
+// is nil inside the action. Emitting one let would leak the sentinel into user
+// code; emitting two keeps both halves true.
+func (c *compiler) unsentinel(binds []bind, action any) any {
+	pairs := make([]any, 0, len(binds)*2)
+	for _, b := range binds {
+		if !c.isMapSub(b.occ) {
+			continue
+		}
+		// `if` is a SPECIAL FORM — it has no var, so it stays unqualified
+		// (clojure.core/if does not resolve).
+		pairs = append(pairs, b.sym,
+			list(lang.NewSymbol("if"), list(cc("="), b.sym, notFoundKW), nil, b.sym))
+	}
+	if len(pairs) == 0 {
+		return action
 	}
 	return list(cc("let"), lang.NewVectorOwning(pairs), action)
 }
