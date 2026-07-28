@@ -3079,14 +3079,14 @@ func Load() {
 						_ = m1260
 						tmp1261 := v_bri_DOT_web_DOT_http_split_pattern.Get()
 						tmp1262 := lang.Apply1(tmp1261, pat1254)
-						var vec__1111263 any = tmp1262
-						_ = vec__1111263
+						var vec__1251263 any = tmp1262
+						_ = vec__1251263
 						tmp1264 := v_clojure_DOT_core_nth.Get()
-						tmp1265 := lang.Apply3(tmp1264, vec__1111263, int64(0), nil)
+						tmp1265 := lang.Apply3(tmp1264, vec__1251263, int64(0), nil)
 						var method1266 any = tmp1265
 						_ = method1266
 						tmp1267 := v_clojure_DOT_core_nth.Get()
-						tmp1268 := lang.Apply3(tmp1267, vec__1111263, int64(1), nil)
+						tmp1268 := lang.Apply3(tmp1267, vec__1251263, int64(1), nil)
 						var path1269 any = tmp1268
 						_ = path1269
 						var tmp1270 any
@@ -3940,25 +3940,25 @@ func Load() {
 				_ = tmp1670
 				{
 					tmp1671 := lang.Apply1(kw_bri_SLASH_ctx, req1663)
-					var some__1141672 any = tmp1671
-					_ = some__1141672
+					var some__1281672 any = tmp1671
+					_ = some__1281672
 					var tmp1673 any
 					_ = tmp1673
 					{
 						tmp1674 := v_clojure_DOT_core_nil_QMARK_.Get()
-						tmp1675 := lang.Apply1(tmp1674, some__1141672)
+						tmp1675 := lang.Apply1(tmp1674, some__1281672)
 						var tmp1676 any
 						_ = tmp1676
 						if lang.IsTruthy(tmp1675) {
 							tmp1676 = nil
 						} else {
 							tmp1677 := v_clojure_DOT_core_deref.Get()
-							tmp1678 := lang.Apply1(tmp1677, some__1141672)
+							tmp1678 := lang.Apply1(tmp1677, some__1281672)
 							tmp1676 = tmp1678
 						}
-						var some__1151679 any = tmp1676
-						_ = some__1151679
-						tmp1673 = some__1151679
+						var some__1291679 any = tmp1676
+						_ = some__1291679
+						tmp1673 = some__1291679
 					}
 					tmp1670 = tmp1673
 				}
@@ -4192,11 +4192,11 @@ func Load() {
 									_ = tmp1786
 									if lang.IsTruthy(and__1__auto__1785) {
 										tmp1787 := v_clojure_DOT_core_some.Get()
-										tmp1788 := lang.FnFunc1(func(p1__41_SHARP_1789 any) any {
-											tmp1790 := rt.EQ2(v_clojure_DOT_core_X_EQ_, p1__41_SHARP_1789, origin1781)
+										tmp1788 := lang.FnFunc1(func(p1__50_SHARP_1789 any) any {
+											tmp1790 := rt.EQ2(v_clojure_DOT_core_X_EQ_, p1__50_SHARP_1789, origin1781)
 											return tmp1790
 										})
-										tmp1791 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__41#]", F: tmp1788}
+										tmp1791 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__50#]", F: tmp1788}
 										tmp1792 := lang.Apply2(tmp1787, tmp1791, origins1762)
 										tmp1786 = tmp1792
 									} else {
@@ -4425,12 +4425,12 @@ func Load() {
 							_ = now1873
 							tmp1874 := v_clojure_DOT_core_conj.Get()
 							tmp1875 := v_clojure_DOT_core_filterv.Get()
-							tmp1876 := lang.FnFunc1(func(p1__42_SHARP_1877 any) any {
+							tmp1876 := lang.FnFunc1(func(p1__51_SHARP_1877 any) any {
 								tmp1878 := rt.Sub2(v_clojure_DOT_core_X_, now1873, window1842)
-								tmp1879 := rt.GT2(v_clojure_DOT_core_X_GT_, p1__42_SHARP_1877, tmp1878)
+								tmp1879 := rt.GT2(v_clojure_DOT_core_X_GT_, p1__51_SHARP_1877, tmp1878)
 								return tmp1879
 							})
-							tmp1880 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__42#]", F: tmp1876}
+							tmp1880 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__51#]", F: tmp1876}
 							tmp1881 := v_clojure_DOT_core_get.Get()
 							tmp1882 := v_clojure_DOT_core_deref.Get()
 							tmp1883 := lang.Apply1(tmp1882, store1857)

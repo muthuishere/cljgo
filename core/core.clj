@@ -2522,3 +2522,117 @@
   "Returns the immediate and indirect superclasses and interfaces of c, if any"
   [c]
   (-type-supers c))
+
+;; ---------------------------------------------------------------------
+;; SPIKE s69 (ADR 0107) — defexpand. Prototype quality; see
+;; spikes/s69-defexpand/VERDICT.md. Written like a defn, expanded at every
+;; DIRECT call site; a real fn is still defined under the same name so
+;; HOFs keep working.
+;; ---------------------------------------------------------------------
+
+;; -defexpand-walk : substitute smap into form, auto-gensymming let/fn
+;; locals (hygiene rule 2) and qualifying free symbols that resolve to a
+;; var (what syntax-quote does for you, minus the ceremony). `quote`
+;; forms are left alone. Naive by design: this is a spike walker.
+(defn -defexpand-walk [form smap]
+  (cond
+    (symbol? form)
+    (cond
+      (contains? smap form) (get smap form)
+      (namespace form) form
+      ;; qualify to the var's home ns, the way syntax-quote does. The
+      ;; var's printed form is "#'ns/name" — cheapest portable route in a
+      ;; spike (corelib builtins carry no :ns meta).
+      :else (let [v (resolve form)]
+              (if (var? v)
+                (symbol (subs (str v) 2))
+                form)))
+
+    (seq? form)
+    (if (empty? form)
+      form
+      (let [head (first form)]
+        (cond
+          (= head 'quote) form
+          ;; (let [b v ...] body) / (loop [...] body): gensym every binding name
+          (and (contains? #{'let 'let* 'loop 'loop*} head) (vector? (second form)))
+          (let [bs (partition 2 (second form))
+                smap2 (reduce (fn [m [b _]]
+                                (if (symbol? b) (assoc m b (gensym (str b "__x"))) m))
+                              smap bs)
+                ;; init exprs see the smap BEFORE their own binding (let* order)
+                nb (vec (mapcat (fn [[b v]]
+                                  [(get smap2 b b) (-defexpand-walk v smap2)])
+                                bs))]
+            (apply list head nb (map #(-defexpand-walk % smap2) (nnext form))))
+          ;; (fn [params] body) — gensym the params
+          (and (contains? #{'fn 'fn*} head) (vector? (second form)))
+          (let [ps (second form)
+                smap2 (reduce (fn [m p]
+                                (if (symbol? p) (assoc m p (gensym (str p "__x"))) m))
+                              smap ps)]
+            (apply list head (vec (map #(get smap2 % %) ps))
+                   (map #(-defexpand-walk % smap2) (nnext form))))
+          :else (apply list (map #(-defexpand-walk % smap) form)))))
+
+    (vector? form) (vec (map #(-defexpand-walk % smap) form))
+    (map? form) (reduce (fn [m e] (assoc m (-defexpand-walk (key e) smap)
+                                         (-defexpand-walk (val e) smap)))
+                        {} form)
+    (set? form) (reduce conj #{} (map #(-defexpand-walk % smap) form))
+    :else form))
+
+;; -defexpand-replace : plain symbol substitution (the gensym names are
+;; unique, so no scoping analysis is needed).
+(defn -defexpand-replace [form smap]
+  (cond
+    (symbol? form) (if (contains? smap form) (get smap form) form)
+    (seq? form) (if (empty? form) form (apply list (map #(-defexpand-replace % smap) form)))
+    (vector? form) (vec (map #(-defexpand-replace % smap) form))
+    (map? form) (reduce (fn [m e] (assoc m (-defexpand-replace (key e) smap)
+                                         (-defexpand-replace (val e) smap)))
+                        {} form)
+    (set? form) (reduce conj #{} (map #(-defexpand-replace % smap) form))
+    :else form))
+
+;; -defexpand-simple? : an argument form that costs nothing to evaluate and
+;; has no side effects — a literal or a bare symbol. Substituted verbatim
+;; rather than bound to a let* temp, which is what keeps the expansion
+;; genuinely zero-cost. Anything else (a call form) gets a temp, so it is
+;; still evaluated exactly once, left to right.
+(defn -defexpand-simple? [f]
+  (or (symbol? f) (keyword? f) (string? f) (number? f) (nil? f)
+      (true? f) (false? f) (char? f)))
+
+;; -defexpand-emit : build the replacement form at the call site.
+(defn -defexpand-emit [gsyms argforms tmpl]
+  (let [pairs (map vector gsyms argforms)
+        simple (filter (fn [p] (-defexpand-simple? (second p))) pairs)
+        temped (filter (fn [p] (not (-defexpand-simple? (second p)))) pairs)
+        smap (reduce (fn [m p] (assoc m (first p) (second p))) {} simple)
+        body (-defexpand-replace tmpl smap)]
+    (if (empty? temped)
+      body
+      (list 'let* (vec (mapcat (fn [p] [(first p) (second p)]) temped)) body))))
+
+(defmacro defexpand
+  "SPIKE (ADR 0107). Define like a defn; every DIRECT call site is expanded
+  at compile time into the body with the arguments substituted. Arguments
+  evaluate exactly once, left to right (they are bound to fresh names in a
+  let* wrapper). A real fn is also defined under the same name, so HOF use
+  ((map f …) / (apply f …)) still works. Single fixed arity only."
+  [name & decl]
+  (let [[pre-args [params body]] (split-with (comp not vector?) decl)
+        gs (vec (map (fn [p] (gensym (str p "__x"))) params))
+        tmpl (-defexpand-walk body (zipmap params gs))
+        inline-fn (list 'clojure.core/fn (vec params)
+                        (list 'clojure.core/-defexpand-emit
+                              (list 'quote gs)
+                              (cons 'clojure.core/vector params)
+                              (list 'quote tmpl)))]
+    `(do
+       (defn ~name ~@pre-args ~params ~body)
+       (alter-meta! (var ~name) assoc
+                    :inline ~inline-fn
+                    :inline-arities #{~(count params)})
+       (var ~name))))

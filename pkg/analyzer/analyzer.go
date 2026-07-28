@@ -941,6 +941,17 @@ func (a *Analyzer) parseInvoke(seq lang.ISeq, env Env) (*ast.Node, error) {
 	}
 	exprEnv := env.withContext(CtxExpr)
 	exprEnv.IsTopLevel = false
+	// SPIKE s69 (ADR 0107): call-site expansion. A DIRECT call to a var
+	// carrying :inline metadata is rewritten to the inline fn applied to
+	// the *arg forms*, and the replacement form is analyzed instead. This
+	// is the one seam — both the interpreter and the AOT emitter analyze
+	// through here (pkg/emit/compile.go:90 calls the same Analyzer), so a
+	// single change covers both harnesses.
+	if expanded, ok, err := a.tryInlineExpand(seq, env); err != nil {
+		return nil, err
+	} else if ok {
+		return a.analyzeForm(expanded, env)
+	}
 	// Go interop call: a namespaced operator whose namespace is a
 	// :require-go alias (ADR 0010, design/05 §2). The `!` suffix
 	// (`os/Open!`) is throw-shaping sugar — Go exports can never end in
@@ -1007,6 +1018,76 @@ func (a *Analyzer) parseInvoke(seq lang.ISeq, env Env) (*ast.Node, error) {
 		args = append(args, n)
 	}
 	return &ast.Node{Op: ast.OpInvoke, Form: seq, Sub: &ast.InvokeNode{Fn: fn, Args: args}}, nil
+}
+
+// kwInline / kwInlineArities are the metadata carrier keys (JVM Clojure
+// uses exactly these for + / inc / etc.; cljgo's definline already
+// attaches :inline, core/core.clj:2466, and nothing consumed it until
+// this spike).
+var (
+	kwInline        = lang.NewKeyword("inline")
+	kwInlineArities = lang.NewKeyword("inline-arities")
+)
+
+// tryInlineExpand implements the s69 call-site expansion. It returns
+// (replacementForm, true, nil) when seq is a direct call to a var whose
+// :inline metadata is an IFn and whose :inline-arities admits the call's
+// argument count. Everything else falls through (false) to the ordinary
+// invoke path — locals shadow, namespaced host calls are untouched, and
+// a var used as a VALUE ((map add! …)) never reaches here at all because
+// that is analyzeSymbol, not parseInvoke. That is the whole HOF fallback.
+func (a *Analyzer) tryInlineExpand(seq lang.ISeq, env Env) (any, bool, error) {
+	if a.ResolveVar == nil {
+		return nil, false, nil
+	}
+	op, ok := seq.First().(*lang.Symbol)
+	if !ok {
+		return nil, false, nil
+	}
+	if !op.HasNamespace() {
+		if _, shadowed := env.Locals[op.Name()]; shadowed {
+			return nil, false, nil // a local shadows the name
+		}
+		if _, isSpecial := a.specialParser(op.Name()); isSpecial {
+			return nil, false, nil
+		}
+	}
+	v, err := a.ResolveVar(op)
+	if err != nil || v == nil || v.Meta() == nil {
+		return nil, false, nil
+	}
+	inline, _ := lang.Get(v.Meta(), kwInline).(lang.IFn)
+	if inline == nil {
+		return nil, false, nil
+	}
+	args := seqToSlice(seq.Next())
+	if arities := lang.Get(v.Meta(), kwInlineArities); arities != nil {
+		af, ok := arities.(lang.IFn)
+		if !ok {
+			return nil, false, nil
+		}
+		if !lang.IsTruthy(af.Invoke(int64(len(args)))) {
+			return nil, false, nil
+		}
+	}
+	var expanded any
+	err = func() (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				if rerr, ok := r.(error); ok {
+					err = rerr
+				} else {
+					err = fmt.Errorf("%v", r)
+				}
+			}
+		}()
+		expanded = inline.Invoke(args...)
+		return nil
+	}()
+	if err != nil {
+		return nil, false, a.errf(seq, "expanding inline call to %s: %v", op, err)
+	}
+	return expanded, true, nil
 }
 
 // parseHostCall resolves a namespaced operator to a Go package member and

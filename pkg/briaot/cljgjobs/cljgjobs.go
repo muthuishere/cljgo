@@ -289,32 +289,32 @@ func Load() {
 		case 2:
 			handlers76 := args[0]
 			_ = handlers76
-			p__19277 := args[1]
-			_ = p__19277
+			p__20677 := args[1]
+			_ = p__20677
 			var tmp78 any
 			_ = tmp78
 			{
-				var map__19379 any = p__19277
-				_ = map__19379
+				var map__20779 any = p__20677
+				_ = map__20779
 				tmp80 := v_clojure_DOT_core_seq_QMARK_.Get()
-				tmp81 := lang.Apply1(tmp80, map__19379)
+				tmp81 := lang.Apply1(tmp80, map__20779)
 				var tmp82 any
 				_ = tmp82
 				if lang.IsTruthy(tmp81) {
 					tmp83 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-					tmp84 := lang.Apply1(tmp83, map__19379)
+					tmp84 := lang.Apply1(tmp83, map__20779)
 					tmp82 = tmp84
 				} else {
-					tmp82 = map__19379
+					tmp82 = map__20779
 				}
-				var map__19385 any = tmp82
-				_ = map__19385
+				var map__20785 any = tmp82
+				_ = map__20785
 				tmp86 := v_clojure_DOT_core_get.Get()
-				tmp87 := lang.Apply3(tmp86, map__19385, kw_workers, int64(4))
+				tmp87 := lang.Apply3(tmp86, map__20785, kw_workers, int64(4))
 				var workers88 any = tmp87
 				_ = workers88
 				tmp89 := v_clojure_DOT_core_get.Get()
-				tmp90 := lang.Apply3(tmp89, map__19385, kw_buffer, int64(1024))
+				tmp90 := lang.Apply3(tmp89, map__20785, kw_buffer, int64(1024))
 				var buffer91 any = tmp90
 				_ = buffer91
 				var tmp92 any
@@ -465,7 +465,7 @@ func Load() {
 			}
 			return tmp78
 		default:
-			panic(lang.NewArityError(len(args), "cljg.jobs/local", "1: [handlers] or 2: [handlers p__192]"))
+			panic(lang.NewArityError(len(args), "cljg.jobs/local", "1: [handlers] or 2: [handlers p__206]"))
 		}
 	})
 	v_cljg_DOT_jobs_local.BindRoot(tmp71)

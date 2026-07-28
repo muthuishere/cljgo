@@ -100,12 +100,12 @@ func Load() {
 			_ = mx12
 			tmp13 := v_clojure_DOT_core_cons.Get()
 			tmp14 := v_clojure_DOT_core_remove.Get()
-			tmp15 := lang.FnFunc1(func(p1__22_SHARP_16 any) any {
+			tmp15 := lang.FnFunc1(func(p1__31_SHARP_16 any) any {
 				tmp17 := v_clojure_DOT_core_identical_QMARK_.Get()
-				tmp18 := lang.Apply2(tmp17, mx12, p1__22_SHARP_16)
+				tmp18 := lang.Apply2(tmp17, mx12, p1__31_SHARP_16)
 				return tmp18
 			})
-			tmp19 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__22#]", F: tmp15}
+			tmp19 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__31#]", F: tmp15}
 			tmp20 := lang.Apply2(tmp14, tmp19, coll7)
 			tmp21 := lang.Apply2(tmp13, mx12, tmp20)
 			tmp8 = tmp21
@@ -249,14 +249,14 @@ func Load() {
 			_ = tmp83
 			{
 				tmp84 := v_clojure_DOT_set_X_bubble_max_key.Get()
-				tmp85 := lang.FnFunc1(func(p1__23_SHARP_86 any) any {
+				tmp85 := lang.FnFunc1(func(p1__32_SHARP_86 any) any {
 					tmp87 := v_clojure_DOT_core_X_.Get()
 					tmp88 := v_clojure_DOT_core_count.Get()
-					tmp89 := lang.Apply1(tmp88, p1__23_SHARP_86)
+					tmp89 := lang.Apply1(tmp88, p1__32_SHARP_86)
 					tmp90 := lang.Apply1(tmp87, tmp89)
 					return tmp90
 				})
-				tmp91 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__23#]", F: tmp85}
+				tmp91 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__32#]", F: tmp85}
 				tmp92 := v_clojure_DOT_core_conj.Get()
 				tmp93 := lang.Apply3(tmp92, sets82, s281, s180)
 				tmp94 := lang.Apply2(tmp84, tmp91, tmp93)
@@ -369,18 +369,18 @@ func Load() {
 	tmp148 := &lang.NamedFn2{Name: "clojure.set/select", Expects: "2: [pred xset]", F: tmp135}
 	v_clojure_DOT_set_select_.BindRoot(tmp148)
 	_ = v_clojure_DOT_set_select_
-	// (def project (clojure.core/fn [xrel ks] (with-meta (set (map (fn* [p1__24#] (select-keys p…
+	// (def project (clojure.core/fn [xrel ks] (with-meta (set (map (fn* [p1__33#] (select-keys p…
 	v_clojure_DOT_set_project.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(14)))
 	tmp149 := lang.FnFunc2(func(xrel150, ks151 any) any {
 		tmp152 := v_clojure_DOT_core_with_meta.Get()
 		tmp153 := v_clojure_DOT_core_set.Get()
 		tmp154 := v_clojure_DOT_core_map_.Get()
-		tmp155 := lang.FnFunc1(func(p1__24_SHARP_156 any) any {
+		tmp155 := lang.FnFunc1(func(p1__33_SHARP_156 any) any {
 			tmp157 := v_clojure_DOT_core_select_keys.Get()
-			tmp158 := lang.Apply2(tmp157, p1__24_SHARP_156, ks151)
+			tmp158 := lang.Apply2(tmp157, p1__33_SHARP_156, ks151)
 			return tmp158
 		})
-		tmp159 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__24#]", F: tmp155}
+		tmp159 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__33#]", F: tmp155}
 		tmp160 := lang.Apply2(tmp154, tmp159, xrel150)
 		tmp161 := lang.Apply1(tmp153, tmp160)
 		tmp162 := v_clojure_DOT_core_meta.Get()
@@ -395,18 +395,18 @@ func Load() {
 	v_clojure_DOT_set_rename_keys.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(18)))
 	tmp166 := lang.FnFunc2(func(m167, kmap168 any) any {
 		tmp169 := v_clojure_DOT_core_reduce.Get()
-		tmp170 := lang.FnFunc2(func(acc171, p__38172 any) any {
+		tmp170 := lang.FnFunc2(func(acc171, p__52172 any) any {
 			var tmp173 any
 			_ = tmp173
 			{
-				var vec__39174 any = p__38172
-				_ = vec__39174
+				var vec__53174 any = p__52172
+				_ = vec__53174
 				tmp175 := v_clojure_DOT_core_nth.Get()
-				tmp176 := lang.Apply3(tmp175, vec__39174, int64(0), nil)
+				tmp176 := lang.Apply3(tmp175, vec__53174, int64(0), nil)
 				var old177 any = tmp176
 				_ = old177
 				tmp178 := v_clojure_DOT_core_nth.Get()
-				tmp179 := lang.Apply3(tmp178, vec__39174, int64(1), nil)
+				tmp179 := lang.Apply3(tmp178, vec__53174, int64(1), nil)
 				var newk180 any = tmp179
 				_ = newk180
 				tmp181 := v_clojure_DOT_core_contains_QMARK_.Get()
@@ -426,7 +426,7 @@ func Load() {
 			}
 			return tmp173
 		})
-		tmp188 := &lang.NamedFn2{Name: "fn", Expects: "2: [acc p__38]", F: tmp170}
+		tmp188 := &lang.NamedFn2{Name: "fn", Expects: "2: [acc p__52]", F: tmp170}
 		tmp189 := v_clojure_DOT_core_apply.Get()
 		tmp190 := v_clojure_DOT_core_dissoc.Get()
 		tmp191 := v_clojure_DOT_core_keys.Get()
@@ -438,18 +438,18 @@ func Load() {
 	tmp195 := &lang.NamedFn2{Name: "clojure.set/rename-keys", Expects: "2: [m kmap]", F: tmp166}
 	v_clojure_DOT_set_rename_keys.BindRoot(tmp195)
 	_ = v_clojure_DOT_set_rename_keys
-	// (def rename (clojure.core/fn [xrel kmap] (with-meta (set (map (fn* [p1__25#] (rename-keys …
+	// (def rename (clojure.core/fn [xrel kmap] (with-meta (set (map (fn* [p1__34#] (rename-keys …
 	v_clojure_DOT_set_rename.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(13)))
 	tmp196 := lang.FnFunc2(func(xrel197, kmap198 any) any {
 		tmp199 := v_clojure_DOT_core_with_meta.Get()
 		tmp200 := v_clojure_DOT_core_set.Get()
 		tmp201 := v_clojure_DOT_core_map_.Get()
-		tmp202 := lang.FnFunc1(func(p1__25_SHARP_203 any) any {
+		tmp202 := lang.FnFunc1(func(p1__34_SHARP_203 any) any {
 			tmp204 := v_clojure_DOT_set_rename_keys.Get()
-			tmp205 := lang.Apply2(tmp204, p1__25_SHARP_203, kmap198)
+			tmp205 := lang.Apply2(tmp204, p1__34_SHARP_203, kmap198)
 			return tmp205
 		})
-		tmp206 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__25#]", F: tmp202}
+		tmp206 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__34#]", F: tmp202}
 		tmp207 := lang.Apply2(tmp201, tmp206, xrel197)
 		tmp208 := lang.Apply1(tmp200, tmp207)
 		tmp209 := v_clojure_DOT_core_meta.Get()
@@ -575,14 +575,14 @@ func Load() {
 						tmp286 := lang.NewVector(yrel254, xrel253)
 						tmp284 = tmp286
 					}
-					var vec__42287 any = tmp284
-					_ = vec__42287
+					var vec__56287 any = tmp284
+					_ = vec__56287
 					tmp288 := v_clojure_DOT_core_nth.Get()
-					tmp289 := lang.Apply3(tmp288, vec__42287, int64(0), nil)
+					tmp289 := lang.Apply3(tmp288, vec__56287, int64(0), nil)
 					var r290 any = tmp289
 					_ = r290
 					tmp291 := v_clojure_DOT_core_nth.Get()
-					tmp292 := lang.Apply3(tmp291, vec__42287, int64(1), nil)
+					tmp292 := lang.Apply3(tmp291, vec__56287, int64(1), nil)
 					var s293 any = tmp292
 					_ = s293
 					tmp294 := v_clojure_DOT_set_index.Get()
@@ -603,14 +603,14 @@ func Load() {
 							_ = tmp306
 							if lang.IsTruthy(found305) {
 								tmp307 := v_clojure_DOT_core_reduce.Get()
-								tmp308 := lang.FnFunc2(func(p1__26_SHARP_309, p2__27_SHARP_310 any) any {
+								tmp308 := lang.FnFunc2(func(p1__35_SHARP_309, p2__36_SHARP_310 any) any {
 									tmp311 := v_clojure_DOT_core_conj.Get()
 									tmp312 := v_clojure_DOT_core_merge.Get()
-									tmp313 := lang.Apply2(tmp312, p2__27_SHARP_310, x300)
-									tmp314 := lang.Apply2(tmp311, p1__26_SHARP_309, tmp313)
+									tmp313 := lang.Apply2(tmp312, p2__36_SHARP_310, x300)
+									tmp314 := lang.Apply2(tmp311, p1__35_SHARP_309, tmp313)
 									return tmp314
 								})
-								tmp315 := &lang.NamedFn2{Name: "fn", Expects: "2: [p1__26# p2__27#]", F: tmp308}
+								tmp315 := &lang.NamedFn2{Name: "fn", Expects: "2: [p1__35# p2__36#]", F: tmp308}
 								tmp316 := lang.Apply3(tmp307, tmp315, ret299, found305)
 								tmp306 = tmp316
 							} else {
@@ -657,18 +657,18 @@ func Load() {
 					tmp334 := lang.NewVector(yrel322, xrel321, km323)
 					tmp330 = tmp334
 				}
-				var vec__45335 any = tmp330
-				_ = vec__45335
+				var vec__59335 any = tmp330
+				_ = vec__59335
 				tmp336 := v_clojure_DOT_core_nth.Get()
-				tmp337 := lang.Apply3(tmp336, vec__45335, int64(0), nil)
+				tmp337 := lang.Apply3(tmp336, vec__59335, int64(0), nil)
 				var r338 any = tmp337
 				_ = r338
 				tmp339 := v_clojure_DOT_core_nth.Get()
-				tmp340 := lang.Apply3(tmp339, vec__45335, int64(1), nil)
+				tmp340 := lang.Apply3(tmp339, vec__59335, int64(1), nil)
 				var s341 any = tmp340
 				_ = s341
 				tmp342 := v_clojure_DOT_core_nth.Get()
-				tmp343 := lang.Apply3(tmp342, vec__45335, int64(2), nil)
+				tmp343 := lang.Apply3(tmp342, vec__59335, int64(2), nil)
 				var k344 any = tmp343
 				_ = k344
 				tmp345 := v_clojure_DOT_set_index.Get()
@@ -695,14 +695,14 @@ func Load() {
 						_ = tmp363
 						if lang.IsTruthy(found362) {
 							tmp364 := v_clojure_DOT_core_reduce.Get()
-							tmp365 := lang.FnFunc2(func(p1__28_SHARP_366, p2__29_SHARP_367 any) any {
+							tmp365 := lang.FnFunc2(func(p1__37_SHARP_366, p2__38_SHARP_367 any) any {
 								tmp368 := v_clojure_DOT_core_conj.Get()
 								tmp369 := v_clojure_DOT_core_merge.Get()
-								tmp370 := lang.Apply2(tmp369, p2__29_SHARP_367, x353)
-								tmp371 := lang.Apply2(tmp368, p1__28_SHARP_366, tmp370)
+								tmp370 := lang.Apply2(tmp369, p2__38_SHARP_367, x353)
+								tmp371 := lang.Apply2(tmp368, p1__37_SHARP_366, tmp370)
 								return tmp371
 							})
-							tmp372 := &lang.NamedFn2{Name: "fn", Expects: "2: [p1__28# p2__29#]", F: tmp365}
+							tmp372 := &lang.NamedFn2{Name: "fn", Expects: "2: [p1__37# p2__38#]", F: tmp365}
 							tmp373 := lang.Apply3(tmp364, tmp372, ret352, found362)
 							tmp363 = tmp373
 						} else {
@@ -741,12 +741,12 @@ func Load() {
 			_ = tmp387
 			if lang.IsTruthy(and__1__auto__386) {
 				tmp388 := v_clojure_DOT_core_every_QMARK_.Get()
-				tmp389 := lang.FnFunc1(func(p1__30_SHARP_390 any) any {
+				tmp389 := lang.FnFunc1(func(p1__39_SHARP_390 any) any {
 					tmp391 := v_clojure_DOT_core_contains_QMARK_.Get()
-					tmp392 := lang.Apply2(tmp391, set2379, p1__30_SHARP_390)
+					tmp392 := lang.Apply2(tmp391, set2379, p1__39_SHARP_390)
 					return tmp392
 				})
-				tmp393 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__30#]", F: tmp389}
+				tmp393 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__39#]", F: tmp389}
 				tmp394 := lang.Apply2(tmp388, tmp393, set1378)
 				tmp387 = tmp394
 			} else {
@@ -776,12 +776,12 @@ func Load() {
 			_ = tmp406
 			if lang.IsTruthy(and__1__auto__405) {
 				tmp407 := v_clojure_DOT_core_every_QMARK_.Get()
-				tmp408 := lang.FnFunc1(func(p1__31_SHARP_409 any) any {
+				tmp408 := lang.FnFunc1(func(p1__40_SHARP_409 any) any {
 					tmp410 := v_clojure_DOT_core_contains_QMARK_.Get()
-					tmp411 := lang.Apply2(tmp410, set1397, p1__31_SHARP_409)
+					tmp411 := lang.Apply2(tmp410, set1397, p1__40_SHARP_409)
 					return tmp411
 				})
-				tmp412 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__31#]", F: tmp408}
+				tmp412 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__40#]", F: tmp408}
 				tmp413 := lang.Apply2(tmp407, tmp412, set2398)
 				tmp406 = tmp413
 			} else {

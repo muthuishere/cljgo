@@ -877,25 +877,25 @@ func Load() {
 				{
 					tmp303 := v_cljg_DOT_security_bearer.Get()
 					tmp304 := lang.Apply1(tmp303, req297)
-					var some__116305 any = tmp304
-					_ = some__116305
+					var some__130305 any = tmp304
+					_ = some__130305
 					var tmp306 any
 					_ = tmp306
 					{
 						tmp307 := v_clojure_DOT_core_nil_QMARK_.Get()
-						tmp308 := lang.Apply1(tmp307, some__116305)
+						tmp308 := lang.Apply1(tmp307, some__130305)
 						var tmp309 any
 						_ = tmp309
 						if lang.IsTruthy(tmp308) {
 							tmp309 = nil
 						} else {
 							tmp310 := v_cljg_DOT_security_verify.Get()
-							tmp311 := lang.Apply1(tmp310, some__116305)
+							tmp311 := lang.Apply1(tmp310, some__130305)
 							tmp309 = tmp311
 						}
-						var some__117312 any = tmp309
-						_ = some__117312
-						tmp306 = some__117312
+						var some__131312 any = tmp309
+						_ = some__131312
+						tmp306 = some__131312
 					}
 					tmp302 = tmp306
 				}
@@ -1439,12 +1439,12 @@ func Load() {
 										{
 											tmp556 := v_clojure_DOT_core_conj.Get()
 											tmp557 := v_clojure_DOT_core_filterv.Get()
-											tmp558 := lang.FnFunc1(func(p1__43_SHARP_559 any) any {
+											tmp558 := lang.FnFunc1(func(p1__52_SHARP_559 any) any {
 												tmp560 := rt.Sub2(v_clojure_DOT_core_X_, now514, window468)
-												tmp561 := rt.GT2(v_clojure_DOT_core_X_GT_, p1__43_SHARP_559, tmp560)
+												tmp561 := rt.GT2(v_clojure_DOT_core_X_GT_, p1__52_SHARP_559, tmp560)
 												return tmp561
 											})
-											tmp562 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__43#]", F: tmp558}
+											tmp562 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__52#]", F: tmp558}
 											tmp563 := lang.NewVector()
 											tmp564 := lang.Apply2(kw_denials, st519, tmp563)
 											tmp565 := lang.Apply2(tmp557, tmp562, tmp564)
