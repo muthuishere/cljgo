@@ -56,8 +56,24 @@ func newNoSuchNamespaceError(sym *lang.Symbol) error {
 	return &noSuchNamespaceError{ns: sym.Namespace(), full: sym.FullName()}
 }
 
+// classNotNamespace reports whether this error should spell out that the
+// namespace is really a Java class. It does so ONLY when we have no concrete
+// cljgo replacement to point at: if javaStaticHints knows one, the
+// did-you-mean Fix already says everything the prose would, and the doctrine
+// prefers a Fix over prose. That split is also what keeps the message
+// byte-stable for the hinted statics (pkg/corelib TestJavaStaticDidYouMean
+// and the publish gate freeze "no such namespace: Thread") while still
+// diagnosing Integer/parseInt, which has no twin
+// (conformance/tests/java-static-class-not-namespace.clj).
+func (e *noSuchNamespaceError) classNotNamespace() bool {
+	if _, hinted := javaStaticHints[e.full]; hinted {
+		return false
+	}
+	return jvmStaticClass[e.ns]
+}
+
 func (e *noSuchNamespaceError) Error() string {
-	if jvmStaticClass[e.ns] {
+	if e.classNotNamespace() {
 		// Naming what the thing actually IS beats "no such namespace" —
 		// the user wrote a Java class, not a mistyped namespace.
 		return fmt.Sprintf("no such namespace: %s (%s is a Java class, not a namespace: cljgo hosts Clojure on Go, so the Java static %s is unavailable)",
@@ -75,7 +91,7 @@ func (e *noSuchNamespaceError) Diagnostic() (diag.Diagnostic, bool) {
 	// namespace (A2009). Both are registered and both have explain pages;
 	// routing by case is what keeps `cljgo explain` useful.
 	code := "A2009"
-	if jvmStaticClass[e.ns] {
+	if e.classNotNamespace() {
 		code = "I4001"
 	}
 	d := diag.Diagnostic{
