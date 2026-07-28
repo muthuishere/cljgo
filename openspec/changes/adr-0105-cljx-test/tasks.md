@@ -16,8 +16,8 @@ Never hand-edit generated briaot files — run `go generate ./pkg/briaot`.
 - [ ] 2.3 Failure report: drop the `#=(var ...)` leak, include file:line of the failing assertion.
 
 ## 3. fn metadata (conformance gap, s66)
-- [ ] 3.1 Make `(with-meta (fn [] 1) {..})` work like JVM Clojure, OR freeze the divergence in conformance with a documented rationale.
-- [ ] 3.2 Conformance test citing the JVM oracle either way.
+- [x] 3.1 Make `(with-meta (fn [] 1) {..})` work like JVM Clojure, OR freeze the divergence in conformance with a documented rationale. → **implemented** (option a): `lang.MetaFn` boxes a closure with its map; `FnFuncN`/`NamedFnN`/`*eval.evalFn` all carry metadata now, both legs, no hot-path cost.
+- [x] 3.2 Conformance test citing the JVM oracle either way. → `conformance/tests/fn-metadata.clj` + `fn-metadata-invoke.clj`, dual harness.
 
 ## 4. Adoption
 - [ ] 4.1 Template tests (lib/cli/web) use cljx.test idioms.

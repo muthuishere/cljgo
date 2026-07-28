@@ -410,11 +410,17 @@ func Conj(coll Conser, x any) Conser {
 // WithMeta returns a new value with the given metadata.
 func WithMeta(v any, meta IPersistentMap) (any, error) {
 	// TODO: just take an IObj
-	iobj, ok := v.(IObj)
-	if !ok {
-		return nil, fmt.Errorf("value of type %T can't have metadata", v)
+	if iobj, ok := v.(IObj); ok {
+		return iobj.WithMeta(meta), nil
 	}
-	return iobj.WithMeta(meta), nil
+	// Function values that are not IObj (the interpreter's *eval.evalFn, and
+	// any host closure that only implements IFn) box into a MetaFn: on the
+	// JVM every fn extends AFunction, which IS an IObj, so with-meta on a fn
+	// must work here too (ADR 0105, spike s66).
+	if fn, ok := v.(IFn); ok && CanCarryFnMeta(v) {
+		return FnWithMeta(fn, meta), nil
+	}
+	return nil, fmt.Errorf("value of type %T can't have metadata", v)
 }
 
 func Assoc(a any, k, v any) Associative {
