@@ -27,10 +27,7 @@ Everything below was measured **before** that release, on the commit labelled
 **arithmetic/numeric and call-heavy** ones; the rest of the suite is unlikely
 to shift much. We are **not** publishing an estimate: the tables stand as
 measured, and no row here should be read as a v0.7.0 result. They will be
-re-measured and re-dated as a whole. (On the shipped benchmark corpus itself —
-`fib`/`tak`/`reduce`/`map-filter`/`transducers`/`persistent-map`/`loop-recur` —
-the v0.7.0 emitter work moved things by less than ±3% in both directions during
-development, which is why nothing below has been rewritten in the meantime.)
+re-measured and re-dated as a whole.
 :::
 
 ## Core metrics
