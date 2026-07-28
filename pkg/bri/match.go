@@ -476,14 +476,45 @@ func ctorEq(a, b ctor) bool {
 
 // distinctCtors collects the head constructors present in column `col`, in
 // first-appearance order (only refutable patterns contribute).
+//
+// Map patterns are the one family that is NOT mutually exclusive: {:kind
+// :click} and {:kind :click :button "left"} both match the same map, so
+// treating each key set as its own constructor makes the if-chain
+// (if (map? o) A (if (map? o) B …)) — the second arm is dead and its rows are
+// silently dropped (the "other click" bug). Maranget dispatch requires
+// disjoint constructors, so EVERY map pattern in a column collapses into ONE
+// constructor over the UNION of the column's keys; per-row key presence is
+// re-checked with `contains?` guards in specialize, which is also what the
+// JVM core.match does (oracle: (match [{}] [{:a _}] :has-a :else :no) => :no).
 func distinctCtors(rows []row, col int) []ctor {
 	var out []ctor
+	var mapKeys []any
+	mapIdx := -1
 	for _, r := range rows {
 		p := r.cols[col]
 		if p.isWild() {
 			continue
 		}
 		ct := ctorOf(p)
+		if ct.kind == pMap {
+			for _, k := range ct.keys {
+				dup := false
+				for _, e := range mapKeys {
+					if lang.Equals(e, k) {
+						dup = true
+						break
+					}
+				}
+				if !dup {
+					mapKeys = append(mapKeys, k)
+				}
+			}
+			if mapIdx == -1 {
+				mapIdx = len(out)
+				out = append(out, ctor{kind: pMap})
+			}
+			continue
+		}
 		dup := false
 		for _, e := range out {
 			if ctorEq(e, ct) {
@@ -494,6 +525,13 @@ func distinctCtors(rows []row, col int) []ctor {
 		if !dup {
 			out = append(out, ct)
 		}
+	}
+	if mapIdx >= 0 {
+		// Deterministic key order (drift-safe output), same rule as parseMap.
+		sort.Slice(mapKeys, func(i, j int) bool {
+			return lang.PrintString(mapKeys[i]) < lang.PrintString(mapKeys[j])
+		})
+		out[mapIdx].keys = mapKeys
 	}
 	return out
 }
@@ -576,15 +614,40 @@ func specialize(rows []row, col int, ct ctor, occ any) []row {
 			mid = arityWilds(ct)
 		} else {
 			ctp := ctorOf(p)
-			if !ctorEq(ctp, ct) {
+			if ct.kind == pMap {
+				// Every map pattern shares the column's single unified map
+				// constructor (see distinctCtors); only non-maps are dropped.
+				if ctp.kind != pMap {
+					continue
+				}
+			} else if !ctorEq(ctp, ct) {
 				continue
 			}
 			for _, s := range p.binds {
 				nr.binds = append(nr.binds, bind{s, occ})
 			}
-			nr.guards = append(nr.guards, p.guards...)
 			switch ct.kind {
+			case pMap:
+				// This row only constrains the keys IT names: require each to
+				// be present (a key bound to nil still matches — the JVM tests
+				// containment, not (get m k)), then realign its value patterns
+				// onto the column's key union, wildcarding the keys it omits.
+				for _, k := range p.keys {
+					nr.guards = append(nr.guards, list(cc("contains?"), occ, k))
+				}
+				nr.guards = append(nr.guards, p.guards...)
+				for _, k := range ct.keys {
+					sub := pat{kind: pWild}
+					for i, pk := range p.keys {
+						if lang.Equals(pk, k) {
+							sub = p.vals[i]
+							break
+						}
+					}
+					mid = append(mid, sub)
+				}
 			case pVec, pSeq:
+				nr.guards = append(nr.guards, p.guards...)
 				mid = append(mid, p.sub...)
 				if ct.hasRest && p.rest != nil {
 					var acc any
@@ -595,8 +658,8 @@ func specialize(rows []row, col int, ct ctor, occ any) []row {
 					}
 					nr.binds = append(nr.binds, bind{p.rest, acc})
 				}
-			case pMap:
-				mid = append(mid, p.vals...)
+			default:
+				nr.guards = append(nr.guards, p.guards...)
 			}
 		}
 		nr.cols = splicePat(r.cols, col, mid)
