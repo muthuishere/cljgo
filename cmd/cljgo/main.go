@@ -22,6 +22,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/build"
 	"github.com/muthuishere/cljgo/pkg/deps"
 	"github.com/muthuishere/cljgo/pkg/emit"
+	"github.com/muthuishere/cljgo/pkg/emit/rt"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/repl"
 	"github.com/muthuishere/cljgo/pkg/version"
@@ -190,6 +191,13 @@ func runFile(path string, cliArgs []string) int {
 		// Same renderer as the REPL (spike s28): named + located + expected/
 		// found detail and did-you-mean, so `cljgo run` reads identically.
 		fmt.Fprintf(os.Stderr, "error: %s\n", d.RenderError(err))
+		return 1
+	}
+	// A file that ran clojure.test assertions and had failures exits non-zero,
+	// exactly as the binary compiled from that same file now does (ADR 0105
+	// task 2.1). Without this the interpreted and compiled legs would disagree
+	// on the exit code — the divergence bar applies to exit status too.
+	if rt.TestsFailed() {
 		return 1
 	}
 	return 0
@@ -373,7 +381,7 @@ usage:
   cljgo generate resource <Name> <field:type>...  scaffold a CRUD resource into a bri app (ADR 0073)
   cljgo migrate [up|status|new <name>]  apply/inspect/create DB migrations (ADR 0072)
   cljgo dev                        run a bri app: server + nREPL + dev warnings
-  cljgo test                       run the app's tests (test/ via clojure.test)
+  cljgo test [--compiled|--both]   run the app's tests (test/ via clojure.test); --both diffs interpreted vs AOT
   cljgo config                     print resolved config, winning layer per key
   cljgo routes                     print routes + the effective middleware stack
   cljgo suite [--dir <path>]       run the jank clojure-test-suite, print a scoreboard (ADR 0022)

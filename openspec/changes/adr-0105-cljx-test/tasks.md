@@ -11,9 +11,14 @@ Never hand-edit generated briaot files — run `go generate ./pkg/briaot`.
 - [ ] 1.5 Conformance `conformance/tests/cljx-test-*.clj`: mock recording, spy forward+restore, stub, capture (+compose), expect failure message shape. Dual harness.
 
 ## 2. Runner correctness
-- [ ] 2.1 Compiled test binaries exit non-zero on failure (QA bug: currently exit 0 — CI green on red).
-- [ ] 2.2 `cljgo test --compiled` runs the suite through the AOT path.
-- [ ] 2.3 Failure report: drop the `#=(var ...)` leak, include file:line of the failing assertion.
+- [x] 2.1 Compiled test binaries exit non-zero on failure (QA bug: currently exit 0 — CI green on red).
+      `clojure.test/-process-failures` (a process-level tally kept in `do-report`) + the emitted
+      `func main()`'s `cljgoTestsFailed()` check; `cljgo run` does the same so the legs agree on exit status.
+- [x] 2.2 `cljgo test --compiled` runs the suite through the AOT path. `--both` landed too: it runs the
+      interpreted leg in a child process, the compiled leg in-process, and diffs output + exit code.
+- [x] 2.3 Failure report: drop the `#=(var ...)` leak, include file:line of the failing assertion.
+      Now `FAIL in (failing-on-purpose) (test/mylib/core_test.cljg:18)` — names from `*testing-vars*`,
+      position from the reader's metadata on the `is` form (`*assertion-position*`).
 
 ## 3. fn metadata (conformance gap, s66)
 - [x] 3.1 Make `(with-meta (fn [] 1) {..})` work like JVM Clojure, OR freeze the divergence in conformance with a documented rationale. → **implemented** (option a): `lang.MetaFn` boxes a closure with its map; `FnFuncN`/`NamedFnN`/`*eval.evalFn` all carry metadata now, both legs, no hot-path cost.

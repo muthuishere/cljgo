@@ -243,7 +243,7 @@ func WriteProgram(dir string, p *Program, opts Options) error {
 			depImports: imports(d.Requires),
 			host:       host,
 		}
-		if err := writePkg(d.Forms, spec, filepath.Join(dir, filepath.FromSlash(nd), pkg+".go")); err != nil {
+		if err := writePkg(d.Forms, spec, filepath.Join(dir, filepath.FromSlash(nd), pkgFileName(pkg))); err != nil {
 			return fmt.Errorf("namespace %s: %w", d.Name, err)
 		}
 	}
@@ -293,4 +293,17 @@ func pkgName(ns string) string {
 		name += "_pkg"
 	}
 	return name
+}
+
+// pkgFileName is the generated source file for a namespace's package.
+// Normally <pkg>.go — EXCEPT when that would end in `_test.go`, which the
+// Go toolchain treats as a test file and excludes from the build ("no
+// non-test Go files"). Every Clojure test namespace is called <thing>-test,
+// so without this NO test namespace could ever be compiled (found compiling
+// `cljgo test --compiled`, ADR 0105 task 2.2).
+func pkgFileName(pkg string) string {
+	if strings.HasSuffix(pkg, "_test") {
+		return pkg + "_ns.go"
+	}
+	return pkg + ".go"
 }
