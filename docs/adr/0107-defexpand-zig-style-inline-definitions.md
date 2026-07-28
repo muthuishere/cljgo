@@ -70,6 +70,27 @@ Rules that make it safe and teachable:
    free" case; `defmacro` remains for genuine syntax (new binding forms,
    control flow, unevaluated arguments).
 
+### The machinery lives in Go (owner, 2026-07-28)
+
+**`defexpand` is a compiler feature and MUST be implemented in Go** — the
+expansion, hygiene renaming and once-only argument binding belong in
+`pkg/analyzer` (with `pkg/emit` cooperating where needed), **not** as a
+Clojure-level macro in `core/core.clj`. Three reasons this is binding:
+
+1. It follows the standing mandate that hot/algorithmic paths are Go host
+   primitives under a thin Clojure surface (ADR 0097 mandate A) — expansion
+   runs on every call site of every compile.
+2. Only the analyzer sees the *call site*. A Clojure macro cannot distinguish
+   a direct call from a value use, so the fn-fallback (rule 4) is
+   unimplementable above the analyzer.
+3. One implementation in the analyzer serves BOTH harnesses by construction,
+   which is how the dual-mode guarantee (ADR 0002) stays true for free.
+
+The Clojure side is only the `defexpand` surface form; everything that decides
+*whether and how* to expand is Go. Existing carrier: `:inline` metadata is
+already attached by `definline` (`core/core.clj` ~2466) and consumed by
+nothing — the analyzer gaining a consumer is the change.
+
 ### Where each tool lands (the guidance docs must lead with)
 
 | you want | use | cost |
