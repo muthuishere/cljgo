@@ -149,6 +149,30 @@ func CallGoMethod(recv any, method string, throw bool, args []any) any {
 			}
 		}
 	}
+	// java.lang.Throwable's accessor trio on ANY host error receiver
+	// (*lang.ArithmeticError, *lang.ExceptionInfo, an IllegalArgumentError,
+	// a plain Go error handed back by interop — the whole family). These are
+	// the methods every JVM-trained user (and LLM) reaches for inside a
+	// catch, and like `.getTime`/`.write` above they are lowercase, so Go
+	// reflection can never resolve them. They delegate to the SAME accessors
+	// clojure.core/ex-message and ex-cause use (ex_builtins.go), so
+	// `(.getMessage t)` and `(ex-message t)` can never disagree, in either
+	// execution mode. Oracle (clojure 1.12.5):
+	//   (try (/ 1 0) (catch Throwable t (.getMessage t)))        => "Divide by zero"
+	//   (try (throw (ex-info "boom" {:a 1})) …(.getMessage t))   => "boom"
+	//   …(.getLocalizedMessage t)                                => "boom"
+	//   (.getMessage (.getCause (ex-info "b" {} (ex-info "inner" {})))) => "inner"
+	// `.toString` is deliberately NOT bridged: the JVM answers
+	// "java.lang.ArithmeticException: Divide by zero" — a class name cljgo
+	// has no honest equivalent for.
+	if err, ok := recv.(error); ok && len(args) == 0 {
+		switch method {
+		case "getMessage", "getLocalizedMessage":
+			return ThrowableMessage(err)
+		case "getCause":
+			return ThrowableCause(err)
+		}
+	}
 	rv := reflect.ValueOf(recv)
 	mv := rv.MethodByName(method)
 	if !mv.IsValid() {

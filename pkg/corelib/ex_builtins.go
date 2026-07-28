@@ -63,7 +63,7 @@ func registerExceptionBuiltins(def func(string, func(...any) any) *lang.Var) {
 			return m.Message()
 		}
 		if err, ok := x.(error); ok {
-			return err.Error()
+			return ThrowableMessage(err)
 		}
 		return nil
 	})
@@ -79,4 +79,28 @@ func registerExceptionBuiltins(def func(string, func(...any) any) *lang.Var) {
 		}
 		return nil
 	})
+}
+
+// ThrowableMessage is java.lang.Throwable.getMessage on a host error:
+// the carried message for a value that has one (*lang.ExceptionInfo),
+// else the rendered error text. It backs BOTH clojure.core/ex-message and
+// the `.getMessage` / `.getLocalizedMessage` interop bridge in
+// CallGoMethod, so the two spellings can never disagree.
+func ThrowableMessage(err error) any {
+	if m, ok := err.(exMessager); ok {
+		return m.Message()
+	}
+	return err.Error()
+}
+
+// ThrowableCause is java.lang.Throwable.getCause on a host error: the
+// carried cause, else nil. Backs clojure.core/ex-cause and the `.getCause`
+// interop bridge.
+func ThrowableCause(err error) any {
+	if c, ok := err.(exCauser); ok {
+		if cause := c.Cause(); cause != nil {
+			return cause
+		}
+	}
+	return nil
 }

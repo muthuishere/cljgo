@@ -71,6 +71,9 @@ var registry = []Entry{
 	{Code: "A2007", Title: "invalid binding form", Since: "M2"},
 	{Code: "A2008", Title: "conflicting fn overloads", Since: "M2"},
 
+	// I4xxx — interop
+	{Code: "I4001", Title: "Java class used as a namespace", Since: "M5"},
+
 	// G5xxx — general (runtime errors carry raise-site codes here, ADR 0048)
 	{Code: "G5000", Title: "uncategorized compiler error", Since: "M2"},
 	{Code: "G5001", Title: "value is not a number", Since: "M5"},

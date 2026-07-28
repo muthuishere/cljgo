@@ -48,10 +48,15 @@ natural translation of a Python list comprehension (hit while writing the
 Found by spike s66. Worked around there with a registry keyed by fn identity.
 Owned by the `cljx/fnmeta` work in the ADR 0105 change.
 
-### 4. `extend-protocol` does not resolve fully-qualified class names
+### 4. `extend-protocol` does not resolve fully-qualified class names — FIXED
 `java.lang.String` → `No implementation of method: describe of protocol:
 user.Describe found for: String`, while bare `String`/`Long` work. Java
 arrivals will type the qualified name.
+
+**Fixed 2026-07-28.** `-type-key` now runs a qualified class name through the
+ADR 0036 class-ref table down to its simple name — the same reduction
+`classDispatchKey` already did for the functional `extend`. Frozen in
+`conformance/tests/extend-protocol-qualified-class.clj` (both harnesses).
 
 ## P1 — correctness of the test story
 
@@ -61,15 +66,46 @@ no `cljgo test --compiled` at all. Owned by the `cljx/runner` work (ADR 0105).
 
 ## P2 — error-message quality (error doctrine says these should be better)
 
-### 6. `.getMessage` on a host error fails
+### 6. `.getMessage` on a host error fails — FIXED (implemented)
 `(try (/ 1 0) (catch Throwable t (.getMessage t)))` → `no method getMessage on
 *lang.ArithmeticError`. `ex-message` works. Every JVM-trained user (and LLM)
 writes `.getMessage` first — implement it or emit a did-you-mean `Fix`.
 
-### 7. `Integer/parseInt` unresolved AND misdiagnosed
+**Fixed 2026-07-28 — implemented, not diagnosed.** `.getMessage`,
+`.getLocalizedMessage` and `.getCause` are bridged in `CallGoMethod` for ANY
+host error receiver (the whole family: `*lang.ArithmeticError`,
+`*lang.ExceptionInfo`, plain Go errors from interop), delegating to the same
+accessors `ex-message`/`ex-cause` use, so the two spellings cannot disagree in
+either mode. `.toString` is deliberately NOT bridged — the JVM answers
+`java.lang.ArithmeticException: Divide by zero`, a class name cljgo has no
+honest equivalent for. Frozen in `conformance/tests/throwable-get-message.clj`
+(both harnesses), all eight rows oracled against clojure 1.12.5.
+
+### 7. `Integer/parseInt` unresolved AND misdiagnosed — FIXED (diagnosed)
 → `error: no such namespace: Integer`. It is a class, not a namespace, so the
 diagnosis is wrong. `parse-long` works. THE idiom in every `tools.cli` example
 — deserves a `Fix` pointing at `parse-long`.
+
+**Fixed 2026-07-28 — diagnosed, not implemented.** Making it WORK would mean
+emulating `java.lang.*` statics on a Go host: a whole feature (ADR-sized), and
+one the precedence principle does not require. So the error now says what the
+thing is, carries the new **I4001** code + explain page, and fires a
+did-you-mean `Fix` for the statics with a real clojure.core replacement:
+
+```
+error: no such namespace: Integer (Integer is a Java class, not a namespace:
+cljgo hosts Clojure on Go, so the Java static Integer/parseInt is unavailable)
+at demo.clj:1:11
+help: did you mean parse-long?
+help: run `cljgo explain I4001`
+```
+
+The leading `no such namespace: X` clause is deliberately kept — it is frozen
+by `conformance/tests/java-static-loud-error.clj` and asserted by ADR 0054's
+decision-4 test. Frozen in
+`conformance/tests/java-static-class-not-namespace.clj`. NOTE: `cljgo build`
+still renders only the bare message with no `help:` lines — that is issue 8
+below (the build-phase renderer), untouched here.
 
 ### 8. Build-time arity error drops fields the run-time one has
 Same file, same call: `cljgo run` gives

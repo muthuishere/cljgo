@@ -21,7 +21,7 @@ func ResolveVar(sym *lang.Symbol) (*lang.Var, error) {
 			ns = lang.FindNamespace(nsSym)
 		}
 		if ns == nil {
-			return nil, fmt.Errorf("no such namespace: %s", sym.Namespace())
+			return nil, noSuchNamespace(sym)
 		}
 		v := ns.FindInternedVar(lang.NewSymbol(sym.Name()))
 		if v == nil {
@@ -48,6 +48,37 @@ func ResolveVar(sym *lang.Symbol) (*lang.Var, error) {
 		return v, nil
 	}
 	return nil, fmt.Errorf("unable to resolve symbol: %s in this context", sym.Name())
+}
+
+// jvmStaticClass is the fixed, zero-false-positive table of bare JVM class
+// names whose STATIC surface shows up in call-namespace position
+// (`Integer/parseInt`, `Math/sqrt`, `System/currentTimeMillis`). It is the
+// same vocabulary `certain-java?` validated in spike S35 — see
+// pkg/publish/java.go's jvmBareClassNS, kept in step with this table. cljgo
+// hosts Clojure on Go, so none of these ever resolve; the point here is
+// purely that the DIAGNOSIS names what the thing actually is.
+var jvmStaticClass = map[string]bool{
+	"System": true, "Math": true, "Thread": true, "Integer": true, "Long": true,
+	"Double": true, "Float": true, "Boolean": true, "Character": true, "Byte": true,
+	"Short": true, "String": true, "Object": true, "Runtime": true, "Class": true,
+	"Number": true, "StringBuilder": true, "StringBuffer": true, "Arrays": true,
+	"Collections": true, "Objects": true,
+}
+
+// noSuchNamespace builds the unresolved-qualified-symbol error. For an
+// ordinary namespace it is the historical, conformance-frozen line. For a
+// JVM class used as a namespace it KEEPS that leading clause (the string is
+// frozen by conformance/tests/java-static-loud-error.clj and asserted by
+// ADR 0054's decision-4 test) and appends the real diagnosis — `Integer` is
+// a class, not a namespace — naming the offending static in full so the
+// render layer can attach the did-you-mean Fix (I4001).
+func noSuchNamespace(sym *lang.Symbol) error {
+	nsName := sym.Namespace()
+	if jvmStaticClass[nsName] {
+		return fmt.Errorf("no such namespace: %s (%s is a Java class, not a namespace: cljgo hosts Clojure on Go, so the Java static %s is unavailable)",
+			nsName, nsName, sym.FullName())
+	}
+	return fmt.Errorf("no such namespace: %s", nsName)
 }
 
 // nsResolver adapts the global namespace world to reader.Resolver
