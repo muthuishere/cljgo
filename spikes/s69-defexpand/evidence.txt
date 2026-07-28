@@ -1,0 +1,296 @@
+s69/semantics evidence — captured 2026-07-28T04:20:25Z
+cljgo: 92f6da7 (branch s69/semantics)
+host:  Darwin arm64
+
+================================================================
+== 01-once-only.clj
+================================================================
+;; s69 defexpand prototype loaded
+
+A. naive macro, (twice-naive (do (println "  side!") 1)):
+  side!
+  side!
+   => 2
+   expansion: (+ (do (println side!) 1) (do (println side!) 1))
+
+B. defexpand, (twice (do (println "  side!") 1)):
+  side!
+   => 2
+   expansion: (clojure.core/let [x__112 (do (println side!) 1)] (clojure.core/+ x__112 x__112))
+
+C. plain defn, (twice-fn (do (println "  side!") 1)):
+  side!
+   => 2
+
+D. order, (three (t :a 10) (t :b 20) (t :c 5)):
+   result  => 25
+   log     => [:a :b :c]
+   fn log  => [:a :b :c]
+
+E. unused param, (ignore-second (t :a 1) (t :b 2)):
+   result => 1
+   log    => [:a :b]   ; :b MUST appear — a function would evaluate it
+
+F. evaluations of the argument:
+   naive macro: 2 result 3
+   defexpand  : 1 result 2
+   defn       : 1 result 2
+   defexpand matches defn? true
+================================================================
+== 02-hygiene.clj
+================================================================
+;; s69 defexpand prototype loaded
+
+A. naive, body local `a` shadows the caller's `a`:
+   (let [a 2] (scale-naive (+ a 1)))
+   expansion: (do (let [a 100] (* a (+ a 1))))
+   => 10100    ; WRONG: wanted 300 (100*(2+1)), got 100*101
+
+B. defexpand renames the body local AND binds the arg first:
+   expansion: (clojure.core/let [x__112 (+ a 1)] (clojure.core/let [a__111 100] (clojure.core/* a__111 x__112)))
+   => 300    ; correct
+   defn says: 300
+
+C. naive, parameter name `a` colliding with a caller local `a`:
+   (let [a :caller] (who-naive 1)) => [1 1]
+   defexpand                        => [1 1]
+
+D. body free reference `limit` (a var = 10), caller has (let [limit 0] ...):
+   naive                  => 0   ; captured the caller's 0
+   defexpand, no qualify  => 0   ; renaming ALONE is not enough
+   defexpand + qualify    => 5   ; correct
+   defn                   => 5   ; the reference semantics
+   qualified expansion: (do (clojure.core/min 5 user/limit))
+
+E. renaming reaches let + loop bindings inside the body:
+   expansion: (do (clojure.core/let [acc__116 0] (clojure.core/loop [i__117 0 acc__116 acc__116] (if (clojure.core/< i__117 3) (recur (clojure.core/inc i__117) (clojure.core/+ acc__116 q)) acc__116))))
+   (let [acc 99 i 99 x 7] (nested x)) => 21
+   fn params renamed too: (do ((clojure.core/fn [y__120] (clojure.core/+ y__120 y)) 10))
+   (let [y 5] (with-fn y)) => 15   ; want 15
+
+F. R1+R3 only (no body-local renaming):
+   expansion: (clojure.core/let [x__122 (+ a 1)] (clojure.core/let [a 100] (clojure.core/* a x__122)))
+   (let [a 2] (scale-nr (+ a 1)))     => 300  (want 300)
+   (let [acc 99 i 99 x 7] (nested-nr x)) => 21  (want 21)
+
+G. body calls `helper`, defined AFTER the defexpand:
+   expansion: (do (user/helper 2))
+   (call-later 2)                => 2000
+   (let [helper (fn [_] :hijacked)] (call-later 2)) => 2000
+   ; expansion-time resolution in the DEFINING ns saves the forward ref;
+   ; had we qualified at DEFINITION time, `helper` would still be bare.
+
+H. R1 elided + no body-local renaming = capture is BACK:
+   expansion: (do (clojure.core/let [a 100] (clojure.core/* a a)))
+   (let [a 2] (scale-nre a)) => 10000  (want 200)
+   (let [a 2] (scale-ok  a)) => 200  (want 200)
+   ; conclusion: R2 is not optional in the shipping design.
+================================================================
+== 03-with-redefs.clj
+================================================================
+;; s69 defexpand prototype loaded
+
+A. defn under with-redefs:
+   normal  => hello ann
+   redefed => STUB ann
+   after   => hello ann
+
+B. defexpand (unconditional inline) under with-redefs:
+   normal  => hello ann
+   expansion: (do (clojure.core/str hello  ann))
+   with-redefs on the name is not even expressible: the call site was
+   already expanded at ANALYSIS time, before with-redefs ever ran.
+
+C. stubbing a fn the defexpand BODY calls (this DOES work):
+   normal  => [real:a real:a]
+   redefed => [STUB:a STUB:a]
+
+D. defexpand-guarded (ADR 0066 shape: inline, but keep a liveness guard):
+   expansion: (clojure.core/let [a__111 3 b__112 4] (if (clojure.core/identical? user/gmul-fn user/dx-pristine-gmul) (do (clojure.core/* a__111 b__112)) (user/gmul-fn a__111 b__112)))
+   normal  => 12
+   redefed => 7
+   after   => 12
+   ; the guard costs ONE identical? compare per call site and the
+   ; emitted fallback call — vs zero for the unconditional inline.
+
+E. alter-var-root (permanent redefinition):
+   guarded gmul after alter-var-root => -1  ; sees it (want -1)
+   unguarded fetch-twice             => [ALTERED:a ALTERED:a]  ; body call goes through the var, so it sees it too
+
+F. cljx.test-style stub via with-redefs-fn:
+   stub a defn        => :stubbed
+   stub a defexpand   => (no var to stub — the name is a macro)
+   stub a guarded one => :stubbed
+
+G. cljx.test-style spy on the guarded form:
+   result => [10 14]
+   calls  => [5 7]   ; the spy SAW both inlined call sites
+================================================================
+== 04-recursion.clj
+================================================================
+;; s69 defexpand prototype loaded
+
+A. definition-time self-reference check:
+   (fact ...) self-referential? => true
+   (add! ...) self-referential? => false
+   ; the LOCAL check catches direct self-reference. Mutual recursion
+   ; (od names evn, evn names od) is NOT caught locally: at od's
+   ; definition time evn does not exist yet.
+
+B. an expansion-depth budget catches BOTH shapes:
+   caught => defexpand: expansion of fact did not terminate (depth > 64) — a defexpand may not expand itself
+
+C. 'inline the call site, keep the recursion in the fn':
+   (call-fact 5) => 120
+   expansion: (do (user/fact-fn 5))
+   ; a defexpand whose body names ITSELF could expand exactly once and
+   ; resolve the inner occurrence to the fn fallback. This terminates,
+   ; but it REQUIRES the fn fallback to exist (see 06).
+================================================================
+== 05-variadic-multiarity.clj
+================================================================
+;; s69 defexpand prototype loaded
+
+A. variadic parameters, current prototype rule (reject):
+   rejected => compiler error at out/05-variadic-multiarity.run.clj:227:10: macroexpanding defexpand: defexpand: variadic parameters are not supported: add-many!
+
+B. a HAND-written variadic expansion works and keeps once-only:
+   expansion: (clojure.core/let [a__111 acc x__112 1 r__113 2 r__114 3] (clojure.core/swap! a__111 clojure.core/conj x__112 r__113 r__114))
+   result => [1 2 3]
+   order  => [:1 :2 :3]
+
+C. the variadic tax: `(apply add-many! a xs)` cannot be expanded —
+   the argument COUNT is unknown until runtime. Only the fn fallback
+   can answer it, so variadic defexpand is inherently 'inline when
+   the call is literal, call the fn otherwise'.
+
+D. multi-arity by expansion (dispatch on the call site's arg count):
+   (bump-hand! c1)          => 1
+   (bump-hand! c2 :a)       => {:a 1}
+   (bump-hand! c2 :a 5)     => {:a 6}
+   equals swap! forms?      => [true true]
+
+E. wrong arity at an expanded call site:
+   => compiler error at out/05-variadic-multiarity.run.clj:285:13: macroexpanding bump-hand!: wrong number of args (4) passed to: user/bump-hand!
+   ; cljgo already NAMES the macro (user/bump-hand!) and gives the count.
+   ; What it does not give is `(expects 1: [a] or 2: [a k] ...)` — the
+   ; defexpand implementation must add Expected/Found per the doctrine.
+================================================================
+== 06-fn-fallback.clj
+================================================================
+;; s69 defexpand prototype loaded
+
+A. defexpand'd name used as a VALUE:
+   (macroexpand-1 '(dbl 4)) => (do (clojure.core/* 2 4))
+   (dbl 4)                  => 8    ; direct call: fine
+   (map dbl [1 2 3])        => THREW: wrong number of args (1) passed to: user/dbl
+   (apply dbl [4])          => THREW: wrong number of args (1) passed to: user/dbl
+   dbl                      => #object[user/dbl]
+   (fn? (deref (var dbl)))  => true
+
+B. can a name be BOTH a macro and a fn value?
+   after (defmacro mname ...): (mname 1)   => 2
+   after (defn mname ...):     (mname 1)   => 0   ; the macro is GONE
+   (map mname [1 2 3])                     => (0 1 2)
+   ; whichever def runs last wins. There is no 'both'.
+
+C. `definline` today (metadata stored, no call-site inlining):
+   (dsqr 5)          => 25
+   (fn? dsqr)        => true    ; it IS a value
+   (map dsqr [1 2 3])=> (1 4 9)
+   (:inline (meta (var dsqr))) present? => true
+   ; the var carries both the fn and the inline template. THIS is the
+   ; only shape that satisfies ADR 0107 rule 4.
+
+D. the guarded prototype keeps a fn — under a DIFFERENT name:
+   (gdbl 4)              => 8
+   (map gdbl-fn [1 2 3]) => (2 4 6)
+   (map gdbl [1 2 3])    => THREW: wrong number of args (1) passed to: user/gdbl
+   ; two names is not what ADR 0107 promises. The name split is an
+   ; artefact of the macro mechanism, not of the semantics.
+================================================================
+== 07-cljx-port.clj
+================================================================
+;; s69 defexpand prototype loaded
+
+A. expansions (what the sugar compiles to):
+   (add! todo "x")  => (do (clojure.core/swap! todo clojure.core/conj x))
+   (bump! n)        => (do (clojure.core/swap! n clojure.core/inc))
+   (toggle! f)      => (do (clojure.core/swap! f clojure.core/not))
+   (del! m :k)      => (do (clojure.core/swap! m (clojure.core/fn [c__111] (if (clojure.core/set? c__111) (clojure.core/disj c__111 :k) (clojure.core/dissoc c__111 :k)))))
+
+B. equivalence to the raw swap!/reset! forms:
+   [true true true true true true true {harsh 2, shaama 1} true true]
+   all true? => true
+
+C. once-only + order inside the ported sugar:
+   evaluation log => [:atom :val]   ; each argument exactly once, left to right
+   atom           => [1]
+   under (let [a :caller] ...) => [:caller]
+
+D. interpreted cost, 300k iterations (indicative only; the AOT numbers
+   are the other track's job). `time` is cljgo's only clock here.
+   defn add-fn!   "Elapsed time: 216.648875 msecs"
+   defexpand add! "Elapsed time: 171.338042 msecs"
+   raw swap!      "Elapsed time: 173.873875 msecs"
+================================================================
+== 08-cost-of-once-only.clj
+================================================================
+;; s69 defexpand prototype loaded
+
+A. interpreted, n = 300000
+  --- round 1 ---
+  raw swap!             "Elapsed time: 171.51575 msecs"
+  defn add-fn!          "Elapsed time: 223.875125 msecs"
+  defexpand, no elision "Elapsed time: 241.196042 msecs"
+  defexpand, elision    "Elapsed time: 168.245375 msecs"
+  naive (unsafe)        "Elapsed time: 176.225375 msecs"
+  --- round 2 ---
+  raw swap!             "Elapsed time: 177.282667 msecs"
+  defn add-fn!          "Elapsed time: 211.920917 msecs"
+  defexpand, no elision "Elapsed time: 236.852041 msecs"
+  defexpand, elision    "Elapsed time: 176.625459 msecs"
+  naive (unsafe)        "Elapsed time: 169.951542 msecs"
+  --- round 3 ---
+  raw swap!             "Elapsed time: 164.095625 msecs"
+  defn add-fn!          "Elapsed time: 210.949959 msecs"
+  defexpand, no elision "Elapsed time: 237.969875 msecs"
+  defexpand, elision    "Elapsed time: 165.154334 msecs"
+  naive (unsafe)        "Elapsed time: 165.411833 msecs"
+
+B. the expansions being compared:
+   no elision: (clojure.core/let [a__113 a x__114 1] (clojure.core/swap! a__113 clojure.core/conj x__114))
+   elision   : (do (clojure.core/swap! a clojure.core/conj 1))
+   naive     : (do (swap! a conj 1))
+   elision keeps R1 when it MATTERS:
+              (clojure.core/let [x__115 (do (side!) 1)] (clojure.core/swap! a clojure.core/conj x__115))
+
+C. elision must not break once-only. Re-checking:
+   (add! box (t :once 1)) log => [:once]
+   (twice (t :v 3))       => 6  log => [:v]
+
+================================================================
+== divergent recursion cases (hard 30s timeout)
+================================================================
+== 04a-recursion-hang.clj (limit: 30s)
+;; s69 defexpand prototype loaded
+defining a self-referential defexpand ...
+definition SUCCEEDED (the body is only captured, never checked)
+now calling (fact 5) ...
+       30.02 real        85.68 user         0.89 sys
+          2660990976  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+   elapsed: 30s
+== 04b-recursion-mutual.clj (limit: 30s)
+;; s69 defexpand prototype loaded
+defining od/evn ...
+both definitions SUCCEEDED
+calling (evn 4) ...
+       30.00 real       105.52 user         7.80 sys
+           116457472  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+   elapsed: 30s
