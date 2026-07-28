@@ -928,14 +928,79 @@ var testIntrinsics = map[string]string{
 // raw `<`/`>`/`==` is byte-identical to LT/GT/Equiv.
 var intUnboxCmp = map[string]string{"<": "<", ">": ">", "=": "==", "<=": "<=", ">=": ">="}
 
-// intUnboxArith2/1 map proven-int64 arithmetic to the checked rt helpers
-// on raw Go int64s (ADR 0067). These do NOT deref the operator var — the
-// design/04 §5 rung-4 primitive-intrinsic contract — but they reproduce
-// the tower's overflow tests exactly, so the "integer overflow" throw
-// stays byte-identical. `/` is never here (ratio semantics live in the
-// tower).
-var intUnboxArith2 = map[string]string{"+": "IAdd", "-": "ISub", "*": "IMul"}
-var intUnboxArith1 = map[string]string{"inc": "IInc", "dec": "IDec"}
+// intUnboxArith2/1 map proven-int64 arithmetic to a raw Go int64
+// EXPRESSION template (ADR 0067; second-table batch 2026-07-27). These do
+// NOT deref the operator var — the design/04 §5 rung-4 primitive-intrinsic
+// contract — but each reproduces its tower op exactly, so every throw
+// (overflow, `/ by zero`) stays byte-identical. `/` is never here (ratio
+// semantics live in the tower).
+//
+// The tables are also THE inference oracle: pkg/emit/numtype.go types a
+// core call int64 iff its name+arity is a key here, so the prover and the
+// emitter cannot drift apart (they were two hand-synced tables before).
+// Every name here must be sealed in rt.Boot — a redefinition has to trip
+// CoreArithDirty or the guarded region would keep open-coding a var the
+// user has replaced (TestUnboxedOpsAreSealed).
+//
+// Checked (throwing) ops go through the rt helpers; the ops whose Go form
+// IS the tower semantics (bit twiddling, wrapping unchecked-*, min/max)
+// open-code inline. Shift counts mask to 6 bits like Java/Clojure longs
+// (corelib bit-shift-left et al), which raw Go `<<` does not do.
+var intUnboxArith2 = map[string]string{
+	"+": "rt.IAdd(%s, %s)",
+	"-": "rt.ISub(%s, %s)",
+	"*": "rt.IMul(%s, %s)",
+
+	"quot": "rt.IQuot(%s, %s)",
+	"rem":  "rt.IRem(%s, %s)",
+
+	"max": "max(%s, %s)",
+	"min": "min(%s, %s)",
+
+	"bit-and":                  "((%s) & (%s))",
+	"bit-or":                   "((%s) | (%s))",
+	"bit-xor":                  "((%s) ^ (%s))",
+	"bit-and-not":              "((%s) &^ (%s))",
+	"bit-shift-left":           "((%s) << uint((%s)&63))",
+	"bit-shift-right":          "((%s) >> uint((%s)&63))",
+	"unsigned-bit-shift-right": "int64(uint64(%s) >> uint((%s)&63))",
+	"bit-set":                  "((%s) | (int64(1) << uint((%s)&63)))",
+	"bit-clear":                "((%s) &^ (int64(1) << uint((%s)&63)))",
+	"bit-flip":                 "((%s) ^ (int64(1) << uint((%s)&63)))",
+
+	"unchecked-add":      "((%s) + (%s))",
+	"unchecked-subtract": "((%s) - (%s))",
+	"unchecked-multiply": "((%s) * (%s))",
+}
+
+var intUnboxArith1 = map[string]string{
+	"inc":  "rt.IInc(%s)",
+	"dec":  "rt.IDec(%s)",
+	"-":    "rt.INeg(%s)",
+	"+":    "(%s)", // unary (+ x) on a long is x (corelib: 1-arg + returns its arg)
+	"long": "(%s)", // already an int64 — the coercion is the identity
+
+	"bit-not": "(^(%s))",
+
+	"unchecked-negate": "(-(%s))",
+	"unchecked-inc":    "((%s) + 1)",
+	"unchecked-dec":    "((%s) - 1)",
+}
+
+// intUnboxPred1 maps a 1-arg core numeric predicate on a proven int64 to a
+// raw Go bool expression, used in `if`-test position (ADR 0067 second-table
+// batch). `(zero? n)` was a var deref + lang.Apply1 + IsTruthy per
+// iteration — the single most common loop-termination test in idiomatic
+// Clojure. even?/odd? match core.clj's `(zero? (rem n 2))` on an integer;
+// Go's `%` is truncating like the tower's, so a negative odd n gives -1,
+// hence `!= 0` rather than `== 1`.
+var intUnboxPred1 = map[string]string{
+	"zero?": "((%s) == 0)",
+	"pos?":  "((%s) > 0)",
+	"neg?":  "((%s) < 0)",
+	"even?": "((%s)%%2 == 0)",
+	"odd?":  "((%s)%%2 != 0)",
+}
 
 // genTestIntrinsic emits an unboxed comparison for an if-test that is a
 // 2-arg call of a core comparison builtin, returning a bool-typed
@@ -947,7 +1012,7 @@ func (g *generator) genTestIntrinsic(test *ast.Node) (string, bool) {
 		return "", false
 	}
 	s := test.Sub.(*ast.InvokeNode)
-	if len(s.Args) != 2 || s.Fn.Op != ast.OpVar {
+	if s.Fn.Op != ast.OpVar {
 		return "", false
 	}
 	v := s.Fn.Sub.(*ast.VarNode).Var
@@ -955,6 +1020,19 @@ func (g *generator) genTestIntrinsic(test *ast.Node) (string, bool) {
 		return "", false
 	}
 	name := v.Symbol().Name()
+	if len(s.Args) == 1 {
+		tmpl, ok := intUnboxPred1[name]
+		if !ok || !g.ni.isInt64(s.Args[0]) {
+			return "", false
+		}
+		a := g.gen(s.Args[0])
+		t := g.temp()
+		g.wf("%s := %s\n", t, fmt.Sprintf(tmpl, a))
+		return t, true
+	}
+	if len(s.Args) != 2 {
+		return "", false
+	}
 	if op, ok := intUnboxCmp[name]; ok && g.ni.isInt64(s.Args[0]) && g.ni.isInt64(s.Args[1]) {
 		a := g.gen(s.Args[0])
 		b := g.gen(s.Args[1])
@@ -990,17 +1068,17 @@ func (g *generator) genIntrinsic(n *ast.Node, s *ast.InvokeNode) (string, bool) 
 	name := v.Symbol().Name()
 
 	if g.ni.isInt64(n) {
-		if helper, ok := intUnboxArith2[name]; ok && len(s.Args) == 2 {
+		if tmpl, ok := intUnboxArith2[name]; ok && len(s.Args) == 2 {
 			a := g.gen(s.Args[0])
 			b := g.gen(s.Args[1])
 			t := g.temp()
-			g.wf("var %s int64 = rt.%s(%s, %s)\n", t, helper, a, b)
+			g.wf("var %s int64 = %s\n", t, fmt.Sprintf(tmpl, a, b))
 			return t, true
 		}
-		if helper, ok := intUnboxArith1[name]; ok && len(s.Args) == 1 {
+		if tmpl, ok := intUnboxArith1[name]; ok && len(s.Args) == 1 {
 			a := g.gen(s.Args[0])
 			t := g.temp()
-			g.wf("var %s int64 = rt.%s(%s)\n", t, helper, a)
+			g.wf("var %s int64 = %s\n", t, fmt.Sprintf(tmpl, a))
 			return t, true
 		}
 	}

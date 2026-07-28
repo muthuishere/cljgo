@@ -116,19 +116,53 @@ func Boot() {
 	// Seal AFTER compiled core has loaded (ADR 0066 / spike s43): the
 	// builtin installs and every core BindRoot ran above with the vars
 	// unsealed, so none of them tripped CoreArithDirty. From here on, only
-	// a user redefinition of one of these nine trips the flag and sends the
-	// intrinsics back to the guarded liveness path. core.clj never re-defs
-	// +/-/*///</>/=/<=/>= (see Boot's contract comment); if it ever did, the flag
-	// would simply trip and cost the fast path — never correctness.
-	vAdd.Seal()
-	vSub.Seal()
-	vMul.Seal()
-	vDiv.Seal()
-	vLT.Seal()
-	vGT.Seal()
-	vEQ.Seal()
-	vLTE.Seal()
-	vGTE.Seal()
+	// a user redefinition of one of SealedCoreNames trips the flag and sends
+	// the intrinsics back to the guarded liveness path. core.clj never
+	// re-defs any of them after this point; if it ever did, the flag would
+	// simply trip and cost the fast path — never correctness.
+	for _, name := range SealedCoreNames {
+		if v := findVar(name); v != nil {
+			v.Seal()
+		}
+	}
+}
+
+// IsSealedCoreVar reports whether clojure.core/<name> is interned and
+// sealed. Boot must have run. Test-facing (see pkg/emit's seal-coverage
+// tests) — a name in SealedCoreNames that no longer resolves would stop
+// sealing silently otherwise.
+func IsSealedCoreVar(name string) bool {
+	v := lang.NSCore.FindInternedVar(lang.NewSymbol(name))
+	return v != nil && v.IsSealed()
+}
+
+// SealedCoreNames is every clojure.core var whose redefinition must trip
+// CoreArithDirty. It is exactly the union of what the emitter open-codes:
+// the nine guarded boxed intrinsics (ADR 0066: + - * / < > = <= >=) and
+// every name in the ADR 0067 unboxed tables (pkg/emit intUnboxArith2 /
+// intUnboxArith1 / intUnboxPred1 / intUnboxCmp), whose typed emission
+// never derefs the var at all. Sealing is what keeps `with-redefs` live
+// through those paths: the trip sends every guarded region back to the
+// boxed emission, which reads the var per call.
+//
+// rt cannot import pkg/emit (the dependency runs the other way), so the
+// list is spelled out here and pkg/emit's TestUnboxedOpsAreSealed asserts
+// the tables are a subset of it — a new unboxed op that forgets its seal
+// fails that test, not a user's program.
+var SealedCoreNames = []string{
+	// ADR 0066 — guarded boxed intrinsics.
+	"+", "-", "*", "/", "<", ">", "=", "<=", ">=",
+	// ADR 0067 — unboxed int64 arithmetic.
+	"inc", "dec", "long", "quot", "rem", "max", "min",
+	// ADR 0067 — unboxed bit operations.
+	"bit-and", "bit-or", "bit-xor", "bit-and-not", "bit-not",
+	"bit-shift-left", "bit-shift-right", "unsigned-bit-shift-right",
+	"bit-set", "bit-clear", "bit-flip",
+	// ADR 0067 — unboxed wrapping arithmetic.
+	"unchecked-add", "unchecked-subtract", "unchecked-multiply",
+	"unchecked-negate", "unchecked-inc", "unchecked-dec",
+	// ADR 0067 — unboxed int64 predicates.
+	"zero?", "pos?", "neg?", "even?", "odd?",
 }
 
 // RegisterCoreLoader receives pkg/coreaot's Load from its init(). rt

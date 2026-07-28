@@ -236,6 +236,10 @@ func (v *Var) Seal() *Var {
 	return v
 }
 
+// IsSealed reports whether Seal has been called on this var. Used by the
+// emitter's seal-coverage test (an open-coded op MUST be sealed).
+func (v *Var) IsSealed() bool { return v.sealed.Load() }
+
 // tripIfSealed flips the global dirty flag when a sealed var's root moves.
 // A plain load-then-maybe-store: the common case (unsealed var) is a single
 // predictable bool load, and the rare sealed case only ever stores true, so

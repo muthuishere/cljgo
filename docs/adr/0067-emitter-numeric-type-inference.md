@@ -144,6 +144,11 @@ return typing; broadening the lift to capturing closures.
 `CLJGO_NUMINFER_OFF=1` remains the kill switch and the A/B measurement
 lever.
 
+**Shipped follow-up (2026-07-27): the second op table.** See the
+"second-table batch" section at the end of this ADR — quot/rem, min/max,
+unary `-`, `long`, the bit operations, the unchecked (wrapping)
+arithmetic, and the int64 predicates (zero?/pos?/neg?/even?/odd?).
+
 **Shipped follow-up (2026-07-23): `<=`/`>=` comparisons.** The
 benchmark-corpus fib (`(if (<= n 1) …)`) DID lift to a typed func, but its
 `<=` test still emitted a per-call var deref + boxing `lang.Apply2` — `<=`
@@ -156,13 +161,10 @@ AOT wall time (hyperfine, startup included): 739 → 31 ms; tak (40 ms) and
 loop-recur (9.5 ms) held. Conformance: numeric-le-ge-compare.clj,
 numeric-le-ge-overflow-boundary.clj, numeric-le-ge-redefs-unboxed.clj
 (dual harness, oracle-verified).
-||||||| 24b7505
-return typing; broadening the lift to capturing closures; `<=`/`>=`
-comparisons. `CLJGO_NUMINFER_OFF=1` remains the kill switch and the A/B
-measurement lever.
-return typing; broadening the lift to capturing closures; `<=`/`>=`
-comparisons. `CLJGO_NUMINFER_OFF=1` remains the kill switch and the A/B
-measurement lever.
+
+<!-- (A stale conflict-marker fragment repeating the superseded "not yet
+     inferred" paragraph sat here from an old merge; removed 2026-07-27
+     with the second-table batch.) -->
 
 ## Startup cost + clawback (2026-07-23 addendum)
 
@@ -204,3 +206,92 @@ Result: empty-binary startup **9.0 → 4.4 ms** (was 6.5 pre-campaign; let-go
 5.7), with every campaign win intact or improved — tak 36.3 ms, loop-recur
 5.1 ms, map-filter 5.3 ms, persistent-map 10.7 ms; factorial gate ratio
 5.0x (max 15), reduce 47 ms (budget 175), pipeline 241 ms (budget 500).
+
+## The second-table batch (2026-07-27 addendum)
+
+v1 typed exactly seven ops: `+ - *` (2-arg), `inc`/`dec`, and the six
+comparisons. Everything else in Clojure's integer vocabulary — `quot`,
+`rem`, `min`, `max`, unary `-`, `long`, all eleven `bit-*` forms, the
+`unchecked-*` family, and the predicates `zero?`/`pos?`/`neg?`/`even?`/
+`odd?` — was invisible to the prover.
+
+That was not a "those ops are a bit slower" gap, it was a **cliff**. The
+inference is a meet over the whole carrier graph: one untyped value in one
+`recur` slot demotes that carrier to `any`, which demotes every value
+computed from it, which costs the region its typed emission entirely. So a
+single `quot` in a digit loop took the WHOLE loop — and the fn containing
+it — back to the fully boxed path, including the `+` and `<` v1 could
+prove. Euclid's `(if (zero? b) a (recur b (rem a b)))` is the canonical
+casualty: two ops, both missing, zero specialization.
+
+**Decision.** Extend the tables, keeping every v1 rule intact:
+
+- `pkg/emit` `intUnboxArith2`/`intUnboxArith1` become Go **expression
+  templates** rather than rt-helper names, so the ops whose Go form already
+  IS the tower semantics (bit twiddling with the 6-bit shift mask, wrapping
+  `unchecked-*`, Go's builtin `min`/`max`) open-code inline, while the
+  throwing ops keep an rt helper that reproduces the tower's check
+  byte-for-byte (`rt.IQuot`/`IRem` raise the same `/ by zero`,
+  `rt.INeg` the same `integer overflow`).
+- `intUnboxPred1` is new: a 1-arg core predicate on a proven int64 becomes
+  a raw Go bool in `if`-test position. `(zero? n)` was a var deref +
+  `lang.Apply1` + `IsTruthy` per iteration.
+- **The tables ARE the prover.** `numtype.go` no longer carries its own
+  `numericBuiltin2`/`1` sets; it asks the emit tables. A name cannot be
+  typed int64 without an unboxed emission existing for it, nor the reverse.
+- **Every open-coded name is sealed.** `rt.SealedCoreNames` (new, replacing
+  the nine inline `Seal()` calls) is the single list `rt.Boot` walks, and
+  `TestUnboxedOpsAreSealed` fails the build if any table key is missing
+  from it. This is what keeps `with-redefs` live: the typed emission never
+  derefs the var, so the redef must trip `CoreArithDirty` and push the
+  region onto its boxed arm. Sealing ~30 names instead of nine is ~30 var
+  lookups once at boot — unmeasurable (startup below).
+
+**Measured** (darwin/arm64, Apple M5 Pro, go1.26.3; base = c51fb41 built
+from a clean tree, branch = this change; hyperfine `-N`, 3 warmup / 10
+runs, wall-clock totals INCLUDING startup; corpus committed under
+`benchmark/numeric/`, runner `benchmark/numeric/run.sh`):
+
+| kernel (AOT) | ops it needs | base | branch | speedup |
+|---|---|---|---|---|
+| `digit-sum` | quot, rem | 146.0 ms | **13.9 ms** | 10.5× |
+| `gcd` | zero?, rem | 343.6 ms | **33.8 ms** | 10.2× |
+| `collatz` | even?, quot, max | 1956.6 ms | **32.3 ms** | 60.5× |
+| `bitmix` | bit-xor, shifts | 663.6 ms | **41.0 ms** | 16.2× |
+
+The 60× on `collatz` is the cliff, not a 60×-faster instruction: the
+predicate, the division and the accumulator were all untyped, so both loops
+AND the fn stayed boxed; typed, the whole thing lifts to
+`func collatz_len(int64) int64`.
+
+Interpreted leg unchanged (the pass is emitter-only): 1.01 / 0.90 / 0.98 /
+1.08 vs base — noise, both directions.
+
+**No regressions.** Shipped corpus, same method, interleaved base/branch:
+fib 25.54→25.82, tak 38.21→37.48, loop-recur 5.74→5.85, map-filter
+5.49→5.64, reduce 28.64→28.04, transducers 17.95→18.02, persistent-map
+11.56→10.77 ms (±3%, both directions). `TestFactorialPerfBudget` base
+4.8–5.9× vs branch 5.0–6.0× over three runs each — same distribution,
+under the 15× gate. Empty-binary startup 5.7 → 5.3 ms (200 runs; the
+larger seal list costs nothing measurable). Compiled binary **+192 bytes**
+(6,684,722 → 6,684,914).
+
+**Bonus, for free:** the pass runs on `core.clj`, so `clojure.core/mod` now
+lifts to `func mod(int64, int64) int64` (its `(rem …)` and `(zero? …)` were
+the two missing ops).
+
+**Conformance** (dual harness, both legs byte-identical):
+`numeric-unboxed-second-table.clj` (oracle-verified vs Clojure 1.12.5 —
+truncating quot/rem on negatives, 6-bit shift masking, arithmetic vs
+unsigned shift, unchecked wrap at both int64 ends, even?/odd? on negative
+odds), `numeric-unboxed-second-table-throws.clj` (the throwing edges: the
+unboxed helper raises what the boxed tower raises; cljgo's wording for
+those diverges from the JVM's and pre-dates this batch),
+`numeric-unboxed-second-table-redefs.clj` (`with-redefs` of quot / even? /
+max / bit-and seen through the specialized, lifted and loop-carrier
+shapes, with pristine before/after).
+
+**Still not inferred:** float64; multi-arity / variadic / >4-arity
+specialization; cross-fn return typing; capturing closures. `mod` and `abs`
+are core.clj/corelib fns rather than emitter intrinsics, so they are typed
+only where they lift, not open-coded at call sites.
