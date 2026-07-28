@@ -40,6 +40,7 @@ import (
 	cljgsocket "github.com/muthuishere/cljgo/pkg/briaot/cljgsocket"
 	cljgstream "github.com/muthuishere/cljgo/pkg/briaot/cljgstream"
 	cljgsystem "github.com/muthuishere/cljgo/pkg/briaot/cljgsystem"
+	cljxcore "github.com/muthuishere/cljgo/pkg/briaot/cljxcore"
 	corematch "github.com/muthuishere/cljgo/pkg/briaot/corematch"
 	toolscli "github.com/muthuishere/cljgo/pkg/briaot/toolscli"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
@@ -75,6 +76,7 @@ func init() {
 	rt.RegisterLib("cljg.socket", loadCljgsocket)
 	rt.RegisterLib("cljg.net.dns", loadCljgnetdns)
 	rt.RegisterLib("cljg.compress", loadCljgcompress)
+	rt.RegisterLib("cljx.core", loadCljxcore)
 }
 
 // installShims interns the named bri namespace's Go shims as :private vars
@@ -114,3 +116,4 @@ func loadCljgprocess()    { installShims("cljg.process"); cljgprocess.Load() }
 func loadCljgsocket()     { installShims("cljg.socket"); cljgsocket.Load() }
 func loadCljgnetdns()     { installShims("cljg.net.dns"); cljgnetdns.Load() }
 func loadCljgcompress()   { installShims("cljg.compress"); cljgcompress.Load() }
+func loadCljxcore()       { installShims("cljx.core"); cljxcore.Load() }
