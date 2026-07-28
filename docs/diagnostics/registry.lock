@@ -16,6 +16,7 @@ G5005 value is not a collection
 G5006 divide by zero
 G5007 no value supplied for key
 I4001 Java class used as a namespace
+G5008 sql params passed as a collection
 R1001 unterminated form
 R1002 unmatched delimiter
 R1003 map literal with odd number of forms

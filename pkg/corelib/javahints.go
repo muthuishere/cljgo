@@ -70,11 +70,19 @@ func (e *noSuchNamespaceError) Error() string {
 // is raised without a position and the analyzer wraps it in a
 // lang.CompilerError that has one, which diag.FromError reads back.
 func (e *noSuchNamespaceError) Diagnostic() (diag.Diagnostic, bool) {
+	// Code follows the band (pkg/diag/registry.go): a Java class used as a
+	// namespace is an INTEROP failure (I4001), not a generic unresolved
+	// namespace (A2009). Both are registered and both have explain pages;
+	// routing by case is what keeps `cljgo explain` useful.
+	code := "A2009"
+	if jvmStaticClass[e.ns] {
+		code = "I4001"
+	}
 	d := diag.Diagnostic{
 		Severity:   diag.SeverityError,
 		Message:    e.Error(),
-		ErrorCode:  "A2009",
-		ExplainURL: diag.ExplainURL("A2009"),
+		ErrorCode:  code,
+		ExplainURL: diag.ExplainURL(code),
 	}
 	if repl, ok := javaStaticHints[e.full]; ok {
 		d.Fixes = append(d.Fixes, diag.Fix{

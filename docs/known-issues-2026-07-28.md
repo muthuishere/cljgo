@@ -107,15 +107,37 @@ decision-4 test. Frozen in
 still renders only the bare message with no `help:` lines — that is issue 8
 below (the build-phase renderer), untouched here.
 
-### 8. Build-time arity error drops fields the run-time one has
+### 8. Build-time arity error drops fields the run-time one has — FIXED 2026-07-28
 Same file, same call: `cljgo run` gives
 `wrong number of args (3) passed to: e2/f (expects 1: [x]) at err2.clj:3:1` +
 `help:`; `cljgo build` gives only `wrong number of args (3) passed to: e2/f`.
 The build-phase renderer skips expected/location/help.
 
-### 9. `cljg.data.cast/exec!` params are varargs; the vector form fails opaquely
+Fixed: `pkg/emit.CompileError` marks the errors that came out of the user's
+Clojure, and `cljgo build` routes exactly those through the one shared
+`diag.Render` — infrastructure failures (missing file, `go build`) keep their
+plain text, as `cljgo run` already did. Frozen by
+`cmd/cljgo/build_error_parity_test.go`.
+
+The same sweep closed a second, unlisted divergence in the SAME error: an
+arity error that merely UNWOUND through an outer call was re-labelled with
+that call's callee, so `cljgo run` blamed `clojure.core/println` for
+`(println (map h [1] [2] [3]))` while `cljgo build` and the compiled binary
+blamed `user/h` — which is what the JVM says. `pkg/eval`'s call-site
+enrichment now only re-labels an error its OWN callee raised
+(`conformance/tests/arity-error-nested-call-names-raiser.clj`,
+`pkg/repl/arity_naming_test.go`).
+
+### 9. `cljg.data.cast/exec!` params are varargs; the vector form fails opaquely — FIXED 2026-07-28
 `(db/exec! conn "insert … values (?)" ["x"])` → `unsupported type lang.Vector,
 a struct` (G5007). The vector is the natural guess; the error gives no hint.
+
+Fixed: `cljg.data.cast` rejects a collection param at the API boundary with the
+new **G5008** diagnostic, naming the verb the user actually called and the
+shape it wanted — `cljg.data.cast/exec!: param 1 is a vector — SQL params are
+varargs, not a collection (expects [db sql & params], found a vector passed as
+one param); spread it with (apply exec! db sql params)`. Frozen in both
+harnesses by `cmd/cljgo/testdata/dbparity.cljg`.
 
 ## P2 — gaps
 

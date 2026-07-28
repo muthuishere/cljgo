@@ -35,3 +35,13 @@
   (println "cast" (:label clean) (:qty clean) "admin?" (contains? clean :admin)))
 (println "cast-err" (:qty (:errors (try (db/cast! {:qty "nope"} {:qty :int})
                                         (catch Throwable e (ex-data e))))))
+
+;; The params guard (docs/known-issues-2026-07-28.md §9, diagnostic G5008):
+;; params are VARARGS, so a collection passed as one param is rejected at the
+;; API boundary — naming the verb and the shape it wanted — instead of dying
+;; inside database/sql with "unsupported type lang.Vector, a struct". The
+;; `apply` spelling that DOES work is exercised right after, so both legs
+;; prove the guard and the escape hatch.
+(println "params-err" (try (db/query conn "select label from item where qty = ?" [9])
+                           (catch Throwable e (ex-message e))))
+(println "params-apply" (:label (first (apply db/query conn "select label from item where qty = ?" [9]))))

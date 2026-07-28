@@ -55,7 +55,11 @@ func TestBriDBParity(t *testing.T) {
 	// And the transcript is the expected one (so a matching-but-wrong pair
 	// can't pass silently).
 	want := "row 2 beta 9\nrow 3 gamma 1\none beta\ncount 2\n" +
-		"cast delta 4 admin? false\ncast-err expected an integer\n"
+		"cast delta 4 admin? false\ncast-err expected an integer\n" +
+		"params-err cljg.data.cast/query: param 1 is a vector — SQL params are varargs, " +
+		"not a collection (expects [db sql & params], found a vector passed as one param); " +
+		"spread it with (apply query db sql params)\n" +
+		"params-apply beta\n"
 	if string(compiled) != want {
 		t.Fatalf("cljg.data.cast parity transcript =\n%q\nwant\n%q", compiled, want)
 	}
