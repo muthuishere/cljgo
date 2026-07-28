@@ -345,7 +345,40 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		if printLast {
 			out.WriteString("fmt.Println(lang.PrintString(lastVal))\n")
 		}
+		// A red suite must fail the process (ADR 0105 task 2.1). `cljgo test`
+		// already maps clojure.test's summary to exit 1; without this a
+		// compiled test binary exited 0 on failing tests and CI went green on
+		// red. Last thing in main, after all output, so only the exit code
+		// differs from before — REPL/binary output parity is untouched.
+		out.WriteString("if cljgoTestsFailed() {\nos.Exit(1)\n}\n")
 		out.WriteString("}\n")
+		// The check is emitted INLINE rather than called from pkg/emit/rt on
+		// purpose: a released cljgo pins the PUBLISHED runtime module in the
+		// generated go.mod, so emitted code may only use runtime APIs that
+		// already shipped (pkg/emit TestBuildFromReleasePin guards this).
+		// lang.FindNamespace/FindInternedVar/IDeref are all long-standing.
+		out.WriteString(`
+// cljgoTestsFailed reports whether any clojure.test assertion failed or
+// errored in this process — the clojure.test/-process-failures tally, which
+// do-report keeps for exactly this purpose. False when the program never
+// loaded clojure.test (nothing to interrogate, nothing to fail).
+func cljgoTestsFailed() bool {
+ns := lang.FindNamespace(lang.NewSymbol("clojure.test"))
+if ns == nil {
+return false
+}
+v := ns.FindInternedVar(lang.NewSymbol("-process-failures"))
+if v == nil {
+return false
+}
+d, ok := v.Get().(lang.IDeref)
+if !ok {
+return false
+}
+n, _ := d.Deref().(int64)
+return n > 0
+}
+`)
 	}
 
 	raw = out.Bytes()
