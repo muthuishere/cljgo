@@ -84,6 +84,18 @@ type generator struct {
 	// shadowing never mis-resolves.
 	directFns map[*ast.BindingNode]directFn
 
+	// directVars maps a TOP-LEVEL def'd var of this compilation unit to
+	// the package-level typed handle its `def` publishes, so a call of
+	// matching arity emits a direct closure invocation guarded by the
+	// var's own ADR 0066 seal bit instead of an unconditional
+	// `v.Get()` + lang.ApplyN (ADR 0064 cross-var direct calls). Populated
+	// by planDirectVars BEFORE emission, so a forward reference (declare +
+	// later defn, mutual recursion) resolves too.
+	directVars map[*lang.Var]directFn
+	// handles holds the `var fnD_… lang.FnFuncN` declarations for
+	// directVars, emitted at package level ahead of Load().
+	handles []string
+
 	vars    map[*lang.Var]string // hoisted var interns
 	dynVars map[*lang.Var]bool   // emitted with .SetDynamic()
 	kws     map[lang.Keyword]string
@@ -134,14 +146,16 @@ type generator struct {
 
 func newGenerator() *generator {
 	return &generator{
-		locals:    map[*ast.BindingNode]string{},
-		frames:    map[string]*recurFrame{},
-		directFns: map[*ast.BindingNode]directFn{},
-		vars:      map[*lang.Var]string{},
-		dynVars:   map[*lang.Var]bool{},
-		kws:       map[lang.Keyword]string{},
-		syms:      map[string]string{},
-		taken:     map[string]bool{},
+		locals:     map[*ast.BindingNode]string{},
+		frames:     map[string]*recurFrame{},
+		directFns:  map[*ast.BindingNode]directFn{},
+		directVars: map[*lang.Var]directFn{},
+
+		vars:    map[*lang.Var]string{},
+		dynVars: map[*lang.Var]bool{},
+		kws:     map[lang.Keyword]string{},
+		syms:    map[string]string{},
+		taken:   map[string]bool{},
 
 		hostImports: map[string]string{},
 		ni:          emptyInfer(),
@@ -715,6 +729,18 @@ func (g *generator) gen(n *ast.Node) string {
 			g.defName = ""
 			g.defVar = nil
 			g.wf("%s.BindRoot(%s)\n", gv, rv)
+			// ADR 0064 cross-var direct calls: publish the typed closure
+			// handle, THEN arm the var's seal bit. That order matters —
+			// SealDirect's atomic store is the release that makes the
+			// handle write visible to any reader that later observes the
+			// bit. BindRoot above disarmed it (tripIfSealed), so a second
+			// def of the same var can never leave a stale handle armed.
+			// rv is the *lang.NamedFnN temp genFn returned; .F is the raw
+			// FnFuncN closure a direct call invokes.
+			if df, ok := g.directVars[s.Var]; ok {
+				g.wf("%s = %s.F\n", df.goName, rv)
+				g.wf("%s.SealDirect()\n", gv)
+			}
 		}
 		return gv // def's value is the Var itself
 
@@ -789,6 +815,40 @@ func (g *generator) gen(n *ast.Node) string {
 				}
 				t := g.temp()
 				g.wf("%s := %s(%s)\n", t, df.goName, strings.Join(rvs, ", "))
+				return t
+			}
+		}
+		// Cross-var direct-call fast path (ADR 0064, on the ADR 0066
+		// seal): the callee is a var this compilation unit def'd exactly
+		// once, at top level, to a single-fixed-arity fn whose typed
+		// handle the def published — and the call arity matches. While
+		// the var's seal bit reads true (nothing has redefined it) invoke
+		// the handle directly: no atomic var deref, no lang.ApplyN
+		// type-switch. The moment ANY root mutation happens — a second
+		// def, alter-var-root, with-redefs — tripIfSealed disarms the bit
+		// and every site falls back to the unchanged v.Get() + ApplyN
+		// path, so redefinition liveness is observably identical.
+		//
+		// Evaluation order is preserved exactly: the fn position is read
+		// BEFORE the args in both arms (the bit on the fast path, the
+		// var's root on the slow one), so an arg that redefines the
+		// callee still does not affect this call.
+		if s.Fn.Op == ast.OpVar {
+			vr := s.Fn.Sub.(*ast.VarNode).Var
+			if df, ok := g.directVars[vr]; ok && df.arity == len(s.Args) {
+				gv := g.hoistVar(vr)
+				dt, ft := g.temp(), g.temp()
+				g.wf("%s := %s.Direct()\n", dt, gv)
+				g.wf("var %s any\nif !%s {\n%s = %s.Get()\n}\n", ft, dt, ft, gv)
+				rvs := make([]string, len(s.Args))
+				for i, a := range s.Args {
+					rvs[i] = g.gen(a)
+				}
+				args := strings.Join(rvs, ", ")
+				t := g.temp()
+				g.wf("var %s any\nif %s {\n%s = %s(%s)\n} else {\n%s = lang.Apply%d(%s)\n}\n",
+					t, dt, t, df.goName, args,
+					t, len(rvs), strings.Join(append([]string{ft}, rvs...), ", "))
 				return t
 			}
 		}
@@ -1498,6 +1558,99 @@ func fnArityLabel(fn *ast.FnNode) string {
 		parts = append(parts, label)
 	}
 	return strings.Join(parts, " or ")
+}
+
+// planDirectVars decides which top-level `def`s of this compilation unit
+// publish a package-level typed handle callable directly (ADR 0064
+// cross-var direct calls, guarded by the ADR 0066 seal bit). It runs
+// BEFORE emission so a forward reference — `(declare g)` … `(defn f [x]
+// (g x))` … `(defn g [x] …)`, or mutual recursion — resolves too.
+//
+// A var qualifies only when ALL of these hold, so the compiled call site
+// is provably the same invocation lang.ApplyN would have performed:
+//
+//  1. exactly ONE def anywhere in the unit gives it a value (a second
+//     init-bearing `def`, nested or not, would rebind the root; `declare`
+//     — an init-less `(def g)` — emits no BindRoot at all and so does not
+//     count, which is what makes forward references and mutual recursion
+//     eligible);
+//  2. that one def is a TOP-LEVEL form (or a statement of a top-level
+//     `do`), so it is unconditionally executed by Load() in source order;
+//  3. its init is a single-fixed-arity, non-variadic fn* (the FnFuncN
+//     shape) — multi-arity/variadic fns keep the ApplyN route, which is
+//     also what preserves exact arity-error semantics; and
+//  4. the var is NOT dynamic — a thread binding (`binding`) is invisible
+//     to a direct call, and lang.PushThreadBindings refuses a non-dynamic
+//     var, so this rules the whole hazard out statically.
+//
+// Everything else simply is not registered and emits unchanged.
+func (g *generator) planDirectVars(forms []*ast.Node) {
+	defs := map[*lang.Var]int{}
+	var count func(n *ast.Node)
+	count = func(n *ast.Node) {
+		if n == nil {
+			return
+		}
+		if n.Op == ast.OpDef {
+			// Only an init-BEARING def counts: that is exactly the set of
+			// defs that emit a BindRoot. An init-less `(def g)` — what
+			// `declare` expands to — never touches the root, so it can
+			// neither install a rival fn nor invalidate the handle.
+			if s := n.Sub.(*ast.DefNode); s.Var != nil && s.Init != nil {
+				defs[s.Var]++
+			}
+		}
+		eachChild(n, func(c *ast.Node, _ bool) { count(c) })
+	}
+	for _, n := range forms {
+		count(n)
+	}
+
+	var plan func(n *ast.Node)
+	plan = func(n *ast.Node) {
+		if n == nil {
+			return
+		}
+		if n.Op == ast.OpDo {
+			// A top-level `do` is spliced into Load() verbatim, so its
+			// statements are top-level for this purpose.
+			s := n.Sub.(*ast.DoNode)
+			for _, st := range s.Statements {
+				plan(st)
+			}
+			plan(s.Ret)
+			return
+		}
+		if n.Op != ast.OpDef {
+			return
+		}
+		s := n.Sub.(*ast.DefNode)
+		if s.Var == nil || s.Init == nil || defs[s.Var] != 1 {
+			return
+		}
+		if _, dup := g.directVars[s.Var]; dup {
+			return
+		}
+		if s.Init.Op != ast.OpFn {
+			return
+		}
+		m := singleFixedMethod(s.Init.Sub.(*ast.FnNode))
+		if m == nil {
+			return
+		}
+		if lang.IsTruthy(lang.Get(s.Var.Meta(), lang.KWDynamic)) {
+			return
+		}
+		ns := s.Var.Namespace().Name().String()
+		name := s.Var.Symbol().Name()
+		gn := g.uniqueGlobal("fnD_" + munge(ns) + "_" + munge(name))
+		g.directVars[s.Var] = directFn{goName: gn, arity: m.FixedArity}
+		g.handles = append(g.handles,
+			fmt.Sprintf("%s lang.FnFunc%d\n", gn, m.FixedArity))
+	}
+	for _, n := range forms {
+		plan(n)
+	}
 }
 
 // singleFixedMethod returns the sole method when the fn qualifies for

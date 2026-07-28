@@ -29,6 +29,11 @@ var (
 	v_clojure_DOT_core_refer     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 )
 
+var (
+	fnD_cljg_DOT_date_nano_time lang.FnFunc0
+	fnD_cljg_DOT_date_now       lang.FnFunc0
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -56,6 +61,8 @@ func Load() {
 	})
 	tmp8 := &lang.NamedFn0{Name: "cljg.date/nano-time", Expects: "0: []", F: tmp5}
 	v_cljg_DOT_date_nano_time.BindRoot(tmp8)
+	fnD_cljg_DOT_date_nano_time = tmp8.F
+	v_cljg_DOT_date_nano_time.SealDirect()
 	_ = v_cljg_DOT_date_nano_time
 	// (def now "The current wall-clock time as epoch milliseconds (the System/currentTimeMillis\…
 	v_cljg_DOT_date_now.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(10), kw_doc, "The current wall-clock time as epoch milliseconds (the System/currentTimeMillis\n  analog)."))
@@ -66,6 +73,8 @@ func Load() {
 	})
 	tmp12 := &lang.NamedFn0{Name: "cljg.date/now", Expects: "0: []", F: tmp9}
 	v_cljg_DOT_date_now.BindRoot(tmp12)
+	fnD_cljg_DOT_date_now = tmp12.F
+	v_cljg_DOT_date_now.SealDirect()
 	_ = v_cljg_DOT_date_now
 	// (def since "Elapsed nanoseconds. With one reading `t0` (from `nano-time`), the elapsed\n  …
 	v_cljg_DOT_date_since.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(12), kw_doc, "Elapsed nanoseconds. With one reading `t0` (from `nano-time`), the elapsed\n  nanos from `t0` until now. With two readings, `t1` - `t0`."))
@@ -74,17 +83,26 @@ func Load() {
 		case 1:
 			t014 := args[0]
 			_ = t014
-			tmp15 := v_cljg_DOT_date_nano_time.Get()
-			tmp16 := lang.Apply0(tmp15)
-			tmp17 := rt.Sub2(v_clojure_DOT_core_X_, tmp16, t014)
-			return tmp17
+			tmp15 := v_cljg_DOT_date_nano_time.Direct()
+			var tmp16 any
+			if !tmp15 {
+				tmp16 = v_cljg_DOT_date_nano_time.Get()
+			}
+			var tmp17 any
+			if tmp15 {
+				tmp17 = fnD_cljg_DOT_date_nano_time()
+			} else {
+				tmp17 = lang.Apply0(tmp16)
+			}
+			tmp18 := rt.Sub2(v_clojure_DOT_core_X_, tmp17, t014)
+			return tmp18
 		case 2:
-			t018 := args[0]
-			_ = t018
-			t119 := args[1]
-			_ = t119
-			tmp20 := rt.Sub2(v_clojure_DOT_core_X_, t119, t018)
-			return tmp20
+			t019 := args[0]
+			_ = t019
+			t120 := args[1]
+			_ = t120
+			tmp21 := rt.Sub2(v_clojure_DOT_core_X_, t120, t019)
+			return tmp21
 		default:
 			panic(lang.NewArityError(len(args), "cljg.date/since", "1: [t0] or 2: [t0 t1]"))
 		}
@@ -93,32 +111,32 @@ func Load() {
 	_ = v_cljg_DOT_date_since
 	// (def since-ms "Elapsed milliseconds (a double) — `since` divided by 1e6. One reading\n  …
 	v_cljg_DOT_date_since_ms.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(15), kw_doc, "Elapsed milliseconds (a double) — `since` divided by 1e6. One reading\n  measures until now; two measure the interval between them."))
-	tmp21 := lang.FnFunc(func(args ...any) any {
+	tmp22 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			t022 := args[0]
-			_ = t022
-			tmp23 := v_clojure_DOT_core_double.Get()
-			tmp24 := v_cljg_DOT_date_since.Get()
-			tmp25 := lang.Apply1(tmp24, t022)
-			tmp26 := lang.Apply1(tmp23, tmp25)
-			tmp27 := rt.Div2(v_clojure_DOT_core_X_SLASH_, tmp26, float64(1e+06))
-			return tmp27
+			t023 := args[0]
+			_ = t023
+			tmp24 := v_clojure_DOT_core_double.Get()
+			tmp25 := v_cljg_DOT_date_since.Get()
+			tmp26 := lang.Apply1(tmp25, t023)
+			tmp27 := lang.Apply1(tmp24, tmp26)
+			tmp28 := rt.Div2(v_clojure_DOT_core_X_SLASH_, tmp27, float64(1e+06))
+			return tmp28
 		case 2:
-			t028 := args[0]
-			_ = t028
-			t129 := args[1]
-			_ = t129
-			tmp30 := v_clojure_DOT_core_double.Get()
-			tmp31 := v_cljg_DOT_date_since.Get()
-			tmp32 := lang.Apply2(tmp31, t028, t129)
-			tmp33 := lang.Apply1(tmp30, tmp32)
-			tmp34 := rt.Div2(v_clojure_DOT_core_X_SLASH_, tmp33, float64(1e+06))
-			return tmp34
+			t029 := args[0]
+			_ = t029
+			t130 := args[1]
+			_ = t130
+			tmp31 := v_clojure_DOT_core_double.Get()
+			tmp32 := v_cljg_DOT_date_since.Get()
+			tmp33 := lang.Apply2(tmp32, t029, t130)
+			tmp34 := lang.Apply1(tmp31, tmp33)
+			tmp35 := rt.Div2(v_clojure_DOT_core_X_SLASH_, tmp34, float64(1e+06))
+			return tmp35
 		default:
 			panic(lang.NewArityError(len(args), "cljg.date/since-ms", "1: [t0] or 2: [t0 t1]"))
 		}
 	})
-	v_cljg_DOT_date_since_ms.BindRoot(tmp21)
+	v_cljg_DOT_date_since_ms.BindRoot(tmp22)
 	_ = v_cljg_DOT_date_since_ms
 }

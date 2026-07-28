@@ -97,3 +97,116 @@ micro-opt — so it stays per-call.
   reading. The gate keeps biting the ~168× naive-emission regression it
   exists to catch.
 </content>
+
+## Addendum — cross-var direct calls (2026-07-28)
+
+Status: **accepted**, extends this ADR's decision from *local* fn bindings
+to *top-level defns of the same compilation unit*. Builds on ADR 0066's
+dirty-flag seal, which is the mechanism that makes it non-breaking. No
+part of the original decision is reversed.
+
+### What was still slow
+
+The decision above covers only callees reachable through a lexical Go
+handle (a fn's self-name, a `let`-bound fn). The far more common shape —
+one top-level `defn` calling another — was untouched: `(add2 3 4)` emitted
+
+```go
+tmp17 := v_f_add2.Get()                       // atomic.Value load + Box unwrap
+tmp18 := lang.Apply2(tmp17, int64(3), int64(4)) // type-switch dispatch on `any`
+```
+
+That is a var deref plus `lang.ApplyN`'s type switch on *every* call, paid
+to honor a redefinition that in practice never happens.
+
+### Decision
+
+A top-level `def` whose init is a single-fixed-arity fn* **publishes a
+package-level typed handle** (`var fnD_ns_name lang.FnFuncN`) and then
+**arms the var's per-var seal bit** (`Var.SealDirect()`). A matching-arity
+call site emits
+
+```go
+tmp17 := v_f_add2.Direct()          // one relaxed atomic.Bool load
+var tmp18 any
+if !tmp17 { tmp18 = v_f_add2.Get() } // fn position still read BEFORE args
+var tmp19 any
+if tmp17 { tmp19 = fnD_f_add2(int64(3), int64(4)) } // direct, no ApplyN
+else     { tmp19 = lang.Apply2(tmp18, int64(3), int64(4)) }
+```
+
+1. **One seal, one trip site.** `Var.tripIfSealed` — already the single
+   root-mutation hook ADR 0066 installed on `BindRoot`/`AlterRoot` — now
+   also disarms the per-var `direct` bit. Every root writer (emitted
+   `def`, `alter-var-root`, and therefore `with-redefs`) goes through it,
+   so a redefinition is observed exactly as before, in the same instruction
+   it was observed before. No second seal was invented.
+2. **Per var, not global.** Unlike `CoreArithDirty` the bit is per var —
+   ADR 0066 "Alternatives" §2, which is the right trade here precisely
+   because *every* emitted `def` mutates a root; a global flag would be
+   tripped by the program's own definitions.
+3. **Publish-then-arm is the memory edge.** The handle write is ordered
+   before the `SealDirect` store, and a reader loads the bit before it
+   uses the handle; `atomic.Bool` Store/Load are sequentially consistent,
+   so no reader can see an armed bit with a stale handle. `BindRoot`
+   disarms first, so a second `def` can never leave one armed either.
+4. **Conservative registration.** A var qualifies only when exactly one
+   init-bearing `def` in the unit gives it a value, that `def` is a
+   top-level form (or a statement of a top-level `do`), its init is a
+   non-variadic single-fixed-arity fn*, and the var is **not** `:dynamic`
+   (a thread binding would be invisible to a direct call;
+   `PushThreadBindings` refuses a non-dynamic var, so the hazard is ruled
+   out statically). `declare` — an init-less `(def g)` — emits no
+   `BindRoot` and so does not disqualify, which is what makes forward
+   references and mutual recursion eligible. Everything else (multi-arity,
+   variadic, `apply`, arity mismatch, value position, a redefined var, a
+   callee in another namespace) emits exactly as before, which is also
+   what keeps `lang.NewArityError` byte-identical.
+5. **Order preserved.** The fn position is read before the args in *both*
+   arms (the bit on the fast path, the root on the slow one), so an arg
+   expression that redefines the callee still does not affect this call.
+
+### Measured (darwin/arm64, 2026-07-28, base c51fb41 vs perf/direct-call)
+
+Wall-clock totals, best of 9 interleaved runs per binary.
+
+| program (AOT) | base | branch | ratio |
+|---|---|---|---|
+| `benchmark/programs/calls.clj` (3 cross-fn calls × 1e7) | 344 ms | **300 ms** | **1.15×** |
+| `fib.clj` (fib 35) | 43 ms | 41 ms | 1.05× (noise — already ADR 0067 lifted) |
+| `tak.clj` | 54 ms | 56 ms | 0.96× (noise) |
+| `reduce.clj` | 45 ms | 46 ms | — |
+| `map-filter.clj` | 23 ms | 23 ms | — |
+| `transducers.clj` | 35 ms | 34 ms | — |
+| `persistent-map.clj` | 28 ms | 28 ms | — |
+| `loop-recur.clj` | 22 ms | 22 ms | — |
+| hello-world (startup floor) | 22 ms | 22 ms | — |
+
+Interpreted leg unchanged (this is an emitter-only change): scaled-down
+`calls` 402 → 405 ms, `fib` 116 → 117 ms, `tak` 90 → 92 ms — all noise.
+
+`fib`/`tak` are self-recursive and already run as ADR 0067 rung-3 lifted
+`int64` funcs, so they never touched the var path; the win is exactly where
+the ADR says it is — **cross-fn calls between top-level defns**, ~15%.
+
+Binary size: hello-world 6,684,722 → 6,783,810 B (**+99 KB, +1.5%**);
+`calls` 6,684,738 → 6,800,338 B (+116 KB, +1.7%). The cost is the published
+handles and the two-arm call sites, mostly in the regenerated
+`pkg/coreaot` (core.clj alone publishes 265 handles).
+
+### Consequences
+
+- **Dual-harness parity unaffected**; the tree-walk evaluator is untouched.
+  Frozen as `conformance/tests/direct-call-var-redefs.clj` (forward
+  reference, plain call, `with-redefs` + restore, value position, mutual
+  recursion, `alter-var-root` — oracle: clojure 1.12.5 CLI), passing in
+  both harnesses, plus `pkg/emit/direct_call_var_test.go` for the emitted
+  shape and the compiled escape hatch.
+- **Non-breaking by default, so no flag.** Observable liveness is
+  identical, exactly as ADR 0066's dirty-flag variant, so this ships on by
+  default; the owner-gated *hard*-seal question ADR 0066 raised stays open
+  and is unaffected.
+- **Residual:** cross-*namespace* calls still deref (the handle is package
+  private), the fallback arm costs one atomic load and a predictable
+  branch, and lifting the callee body to a static (inlinable) package func
+  instead of a func-valued global is a further rung not taken here.

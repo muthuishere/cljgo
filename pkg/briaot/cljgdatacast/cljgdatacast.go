@@ -130,6 +130,27 @@ var (
 	v_clojure_DOT_string_trim                              = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("trim"))
 )
 
+var (
+	fnD_cljg_DOT_data_DOT_cast_handle                        lang.FnFunc1
+	fnD_cljg_DOT_data_DOT_cast_close_BANG_                   lang.FnFunc1
+	fnD_cljg_DOT_data_DOT_cast_now                           lang.FnFunc0
+	fnD_cljg_DOT_data_DOT_cast_col_name                      lang.FnFunc1
+	fnD_cljg_DOT_data_DOT_cast_coerce_bool                   lang.FnFunc1
+	fnD_cljg_DOT_data_DOT_cast_coerce_field                  lang.FnFunc2
+	fnD_cljg_DOT_data_DOT_cast_cast_STAR_                    lang.FnFunc2
+	fnD_cljg_DOT_data_DOT_cast_cast                          lang.FnFunc2
+	fnD_cljg_DOT_data_DOT_cast_cast_BANG_                    lang.FnFunc2
+	fnD_cljg_DOT_data_DOT_cast_insert_BANG_                  lang.FnFunc3
+	fnD_cljg_DOT_data_DOT_cast_update_BANG_                  lang.FnFunc4
+	fnD_cljg_DOT_data_DOT_cast_delete_BANG_                  lang.FnFunc3
+	fnD_cljg_DOT_data_DOT_cast_tx                            lang.FnFunc2
+	fnD_cljg_DOT_data_DOT_cast_with_rollback                 lang.FnFunc2
+	fnD_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_ lang.FnFunc1
+	fnD_cljg_DOT_data_DOT_cast_applied_set                   lang.FnFunc1
+	fnD_cljg_DOT_data_DOT_cast_migrate_status                lang.FnFunc2
+	fnD_cljg_DOT_data_DOT_cast_migrate_BANG_                 lang.FnFunc2
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -160,6 +181,8 @@ func Load() {
 	})
 	tmp10 := &lang.NamedFn1{Name: "cljg.data.cast/handle", Expects: "1: [db]", F: tmp7}
 	v_cljg_DOT_data_DOT_cast_handle.BindRoot(tmp10)
+	fnD_cljg_DOT_data_DOT_cast_handle = tmp10.F
+	v_cljg_DOT_data_DOT_cast_handle.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_handle
 	// (def connect "Open a connection pool. opts:\n     :driver   :sqlite (default) | :postgres\…
 	v_cljg_DOT_data_DOT_cast_connect.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(30), kw_column, int64(7), kw_end_line, int64(30), kw_end_column, int64(14), kw_doc, "Open a connection pool. opts:\n     :driver   :sqlite (default) | :postgres\n     :database SQLite file path (default \".dev/app.db\") or \":memory:\"\n     :url      Postgres URL (or set APP_DB_URL)\n   With no :driver, APP_DB_URL starting \"postgres\" selects pgx, else\n   SQLite — the zero-install default (ADR 0057). Returns a handle map."))
@@ -307,1062 +330,1303 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_close_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(13), kw_doc, "Close a connection pool (a no-op on a tx handle)."))
 	tmp57 := lang.FnFunc1(func(db58 any) any {
 		tmp59 := v_cljg_DOT_data_DOT_cast_X_db_close.Get()
-		tmp60 := v_cljg_DOT_data_DOT_cast_handle.Get()
-		tmp61 := lang.Apply1(tmp60, db58)
-		tmp62 := lang.Apply1(tmp59, tmp61)
-		_ = tmp62
+		tmp60 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+		var tmp61 any
+		if !tmp60 {
+			tmp61 = v_cljg_DOT_data_DOT_cast_handle.Get()
+		}
+		var tmp62 any
+		if tmp60 {
+			tmp62 = fnD_cljg_DOT_data_DOT_cast_handle(db58)
+		} else {
+			tmp62 = lang.Apply1(tmp61, db58)
+		}
+		tmp63 := lang.Apply1(tmp59, tmp62)
+		_ = tmp63
 		return nil
 	})
-	tmp63 := &lang.NamedFn1{Name: "cljg.data.cast/close!", Expects: "1: [db]", F: tmp57}
-	v_cljg_DOT_data_DOT_cast_close_BANG_.BindRoot(tmp63)
+	tmp64 := &lang.NamedFn1{Name: "cljg.data.cast/close!", Expects: "1: [db]", F: tmp57}
+	v_cljg_DOT_data_DOT_cast_close_BANG_.BindRoot(tmp64)
+	fnD_cljg_DOT_data_DOT_cast_close_BANG_ = tmp64.F
+	v_cljg_DOT_data_DOT_cast_close_BANG_.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_close_BANG_
 	// (def now "The current UTC instant as an RFC3339 string — a portable timestamp for\n  cre…
 	v_cljg_DOT_data_DOT_cast_now.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(58), kw_column, int64(7), kw_end_line, int64(58), kw_end_column, int64(10), kw_doc, "The current UTC instant as an RFC3339 string — a portable timestamp for\n  created-at/updated-at columns (no Java interop, identical across modes)."))
-	tmp64 := lang.FnFunc0(func() any {
-		tmp65 := v_cljg_DOT_data_DOT_cast_X_db_now.Get()
-		tmp66 := lang.Apply0(tmp65)
-		return tmp66
+	tmp65 := lang.FnFunc0(func() any {
+		tmp66 := v_cljg_DOT_data_DOT_cast_X_db_now.Get()
+		tmp67 := lang.Apply0(tmp66)
+		return tmp67
 	})
-	tmp67 := &lang.NamedFn0{Name: "cljg.data.cast/now", Expects: "0: []", F: tmp64}
-	v_cljg_DOT_data_DOT_cast_now.BindRoot(tmp67)
+	tmp68 := &lang.NamedFn0{Name: "cljg.data.cast/now", Expects: "0: []", F: tmp65}
+	v_cljg_DOT_data_DOT_cast_now.BindRoot(tmp68)
+	fnD_cljg_DOT_data_DOT_cast_now = tmp68.F
+	v_cljg_DOT_data_DOT_cast_now.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_now
 	// (def query "Run a parametrized SELECT — SQL string + positional `?` params — and\n  re…
 	v_cljg_DOT_data_DOT_cast_query.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(12), kw_doc, "Run a parametrized SELECT — SQL string + positional `?` params — and\n  return a vector of maps (snake_case columns → kebab-case keyword keys)."))
-	tmp68 := lang.FnFunc(func(args ...any) any {
+	tmp69 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "cljg.data.cast/query", "2+: [db sql params & more]"))
 			}
-			db69 := args[0]
-			_ = db69
-			sql70 := args[1]
-			_ = sql70
-			var params71 any
+			db70 := args[0]
+			_ = db70
+			sql71 := args[1]
+			_ = sql71
+			var params72 any
 			if len(args) > 2 {
-				params71 = lang.NewList(args[2:]...)
+				params72 = lang.NewList(args[2:]...)
 			}
-			_ = params71
-			tmp72 := v_cljg_DOT_data_DOT_cast_X_db_query.Get()
-			tmp73 := v_cljg_DOT_data_DOT_cast_handle.Get()
-			tmp74 := lang.Apply1(tmp73, db69)
-			tmp75 := v_clojure_DOT_core_vec.Get()
-			tmp76 := lang.Apply1(tmp75, params71)
-			tmp77 := lang.Apply3(tmp72, tmp74, sql70, tmp76)
-			return tmp77
+			_ = params72
+			tmp73 := v_cljg_DOT_data_DOT_cast_X_db_query.Get()
+			tmp74 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+			var tmp75 any
+			if !tmp74 {
+				tmp75 = v_cljg_DOT_data_DOT_cast_handle.Get()
+			}
+			var tmp76 any
+			if tmp74 {
+				tmp76 = fnD_cljg_DOT_data_DOT_cast_handle(db70)
+			} else {
+				tmp76 = lang.Apply1(tmp75, db70)
+			}
+			tmp77 := v_clojure_DOT_core_vec.Get()
+			tmp78 := lang.Apply1(tmp77, params72)
+			tmp79 := lang.Apply3(tmp73, tmp76, sql71, tmp78)
+			return tmp79
 		}
 	})
-	v_cljg_DOT_data_DOT_cast_query.BindRoot(tmp68)
+	v_cljg_DOT_data_DOT_cast_query.BindRoot(tmp69)
 	_ = v_cljg_DOT_data_DOT_cast_query
 	// (def one "The first row of (query …) as a map, or nil." (clojure.core/fn [db sql & param…
 	v_cljg_DOT_data_DOT_cast_one.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(10), kw_doc, "The first row of (query …) as a map, or nil."))
-	tmp78 := lang.FnFunc(func(args ...any) any {
+	tmp80 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "cljg.data.cast/one", "2+: [db sql params & more]"))
 			}
-			db79 := args[0]
-			_ = db79
-			sql80 := args[1]
-			_ = sql80
-			var params81 any
+			db81 := args[0]
+			_ = db81
+			sql82 := args[1]
+			_ = sql82
+			var params83 any
 			if len(args) > 2 {
-				params81 = lang.NewList(args[2:]...)
+				params83 = lang.NewList(args[2:]...)
 			}
-			_ = params81
-			tmp82 := v_clojure_DOT_core_first.Get()
-			tmp83 := v_cljg_DOT_data_DOT_cast_X_db_query.Get()
-			tmp84 := v_cljg_DOT_data_DOT_cast_handle.Get()
-			tmp85 := lang.Apply1(tmp84, db79)
-			tmp86 := v_clojure_DOT_core_vec.Get()
-			tmp87 := lang.Apply1(tmp86, params81)
-			tmp88 := lang.Apply3(tmp83, tmp85, sql80, tmp87)
-			tmp89 := lang.Apply1(tmp82, tmp88)
-			return tmp89
+			_ = params83
+			tmp84 := v_clojure_DOT_core_first.Get()
+			tmp85 := v_cljg_DOT_data_DOT_cast_X_db_query.Get()
+			tmp86 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+			var tmp87 any
+			if !tmp86 {
+				tmp87 = v_cljg_DOT_data_DOT_cast_handle.Get()
+			}
+			var tmp88 any
+			if tmp86 {
+				tmp88 = fnD_cljg_DOT_data_DOT_cast_handle(db81)
+			} else {
+				tmp88 = lang.Apply1(tmp87, db81)
+			}
+			tmp89 := v_clojure_DOT_core_vec.Get()
+			tmp90 := lang.Apply1(tmp89, params83)
+			tmp91 := lang.Apply3(tmp85, tmp88, sql82, tmp90)
+			tmp92 := lang.Apply1(tmp84, tmp91)
+			return tmp92
 		}
 	})
-	v_cljg_DOT_data_DOT_cast_one.BindRoot(tmp78)
+	v_cljg_DOT_data_DOT_cast_one.BindRoot(tmp80)
 	_ = v_cljg_DOT_data_DOT_cast_one
 	// (def one! "Like `one`, but throws an ex-info tagged :cljg.data.cast/not-found when no row\…
 	v_cljg_DOT_data_DOT_cast_one_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(11), kw_doc, "Like `one`, but throws an ex-info tagged :cljg.data.cast/not-found when no row\n  matches (the ADR 0041 funnel → 404)."))
-	tmp90 := lang.FnFunc(func(args ...any) any {
+	tmp93 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "cljg.data.cast/one!", "2+: [db sql params & more]"))
 			}
-			db91 := args[0]
-			_ = db91
-			sql92 := args[1]
-			_ = sql92
-			var params93 any
+			db94 := args[0]
+			_ = db94
+			sql95 := args[1]
+			_ = sql95
+			var params96 any
 			if len(args) > 2 {
-				params93 = lang.NewList(args[2:]...)
+				params96 = lang.NewList(args[2:]...)
 			}
-			_ = params93
-			var tmp94 any
-			_ = tmp94
+			_ = params96
+			var tmp97 any
+			_ = tmp97
 			{
-				tmp95 := v_clojure_DOT_core_first.Get()
-				tmp96 := v_cljg_DOT_data_DOT_cast_X_db_query.Get()
-				tmp97 := v_cljg_DOT_data_DOT_cast_handle.Get()
-				tmp98 := lang.Apply1(tmp97, db91)
-				tmp99 := v_clojure_DOT_core_vec.Get()
-				tmp100 := lang.Apply1(tmp99, params93)
-				tmp101 := lang.Apply3(tmp96, tmp98, sql92, tmp100)
-				tmp102 := lang.Apply1(tmp95, tmp101)
-				var or__2__auto__103 any = tmp102
-				_ = or__2__auto__103
-				var tmp104 any
-				_ = tmp104
-				if lang.IsTruthy(or__2__auto__103) {
-					tmp104 = or__2__auto__103
-				} else {
-					tmp105 := v_clojure_DOT_core_ex_info.Get()
-					tmp106 := lang.NewMap(kw_cljg_DOT_data_DOT_cast_SLASH_error, kw_cljg_DOT_data_DOT_cast_SLASH_not_found, kw_sql, sql92)
-					tmp107 := lang.Apply2(tmp105, "cljg.data.cast/one!: no matching row", tmp106)
-					panic(rt.Throw(tmp107))
+				tmp98 := v_clojure_DOT_core_first.Get()
+				tmp99 := v_cljg_DOT_data_DOT_cast_X_db_query.Get()
+				tmp100 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+				var tmp101 any
+				if !tmp100 {
+					tmp101 = v_cljg_DOT_data_DOT_cast_handle.Get()
 				}
-				tmp94 = tmp104
+				var tmp102 any
+				if tmp100 {
+					tmp102 = fnD_cljg_DOT_data_DOT_cast_handle(db94)
+				} else {
+					tmp102 = lang.Apply1(tmp101, db94)
+				}
+				tmp103 := v_clojure_DOT_core_vec.Get()
+				tmp104 := lang.Apply1(tmp103, params96)
+				tmp105 := lang.Apply3(tmp99, tmp102, sql95, tmp104)
+				tmp106 := lang.Apply1(tmp98, tmp105)
+				var or__2__auto__107 any = tmp106
+				_ = or__2__auto__107
+				var tmp108 any
+				_ = tmp108
+				if lang.IsTruthy(or__2__auto__107) {
+					tmp108 = or__2__auto__107
+				} else {
+					tmp109 := v_clojure_DOT_core_ex_info.Get()
+					tmp110 := lang.NewMap(kw_cljg_DOT_data_DOT_cast_SLASH_error, kw_cljg_DOT_data_DOT_cast_SLASH_not_found, kw_sql, sql95)
+					tmp111 := lang.Apply2(tmp109, "cljg.data.cast/one!: no matching row", tmp110)
+					panic(rt.Throw(tmp111))
+				}
+				tmp97 = tmp108
 			}
-			return tmp94
+			return tmp97
 		}
 	})
-	v_cljg_DOT_data_DOT_cast_one_BANG_.BindRoot(tmp90)
+	v_cljg_DOT_data_DOT_cast_one_BANG_.BindRoot(tmp93)
 	_ = v_cljg_DOT_data_DOT_cast_one_BANG_
 	// (def exec! "Run a parametrized write (INSERT/UPDATE/DELETE/DDL). Returns\n  {:rows-affecte…
 	v_cljg_DOT_data_DOT_cast_exec_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(12), kw_doc, "Run a parametrized write (INSERT/UPDATE/DELETE/DDL). Returns\n  {:rows-affected n :last-insert-id id}."))
-	tmp108 := lang.FnFunc(func(args ...any) any {
+	tmp112 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "cljg.data.cast/exec!", "2+: [db sql params & more]"))
 			}
-			db109 := args[0]
-			_ = db109
-			sql110 := args[1]
-			_ = sql110
-			var params111 any
+			db113 := args[0]
+			_ = db113
+			sql114 := args[1]
+			_ = sql114
+			var params115 any
 			if len(args) > 2 {
-				params111 = lang.NewList(args[2:]...)
+				params115 = lang.NewList(args[2:]...)
 			}
-			_ = params111
-			tmp112 := v_cljg_DOT_data_DOT_cast_X_db_exec.Get()
-			tmp113 := v_cljg_DOT_data_DOT_cast_handle.Get()
-			tmp114 := lang.Apply1(tmp113, db109)
-			tmp115 := v_clojure_DOT_core_vec.Get()
-			tmp116 := lang.Apply1(tmp115, params111)
-			tmp117 := lang.Apply3(tmp112, tmp114, sql110, tmp116)
-			return tmp117
+			_ = params115
+			tmp116 := v_cljg_DOT_data_DOT_cast_X_db_exec.Get()
+			tmp117 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+			var tmp118 any
+			if !tmp117 {
+				tmp118 = v_cljg_DOT_data_DOT_cast_handle.Get()
+			}
+			var tmp119 any
+			if tmp117 {
+				tmp119 = fnD_cljg_DOT_data_DOT_cast_handle(db113)
+			} else {
+				tmp119 = lang.Apply1(tmp118, db113)
+			}
+			tmp120 := v_clojure_DOT_core_vec.Get()
+			tmp121 := lang.Apply1(tmp120, params115)
+			tmp122 := lang.Apply3(tmp116, tmp119, sql114, tmp121)
+			return tmp122
 		}
 	})
-	v_cljg_DOT_data_DOT_cast_exec_BANG_.BindRoot(tmp108)
+	v_cljg_DOT_data_DOT_cast_exec_BANG_.BindRoot(tmp112)
 	_ = v_cljg_DOT_data_DOT_cast_exec_BANG_
 	// (def col-name "Kebab-case keyword key → snake_case column name." (clojure.core/fn [k] (s…
 	v_cljg_DOT_data_DOT_cast_col_name.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(91), kw_column, int64(7), kw_end_line, int64(91), kw_end_column, int64(25), kw_private, true, kw_doc, "Kebab-case keyword key → snake_case column name."))
-	tmp118 := lang.FnFunc1(func(k119 any) any {
-		tmp120 := v_clojure_DOT_string_replace.Get()
-		tmp121 := v_clojure_DOT_core_name.Get()
-		tmp122 := lang.Apply1(tmp121, k119)
-		tmp123 := lang.Apply3(tmp120, tmp122, "-", "_")
-		return tmp123
+	tmp123 := lang.FnFunc1(func(k124 any) any {
+		tmp125 := v_clojure_DOT_string_replace.Get()
+		tmp126 := v_clojure_DOT_core_name.Get()
+		tmp127 := lang.Apply1(tmp126, k124)
+		tmp128 := lang.Apply3(tmp125, tmp127, "-", "_")
+		return tmp128
 	})
-	tmp124 := &lang.NamedFn1{Name: "cljg.data.cast/col-name", Expects: "1: [k]", F: tmp118}
-	v_cljg_DOT_data_DOT_cast_col_name.BindRoot(tmp124)
+	tmp129 := &lang.NamedFn1{Name: "cljg.data.cast/col-name", Expects: "1: [k]", F: tmp123}
+	v_cljg_DOT_data_DOT_cast_col_name.BindRoot(tmp129)
+	fnD_cljg_DOT_data_DOT_cast_col_name = tmp129.F
+	v_cljg_DOT_data_DOT_cast_col_name.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_col_name
 	// (def coerce-bool (clojure.core/fn [v] (cond (boolean? v) v (nil? v) false (string? v) (con…
 	v_cljg_DOT_data_DOT_cast_coerce_bool.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(105), kw_column, int64(7), kw_end_line, int64(105), kw_end_column, int64(28), kw_private, true))
-	tmp125 := lang.FnFunc1(func(v126 any) any {
-		tmp127 := v_clojure_DOT_core_boolean_QMARK_.Get()
-		tmp128 := lang.Apply1(tmp127, v126)
-		var tmp129 any
-		_ = tmp129
-		if lang.IsTruthy(tmp128) {
-			tmp129 = v126
+	tmp130 := lang.FnFunc1(func(v131 any) any {
+		tmp132 := v_clojure_DOT_core_boolean_QMARK_.Get()
+		tmp133 := lang.Apply1(tmp132, v131)
+		var tmp134 any
+		_ = tmp134
+		if lang.IsTruthy(tmp133) {
+			tmp134 = v131
 		} else {
-			tmp130 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp131 := lang.Apply1(tmp130, v126)
-			var tmp132 any
-			_ = tmp132
-			if lang.IsTruthy(tmp131) {
-				tmp132 = false
+			tmp135 := v_clojure_DOT_core_nil_QMARK_.Get()
+			tmp136 := lang.Apply1(tmp135, v131)
+			var tmp137 any
+			_ = tmp137
+			if lang.IsTruthy(tmp136) {
+				tmp137 = false
 			} else {
-				tmp133 := v_clojure_DOT_core_string_QMARK_.Get()
-				tmp134 := lang.Apply1(tmp133, v126)
-				var tmp135 any
-				_ = tmp135
-				if lang.IsTruthy(tmp134) {
-					tmp136 := v_clojure_DOT_core_contains_QMARK_.Get()
-					tmp137 := lang.NewSet("yes", "true", "on", "1")
-					tmp138 := v_clojure_DOT_string_lower_case.Get()
-					tmp139 := v_clojure_DOT_string_trim.Get()
-					tmp140 := lang.Apply1(tmp139, v126)
-					tmp141 := lang.Apply1(tmp138, tmp140)
-					tmp142 := lang.Apply2(tmp136, tmp137, tmp141)
-					tmp135 = tmp142
+				tmp138 := v_clojure_DOT_core_string_QMARK_.Get()
+				tmp139 := lang.Apply1(tmp138, v131)
+				var tmp140 any
+				_ = tmp140
+				if lang.IsTruthy(tmp139) {
+					tmp141 := v_clojure_DOT_core_contains_QMARK_.Get()
+					tmp142 := lang.NewSet("yes", "true", "on", "1")
+					tmp143 := v_clojure_DOT_string_lower_case.Get()
+					tmp144 := v_clojure_DOT_string_trim.Get()
+					tmp145 := lang.Apply1(tmp144, v131)
+					tmp146 := lang.Apply1(tmp143, tmp145)
+					tmp147 := lang.Apply2(tmp141, tmp142, tmp146)
+					tmp140 = tmp147
 				} else {
-					var tmp143 any
-					_ = tmp143
+					var tmp148 any
+					_ = tmp148
 					if lang.IsTruthy(kw_else_) {
-						tmp144 := v_clojure_DOT_core_boolean.Get()
-						tmp145 := lang.Apply1(tmp144, v126)
-						tmp143 = tmp145
+						tmp149 := v_clojure_DOT_core_boolean.Get()
+						tmp150 := lang.Apply1(tmp149, v131)
+						tmp148 = tmp150
 					} else {
-						tmp143 = nil
+						tmp148 = nil
 					}
-					tmp135 = tmp143
+					tmp140 = tmp148
 				}
-				tmp132 = tmp135
+				tmp137 = tmp140
 			}
-			tmp129 = tmp132
+			tmp134 = tmp137
 		}
-		return tmp129
+		return tmp134
 	})
-	tmp146 := &lang.NamedFn1{Name: "cljg.data.cast/coerce-bool", Expects: "1: [v]", F: tmp125}
-	v_cljg_DOT_data_DOT_cast_coerce_bool.BindRoot(tmp146)
+	tmp151 := &lang.NamedFn1{Name: "cljg.data.cast/coerce-bool", Expects: "1: [v]", F: tmp130}
+	v_cljg_DOT_data_DOT_cast_coerce_bool.BindRoot(tmp151)
+	fnD_cljg_DOT_data_DOT_cast_coerce_bool = tmp151.F
+	v_cljg_DOT_data_DOT_cast_coerce_bool.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_coerce_bool
 	// (def coerce-field "Coerce one value against a `type` keyword. Returns [:ok v'] | [:err mes…
 	v_cljg_DOT_data_DOT_cast_coerce_field.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(29), kw_private, true, kw_doc, "Coerce one value against a `type` keyword. Returns [:ok v'] | [:err message]."))
-	tmp147 := lang.FnFunc2(func(type_148, v149 any) any {
-		var tmp150 any
-		_ = tmp150
+	tmp152 := lang.FnFunc2(func(type_153, v154 any) any {
+		var tmp155 any
+		_ = tmp155
 		{
-			var case__118151 any = type_148
-			_ = case__118151
-			tmp152 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118151, kw_any_)
-			var tmp153 any
-			_ = tmp153
-			if tmp152 {
-				tmp154 := lang.NewVector(kw_ok, v149)
-				tmp153 = tmp154
+			var case__118156 any = type_153
+			_ = case__118156
+			tmp157 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118156, kw_any_)
+			var tmp158 any
+			_ = tmp158
+			if tmp157 {
+				tmp159 := lang.NewVector(kw_ok, v154)
+				tmp158 = tmp159
 			} else {
-				tmp155 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118151, kw_string_)
-				var tmp156 any
-				_ = tmp156
-				if tmp155 {
-					tmp157 := v_clojure_DOT_core_some_QMARK_.Get()
-					tmp158 := lang.Apply1(tmp157, v149)
-					var tmp159 any
-					_ = tmp159
-					if lang.IsTruthy(tmp158) {
-						tmp160 := v_clojure_DOT_core_str.Get()
-						tmp161 := lang.Apply1(tmp160, v149)
-						tmp159 = tmp161
-					} else {
-						tmp159 = nil
-					}
-					tmp162 := lang.NewVector(kw_ok, tmp159)
-					tmp156 = tmp162
-				} else {
-					tmp163 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118151, kw_keyword)
+				tmp160 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118156, kw_string_)
+				var tmp161 any
+				_ = tmp161
+				if tmp160 {
+					tmp162 := v_clojure_DOT_core_some_QMARK_.Get()
+					tmp163 := lang.Apply1(tmp162, v154)
 					var tmp164 any
 					_ = tmp164
-					if tmp163 {
-						tmp165 := v_clojure_DOT_core_some_QMARK_.Get()
-						tmp166 := lang.Apply1(tmp165, v149)
-						var tmp167 any
-						_ = tmp167
-						if lang.IsTruthy(tmp166) {
-							tmp168 := v_clojure_DOT_core_keyword.Get()
-							tmp169 := lang.Apply1(tmp168, v149)
-							tmp167 = tmp169
-						} else {
-							tmp167 = nil
-						}
-						tmp170 := lang.NewVector(kw_ok, tmp167)
-						tmp164 = tmp170
+					if lang.IsTruthy(tmp163) {
+						tmp165 := v_clojure_DOT_core_str.Get()
+						tmp166 := lang.Apply1(tmp165, v154)
+						tmp164 = tmp166
 					} else {
-						var tmp171 any
-						_ = tmp171
-						{
-							tmp172 := rt.EQ2(v_clojure_DOT_core_X_EQ_, case__118151, kw_int_)
-							var or__2__auto__173 any = tmp172
-							_ = or__2__auto__173
-							var tmp174 any
-							_ = tmp174
-							if lang.IsTruthy(or__2__auto__173) {
-								tmp174 = or__2__auto__173
-							} else {
-								tmp175 := rt.EQ2(v_clojure_DOT_core_X_EQ_, case__118151, kw_long)
-								tmp174 = tmp175
-							}
-							tmp171 = tmp174
+						tmp164 = nil
+					}
+					tmp167 := lang.NewVector(kw_ok, tmp164)
+					tmp161 = tmp167
+				} else {
+					tmp168 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118156, kw_keyword)
+					var tmp169 any
+					_ = tmp169
+					if tmp168 {
+						tmp170 := v_clojure_DOT_core_some_QMARK_.Get()
+						tmp171 := lang.Apply1(tmp170, v154)
+						var tmp172 any
+						_ = tmp172
+						if lang.IsTruthy(tmp171) {
+							tmp173 := v_clojure_DOT_core_keyword.Get()
+							tmp174 := lang.Apply1(tmp173, v154)
+							tmp172 = tmp174
+						} else {
+							tmp172 = nil
 						}
+						tmp175 := lang.NewVector(kw_ok, tmp172)
+						tmp169 = tmp175
+					} else {
 						var tmp176 any
 						_ = tmp176
-						if lang.IsTruthy(tmp171) {
-							tmp177 := v_clojure_DOT_core_integer_QMARK_.Get()
-							tmp178 := lang.Apply1(tmp177, v149)
+						{
+							tmp177 := rt.EQ2(v_clojure_DOT_core_X_EQ_, case__118156, kw_int_)
+							var or__2__auto__178 any = tmp177
+							_ = or__2__auto__178
 							var tmp179 any
 							_ = tmp179
-							if lang.IsTruthy(tmp178) {
-								tmp180 := v_clojure_DOT_core_long.Get()
-								tmp181 := lang.Apply1(tmp180, v149)
-								tmp182 := lang.NewVector(kw_ok, tmp181)
-								tmp179 = tmp182
+							if lang.IsTruthy(or__2__auto__178) {
+								tmp179 = or__2__auto__178
 							} else {
-								tmp183 := v_clojure_DOT_core_number_QMARK_.Get()
-								tmp184 := lang.Apply1(tmp183, v149)
-								var tmp185 any
-								_ = tmp185
-								if lang.IsTruthy(tmp184) {
-									tmp186 := v_clojure_DOT_core_long.Get()
-									tmp187 := lang.Apply1(tmp186, v149)
-									tmp188 := lang.NewVector(kw_ok, tmp187)
-									tmp185 = tmp188
-								} else {
-									tmp189 := v_clojure_DOT_core_string_QMARK_.Get()
-									tmp190 := lang.Apply1(tmp189, v149)
-									var tmp191 any
-									_ = tmp191
-									if lang.IsTruthy(tmp190) {
-										var tmp192 any
-										_ = tmp192
-										{
-											tmp193 := v_clojure_DOT_core_parse_long.Get()
-											tmp194 := v_clojure_DOT_string_trim.Get()
-											tmp195 := lang.Apply1(tmp194, v149)
-											tmp196 := lang.Apply1(tmp193, tmp195)
-											var temp__4__auto__197 any = tmp196
-											_ = temp__4__auto__197
-											var tmp198 any
-											_ = tmp198
-											if lang.IsTruthy(temp__4__auto__197) {
-												var tmp199 any
-												_ = tmp199
-												{
-													var n200 any = temp__4__auto__197
-													_ = n200
-													tmp201 := lang.NewVector(kw_ok, n200)
-													tmp199 = tmp201
-												}
-												tmp198 = tmp199
-											} else {
-												tmp202 := lang.NewVector(kw_err, "expected an integer")
-												tmp198 = tmp202
-											}
-											tmp192 = tmp198
-										}
-										tmp191 = tmp192
-									} else {
-										var tmp203 any
-										_ = tmp203
-										if lang.IsTruthy(kw_else_) {
-											tmp204 := lang.NewVector(kw_err, "expected an integer")
-											tmp203 = tmp204
-										} else {
-											tmp203 = nil
-										}
-										tmp191 = tmp203
-									}
-									tmp185 = tmp191
-								}
-								tmp179 = tmp185
+								tmp180 := rt.EQ2(v_clojure_DOT_core_X_EQ_, case__118156, kw_long)
+								tmp179 = tmp180
 							}
 							tmp176 = tmp179
-						} else {
-							tmp205 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118151, kw_double)
-							var tmp206 any
-							_ = tmp206
-							if tmp205 {
-								tmp207 := v_clojure_DOT_core_number_QMARK_.Get()
-								tmp208 := lang.Apply1(tmp207, v149)
-								var tmp209 any
-								_ = tmp209
-								if lang.IsTruthy(tmp208) {
-									tmp210 := v_clojure_DOT_core_double.Get()
-									tmp211 := lang.Apply1(tmp210, v149)
-									tmp212 := lang.NewVector(kw_ok, tmp211)
-									tmp209 = tmp212
-								} else {
-									tmp213 := v_clojure_DOT_core_string_QMARK_.Get()
-									tmp214 := lang.Apply1(tmp213, v149)
-									var tmp215 any
-									_ = tmp215
-									if lang.IsTruthy(tmp214) {
-										var tmp216 any
-										_ = tmp216
-										{
-											tmp217 := v_clojure_DOT_core_parse_double.Get()
-											tmp218 := v_clojure_DOT_string_trim.Get()
-											tmp219 := lang.Apply1(tmp218, v149)
-											tmp220 := lang.Apply1(tmp217, tmp219)
-											var temp__4__auto__221 any = tmp220
-											_ = temp__4__auto__221
-											var tmp222 any
-											_ = tmp222
-											if lang.IsTruthy(temp__4__auto__221) {
-												var tmp223 any
-												_ = tmp223
-												{
-													var n224 any = temp__4__auto__221
-													_ = n224
-													tmp225 := lang.NewVector(kw_ok, n224)
-													tmp223 = tmp225
-												}
-												tmp222 = tmp223
-											} else {
-												tmp226 := lang.NewVector(kw_err, "expected a number")
-												tmp222 = tmp226
-											}
-											tmp216 = tmp222
-										}
-										tmp215 = tmp216
-									} else {
-										var tmp227 any
-										_ = tmp227
-										if lang.IsTruthy(kw_else_) {
-											tmp228 := lang.NewVector(kw_err, "expected a number")
-											tmp227 = tmp228
-										} else {
-											tmp227 = nil
-										}
-										tmp215 = tmp227
-									}
-									tmp209 = tmp215
-								}
-								tmp206 = tmp209
-							} else {
-								tmp229 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118151, kw_bool_)
-								var tmp230 any
-								_ = tmp230
-								if tmp229 {
-									tmp231 := v_cljg_DOT_data_DOT_cast_coerce_bool.Get()
-									tmp232 := lang.Apply1(tmp231, v149)
-									tmp233 := lang.NewVector(kw_ok, tmp232)
-									tmp230 = tmp233
-								} else {
-									tmp234 := v_clojure_DOT_core_str.Get()
-									tmp235 := v_clojure_DOT_core_pr_str.Get()
-									tmp236 := lang.Apply1(tmp235, type_148)
-									tmp237 := lang.Apply2(tmp234, "unknown cast type ", tmp236)
-									tmp238 := lang.NewVector(kw_err, tmp237)
-									tmp230 = tmp238
-								}
-								tmp206 = tmp230
-							}
-							tmp176 = tmp206
 						}
-						tmp164 = tmp176
+						var tmp181 any
+						_ = tmp181
+						if lang.IsTruthy(tmp176) {
+							tmp182 := v_clojure_DOT_core_integer_QMARK_.Get()
+							tmp183 := lang.Apply1(tmp182, v154)
+							var tmp184 any
+							_ = tmp184
+							if lang.IsTruthy(tmp183) {
+								tmp185 := v_clojure_DOT_core_long.Get()
+								tmp186 := lang.Apply1(tmp185, v154)
+								tmp187 := lang.NewVector(kw_ok, tmp186)
+								tmp184 = tmp187
+							} else {
+								tmp188 := v_clojure_DOT_core_number_QMARK_.Get()
+								tmp189 := lang.Apply1(tmp188, v154)
+								var tmp190 any
+								_ = tmp190
+								if lang.IsTruthy(tmp189) {
+									tmp191 := v_clojure_DOT_core_long.Get()
+									tmp192 := lang.Apply1(tmp191, v154)
+									tmp193 := lang.NewVector(kw_ok, tmp192)
+									tmp190 = tmp193
+								} else {
+									tmp194 := v_clojure_DOT_core_string_QMARK_.Get()
+									tmp195 := lang.Apply1(tmp194, v154)
+									var tmp196 any
+									_ = tmp196
+									if lang.IsTruthy(tmp195) {
+										var tmp197 any
+										_ = tmp197
+										{
+											tmp198 := v_clojure_DOT_core_parse_long.Get()
+											tmp199 := v_clojure_DOT_string_trim.Get()
+											tmp200 := lang.Apply1(tmp199, v154)
+											tmp201 := lang.Apply1(tmp198, tmp200)
+											var temp__4__auto__202 any = tmp201
+											_ = temp__4__auto__202
+											var tmp203 any
+											_ = tmp203
+											if lang.IsTruthy(temp__4__auto__202) {
+												var tmp204 any
+												_ = tmp204
+												{
+													var n205 any = temp__4__auto__202
+													_ = n205
+													tmp206 := lang.NewVector(kw_ok, n205)
+													tmp204 = tmp206
+												}
+												tmp203 = tmp204
+											} else {
+												tmp207 := lang.NewVector(kw_err, "expected an integer")
+												tmp203 = tmp207
+											}
+											tmp197 = tmp203
+										}
+										tmp196 = tmp197
+									} else {
+										var tmp208 any
+										_ = tmp208
+										if lang.IsTruthy(kw_else_) {
+											tmp209 := lang.NewVector(kw_err, "expected an integer")
+											tmp208 = tmp209
+										} else {
+											tmp208 = nil
+										}
+										tmp196 = tmp208
+									}
+									tmp190 = tmp196
+								}
+								tmp184 = tmp190
+							}
+							tmp181 = tmp184
+						} else {
+							tmp210 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118156, kw_double)
+							var tmp211 any
+							_ = tmp211
+							if tmp210 {
+								tmp212 := v_clojure_DOT_core_number_QMARK_.Get()
+								tmp213 := lang.Apply1(tmp212, v154)
+								var tmp214 any
+								_ = tmp214
+								if lang.IsTruthy(tmp213) {
+									tmp215 := v_clojure_DOT_core_double.Get()
+									tmp216 := lang.Apply1(tmp215, v154)
+									tmp217 := lang.NewVector(kw_ok, tmp216)
+									tmp214 = tmp217
+								} else {
+									tmp218 := v_clojure_DOT_core_string_QMARK_.Get()
+									tmp219 := lang.Apply1(tmp218, v154)
+									var tmp220 any
+									_ = tmp220
+									if lang.IsTruthy(tmp219) {
+										var tmp221 any
+										_ = tmp221
+										{
+											tmp222 := v_clojure_DOT_core_parse_double.Get()
+											tmp223 := v_clojure_DOT_string_trim.Get()
+											tmp224 := lang.Apply1(tmp223, v154)
+											tmp225 := lang.Apply1(tmp222, tmp224)
+											var temp__4__auto__226 any = tmp225
+											_ = temp__4__auto__226
+											var tmp227 any
+											_ = tmp227
+											if lang.IsTruthy(temp__4__auto__226) {
+												var tmp228 any
+												_ = tmp228
+												{
+													var n229 any = temp__4__auto__226
+													_ = n229
+													tmp230 := lang.NewVector(kw_ok, n229)
+													tmp228 = tmp230
+												}
+												tmp227 = tmp228
+											} else {
+												tmp231 := lang.NewVector(kw_err, "expected a number")
+												tmp227 = tmp231
+											}
+											tmp221 = tmp227
+										}
+										tmp220 = tmp221
+									} else {
+										var tmp232 any
+										_ = tmp232
+										if lang.IsTruthy(kw_else_) {
+											tmp233 := lang.NewVector(kw_err, "expected a number")
+											tmp232 = tmp233
+										} else {
+											tmp232 = nil
+										}
+										tmp220 = tmp232
+									}
+									tmp214 = tmp220
+								}
+								tmp211 = tmp214
+							} else {
+								tmp234 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118156, kw_bool_)
+								var tmp235 any
+								_ = tmp235
+								if tmp234 {
+									tmp236 := v_cljg_DOT_data_DOT_cast_coerce_bool.Direct()
+									var tmp237 any
+									if !tmp236 {
+										tmp237 = v_cljg_DOT_data_DOT_cast_coerce_bool.Get()
+									}
+									var tmp238 any
+									if tmp236 {
+										tmp238 = fnD_cljg_DOT_data_DOT_cast_coerce_bool(v154)
+									} else {
+										tmp238 = lang.Apply1(tmp237, v154)
+									}
+									tmp239 := lang.NewVector(kw_ok, tmp238)
+									tmp235 = tmp239
+								} else {
+									tmp240 := v_clojure_DOT_core_str.Get()
+									tmp241 := v_clojure_DOT_core_pr_str.Get()
+									tmp242 := lang.Apply1(tmp241, type_153)
+									tmp243 := lang.Apply2(tmp240, "unknown cast type ", tmp242)
+									tmp244 := lang.NewVector(kw_err, tmp243)
+									tmp235 = tmp244
+								}
+								tmp211 = tmp235
+							}
+							tmp181 = tmp211
+						}
+						tmp169 = tmp181
 					}
-					tmp156 = tmp164
+					tmp161 = tmp169
 				}
-				tmp153 = tmp156
+				tmp158 = tmp161
 			}
-			tmp150 = tmp153
+			tmp155 = tmp158
 		}
-		return tmp150
+		return tmp155
 	})
-	tmp239 := &lang.NamedFn2{Name: "cljg.data.cast/coerce-field", Expects: "2: [type v]", F: tmp147}
-	v_cljg_DOT_data_DOT_cast_coerce_field.BindRoot(tmp239)
+	tmp245 := &lang.NamedFn2{Name: "cljg.data.cast/coerce-field", Expects: "2: [type v]", F: tmp152}
+	v_cljg_DOT_data_DOT_cast_coerce_field.BindRoot(tmp245)
+	fnD_cljg_DOT_data_DOT_cast_coerce_field = tmp245.F
+	v_cljg_DOT_data_DOT_cast_coerce_field.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_coerce_field
 	// (def cast* "The engine: reduce `row` against `schema`, dropping undeclared keys. Returns\n…
 	v_cljg_DOT_data_DOT_cast_cast_STAR_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(131), kw_column, int64(7), kw_end_line, int64(131), kw_end_column, int64(22), kw_private, true, kw_doc, "The engine: reduce `row` against `schema`, dropping undeclared keys. Returns\n  [clean-row errors-map]."))
-	tmp240 := lang.FnFunc2(func(row241, schema242 any) any {
-		tmp243 := v_clojure_DOT_core_reduce.Get()
-		tmp244 := lang.FnFunc2(func(p__119245, f246 any) any {
-			var tmp247 any
-			_ = tmp247
+	tmp246 := lang.FnFunc2(func(row247, schema248 any) any {
+		tmp249 := v_clojure_DOT_core_reduce.Get()
+		tmp250 := lang.FnFunc2(func(p__119251, f252 any) any {
+			var tmp253 any
+			_ = tmp253
 			{
-				var vec__120248 any = p__119245
-				_ = vec__120248
-				tmp249 := v_clojure_DOT_core_nth.Get()
-				tmp250 := lang.Apply3(tmp249, vec__120248, int64(0), nil)
-				var clean251 any = tmp250
-				_ = clean251
-				tmp252 := v_clojure_DOT_core_nth.Get()
-				tmp253 := lang.Apply3(tmp252, vec__120248, int64(1), nil)
-				var errs254 any = tmp253
-				_ = errs254
-				tmp255 := v_clojure_DOT_core_contains_QMARK_.Get()
-				tmp256 := lang.Apply2(tmp255, row241, f246)
-				var tmp257 any
-				_ = tmp257
-				if lang.IsTruthy(tmp256) {
-					var tmp258 any
-					_ = tmp258
+				var vec__120254 any = p__119251
+				_ = vec__120254
+				tmp255 := v_clojure_DOT_core_nth.Get()
+				tmp256 := lang.Apply3(tmp255, vec__120254, int64(0), nil)
+				var clean257 any = tmp256
+				_ = clean257
+				tmp258 := v_clojure_DOT_core_nth.Get()
+				tmp259 := lang.Apply3(tmp258, vec__120254, int64(1), nil)
+				var errs260 any = tmp259
+				_ = errs260
+				tmp261 := v_clojure_DOT_core_contains_QMARK_.Get()
+				tmp262 := lang.Apply2(tmp261, row247, f252)
+				var tmp263 any
+				_ = tmp263
+				if lang.IsTruthy(tmp262) {
+					var tmp264 any
+					_ = tmp264
 					{
-						tmp259 := v_cljg_DOT_data_DOT_cast_coerce_field.Get()
-						tmp260 := v_clojure_DOT_core_get.Get()
-						tmp261 := lang.Apply2(tmp260, schema242, f246)
-						tmp262 := v_clojure_DOT_core_get.Get()
-						tmp263 := lang.Apply2(tmp262, row241, f246)
-						tmp264 := lang.Apply2(tmp259, tmp261, tmp263)
-						var vec__123265 any = tmp264
-						_ = vec__123265
-						tmp266 := v_clojure_DOT_core_nth.Get()
-						tmp267 := lang.Apply3(tmp266, vec__123265, int64(0), nil)
-						var tag268 any = tmp267
-						_ = tag268
-						tmp269 := v_clojure_DOT_core_nth.Get()
-						tmp270 := lang.Apply3(tmp269, vec__123265, int64(1), nil)
-						var v271 any = tmp270
-						_ = v271
-						tmp272 := rt.EQBool(v_clojure_DOT_core_X_EQ_, tag268, kw_ok)
-						var tmp273 any
-						_ = tmp273
-						if tmp272 {
-							tmp274 := v_clojure_DOT_core_assoc.Get()
-							tmp275 := lang.Apply3(tmp274, clean251, f246, v271)
-							tmp276 := lang.NewVector(tmp275, errs254)
-							tmp273 = tmp276
-						} else {
-							tmp277 := v_clojure_DOT_core_assoc.Get()
-							tmp278 := lang.Apply3(tmp277, errs254, f246, v271)
-							tmp279 := lang.NewVector(clean251, tmp278)
-							tmp273 = tmp279
+						tmp265 := v_cljg_DOT_data_DOT_cast_coerce_field.Direct()
+						var tmp266 any
+						if !tmp265 {
+							tmp266 = v_cljg_DOT_data_DOT_cast_coerce_field.Get()
 						}
-						tmp258 = tmp273
+						tmp267 := v_clojure_DOT_core_get.Get()
+						tmp268 := lang.Apply2(tmp267, schema248, f252)
+						tmp269 := v_clojure_DOT_core_get.Get()
+						tmp270 := lang.Apply2(tmp269, row247, f252)
+						var tmp271 any
+						if tmp265 {
+							tmp271 = fnD_cljg_DOT_data_DOT_cast_coerce_field(tmp268, tmp270)
+						} else {
+							tmp271 = lang.Apply2(tmp266, tmp268, tmp270)
+						}
+						var vec__123272 any = tmp271
+						_ = vec__123272
+						tmp273 := v_clojure_DOT_core_nth.Get()
+						tmp274 := lang.Apply3(tmp273, vec__123272, int64(0), nil)
+						var tag275 any = tmp274
+						_ = tag275
+						tmp276 := v_clojure_DOT_core_nth.Get()
+						tmp277 := lang.Apply3(tmp276, vec__123272, int64(1), nil)
+						var v278 any = tmp277
+						_ = v278
+						tmp279 := rt.EQBool(v_clojure_DOT_core_X_EQ_, tag275, kw_ok)
+						var tmp280 any
+						_ = tmp280
+						if tmp279 {
+							tmp281 := v_clojure_DOT_core_assoc.Get()
+							tmp282 := lang.Apply3(tmp281, clean257, f252, v278)
+							tmp283 := lang.NewVector(tmp282, errs260)
+							tmp280 = tmp283
+						} else {
+							tmp284 := v_clojure_DOT_core_assoc.Get()
+							tmp285 := lang.Apply3(tmp284, errs260, f252, v278)
+							tmp286 := lang.NewVector(clean257, tmp285)
+							tmp280 = tmp286
+						}
+						tmp264 = tmp280
 					}
-					tmp257 = tmp258
+					tmp263 = tmp264
 				} else {
-					tmp280 := lang.NewVector(clean251, errs254)
-					tmp257 = tmp280
+					tmp287 := lang.NewVector(clean257, errs260)
+					tmp263 = tmp287
 				}
-				tmp247 = tmp257
+				tmp253 = tmp263
 			}
-			return tmp247
+			return tmp253
 		})
-		tmp281 := &lang.NamedFn2{Name: "fn", Expects: "2: [p__119 f]", F: tmp244}
-		tmp282 := lang.NewMap()
-		tmp283 := lang.NewMap()
-		tmp284 := lang.NewVector(tmp282, tmp283)
-		tmp285 := v_clojure_DOT_core_keys.Get()
-		tmp286 := lang.Apply1(tmp285, schema242)
-		tmp287 := lang.Apply3(tmp243, tmp281, tmp284, tmp286)
-		return tmp287
+		tmp288 := &lang.NamedFn2{Name: "fn", Expects: "2: [p__119 f]", F: tmp250}
+		tmp289 := lang.NewMap()
+		tmp290 := lang.NewMap()
+		tmp291 := lang.NewVector(tmp289, tmp290)
+		tmp292 := v_clojure_DOT_core_keys.Get()
+		tmp293 := lang.Apply1(tmp292, schema248)
+		tmp294 := lang.Apply3(tmp249, tmp288, tmp291, tmp293)
+		return tmp294
 	})
-	tmp288 := &lang.NamedFn2{Name: "cljg.data.cast/cast*", Expects: "2: [row schema]", F: tmp240}
-	v_cljg_DOT_data_DOT_cast_cast_STAR_.BindRoot(tmp288)
+	tmp295 := &lang.NamedFn2{Name: "cljg.data.cast/cast*", Expects: "2: [row schema]", F: tmp246}
+	v_cljg_DOT_data_DOT_cast_cast_STAR_.BindRoot(tmp295)
+	fnD_cljg_DOT_data_DOT_cast_cast_STAR_ = tmp295.F
+	v_cljg_DOT_data_DOT_cast_cast_STAR_.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_cast_STAR_
 	// (def cast "Validate + coerce `row` against `schema` ({field → type-keyword}), DROPPING a…
 	v_cljg_DOT_data_DOT_cast_cast.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(145), kw_column, int64(7), kw_end_line, int64(145), kw_end_column, int64(11), kw_doc, "Validate + coerce `row` against `schema` ({field → type-keyword}), DROPPING any\n  key not in the schema (mass assignment structurally off the path). Returns\n  (ok clean-row) or (err {field message}). Only keys present in `row` are\n  processed. Types: :string :int :long :double :bool :keyword :any."))
-	tmp289 := lang.FnFunc2(func(row290, schema291 any) any {
-		var tmp292 any
-		_ = tmp292
+	tmp296 := lang.FnFunc2(func(row297, schema298 any) any {
+		var tmp299 any
+		_ = tmp299
 		{
-			tmp293 := v_cljg_DOT_data_DOT_cast_cast_STAR_.Get()
-			tmp294 := lang.Apply2(tmp293, row290, schema291)
-			var vec__126295 any = tmp294
-			_ = vec__126295
-			tmp296 := v_clojure_DOT_core_nth.Get()
-			tmp297 := lang.Apply3(tmp296, vec__126295, int64(0), nil)
-			var clean298 any = tmp297
-			_ = clean298
-			tmp299 := v_clojure_DOT_core_nth.Get()
-			tmp300 := lang.Apply3(tmp299, vec__126295, int64(1), nil)
-			var errs301 any = tmp300
-			_ = errs301
-			tmp302 := v_clojure_DOT_core_empty_QMARK_.Get()
-			tmp303 := lang.Apply1(tmp302, errs301)
-			var tmp304 any
-			_ = tmp304
-			if lang.IsTruthy(tmp303) {
-				tmp305 := v_clojure_DOT_core_ok.Get()
-				tmp306 := lang.Apply1(tmp305, clean298)
-				tmp304 = tmp306
-			} else {
-				tmp307 := v_clojure_DOT_core_err.Get()
-				tmp308 := lang.Apply1(tmp307, errs301)
-				tmp304 = tmp308
+			tmp300 := v_cljg_DOT_data_DOT_cast_cast_STAR_.Direct()
+			var tmp301 any
+			if !tmp300 {
+				tmp301 = v_cljg_DOT_data_DOT_cast_cast_STAR_.Get()
 			}
-			tmp292 = tmp304
+			var tmp302 any
+			if tmp300 {
+				tmp302 = fnD_cljg_DOT_data_DOT_cast_cast_STAR_(row297, schema298)
+			} else {
+				tmp302 = lang.Apply2(tmp301, row297, schema298)
+			}
+			var vec__126303 any = tmp302
+			_ = vec__126303
+			tmp304 := v_clojure_DOT_core_nth.Get()
+			tmp305 := lang.Apply3(tmp304, vec__126303, int64(0), nil)
+			var clean306 any = tmp305
+			_ = clean306
+			tmp307 := v_clojure_DOT_core_nth.Get()
+			tmp308 := lang.Apply3(tmp307, vec__126303, int64(1), nil)
+			var errs309 any = tmp308
+			_ = errs309
+			tmp310 := v_clojure_DOT_core_empty_QMARK_.Get()
+			tmp311 := lang.Apply1(tmp310, errs309)
+			var tmp312 any
+			_ = tmp312
+			if lang.IsTruthy(tmp311) {
+				tmp313 := v_clojure_DOT_core_ok.Get()
+				tmp314 := lang.Apply1(tmp313, clean306)
+				tmp312 = tmp314
+			} else {
+				tmp315 := v_clojure_DOT_core_err.Get()
+				tmp316 := lang.Apply1(tmp315, errs309)
+				tmp312 = tmp316
+			}
+			tmp299 = tmp312
 		}
-		return tmp292
+		return tmp299
 	})
-	tmp309 := &lang.NamedFn2{Name: "cljg.data.cast/cast", Expects: "2: [row schema]", F: tmp289}
-	v_cljg_DOT_data_DOT_cast_cast.BindRoot(tmp309)
+	tmp317 := &lang.NamedFn2{Name: "cljg.data.cast/cast", Expects: "2: [row schema]", F: tmp296}
+	v_cljg_DOT_data_DOT_cast_cast.BindRoot(tmp317)
+	fnD_cljg_DOT_data_DOT_cast_cast = tmp317.F
+	v_cljg_DOT_data_DOT_cast_cast.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_cast
 	// (def cast! "Like `cast`, but returns the clean row on success and THROWS\n  cljg.data.cast…
 	v_cljg_DOT_data_DOT_cast_cast_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(154), kw_column, int64(7), kw_end_line, int64(154), kw_end_column, int64(12), kw_doc, "Like `cast`, but returns the clean row on success and THROWS\n  cljg.data.cast/cast (ex-info with :errors) on any validation failure — the\n  fail-fast form for a controller that treats bad input as a 400."))
-	tmp310 := lang.FnFunc2(func(row311, schema312 any) any {
-		var tmp313 any
-		_ = tmp313
+	tmp318 := lang.FnFunc2(func(row319, schema320 any) any {
+		var tmp321 any
+		_ = tmp321
 		{
-			tmp314 := v_cljg_DOT_data_DOT_cast_cast_STAR_.Get()
-			tmp315 := lang.Apply2(tmp314, row311, schema312)
-			var vec__129316 any = tmp315
-			_ = vec__129316
-			tmp317 := v_clojure_DOT_core_nth.Get()
-			tmp318 := lang.Apply3(tmp317, vec__129316, int64(0), nil)
-			var clean319 any = tmp318
-			_ = clean319
-			tmp320 := v_clojure_DOT_core_nth.Get()
-			tmp321 := lang.Apply3(tmp320, vec__129316, int64(1), nil)
-			var errs322 any = tmp321
-			_ = errs322
-			tmp323 := v_clojure_DOT_core_empty_QMARK_.Get()
-			tmp324 := lang.Apply1(tmp323, errs322)
-			var tmp325 any
-			_ = tmp325
-			if lang.IsTruthy(tmp324) {
-				tmp325 = clean319
-			} else {
-				tmp326 := v_clojure_DOT_core_ex_info.Get()
-				tmp327 := lang.NewMap(kw_cljg_DOT_data_DOT_cast_SLASH_error, kw_cljg_DOT_data_DOT_cast_SLASH_cast, kw_errors, errs322)
-				tmp328 := lang.Apply2(tmp326, "cljg.data.cast/cast: input failed validation", tmp327)
-				panic(rt.Throw(tmp328))
+			tmp322 := v_cljg_DOT_data_DOT_cast_cast_STAR_.Direct()
+			var tmp323 any
+			if !tmp322 {
+				tmp323 = v_cljg_DOT_data_DOT_cast_cast_STAR_.Get()
 			}
-			tmp313 = tmp325
+			var tmp324 any
+			if tmp322 {
+				tmp324 = fnD_cljg_DOT_data_DOT_cast_cast_STAR_(row319, schema320)
+			} else {
+				tmp324 = lang.Apply2(tmp323, row319, schema320)
+			}
+			var vec__129325 any = tmp324
+			_ = vec__129325
+			tmp326 := v_clojure_DOT_core_nth.Get()
+			tmp327 := lang.Apply3(tmp326, vec__129325, int64(0), nil)
+			var clean328 any = tmp327
+			_ = clean328
+			tmp329 := v_clojure_DOT_core_nth.Get()
+			tmp330 := lang.Apply3(tmp329, vec__129325, int64(1), nil)
+			var errs331 any = tmp330
+			_ = errs331
+			tmp332 := v_clojure_DOT_core_empty_QMARK_.Get()
+			tmp333 := lang.Apply1(tmp332, errs331)
+			var tmp334 any
+			_ = tmp334
+			if lang.IsTruthy(tmp333) {
+				tmp334 = clean328
+			} else {
+				tmp335 := v_clojure_DOT_core_ex_info.Get()
+				tmp336 := lang.NewMap(kw_cljg_DOT_data_DOT_cast_SLASH_error, kw_cljg_DOT_data_DOT_cast_SLASH_cast, kw_errors, errs331)
+				tmp337 := lang.Apply2(tmp335, "cljg.data.cast/cast: input failed validation", tmp336)
+				panic(rt.Throw(tmp337))
+			}
+			tmp321 = tmp334
 		}
-		return tmp313
+		return tmp321
 	})
-	tmp329 := &lang.NamedFn2{Name: "cljg.data.cast/cast!", Expects: "2: [row schema]", F: tmp310}
-	v_cljg_DOT_data_DOT_cast_cast_BANG_.BindRoot(tmp329)
+	tmp338 := &lang.NamedFn2{Name: "cljg.data.cast/cast!", Expects: "2: [row schema]", F: tmp318}
+	v_cljg_DOT_data_DOT_cast_cast_BANG_.BindRoot(tmp338)
+	fnD_cljg_DOT_data_DOT_cast_cast_BANG_ = tmp338.F
+	v_cljg_DOT_data_DOT_cast_cast_BANG_.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_cast_BANG_
 	// (def insert! "Insert one row from a map (kebab keys → snake columns), parametrized.\n  R…
 	v_cljg_DOT_data_DOT_cast_insert_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(165), kw_column, int64(7), kw_end_line, int64(165), kw_end_column, int64(14), kw_doc, "Insert one row from a map (kebab keys → snake columns), parametrized.\n  Returns {:rows-affected :last-insert-id} (SQLite fills :last-insert-id)."))
-	tmp330 := lang.FnFunc3(func(db331, table332, row333 any) any {
-		var tmp334 any
-		_ = tmp334
+	tmp339 := lang.FnFunc3(func(db340, table341, row342 any) any {
+		var tmp343 any
+		_ = tmp343
 		{
-			tmp335 := v_clojure_DOT_core_keys.Get()
-			tmp336 := lang.Apply1(tmp335, row333)
-			var cols337 any = tmp336
-			_ = cols337
-			tmp338 := v_clojure_DOT_core_str.Get()
-			tmp339 := v_clojure_DOT_core_name.Get()
-			tmp340 := lang.Apply1(tmp339, table332)
-			tmp341 := v_clojure_DOT_string_join.Get()
-			tmp342 := v_clojure_DOT_core_map_.Get()
-			tmp343 := v_cljg_DOT_data_DOT_cast_col_name.Get()
-			tmp344 := lang.Apply2(tmp342, tmp343, cols337)
-			tmp345 := lang.Apply2(tmp341, ", ", tmp344)
-			tmp346 := v_clojure_DOT_string_join.Get()
-			tmp347 := v_clojure_DOT_core_map_.Get()
-			tmp348 := v_clojure_DOT_core_constantly.Get()
-			tmp349 := lang.Apply1(tmp348, "?")
-			tmp350 := lang.Apply2(tmp347, tmp349, cols337)
-			tmp351 := lang.Apply2(tmp346, ", ", tmp350)
-			tmp352 := lang.Apply(tmp338, []any{"insert into ", tmp340, " (", tmp345, ")", " values (", tmp351, ")"})
-			var sql353 any = tmp352
-			_ = sql353
-			tmp354 := v_clojure_DOT_core_apply.Get()
-			tmp355 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
+			tmp344 := v_clojure_DOT_core_keys.Get()
+			tmp345 := lang.Apply1(tmp344, row342)
+			var cols346 any = tmp345
+			_ = cols346
+			tmp347 := v_clojure_DOT_core_str.Get()
+			tmp348 := v_clojure_DOT_core_name.Get()
+			tmp349 := lang.Apply1(tmp348, table341)
+			tmp350 := v_clojure_DOT_string_join.Get()
+			tmp351 := v_clojure_DOT_core_map_.Get()
+			tmp352 := v_cljg_DOT_data_DOT_cast_col_name.Get()
+			tmp353 := lang.Apply2(tmp351, tmp352, cols346)
+			tmp354 := lang.Apply2(tmp350, ", ", tmp353)
+			tmp355 := v_clojure_DOT_string_join.Get()
 			tmp356 := v_clojure_DOT_core_map_.Get()
-			tmp357 := lang.FnFunc1(func(p1__44_SHARP_358 any) any {
-				tmp359 := v_clojure_DOT_core_get.Get()
-				tmp360 := lang.Apply2(tmp359, row333, p1__44_SHARP_358)
-				return tmp360
+			tmp357 := v_clojure_DOT_core_constantly.Get()
+			tmp358 := lang.Apply1(tmp357, "?")
+			tmp359 := lang.Apply2(tmp356, tmp358, cols346)
+			tmp360 := lang.Apply2(tmp355, ", ", tmp359)
+			tmp361 := lang.Apply(tmp347, []any{"insert into ", tmp349, " (", tmp354, ")", " values (", tmp360, ")"})
+			var sql362 any = tmp361
+			_ = sql362
+			tmp363 := v_clojure_DOT_core_apply.Get()
+			tmp364 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
+			tmp365 := v_clojure_DOT_core_map_.Get()
+			tmp366 := lang.FnFunc1(func(p1__44_SHARP_367 any) any {
+				tmp368 := v_clojure_DOT_core_get.Get()
+				tmp369 := lang.Apply2(tmp368, row342, p1__44_SHARP_367)
+				return tmp369
 			})
-			tmp361 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__44#]", F: tmp357}
-			tmp362 := lang.Apply2(tmp356, tmp361, cols337)
-			tmp363 := lang.Apply4(tmp354, tmp355, db331, sql353, tmp362)
-			tmp334 = tmp363
+			tmp370 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__44#]", F: tmp366}
+			tmp371 := lang.Apply2(tmp365, tmp370, cols346)
+			tmp372 := lang.Apply4(tmp363, tmp364, db340, sql362, tmp371)
+			tmp343 = tmp372
 		}
-		return tmp334
+		return tmp343
 	})
-	tmp364 := &lang.NamedFn3{Name: "cljg.data.cast/insert!", Expects: "3: [db table row]", F: tmp330}
-	v_cljg_DOT_data_DOT_cast_insert_BANG_.BindRoot(tmp364)
+	tmp373 := &lang.NamedFn3{Name: "cljg.data.cast/insert!", Expects: "3: [db table row]", F: tmp339}
+	v_cljg_DOT_data_DOT_cast_insert_BANG_.BindRoot(tmp373)
+	fnD_cljg_DOT_data_DOT_cast_insert_BANG_ = tmp373.F
+	v_cljg_DOT_data_DOT_cast_insert_BANG_.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_insert_BANG_
 	// (def update! "Update rows matching where-map with set-map (both kebab→snake),\n  paramet…
 	v_cljg_DOT_data_DOT_cast_update_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(175), kw_column, int64(7), kw_end_line, int64(175), kw_end_column, int64(14), kw_doc, "Update rows matching where-map with set-map (both kebab→snake),\n  parametrized. Returns {:rows-affected …}."))
-	tmp365 := lang.FnFunc4(func(db366, table367, set_map368, where_map369 any) any {
-		var tmp370 any
-		_ = tmp370
+	tmp374 := lang.FnFunc4(func(db375, table376, set_map377, where_map378 any) any {
+		var tmp379 any
+		_ = tmp379
 		{
-			tmp371 := v_clojure_DOT_core_keys.Get()
-			tmp372 := lang.Apply1(tmp371, set_map368)
-			var set_cols373 any = tmp372
-			_ = set_cols373
-			tmp374 := v_clojure_DOT_core_keys.Get()
-			tmp375 := lang.Apply1(tmp374, where_map369)
-			var where_cols376 any = tmp375
-			_ = where_cols376
-			tmp377 := v_clojure_DOT_string_join.Get()
-			tmp378 := v_clojure_DOT_core_map_.Get()
-			tmp379 := lang.FnFunc1(func(p1__45_SHARP_380 any) any {
-				tmp381 := v_clojure_DOT_core_str.Get()
-				tmp382 := v_cljg_DOT_data_DOT_cast_col_name.Get()
-				tmp383 := lang.Apply1(tmp382, p1__45_SHARP_380)
-				tmp384 := lang.Apply2(tmp381, tmp383, " = ?")
-				return tmp384
+			tmp380 := v_clojure_DOT_core_keys.Get()
+			tmp381 := lang.Apply1(tmp380, set_map377)
+			var set_cols382 any = tmp381
+			_ = set_cols382
+			tmp383 := v_clojure_DOT_core_keys.Get()
+			tmp384 := lang.Apply1(tmp383, where_map378)
+			var where_cols385 any = tmp384
+			_ = where_cols385
+			tmp386 := v_clojure_DOT_string_join.Get()
+			tmp387 := v_clojure_DOT_core_map_.Get()
+			tmp388 := lang.FnFunc1(func(p1__45_SHARP_389 any) any {
+				tmp390 := v_clojure_DOT_core_str.Get()
+				tmp391 := v_cljg_DOT_data_DOT_cast_col_name.Direct()
+				var tmp392 any
+				if !tmp391 {
+					tmp392 = v_cljg_DOT_data_DOT_cast_col_name.Get()
+				}
+				var tmp393 any
+				if tmp391 {
+					tmp393 = fnD_cljg_DOT_data_DOT_cast_col_name(p1__45_SHARP_389)
+				} else {
+					tmp393 = lang.Apply1(tmp392, p1__45_SHARP_389)
+				}
+				tmp394 := lang.Apply2(tmp390, tmp393, " = ?")
+				return tmp394
 			})
-			tmp385 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__45#]", F: tmp379}
-			tmp386 := lang.Apply2(tmp378, tmp385, set_cols373)
-			tmp387 := lang.Apply2(tmp377, ", ", tmp386)
-			var set_cl388 any = tmp387
-			_ = set_cl388
-			tmp389 := v_clojure_DOT_string_join.Get()
-			tmp390 := v_clojure_DOT_core_map_.Get()
-			tmp391 := lang.FnFunc1(func(p1__46_SHARP_392 any) any {
-				tmp393 := v_clojure_DOT_core_str.Get()
-				tmp394 := v_cljg_DOT_data_DOT_cast_col_name.Get()
-				tmp395 := lang.Apply1(tmp394, p1__46_SHARP_392)
-				tmp396 := lang.Apply2(tmp393, tmp395, " = ?")
-				return tmp396
+			tmp395 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__45#]", F: tmp388}
+			tmp396 := lang.Apply2(tmp387, tmp395, set_cols382)
+			tmp397 := lang.Apply2(tmp386, ", ", tmp396)
+			var set_cl398 any = tmp397
+			_ = set_cl398
+			tmp399 := v_clojure_DOT_string_join.Get()
+			tmp400 := v_clojure_DOT_core_map_.Get()
+			tmp401 := lang.FnFunc1(func(p1__46_SHARP_402 any) any {
+				tmp403 := v_clojure_DOT_core_str.Get()
+				tmp404 := v_cljg_DOT_data_DOT_cast_col_name.Direct()
+				var tmp405 any
+				if !tmp404 {
+					tmp405 = v_cljg_DOT_data_DOT_cast_col_name.Get()
+				}
+				var tmp406 any
+				if tmp404 {
+					tmp406 = fnD_cljg_DOT_data_DOT_cast_col_name(p1__46_SHARP_402)
+				} else {
+					tmp406 = lang.Apply1(tmp405, p1__46_SHARP_402)
+				}
+				tmp407 := lang.Apply2(tmp403, tmp406, " = ?")
+				return tmp407
 			})
-			tmp397 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__46#]", F: tmp391}
-			tmp398 := lang.Apply2(tmp390, tmp397, where_cols376)
-			tmp399 := lang.Apply2(tmp389, " and ", tmp398)
-			var where_cl400 any = tmp399
-			_ = where_cl400
-			tmp401 := v_clojure_DOT_core_str.Get()
-			tmp402 := v_clojure_DOT_core_name.Get()
-			tmp403 := lang.Apply1(tmp402, table367)
-			tmp404 := v_clojure_DOT_core_seq.Get()
-			tmp405 := lang.Apply1(tmp404, where_cols376)
-			var tmp406 any
-			_ = tmp406
-			if lang.IsTruthy(tmp405) {
-				tmp407 := v_clojure_DOT_core_str.Get()
-				tmp408 := lang.Apply2(tmp407, " where ", where_cl400)
-				tmp406 = tmp408
+			tmp408 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__46#]", F: tmp401}
+			tmp409 := lang.Apply2(tmp400, tmp408, where_cols385)
+			tmp410 := lang.Apply2(tmp399, " and ", tmp409)
+			var where_cl411 any = tmp410
+			_ = where_cl411
+			tmp412 := v_clojure_DOT_core_str.Get()
+			tmp413 := v_clojure_DOT_core_name.Get()
+			tmp414 := lang.Apply1(tmp413, table376)
+			tmp415 := v_clojure_DOT_core_seq.Get()
+			tmp416 := lang.Apply1(tmp415, where_cols385)
+			var tmp417 any
+			_ = tmp417
+			if lang.IsTruthy(tmp416) {
+				tmp418 := v_clojure_DOT_core_str.Get()
+				tmp419 := lang.Apply2(tmp418, " where ", where_cl411)
+				tmp417 = tmp419
 			} else {
-				tmp406 = nil
+				tmp417 = nil
 			}
-			tmp409 := lang.Apply(tmp401, []any{"update ", tmp403, " set ", set_cl388, tmp406})
-			var sql410 any = tmp409
-			_ = sql410
-			tmp411 := v_clojure_DOT_core_apply.Get()
-			tmp412 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
-			tmp413 := v_clojure_DOT_core_concat.Get()
-			tmp414 := v_clojure_DOT_core_map_.Get()
-			tmp415 := lang.FnFunc1(func(p1__47_SHARP_416 any) any {
-				tmp417 := v_clojure_DOT_core_get.Get()
-				tmp418 := lang.Apply2(tmp417, set_map368, p1__47_SHARP_416)
-				return tmp418
+			tmp420 := lang.Apply(tmp412, []any{"update ", tmp414, " set ", set_cl398, tmp417})
+			var sql421 any = tmp420
+			_ = sql421
+			tmp422 := v_clojure_DOT_core_apply.Get()
+			tmp423 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
+			tmp424 := v_clojure_DOT_core_concat.Get()
+			tmp425 := v_clojure_DOT_core_map_.Get()
+			tmp426 := lang.FnFunc1(func(p1__47_SHARP_427 any) any {
+				tmp428 := v_clojure_DOT_core_get.Get()
+				tmp429 := lang.Apply2(tmp428, set_map377, p1__47_SHARP_427)
+				return tmp429
 			})
-			tmp419 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__47#]", F: tmp415}
-			tmp420 := lang.Apply2(tmp414, tmp419, set_cols373)
-			tmp421 := v_clojure_DOT_core_map_.Get()
-			tmp422 := lang.FnFunc1(func(p1__48_SHARP_423 any) any {
-				tmp424 := v_clojure_DOT_core_get.Get()
-				tmp425 := lang.Apply2(tmp424, where_map369, p1__48_SHARP_423)
-				return tmp425
+			tmp430 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__47#]", F: tmp426}
+			tmp431 := lang.Apply2(tmp425, tmp430, set_cols382)
+			tmp432 := v_clojure_DOT_core_map_.Get()
+			tmp433 := lang.FnFunc1(func(p1__48_SHARP_434 any) any {
+				tmp435 := v_clojure_DOT_core_get.Get()
+				tmp436 := lang.Apply2(tmp435, where_map378, p1__48_SHARP_434)
+				return tmp436
 			})
-			tmp426 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__48#]", F: tmp422}
-			tmp427 := lang.Apply2(tmp421, tmp426, where_cols376)
-			tmp428 := lang.Apply2(tmp413, tmp420, tmp427)
-			tmp429 := lang.Apply4(tmp411, tmp412, db366, sql410, tmp428)
-			tmp370 = tmp429
+			tmp437 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__48#]", F: tmp433}
+			tmp438 := lang.Apply2(tmp432, tmp437, where_cols385)
+			tmp439 := lang.Apply2(tmp424, tmp431, tmp438)
+			tmp440 := lang.Apply4(tmp422, tmp423, db375, sql421, tmp439)
+			tmp379 = tmp440
 		}
-		return tmp370
+		return tmp379
 	})
-	tmp430 := &lang.NamedFn4{Name: "cljg.data.cast/update!", Expects: "4: [db table set-map where-map]", F: tmp365}
-	v_cljg_DOT_data_DOT_cast_update_BANG_.BindRoot(tmp430)
+	tmp441 := &lang.NamedFn4{Name: "cljg.data.cast/update!", Expects: "4: [db table set-map where-map]", F: tmp374}
+	v_cljg_DOT_data_DOT_cast_update_BANG_.BindRoot(tmp441)
+	fnD_cljg_DOT_data_DOT_cast_update_BANG_ = tmp441.F
+	v_cljg_DOT_data_DOT_cast_update_BANG_.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_update_BANG_
 	// (def delete! "Delete rows matching where-map (kebab→snake), parametrized.\n  Returns {:r…
 	v_cljg_DOT_data_DOT_cast_delete_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(188), kw_column, int64(7), kw_end_line, int64(188), kw_end_column, int64(14), kw_doc, "Delete rows matching where-map (kebab→snake), parametrized.\n  Returns {:rows-affected …}."))
-	tmp431 := lang.FnFunc3(func(db432, table433, where_map434 any) any {
-		var tmp435 any
-		_ = tmp435
+	tmp442 := lang.FnFunc3(func(db443, table444, where_map445 any) any {
+		var tmp446 any
+		_ = tmp446
 		{
-			tmp436 := v_clojure_DOT_core_keys.Get()
-			tmp437 := lang.Apply1(tmp436, where_map434)
-			var where_cols438 any = tmp437
-			_ = where_cols438
-			tmp439 := v_clojure_DOT_string_join.Get()
-			tmp440 := v_clojure_DOT_core_map_.Get()
-			tmp441 := lang.FnFunc1(func(p1__49_SHARP_442 any) any {
-				tmp443 := v_clojure_DOT_core_str.Get()
-				tmp444 := v_cljg_DOT_data_DOT_cast_col_name.Get()
-				tmp445 := lang.Apply1(tmp444, p1__49_SHARP_442)
-				tmp446 := lang.Apply2(tmp443, tmp445, " = ?")
-				return tmp446
+			tmp447 := v_clojure_DOT_core_keys.Get()
+			tmp448 := lang.Apply1(tmp447, where_map445)
+			var where_cols449 any = tmp448
+			_ = where_cols449
+			tmp450 := v_clojure_DOT_string_join.Get()
+			tmp451 := v_clojure_DOT_core_map_.Get()
+			tmp452 := lang.FnFunc1(func(p1__49_SHARP_453 any) any {
+				tmp454 := v_clojure_DOT_core_str.Get()
+				tmp455 := v_cljg_DOT_data_DOT_cast_col_name.Direct()
+				var tmp456 any
+				if !tmp455 {
+					tmp456 = v_cljg_DOT_data_DOT_cast_col_name.Get()
+				}
+				var tmp457 any
+				if tmp455 {
+					tmp457 = fnD_cljg_DOT_data_DOT_cast_col_name(p1__49_SHARP_453)
+				} else {
+					tmp457 = lang.Apply1(tmp456, p1__49_SHARP_453)
+				}
+				tmp458 := lang.Apply2(tmp454, tmp457, " = ?")
+				return tmp458
 			})
-			tmp447 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__49#]", F: tmp441}
-			tmp448 := lang.Apply2(tmp440, tmp447, where_cols438)
-			tmp449 := lang.Apply2(tmp439, " and ", tmp448)
-			var where_cl450 any = tmp449
-			_ = where_cl450
-			tmp451 := v_clojure_DOT_core_str.Get()
-			tmp452 := v_clojure_DOT_core_name.Get()
-			tmp453 := lang.Apply1(tmp452, table433)
-			tmp454 := v_clojure_DOT_core_seq.Get()
-			tmp455 := lang.Apply1(tmp454, where_cols438)
-			var tmp456 any
-			_ = tmp456
-			if lang.IsTruthy(tmp455) {
-				tmp457 := v_clojure_DOT_core_str.Get()
-				tmp458 := lang.Apply2(tmp457, " where ", where_cl450)
-				tmp456 = tmp458
+			tmp459 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__49#]", F: tmp452}
+			tmp460 := lang.Apply2(tmp451, tmp459, where_cols449)
+			tmp461 := lang.Apply2(tmp450, " and ", tmp460)
+			var where_cl462 any = tmp461
+			_ = where_cl462
+			tmp463 := v_clojure_DOT_core_str.Get()
+			tmp464 := v_clojure_DOT_core_name.Get()
+			tmp465 := lang.Apply1(tmp464, table444)
+			tmp466 := v_clojure_DOT_core_seq.Get()
+			tmp467 := lang.Apply1(tmp466, where_cols449)
+			var tmp468 any
+			_ = tmp468
+			if lang.IsTruthy(tmp467) {
+				tmp469 := v_clojure_DOT_core_str.Get()
+				tmp470 := lang.Apply2(tmp469, " where ", where_cl462)
+				tmp468 = tmp470
 			} else {
-				tmp456 = nil
+				tmp468 = nil
 			}
-			tmp459 := lang.Apply3(tmp451, "delete from ", tmp453, tmp456)
-			var sql460 any = tmp459
-			_ = sql460
-			tmp461 := v_clojure_DOT_core_apply.Get()
-			tmp462 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
-			tmp463 := v_clojure_DOT_core_map_.Get()
-			tmp464 := lang.FnFunc1(func(p1__50_SHARP_465 any) any {
-				tmp466 := v_clojure_DOT_core_get.Get()
-				tmp467 := lang.Apply2(tmp466, where_map434, p1__50_SHARP_465)
-				return tmp467
+			tmp471 := lang.Apply3(tmp463, "delete from ", tmp465, tmp468)
+			var sql472 any = tmp471
+			_ = sql472
+			tmp473 := v_clojure_DOT_core_apply.Get()
+			tmp474 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
+			tmp475 := v_clojure_DOT_core_map_.Get()
+			tmp476 := lang.FnFunc1(func(p1__50_SHARP_477 any) any {
+				tmp478 := v_clojure_DOT_core_get.Get()
+				tmp479 := lang.Apply2(tmp478, where_map445, p1__50_SHARP_477)
+				return tmp479
 			})
-			tmp468 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__50#]", F: tmp464}
-			tmp469 := lang.Apply2(tmp463, tmp468, where_cols438)
-			tmp470 := lang.Apply4(tmp461, tmp462, db432, sql460, tmp469)
-			tmp435 = tmp470
+			tmp480 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__50#]", F: tmp476}
+			tmp481 := lang.Apply2(tmp475, tmp480, where_cols449)
+			tmp482 := lang.Apply4(tmp473, tmp474, db443, sql472, tmp481)
+			tmp446 = tmp482
 		}
-		return tmp435
+		return tmp446
 	})
-	tmp471 := &lang.NamedFn3{Name: "cljg.data.cast/delete!", Expects: "3: [db table where-map]", F: tmp431}
-	v_cljg_DOT_data_DOT_cast_delete_BANG_.BindRoot(tmp471)
+	tmp483 := &lang.NamedFn3{Name: "cljg.data.cast/delete!", Expects: "3: [db table where-map]", F: tmp442}
+	v_cljg_DOT_data_DOT_cast_delete_BANG_.BindRoot(tmp483)
+	fnD_cljg_DOT_data_DOT_cast_delete_BANG_ = tmp483.F
+	v_cljg_DOT_data_DOT_cast_delete_BANG_.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_delete_BANG_
 	// (def tx "Run (f tx-conn) in a transaction: COMMIT on normal return, ROLL BACK\n  on any th…
 	v_cljg_DOT_data_DOT_cast_tx.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(199), kw_column, int64(7), kw_end_line, int64(199), kw_end_column, int64(9), kw_doc, "Run (f tx-conn) in a transaction: COMMIT on normal return, ROLL BACK\n  on any throw (re-raising). tx-conn drives the identical read/write\n  verbs. Called on a tx handle, runs inline (no nested savepoints on the\n  blessed path)."))
-	tmp472 := lang.FnFunc2(func(db473, f474 any) any {
-		tmp475 := lang.Apply1(kw_tx, db473)
-		var tmp476 any
-		_ = tmp476
-		if lang.IsTruthy(tmp475) {
-			tmp477 := lang.Apply1(f474, db473)
-			tmp476 = tmp477
+	tmp484 := lang.FnFunc2(func(db485, f486 any) any {
+		tmp487 := lang.Apply1(kw_tx, db485)
+		var tmp488 any
+		_ = tmp488
+		if lang.IsTruthy(tmp487) {
+			tmp489 := lang.Apply1(f486, db485)
+			tmp488 = tmp489
 		} else {
-			var tmp478 any
-			_ = tmp478
+			var tmp490 any
+			_ = tmp490
 			{
-				tmp479 := v_clojure_DOT_core_assoc.Get()
-				tmp480 := v_cljg_DOT_data_DOT_cast_X_db_begin.Get()
-				tmp481 := v_cljg_DOT_data_DOT_cast_handle.Get()
-				tmp482 := lang.Apply1(tmp481, db473)
-				tmp483 := lang.Apply1(tmp480, tmp482)
-				tmp484 := lang.Apply(tmp479, []any{db473, kw_cljg_DOT_data_DOT_cast_SLASH_handle, tmp483, kw_tx, true})
-				var t485 any = tmp484
-				_ = t485
-				var tmp486 any
-				_ = tmp486
+				tmp491 := v_clojure_DOT_core_assoc.Get()
+				tmp492 := v_cljg_DOT_data_DOT_cast_X_db_begin.Get()
+				tmp493 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+				var tmp494 any
+				if !tmp493 {
+					tmp494 = v_cljg_DOT_data_DOT_cast_handle.Get()
+				}
+				var tmp495 any
+				if tmp493 {
+					tmp495 = fnD_cljg_DOT_data_DOT_cast_handle(db485)
+				} else {
+					tmp495 = lang.Apply1(tmp494, db485)
+				}
+				tmp496 := lang.Apply1(tmp492, tmp495)
+				tmp497 := lang.Apply(tmp491, []any{db485, kw_cljg_DOT_data_DOT_cast_SLASH_handle, tmp496, kw_tx, true})
+				var t498 any = tmp497
+				_ = t498
+				var tmp499 any
+				_ = tmp499
 				func() {
 					defer func() {
 						if r := recover(); r != nil {
 							thrown := rt.Recover(r)
 							if rt.CatchMatches("Throwable", thrown) {
-								var e487 any = thrown
-								_ = e487
-								tmp488 := v_cljg_DOT_data_DOT_cast_X_db_rollback.Get()
-								tmp489 := v_cljg_DOT_data_DOT_cast_handle.Get()
-								tmp490 := lang.Apply1(tmp489, t485)
-								tmp491 := lang.Apply1(tmp488, tmp490)
-								_ = tmp491
-								panic(rt.Throw(e487))
+								var e500 any = thrown
+								_ = e500
+								tmp501 := v_cljg_DOT_data_DOT_cast_X_db_rollback.Get()
+								tmp502 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+								var tmp503 any
+								if !tmp502 {
+									tmp503 = v_cljg_DOT_data_DOT_cast_handle.Get()
+								}
+								var tmp504 any
+								if tmp502 {
+									tmp504 = fnD_cljg_DOT_data_DOT_cast_handle(t498)
+								} else {
+									tmp504 = lang.Apply1(tmp503, t498)
+								}
+								tmp505 := lang.Apply1(tmp501, tmp504)
+								_ = tmp505
+								panic(rt.Throw(e500))
 							}
 							panic(r)
 						}
 					}()
-					var tmp492 any
-					_ = tmp492
+					var tmp506 any
+					_ = tmp506
 					{
-						tmp493 := lang.Apply1(f474, t485)
-						var result494 any = tmp493
-						_ = result494
-						tmp495 := v_cljg_DOT_data_DOT_cast_X_db_commit.Get()
-						tmp496 := v_cljg_DOT_data_DOT_cast_handle.Get()
-						tmp497 := lang.Apply1(tmp496, t485)
-						tmp498 := lang.Apply1(tmp495, tmp497)
-						_ = tmp498
-						tmp492 = result494
+						tmp507 := lang.Apply1(f486, t498)
+						var result508 any = tmp507
+						_ = result508
+						tmp509 := v_cljg_DOT_data_DOT_cast_X_db_commit.Get()
+						tmp510 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+						var tmp511 any
+						if !tmp510 {
+							tmp511 = v_cljg_DOT_data_DOT_cast_handle.Get()
+						}
+						var tmp512 any
+						if tmp510 {
+							tmp512 = fnD_cljg_DOT_data_DOT_cast_handle(t498)
+						} else {
+							tmp512 = lang.Apply1(tmp511, t498)
+						}
+						tmp513 := lang.Apply1(tmp509, tmp512)
+						_ = tmp513
+						tmp506 = result508
 					}
-					tmp486 = tmp492
+					tmp499 = tmp506
 				}()
-				tmp478 = tmp486
+				tmp490 = tmp499
 			}
-			tmp476 = tmp478
+			tmp488 = tmp490
 		}
-		return tmp476
+		return tmp488
 	})
-	tmp499 := &lang.NamedFn2{Name: "cljg.data.cast/tx", Expects: "2: [db f]", F: tmp472}
-	v_cljg_DOT_data_DOT_cast_tx.BindRoot(tmp499)
+	tmp514 := &lang.NamedFn2{Name: "cljg.data.cast/tx", Expects: "2: [db f]", F: tmp484}
+	v_cljg_DOT_data_DOT_cast_tx.BindRoot(tmp514)
+	fnD_cljg_DOT_data_DOT_cast_tx = tmp514.F
+	v_cljg_DOT_data_DOT_cast_tx.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_tx
 	// (def with-rollback "Run (f tx-conn) in a transaction that is ALWAYS rolled back — the\n …
 	v_cljg_DOT_data_DOT_cast_with_rollback.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(216), kw_column, int64(7), kw_end_line, int64(216), kw_end_column, int64(20), kw_doc, "Run (f tx-conn) in a transaction that is ALWAYS rolled back — the\n  per-test sandbox (Ecto-Sandbox shape, ADR 0058). Returns (f tx-conn)."))
-	tmp500 := lang.FnFunc2(func(db501, f502 any) any {
-		var tmp503 any
-		_ = tmp503
+	tmp515 := lang.FnFunc2(func(db516, f517 any) any {
+		var tmp518 any
+		_ = tmp518
 		{
-			tmp504 := v_clojure_DOT_core_assoc.Get()
-			tmp505 := v_cljg_DOT_data_DOT_cast_X_db_begin.Get()
-			tmp506 := v_cljg_DOT_data_DOT_cast_handle.Get()
-			tmp507 := lang.Apply1(tmp506, db501)
-			tmp508 := lang.Apply1(tmp505, tmp507)
-			tmp509 := lang.Apply(tmp504, []any{db501, kw_cljg_DOT_data_DOT_cast_SLASH_handle, tmp508, kw_tx, true})
-			var t510 any = tmp509
-			_ = t510
-			var tmp511 any
-			_ = tmp511
+			tmp519 := v_clojure_DOT_core_assoc.Get()
+			tmp520 := v_cljg_DOT_data_DOT_cast_X_db_begin.Get()
+			tmp521 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+			var tmp522 any
+			if !tmp521 {
+				tmp522 = v_cljg_DOT_data_DOT_cast_handle.Get()
+			}
+			var tmp523 any
+			if tmp521 {
+				tmp523 = fnD_cljg_DOT_data_DOT_cast_handle(db516)
+			} else {
+				tmp523 = lang.Apply1(tmp522, db516)
+			}
+			tmp524 := lang.Apply1(tmp520, tmp523)
+			tmp525 := lang.Apply(tmp519, []any{db516, kw_cljg_DOT_data_DOT_cast_SLASH_handle, tmp524, kw_tx, true})
+			var t526 any = tmp525
+			_ = t526
+			var tmp527 any
+			_ = tmp527
 			func() {
 				defer func() {
-					tmp512 := v_cljg_DOT_data_DOT_cast_X_db_rollback.Get()
-					tmp513 := v_cljg_DOT_data_DOT_cast_handle.Get()
-					tmp514 := lang.Apply1(tmp513, t510)
-					tmp515 := lang.Apply1(tmp512, tmp514)
-					_ = tmp515
+					tmp528 := v_cljg_DOT_data_DOT_cast_X_db_rollback.Get()
+					tmp529 := v_cljg_DOT_data_DOT_cast_handle.Direct()
+					var tmp530 any
+					if !tmp529 {
+						tmp530 = v_cljg_DOT_data_DOT_cast_handle.Get()
+					}
+					var tmp531 any
+					if tmp529 {
+						tmp531 = fnD_cljg_DOT_data_DOT_cast_handle(t526)
+					} else {
+						tmp531 = lang.Apply1(tmp530, t526)
+					}
+					tmp532 := lang.Apply1(tmp528, tmp531)
+					_ = tmp532
 				}()
-				tmp516 := lang.Apply1(f502, t510)
-				tmp511 = tmp516
+				tmp533 := lang.Apply1(f517, t526)
+				tmp527 = tmp533
 			}()
-			tmp503 = tmp511
+			tmp518 = tmp527
 		}
-		return tmp503
+		return tmp518
 	})
-	tmp517 := &lang.NamedFn2{Name: "cljg.data.cast/with-rollback", Expects: "2: [db f]", F: tmp500}
-	v_cljg_DOT_data_DOT_cast_with_rollback.BindRoot(tmp517)
+	tmp534 := &lang.NamedFn2{Name: "cljg.data.cast/with-rollback", Expects: "2: [db f]", F: tmp515}
+	v_cljg_DOT_data_DOT_cast_with_rollback.BindRoot(tmp534)
+	fnD_cljg_DOT_data_DOT_cast_with_rollback = tmp534.F
+	v_cljg_DOT_data_DOT_cast_with_rollback.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_with_rollback
 	// (def ensure-migrations-table! (clojure.core/fn [db] (exec! db (str "create table if not ex…
 	v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(229), kw_column, int64(7), kw_end_line, int64(229), kw_end_column, int64(41), kw_private, true))
-	tmp518 := lang.FnFunc1(func(db519 any) any {
-		tmp520 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
-		tmp521 := v_clojure_DOT_core_str.Get()
-		tmp522 := lang.Apply2(tmp521, "create table if not exists schema_migrations ", "(version text primary key, applied_at text not null)")
-		tmp523 := lang.Apply2(tmp520, db519, tmp522)
-		return tmp523
+	tmp535 := lang.FnFunc1(func(db536 any) any {
+		tmp537 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
+		tmp538 := v_clojure_DOT_core_str.Get()
+		tmp539 := lang.Apply2(tmp538, "create table if not exists schema_migrations ", "(version text primary key, applied_at text not null)")
+		tmp540 := lang.Apply2(tmp537, db536, tmp539)
+		return tmp540
 	})
-	tmp524 := &lang.NamedFn1{Name: "cljg.data.cast/ensure-migrations-table!", Expects: "1: [db]", F: tmp518}
-	v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.BindRoot(tmp524)
+	tmp541 := &lang.NamedFn1{Name: "cljg.data.cast/ensure-migrations-table!", Expects: "1: [db]", F: tmp535}
+	v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.BindRoot(tmp541)
+	fnD_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_ = tmp541.F
+	v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_
 	// (def applied-set (clojure.core/fn [db] (set (map :version (query db "select version from s…
 	v_cljg_DOT_data_DOT_cast_applied_set.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(233), kw_column, int64(7), kw_end_line, int64(233), kw_end_column, int64(28), kw_private, true))
-	tmp525 := lang.FnFunc1(func(db526 any) any {
-		tmp527 := v_clojure_DOT_core_set.Get()
-		tmp528 := v_clojure_DOT_core_map_.Get()
-		tmp529 := v_cljg_DOT_data_DOT_cast_query.Get()
-		tmp530 := lang.Apply2(tmp529, db526, "select version from schema_migrations")
-		tmp531 := lang.Apply2(tmp528, kw_version, tmp530)
-		tmp532 := lang.Apply1(tmp527, tmp531)
-		return tmp532
+	tmp542 := lang.FnFunc1(func(db543 any) any {
+		tmp544 := v_clojure_DOT_core_set.Get()
+		tmp545 := v_clojure_DOT_core_map_.Get()
+		tmp546 := v_cljg_DOT_data_DOT_cast_query.Get()
+		tmp547 := lang.Apply2(tmp546, db543, "select version from schema_migrations")
+		tmp548 := lang.Apply2(tmp545, kw_version, tmp547)
+		tmp549 := lang.Apply1(tmp544, tmp548)
+		return tmp549
 	})
-	tmp533 := &lang.NamedFn1{Name: "cljg.data.cast/applied-set", Expects: "1: [db]", F: tmp525}
-	v_cljg_DOT_data_DOT_cast_applied_set.BindRoot(tmp533)
+	tmp550 := &lang.NamedFn1{Name: "cljg.data.cast/applied-set", Expects: "1: [db]", F: tmp542}
+	v_cljg_DOT_data_DOT_cast_applied_set.BindRoot(tmp550)
+	fnD_cljg_DOT_data_DOT_cast_applied_set = tmp550.F
+	v_cljg_DOT_data_DOT_cast_applied_set.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_applied_set
 	// (def migrate-status "Return {:applied [versions…] :pending [versions…]} for `dir`." (c…
 	v_cljg_DOT_data_DOT_cast_migrate_status.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(236), kw_column, int64(7), kw_end_line, int64(236), kw_end_column, int64(21), kw_doc, "Return {:applied [versions…] :pending [versions…]} for `dir`."))
-	tmp534 := lang.FnFunc2(func(db535, dir536 any) any {
-		tmp537 := v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.Get()
-		tmp538 := lang.Apply1(tmp537, db535)
-		_ = tmp538
-		var tmp539 any
-		_ = tmp539
-		{
-			tmp540 := v_cljg_DOT_data_DOT_cast_applied_set.Get()
-			tmp541 := lang.Apply1(tmp540, db535)
-			var applied542 any = tmp541
-			_ = applied542
-			tmp543 := v_cljg_DOT_data_DOT_cast_X_db_migration_files.Get()
-			tmp544 := lang.Apply1(tmp543, dir536)
-			var files545 any = tmp544
-			_ = files545
-			tmp546 := v_clojure_DOT_core_vec.Get()
-			tmp547 := v_clojure_DOT_core_sort.Get()
-			tmp548 := lang.Apply1(tmp547, applied542)
-			tmp549 := lang.Apply1(tmp546, tmp548)
-			tmp550 := v_clojure_DOT_core_into.Get()
-			tmp551 := lang.NewVector()
-			tmp552 := v_clojure_DOT_core_comp.Get()
-			tmp553 := v_clojure_DOT_core_remove.Get()
-			tmp554 := lang.FnFunc1(func(p1__51_SHARP_555 any) any {
-				tmp556 := v_clojure_DOT_core_contains_QMARK_.Get()
-				tmp557 := lang.Apply1(kw_version, p1__51_SHARP_555)
-				tmp558 := lang.Apply2(tmp556, applied542, tmp557)
-				return tmp558
-			})
-			tmp559 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__51#]", F: tmp554}
-			tmp560 := lang.Apply1(tmp553, tmp559)
-			tmp561 := v_clojure_DOT_core_map_.Get()
-			tmp562 := lang.Apply1(tmp561, kw_version)
-			tmp563 := lang.Apply2(tmp552, tmp560, tmp562)
-			tmp564 := lang.Apply3(tmp550, tmp551, tmp563, files545)
-			tmp565 := lang.NewMap(kw_applied, tmp549, kw_pending, tmp564)
-			tmp539 = tmp565
+	tmp551 := lang.FnFunc2(func(db552, dir553 any) any {
+		tmp554 := v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.Direct()
+		var tmp555 any
+		if !tmp554 {
+			tmp555 = v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.Get()
 		}
-		return tmp539
+		var tmp556 any
+		if tmp554 {
+			tmp556 = fnD_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_(db552)
+		} else {
+			tmp556 = lang.Apply1(tmp555, db552)
+		}
+		_ = tmp556
+		var tmp557 any
+		_ = tmp557
+		{
+			tmp558 := v_cljg_DOT_data_DOT_cast_applied_set.Direct()
+			var tmp559 any
+			if !tmp558 {
+				tmp559 = v_cljg_DOT_data_DOT_cast_applied_set.Get()
+			}
+			var tmp560 any
+			if tmp558 {
+				tmp560 = fnD_cljg_DOT_data_DOT_cast_applied_set(db552)
+			} else {
+				tmp560 = lang.Apply1(tmp559, db552)
+			}
+			var applied561 any = tmp560
+			_ = applied561
+			tmp562 := v_cljg_DOT_data_DOT_cast_X_db_migration_files.Get()
+			tmp563 := lang.Apply1(tmp562, dir553)
+			var files564 any = tmp563
+			_ = files564
+			tmp565 := v_clojure_DOT_core_vec.Get()
+			tmp566 := v_clojure_DOT_core_sort.Get()
+			tmp567 := lang.Apply1(tmp566, applied561)
+			tmp568 := lang.Apply1(tmp565, tmp567)
+			tmp569 := v_clojure_DOT_core_into.Get()
+			tmp570 := lang.NewVector()
+			tmp571 := v_clojure_DOT_core_comp.Get()
+			tmp572 := v_clojure_DOT_core_remove.Get()
+			tmp573 := lang.FnFunc1(func(p1__51_SHARP_574 any) any {
+				tmp575 := v_clojure_DOT_core_contains_QMARK_.Get()
+				tmp576 := lang.Apply1(kw_version, p1__51_SHARP_574)
+				tmp577 := lang.Apply2(tmp575, applied561, tmp576)
+				return tmp577
+			})
+			tmp578 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__51#]", F: tmp573}
+			tmp579 := lang.Apply1(tmp572, tmp578)
+			tmp580 := v_clojure_DOT_core_map_.Get()
+			tmp581 := lang.Apply1(tmp580, kw_version)
+			tmp582 := lang.Apply2(tmp571, tmp579, tmp581)
+			tmp583 := lang.Apply3(tmp569, tmp570, tmp582, files564)
+			tmp584 := lang.NewMap(kw_applied, tmp568, kw_pending, tmp583)
+			tmp557 = tmp584
+		}
+		return tmp557
 	})
-	tmp566 := &lang.NamedFn2{Name: "cljg.data.cast/migrate-status", Expects: "2: [db dir]", F: tmp534}
-	v_cljg_DOT_data_DOT_cast_migrate_status.BindRoot(tmp566)
+	tmp585 := &lang.NamedFn2{Name: "cljg.data.cast/migrate-status", Expects: "2: [db dir]", F: tmp551}
+	v_cljg_DOT_data_DOT_cast_migrate_status.BindRoot(tmp585)
+	fnD_cljg_DOT_data_DOT_cast_migrate_status = tmp585.F
+	v_cljg_DOT_data_DOT_cast_migrate_status.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_migrate_status
 	// (def migrate! "Apply every pending migration in `dir` (ascending version order, each\n  in…
 	v_cljg_DOT_data_DOT_cast_migrate_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(247), kw_column, int64(7), kw_end_line, int64(247), kw_end_column, int64(15), kw_doc, "Apply every pending migration in `dir` (ascending version order, each\n  in its own transaction), idempotently. Returns the post-run\n  (migrate-status …)."))
-	tmp567 := lang.FnFunc2(func(db568, dir569 any) any {
-		tmp570 := v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.Get()
-		tmp571 := lang.Apply1(tmp570, db568)
-		_ = tmp571
-		var tmp572 any
-		_ = tmp572
+	tmp586 := lang.FnFunc2(func(db587, dir588 any) any {
+		tmp589 := v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.Direct()
+		var tmp590 any
+		if !tmp589 {
+			tmp590 = v_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_.Get()
+		}
+		var tmp591 any
+		if tmp589 {
+			tmp591 = fnD_cljg_DOT_data_DOT_cast_ensure_migrations_table_BANG_(db587)
+		} else {
+			tmp591 = lang.Apply1(tmp590, db587)
+		}
+		_ = tmp591
+		var tmp592 any
+		_ = tmp592
 		{
-			tmp573 := v_cljg_DOT_data_DOT_cast_applied_set.Get()
-			tmp574 := lang.Apply1(tmp573, db568)
-			var applied575 any = tmp574
-			_ = applied575
-			tmp576 := v_cljg_DOT_data_DOT_cast_X_db_migration_files.Get()
-			tmp577 := lang.Apply1(tmp576, dir569)
-			var files578 any = tmp577
-			_ = files578
-			tmp579 := v_clojure_DOT_core_remove.Get()
-			tmp580 := lang.FnFunc1(func(p1__52_SHARP_581 any) any {
-				tmp582 := v_clojure_DOT_core_contains_QMARK_.Get()
-				tmp583 := lang.Apply1(kw_version, p1__52_SHARP_581)
-				tmp584 := lang.Apply2(tmp582, applied575, tmp583)
-				return tmp584
+			tmp593 := v_cljg_DOT_data_DOT_cast_applied_set.Direct()
+			var tmp594 any
+			if !tmp593 {
+				tmp594 = v_cljg_DOT_data_DOT_cast_applied_set.Get()
+			}
+			var tmp595 any
+			if tmp593 {
+				tmp595 = fnD_cljg_DOT_data_DOT_cast_applied_set(db587)
+			} else {
+				tmp595 = lang.Apply1(tmp594, db587)
+			}
+			var applied596 any = tmp595
+			_ = applied596
+			tmp597 := v_cljg_DOT_data_DOT_cast_X_db_migration_files.Get()
+			tmp598 := lang.Apply1(tmp597, dir588)
+			var files599 any = tmp598
+			_ = files599
+			tmp600 := v_clojure_DOT_core_remove.Get()
+			tmp601 := lang.FnFunc1(func(p1__52_SHARP_602 any) any {
+				tmp603 := v_clojure_DOT_core_contains_QMARK_.Get()
+				tmp604 := lang.Apply1(kw_version, p1__52_SHARP_602)
+				tmp605 := lang.Apply2(tmp603, applied596, tmp604)
+				return tmp605
 			})
-			tmp585 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__52#]", F: tmp580}
-			tmp586 := lang.Apply2(tmp579, tmp585, files578)
-			var pending587 any = tmp586
-			_ = pending587
-			var tmp588 any
-			_ = tmp588
+			tmp606 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__52#]", F: tmp601}
+			tmp607 := lang.Apply2(tmp600, tmp606, files599)
+			var pending608 any = tmp607
+			_ = pending608
+			var tmp609 any
+			_ = tmp609
 			{
-				tmp589 := v_clojure_DOT_core_seq.Get()
-				tmp590 := lang.Apply1(tmp589, pending587)
-				var s__9__auto__591 any = tmp590
-				_ = s__9__auto__591
-			loop592:
+				tmp610 := v_clojure_DOT_core_seq.Get()
+				tmp611 := lang.Apply1(tmp610, pending608)
+				var s__9__auto__612 any = tmp611
+				_ = s__9__auto__612
+			loop613:
 				for {
-					var tmp593 any
-					_ = tmp593
-					if lang.IsTruthy(s__9__auto__591) {
-						var tmp594 any
-						_ = tmp594
+					var tmp614 any
+					_ = tmp614
+					if lang.IsTruthy(s__9__auto__612) {
+						var tmp615 any
+						_ = tmp615
 						{
-							tmp595 := v_clojure_DOT_core_first.Get()
-							tmp596 := lang.Apply1(tmp595, s__9__auto__591)
-							var m597 any = tmp596
-							_ = m597
-							tmp598 := v_cljg_DOT_data_DOT_cast_tx.Get()
-							tmp599 := lang.FnFunc1(func(t600 any) any {
-								tmp601 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
-								tmp602 := lang.Apply1(kw_sql, m597)
-								tmp603 := lang.Apply2(tmp601, t600, tmp602)
-								_ = tmp603
-								tmp604 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
-								tmp605 := lang.Apply1(kw_version, m597)
-								tmp606 := v_cljg_DOT_data_DOT_cast_X_db_now.Get()
-								tmp607 := lang.Apply0(tmp606)
-								tmp608 := lang.Apply4(tmp604, t600, "insert into schema_migrations (version, applied_at) values (?, ?)", tmp605, tmp607)
-								return tmp608
-							})
-							tmp609 := &lang.NamedFn1{Name: "fn", Expects: "1: [t]", F: tmp599}
-							tmp610 := lang.Apply2(tmp598, db568, tmp609)
-							_ = tmp610
-							var tmp611 any
-							_ = tmp611
-							if lang.IsTruthy(true) {
-								tmp612 := v_clojure_DOT_core_next.Get()
-								tmp613 := lang.Apply1(tmp612, s__9__auto__591)
-								var tmp614 any = tmp613
-								s__9__auto__591 = tmp614
-								continue loop592
-							} else {
-								tmp611 = nil
+							tmp616 := v_clojure_DOT_core_first.Get()
+							tmp617 := lang.Apply1(tmp616, s__9__auto__612)
+							var m618 any = tmp617
+							_ = m618
+							tmp619 := v_cljg_DOT_data_DOT_cast_tx.Direct()
+							var tmp620 any
+							if !tmp619 {
+								tmp620 = v_cljg_DOT_data_DOT_cast_tx.Get()
 							}
-							tmp594 = tmp611
+							tmp621 := lang.FnFunc1(func(t622 any) any {
+								tmp623 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
+								tmp624 := lang.Apply1(kw_sql, m618)
+								tmp625 := lang.Apply2(tmp623, t622, tmp624)
+								_ = tmp625
+								tmp626 := v_cljg_DOT_data_DOT_cast_exec_BANG_.Get()
+								tmp627 := lang.Apply1(kw_version, m618)
+								tmp628 := v_cljg_DOT_data_DOT_cast_X_db_now.Get()
+								tmp629 := lang.Apply0(tmp628)
+								tmp630 := lang.Apply4(tmp626, t622, "insert into schema_migrations (version, applied_at) values (?, ?)", tmp627, tmp629)
+								return tmp630
+							})
+							tmp631 := &lang.NamedFn1{Name: "fn", Expects: "1: [t]", F: tmp621}
+							var tmp632 any
+							if tmp619 {
+								tmp632 = fnD_cljg_DOT_data_DOT_cast_tx(db587, tmp631)
+							} else {
+								tmp632 = lang.Apply2(tmp620, db587, tmp631)
+							}
+							_ = tmp632
+							var tmp633 any
+							_ = tmp633
+							if lang.IsTruthy(true) {
+								tmp634 := v_clojure_DOT_core_next.Get()
+								tmp635 := lang.Apply1(tmp634, s__9__auto__612)
+								var tmp636 any = tmp635
+								s__9__auto__612 = tmp636
+								continue loop613
+							} else {
+								tmp633 = nil
+							}
+							tmp615 = tmp633
 						}
-						tmp593 = tmp594
+						tmp614 = tmp615
 					} else {
-						tmp593 = nil
+						tmp614 = nil
 					}
-					tmp588 = tmp593
-					break loop592
+					tmp609 = tmp614
+					break loop613
 				}
 			}
-			_ = tmp588
-			tmp615 := v_cljg_DOT_data_DOT_cast_migrate_status.Get()
-			tmp616 := lang.Apply2(tmp615, db568, dir569)
-			tmp572 = tmp616
+			_ = tmp609
+			tmp637 := v_cljg_DOT_data_DOT_cast_migrate_status.Direct()
+			var tmp638 any
+			if !tmp637 {
+				tmp638 = v_cljg_DOT_data_DOT_cast_migrate_status.Get()
+			}
+			var tmp639 any
+			if tmp637 {
+				tmp639 = fnD_cljg_DOT_data_DOT_cast_migrate_status(db587, dir588)
+			} else {
+				tmp639 = lang.Apply2(tmp638, db587, dir588)
+			}
+			tmp592 = tmp639
 		}
-		return tmp572
+		return tmp592
 	})
-	tmp617 := &lang.NamedFn2{Name: "cljg.data.cast/migrate!", Expects: "2: [db dir]", F: tmp567}
-	v_cljg_DOT_data_DOT_cast_migrate_BANG_.BindRoot(tmp617)
+	tmp640 := &lang.NamedFn2{Name: "cljg.data.cast/migrate!", Expects: "2: [db dir]", F: tmp586}
+	v_cljg_DOT_data_DOT_cast_migrate_BANG_.BindRoot(tmp640)
+	fnD_cljg_DOT_data_DOT_cast_migrate_BANG_ = tmp640.F
+	v_cljg_DOT_data_DOT_cast_migrate_BANG_.SealDirect()
 	_ = v_cljg_DOT_data_DOT_cast_migrate_BANG_
 }
