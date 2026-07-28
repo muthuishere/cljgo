@@ -96,3 +96,109 @@ func TestSealedGuardWithRedefsEscapeHatch(t *testing.T) {
 	}
 	_ = os.Remove(bin)
 }
+
+// redefPlusSealedExpected is the OPT-IN hard seal's contract (ADR 0066
+// alternative 1, `cljgo build --seal-core`): with the guard elided the
+// site IS the int64 op, so the with-redefs is not observed and the answer
+// is [7 7 7] — byte-for-byte what real Clojure 1.12.5 prints for this
+// program (its :inline on + compiles the site to Numbers.add; verified
+// 2026-07-23, see the file header). The sealed binary is therefore MORE
+// JVM-conformant than the default one, at the documented cost of the
+// redefinition not being seen at that site.
+const redefPlusSealedExpected = "[7 7 7]\n"
+
+// TestSealCoreHardSealElidesGuard freezes BOTH modes of the flag:
+//
+//   - SealCore false (the default): identical to the guarded emission —
+//     the call sites still carry the operator var and the rt.CoreDirty
+//     check, and the program still answers [7 12 7].
+//   - SealCore true: no var reference, no rt.CoreDirty load, no rt.Add2
+//     family at all — and the program answers [7 7 7].
+//
+// The [7 12 7] → [7 7 7] difference is the WHOLE observable cost of the
+// flag, deliberately frozen here so it can never change by accident. Under
+// --seal-core the compiled leg intentionally diverges from the REPL (which
+// is always fully live); that divergence is the opt-in's entire point and
+// moves the binary TOWARD the JVM oracle, not away from it.
+func TestSealCoreHardSealElidesGuard(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping compile-and-run in -short mode")
+	}
+	oldOut := corelib.Out
+	snap := namespaceSnapshot()
+	defer removeNewNamespaces(snap)
+
+	build := func(opts Options) (src string, output string) {
+		t.Helper()
+		lang.RemoveNamespace(lang.NewSymbol("user"))
+		corelib.Out = io.Discard
+		forms, err := CompileReader(strings.NewReader(redefPlusProgram), "redefplus.clj")
+		corelib.Out = oldOut
+		if err != nil {
+			t.Fatalf("compile: %v", err)
+		}
+		gen := t.TempDir()
+		opts.PrintLastValue = true
+		if err := WriteModule(gen, forms, opts); err != nil {
+			t.Fatalf("WriteModule: %v", err)
+		}
+		b, err := os.ReadFile(filepath.Join(gen, "main.go"))
+		if err != nil {
+			t.Fatalf("read generated main.go: %v", err)
+		}
+		bin := filepath.Join(gen, "redefplus"+ExeSuffix)
+		if err := GoBuild(gen, bin); err != nil {
+			t.Fatalf("go build: %v", err)
+		}
+		out, err := exec.Command(bin).Output()
+		if err != nil {
+			t.Fatalf("run: %v", err)
+		}
+		_ = os.Remove(bin)
+		return string(b), string(out)
+	}
+
+	offSrc, offOut := build(Options{})
+	if offOut != redefPlusExpected {
+		t.Fatalf("--seal-core OFF output = %q, want %q (the default MUST keep today's liveness)", offOut, redefPlusExpected)
+	}
+	if !strings.Contains(offSrc, "rt.Add2(") {
+		t.Fatalf("--seal-core OFF: expected the guarded rt.Add2(v, x, y) emission, got:\n%s", offSrc)
+	}
+	if strings.Contains(offSrc, "rt.Add2S(") {
+		t.Fatalf("--seal-core OFF: sealed helper leaked into the default emission:\n%s", offSrc)
+	}
+
+	onSrc, onOut := build(Options{SealCore: true})
+	if onOut != redefPlusSealedExpected {
+		t.Fatalf("--seal-core ON output = %q, want %q (hard seal must NOT observe the with-redefs)", onOut, redefPlusSealedExpected)
+	}
+	if !strings.Contains(onSrc, "rt.Add2S(") {
+		t.Fatalf("--seal-core ON: expected the sealed rt.Add2S(x, y) emission, got:\n%s", onSrc)
+	}
+	for _, forbidden := range []string{"rt.Add2(", "rt.CoreDirty()"} {
+		if strings.Contains(onSrc, forbidden) {
+			t.Fatalf("--seal-core ON: %q still present — the guard was not elided:\n%s", forbidden, onSrc)
+		}
+	}
+}
+
+// TestSealCoreEnvSeam covers the CLJGO_SEAL_CORE=1 environment seam, the
+// path project builds / the conformance harness / benchmark scripts use
+// when no --seal-core flag is plumbed through.
+func TestSealCoreEnvSeam(t *testing.T) {
+	if (Options{}).sealCore() {
+		t.Fatal("Options{}.sealCore() must default to false")
+	}
+	t.Setenv("CLJGO_SEAL_CORE", "1")
+	if !(Options{}).sealCore() {
+		t.Fatal("CLJGO_SEAL_CORE=1 must turn the hard seal on")
+	}
+	t.Setenv("CLJGO_SEAL_CORE", "0")
+	if (Options{}).sealCore() {
+		t.Fatal("CLJGO_SEAL_CORE=0 must leave the hard seal off")
+	}
+	if !(Options{SealCore: true}).sealCore() {
+		t.Fatal("explicit SealCore must win over an unset/0 env")
+	}
+}

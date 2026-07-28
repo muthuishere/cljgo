@@ -65,6 +65,33 @@ type Options struct {
 	// the pre-0049 behavior). A binary has no source tree at runtime, so
 	// this is a logical path — semantics match, not on-disk byte-identity.
 	EntrySrcFile string
+	// SealCore turns on the OPT-IN hard seal of core arithmetic (ADR 0066
+	// alternative 1): direct 2-arg calls to `+ - * / < > = <= >=` emit as
+	// the unguarded rt.Add2S/… helpers and the ADR 0067 typed regions drop
+	// their `if !rt.CoreDirty()` entry, so an arithmetic call site carries
+	// NO operator-var reference and NO dirty-flag load at all.
+	//
+	// COST, stated plainly: a redefinition of a core arithmetic op — `(def
+	// + …)`, `(alter-var-root #'+ …)`, `(with-redefs [+ …] …)` — is NOT
+	// observed at those sites. This matches JVM Clojure exactly (`+` is
+	// :inline there, so a direct 2-arg site never consults the var), but it
+	// differs from cljgo's default, so it is opt-in and never automatic.
+	// `cljgo build --seal-core`, or CLJGO_SEAL_CORE=1 in the environment.
+	// Off → emission is byte-identical to the guarded output.
+	//
+	// Scope: the program being emitted. The pre-compiled core (pkg/coreaot)
+	// and pkg/briaot are committed Go and are unaffected either way.
+	SealCore bool
+}
+
+// sealCore resolves the hard-seal decision: the explicit option, or the
+// CLJGO_SEAL_CORE=1 environment seam (which reaches project builds, the
+// conformance harness, and benchmark runs without a plumbed flag).
+func (o Options) sealCore() bool {
+	if o.SealCore {
+		return true
+	}
+	return os.Getenv("CLJGO_SEAL_CORE") == "1"
 }
 
 // EmitMain compiles analyzed top-level forms into a complete
@@ -134,6 +161,7 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 
 	g := newGenerator()
 	g.host = spec.host
+	g.sealCore = opts.sealCore()
 
 	// Pre-scan for Go-interop references and batch-load their type facts
 	// (ADR 0010, design/05 §2) BEFORE emission — a non-interop program

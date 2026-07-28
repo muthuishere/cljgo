@@ -142,7 +142,33 @@ type generator struct {
 	// flag is sticky (never cleared), so nested loops there must not emit
 	// their own dead `if !rt.CoreDirty()` arms.
 	boxedForced bool
+
+	// sealCore is the OPT-IN hard seal (ADR 0066 alternative 1, opt-in via
+	// emit.Options.SealCore / `cljgo build --seal-core` / CLJGO_SEAL_CORE=1).
+	// When set, arithmetic call sites emit the rt.*S helpers — no operator
+	// var, no lang.CoreArithDirty load, no fallback — and the typed-region
+	// entries drop their `if !rt.CoreDirty()` condition. A redefinition of
+	// a core arithmetic op is then NOT observed at those sites (exactly
+	// like JVM Clojure's :inline). Default false: emission is byte-identical
+	// to the guarded, fully live pre-flag output.
+	sealCore bool
 }
+
+// dirtyOpen writes the opening of an ADR 0066 typed-region entry guard —
+// `if !rt.CoreDirty() {` normally, a plain block `{` under the opt-in hard
+// seal (the flag can never be consulted there, because a redefinition is
+// deliberately not observed). Callers close it with the usual `}`.
+func (g *generator) dirtyOpen() {
+	if g.sealCore {
+		g.wf("{\n")
+		return
+	}
+	g.wf("if !rt.CoreDirty() {\n")
+}
+
+// sealName maps a guarded intrinsic helper to its hard-sealed twin
+// (rt.Add2 → rt.Add2S): same body, no var argument, no dirty-flag load.
+func sealName(helper string) string { return helper + "S" }
 
 func newGenerator() *generator {
 	return &generator{
@@ -1104,6 +1130,13 @@ func (g *generator) genTestIntrinsic(test *ast.Node) (string, bool) {
 	if !ok {
 		return "", false
 	}
+	if g.sealCore {
+		a := g.gen(s.Args[0])
+		b := g.gen(s.Args[1])
+		t := g.temp()
+		g.wf("%s := rt.%s(%s, %s)\n", t, sealName(helper), a, b)
+		return t, true
+	}
 	gv := g.hoistVar(v)
 	a := g.gen(s.Args[0])
 	b := g.gen(s.Args[1])
@@ -1146,6 +1179,13 @@ func (g *generator) genIntrinsic(n *ast.Node, s *ast.InvokeNode) (string, bool) 
 	helper, ok := intrinsic2[name]
 	if !ok || len(s.Args) != 2 {
 		return "", false
+	}
+	if g.sealCore {
+		a := g.gen(s.Args[0])
+		b := g.gen(s.Args[1])
+		t := g.temp()
+		g.wf("%s := rt.%s(%s, %s)\n", t, sealName(helper), a, b)
+		return t, true
 	}
 	gv := g.hoistVar(v)
 	a := g.gen(s.Args[0])
@@ -1253,13 +1293,19 @@ func loopWin(ni *numInfer, n *ast.Node) bool {
 func (g *generator) genLoopDual(n *ast.Node, ni *numInfer) string {
 	t := g.temp()
 	g.wf("var %s any\n_ = %s\n", t, t)
-	g.wf("if !rt.CoreDirty() {\n")
+	g.dirtyOpen()
 	save, saveG := g.ni, g.guarded
 	g.ni, g.guarded = ni, true
 	if rv := g.genLoopEmit(n); rv != "" {
 		g.wf("%s = %s\n", t, rv)
 	}
 	g.ni, g.guarded = save, saveG
+	if g.sealCore {
+		// Hard seal: the typed arm is unconditional, so the boxed arm is
+		// unreachable — don't emit it at all (smaller binary, same result).
+		g.wf("}\n")
+		return t
+	}
 	g.wf("} else {\n")
 	saveF := g.boxedForced
 	g.boxedForced = true
@@ -1777,7 +1823,7 @@ func (g *generator) specializeInt(fn *ast.FnNode, m *ast.FnMethodNode, defVar *l
 func (g *generator) emitTypedGuard(m *ast.FnMethodNode, outer []string, spec *numInfer) {
 	save, saveG := g.ni, g.guarded
 	g.ni, g.guarded = spec, true
-	g.wf("if !rt.CoreDirty() {\n")
+	g.dirtyOpen()
 	inner := make([]string, len(m.Params))
 	for i, pn := range m.Params {
 		gn := g.bindLocal(pn.Sub.(*ast.BindingNode))
@@ -1975,7 +2021,7 @@ func (g *generator) emitTypedFunc(m *ast.FnMethodNode, spec *numInfer, name stri
 // redefined core arithmetic op falls through to the boxed body, which
 // honors it per call; a non-int64 arg falls through the same way.
 func (g *generator) emitLiftGuard(m *ast.FnMethodNode, outer []string, fnL string) {
-	g.wf("if !rt.CoreDirty() {\n")
+	g.dirtyOpen()
 	inner := make([]string, len(m.Params))
 	for i := range m.Params {
 		gn := fmt.Sprintf("a%d_%d", i, g.next())
