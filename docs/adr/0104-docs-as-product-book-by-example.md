@@ -57,12 +57,16 @@ four pillars, one repo, one site, all example-first, all CI-verified:
    prev/next arrows through the whole sequence, and every page = short prose
    + annotated runnable code + its real output. Concepts first, then the
    battery topics continue the same numbering (…*18. Serve HTTP · 19.
-   Sockets · 20. Passwords & keychain*…). **Generated where possible from
-   `conformance/tests/`** — the 521 frozen examples are by-example pages CI
-   already guarantees; a generator maps file → page (title from filename,
-   code block, `;; expect:` as shown output), hand-written pages only where
-   no conformance file fits (and each hand-written example gets a
-   conformance twin so it can't rot — the doctest rule).
+   Sockets · 20. Passwords & keychain*…). **Every page is HAND-AUTHORED
+   teaching content (owner rescope 2026-07-28, after seeing a raw-generated
+   sample: "not just generated — put effort on each page")**: one idea at a
+   time, a **small → mid → big** graduation on every page (tiny first
+   taste, one twist, then a real payoff example), plain short sentences,
+   airy code with real newlines — never a dense test expression — and the
+   Output block immediately after every snippet. Generation runs the OTHER
+   way: `cmd/gendocs` **extracts** each page's snippets and verifies them
+   against cljgo in CI (conformance twin or direct run) — the doctest rule.
+   Conformance files are the verification substrate, never the author.
 3. **Per-package doc packs, surfaced under HUMAN NAMES (owner mandate:
    "packages buried by better names")** — the navigation NEVER shows a raw
    namespace string. Nav labels are task-named topics — *"Serve HTTP"*,

@@ -26,3 +26,15 @@ Gotchas for cmd/gendocs (the production home):
   stale entries after rename/delete need both cleared.
 - Comment-block prose quality varies: newer cljg-* tests read like docs;
   terse old tests need the manifest `lead` line to carry the teaching hook.
+
+## Owner rescope (2026-07-28, after review of the generated sample)
+
+Raw conformance→page generation is REJECTED for page content: "not just
+generated — put some effort on each page… small, mid and then big… one at a
+time… new lines so people understand." The 7 sample pages were re-authored
+by hand in the graduated small→mid→big teaching shape (every snippet's
+output verified by actually running it through cljgo before publishing).
+The generator's production role INVERTS to verification only: cmd/gendocs
+extracts snippets from authored pages and runs them in CI (doctest rule).
+gen.go stays as evidence of the parsing/emission mechanics, which carry
+over to the verifier. ADR 0104 updated accordingly.
