@@ -33,11 +33,20 @@ var javaStaticNamespaces = map[string]string{
 }
 
 // noSuchNamespaceError is the resolution failure for a namespaced symbol
-// whose namespace does not exist. Error() is BYTE-IDENTICAL to the
-// fmt.Errorf it replaced ("no such namespace: X") — conformance and the
-// publish gate freeze that string — while Diagnostic() (diag.Carrier) adds
-// the registered code and, for a Java static, the did-you-mean Fix the
-// error doctrine asks for (CLAUDE.md: suggestions are Fixes, not prose).
+// whose namespace does not exist. Error() OPENS with the byte-identical
+// clause it replaced ("no such namespace: X") — conformance and the publish
+// gate freeze that prefix — while Diagnostic() (diag.Carrier) adds the
+// registered code and, for a Java static, the did-you-mean Fix the error
+// doctrine asks for (CLAUDE.md: suggestions are Fixes, not prose).
+//
+// Reconciled 2026-07-28 from two independent fixes that replaced the SAME
+// bare fmt.Errorf: the gaps batch (known-issue #10) contributed this carrier
+// — the A2009 code plus did-you-mean Fixes — and the interop batch
+// (known-issue #7, Integer/parseInt "unresolved AND misdiagnosed")
+// contributed the broad jvmStaticClass table and the class-not-a-namespace
+// clause. Both are kept: the clause lands in Error() because
+// conformance/tests/java-static-class-not-namespace.clj freezes it there,
+// and java-static-loud-error.clj still matches on the leading clause.
 type noSuchNamespaceError struct {
 	ns   string // the unresolved namespace ("System")
 	full string // the full symbol as written ("System/nanoTime")
@@ -48,6 +57,12 @@ func newNoSuchNamespaceError(sym *lang.Symbol) error {
 }
 
 func (e *noSuchNamespaceError) Error() string {
+	if jvmStaticClass[e.ns] {
+		// Naming what the thing actually IS beats "no such namespace" —
+		// the user wrote a Java class, not a mistyped namespace.
+		return fmt.Sprintf("no such namespace: %s (%s is a Java class, not a namespace: cljgo hosts Clojure on Go, so the Java static %s is unavailable)",
+			e.ns, e.ns, e.full)
+	}
 	return fmt.Sprintf("no such namespace: %s", e.ns)
 }
 

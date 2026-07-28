@@ -400,7 +400,11 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// (-type-key type-designator-symbol) -> the dispatch-key string for a
 	// type named in extend-type/extend-protocol: a user deftype/defrecord
 	// resolves (via its name var → TypeMarker) to its qualified name; a
-	// built-in type name (String, Long, …) that resolves to no var is used
+	// well-known class name resolves through the ADR 0036 class-ref table to
+	// its SIMPLE name, which IS the built-in dispatch key — so the fully
+	// qualified spelling a Java arrival types (`java.lang.String`) keys the
+	// same table as the bare one (`String`), exactly as classDispatchKey
+	// already does for the functional `extend`. Anything else is used
 	// as-is, matching dispatchKey for built-in values.
 	defPrivate("-type-key", func(args ...any) any {
 		sym, ok := args[0].(*lang.Symbol)
@@ -408,9 +412,15 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 			return lang.ToString(args[0])
 		}
 		if v, err := ResolveVar(sym); err == nil {
-			if m, ok := v.Deref().(*TypeMarker); ok {
-				return m.name
+			switch t := v.Deref().(type) {
+			case *TypeMarker:
+				return t.name
+			case *ClassRef:
+				return classDispatchKey(t, "extend-type")
 			}
+		}
+		if c := lookupClassRef(sym.Name()); c != nil {
+			return classDispatchKey(c, "extend-type")
 		}
 		return sym.Name()
 	})
