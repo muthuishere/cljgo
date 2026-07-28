@@ -35,6 +35,16 @@ var (
 	v_clojure_DOT_core_refer             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 )
 
+var (
+	fnD_cljg_DOT_net_DOT_dns_lookup     lang.FnFunc1
+	fnD_cljg_DOT_net_DOT_dns_reverse    lang.FnFunc1
+	fnD_cljg_DOT_net_DOT_dns_mx         lang.FnFunc1
+	fnD_cljg_DOT_net_DOT_dns_txt        lang.FnFunc1
+	fnD_cljg_DOT_net_DOT_dns_srv        lang.FnFunc3
+	fnD_cljg_DOT_net_DOT_dns_cname      lang.FnFunc1
+	fnD_cljg_DOT_net_DOT_dns_ns_records lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -62,6 +72,8 @@ func Load() {
 	})
 	tmp9 := &lang.NamedFn1{Name: "cljg.net.dns/lookup", Expects: "1: [host]", F: tmp5}
 	v_cljg_DOT_net_DOT_dns_lookup.BindRoot(tmp9)
+	fnD_cljg_DOT_net_DOT_dns_lookup = tmp9.F
+	v_cljg_DOT_net_DOT_dns_lookup.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_lookup
 	// (def reverse "Reverse (PTR) lookup of the IP string `ip`: a sorted vector of hostnames\n  …
 	v_cljg_DOT_net_DOT_dns_reverse.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(39), kw_column, int64(7), kw_end_line, int64(39), kw_end_column, int64(14), kw_doc, "Reverse (PTR) lookup of the IP string `ip`: a sorted vector of hostnames\n  (no trailing dot)."))
@@ -72,6 +84,8 @@ func Load() {
 	})
 	tmp14 := &lang.NamedFn1{Name: "cljg.net.dns/reverse", Expects: "1: [ip]", F: tmp10}
 	v_cljg_DOT_net_DOT_dns_reverse.BindRoot(tmp14)
+	fnD_cljg_DOT_net_DOT_dns_reverse = tmp14.F
+	v_cljg_DOT_net_DOT_dns_reverse.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_reverse
 	// (def mx "MX records for `domain`: a vector of {:host string :preference int} maps,\n  sort…
 	v_cljg_DOT_net_DOT_dns_mx.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(45), kw_column, int64(7), kw_end_line, int64(45), kw_end_column, int64(9), kw_doc, "MX records for `domain`: a vector of {:host string :preference int} maps,\n  sorted by preference (lowest first)."))
@@ -82,6 +96,8 @@ func Load() {
 	})
 	tmp19 := &lang.NamedFn1{Name: "cljg.net.dns/mx", Expects: "1: [domain]", F: tmp15}
 	v_cljg_DOT_net_DOT_dns_mx.BindRoot(tmp19)
+	fnD_cljg_DOT_net_DOT_dns_mx = tmp19.F
+	v_cljg_DOT_net_DOT_dns_mx.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_mx
 	// (def txt "TXT records for `domain`: a vector of strings." (clojure.core/fn [domain] (-dns-…
 	v_cljg_DOT_net_DOT_dns_txt.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(51), kw_column, int64(7), kw_end_line, int64(51), kw_end_column, int64(10), kw_doc, "TXT records for `domain`: a vector of strings."))
@@ -92,6 +108,8 @@ func Load() {
 	})
 	tmp24 := &lang.NamedFn1{Name: "cljg.net.dns/txt", Expects: "1: [domain]", F: tmp20}
 	v_cljg_DOT_net_DOT_dns_txt.BindRoot(tmp24)
+	fnD_cljg_DOT_net_DOT_dns_txt = tmp24.F
+	v_cljg_DOT_net_DOT_dns_txt.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_txt
 	// (def srv "SRV records for `service`/`proto` under `domain` (e.g. \"imaps\" \"tcp\"\n  \"gm…
 	v_cljg_DOT_net_DOT_dns_srv.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(10), kw_doc, "SRV records for `service`/`proto` under `domain` (e.g. \"imaps\" \"tcp\"\n  \"gmail.com\" ⇒ _imaps._tcp.gmail.com): a vector of {:target string :port\n  int :priority int :weight int} maps in RFC 2782 order."))
@@ -102,6 +120,8 @@ func Load() {
 	})
 	tmp31 := &lang.NamedFn3{Name: "cljg.net.dns/srv", Expects: "3: [service proto domain]", F: tmp25}
 	v_cljg_DOT_net_DOT_dns_srv.BindRoot(tmp31)
+	fnD_cljg_DOT_net_DOT_dns_srv = tmp31.F
+	v_cljg_DOT_net_DOT_dns_srv.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_srv
 	// (def cname "The canonical name for `domain` (no trailing dot). A host with no CNAME\n  rec…
 	v_cljg_DOT_net_DOT_dns_cname.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(63), kw_column, int64(7), kw_end_line, int64(63), kw_end_column, int64(12), kw_doc, "The canonical name for `domain` (no trailing dot). A host with no CNAME\n  record returns its own name."))
@@ -112,6 +132,8 @@ func Load() {
 	})
 	tmp36 := &lang.NamedFn1{Name: "cljg.net.dns/cname", Expects: "1: [domain]", F: tmp32}
 	v_cljg_DOT_net_DOT_dns_cname.BindRoot(tmp36)
+	fnD_cljg_DOT_net_DOT_dns_cname = tmp36.F
+	v_cljg_DOT_net_DOT_dns_cname.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_cname
 	// (def ns-records "NS records for `domain`: a sorted vector of nameserver hostnames. Named\n…
 	v_cljg_DOT_net_DOT_dns_ns_records.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(69), kw_column, int64(7), kw_end_line, int64(69), kw_end_column, int64(17), kw_doc, "NS records for `domain`: a sorted vector of nameserver hostnames. Named\n  ns-records, not ns — clojure.core/ns is first-class (precedence principle)."))
@@ -122,5 +144,7 @@ func Load() {
 	})
 	tmp41 := &lang.NamedFn1{Name: "cljg.net.dns/ns-records", Expects: "1: [domain]", F: tmp37}
 	v_cljg_DOT_net_DOT_dns_ns_records.BindRoot(tmp41)
+	fnD_cljg_DOT_net_DOT_dns_ns_records = tmp41.F
+	v_cljg_DOT_net_DOT_dns_ns_records.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_ns_records
 }

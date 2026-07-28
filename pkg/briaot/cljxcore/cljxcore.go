@@ -61,6 +61,13 @@ var (
 	v_clojure_DOT_core_update_in         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("update-in"))
 )
 
+var (
+	fnD_cljx_DOT_core_del_BANG_    lang.FnFunc2
+	fnD_cljx_DOT_core_put_in_BANG_ lang.FnFunc3
+	fnD_cljx_DOT_core_clear_BANG_  lang.FnFunc1
+	fnD_cljx_DOT_core_toggle_BANG_ lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -168,6 +175,8 @@ func Load() {
 	})
 	tmp49 := &lang.NamedFn2{Name: "cljx.core/del!", Expects: "2: [a k]", F: tmp34}
 	v_cljx_DOT_core_del_BANG_.BindRoot(tmp49)
+	fnD_cljx_DOT_core_del_BANG_ = tmp49.F
+	v_cljx_DOT_core_del_BANG_.SealDirect()
 	_ = v_cljx_DOT_core_del_BANG_
 	// (def bump! "Increment — a counter in one word, returning the new value.\n\n  (bump! a)  …
 	v_cljx_DOT_core_bump_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(12), kw_doc, "Increment — a counter in one word, returning the new value.\n\n  (bump! a)        =>  (swap! a inc)\n  (bump! a k)      =>  (swap! a update k (fnil inc 0))   ; absent key starts at 0\n  (bump! a k n)    =>  (swap! a update k (fnil + 0) n)   ; by n"))
@@ -250,6 +259,8 @@ func Load() {
 	})
 	tmp88 := &lang.NamedFn3{Name: "cljx.core/put-in!", Expects: "3: [a path v]", F: tmp81}
 	v_cljx_DOT_core_put_in_BANG_.BindRoot(tmp88)
+	fnD_cljx_DOT_core_put_in_BANG_ = tmp88.F
+	v_cljx_DOT_core_put_in_BANG_.SealDirect()
 	_ = v_cljx_DOT_core_put_in_BANG_
 	// (def upd-in! "Apply a function to a nested value in a map atom, returning the new value.\n…
 	v_cljx_DOT_core_upd_in_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(81), kw_column, int64(7), kw_end_line, int64(81), kw_end_column, int64(14), kw_doc, "Apply a function to a nested value in a map atom, returning the new value.\n\n  (upd-in! a path f & args)  =>  (swap! a update-in path f & args)"))
@@ -292,6 +303,8 @@ func Load() {
 	})
 	tmp106 := &lang.NamedFn1{Name: "cljx.core/clear!", Expects: "1: [a]", F: tmp98}
 	v_cljx_DOT_core_clear_BANG_.BindRoot(tmp106)
+	fnD_cljx_DOT_core_clear_BANG_ = tmp106.F
+	v_cljx_DOT_core_clear_BANG_.SealDirect()
 	_ = v_cljx_DOT_core_clear_BANG_
 	// (def toggle! "Flip a boolean atom, returning the new value.\n\n  (toggle! a)  =>  (swap! a…
 	v_cljx_DOT_core_toggle_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(14), kw_doc, "Flip a boolean atom, returning the new value.\n\n  (toggle! a)  =>  (swap! a not)"))
@@ -303,6 +316,8 @@ func Load() {
 	})
 	tmp112 := &lang.NamedFn1{Name: "cljx.core/toggle!", Expects: "1: [a]", F: tmp107}
 	v_cljx_DOT_core_toggle_BANG_.BindRoot(tmp112)
+	fnD_cljx_DOT_core_toggle_BANG_ = tmp112.F
+	v_cljx_DOT_core_toggle_BANG_.SealDirect()
 	_ = v_cljx_DOT_core_toggle_BANG_
 	// (def dbg "Print a value and RETURN it unchanged — so it drops into any pipeline\n  witho…
 	v_cljx_DOT_core_dbg.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(105), kw_column, int64(7), kw_end_line, int64(105), kw_end_column, int64(10), kw_doc, "Print a value and RETURN it unchanged — so it drops into any pipeline\n  without altering the result.\n\n  (dbg x)        prints  dbg: <x>\n  (dbg label x)  prints  <label>: <x>\n\n  (->> prices (dbg \"prices\") (filter big?) (reduce +))"))

@@ -50,6 +50,20 @@ var (
 	v_clojure_DOT_core_swap_BANG_      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("swap!"))
 )
 
+var (
+	fnD_cljgo_DOT_build_make_builder     lang.FnFunc0
+	fnD_cljgo_DOT_build_exe              lang.FnFunc2
+	fnD_cljgo_DOT_build_lib              lang.FnFunc2
+	fnD_cljgo_DOT_build_go_require       lang.FnFunc3
+	fnD_cljgo_DOT_build_dep              lang.FnFunc3
+	fnD_cljgo_DOT_build_accept_version   lang.FnFunc3
+	fnD_cljgo_DOT_build_allow_capability lang.FnFunc2
+	fnD_cljgo_DOT_build_install          lang.FnFunc2
+	fnD_cljgo_DOT_build_run              lang.FnFunc2
+	fnD_cljgo_DOT_build_option           lang.FnFunc4
+	fnD_cljgo_DOT_build_host_target      lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -84,6 +98,8 @@ func Load() {
 	})
 	tmp15 := &lang.NamedFn0{Name: "cljgo.build/make-builder", Expects: "0: []", F: tmp5}
 	v_cljgo_DOT_build_make_builder.BindRoot(tmp15)
+	fnD_cljgo_DOT_build_make_builder = tmp15.F
+	v_cljgo_DOT_build_make_builder.SealDirect()
 	_ = v_cljgo_DOT_build_make_builder
 	// (def exe "Declares an executable artifact from spec {:name … :main \"path.cljg\" …}\n …
 	v_cljgo_DOT_build_exe.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(30), kw_column, int64(7), kw_end_line, int64(30), kw_end_column, int64(10), kw_doc, "Declares an executable artifact from spec {:name … :main \"path.cljg\" …}\n  and returns an artifact handle {:builder b :name …} the step/require fns\n  take. :target/:optimize are carried through untouched (minimal for B1)."))
@@ -117,6 +133,8 @@ func Load() {
 	})
 	tmp37 := &lang.NamedFn2{Name: "cljgo.build/exe", Expects: "2: [b spec]", F: tmp16}
 	v_cljgo_DOT_build_exe.BindRoot(tmp37)
+	fnD_cljgo_DOT_build_exe = tmp37.F
+	v_cljgo_DOT_build_exe.SealDirect()
 	_ = v_cljgo_DOT_build_exe
 	// (def lib "Declares a publishable library artifact from spec\n  {:name … :main \"path.clj…
 	v_cljgo_DOT_build_lib.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(39), kw_column, int64(7), kw_end_line, int64(39), kw_end_column, int64(10), kw_doc, "Declares a publishable library artifact from spec\n  {:name … :main \"path.cljg\" :module \"github.com/you/lib\"} — the producer\n  side of ADR 0013 / ADR 0054. ONE library, both ecosystems: `cljgo publish go`\n  emits a go-gettable module and `cljgo publish clojars` emits pure Clojure\n  source, from this one declaration. :kind is stamped \"lib\"; the target\n  (go|clojars) is chosen at publish time. :module is the library's module path /\n  coordinate. Returns an artifact handle {:builder b :name …}."))
@@ -150,6 +168,8 @@ func Load() {
 	})
 	tmp59 := &lang.NamedFn2{Name: "cljgo.build/lib", Expects: "2: [b spec]", F: tmp38}
 	v_cljgo_DOT_build_lib.BindRoot(tmp59)
+	fnD_cljgo_DOT_build_lib = tmp59.F
+	v_cljgo_DOT_build_lib.SealDirect()
 	_ = v_cljgo_DOT_build_lib
 	// (def go-require "Records a pinned third-party Go module requirement (ADR 0021 — this\n  …
 	v_cljgo_DOT_build_go_require.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(17), kw_doc, "Records a pinned third-party Go module requirement (ADR 0021 — this\n  REPLACES deps.edn). art is an artifact handle from exe; the pin is\n  accumulated module-wide (the emitted go.mod is one module)."))
@@ -181,6 +201,8 @@ func Load() {
 	})
 	tmp80 := &lang.NamedFn3{Name: "cljgo.build/go-require", Expects: "3: [art path version]", F: tmp60}
 	v_cljgo_DOT_build_go_require.BindRoot(tmp80)
+	fnD_cljgo_DOT_build_go_require = tmp80.F
+	v_cljgo_DOT_build_go_require.SealDirect()
 	_ = v_cljgo_DOT_build_go_require
 	// (def dep "Declares a dependency (ADR 0052). `name` is the dependency name; `opts` is\n  a …
 	v_cljgo_DOT_build_dep.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(10), kw_doc, "Declares a dependency (ADR 0052). `name` is the dependency name; `opts` is\n  a map of fetch coordinates — {:git url :ref \"v1.2.0\" :subdir \"…\"} for a\n  git dep, or {:path \"../local\"} for a local one. Accumulated project-wide\n  onto :deps (the emitted binary bakes one dependency graph). Returns b."))
@@ -204,6 +226,8 @@ func Load() {
 	})
 	tmp98 := &lang.NamedFn3{Name: "cljgo.build/dep", Expects: "3: [b name opts]", F: tmp81}
 	v_cljgo_DOT_build_dep.BindRoot(tmp98)
+	fnD_cljgo_DOT_build_dep = tmp98.F
+	v_cljgo_DOT_build_dep.SealDirect()
 	_ = v_cljgo_DOT_build_dep
 	// (def accept-version "Consumer-side version override (ADR 0052 decision 4): accept `version…
 	v_cljgo_DOT_build_accept_version.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(21), kw_doc, "Consumer-side version override (ADR 0052 decision 4): accept `version` for\n  Go module `module` when two dependencies pin it at different versions,\n  instead of the hard conflict error. Accumulated onto the :accept-versions\n  map. Returns b."))
@@ -225,6 +249,8 @@ func Load() {
 	})
 	tmp114 := &lang.NamedFn3{Name: "cljgo.build/accept-version", Expects: "3: [b module version]", F: tmp99}
 	v_cljgo_DOT_build_accept_version.BindRoot(tmp114)
+	fnD_cljgo_DOT_build_accept_version = tmp114.F
+	v_cljgo_DOT_build_accept_version.SealDirect()
 	_ = v_cljgo_DOT_build_accept_version
 	// (def allow-capability "Acknowledges a dependency's impure capability (ADR 0052 decision 6,…
 	v_cljgo_DOT_build_allow_capability.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(87), kw_column, int64(7), kw_end_line, int64(87), kw_end_column, int64(23), kw_doc, "Acknowledges a dependency's impure capability (ADR 0052 decision 6,\n  default-deny): `cap` is a capability keyword — :ffi, :cgo, or :go-require.\n  Unacknowledged impurity is refused at resolve time. Accumulated onto\n  :allow-caps. Returns b."))
@@ -246,6 +272,8 @@ func Load() {
 	})
 	tmp129 := &lang.NamedFn2{Name: "cljgo.build/allow-capability", Expects: "2: [b cap]", F: tmp115}
 	v_cljgo_DOT_build_allow_capability.BindRoot(tmp129)
+	fnD_cljgo_DOT_build_allow_capability = tmp129.F
+	v_cljgo_DOT_build_allow_capability.SealDirect()
 	_ = v_cljgo_DOT_build_allow_capability
 	// (def install "Adds an install step for an artifact and makes it the default step\n  (the t…
 	v_cljgo_DOT_build_install.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(98), kw_column, int64(7), kw_end_line, int64(98), kw_end_column, int64(14), kw_doc, "Adds an install step for an artifact and makes it the default step\n  (the target of a bare `cljgo build`). Mirrors zig's b.installArtifact."))
@@ -288,6 +316,8 @@ func Load() {
 	})
 	tmp154 := &lang.NamedFn2{Name: "cljgo.build/install", Expects: "2: [b art]", F: tmp130}
 	v_cljgo_DOT_build_install.BindRoot(tmp154)
+	fnD_cljgo_DOT_build_install = tmp154.F
+	v_cljgo_DOT_build_install.SealDirect()
 	_ = v_cljgo_DOT_build_install
 	// (def run "Adds a run step for an artifact (the `cljgo build run` target). Mirrors\n  zig's…
 	v_cljgo_DOT_build_run.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(10), kw_doc, "Adds a run step for an artifact (the `cljgo build run` target). Mirrors\n  zig's b.addRunArtifact + a top-level `run` step."))
@@ -312,6 +342,8 @@ func Load() {
 	})
 	tmp172 := &lang.NamedFn2{Name: "cljgo.build/run", Expects: "2: [b art]", F: tmp155}
 	v_cljgo_DOT_build_run.BindRoot(tmp172)
+	fnD_cljgo_DOT_build_run = tmp172.F
+	v_cljgo_DOT_build_run.SealDirect()
 	_ = v_cljgo_DOT_build_run
 	// (def option "Build option (Zig -D). B1 stub: returns (get opts :default) — no CLI\n  -D …
 	v_cljgo_DOT_build_option.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(121), kw_column, int64(7), kw_end_line, int64(121), kw_end_column, int64(13), kw_doc, "Build option (Zig -D). B1 stub: returns (get opts :default) — no CLI\n  -D wiring yet (B3)."))
@@ -322,6 +354,8 @@ func Load() {
 	})
 	tmp180 := &lang.NamedFn4{Name: "cljgo.build/option", Expects: "4: [b name typ opts]", F: tmp173}
 	v_cljgo_DOT_build_option.BindRoot(tmp180)
+	fnD_cljgo_DOT_build_option = tmp180.F
+	v_cljgo_DOT_build_option.SealDirect()
 	_ = v_cljgo_DOT_build_option
 	// (def host-target "The host os/arch. B1 stub: an empty tuple means \"host default\" to the\…
 	v_cljgo_DOT_build_host_target.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(127), kw_column, int64(7), kw_end_line, int64(127), kw_end_column, int64(18), kw_doc, "The host os/arch. B1 stub: an empty tuple means \"host default\" to the\n  emitter (cross-compile matrix is B5)."))
@@ -331,5 +365,7 @@ func Load() {
 	})
 	tmp184 := &lang.NamedFn1{Name: "cljgo.build/host-target", Expects: "1: [b]", F: tmp181}
 	v_cljgo_DOT_build_host_target.BindRoot(tmp184)
+	fnD_cljgo_DOT_build_host_target = tmp184.F
+	v_cljgo_DOT_build_host_target.SealDirect()
 	_ = v_cljgo_DOT_build_host_target
 }

@@ -72,6 +72,11 @@ var (
 	v_clojure_DOT_string_join                   = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("join"))
 )
 
+var (
+	fnD_clojure_DOT_data_DOT_csv_write_cell   lang.FnFunc4
+	fnD_clojure_DOT_data_DOT_csv_write_record lang.FnFunc4
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -732,6 +737,8 @@ func Load() {
 	})
 	tmp297 := &lang.NamedFn4{Name: "clojure.data.csv/write-cell", Expects: "4: [obj sep quote quote?]", F: tmp278}
 	v_clojure_DOT_data_DOT_csv_write_cell.BindRoot(tmp297)
+	fnD_clojure_DOT_data_DOT_csv_write_cell = tmp297.F
+	v_clojure_DOT_data_DOT_csv_write_cell.SealDirect()
 	_ = v_clojure_DOT_data_DOT_csv_write_cell
 	// (def write-record "Render one record (a seq of cells) to a CSV line (no trailing newline).…
 	v_clojure_DOT_data_DOT_csv_write_record.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(141), kw_column, int64(8), kw_end_line, int64(141), kw_end_column, int64(20), kw_private, true, kw_doc, "Render one record (a seq of cells) to a CSV line (no trailing newline)."))
@@ -741,144 +748,164 @@ func Load() {
 		tmp305 := lang.Apply1(tmp304, sep300)
 		tmp306 := v_clojure_DOT_core_map_.Get()
 		tmp307 := lang.FnFunc1(func(p1__67_SHARP_308 any) any {
-			tmp309 := v_clojure_DOT_data_DOT_csv_write_cell.Get()
-			tmp310 := lang.Apply4(tmp309, p1__67_SHARP_308, sep300, quote301, quote_QMARK_302)
-			return tmp310
+			tmp309 := v_clojure_DOT_data_DOT_csv_write_cell.Direct()
+			var tmp310 any
+			if !tmp309 {
+				tmp310 = v_clojure_DOT_data_DOT_csv_write_cell.Get()
+			}
+			var tmp311 any
+			if tmp309 {
+				tmp311 = fnD_clojure_DOT_data_DOT_csv_write_cell(p1__67_SHARP_308, sep300, quote301, quote_QMARK_302)
+			} else {
+				tmp311 = lang.Apply4(tmp310, p1__67_SHARP_308, sep300, quote301, quote_QMARK_302)
+			}
+			return tmp311
 		})
-		tmp311 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__67#]", F: tmp307}
-		tmp312 := lang.Apply2(tmp306, tmp311, record299)
-		tmp313 := lang.Apply2(tmp303, tmp305, tmp312)
-		return tmp313
+		tmp312 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__67#]", F: tmp307}
+		tmp313 := lang.Apply2(tmp306, tmp312, record299)
+		tmp314 := lang.Apply2(tmp303, tmp305, tmp313)
+		return tmp314
 	})
-	tmp314 := &lang.NamedFn4{Name: "clojure.data.csv/write-record", Expects: "4: [record sep quote quote?]", F: tmp298}
-	v_clojure_DOT_data_DOT_csv_write_record.BindRoot(tmp314)
+	tmp315 := &lang.NamedFn4{Name: "clojure.data.csv/write-record", Expects: "4: [record sep quote quote?]", F: tmp298}
+	v_clojure_DOT_data_DOT_csv_write_record.BindRoot(tmp315)
+	fnD_clojure_DOT_data_DOT_csv_write_record = tmp315.F
+	v_clojure_DOT_data_DOT_csv_write_record.SealDirect()
 	_ = v_clojure_DOT_data_DOT_csv_write_record
 	// (def write-csv "Writes `data` (a seq of seqs of cells) to CSV format and returns the resul…
 	v_clojure_DOT_data_DOT_csv_write_csv.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(146), kw_column, int64(7), kw_end_line, int64(146), kw_end_column, int64(16), kw_doc, "Writes `data` (a seq of seqs of cells) to CSV format and returns the result\n  as a String (cljgo has no java.io.Writer — the pure-String surface, Mandate\n  A). The returned string is byte-identical to what the JVM data.csv writes to\n  a java.io.StringWriter.\n\n  Valid options are\n    :separator (default \\,)\n    :quote     (default \\\")\n    :quote?    (a predicate on the rendered field string deciding whether it\n                must be quoted; defaults to quoting only when the field\n                contains the separator, the quote, CR, or LF)\n    :newline   (:lf (default) or :cr+lf)"))
-	tmp315 := lang.FnFunc(func(args ...any) any {
+	tmp316 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 1 {
 				panic(lang.NewArityError(len(args), "clojure.data.csv/write-csv", "1+: [data options & more]"))
 			}
-			data316 := args[0]
-			_ = data316
-			var options317 any
+			data317 := args[0]
+			_ = data317
+			var options318 any
 			if len(args) > 1 {
-				options317 = lang.NewList(args[1:]...)
+				options318 = lang.NewList(args[1:]...)
 			}
-			_ = options317
-			var tmp318 any
-			_ = tmp318
+			_ = options318
+			var tmp319 any
+			_ = tmp319
 			{
-				tmp319 := v_clojure_DOT_core_apply.Get()
-				tmp320 := v_clojure_DOT_core_hash_map.Get()
-				tmp321 := lang.Apply2(tmp319, tmp320, options317)
-				var opts322 any = tmp321
-				_ = opts322
-				var tmp323 any
-				_ = tmp323
+				tmp320 := v_clojure_DOT_core_apply.Get()
+				tmp321 := v_clojure_DOT_core_hash_map.Get()
+				tmp322 := lang.Apply2(tmp320, tmp321, options318)
+				var opts323 any = tmp322
+				_ = opts323
+				var tmp324 any
+				_ = tmp324
 				{
-					tmp324 := lang.Apply1(kw_separator, opts322)
-					var or__2__auto__325 any = tmp324
-					_ = or__2__auto__325
-					var tmp326 any
-					_ = tmp326
-					if lang.IsTruthy(or__2__auto__325) {
-						tmp326 = or__2__auto__325
+					tmp325 := lang.Apply1(kw_separator, opts323)
+					var or__2__auto__326 any = tmp325
+					_ = or__2__auto__326
+					var tmp327 any
+					_ = tmp327
+					if lang.IsTruthy(or__2__auto__326) {
+						tmp327 = or__2__auto__326
 					} else {
-						tmp326 = lang.Char(',')
+						tmp327 = lang.Char(',')
 					}
-					tmp323 = tmp326
+					tmp324 = tmp327
 				}
-				var separator327 any = tmp323
-				_ = separator327
-				var tmp328 any
-				_ = tmp328
+				var separator328 any = tmp324
+				_ = separator328
+				var tmp329 any
+				_ = tmp329
 				{
-					tmp329 := lang.Apply1(kw_quote, opts322)
-					var or__2__auto__330 any = tmp329
-					_ = or__2__auto__330
-					var tmp331 any
-					_ = tmp331
-					if lang.IsTruthy(or__2__auto__330) {
-						tmp331 = or__2__auto__330
+					tmp330 := lang.Apply1(kw_quote, opts323)
+					var or__2__auto__331 any = tmp330
+					_ = or__2__auto__331
+					var tmp332 any
+					_ = tmp332
+					if lang.IsTruthy(or__2__auto__331) {
+						tmp332 = or__2__auto__331
 					} else {
-						tmp331 = lang.Char('"')
+						tmp332 = lang.Char('"')
 					}
-					tmp328 = tmp331
+					tmp329 = tmp332
 				}
-				var quote332 any = tmp328
-				_ = quote332
-				var tmp333 any
-				_ = tmp333
+				var quote333 any = tmp329
+				_ = quote333
+				var tmp334 any
+				_ = tmp334
 				{
-					tmp334 := lang.Apply1(kw_quote_QMARK_, opts322)
-					var or__2__auto__335 any = tmp334
-					_ = or__2__auto__335
-					var tmp336 any
-					_ = tmp336
-					if lang.IsTruthy(or__2__auto__335) {
-						tmp336 = or__2__auto__335
+					tmp335 := lang.Apply1(kw_quote_QMARK_, opts323)
+					var or__2__auto__336 any = tmp335
+					_ = or__2__auto__336
+					var tmp337 any
+					_ = tmp337
+					if lang.IsTruthy(or__2__auto__336) {
+						tmp337 = or__2__auto__336
 					} else {
-						var tmp337 any
-						_ = tmp337
+						var tmp338 any
+						_ = tmp338
 						{
-							tmp338 := lang.NewSet(separator327, lang.Char('\n'), lang.Char('\r'), quote332)
-							var should_quote339 any = tmp338
-							_ = should_quote339
-							tmp340 := lang.FnFunc1(func(p1__68_SHARP_341 any) any {
-								tmp342 := v_clojure_DOT_core_some.Get()
-								tmp343 := lang.Apply2(tmp342, should_quote339, p1__68_SHARP_341)
-								return tmp343
+							tmp339 := lang.NewSet(separator328, lang.Char('\n'), lang.Char('\r'), quote333)
+							var should_quote340 any = tmp339
+							_ = should_quote340
+							tmp341 := lang.FnFunc1(func(p1__68_SHARP_342 any) any {
+								tmp343 := v_clojure_DOT_core_some.Get()
+								tmp344 := lang.Apply2(tmp343, should_quote340, p1__68_SHARP_342)
+								return tmp344
 							})
-							tmp344 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__68#]", F: tmp340}
-							tmp337 = tmp344
+							tmp345 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__68#]", F: tmp341}
+							tmp338 = tmp345
 						}
-						tmp336 = tmp337
+						tmp337 = tmp338
 					}
-					tmp333 = tmp336
+					tmp334 = tmp337
 				}
-				var quote_QMARK_345 any = tmp333
-				_ = quote_QMARK_345
-				var tmp346 any
-				_ = tmp346
+				var quote_QMARK_346 any = tmp334
+				_ = quote_QMARK_346
+				var tmp347 any
+				_ = tmp347
 				{
-					tmp347 := lang.Apply1(kw_newline, opts322)
-					var or__2__auto__348 any = tmp347
-					_ = or__2__auto__348
-					var tmp349 any
-					_ = tmp349
-					if lang.IsTruthy(or__2__auto__348) {
-						tmp349 = or__2__auto__348
+					tmp348 := lang.Apply1(kw_newline, opts323)
+					var or__2__auto__349 any = tmp348
+					_ = or__2__auto__349
+					var tmp350 any
+					_ = tmp350
+					if lang.IsTruthy(or__2__auto__349) {
+						tmp350 = or__2__auto__349
 					} else {
-						tmp349 = kw_lf
+						tmp350 = kw_lf
 					}
-					tmp346 = tmp349
+					tmp347 = tmp350
 				}
-				var newline350 any = tmp346
-				_ = newline350
-				tmp351 := lang.NewMap(kw_lf, "\n", kw_cr_PLUS_lf, "\r\n")
-				tmp352 := lang.Apply1(tmp351, newline350)
-				var nl353 any = tmp352
-				_ = nl353
-				tmp354 := v_clojure_DOT_core_apply.Get()
-				tmp355 := v_clojure_DOT_core_str.Get()
-				tmp356 := v_clojure_DOT_core_mapcat.Get()
-				tmp357 := lang.FnFunc1(func(record358 any) any {
-					tmp359 := v_clojure_DOT_data_DOT_csv_write_record.Get()
-					tmp360 := lang.Apply4(tmp359, record358, separator327, quote332, quote_QMARK_345)
-					tmp361 := lang.NewVector(tmp360, nl353)
-					return tmp361
+				var newline351 any = tmp347
+				_ = newline351
+				tmp352 := lang.NewMap(kw_lf, "\n", kw_cr_PLUS_lf, "\r\n")
+				tmp353 := lang.Apply1(tmp352, newline351)
+				var nl354 any = tmp353
+				_ = nl354
+				tmp355 := v_clojure_DOT_core_apply.Get()
+				tmp356 := v_clojure_DOT_core_str.Get()
+				tmp357 := v_clojure_DOT_core_mapcat.Get()
+				tmp358 := lang.FnFunc1(func(record359 any) any {
+					tmp360 := v_clojure_DOT_data_DOT_csv_write_record.Direct()
+					var tmp361 any
+					if !tmp360 {
+						tmp361 = v_clojure_DOT_data_DOT_csv_write_record.Get()
+					}
+					var tmp362 any
+					if tmp360 {
+						tmp362 = fnD_clojure_DOT_data_DOT_csv_write_record(record359, separator328, quote333, quote_QMARK_346)
+					} else {
+						tmp362 = lang.Apply4(tmp361, record359, separator328, quote333, quote_QMARK_346)
+					}
+					tmp363 := lang.NewVector(tmp362, nl354)
+					return tmp363
 				})
-				tmp362 := &lang.NamedFn1{Name: "fn", Expects: "1: [record]", F: tmp357}
-				tmp363 := lang.Apply2(tmp356, tmp362, data316)
-				tmp364 := lang.Apply2(tmp354, tmp355, tmp363)
-				tmp318 = tmp364
+				tmp364 := &lang.NamedFn1{Name: "fn", Expects: "1: [record]", F: tmp358}
+				tmp365 := lang.Apply2(tmp357, tmp364, data317)
+				tmp366 := lang.Apply2(tmp355, tmp356, tmp365)
+				tmp319 = tmp366
 			}
-			return tmp318
+			return tmp319
 		}
 	})
-	v_clojure_DOT_data_DOT_csv_write_csv.BindRoot(tmp315)
+	v_clojure_DOT_data_DOT_csv_write_csv.BindRoot(tmp316)
 	_ = v_clojure_DOT_data_DOT_csv_write_csv
 }

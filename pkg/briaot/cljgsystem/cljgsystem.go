@@ -28,6 +28,11 @@ var (
 	v_clojure_DOT_core_refer      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 )
 
+var (
+	fnD_cljg_DOT_system_environ lang.FnFunc0
+	fnD_cljg_DOT_system_args    lang.FnFunc0
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -95,6 +100,8 @@ func Load() {
 	})
 	tmp21 := &lang.NamedFn0{Name: "cljg.system/environ", Expects: "0: []", F: tmp18}
 	v_cljg_DOT_system_environ.BindRoot(tmp21)
+	fnD_cljg_DOT_system_environ = tmp21.F
+	v_cljg_DOT_system_environ.SealDirect()
 	_ = v_cljg_DOT_system_environ
 	// (def args "The raw process argument vector as a vector of strings; element 0 is the\n  pro…
 	v_cljg_DOT_system_args.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(41), kw_column, int64(7), kw_end_line, int64(41), kw_end_column, int64(11), kw_doc, "The raw process argument vector as a vector of strings; element 0 is the\n  program path (os.Args). For just the user args after the program, clojure.core\n  keeps *command-line-args*."))
@@ -105,6 +112,8 @@ func Load() {
 	})
 	tmp25 := &lang.NamedFn0{Name: "cljg.system/args", Expects: "0: []", F: tmp22}
 	v_cljg_DOT_system_args.BindRoot(tmp25)
+	fnD_cljg_DOT_system_args = tmp25.F
+	v_cljg_DOT_system_args.SealDirect()
 	_ = v_cljg_DOT_system_args
 	// (def exit "Terminate the process immediately with integer exit `status` (default 0).\n  Do…
 	v_cljg_DOT_system_exit.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(11), kw_doc, "Terminate the process immediately with integer exit `status` (default 0).\n  Does not return, and does NOT run pending finally / with-open cleanup — treat\n  it as the very last thing you call, after your own teardown."))

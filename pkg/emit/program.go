@@ -161,6 +161,11 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		}
 	}
 
+	// ADR 0064 cross-var direct calls: decide which top-level defns
+	// publish a typed handle BEFORE emission, so a forward reference
+	// (declare + later defn, mutual recursion) resolves to it too.
+	g.planDirectVars(forms)
+
 	printLast := opts.PrintLastValue && spec.isMain
 	for i, n := range forms {
 		// Numeric emission (spike s42 / ADR 0067) starts from the boxed
@@ -194,7 +199,7 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	// Lifted typed funcs (g.funcs) sit outside g.buf; scan them too for the
 	// lang./rt. import decisions (but they are emitted separately, not into
 	// Load's body).
-	scanText := body + strings.Join(g.funcs, "")
+	scanText := body + strings.Join(g.funcs, "") + strings.Join(g.handles, "")
 	var declText bytes.Buffer
 	if len(g.decls) > 0 {
 		decls := make([]hoistDecl, len(g.decls))
@@ -290,6 +295,16 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	out.WriteString(")\n\n")
 
 	out.Write(declText.Bytes())
+	// ADR 0064 cross-var direct-call handles: `var fnD_… lang.FnFuncN`,
+	// published by the owning def and read at matching-arity call sites
+	// while the var's seal bit is armed.
+	if len(g.handles) > 0 {
+		out.WriteString("var (\n")
+		for _, h := range g.handles {
+			out.WriteString(h)
+		}
+		out.WriteString(")\n\n")
+	}
 	// Lifted typed funcs (ADR 0067 rung 3): package-level `func nameL(…
 	// int64) int64` with direct int64 recursion, emitted before Load.
 	for _, fn := range g.funcs {

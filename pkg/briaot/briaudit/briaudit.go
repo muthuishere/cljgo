@@ -49,6 +49,14 @@ var (
 	v_clojure_DOT_core_reset_BANG_             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("reset!"))
 )
 
+var (
+	fnD_bri_DOT_core_DOT_audit_dev_QMARK_     lang.FnFunc0
+	fnD_bri_DOT_core_DOT_audit_set_sink_BANG_ lang.FnFunc1
+	fnD_bri_DOT_core_DOT_audit_default_sink   lang.FnFunc1
+	fnD_bri_DOT_core_DOT_audit_record         lang.FnFunc1
+	fnD_bri_DOT_core_DOT_audit_subject        lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -81,6 +89,8 @@ func Load() {
 	})
 	tmp11 := &lang.NamedFn0{Name: "bri.core.audit/dev?", Expects: "0: []", F: tmp7}
 	v_bri_DOT_core_DOT_audit_dev_QMARK_.BindRoot(tmp11)
+	fnD_bri_DOT_core_DOT_audit_dev_QMARK_ = tmp11.F
+	v_bri_DOT_core_DOT_audit_dev_QMARK_.SealDirect()
 	_ = v_bri_DOT_core_DOT_audit_dev_QMARK_
 	// (def *sink* "When thread-bound, receives every event map (used by tests to capture\n  dete…
 	v_bri_DOT_core_DOT_audit_X_STAR_sink_STAR_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(19), kw_column, int64(6), kw_end_line, int64(19), kw_end_column, int64(22), kw_dynamic, true, kw_doc, "When thread-bound, receives every event map (used by tests to capture\n  deterministically). nil = fall through to the process sink."))
@@ -102,96 +112,113 @@ func Load() {
 	})
 	tmp19 := &lang.NamedFn1{Name: "bri.core.audit/set-sink!", Expects: "1: [f]", F: tmp14}
 	v_bri_DOT_core_DOT_audit_set_sink_BANG_.BindRoot(tmp19)
+	fnD_bri_DOT_core_DOT_audit_set_sink_BANG_ = tmp19.F
+	v_bri_DOT_core_DOT_audit_set_sink_BANG_.SealDirect()
 	_ = v_bri_DOT_core_DOT_audit_set_sink_BANG_
 	// (def default-sink (clojure.core/fn [ev] (if (dev?) (-eprintln (pr-str ev)) (-eprintln (-js…
 	v_bri_DOT_core_DOT_audit_default_sink.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(29), kw_private, true))
 	tmp20 := lang.FnFunc1(func(ev21 any) any {
-		tmp22 := v_bri_DOT_core_DOT_audit_dev_QMARK_.Get()
-		tmp23 := lang.Apply0(tmp22)
-		var tmp24 any
-		_ = tmp24
-		if lang.IsTruthy(tmp23) {
-			tmp25 := v_bri_DOT_core_DOT_audit_X_eprintln.Get()
-			tmp26 := v_clojure_DOT_core_pr_str.Get()
-			tmp27 := lang.Apply1(tmp26, ev21)
-			tmp28 := lang.Apply1(tmp25, tmp27)
-			tmp24 = tmp28
-		} else {
-			tmp29 := v_bri_DOT_core_DOT_audit_X_eprintln.Get()
-			tmp30 := v_bri_DOT_core_DOT_audit_X_json_encode.Get()
-			tmp31 := lang.Apply1(tmp30, ev21)
-			tmp32 := lang.Apply1(tmp29, tmp31)
-			tmp24 = tmp32
+		tmp22 := v_bri_DOT_core_DOT_audit_dev_QMARK_.Direct()
+		var tmp23 any
+		if !tmp22 {
+			tmp23 = v_bri_DOT_core_DOT_audit_dev_QMARK_.Get()
 		}
-		return tmp24
+		var tmp24 any
+		if tmp22 {
+			tmp24 = fnD_bri_DOT_core_DOT_audit_dev_QMARK_()
+		} else {
+			tmp24 = lang.Apply0(tmp23)
+		}
+		var tmp25 any
+		_ = tmp25
+		if lang.IsTruthy(tmp24) {
+			tmp26 := v_bri_DOT_core_DOT_audit_X_eprintln.Get()
+			tmp27 := v_clojure_DOT_core_pr_str.Get()
+			tmp28 := lang.Apply1(tmp27, ev21)
+			tmp29 := lang.Apply1(tmp26, tmp28)
+			tmp25 = tmp29
+		} else {
+			tmp30 := v_bri_DOT_core_DOT_audit_X_eprintln.Get()
+			tmp31 := v_bri_DOT_core_DOT_audit_X_json_encode.Get()
+			tmp32 := lang.Apply1(tmp31, ev21)
+			tmp33 := lang.Apply1(tmp30, tmp32)
+			tmp25 = tmp33
+		}
+		return tmp25
 	})
-	tmp33 := &lang.NamedFn1{Name: "bri.core.audit/default-sink", Expects: "1: [ev]", F: tmp20}
-	v_bri_DOT_core_DOT_audit_default_sink.BindRoot(tmp33)
+	tmp34 := &lang.NamedFn1{Name: "bri.core.audit/default-sink", Expects: "1: [ev]", F: tmp20}
+	v_bri_DOT_core_DOT_audit_default_sink.BindRoot(tmp34)
+	fnD_bri_DOT_core_DOT_audit_default_sink = tmp34.F
+	v_bri_DOT_core_DOT_audit_default_sink.SealDirect()
 	_ = v_bri_DOT_core_DOT_audit_default_sink
 	// (def record "Record ONE audit event. Merges a :ts (epoch millis), :kind :audit and\n  a de…
 	v_bri_DOT_core_DOT_audit_record.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(13), kw_doc, "Record ONE audit event. Merges a :ts (epoch millis), :kind :audit and\n  a default :severity :info; the caller supplies :action (required by\n  convention), :actor (subject or client key), :target, and any extra\n  keys. Returns the completed event. Routing: a thread-bound *sink* wins\n  (tests), else the process sink, else structured stderr."))
-	tmp34 := lang.FnFunc1(func(ev35 any) any {
-		var tmp36 any
-		_ = tmp36
+	tmp35 := lang.FnFunc1(func(ev36 any) any {
+		var tmp37 any
+		_ = tmp37
 		{
-			tmp37 := v_clojure_DOT_core_merge.Get()
-			tmp38 := v_bri_DOT_core_DOT_audit_X_now_millis.Get()
-			tmp39 := lang.Apply0(tmp38)
-			tmp40 := lang.NewMap(kw_ts, tmp39, kw_kind, kw_audit, kw_severity, kw_info)
-			tmp41 := lang.Apply2(tmp37, tmp40, ev35)
-			var event42 any = tmp41
-			_ = event42
-			var tmp43 any
-			_ = tmp43
+			tmp38 := v_clojure_DOT_core_merge.Get()
+			tmp39 := v_bri_DOT_core_DOT_audit_X_now_millis.Get()
+			tmp40 := lang.Apply0(tmp39)
+			tmp41 := lang.NewMap(kw_ts, tmp40, kw_kind, kw_audit, kw_severity, kw_info)
+			tmp42 := lang.Apply2(tmp38, tmp41, ev36)
+			var event43 any = tmp42
+			_ = event43
+			var tmp44 any
+			_ = tmp44
 			{
-				tmp44 := v_bri_DOT_core_DOT_audit_X_STAR_sink_STAR_.Get()
-				var or__2__auto__45 any = tmp44
-				_ = or__2__auto__45
-				var tmp46 any
-				_ = tmp46
-				if lang.IsTruthy(or__2__auto__45) {
-					tmp46 = or__2__auto__45
+				tmp45 := v_bri_DOT_core_DOT_audit_X_STAR_sink_STAR_.Get()
+				var or__2__auto__46 any = tmp45
+				_ = or__2__auto__46
+				var tmp47 any
+				_ = tmp47
+				if lang.IsTruthy(or__2__auto__46) {
+					tmp47 = or__2__auto__46
 				} else {
-					var tmp47 any
-					_ = tmp47
+					var tmp48 any
+					_ = tmp48
 					{
-						tmp48 := v_clojure_DOT_core_deref.Get()
-						tmp49 := v_bri_DOT_core_DOT_audit_process_sink.Get()
-						tmp50 := lang.Apply1(tmp48, tmp49)
-						var or__2__auto__51 any = tmp50
-						_ = or__2__auto__51
-						var tmp52 any
-						_ = tmp52
-						if lang.IsTruthy(or__2__auto__51) {
-							tmp52 = or__2__auto__51
+						tmp49 := v_clojure_DOT_core_deref.Get()
+						tmp50 := v_bri_DOT_core_DOT_audit_process_sink.Get()
+						tmp51 := lang.Apply1(tmp49, tmp50)
+						var or__2__auto__52 any = tmp51
+						_ = or__2__auto__52
+						var tmp53 any
+						_ = tmp53
+						if lang.IsTruthy(or__2__auto__52) {
+							tmp53 = or__2__auto__52
 						} else {
-							tmp53 := v_bri_DOT_core_DOT_audit_default_sink.Get()
-							tmp52 = tmp53
+							tmp54 := v_bri_DOT_core_DOT_audit_default_sink.Get()
+							tmp53 = tmp54
 						}
-						tmp47 = tmp52
+						tmp48 = tmp53
 					}
-					tmp46 = tmp47
+					tmp47 = tmp48
 				}
-				tmp43 = tmp46
+				tmp44 = tmp47
 			}
-			var sink54 any = tmp43
-			_ = sink54
-			tmp55 := lang.Apply1(sink54, event42)
-			_ = tmp55
-			tmp36 = event42
+			var sink55 any = tmp44
+			_ = sink55
+			tmp56 := lang.Apply1(sink55, event43)
+			_ = tmp56
+			tmp37 = event43
 		}
-		return tmp36
+		return tmp37
 	})
-	tmp56 := &lang.NamedFn1{Name: "bri.core.audit/record", Expects: "1: [ev]", F: tmp34}
-	v_bri_DOT_core_DOT_audit_record.BindRoot(tmp56)
+	tmp57 := &lang.NamedFn1{Name: "bri.core.audit/record", Expects: "1: [ev]", F: tmp35}
+	v_bri_DOT_core_DOT_audit_record.BindRoot(tmp57)
+	fnD_bri_DOT_core_DOT_audit_record = tmp57.F
+	v_bri_DOT_core_DOT_audit_record.SealDirect()
 	_ = v_bri_DOT_core_DOT_audit_record
 	// (def subject "The audit actor for a claims map — the JWT subject." (clojure.core/fn [cla…
 	v_bri_DOT_core_DOT_audit_subject.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(14), kw_doc, "The audit actor for a claims map — the JWT subject."))
-	tmp57 := lang.FnFunc1(func(claims58 any) any {
-		tmp59 := lang.Apply1(kw_sub, claims58)
-		return tmp59
+	tmp58 := lang.FnFunc1(func(claims59 any) any {
+		tmp60 := lang.Apply1(kw_sub, claims59)
+		return tmp60
 	})
-	tmp60 := &lang.NamedFn1{Name: "bri.core.audit/subject", Expects: "1: [claims]", F: tmp57}
-	v_bri_DOT_core_DOT_audit_subject.BindRoot(tmp60)
+	tmp61 := &lang.NamedFn1{Name: "bri.core.audit/subject", Expects: "1: [claims]", F: tmp58}
+	v_bri_DOT_core_DOT_audit_subject.BindRoot(tmp61)
+	fnD_bri_DOT_core_DOT_audit_subject = tmp61.F
+	v_bri_DOT_core_DOT_audit_subject.SealDirect()
 	_ = v_bri_DOT_core_DOT_audit_subject
 }

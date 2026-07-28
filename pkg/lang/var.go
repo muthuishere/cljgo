@@ -33,6 +33,28 @@ type (
 		// emitted intrinsics drop their per-call guard until then.
 		sealed atomic.Bool
 
+		// direct is the per-var arm of the SAME seal (ADR 0064
+		// cross-var direct calls, built on the ADR 0066 dirty-flag
+		// mechanism). It is armed by SealDirect() at the point the
+		// emitted `def` has just installed the fn AND published its
+		// typed Go handle, and disarmed by the one and only trip site
+		// (tripIfSealed) on ANY later root mutation — emitted `def`,
+		// alter-var-root, with-redefs. While it reads true a compiled
+		// call site of matching arity may invoke the published handle
+		// directly (no var deref, no lang.ApplyN dispatch); the moment
+		// it reads false every such site falls back to
+		// `v.Get()` + `lang.ApplyN`, so a redefinition is observed
+		// exactly as before. Unlike CoreArithDirty this is PER VAR: a
+		// program that redefines one fn must not deoptimize the rest
+		// (ADR 0066 "Alternatives" §2, which is the right trade here
+		// because every emitted `def` mutates a root).
+		//
+		// It is disarmed monotonically for the same reason
+		// CoreArithDirty is set monotonically: correctness only needs a
+		// currently-redefined var to take the slow path, and never
+		// re-arming avoids any cross-goroutine reset race.
+		direct atomic.Bool
+
 		watches IPersistentMap
 
 		syncLock sync.Mutex
@@ -236,13 +258,37 @@ func (v *Var) Seal() *Var {
 	return v
 }
 
-// tripIfSealed flips the global dirty flag when a sealed var's root moves.
-// A plain load-then-maybe-store: the common case (unsealed var) is a single
-// predictable bool load, and the rare sealed case only ever stores true, so
-// no CAS or lock is needed.
+// SealDirect arms the var's per-var direct-call bit (ADR 0064 cross-var
+// direct calls, on the ADR 0066 seal). Emitted `def` code calls it
+// IMMEDIATELY AFTER BindRoot has installed the fn and the package-level
+// typed handle has been published, so the handle-publish happens-before
+// any reader that observes the bit (atomic.Bool Store/Load are
+// sequentially consistent). Any later root mutation disarms it through
+// tripIfSealed — the one shared trip site. Returns the var for chaining.
+func (v *Var) SealDirect() *Var {
+	v.direct.Store(true)
+	return v
+}
+
+// Direct reports whether compiled call sites may invoke this var's
+// published typed handle directly. False until SealDirect arms it (so a
+// forward reference called before its `def` runs still takes the var path
+// and reports the real unbound error), and false forever after the first
+// redefinition.
+func (v *Var) Direct() bool { return v.direct.Load() }
+
+// tripIfSealed is the ONE root-mutation trip site for both arms of the
+// seal (ADR 0066): it flips the global arithmetic dirty flag when a sealed
+// arithmetic var's root moves, and disarms this var's direct-call bit so
+// compiled sites stop using a stale handle. A plain load-then-maybe-store:
+// the common case is two predictable bool loads, and the rare sealed case
+// only ever stores, so no CAS or lock is needed.
 func (v *Var) tripIfSealed() {
 	if v.sealed.Load() {
 		CoreArithDirty.Store(true)
+	}
+	if v.direct.Load() {
+		v.direct.Store(false)
 	}
 }
 
@@ -338,6 +384,13 @@ func (v *Var) isDynamic() bool {
 
 func (v *Var) SetDynamic() *Var {
 	v.dynamic = true
+	// A dynamic var can acquire a thread binding, which a direct call
+	// site would not see. Disarm (ADR 0064) — the emitter never arms a
+	// var it knows is dynamic, so this only covers a var made dynamic
+	// after the fact.
+	if v.direct.Load() {
+		v.direct.Store(false)
+	}
 	return v
 }
 
