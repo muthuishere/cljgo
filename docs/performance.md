@@ -48,6 +48,24 @@ dirty-flag (guard elision with full `with-redefs` liveness, 0066), and an
 int64 numeric-inference pass that lifts monomorphic kernels to raw typed Go
 (`func tak(x, y, z int64) int64`, 0067).
 
+### `cljgo build --seal-core` — an opt-in that is NOT a speed knob (ADR 0108)
+
+`--seal-core` drops the redefinition guard from core-arithmetic call sites
+entirely (no operator var, no dirty-flag load), giving JVM Clojure's `:inline`
+semantics: a `with-redefs`/`def`/`alter-var-root` of `+ - * / < > = <= >=` is
+then **not seen** at a direct 2-arg site. It is off by default and the default
+emission is byte-identical to what it was before the flag existed.
+
+Measured, so nobody has to guess (Apple M5 Pro, hyperfine `-N -w 3 -r 20`,
+whole binary): `(fact 15)` × 2M **66.0 ms → 64.8 ms** (1.02× ± 0.04); a
+boxed float accumulate × 5M **70.8 ms → 71.8 ms** (no gain). At the intrinsic
+level `Add2` goes 5.89 → 5.85 ns/op and `LTBool` 5.06 → 4.96 ns/op. In other
+words ADR 0066's dirty flag already took the win, and the single
+`atomic.Bool` load it leaves behind costs ~nothing. **Turn `--seal-core` on if
+you want the JVM's inlining semantics — not for speed.** Reproduce with
+`CLJGO_SEAL_BENCH=1 go test ./pkg/emit -run TestSealCoreMeasure -v` and
+`go test ./pkg/emit/rt -bench 'Guard|Sealed'`.
+
 ### Head-to-head vs let-go
 
 [let-go](https://github.com/nooga/let-go) (v1.11.1) is the closest comparable —

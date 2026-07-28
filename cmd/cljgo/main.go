@@ -256,8 +256,9 @@ func runBuild(args []string) int {
 	out := fs.String("o", "", "output binary path (default: derived from the source file)")
 	gen := fs.String("gen", "", "directory for the generated Go module (single-file: keep it here; project: any value keeps the temp dirs)")
 	runtimeDir := fs.String("runtime", "", "cljgo source tree for the generated go.mod replace (default: $CLJGO_SRC; release binaries pin the published module, dev binaries auto-detect the repo)")
+	sealCore := fs.Bool("seal-core", false, "hard-inline core arithmetic: a with-redefs/def/alter-var-root of + - * / < > = <= >= is then NOT seen at those call sites (JVM :inline semantics). Measured gain over the default guard: ~0-2% — opt in only if you want the JVM's inlining semantics (ADR 0108)")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: cljgo build [-o out] [-gen dir] [-runtime dir] [<file.clj> | <step>]")
+		fmt.Fprintln(os.Stderr, "usage: cljgo build [-o out] [-gen dir] [-runtime dir] [--seal-core] [<file.clj> | <step>]")
 		fs.PrintDefaults()
 	}
 	if err := fs.Parse(args); err != nil {
@@ -279,7 +280,7 @@ func runBuild(args []string) int {
 		if len(rest) == 1 {
 			step = rest[0]
 		}
-		return runProjectBuild(step, *runtimeDir, *gen != "")
+		return runProjectBuild(step, *runtimeDir, *gen != "", *sealCore)
 	}
 
 	if len(rest) != 1 {
@@ -292,7 +293,7 @@ func runBuild(args []string) int {
 	if outPath == "" {
 		outPath = defaultBinaryName(src)
 	}
-	genDir, err := emit.Build(src, outPath, *gen, emit.Options{RuntimeDir: *runtimeDir})
+	genDir, err := emit.Build(src, outPath, *gen, emit.Options{RuntimeDir: *runtimeDir, SealCore: *sealCore})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return 1
@@ -306,7 +307,7 @@ func runBuild(args []string) int {
 // runProjectBuild loads the project build file (build.cljgo/.cljg/.clj — ADR
 // 0051, most-specific-first), evaluates its build fn, and runs the requested
 // step (empty → default). keepGen preserves the generated modules.
-func runProjectBuild(step, runtimeDir string, keepGen bool) int {
+func runProjectBuild(step, runtimeDir string, keepGen, sealCore bool) int {
 	buildFile := build.FindBuildFile(".")
 	if buildFile == "" {
 		fmt.Fprintf(os.Stderr, "cljgo build: no %s in the current directory\n", build.BuildFileName)
@@ -317,7 +318,7 @@ func runProjectBuild(step, runtimeDir string, keepGen bool) int {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return 1
 	}
-	if err := plan.Run(step, emit.Options{RuntimeDir: runtimeDir}, keepGen); err != nil {
+	if err := plan.Run(step, emit.Options{RuntimeDir: runtimeDir, SealCore: sealCore}, keepGen); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return 1
 	}
