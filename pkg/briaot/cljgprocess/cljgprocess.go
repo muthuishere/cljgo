@@ -74,35 +74,35 @@ func Load() {
 				tmp14 := v_clojure_DOT_core_vec.Get()
 				tmp15 := lang.Apply1(tmp14, command10)
 				tmp16 := lang.Apply2(tmp13, tmp15, opts11)
-				var map__33317 any = tmp16
-				_ = map__33317
+				var map__34217 any = tmp16
+				_ = map__34217
 				tmp18 := v_clojure_DOT_core_seq_QMARK_.Get()
-				tmp19 := lang.Apply1(tmp18, map__33317)
+				tmp19 := lang.Apply1(tmp18, map__34217)
 				var tmp20 any
 				_ = tmp20
 				if lang.IsTruthy(tmp19) {
 					tmp21 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-					tmp22 := lang.Apply1(tmp21, map__33317)
+					tmp22 := lang.Apply1(tmp21, map__34217)
 					tmp20 = tmp22
 				} else {
-					tmp20 = map__33317
+					tmp20 = map__34217
 				}
-				var map__33323 any = tmp20
-				_ = map__33323
+				var map__34223 any = tmp20
+				_ = map__34223
 				tmp24 := v_clojure_DOT_core_get.Get()
-				tmp25 := lang.Apply2(tmp24, map__33323, kw_in)
+				tmp25 := lang.Apply2(tmp24, map__34223, kw_in)
 				var in26 any = tmp25
 				_ = in26
 				tmp27 := v_clojure_DOT_core_get.Get()
-				tmp28 := lang.Apply2(tmp27, map__33323, kw_out)
+				tmp28 := lang.Apply2(tmp27, map__34223, kw_out)
 				var out29 any = tmp28
 				_ = out29
 				tmp30 := v_clojure_DOT_core_get.Get()
-				tmp31 := lang.Apply2(tmp30, map__33323, kw_err)
+				tmp31 := lang.Apply2(tmp30, map__34223, kw_err)
 				var err32 any = tmp31
 				_ = err32
 				tmp33 := v_clojure_DOT_core_get.Get()
-				tmp34 := lang.Apply2(tmp33, map__33323, kw_X_handle)
+				tmp34 := lang.Apply2(tmp33, map__34223, kw_X_handle)
 				var X_handle35 any = tmp34
 				_ = X_handle35
 				tmp36 := lang.FnFunc0(func() any {
