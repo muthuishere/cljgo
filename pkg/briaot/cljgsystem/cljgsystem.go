@@ -33,6 +33,7 @@ var (
 var (
 	fnD_cljg_DOT_system_environ lang.FnFunc0
 	fnD_cljg_DOT_system_args    lang.FnFunc0
+	fnD_cljg_DOT_system_sleep   lang.FnFunc1
 )
 
 var loaded = false
@@ -126,6 +127,8 @@ func Load() {
 	})
 	tmp30 := &lang.NamedFn1{Name: "cljg.system/sleep", Expects: "1: [ms]", F: tmp26}
 	v_cljg_DOT_system_sleep.BindRoot(tmp30)
+	fnD_cljg_DOT_system_sleep = tmp30.F
+	v_cljg_DOT_system_sleep.SealDirect()
 	_ = v_cljg_DOT_system_sleep
 	// (def exit "Terminate the process immediately with integer exit `status` (default 0).\n  Do…
 	v_cljg_DOT_system_exit.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(11), kw_doc, "Terminate the process immediately with integer exit `status` (default 0).\n  Does not return, and does NOT run pending finally / with-open cleanup — treat\n  it as the very last thing you call, after your own teardown."))
