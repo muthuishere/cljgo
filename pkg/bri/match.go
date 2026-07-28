@@ -60,6 +60,15 @@ func list(xs ...any) any        { return lang.NewList(xs...) }
 // hygienic regardless of the caller's refers (core.match does the same).
 func cc(name string) *lang.Symbol { return lang.NewSymbol("clojure.core/" + name) }
 
+// notFoundKW is core.match's absent-key sentinel, ::not-found in
+// clojure.core.match. Every map sub-occurrence is bound to
+// (get m k :clojure.core.match/not-found) — NOT (get m k) — because the JVM
+// hands that sentinel to a key's value pattern when the key is missing
+// (clojure/core/match.clj: map-pattern-matrix-ocr-sym binds
+// (val-at-expr focr k ::not-found)). That is observable: a :guard on an
+// absent key runs against ::not-found and blows up exactly like the JVM's.
+var notFoundKW = lang.NewKeyword("clojure.core.match/not-found")
+
 // --- pattern model -----------------------------------------------------------
 
 const (
@@ -101,6 +110,18 @@ type row struct {
 	binds  []bind
 	guards []any
 	action any
+
+	// presence holds the map-key EXISTENCE tests a row accumulated
+	// ((not= <sub-occ> ::not-found), the JVM's MapKeyPattern). They are kept
+	// apart from guards because the JVM evaluates them LAST: core.match only
+	// wraps a key's value pattern in MapKeyPattern when that pattern is a
+	// bare wildcard (wrap-values), and the resulting existential test is
+	// deprioritized against real patterns, so a :guard on ANY key of the row
+	// runs before the presence test of any other key. Oracle: for
+	//   (match [m] [{:a x :b (y :guard even?)}] :hit :else :none)
+	// the JVM throws on {} — the guard sees ::not-found — instead of
+	// answering :none off a failed (contains? m :a).
+	presence []any
 }
 
 // --- entry -------------------------------------------------------------------
@@ -350,10 +371,12 @@ func (c *compiler) compile(occs []any, rows []row, fail any) (any, bool) {
 				binds = append(binds, bind{s, occs[i]})
 			}
 		}
-		guards := r0.guards
+		guards := append([]any(nil), r0.guards...)
 		for _, p := range r0.cols {
 			guards = append(guards, p.guards...)
 		}
+		// Key-existence tests go LAST — see row.presence.
+		guards = append(guards, r0.presence...)
 		if len(guards) == 0 {
 			return withLet(binds, r0.action), false // remaining rows unreachable
 		}
@@ -386,7 +409,7 @@ func (c *compiler) compile(occs []any, rows []row, fail any) (any, bool) {
 	for i, ct := range ctors {
 		subOccs, letPairs := c.expandOccs(occ, ct)
 		newOccs := spliceAt(occs, col, subOccs)
-		specRows := specialize(rows, col, ct, occ)
+		specRows := specialize(rows, col, ct, occ, subOccs)
 		bform, used := c.compile(newOccs, specRows, thunkCall)
 		if len(letPairs) > 0 {
 			bform = list(cc("let"), lang.NewVectorOwning(letPairs), bform)
@@ -483,9 +506,11 @@ func ctorEq(a, b ctor) bool {
 // (if (map? o) A (if (map? o) B …)) — the second arm is dead and its rows are
 // silently dropped (the "other click" bug). Maranget dispatch requires
 // disjoint constructors, so EVERY map pattern in a column collapses into ONE
-// constructor over the UNION of the column's keys; per-row key presence is
-// re-checked with `contains?` guards in specialize, which is also what the
-// JVM core.match does (oracle: (match [{}] [{:a _}] :has-a :else :no) => :no).
+// constructor over the UNION of the column's keys — the same all-keys union
+// core.match builds. Each row is then re-constrained in specialize: keys whose
+// value pattern is a bare wildcard get an existence test, keys with a real
+// pattern get that pattern applied to (get m k ::not-found). Oracle:
+// (match [{}] [{:a _}] :has-a :else :no) => :no.
 func distinctCtors(rows []row, col int) []ctor {
 	var out []ctor
 	var mapKeys []any
@@ -585,7 +610,10 @@ func (c *compiler) expandOccs(occ any, ct ctor) (subOccs []any, letPairs []any) 
 		for _, k := range ct.keys {
 			g := c.gensym("m")
 			subOccs = append(subOccs, g)
-			letPairs = append(letPairs, g, list(cc("get"), occ, k))
+			// (get occ k ::not-found), not (get occ k): an absent key must be
+			// distinguishable from a nil value, and the sentinel is what a
+			// value pattern (literal / nested map / :guard) is applied to.
+			letPairs = append(letPairs, g, list(cc("get"), occ, k, notFoundKW))
 		}
 	}
 	return subOccs, letPairs
@@ -596,14 +624,15 @@ func (c *compiler) expandOccs(occ any, ct ctor) (subOccs []any, letPairs []any) 
 // in), and wildcard rows (arity wildcards spliced in, binding recorded). Rows
 // with a different constructor are dropped. A rest binding is recorded against
 // (subvec occ arity) / (nthrest occ arity).
-func specialize(rows []row, col int, ct ctor, occ any) []row {
+func specialize(rows []row, col int, ct ctor, occ any, subOccs []any) []row {
 	var out []row
 	for _, r := range rows {
 		p := r.cols[col]
 		nr := row{
-			binds:  append([]bind(nil), r.binds...),
-			guards: append([]any(nil), r.guards...),
-			action: r.action,
+			binds:    append([]bind(nil), r.binds...),
+			guards:   append([]any(nil), r.guards...),
+			presence: append([]any(nil), r.presence...),
+			action:   r.action,
 		}
 		var mid []pat
 		if p.isWild() {
@@ -628,21 +657,31 @@ func specialize(rows []row, col int, ct ctor, occ any) []row {
 			}
 			switch ct.kind {
 			case pMap:
-				// This row only constrains the keys IT names: require each to
-				// be present (a key bound to nil still matches — the JVM tests
-				// containment, not (get m k)), then realign its value patterns
-				// onto the column's key union, wildcarding the keys it omits.
-				for _, k := range p.keys {
-					nr.guards = append(nr.guards, list(cc("contains?"), occ, k))
-				}
+				// This row only constrains the keys IT names: realign its value
+				// patterns onto the column's key union, wildcarding the keys it
+				// omits. Whether a named key gets an EXISTENCE test depends on
+				// its value pattern, exactly as core.match's `wrap-values`
+				// decides: a bare wildcard/binding becomes a MapKeyPattern
+				// ((not= ocr ::not-found)) — so {:a x} matches {:a nil} but not
+				// {} — while any real pattern (literal, nested map, vector,
+				// :guard) is instead applied straight to the sub-occurrence,
+				// which is ::not-found when the key is absent. That is why a
+				// :guard on a missing key RUNS and throws on the sentinel
+				// rather than being short-circuited away.
 				nr.guards = append(nr.guards, p.guards...)
-				for _, k := range ct.keys {
+				for i, k := range ct.keys {
 					sub := pat{kind: pWild}
-					for i, pk := range p.keys {
+					named := false
+					for j, pk := range p.keys {
 						if lang.Equals(pk, k) {
-							sub = p.vals[i]
+							sub = p.vals[j]
+							named = true
 							break
 						}
+					}
+					if named && sub.isWild() && len(sub.guards) == 0 {
+						nr.presence = append(nr.presence,
+							list(cc("not="), subOccs[i], notFoundKW))
 					}
 					mid = append(mid, sub)
 				}
@@ -693,9 +732,10 @@ func defaultMatrix(rows []row, col int, occ any) []row {
 			continue
 		}
 		nr := row{
-			binds:  append([]bind(nil), r.binds...),
-			guards: append(append([]any(nil), r.guards...), p.guards...),
-			action: r.action,
+			binds:    append([]bind(nil), r.binds...),
+			guards:   append(append([]any(nil), r.guards...), p.guards...),
+			presence: append([]any(nil), r.presence...),
+			action:   r.action,
 		}
 		for _, s := range p.binds {
 			nr.binds = append(nr.binds, bind{s, occ})
