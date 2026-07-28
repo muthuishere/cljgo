@@ -60,7 +60,7 @@ Here's a `/hello/<name>` endpoint, done by hand:
                    :body   (str "Hello " name "!")}))}))
 
 (def reply
-  (client/get (str "http://127.0.0.1:" (:port server) "/hello/asha")))
+  (client/get (str "http://127.0.0.1:" (:port server) "/hello/prabagar")))
 
 (println (:status reply))
 (println (:body reply))
@@ -72,7 +72,7 @@ Output:
 
 ```
 200
-Hello asha!
+Hello prabagar!
 ```
 
 Look at what that `subs` is doing: chopping the name out of the URL with
@@ -95,7 +95,7 @@ Same task, one layer up:
     (web/GET "/hello/{name}"
              (fn [req] (web/ok (str "Hello " (web/param! req :name) "!"))))))
 
-(def reply (web/request app {:method "GET" :path "/hello/asha"}))
+(def reply (web/request app {:method "GET" :path "/hello/prabagar"}))
 
 (println (:status reply))
 (println (:body reply))
@@ -104,9 +104,9 @@ Same task, one layer up:
 Output:
 
 ```
-GET /hello/asha 200 0ms
+GET /hello/prabagar 200 0ms
 200
-Hello asha!
+Hello prabagar!
 ```
 
 The string surgery is gone: `{name}` in the path, `param!` to read it.

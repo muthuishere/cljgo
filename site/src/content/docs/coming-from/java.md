@@ -28,7 +28,7 @@ public class User {
 cljgo:
 
 ```clojure
-(def user {:name "Asha" :age 30})
+(def user {:name "Vidya" :age 30})
 
 (println (:name user))
 (println (:age user))
@@ -37,7 +37,7 @@ cljgo:
 Output:
 
 ```
-Asha
+Vidya
 30
 ```
 
@@ -52,7 +52,7 @@ Java's `final` stops the *reference* from moving. Here the *value itself*
 never changes:
 
 ```clojure
-(def user {:name "Asha" :age 30})
+(def user {:name "Vidya" :age 30})
 
 (def older (assoc user :age 31))
 
@@ -63,8 +63,8 @@ never changes:
 Output:
 
 ```
-{:name Asha, :age 31}
-{:name Asha, :age 30}
+{:name Vidya, :age 31}
+{:name Vidya, :age 30}
 ```
 
 `assoc` returns a new map and leaves the old one alone. Internally they
@@ -192,8 +192,8 @@ Here it's the same two ideas spelled out:
 
 ```clojure
 (def staff
-  [{:name "Asha" :dept "eng"   :salary 120}
-   {:name "Ravi" :dept "eng"   :salary 100}
+  [{:name "Vidya" :dept "eng"   :salary 120}
+   {:name "Sreyash" :dept "eng"   :salary 100}
    {:name "Mina" :dept "sales" :salary  90}])
 
 (defn payroll [people]

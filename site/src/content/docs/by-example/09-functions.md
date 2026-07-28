@@ -39,15 +39,15 @@ body. Wrap each version in its own parentheses:
   ([greeting who]
    (str greeting ", " who "!")))
 
-(println (greet "Asha"))
-(println (greet "Good morning" "Ravi"))
+(println (greet "Vidya"))
+(println (greet "Good morning" "Suren"))
 ```
 
 Output:
 
 ```
-Hello, Asha!
-Good morning, Ravi!
+Hello, Vidya!
+Good morning, Suren!
 ```
 
 The one-argument version just calls the two-argument one with a default.

@@ -17,17 +17,17 @@ on the other end.
 Python:
 
 ```python
-scores = {"asha": 91, "ravi": 78}
-print(scores["asha"])
+scores = {"suren": 91, "shaama": 78}
+print(scores["suren"])
 print(scores.get("mina", 0))
 ```
 
 cljgo:
 
 ```clojure
-(def scores {"asha" 91 "ravi" 78})
+(def scores {"suren" 91 "shaama" 78})
 
-(println (get scores "asha"))
+(println (get scores "suren"))
 (println (get scores "mina" 0))
 ```
 
@@ -48,7 +48,7 @@ Python mutates in place: `scores["mina"] = 84`. Here you get a new map
 back and the old one is untouched:
 
 ```clojure
-(def scores {"asha" 91 "ravi" 78})
+(def scores {"suren" 91 "shaama" 78})
 
 (println (assoc scores "mina" 84))
 (println scores)
@@ -57,8 +57,8 @@ back and the old one is untouched:
 Output:
 
 ```
-{asha 91, ravi 78, mina 84}
-{asha 91, ravi 78}
+{suren 91, shaama 78, mina 84}
+{suren 91, shaama 78}
 ```
 
 This is the single biggest change, and it's the one that pays. No more

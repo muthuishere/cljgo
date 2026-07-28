@@ -24,14 +24,14 @@ type User struct {
     Age  int
 }
 
-u := User{Name: "Asha", Age: 30}
+u := User{Name: "Harsh", Age: 30}
 fmt.Println(u.Name)
 ```
 
 cljgo:
 
 ```clojure
-(def user {:name "Asha" :age 30})
+(def user {:name "Harsh" :age 30})
 
 (println (:name user))
 (println (:age user))
@@ -40,7 +40,7 @@ cljgo:
 Output:
 
 ```
-Asha
+Harsh
 30
 ```
 
@@ -54,7 +54,7 @@ This is the one real mental shift. In Go you'd write `u.Age = 31`. Here you
 build a new map:
 
 ```clojure
-(def user {:name "Asha" :age 30})
+(def user {:name "Harsh" :age 30})
 
 (def older (assoc user :age 31))
 
@@ -65,8 +65,8 @@ build a new map:
 Output:
 
 ```
-{:name Asha, :age 31}
-{:name Asha, :age 30}
+{:name Harsh, :age 31}
+{:name Harsh, :age 30}
 ```
 
 `assoc` returned a *new* map; the original is untouched. That is not a copy
@@ -91,13 +91,13 @@ cljgo — the receiver becomes an ordinary first argument:
 (defn full-name [u]
   (str (:first u) " " (:last u)))
 
-(println (full-name {:first "Asha" :last "Iyer"}))
+(println (full-name {:first "Harsh" :last "Iyer"}))
 ```
 
 Output:
 
 ```
-Asha Iyer
+Harsh Iyer
 ```
 
 No method set, no pointer-vs-value receiver question. Functions are free

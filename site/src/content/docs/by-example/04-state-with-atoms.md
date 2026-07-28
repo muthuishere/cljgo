@@ -65,9 +65,9 @@ Output:
 (defn vote! [who]
   (swap! votes update who (fnil inc 0)))
 
-(vote! "asha")
-(vote! "ravi")
-(vote! "asha")
+(vote! "harsh")
+(vote! "shaama")
+(vote! "harsh")
 
 (println @votes)
 ```
@@ -75,7 +75,7 @@ Output:
 Output:
 
 ```
-{asha 2, ravi 1}
+{harsh 2, shaama 1}
 ```
 
 `update` bumps one key inside the map; `(fnil inc 0)` says "if this person

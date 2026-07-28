@@ -49,7 +49,7 @@ slightly stale* — a user record, a currency rate, a rendered page.
 
 (defn load-user [id]
   (println "hitting the database for" id)
-  {:id id :name "Asha"})
+  {:id id :name "Prabagar"})
 
 (println (cache/fetch c 42 #(load-user 42)))
 (println (cache/fetch c 42 #(load-user 42)))
@@ -59,8 +59,8 @@ Output:
 
 ```
 hitting the database for 42
-{:id 42, :name Asha}
-{:id 42, :name Asha}
+{:id 42, :name Prabagar}
+{:id 42, :name Prabagar}
 ```
 
 Two fetches, one database hit. `fetch` takes the key and a function to
@@ -86,8 +86,8 @@ immediately.
     {:email/welcome (fn [{:keys [to]}]
                       (println "sending welcome mail to" to))}))
 
-(jobs/submit q :email/welcome {:to "asha@example.com"})
-(jobs/submit q :email/welcome {:to "ravi@example.com"})
+(jobs/submit q :email/welcome {:to "prabagar@example.com"})
+(jobs/submit q :email/welcome {:to "suren@example.com"})
 
 (jobs/drain q)
 (jobs/stop q)
@@ -98,8 +98,8 @@ immediately.
 Output:
 
 ```
-sending welcome mail to asha@example.com
-sending welcome mail to ravi@example.com
+sending welcome mail to prabagar@example.com
+sending welcome mail to suren@example.com
 done
 ```
 

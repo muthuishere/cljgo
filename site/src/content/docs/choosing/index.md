@@ -70,7 +70,7 @@ table of routes and it runs the rest.
     (web/GET "/hello/{name}"
              (fn [req] (web/ok (str "Hello " (web/param! req :name) "!"))))))
 
-(def reply (web/request app {:method "GET" :path "/hello/asha"}))
+(def reply (web/request app {:method "GET" :path "/hello/shaama"}))
 
 (println (:status reply))
 (println (:body reply))
@@ -79,9 +79,9 @@ table of routes and it runs the rest.
 Output:
 
 ```
-GET /hello/asha 200 0ms
+GET /hello/shaama 200 0ms
 200
-Hello asha!
+Hello shaama!
 ```
 
 Notice the first line — you didn't ask for request logging, and you got
