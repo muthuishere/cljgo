@@ -1,8 +1,26 @@
 # Known issues — found 2026-07-28 (QA sweep + book authoring + spike s66)
 
 Every item below was **reproduced against a real build**, and every JVM claim
-was verified against the real `clojure` CLI (1.12.5) — not memory. Nothing here
-is fixed yet. These should clear before a version bump.
+was verified against the real `clojure` CLI (1.12.5) — not memory.
+
+**STATUS 2026-07-28: all 11 are closed, ahead of the v0.7.0 bump.** #3
+(functions cannot carry metadata) and #5 (compiled test binaries exit 0 when
+tests fail) fell out of the `cljx.test` work — `lang.MetaFn` and
+`pkg/emit/rt/testexit.go`. The other nine were fixed in four batches, each one
+then handed to an **adversarial verifier** that re-derived the JVM oracle
+itself rather than trusting the fixing agent's transcription. That caught two
+defects the fixes had introduced, both since closed:
+
+- the `core.match` key-union fix broke `:guard` on a possibly-absent key, and
+  its own fix then leaked the `::not-found` sentinel into user code
+  (`conformance/tests/core-match-map-not-found.clj`,
+  `core-match-map-sentinel-binding.clj`);
+- the G5008 varargs guard misfired on collections inside `insert!`/`update!`
+  row maps, naming a verb the user never called and offering a `Fix` that
+  fixed nothing (now G5009).
+
+Each entry below records what was wrong and how it was verified; they are kept
+rather than deleted because the repros are the regression story.
 
 ## P1 — JVM divergences in shipped code
 
