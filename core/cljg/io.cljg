@@ -12,6 +12,7 @@
 ;;   (io/sh "git" "rev-parse" "HEAD")            ; {:out :err :exit :timed-out?}
 ;;   (io/exec ["cat"] {:in "hi" :timeout-ms 500})
 ;;   (io/sh! ["make" "build"] {:dir "app"})      ; throws on non-zero exit
+;;   (io/string-writer)    (io/writer-str w)     ; in-memory *out* target
 ;;
 ;; Private Go shims interned before this loads: -fs-stat -fs-list -fs-mkdir
 ;; -fs-delete -fs-copy -fs-move -fs-glob -fs-walk -fs-temp-file -fs-temp-dir
@@ -186,3 +187,35 @@
                             (when (seq err) (str "\n" err)))
                        (assoc r :command (vec command)))))
      r)))
+
+;; --- in-memory writer (ADR 0089; the java.io.StringWriter analog) ------------
+;;
+;; The PUBLIC handle `(binding [*out* w] …)` needs. cljgo has no java.io, so
+;; `(java.io.StringWriter.)` cannot be written; `with-out-str` covers
+;; whole-body capture and cljx.test's `capturing` covers a test body, but both
+;; own the binding themselves. These two fns expose the very same in-memory
+;; writer those macros ride on (clojure.core's -string-writer substrate,
+;; corelib/builtins.go) so a caller can hold one, bind *out* to it across
+;; several forms, and read it back — no second mechanism, no new host shim.
+;;
+;;   (let [w (io/string-writer)]
+;;     (binding [*out* w] (println "hi") (print "x"))
+;;     (io/writer-str w))            ;=> "hi\nx"
+;;
+;; oracle (clojure 1.12.5, 2026-07-28): the same shape on the JVM —
+;;   (let [w (java.io.StringWriter.)]
+;;     (binding [*out* w] (println "hi") (print "x")) (str w))  ;=> "hi\nx"
+;; cljgo's reader is `writer-str` rather than `str` (a cljgo writer is a Go
+;; io.Writer, not a JVM object whose toString is its buffer).
+
+(defn string-writer
+  "A fresh in-memory writer *out* can be bound to — the java.io.StringWriter
+  analog. Read what has been written to it with `writer-str`."
+  []
+  (clojure.core/-string-writer))
+
+(defn writer-str
+  "Everything written to `w` (a `string-writer`) so far, as a String — the
+  (str a-StringWriter) analog. Non-destructive: the writer keeps accumulating."
+  [w]
+  (clojure.core/-string-writer-str w))

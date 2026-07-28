@@ -1,0 +1,480 @@
+;; cljx.test — Bun-flavoured first-class testing (ADR 0105). The DEVELOPER
+;; EXPERIENCE tier (`cljx.*`, ADR 0085's fourth tier): mocks, spies, stubs,
+;; output capture, expect matchers and lifecycle hooks, all batteries-included.
+;;
+;; Built ON clojure.test, never beside it (the precedence principle):
+;; describe/it expand to deftest/testing, `expect` delegates to `is`, the
+;; hooks are use-fixtures sugar. A cljx.test test IS a clojure.test test — one
+;; runner, one report, dual REPL-vs-binary harness for free, and
+;; `clojure.test` itself is untouched and fully supported.
+;;
+;;   (require '[cljx.test :refer [describe it expect mock spy stub
+;;                                with-spies printed? call-count]])
+;;
+;;   (describe "greeting"
+;;     (it "uses the stubbed user"
+;;       (with-spies [db (stub #'app/fetch-user (fn [id] {:name "Asha"}))]
+;;         (expect (app/render 1) :to-be "Hello, Asha!")
+;;         (expect (call-count db) :to-be 1)
+;;         (expect (printed? "rendering for") :to-be true))))
+;;
+;; Output capture is the DEFAULT, not opt-in: every cljx test body runs with
+;; *out* captured, `(printed)` returns the text so far, `(printed? …)` asserts
+;; on it, and a FAILING test replays what it printed into the report. No
+;; `binding [*out* …]` boilerplate anywhere.
+;;
+;; Mechanisms are exactly the ones spike s66 proved byte-identical interpreted
+;; and compiled (with-redefs, with-out-str/-string-writer, atoms, dynamic
+;; binding). NO Go shim — pure Clojure, loaded lazily, so a binary that never
+;; requires cljx.test pays zero bytes.
+;;
+;; s66 finding 1: cljgo cannot attach metadata to a fn, so a mock's call log
+;; cannot ride on its own meta. s66 proposed a registry keyed by the mock fn
+;; object; that is UNSOUND in compiled mode and this implementation takes s66's
+;; stated alternative — the SENTINEL-ARG protocol — instead. Measured here in
+;; both harnesses:
+;;
+;;                          interpreted   compiled
+;;   (= f1 f2)   distinct     false        TRUE     ← two mocks collapse to one key
+;;   (identical? f1 f1) same  true         FALSE    ← a mock cannot even find itself
+;;
+;; A compiled fn has no stable identity, so NO fn-keyed map (by = or by
+;; identical?) can work. Instead each mock closes over its OWN call log and
+;; answers the sentinel `:cljx.test/call-log` with it; `calls` asks the mock.
+;;
+;; That also settles s66 finding 2 (registry leak) by construction rather than
+;; by scoping: there is no global registry to leak. A mock's log lives and dies
+;; with the mock, so it cannot outlive its test or accumulate across a long
+;; REPL session.
+;;
+;; Loaded as a lazy satellite namespace (ADR 0041): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file, then the requires.
+(clojure.core/in-ns 'cljx.test)
+(clojure.core/refer 'clojure.core)
+(require '[clojure.test])
+(require '[clojure.string :as str])
+(require '[cljg.date])
+
+;; --- scoped state ------------------------------------------------------
+
+;; *capture* is the in-memory writer holding the current scope's captured
+;; output; nil outside a captured scope.
+(def ^:dynamic *capture* nil)
+
+;; *clock* is the frozen-time cell `advance!` moves; nil unless inside
+;; `with-frozen-time`.
+(def ^:dynamic *clock* nil)
+
+;; --- mocks -------------------------------------------------------------
+
+(def call-log-key
+  "The sentinel a mock answers with its call log. `(m call-log-key)` returns
+  {:cljx.test/calls [args …]}; `calls` does this for you. A mock called with
+  exactly this one argument reports instead of recording — the one documented
+  seam of the sentinel protocol."
+  :cljx.test/call-log)
+
+(defn mock
+  "A callable that RECORDS every call.
+
+    (mock)                ; records; every call returns nil
+    (mock f)              ; records, then delegates to f
+    (mock {:returns v})   ; records; every call answers v
+
+  Inspect it with calls / call-count / called? / called-with?. The log lives in
+  the mock's own closure — nothing global holds it, so it cannot leak past the
+  test that made it."
+  ([] (mock (fn [& _] nil)))
+  ([f]
+   (let [log  (atom [])
+         impl (if (map? f)
+                (let [{:keys [returns]} f] (fn [& _] returns))
+                f)]
+     (fn [& args]
+       (if (= args (list call-log-key))
+         {:cljx.test/calls (deref log)}
+         (do (swap! log conj (vec args))
+             (apply impl args)))))))
+
+(defn calls
+  "Every call's argument vector, in call order."
+  [m]
+  (let [r (try (m call-log-key) (catch Throwable _ nil))]
+    (if (and (map? r) (contains? r :cljx.test/calls))
+      (:cljx.test/calls r)
+      (throw (ex-info (str "cljx.test/calls: not a mock"
+                           " (expected: a value from cljx.test/mock, spy or stub;"
+                           " found: " (pr-str m) ").")
+                      {:found m})))))
+
+(defn call-count
+  "How many times the mock was called."
+  [m]
+  (count (calls m)))
+
+(defn called?
+  "Was the mock called at all?"
+  [m]
+  (pos? (call-count m)))
+
+(defn called-with?
+  "Was the mock ever called with exactly these arguments?"
+  [m & args]
+  (boolean (some (fn [c] (= c (vec args))) (calls m))))
+
+;; --- spies and stubs ---------------------------------------------------
+
+(defn spy
+  "Wrap the CURRENT value of var `v` so calls are recorded AND forwarded to the
+  real implementation. Install it with `with-spies`.
+
+  The real fn is captured eagerly, so redefining the var to the spy cannot
+  recurse into itself."
+  [v]
+  (let [real (deref v)]
+    (mock (fn [& args] (apply real args)))))
+
+(defn stub
+  "A recording mock that REPLACES var `v`'s implementation with `impl` (a fn,
+  or a {:returns v} map). Install it with `with-spies`.
+
+  `v` is accepted for symmetry with `spy` and so `with-spies` can read the
+  target var out of the form; the original implementation is not called."
+  [v impl]
+  (mock impl))
+
+(defn ^:private -spy-target
+  "Read the var symbol out of a with-spies init form — (spy #'ns/f) or
+  (stub #'ns/f impl), where #'ns/f reads as (var ns/f)."
+  [init]
+  (let [head (and (seq? init) (first init))
+        vform (and (seq? init) (first (rest init)))]
+    (when-not (and (symbol? head)
+                   (contains? #{"spy" "stub"} (name head))
+                   (seq? vform)
+                   (= 'var (first vform))
+                   (symbol? (first (rest vform))))
+      (throw (ex-info (str "cljx.test/with-spies: bad binding initializer"
+                           " (expected: (spy #'ns/f) or (stub #'ns/f impl);"
+                           " found: " (pr-str init) ").")
+                      {:found init})))
+    (first (rest vform))))
+
+(defmacro with-spies
+  "Install spies/stubs for the duration of `body`, then restore every var —
+  including when the body throws (with-redefs unwinds on the way out).
+
+    (with-spies [db   (spy  #'app/fetch-user)
+                 mail (stub #'app/send-mail {:returns :queued})]
+      (app/signup! 1)
+      (expect (call-count db) :to-be 1))
+
+  Each binding's initializer must literally be (spy #'ns/f) or
+  (stub #'ns/f impl) — with-spies reads the target var out of the form
+  (cljgo cannot attach metadata to a fn, s66 finding 1)."
+  [bindings & body]
+  (let [pairs  (partition 2 bindings)
+        lets   (vec (mapcat (fn [p] [(first p) (first (rest p))]) pairs))
+        redefs (vec (mapcat (fn [p] [(-spy-target (first (rest p))) (first p)]) pairs))]
+    `(let ~lets
+       (with-redefs ~redefs
+         ~@body))))
+
+;; --- output capture ----------------------------------------------------
+
+(defmacro capturing
+  "Run body with *out* captured; return {:value v :printed s}. The EXPLICIT
+  form, for use outside a test — inside a cljx test capture is already on and
+  `(printed)` / `(printed? …)` read it directly."
+  [& body]
+  `(let [v# (atom nil)
+         w# (-string-writer)]
+     (~'binding [*capture* w#]
+       (~'binding [*out* w#]
+         (reset! v# (do ~@body))))
+     {:value (deref v#) :printed (-string-writer-str w#)}))
+
+(defn printed
+  "The output captured SO FAR in the current scope — (printed) inside a cljx
+  test or a `capturing` body — or the text of a `capturing` result map."
+  ([]
+   (when-not *capture*
+     (throw (ex-info (str "cljx.test/printed: no captured output in scope"
+                          " (expected: a call inside a cljx test body or"
+                          " (capturing …); found: top level).")
+                     {})))
+   (-string-writer-str *capture*))
+  ([captured] (:printed captured)))
+
+(defn printed?
+  "Did the captured output contain `needle` — a literal string or a regex?
+
+    (printed? \"rendering for\")     ; current scope
+    (printed? c #\"rendering \\w+\")  ; a `capturing` result map"
+  ([needle] (printed? {:printed (printed)} needle))
+  ([captured needle]
+   (let [s (:printed captured)]
+     (boolean
+      (if (string? needle)
+        (str/includes? s needle)
+        (re-find needle s))))))
+
+;; --- test context ------------------------------------------------------
+
+(defn ^:private -failures
+  "fail+error assertions counted so far in this run, or 0 outside a run."
+  []
+  (let [c clojure.test/*report-counters*]
+    (if c
+      (let [m (deref c)] (+ (or (:fail m) 0) (or (:error m) 0)))
+      0)))
+
+(defn ^:private -reporting-to
+  "Wrap whatever clojure.test/report is CURRENTLY installed so it writes to
+  `real` — the stream the runner is really printing to — instead of the
+  capture buffer. Without this the test's own FAIL/ERROR lines would be
+  swallowed by the capture that exists to quiet the code under test.
+
+  It wraps rather than replaces, so a custom reporter (clojure.test's
+  documented extension point) keeps working."
+  [real]
+  (let [installed clojure.test/report]
+    (fn [m] (binding [*out* real] (installed m)))))
+
+(defmacro with-test-context
+  "The wrapper every cljx test body runs inside: *out* captured (the println
+  spy is just there) with the runner's own reporting routed past the capture.
+  If the body records a failure, the captured output is REPLAYED into the
+  report so the reader sees what the code printed.
+
+  Mocks need no scoping here — each one owns its log, so nothing survives the
+  test that made it.
+
+  `deftest`/`it` apply this for you; call it directly only when wrapping a
+  plain clojure.test deftest by hand."
+  [label & body]
+  `(let [w#      (-string-writer)
+         real#   *out*
+         before# (-failures)]
+     (~'binding [*capture* w#]
+       (try
+         (with-redefs [clojure.test/report (-reporting-to real#)]
+           (~'binding [*out* w#] ~@body))
+         (finally
+           (let [out# (-string-writer-str w#)]
+             (when (and (not= "" out#) (> (-failures) before#))
+               (println (str ";; captured output — " ~label))
+               (print out#)
+               (when-not (str/ends-with? out# "\n") (println))
+               (println ";; end captured output"))))))))
+
+;; --- tests and suites --------------------------------------------------
+
+(defmacro deftest
+  "clojure.test/deftest with the cljx context applied — mocks scoped, output
+  captured. Drop-in for authors who prefer deftest to describe/it."
+  [name & body]
+  `(clojure.test/deftest ~name
+     (with-test-context ~(str name) ~@body)))
+
+(defn ^:private -munge-label
+  "A test label ('caches a miss once!') as a var-name fragment
+  ('caches-a-miss-once')."
+  [label]
+  (let [s (str/replace (str/lower-case (str label)) #"[^a-z0-9]+" "-")
+        s (str/replace s #"^-+|-+$" "")]
+    (if (= "" s) "test" s)))
+
+(defmacro it
+  "One test. Expands to a clojure.test deftest named `it-<munged label>`,
+  wrapping the body in (testing label …) plus the cljx context.
+
+  Two `it`s whose labels munge to the same name collide exactly as two
+  same-named deftests would — give them distinct labels."
+  [label & body]
+  `(clojure.test/deftest ~(symbol (str "it-" (-munge-label label)))
+     (clojure.test/testing ~label
+       (with-test-context ~label ~@body))))
+
+(defn ^:private -prefixed
+  "Rewrite the `it`/`describe` forms in a describe body so their labels carry
+  the group name. Any other form (a hook call, a def) is emitted unchanged."
+  [group forms]
+  (map (fn [f]
+         (if (and (seq? f) (symbol? (first f)) (contains? #{"it" "describe"} (name (first f))))
+           (list* (symbol "cljx.test" (name (first f)))
+                  (str group " " (first (rest f)))
+                  (rest (rest f)))
+           f))
+       forms))
+
+(defmacro describe
+  "Group related tests. Each nested `it` becomes its own deftest whose label is
+  prefixed with the group name; nested `describe`s compose their prefixes.
+
+    (describe \"cache\"
+      (it \"fills on a miss\" …)     ; => label \"cache fills on a miss\"
+      (it \"expires\" …))"
+  [group & body]
+  `(do ~@(-prefixed group body)))
+
+;; --- lifecycle hooks ---------------------------------------------------
+
+(defn ^:private -add-fixture!
+  "Append a fixture to the CURRENT namespace's clojure.test fixture list.
+  clojure.test/use-fixtures REPLACES the list, so read-append-write keeps
+  multiple hook registrations from clobbering each other."
+  [kind wrap]
+  (let [k        (if (= kind :each) :clojure.test/each-fixtures :clojure.test/once-fixtures)
+        existing (or (get (meta *ns*) k) [])]
+    (apply clojure.test/use-fixtures kind (concat existing [wrap]))))
+
+(defn before-each
+  "Run `f` before every test in this namespace (use-fixtures :each sugar)."
+  [f]
+  (-add-fixture! :each (fn [g] (f) (g))))
+
+(defn after-each
+  "Run `f` after every test in this namespace, even if the test throws."
+  [f]
+  (-add-fixture! :each (fn [g] (try (g) (finally (f))))))
+
+(defn before-all
+  "Run `f` once before this namespace's tests (use-fixtures :once sugar)."
+  [f]
+  (-add-fixture! :once (fn [g] (f) (g))))
+
+(defn after-all
+  "Run `f` once after this namespace's tests, even if a test throws."
+  [f]
+  (-add-fixture! :once (fn [g] (try (g) (finally (f))))))
+
+;; --- expect matchers ---------------------------------------------------
+
+;; Each matcher becomes an `is` form whose PREDICATE names the check and whose
+;; arguments are the actual and expected VALUES — so clojure.test's own
+;; reporter prints expected-vs-found without a custom reporter:
+;;
+;;   expected: (cljx.test/to-contain? (users) "asha")
+;;     actual: (not (cljx.test/to-contain? ["ravi"] "asha"))
+
+(defn to-contain?
+  "Membership: substring for a string, key for a map or set, element otherwise."
+  [coll x]
+  (cond
+    (nil? coll)    false
+    (string? coll) (str/includes? coll (str x))
+    (map? coll)    (contains? coll x)
+    (set? coll)    (contains? coll x)
+    :else          (boolean (some (fn [e] (= e x)) (seq coll)))))
+
+(defn not-to-contain? [coll x] (not (to-contain? coll x)))
+
+(defn to-match?
+  "Does the string match the regex?"
+  [s re]
+  (boolean (and (string? s) (re-find re s))))
+
+(defn not-to-match? [s re] (not (to-match? s re)))
+
+(def no-exception
+  "What `caught-message` reports when the thunk returned normally — so a
+  :to-throw failure reads as expected-vs-found rather than a nil blow-up."
+  "<no exception thrown>")
+
+(defn caught-message
+  "Run the thunk; return the message of whatever it threw, or `no-exception`."
+  [thunk]
+  (try
+    (thunk)
+    no-exception
+    (catch Throwable e (or (ex-message e) (str e)))))
+
+(defn message-matches?
+  "Does an exception message contain `needle` (string) or match it (regex)?"
+  [m needle]
+  (boolean
+   (if (string? needle)
+     (str/includes? m needle)
+     (re-find needle m))))
+
+(defn did-not-throw?
+  "True when the thunk completes without throwing."
+  [thunk]
+  (try (thunk) true (catch Throwable _ false)))
+
+(defn ^:private -matcher-error [matcher]
+  (throw (ex-info (str "cljx.test/expect: unknown matcher " (pr-str matcher)
+                       " (expected one of: :to-be :to-equal :to-contain :to-match"
+                       " :to-be-nil :to-throw and their :not-to-… negations)."
+                       " Note the matcher must be a literal keyword.")
+                  {:found matcher})))
+
+(defmacro expect
+  "Assert about `actual`, delegating to clojure.test/is so one runner reports
+  everything.
+
+    (expect (calc) :to-be 4)            (expect (calc) :not-to-be 5)
+    (expect (calc) :to-equal 4)         (expect (calc) :not-to-equal 5)
+    (expect (users) :to-contain \"asha\") (expect (users) :not-to-contain \"x\")
+    (expect (msg) :to-match #\"ok\")      (expect (msg) :not-to-match #\"err\")
+    (expect (lookup) :to-be-nil)        (expect (lookup) :not-to-be-nil)
+    (expect (boom) :to-throw)           (expect (boom) :not-to-throw)
+    (expect (boom) :to-throw \"denied\")  ; message contains / matches"
+  ([actual matcher]
+   (let [msg (str "expect " (pr-str matcher))]
+     (cond
+       (= matcher :to-be-nil)     `(clojure.test/is (nil? ~actual) ~msg)
+       (= matcher :not-to-be-nil) `(clojure.test/is (some? ~actual) ~msg)
+       ;; ~'thrown? / ~'Throwable stay BARE: clojure.test's assert-expr
+       ;; dispatches on the head symbol, and a namespace-qualified thrown?
+       ;; routes to the class-less portability method instead.
+       (= matcher :to-throw)      `(clojure.test/is (~'thrown? ~'Throwable ~actual) ~msg)
+       (= matcher :not-to-throw)  `(clojure.test/is (did-not-throw? (fn [] ~actual)) ~msg)
+       :else                      (-matcher-error matcher))))
+  ([actual matcher expected]
+   (let [msg (str "expect " (pr-str matcher))]
+     (cond
+       (or (= matcher :to-be) (= matcher :to-equal))
+       `(clojure.test/is (= ~actual ~expected) ~msg)
+
+       (or (= matcher :not-to-be) (= matcher :not-to-equal))
+       `(clojure.test/is (not= ~actual ~expected) ~msg)
+
+       (= matcher :to-contain)     `(clojure.test/is (to-contain? ~actual ~expected) ~msg)
+       (= matcher :not-to-contain) `(clojure.test/is (not-to-contain? ~actual ~expected) ~msg)
+       (= matcher :to-match)       `(clojure.test/is (to-match? ~actual ~expected) ~msg)
+       (= matcher :not-to-match)   `(clojure.test/is (not-to-match? ~actual ~expected) ~msg)
+
+       (= matcher :to-throw)
+       `(clojure.test/is (message-matches? (caught-message (fn [] ~actual)) ~expected) ~msg)
+
+       :else (-matcher-error matcher)))))
+
+;; --- time control ------------------------------------------------------
+
+(defmacro with-frozen-time
+  "Freeze cljg.date's clocks at `millis` (epoch milliseconds) for the duration
+  of `body`; `(advance! ms)` inside moves them forward. nano-time is frozen in
+  step with now, so `since` stays consistent.
+
+    (with-frozen-time 1000
+      (expect (cljg.date/now) :to-be 1000)
+      (advance! 500)
+      (expect (cljg.date/now) :to-be 1500))"
+  [millis & body]
+  `(let [clk# (atom ~millis)]
+     (~'binding [*clock* clk#]
+       (with-redefs [cljg.date/now       (fn [] (deref clk#))
+                     cljg.date/nano-time (fn [] (* 1000000 (deref clk#)))]
+         ~@body))))
+
+(defn advance!
+  "Move the frozen clock forward by `ms` milliseconds; return the new time."
+  [ms]
+  (when-not *clock*
+    (throw (ex-info (str "cljx.test/advance!: no frozen clock in scope"
+                         " (expected: a call inside (with-frozen-time t …);"
+                         " found: top level).")
+                    {})))
+  (swap! *clock* + ms))

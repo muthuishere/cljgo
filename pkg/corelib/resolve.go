@@ -21,7 +21,7 @@ func ResolveVar(sym *lang.Symbol) (*lang.Var, error) {
 			ns = lang.FindNamespace(nsSym)
 		}
 		if ns == nil {
-			return nil, fmt.Errorf("no such namespace: %s", sym.Namespace())
+			return nil, newNoSuchNamespaceError(sym)
 		}
 		v := ns.FindInternedVar(lang.NewSymbol(sym.Name()))
 		if v == nil {
@@ -48,6 +48,21 @@ func ResolveVar(sym *lang.Symbol) (*lang.Var, error) {
 		return v, nil
 	}
 	return nil, fmt.Errorf("unable to resolve symbol: %s in this context", sym.Name())
+}
+
+// jvmStaticClass is the fixed, zero-false-positive table of bare JVM class
+// names whose STATIC surface shows up in call-namespace position
+// (`Integer/parseInt`, `Math/sqrt`, `System/currentTimeMillis`). It is the
+// same vocabulary `certain-java?` validated in spike S35 — see
+// pkg/publish/java.go's jvmBareClassNS, kept in step with this table. cljgo
+// hosts Clojure on Go, so none of these ever resolve; the point here is
+// purely that the DIAGNOSIS names what the thing actually is.
+var jvmStaticClass = map[string]bool{
+	"System": true, "Math": true, "Thread": true, "Integer": true, "Long": true,
+	"Double": true, "Float": true, "Boolean": true, "Character": true, "Byte": true,
+	"Short": true, "String": true, "Object": true, "Runtime": true, "Class": true,
+	"Number": true, "StringBuilder": true, "StringBuffer": true, "Arrays": true,
+	"Collections": true, "Objects": true,
 }
 
 // nsResolver adapts the global namespace world to reader.Resolver

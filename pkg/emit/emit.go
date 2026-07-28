@@ -84,6 +84,18 @@ type generator struct {
 	// shadowing never mis-resolves.
 	directFns map[*ast.BindingNode]directFn
 
+	// directVars maps a TOP-LEVEL def'd var of this compilation unit to
+	// the package-level typed handle its `def` publishes, so a call of
+	// matching arity emits a direct closure invocation guarded by the
+	// var's own ADR 0066 seal bit instead of an unconditional
+	// `v.Get()` + lang.ApplyN (ADR 0064 cross-var direct calls). Populated
+	// by planDirectVars BEFORE emission, so a forward reference (declare +
+	// later defn, mutual recursion) resolves too.
+	directVars map[*lang.Var]directFn
+	// handles holds the `var fnD_… lang.FnFuncN` declarations for
+	// directVars, emitted at package level ahead of Load().
+	handles []string
+
 	vars    map[*lang.Var]string // hoisted var interns
 	dynVars map[*lang.Var]bool   // emitted with .SetDynamic()
 	kws     map[lang.Keyword]string
@@ -130,18 +142,46 @@ type generator struct {
 	// flag is sticky (never cleared), so nested loops there must not emit
 	// their own dead `if !rt.CoreDirty()` arms.
 	boxedForced bool
+
+	// sealCore is the OPT-IN hard seal (ADR 0066 alternative 1, opt-in via
+	// emit.Options.SealCore / `cljgo build --seal-core` / CLJGO_SEAL_CORE=1).
+	// When set, arithmetic call sites emit the rt.*S helpers — no operator
+	// var, no lang.CoreArithDirty load, no fallback — and the typed-region
+	// entries drop their `if !rt.CoreDirty()` condition. A redefinition of
+	// a core arithmetic op is then NOT observed at those sites (exactly
+	// like JVM Clojure's :inline). Default false: emission is byte-identical
+	// to the guarded, fully live pre-flag output.
+	sealCore bool
 }
+
+// dirtyOpen writes the opening of an ADR 0066 typed-region entry guard —
+// `if !rt.CoreDirty() {` normally, a plain block `{` under the opt-in hard
+// seal (the flag can never be consulted there, because a redefinition is
+// deliberately not observed). Callers close it with the usual `}`.
+func (g *generator) dirtyOpen() {
+	if g.sealCore {
+		g.wf("{\n")
+		return
+	}
+	g.wf("if !rt.CoreDirty() {\n")
+}
+
+// sealName maps a guarded intrinsic helper to its hard-sealed twin
+// (rt.Add2 → rt.Add2S): same body, no var argument, no dirty-flag load.
+func sealName(helper string) string { return helper + "S" }
 
 func newGenerator() *generator {
 	return &generator{
-		locals:    map[*ast.BindingNode]string{},
-		frames:    map[string]*recurFrame{},
-		directFns: map[*ast.BindingNode]directFn{},
-		vars:      map[*lang.Var]string{},
-		dynVars:   map[*lang.Var]bool{},
-		kws:       map[lang.Keyword]string{},
-		syms:      map[string]string{},
-		taken:     map[string]bool{},
+		locals:     map[*ast.BindingNode]string{},
+		frames:     map[string]*recurFrame{},
+		directFns:  map[*ast.BindingNode]directFn{},
+		directVars: map[*lang.Var]directFn{},
+
+		vars:    map[*lang.Var]string{},
+		dynVars: map[*lang.Var]bool{},
+		kws:     map[lang.Keyword]string{},
+		syms:    map[string]string{},
+		taken:   map[string]bool{},
 
 		hostImports: map[string]string{},
 		ni:          emptyInfer(),
@@ -715,6 +755,18 @@ func (g *generator) gen(n *ast.Node) string {
 			g.defName = ""
 			g.defVar = nil
 			g.wf("%s.BindRoot(%s)\n", gv, rv)
+			// ADR 0064 cross-var direct calls: publish the typed closure
+			// handle, THEN arm the var's seal bit. That order matters —
+			// SealDirect's atomic store is the release that makes the
+			// handle write visible to any reader that later observes the
+			// bit. BindRoot above disarmed it (tripIfSealed), so a second
+			// def of the same var can never leave a stale handle armed.
+			// rv is the *lang.NamedFnN temp genFn returned; .F is the raw
+			// FnFuncN closure a direct call invokes.
+			if df, ok := g.directVars[s.Var]; ok {
+				g.wf("%s = %s.F\n", df.goName, rv)
+				g.wf("%s.SealDirect()\n", gv)
+			}
 		}
 		return gv // def's value is the Var itself
 
@@ -789,6 +841,40 @@ func (g *generator) gen(n *ast.Node) string {
 				}
 				t := g.temp()
 				g.wf("%s := %s(%s)\n", t, df.goName, strings.Join(rvs, ", "))
+				return t
+			}
+		}
+		// Cross-var direct-call fast path (ADR 0064, on the ADR 0066
+		// seal): the callee is a var this compilation unit def'd exactly
+		// once, at top level, to a single-fixed-arity fn whose typed
+		// handle the def published — and the call arity matches. While
+		// the var's seal bit reads true (nothing has redefined it) invoke
+		// the handle directly: no atomic var deref, no lang.ApplyN
+		// type-switch. The moment ANY root mutation happens — a second
+		// def, alter-var-root, with-redefs — tripIfSealed disarms the bit
+		// and every site falls back to the unchanged v.Get() + ApplyN
+		// path, so redefinition liveness is observably identical.
+		//
+		// Evaluation order is preserved exactly: the fn position is read
+		// BEFORE the args in both arms (the bit on the fast path, the
+		// var's root on the slow one), so an arg that redefines the
+		// callee still does not affect this call.
+		if s.Fn.Op == ast.OpVar {
+			vr := s.Fn.Sub.(*ast.VarNode).Var
+			if df, ok := g.directVars[vr]; ok && df.arity == len(s.Args) {
+				gv := g.hoistVar(vr)
+				dt, ft := g.temp(), g.temp()
+				g.wf("%s := %s.Direct()\n", dt, gv)
+				g.wf("var %s any\nif !%s {\n%s = %s.Get()\n}\n", ft, dt, ft, gv)
+				rvs := make([]string, len(s.Args))
+				for i, a := range s.Args {
+					rvs[i] = g.gen(a)
+				}
+				args := strings.Join(rvs, ", ")
+				t := g.temp()
+				g.wf("var %s any\nif %s {\n%s = %s(%s)\n} else {\n%s = lang.Apply%d(%s)\n}\n",
+					t, dt, t, df.goName, args,
+					t, len(rvs), strings.Join(append([]string{ft}, rvs...), ", "))
 				return t
 			}
 		}
@@ -928,14 +1014,79 @@ var testIntrinsics = map[string]string{
 // raw `<`/`>`/`==` is byte-identical to LT/GT/Equiv.
 var intUnboxCmp = map[string]string{"<": "<", ">": ">", "=": "==", "<=": "<=", ">=": ">="}
 
-// intUnboxArith2/1 map proven-int64 arithmetic to the checked rt helpers
-// on raw Go int64s (ADR 0067). These do NOT deref the operator var — the
-// design/04 §5 rung-4 primitive-intrinsic contract — but they reproduce
-// the tower's overflow tests exactly, so the "integer overflow" throw
-// stays byte-identical. `/` is never here (ratio semantics live in the
-// tower).
-var intUnboxArith2 = map[string]string{"+": "IAdd", "-": "ISub", "*": "IMul"}
-var intUnboxArith1 = map[string]string{"inc": "IInc", "dec": "IDec"}
+// intUnboxArith2/1 map proven-int64 arithmetic to a raw Go int64
+// EXPRESSION template (ADR 0067; second-table batch 2026-07-27). These do
+// NOT deref the operator var — the design/04 §5 rung-4 primitive-intrinsic
+// contract — but each reproduces its tower op exactly, so every throw
+// (overflow, `/ by zero`) stays byte-identical. `/` is never here (ratio
+// semantics live in the tower).
+//
+// The tables are also THE inference oracle: pkg/emit/numtype.go types a
+// core call int64 iff its name+arity is a key here, so the prover and the
+// emitter cannot drift apart (they were two hand-synced tables before).
+// Every name here must be sealed in rt.Boot — a redefinition has to trip
+// CoreArithDirty or the guarded region would keep open-coding a var the
+// user has replaced (TestUnboxedOpsAreSealed).
+//
+// Checked (throwing) ops go through the rt helpers; the ops whose Go form
+// IS the tower semantics (bit twiddling, wrapping unchecked-*, min/max)
+// open-code inline. Shift counts mask to 6 bits like Java/Clojure longs
+// (corelib bit-shift-left et al), which raw Go `<<` does not do.
+var intUnboxArith2 = map[string]string{
+	"+": "rt.IAdd(%s, %s)",
+	"-": "rt.ISub(%s, %s)",
+	"*": "rt.IMul(%s, %s)",
+
+	"quot": "rt.IQuot(%s, %s)",
+	"rem":  "rt.IRem(%s, %s)",
+
+	"max": "max(%s, %s)",
+	"min": "min(%s, %s)",
+
+	"bit-and":                  "((%s) & (%s))",
+	"bit-or":                   "((%s) | (%s))",
+	"bit-xor":                  "((%s) ^ (%s))",
+	"bit-and-not":              "((%s) &^ (%s))",
+	"bit-shift-left":           "((%s) << uint((%s)&63))",
+	"bit-shift-right":          "((%s) >> uint((%s)&63))",
+	"unsigned-bit-shift-right": "int64(uint64(%s) >> uint((%s)&63))",
+	"bit-set":                  "((%s) | (int64(1) << uint((%s)&63)))",
+	"bit-clear":                "((%s) &^ (int64(1) << uint((%s)&63)))",
+	"bit-flip":                 "((%s) ^ (int64(1) << uint((%s)&63)))",
+
+	"unchecked-add":      "((%s) + (%s))",
+	"unchecked-subtract": "((%s) - (%s))",
+	"unchecked-multiply": "((%s) * (%s))",
+}
+
+var intUnboxArith1 = map[string]string{
+	"inc":  "rt.IInc(%s)",
+	"dec":  "rt.IDec(%s)",
+	"-":    "rt.INeg(%s)",
+	"+":    "(%s)", // unary (+ x) on a long is x (corelib: 1-arg + returns its arg)
+	"long": "(%s)", // already an int64 — the coercion is the identity
+
+	"bit-not": "(^(%s))",
+
+	"unchecked-negate": "(-(%s))",
+	"unchecked-inc":    "((%s) + 1)",
+	"unchecked-dec":    "((%s) - 1)",
+}
+
+// intUnboxPred1 maps a 1-arg core numeric predicate on a proven int64 to a
+// raw Go bool expression, used in `if`-test position (ADR 0067 second-table
+// batch). `(zero? n)` was a var deref + lang.Apply1 + IsTruthy per
+// iteration — the single most common loop-termination test in idiomatic
+// Clojure. even?/odd? match core.clj's `(zero? (rem n 2))` on an integer;
+// Go's `%` is truncating like the tower's, so a negative odd n gives -1,
+// hence `!= 0` rather than `== 1`.
+var intUnboxPred1 = map[string]string{
+	"zero?": "((%s) == 0)",
+	"pos?":  "((%s) > 0)",
+	"neg?":  "((%s) < 0)",
+	"even?": "((%s)%%2 == 0)",
+	"odd?":  "((%s)%%2 != 0)",
+}
 
 // genTestIntrinsic emits an unboxed comparison for an if-test that is a
 // 2-arg call of a core comparison builtin, returning a bool-typed
@@ -947,7 +1098,7 @@ func (g *generator) genTestIntrinsic(test *ast.Node) (string, bool) {
 		return "", false
 	}
 	s := test.Sub.(*ast.InvokeNode)
-	if len(s.Args) != 2 || s.Fn.Op != ast.OpVar {
+	if s.Fn.Op != ast.OpVar {
 		return "", false
 	}
 	v := s.Fn.Sub.(*ast.VarNode).Var
@@ -955,6 +1106,19 @@ func (g *generator) genTestIntrinsic(test *ast.Node) (string, bool) {
 		return "", false
 	}
 	name := v.Symbol().Name()
+	if len(s.Args) == 1 {
+		tmpl, ok := intUnboxPred1[name]
+		if !ok || !g.ni.isInt64(s.Args[0]) {
+			return "", false
+		}
+		a := g.gen(s.Args[0])
+		t := g.temp()
+		g.wf("%s := %s\n", t, fmt.Sprintf(tmpl, a))
+		return t, true
+	}
+	if len(s.Args) != 2 {
+		return "", false
+	}
 	if op, ok := intUnboxCmp[name]; ok && g.ni.isInt64(s.Args[0]) && g.ni.isInt64(s.Args[1]) {
 		a := g.gen(s.Args[0])
 		b := g.gen(s.Args[1])
@@ -965,6 +1129,13 @@ func (g *generator) genTestIntrinsic(test *ast.Node) (string, bool) {
 	helper, ok := testIntrinsics[name]
 	if !ok {
 		return "", false
+	}
+	if g.sealCore {
+		a := g.gen(s.Args[0])
+		b := g.gen(s.Args[1])
+		t := g.temp()
+		g.wf("%s := rt.%s(%s, %s)\n", t, sealName(helper), a, b)
+		return t, true
 	}
 	gv := g.hoistVar(v)
 	a := g.gen(s.Args[0])
@@ -990,17 +1161,17 @@ func (g *generator) genIntrinsic(n *ast.Node, s *ast.InvokeNode) (string, bool) 
 	name := v.Symbol().Name()
 
 	if g.ni.isInt64(n) {
-		if helper, ok := intUnboxArith2[name]; ok && len(s.Args) == 2 {
+		if tmpl, ok := intUnboxArith2[name]; ok && len(s.Args) == 2 {
 			a := g.gen(s.Args[0])
 			b := g.gen(s.Args[1])
 			t := g.temp()
-			g.wf("var %s int64 = rt.%s(%s, %s)\n", t, helper, a, b)
+			g.wf("var %s int64 = %s\n", t, fmt.Sprintf(tmpl, a, b))
 			return t, true
 		}
-		if helper, ok := intUnboxArith1[name]; ok && len(s.Args) == 1 {
+		if tmpl, ok := intUnboxArith1[name]; ok && len(s.Args) == 1 {
 			a := g.gen(s.Args[0])
 			t := g.temp()
-			g.wf("var %s int64 = rt.%s(%s)\n", t, helper, a)
+			g.wf("var %s int64 = %s\n", t, fmt.Sprintf(tmpl, a))
 			return t, true
 		}
 	}
@@ -1008,6 +1179,13 @@ func (g *generator) genIntrinsic(n *ast.Node, s *ast.InvokeNode) (string, bool) 
 	helper, ok := intrinsic2[name]
 	if !ok || len(s.Args) != 2 {
 		return "", false
+	}
+	if g.sealCore {
+		a := g.gen(s.Args[0])
+		b := g.gen(s.Args[1])
+		t := g.temp()
+		g.wf("%s := rt.%s(%s, %s)\n", t, sealName(helper), a, b)
+		return t, true
 	}
 	gv := g.hoistVar(v)
 	a := g.gen(s.Args[0])
@@ -1115,13 +1293,19 @@ func loopWin(ni *numInfer, n *ast.Node) bool {
 func (g *generator) genLoopDual(n *ast.Node, ni *numInfer) string {
 	t := g.temp()
 	g.wf("var %s any\n_ = %s\n", t, t)
-	g.wf("if !rt.CoreDirty() {\n")
+	g.dirtyOpen()
 	save, saveG := g.ni, g.guarded
 	g.ni, g.guarded = ni, true
 	if rv := g.genLoopEmit(n); rv != "" {
 		g.wf("%s = %s\n", t, rv)
 	}
 	g.ni, g.guarded = save, saveG
+	if g.sealCore {
+		// Hard seal: the typed arm is unconditional, so the boxed arm is
+		// unreachable — don't emit it at all (smaller binary, same result).
+		g.wf("}\n")
+		return t
+	}
 	g.wf("} else {\n")
 	saveF := g.boxedForced
 	g.boxedForced = true
@@ -1422,6 +1606,99 @@ func fnArityLabel(fn *ast.FnNode) string {
 	return strings.Join(parts, " or ")
 }
 
+// planDirectVars decides which top-level `def`s of this compilation unit
+// publish a package-level typed handle callable directly (ADR 0064
+// cross-var direct calls, guarded by the ADR 0066 seal bit). It runs
+// BEFORE emission so a forward reference — `(declare g)` … `(defn f [x]
+// (g x))` … `(defn g [x] …)`, or mutual recursion — resolves too.
+//
+// A var qualifies only when ALL of these hold, so the compiled call site
+// is provably the same invocation lang.ApplyN would have performed:
+//
+//  1. exactly ONE def anywhere in the unit gives it a value (a second
+//     init-bearing `def`, nested or not, would rebind the root; `declare`
+//     — an init-less `(def g)` — emits no BindRoot at all and so does not
+//     count, which is what makes forward references and mutual recursion
+//     eligible);
+//  2. that one def is a TOP-LEVEL form (or a statement of a top-level
+//     `do`), so it is unconditionally executed by Load() in source order;
+//  3. its init is a single-fixed-arity, non-variadic fn* (the FnFuncN
+//     shape) — multi-arity/variadic fns keep the ApplyN route, which is
+//     also what preserves exact arity-error semantics; and
+//  4. the var is NOT dynamic — a thread binding (`binding`) is invisible
+//     to a direct call, and lang.PushThreadBindings refuses a non-dynamic
+//     var, so this rules the whole hazard out statically.
+//
+// Everything else simply is not registered and emits unchanged.
+func (g *generator) planDirectVars(forms []*ast.Node) {
+	defs := map[*lang.Var]int{}
+	var count func(n *ast.Node)
+	count = func(n *ast.Node) {
+		if n == nil {
+			return
+		}
+		if n.Op == ast.OpDef {
+			// Only an init-BEARING def counts: that is exactly the set of
+			// defs that emit a BindRoot. An init-less `(def g)` — what
+			// `declare` expands to — never touches the root, so it can
+			// neither install a rival fn nor invalidate the handle.
+			if s := n.Sub.(*ast.DefNode); s.Var != nil && s.Init != nil {
+				defs[s.Var]++
+			}
+		}
+		eachChild(n, func(c *ast.Node, _ bool) { count(c) })
+	}
+	for _, n := range forms {
+		count(n)
+	}
+
+	var plan func(n *ast.Node)
+	plan = func(n *ast.Node) {
+		if n == nil {
+			return
+		}
+		if n.Op == ast.OpDo {
+			// A top-level `do` is spliced into Load() verbatim, so its
+			// statements are top-level for this purpose.
+			s := n.Sub.(*ast.DoNode)
+			for _, st := range s.Statements {
+				plan(st)
+			}
+			plan(s.Ret)
+			return
+		}
+		if n.Op != ast.OpDef {
+			return
+		}
+		s := n.Sub.(*ast.DefNode)
+		if s.Var == nil || s.Init == nil || defs[s.Var] != 1 {
+			return
+		}
+		if _, dup := g.directVars[s.Var]; dup {
+			return
+		}
+		if s.Init.Op != ast.OpFn {
+			return
+		}
+		m := singleFixedMethod(s.Init.Sub.(*ast.FnNode))
+		if m == nil {
+			return
+		}
+		if lang.IsTruthy(lang.Get(s.Var.Meta(), lang.KWDynamic)) {
+			return
+		}
+		ns := s.Var.Namespace().Name().String()
+		name := s.Var.Symbol().Name()
+		gn := g.uniqueGlobal("fnD_" + munge(ns) + "_" + munge(name))
+		g.directVars[s.Var] = directFn{goName: gn, arity: m.FixedArity}
+		g.handles = append(g.handles,
+			fmt.Sprintf("%s lang.FnFunc%d\n", gn, m.FixedArity))
+	}
+	for _, n := range forms {
+		plan(n)
+	}
+}
+
 // singleFixedMethod returns the sole method when the fn qualifies for
 // the fixed-arity FnFuncN representation, else nil.
 func singleFixedMethod(fn *ast.FnNode) *ast.FnMethodNode {
@@ -1546,7 +1823,7 @@ func (g *generator) specializeInt(fn *ast.FnNode, m *ast.FnMethodNode, defVar *l
 func (g *generator) emitTypedGuard(m *ast.FnMethodNode, outer []string, spec *numInfer) {
 	save, saveG := g.ni, g.guarded
 	g.ni, g.guarded = spec, true
-	g.wf("if !rt.CoreDirty() {\n")
+	g.dirtyOpen()
 	inner := make([]string, len(m.Params))
 	for i, pn := range m.Params {
 		gn := g.bindLocal(pn.Sub.(*ast.BindingNode))
@@ -1744,7 +2021,7 @@ func (g *generator) emitTypedFunc(m *ast.FnMethodNode, spec *numInfer, name stri
 // redefined core arithmetic op falls through to the boxed body, which
 // honors it per call; a non-int64 arg falls through the same way.
 func (g *generator) emitLiftGuard(m *ast.FnMethodNode, outer []string, fnL string) {
-	g.wf("if !rt.CoreDirty() {\n")
+	g.dirtyOpen()
 	inner := make([]string, len(m.Params))
 	for i := range m.Params {
 		gn := fmt.Sprintf("a%d_%d", i, g.next())

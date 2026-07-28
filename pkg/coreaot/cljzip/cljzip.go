@@ -93,6 +93,36 @@ var (
 	v_clojure_DOT_zip_zipper                        = lang.InternVarName(lang.NewSymbol("clojure.zip"), lang.NewSymbol("zipper"))
 )
 
+var (
+	fnD_clojure_DOT_zip_zipper        lang.FnFunc4
+	fnD_clojure_DOT_zip_seq_zip       lang.FnFunc1
+	fnD_clojure_DOT_zip_vector_zip    lang.FnFunc1
+	fnD_clojure_DOT_zip_xml_zip       lang.FnFunc1
+	fnD_clojure_DOT_zip_node          lang.FnFunc1
+	fnD_clojure_DOT_zip_branch_QMARK_ lang.FnFunc1
+	fnD_clojure_DOT_zip_children      lang.FnFunc1
+	fnD_clojure_DOT_zip_make_node     lang.FnFunc3
+	fnD_clojure_DOT_zip_path          lang.FnFunc1
+	fnD_clojure_DOT_zip_lefts         lang.FnFunc1
+	fnD_clojure_DOT_zip_rights        lang.FnFunc1
+	fnD_clojure_DOT_zip_down          lang.FnFunc1
+	fnD_clojure_DOT_zip_up            lang.FnFunc1
+	fnD_clojure_DOT_zip_root          lang.FnFunc1
+	fnD_clojure_DOT_zip_right         lang.FnFunc1
+	fnD_clojure_DOT_zip_rightmost     lang.FnFunc1
+	fnD_clojure_DOT_zip_left          lang.FnFunc1
+	fnD_clojure_DOT_zip_leftmost      lang.FnFunc1
+	fnD_clojure_DOT_zip_insert_left   lang.FnFunc2
+	fnD_clojure_DOT_zip_insert_right  lang.FnFunc2
+	fnD_clojure_DOT_zip_replace       lang.FnFunc2
+	fnD_clojure_DOT_zip_insert_child  lang.FnFunc2
+	fnD_clojure_DOT_zip_append_child  lang.FnFunc2
+	fnD_clojure_DOT_zip_next          lang.FnFunc1
+	fnD_clojure_DOT_zip_prev          lang.FnFunc1
+	fnD_clojure_DOT_zip_end_QMARK_    lang.FnFunc1
+	fnD_clojure_DOT_zip_remove        lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -122,1343 +152,1748 @@ func Load() {
 	})
 	tmp14 := &lang.NamedFn4{Name: "clojure.zip/zipper", Expects: "4: [branch? children make-node root]", F: tmp5}
 	v_clojure_DOT_zip_zipper.BindRoot(tmp14)
+	fnD_clojure_DOT_zip_zipper = tmp14.F
+	v_clojure_DOT_zip_zipper.SealDirect()
 	_ = v_clojure_DOT_zip_zipper
 	// (def seq-zip "Returns a zipper for nested sequences, given a root sequence" (clojure.core/…
 	v_clojure_DOT_zip_seq_zip.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(45), kw_column, int64(7), kw_end_line, int64(45), kw_end_column, int64(14), kw_doc, "Returns a zipper for nested sequences, given a root sequence"))
 	tmp15 := lang.FnFunc1(func(root16 any) any {
-		tmp17 := v_clojure_DOT_zip_zipper.Get()
-		tmp18 := v_clojure_DOT_core_seq_QMARK_.Get()
-		tmp19 := v_clojure_DOT_core_identity.Get()
-		tmp20 := lang.FnFunc2(func(node21, children22 any) any {
-			tmp23 := v_clojure_DOT_core_with_meta.Get()
-			tmp24 := v_clojure_DOT_core_meta.Get()
-			tmp25 := lang.Apply1(tmp24, node21)
-			tmp26 := lang.Apply2(tmp23, children22, tmp25)
-			return tmp26
+		tmp17 := v_clojure_DOT_zip_zipper.Direct()
+		var tmp18 any
+		if !tmp17 {
+			tmp18 = v_clojure_DOT_zip_zipper.Get()
+		}
+		tmp19 := v_clojure_DOT_core_seq_QMARK_.Get()
+		tmp20 := v_clojure_DOT_core_identity.Get()
+		tmp21 := lang.FnFunc2(func(node22, children23 any) any {
+			tmp24 := v_clojure_DOT_core_with_meta.Get()
+			tmp25 := v_clojure_DOT_core_meta.Get()
+			tmp26 := lang.Apply1(tmp25, node22)
+			tmp27 := lang.Apply2(tmp24, children23, tmp26)
+			return tmp27
 		})
-		tmp27 := &lang.NamedFn2{Name: "fn", Expects: "2: [node children]", F: tmp20}
-		tmp28 := lang.Apply4(tmp17, tmp18, tmp19, tmp27, root16)
-		return tmp28
+		tmp28 := &lang.NamedFn2{Name: "fn", Expects: "2: [node children]", F: tmp21}
+		var tmp29 any
+		if tmp17 {
+			tmp29 = fnD_clojure_DOT_zip_zipper(tmp19, tmp20, tmp28, root16)
+		} else {
+			tmp29 = lang.Apply4(tmp18, tmp19, tmp20, tmp28, root16)
+		}
+		return tmp29
 	})
-	tmp29 := &lang.NamedFn1{Name: "clojure.zip/seq-zip", Expects: "1: [root]", F: tmp15}
-	v_clojure_DOT_zip_seq_zip.BindRoot(tmp29)
+	tmp30 := &lang.NamedFn1{Name: "clojure.zip/seq-zip", Expects: "1: [root]", F: tmp15}
+	v_clojure_DOT_zip_seq_zip.BindRoot(tmp30)
+	fnD_clojure_DOT_zip_seq_zip = tmp30.F
+	v_clojure_DOT_zip_seq_zip.SealDirect()
 	_ = v_clojure_DOT_zip_seq_zip
 	// (def vector-zip "Returns a zipper for nested vectors, given a root vector" (clojure.core/f…
 	v_clojure_DOT_zip_vector_zip.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(54), kw_column, int64(7), kw_end_line, int64(54), kw_end_column, int64(17), kw_doc, "Returns a zipper for nested vectors, given a root vector"))
-	tmp30 := lang.FnFunc1(func(root31 any) any {
-		tmp32 := v_clojure_DOT_zip_zipper.Get()
-		tmp33 := v_clojure_DOT_core_vector_QMARK_.Get()
-		tmp34 := v_clojure_DOT_core_seq.Get()
-		tmp35 := lang.FnFunc2(func(node36, children37 any) any {
-			tmp38 := v_clojure_DOT_core_with_meta.Get()
-			tmp39 := v_clojure_DOT_core_vec.Get()
-			tmp40 := lang.Apply1(tmp39, children37)
-			tmp41 := v_clojure_DOT_core_meta.Get()
-			tmp42 := lang.Apply1(tmp41, node36)
-			tmp43 := lang.Apply2(tmp38, tmp40, tmp42)
-			return tmp43
+	tmp31 := lang.FnFunc1(func(root32 any) any {
+		tmp33 := v_clojure_DOT_zip_zipper.Direct()
+		var tmp34 any
+		if !tmp33 {
+			tmp34 = v_clojure_DOT_zip_zipper.Get()
+		}
+		tmp35 := v_clojure_DOT_core_vector_QMARK_.Get()
+		tmp36 := v_clojure_DOT_core_seq.Get()
+		tmp37 := lang.FnFunc2(func(node38, children39 any) any {
+			tmp40 := v_clojure_DOT_core_with_meta.Get()
+			tmp41 := v_clojure_DOT_core_vec.Get()
+			tmp42 := lang.Apply1(tmp41, children39)
+			tmp43 := v_clojure_DOT_core_meta.Get()
+			tmp44 := lang.Apply1(tmp43, node38)
+			tmp45 := lang.Apply2(tmp40, tmp42, tmp44)
+			return tmp45
 		})
-		tmp44 := &lang.NamedFn2{Name: "fn", Expects: "2: [node children]", F: tmp35}
-		tmp45 := lang.Apply4(tmp32, tmp33, tmp34, tmp44, root31)
-		return tmp45
+		tmp46 := &lang.NamedFn2{Name: "fn", Expects: "2: [node children]", F: tmp37}
+		var tmp47 any
+		if tmp33 {
+			tmp47 = fnD_clojure_DOT_zip_zipper(tmp35, tmp36, tmp46, root32)
+		} else {
+			tmp47 = lang.Apply4(tmp34, tmp35, tmp36, tmp46, root32)
+		}
+		return tmp47
 	})
-	tmp46 := &lang.NamedFn1{Name: "clojure.zip/vector-zip", Expects: "1: [root]", F: tmp30}
-	v_clojure_DOT_zip_vector_zip.BindRoot(tmp46)
+	tmp48 := &lang.NamedFn1{Name: "clojure.zip/vector-zip", Expects: "1: [root]", F: tmp31}
+	v_clojure_DOT_zip_vector_zip.BindRoot(tmp48)
+	fnD_clojure_DOT_zip_vector_zip = tmp48.F
+	v_clojure_DOT_zip_vector_zip.SealDirect()
 	_ = v_clojure_DOT_zip_vector_zip
 	// (def xml-zip "Returns a zipper for xml elements (as from xml/parse),\n  given a root eleme…
 	v_clojure_DOT_zip_xml_zip.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(14), kw_doc, "Returns a zipper for xml elements (as from xml/parse),\n  given a root element"))
-	tmp47 := lang.FnFunc1(func(root48 any) any {
-		tmp49 := v_clojure_DOT_zip_zipper.Get()
-		tmp50 := v_clojure_DOT_core_complement.Get()
-		tmp51 := v_clojure_DOT_core_string_QMARK_.Get()
-		tmp52 := lang.Apply1(tmp50, tmp51)
-		tmp53 := v_clojure_DOT_core_comp.Get()
-		tmp54 := v_clojure_DOT_core_seq.Get()
-		tmp55 := lang.Apply2(tmp53, tmp54, kw_content)
-		tmp56 := lang.FnFunc2(func(node57, children58 any) any {
-			tmp59 := v_clojure_DOT_core_assoc.Get()
-			var tmp60 any
-			_ = tmp60
+	tmp49 := lang.FnFunc1(func(root50 any) any {
+		tmp51 := v_clojure_DOT_zip_zipper.Direct()
+		var tmp52 any
+		if !tmp51 {
+			tmp52 = v_clojure_DOT_zip_zipper.Get()
+		}
+		tmp53 := v_clojure_DOT_core_complement.Get()
+		tmp54 := v_clojure_DOT_core_string_QMARK_.Get()
+		tmp55 := lang.Apply1(tmp53, tmp54)
+		tmp56 := v_clojure_DOT_core_comp.Get()
+		tmp57 := v_clojure_DOT_core_seq.Get()
+		tmp58 := lang.Apply2(tmp56, tmp57, kw_content)
+		tmp59 := lang.FnFunc2(func(node60, children61 any) any {
+			tmp62 := v_clojure_DOT_core_assoc.Get()
+			var tmp63 any
+			_ = tmp63
 			{
-				var and__1__auto__61 any = children58
-				_ = and__1__auto__61
-				var tmp62 any
-				_ = tmp62
-				if lang.IsTruthy(and__1__auto__61) {
-					tmp63 := v_clojure_DOT_core_apply.Get()
-					tmp64 := v_clojure_DOT_core_vector.Get()
-					tmp65 := lang.Apply2(tmp63, tmp64, children58)
-					tmp62 = tmp65
+				var and__1__auto__64 any = children61
+				_ = and__1__auto__64
+				var tmp65 any
+				_ = tmp65
+				if lang.IsTruthy(and__1__auto__64) {
+					tmp66 := v_clojure_DOT_core_apply.Get()
+					tmp67 := v_clojure_DOT_core_vector.Get()
+					tmp68 := lang.Apply2(tmp66, tmp67, children61)
+					tmp65 = tmp68
 				} else {
-					tmp62 = and__1__auto__61
+					tmp65 = and__1__auto__64
 				}
-				tmp60 = tmp62
+				tmp63 = tmp65
 			}
-			tmp66 := lang.Apply3(tmp59, node57, kw_content, tmp60)
-			return tmp66
+			tmp69 := lang.Apply3(tmp62, node60, kw_content, tmp63)
+			return tmp69
 		})
-		tmp67 := &lang.NamedFn2{Name: "fn", Expects: "2: [node children]", F: tmp56}
-		tmp68 := lang.Apply4(tmp49, tmp52, tmp55, tmp67, root48)
-		return tmp68
+		tmp70 := &lang.NamedFn2{Name: "fn", Expects: "2: [node children]", F: tmp59}
+		var tmp71 any
+		if tmp51 {
+			tmp71 = fnD_clojure_DOT_zip_zipper(tmp55, tmp58, tmp70, root50)
+		} else {
+			tmp71 = lang.Apply4(tmp52, tmp55, tmp58, tmp70, root50)
+		}
+		return tmp71
 	})
-	tmp69 := &lang.NamedFn1{Name: "clojure.zip/xml-zip", Expects: "1: [root]", F: tmp47}
-	v_clojure_DOT_zip_xml_zip.BindRoot(tmp69)
+	tmp72 := &lang.NamedFn1{Name: "clojure.zip/xml-zip", Expects: "1: [root]", F: tmp49}
+	v_clojure_DOT_zip_xml_zip.BindRoot(tmp72)
+	fnD_clojure_DOT_zip_xml_zip = tmp72.F
+	v_clojure_DOT_zip_xml_zip.SealDirect()
 	_ = v_clojure_DOT_zip_xml_zip
 	// (def node "Returns the node at loc" (clojure.core/fn [loc] (loc 0)))
 	v_clojure_DOT_zip_node.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(11), kw_doc, "Returns the node at loc"))
-	tmp70 := lang.FnFunc1(func(loc71 any) any {
-		tmp72 := lang.Apply1(loc71, int64(0))
-		return tmp72
+	tmp73 := lang.FnFunc1(func(loc74 any) any {
+		tmp75 := lang.Apply1(loc74, int64(0))
+		return tmp75
 	})
-	tmp73 := &lang.NamedFn1{Name: "clojure.zip/node", Expects: "1: [loc]", F: tmp70}
-	v_clojure_DOT_zip_node.BindRoot(tmp73)
+	tmp76 := &lang.NamedFn1{Name: "clojure.zip/node", Expects: "1: [loc]", F: tmp73}
+	v_clojure_DOT_zip_node.BindRoot(tmp76)
+	fnD_clojure_DOT_zip_node = tmp76.F
+	v_clojure_DOT_zip_node.SealDirect()
 	_ = v_clojure_DOT_zip_node
 	// (def branch? "Returns true if the node at loc is a branch" (clojure.core/fn [loc] ((:zip/b…
 	v_clojure_DOT_zip_branch_QMARK_.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(81), kw_column, int64(7), kw_end_line, int64(81), kw_end_column, int64(14), kw_doc, "Returns true if the node at loc is a branch"))
-	tmp74 := lang.FnFunc1(func(loc75 any) any {
-		tmp76 := v_clojure_DOT_core_meta.Get()
-		tmp77 := lang.Apply1(tmp76, loc75)
-		tmp78 := lang.Apply1(kw_zip_SLASH_branch_QMARK_, tmp77)
-		tmp79 := v_clojure_DOT_zip_node.Get()
-		tmp80 := lang.Apply1(tmp79, loc75)
-		tmp81 := lang.Apply1(tmp78, tmp80)
-		return tmp81
+	tmp77 := lang.FnFunc1(func(loc78 any) any {
+		tmp79 := v_clojure_DOT_core_meta.Get()
+		tmp80 := lang.Apply1(tmp79, loc78)
+		tmp81 := lang.Apply1(kw_zip_SLASH_branch_QMARK_, tmp80)
+		tmp82 := v_clojure_DOT_zip_node.Direct()
+		var tmp83 any
+		if !tmp82 {
+			tmp83 = v_clojure_DOT_zip_node.Get()
+		}
+		var tmp84 any
+		if tmp82 {
+			tmp84 = fnD_clojure_DOT_zip_node(loc78)
+		} else {
+			tmp84 = lang.Apply1(tmp83, loc78)
+		}
+		tmp85 := lang.Apply1(tmp81, tmp84)
+		return tmp85
 	})
-	tmp82 := &lang.NamedFn1{Name: "clojure.zip/branch?", Expects: "1: [loc]", F: tmp74}
-	v_clojure_DOT_zip_branch_QMARK_.BindRoot(tmp82)
+	tmp86 := &lang.NamedFn1{Name: "clojure.zip/branch?", Expects: "1: [loc]", F: tmp77}
+	v_clojure_DOT_zip_branch_QMARK_.BindRoot(tmp86)
+	fnD_clojure_DOT_zip_branch_QMARK_ = tmp86.F
+	v_clojure_DOT_zip_branch_QMARK_.SealDirect()
 	_ = v_clojure_DOT_zip_branch_QMARK_
 	// (def children "Returns a seq of the children of node at loc, which must be a branch" (cloj…
 	v_clojure_DOT_zip_children.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(15), kw_doc, "Returns a seq of the children of node at loc, which must be a branch"))
-	tmp83 := lang.FnFunc1(func(loc84 any) any {
-		tmp85 := v_clojure_DOT_zip_branch_QMARK_.Get()
-		tmp86 := lang.Apply1(tmp85, loc84)
-		var tmp87 any
-		_ = tmp87
-		if lang.IsTruthy(tmp86) {
-			tmp88 := v_clojure_DOT_core_meta.Get()
-			tmp89 := lang.Apply1(tmp88, loc84)
-			tmp90 := lang.Apply1(kw_zip_SLASH_children, tmp89)
-			tmp91 := v_clojure_DOT_zip_node.Get()
-			tmp92 := lang.Apply1(tmp91, loc84)
-			tmp93 := lang.Apply1(tmp90, tmp92)
-			tmp87 = tmp93
-		} else {
-			tmp94 := v_clojure_DOT_core_ex_info.Get()
-			tmp95 := lang.NewMap()
-			tmp96 := lang.Apply2(tmp94, "called children on a leaf node", tmp95)
-			panic(rt.Throw(tmp96))
+	tmp87 := lang.FnFunc1(func(loc88 any) any {
+		tmp89 := v_clojure_DOT_zip_branch_QMARK_.Direct()
+		var tmp90 any
+		if !tmp89 {
+			tmp90 = v_clojure_DOT_zip_branch_QMARK_.Get()
 		}
-		return tmp87
+		var tmp91 any
+		if tmp89 {
+			tmp91 = fnD_clojure_DOT_zip_branch_QMARK_(loc88)
+		} else {
+			tmp91 = lang.Apply1(tmp90, loc88)
+		}
+		var tmp92 any
+		_ = tmp92
+		if lang.IsTruthy(tmp91) {
+			tmp93 := v_clojure_DOT_core_meta.Get()
+			tmp94 := lang.Apply1(tmp93, loc88)
+			tmp95 := lang.Apply1(kw_zip_SLASH_children, tmp94)
+			tmp96 := v_clojure_DOT_zip_node.Direct()
+			var tmp97 any
+			if !tmp96 {
+				tmp97 = v_clojure_DOT_zip_node.Get()
+			}
+			var tmp98 any
+			if tmp96 {
+				tmp98 = fnD_clojure_DOT_zip_node(loc88)
+			} else {
+				tmp98 = lang.Apply1(tmp97, loc88)
+			}
+			tmp99 := lang.Apply1(tmp95, tmp98)
+			tmp92 = tmp99
+		} else {
+			tmp100 := v_clojure_DOT_core_ex_info.Get()
+			tmp101 := lang.NewMap()
+			tmp102 := lang.Apply2(tmp100, "called children on a leaf node", tmp101)
+			panic(rt.Throw(tmp102))
+		}
+		return tmp92
 	})
-	tmp97 := &lang.NamedFn1{Name: "clojure.zip/children", Expects: "1: [loc]", F: tmp83}
-	v_clojure_DOT_zip_children.BindRoot(tmp97)
+	tmp103 := &lang.NamedFn1{Name: "clojure.zip/children", Expects: "1: [loc]", F: tmp87}
+	v_clojure_DOT_zip_children.BindRoot(tmp103)
+	fnD_clojure_DOT_zip_children = tmp103.F
+	v_clojure_DOT_zip_children.SealDirect()
 	_ = v_clojure_DOT_zip_children
 	// (def make-node "Returns a new branch node, given an existing node and new\n  children. The…
 	v_clojure_DOT_zip_make_node.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(16), kw_doc, "Returns a new branch node, given an existing node and new\n  children. The loc is only used to supply the constructor."))
-	tmp98 := lang.FnFunc3(func(loc99, node100, children101 any) any {
-		tmp102 := v_clojure_DOT_core_meta.Get()
-		tmp103 := lang.Apply1(tmp102, loc99)
-		tmp104 := lang.Apply1(kw_zip_SLASH_make_node, tmp103)
-		tmp105 := lang.Apply2(tmp104, node100, children101)
-		return tmp105
+	tmp104 := lang.FnFunc3(func(loc105, node106, children107 any) any {
+		tmp108 := v_clojure_DOT_core_meta.Get()
+		tmp109 := lang.Apply1(tmp108, loc105)
+		tmp110 := lang.Apply1(kw_zip_SLASH_make_node, tmp109)
+		tmp111 := lang.Apply2(tmp110, node106, children107)
+		return tmp111
 	})
-	tmp106 := &lang.NamedFn3{Name: "clojure.zip/make-node", Expects: "3: [loc node children]", F: tmp98}
-	v_clojure_DOT_zip_make_node.BindRoot(tmp106)
+	tmp112 := &lang.NamedFn3{Name: "clojure.zip/make-node", Expects: "3: [loc node children]", F: tmp104}
+	v_clojure_DOT_zip_make_node.BindRoot(tmp112)
+	fnD_clojure_DOT_zip_make_node = tmp112.F
+	v_clojure_DOT_zip_make_node.SealDirect()
 	_ = v_clojure_DOT_zip_make_node
 	// (def path "Returns a seq of nodes leading to this loc" (clojure.core/fn [loc] (:pnodes (lo…
 	v_clojure_DOT_zip_path.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(103), kw_column, int64(7), kw_end_line, int64(103), kw_end_column, int64(11), kw_doc, "Returns a seq of nodes leading to this loc"))
-	tmp107 := lang.FnFunc1(func(loc108 any) any {
-		tmp109 := lang.Apply1(loc108, int64(1))
-		tmp110 := lang.Apply1(kw_pnodes, tmp109)
-		return tmp110
+	tmp113 := lang.FnFunc1(func(loc114 any) any {
+		tmp115 := lang.Apply1(loc114, int64(1))
+		tmp116 := lang.Apply1(kw_pnodes, tmp115)
+		return tmp116
 	})
-	tmp111 := &lang.NamedFn1{Name: "clojure.zip/path", Expects: "1: [loc]", F: tmp107}
-	v_clojure_DOT_zip_path.BindRoot(tmp111)
+	tmp117 := &lang.NamedFn1{Name: "clojure.zip/path", Expects: "1: [loc]", F: tmp113}
+	v_clojure_DOT_zip_path.BindRoot(tmp117)
+	fnD_clojure_DOT_zip_path = tmp117.F
+	v_clojure_DOT_zip_path.SealDirect()
 	_ = v_clojure_DOT_zip_path
 	// (def lefts "Returns a seq of the left siblings of this loc" (clojure.core/fn [loc] (seq (:…
 	v_clojure_DOT_zip_lefts.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(12), kw_doc, "Returns a seq of the left siblings of this loc"))
-	tmp112 := lang.FnFunc1(func(loc113 any) any {
-		tmp114 := v_clojure_DOT_core_seq.Get()
-		tmp115 := lang.Apply1(loc113, int64(1))
-		tmp116 := lang.Apply1(kw_l, tmp115)
-		tmp117 := lang.Apply1(tmp114, tmp116)
-		return tmp117
+	tmp118 := lang.FnFunc1(func(loc119 any) any {
+		tmp120 := v_clojure_DOT_core_seq.Get()
+		tmp121 := lang.Apply1(loc119, int64(1))
+		tmp122 := lang.Apply1(kw_l, tmp121)
+		tmp123 := lang.Apply1(tmp120, tmp122)
+		return tmp123
 	})
-	tmp118 := &lang.NamedFn1{Name: "clojure.zip/lefts", Expects: "1: [loc]", F: tmp112}
-	v_clojure_DOT_zip_lefts.BindRoot(tmp118)
+	tmp124 := &lang.NamedFn1{Name: "clojure.zip/lefts", Expects: "1: [loc]", F: tmp118}
+	v_clojure_DOT_zip_lefts.BindRoot(tmp124)
+	fnD_clojure_DOT_zip_lefts = tmp124.F
+	v_clojure_DOT_zip_lefts.SealDirect()
 	_ = v_clojure_DOT_zip_lefts
 	// (def rights "Returns a seq of the right siblings of this loc" (clojure.core/fn [loc] (:r (…
 	v_clojure_DOT_zip_rights.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(115), kw_column, int64(7), kw_end_line, int64(115), kw_end_column, int64(13), kw_doc, "Returns a seq of the right siblings of this loc"))
-	tmp119 := lang.FnFunc1(func(loc120 any) any {
-		tmp121 := lang.Apply1(loc120, int64(1))
-		tmp122 := lang.Apply1(kw_r, tmp121)
-		return tmp122
+	tmp125 := lang.FnFunc1(func(loc126 any) any {
+		tmp127 := lang.Apply1(loc126, int64(1))
+		tmp128 := lang.Apply1(kw_r, tmp127)
+		return tmp128
 	})
-	tmp123 := &lang.NamedFn1{Name: "clojure.zip/rights", Expects: "1: [loc]", F: tmp119}
-	v_clojure_DOT_zip_rights.BindRoot(tmp123)
+	tmp129 := &lang.NamedFn1{Name: "clojure.zip/rights", Expects: "1: [loc]", F: tmp125}
+	v_clojure_DOT_zip_rights.BindRoot(tmp129)
+	fnD_clojure_DOT_zip_rights = tmp129.F
+	v_clojure_DOT_zip_rights.SealDirect()
 	_ = v_clojure_DOT_zip_rights
 	// (def down "Returns the loc of the leftmost child of the node at this loc, or\n  nil if no …
 	v_clojure_DOT_zip_down.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(122), kw_column, int64(7), kw_end_line, int64(122), kw_end_column, int64(11), kw_doc, "Returns the loc of the leftmost child of the node at this loc, or\n  nil if no children"))
-	tmp124 := lang.FnFunc1(func(loc125 any) any {
-		tmp126 := v_clojure_DOT_zip_branch_QMARK_.Get()
-		tmp127 := lang.Apply1(tmp126, loc125)
-		var tmp128 any
-		_ = tmp128
-		if lang.IsTruthy(tmp127) {
-			var tmp129 any
-			_ = tmp129
-			{
-				var vec__48130 any = loc125
-				_ = vec__48130
-				tmp131 := v_clojure_DOT_core_nth.Get()
-				tmp132 := lang.Apply3(tmp131, vec__48130, int64(0), nil)
-				var node133 any = tmp132
-				_ = node133
-				tmp134 := v_clojure_DOT_core_nth.Get()
-				tmp135 := lang.Apply3(tmp134, vec__48130, int64(1), nil)
-				var path136 any = tmp135
-				_ = path136
-				tmp137 := v_clojure_DOT_zip_children.Get()
-				tmp138 := lang.Apply1(tmp137, loc125)
-				var vec__51139 any = tmp138
-				_ = vec__51139
-				tmp140 := v_clojure_DOT_core_seq.Get()
-				tmp141 := lang.Apply1(tmp140, vec__51139)
-				var seq__52142 any = tmp141
-				_ = seq__52142
-				tmp143 := v_clojure_DOT_core_first.Get()
-				tmp144 := lang.Apply1(tmp143, seq__52142)
-				var first__53145 any = tmp144
-				_ = first__53145
-				tmp146 := v_clojure_DOT_core_next.Get()
-				tmp147 := lang.Apply1(tmp146, seq__52142)
-				var seq__52148 any = tmp147
-				_ = seq__52148
-				var c149 any = first__53145
-				_ = c149
-				var cnext150 any = seq__52148
-				_ = cnext150
-				var cs151 any = vec__51139
-				_ = cs151
-				var tmp152 any
-				_ = tmp152
-				if lang.IsTruthy(cs151) {
-					tmp153 := v_clojure_DOT_core_with_meta.Get()
-					tmp154 := lang.NewVector()
-					var tmp155 any
-					_ = tmp155
-					if lang.IsTruthy(path136) {
-						tmp156 := v_clojure_DOT_core_conj.Get()
-						tmp157 := lang.Apply1(kw_pnodes, path136)
-						tmp158 := lang.Apply2(tmp156, tmp157, node133)
-						tmp155 = tmp158
-					} else {
-						tmp159 := lang.NewVector(node133)
-						tmp155 = tmp159
-					}
-					tmp160 := lang.NewMap(kw_l, tmp154, kw_pnodes, tmp155, kw_ppath, path136, kw_r, cnext150)
-					tmp161 := lang.NewVector(c149, tmp160)
-					tmp162 := v_clojure_DOT_core_meta.Get()
-					tmp163 := lang.Apply1(tmp162, loc125)
-					tmp164 := lang.Apply2(tmp153, tmp161, tmp163)
-					tmp152 = tmp164
-				} else {
-					tmp152 = nil
-				}
-				tmp129 = tmp152
-			}
-			tmp128 = tmp129
-		} else {
-			tmp128 = nil
+	tmp130 := lang.FnFunc1(func(loc131 any) any {
+		tmp132 := v_clojure_DOT_zip_branch_QMARK_.Direct()
+		var tmp133 any
+		if !tmp132 {
+			tmp133 = v_clojure_DOT_zip_branch_QMARK_.Get()
 		}
-		return tmp128
+		var tmp134 any
+		if tmp132 {
+			tmp134 = fnD_clojure_DOT_zip_branch_QMARK_(loc131)
+		} else {
+			tmp134 = lang.Apply1(tmp133, loc131)
+		}
+		var tmp135 any
+		_ = tmp135
+		if lang.IsTruthy(tmp134) {
+			var tmp136 any
+			_ = tmp136
+			{
+				var vec__48137 any = loc131
+				_ = vec__48137
+				tmp138 := v_clojure_DOT_core_nth.Get()
+				tmp139 := lang.Apply3(tmp138, vec__48137, int64(0), nil)
+				var node140 any = tmp139
+				_ = node140
+				tmp141 := v_clojure_DOT_core_nth.Get()
+				tmp142 := lang.Apply3(tmp141, vec__48137, int64(1), nil)
+				var path143 any = tmp142
+				_ = path143
+				tmp144 := v_clojure_DOT_zip_children.Direct()
+				var tmp145 any
+				if !tmp144 {
+					tmp145 = v_clojure_DOT_zip_children.Get()
+				}
+				var tmp146 any
+				if tmp144 {
+					tmp146 = fnD_clojure_DOT_zip_children(loc131)
+				} else {
+					tmp146 = lang.Apply1(tmp145, loc131)
+				}
+				var vec__51147 any = tmp146
+				_ = vec__51147
+				tmp148 := v_clojure_DOT_core_seq.Get()
+				tmp149 := lang.Apply1(tmp148, vec__51147)
+				var seq__52150 any = tmp149
+				_ = seq__52150
+				tmp151 := v_clojure_DOT_core_first.Get()
+				tmp152 := lang.Apply1(tmp151, seq__52150)
+				var first__53153 any = tmp152
+				_ = first__53153
+				tmp154 := v_clojure_DOT_core_next.Get()
+				tmp155 := lang.Apply1(tmp154, seq__52150)
+				var seq__52156 any = tmp155
+				_ = seq__52156
+				var c157 any = first__53153
+				_ = c157
+				var cnext158 any = seq__52156
+				_ = cnext158
+				var cs159 any = vec__51147
+				_ = cs159
+				var tmp160 any
+				_ = tmp160
+				if lang.IsTruthy(cs159) {
+					tmp161 := v_clojure_DOT_core_with_meta.Get()
+					tmp162 := lang.NewVector()
+					var tmp163 any
+					_ = tmp163
+					if lang.IsTruthy(path143) {
+						tmp164 := v_clojure_DOT_core_conj.Get()
+						tmp165 := lang.Apply1(kw_pnodes, path143)
+						tmp166 := lang.Apply2(tmp164, tmp165, node140)
+						tmp163 = tmp166
+					} else {
+						tmp167 := lang.NewVector(node140)
+						tmp163 = tmp167
+					}
+					tmp168 := lang.NewMap(kw_l, tmp162, kw_pnodes, tmp163, kw_ppath, path143, kw_r, cnext158)
+					tmp169 := lang.NewVector(c157, tmp168)
+					tmp170 := v_clojure_DOT_core_meta.Get()
+					tmp171 := lang.Apply1(tmp170, loc131)
+					tmp172 := lang.Apply2(tmp161, tmp169, tmp171)
+					tmp160 = tmp172
+				} else {
+					tmp160 = nil
+				}
+				tmp136 = tmp160
+			}
+			tmp135 = tmp136
+		} else {
+			tmp135 = nil
+		}
+		return tmp135
 	})
-	tmp165 := &lang.NamedFn1{Name: "clojure.zip/down", Expects: "1: [loc]", F: tmp124}
-	v_clojure_DOT_zip_down.BindRoot(tmp165)
+	tmp173 := &lang.NamedFn1{Name: "clojure.zip/down", Expects: "1: [loc]", F: tmp130}
+	v_clojure_DOT_zip_down.BindRoot(tmp173)
+	fnD_clojure_DOT_zip_down = tmp173.F
+	v_clojure_DOT_zip_down.SealDirect()
 	_ = v_clojure_DOT_zip_down
 	// (def up "Returns the loc of the parent of the node at this loc, or nil if at\n  the top" (…
 	v_clojure_DOT_zip_up.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(137), kw_column, int64(7), kw_end_line, int64(137), kw_end_column, int64(9), kw_doc, "Returns the loc of the parent of the node at this loc, or nil if at\n  the top"))
-	tmp166 := lang.FnFunc1(func(loc167 any) any {
-		var tmp168 any
-		_ = tmp168
+	tmp174 := lang.FnFunc1(func(loc175 any) any {
+		var tmp176 any
+		_ = tmp176
 		{
-			var vec__54169 any = loc167
-			_ = vec__54169
-			tmp170 := v_clojure_DOT_core_nth.Get()
-			tmp171 := lang.Apply3(tmp170, vec__54169, int64(0), nil)
-			var node172 any = tmp171
-			_ = node172
-			tmp173 := v_clojure_DOT_core_nth.Get()
-			tmp174 := lang.Apply3(tmp173, vec__54169, int64(1), nil)
-			var map__57175 any = tmp174
-			_ = map__57175
-			tmp176 := v_clojure_DOT_core_seq_QMARK_.Get()
-			tmp177 := lang.Apply1(tmp176, map__57175)
-			var tmp178 any
-			_ = tmp178
-			if lang.IsTruthy(tmp177) {
-				tmp179 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-				tmp180 := lang.Apply1(tmp179, map__57175)
-				tmp178 = tmp180
+			var vec__54177 any = loc175
+			_ = vec__54177
+			tmp178 := v_clojure_DOT_core_nth.Get()
+			tmp179 := lang.Apply3(tmp178, vec__54177, int64(0), nil)
+			var node180 any = tmp179
+			_ = node180
+			tmp181 := v_clojure_DOT_core_nth.Get()
+			tmp182 := lang.Apply3(tmp181, vec__54177, int64(1), nil)
+			var map__57183 any = tmp182
+			_ = map__57183
+			tmp184 := v_clojure_DOT_core_seq_QMARK_.Get()
+			tmp185 := lang.Apply1(tmp184, map__57183)
+			var tmp186 any
+			_ = tmp186
+			if lang.IsTruthy(tmp185) {
+				tmp187 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+				tmp188 := lang.Apply1(tmp187, map__57183)
+				tmp186 = tmp188
 			} else {
-				tmp178 = map__57175
+				tmp186 = map__57183
 			}
-			var map__57181 any = tmp178
-			_ = map__57181
-			var path182 any = map__57181
-			_ = path182
-			tmp183 := v_clojure_DOT_core_get.Get()
-			tmp184 := lang.Apply2(tmp183, map__57181, kw_l)
-			var l185 any = tmp184
-			_ = l185
-			tmp186 := v_clojure_DOT_core_get.Get()
-			tmp187 := lang.Apply2(tmp186, map__57181, kw_ppath)
-			var ppath188 any = tmp187
-			_ = ppath188
-			tmp189 := v_clojure_DOT_core_get.Get()
-			tmp190 := lang.Apply2(tmp189, map__57181, kw_pnodes)
-			var pnodes191 any = tmp190
-			_ = pnodes191
-			tmp192 := v_clojure_DOT_core_get.Get()
-			tmp193 := lang.Apply2(tmp192, map__57181, kw_r)
-			var r194 any = tmp193
-			_ = r194
-			tmp195 := v_clojure_DOT_core_get.Get()
-			tmp196 := lang.Apply2(tmp195, map__57181, kw_changed_QMARK_)
-			var changed_QMARK_197 any = tmp196
-			_ = changed_QMARK_197
-			var tmp198 any
-			_ = tmp198
-			if lang.IsTruthy(pnodes191) {
-				var tmp199 any
-				_ = tmp199
+			var map__57189 any = tmp186
+			_ = map__57189
+			var path190 any = map__57189
+			_ = path190
+			tmp191 := v_clojure_DOT_core_get.Get()
+			tmp192 := lang.Apply2(tmp191, map__57189, kw_l)
+			var l193 any = tmp192
+			_ = l193
+			tmp194 := v_clojure_DOT_core_get.Get()
+			tmp195 := lang.Apply2(tmp194, map__57189, kw_ppath)
+			var ppath196 any = tmp195
+			_ = ppath196
+			tmp197 := v_clojure_DOT_core_get.Get()
+			tmp198 := lang.Apply2(tmp197, map__57189, kw_pnodes)
+			var pnodes199 any = tmp198
+			_ = pnodes199
+			tmp200 := v_clojure_DOT_core_get.Get()
+			tmp201 := lang.Apply2(tmp200, map__57189, kw_r)
+			var r202 any = tmp201
+			_ = r202
+			tmp203 := v_clojure_DOT_core_get.Get()
+			tmp204 := lang.Apply2(tmp203, map__57189, kw_changed_QMARK_)
+			var changed_QMARK_205 any = tmp204
+			_ = changed_QMARK_205
+			var tmp206 any
+			_ = tmp206
+			if lang.IsTruthy(pnodes199) {
+				var tmp207 any
+				_ = tmp207
 				{
-					tmp200 := v_clojure_DOT_core_peek.Get()
-					tmp201 := lang.Apply1(tmp200, pnodes191)
-					var pnode202 any = tmp201
-					_ = pnode202
-					tmp203 := v_clojure_DOT_core_with_meta.Get()
-					var tmp204 any
-					_ = tmp204
-					if lang.IsTruthy(changed_QMARK_197) {
-						tmp205 := v_clojure_DOT_zip_make_node.Get()
-						tmp206 := v_clojure_DOT_core_concat.Get()
-						tmp207 := v_clojure_DOT_core_cons.Get()
-						tmp208 := lang.Apply2(tmp207, node172, r194)
-						tmp209 := lang.Apply2(tmp206, l185, tmp208)
-						tmp210 := lang.Apply3(tmp205, loc167, pnode202, tmp209)
-						var tmp211 any
-						_ = tmp211
-						{
-							var and__1__auto__212 any = ppath188
-							_ = and__1__auto__212
-							var tmp213 any
-							_ = tmp213
-							if lang.IsTruthy(and__1__auto__212) {
-								tmp214 := v_clojure_DOT_core_assoc.Get()
-								tmp215 := lang.Apply3(tmp214, ppath188, kw_changed_QMARK_, true)
-								tmp213 = tmp215
-							} else {
-								tmp213 = and__1__auto__212
-							}
-							tmp211 = tmp213
+					tmp208 := v_clojure_DOT_core_peek.Get()
+					tmp209 := lang.Apply1(tmp208, pnodes199)
+					var pnode210 any = tmp209
+					_ = pnode210
+					tmp211 := v_clojure_DOT_core_with_meta.Get()
+					var tmp212 any
+					_ = tmp212
+					if lang.IsTruthy(changed_QMARK_205) {
+						tmp213 := v_clojure_DOT_zip_make_node.Direct()
+						var tmp214 any
+						if !tmp213 {
+							tmp214 = v_clojure_DOT_zip_make_node.Get()
 						}
-						tmp216 := lang.NewVector(tmp210, tmp211)
-						tmp204 = tmp216
+						tmp215 := v_clojure_DOT_core_concat.Get()
+						tmp216 := v_clojure_DOT_core_cons.Get()
+						tmp217 := lang.Apply2(tmp216, node180, r202)
+						tmp218 := lang.Apply2(tmp215, l193, tmp217)
+						var tmp219 any
+						if tmp213 {
+							tmp219 = fnD_clojure_DOT_zip_make_node(loc175, pnode210, tmp218)
+						} else {
+							tmp219 = lang.Apply3(tmp214, loc175, pnode210, tmp218)
+						}
+						var tmp220 any
+						_ = tmp220
+						{
+							var and__1__auto__221 any = ppath196
+							_ = and__1__auto__221
+							var tmp222 any
+							_ = tmp222
+							if lang.IsTruthy(and__1__auto__221) {
+								tmp223 := v_clojure_DOT_core_assoc.Get()
+								tmp224 := lang.Apply3(tmp223, ppath196, kw_changed_QMARK_, true)
+								tmp222 = tmp224
+							} else {
+								tmp222 = and__1__auto__221
+							}
+							tmp220 = tmp222
+						}
+						tmp225 := lang.NewVector(tmp219, tmp220)
+						tmp212 = tmp225
 					} else {
-						tmp217 := lang.NewVector(pnode202, ppath188)
-						tmp204 = tmp217
+						tmp226 := lang.NewVector(pnode210, ppath196)
+						tmp212 = tmp226
 					}
-					tmp218 := v_clojure_DOT_core_meta.Get()
-					tmp219 := lang.Apply1(tmp218, loc167)
-					tmp220 := lang.Apply2(tmp203, tmp204, tmp219)
-					tmp199 = tmp220
+					tmp227 := v_clojure_DOT_core_meta.Get()
+					tmp228 := lang.Apply1(tmp227, loc175)
+					tmp229 := lang.Apply2(tmp211, tmp212, tmp228)
+					tmp207 = tmp229
 				}
-				tmp198 = tmp199
+				tmp206 = tmp207
 			} else {
-				tmp198 = nil
+				tmp206 = nil
 			}
-			tmp168 = tmp198
+			tmp176 = tmp206
 		}
-		return tmp168
+		return tmp176
 	})
-	tmp221 := &lang.NamedFn1{Name: "clojure.zip/up", Expects: "1: [loc]", F: tmp166}
-	v_clojure_DOT_zip_up.BindRoot(tmp221)
+	tmp230 := &lang.NamedFn1{Name: "clojure.zip/up", Expects: "1: [loc]", F: tmp174}
+	v_clojure_DOT_zip_up.BindRoot(tmp230)
+	fnD_clojure_DOT_zip_up = tmp230.F
+	v_clojure_DOT_zip_up.SealDirect()
 	_ = v_clojure_DOT_zip_up
 	// (def root "zips all the way up and returns the root node, reflecting any\n changes." (cloj…
 	v_clojure_DOT_zip_root.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(152), kw_column, int64(7), kw_end_line, int64(152), kw_end_column, int64(11), kw_doc, "zips all the way up and returns the root node, reflecting any\n changes."))
-	tmp222 := lang.FnFunc1(func(loc223 any) any {
-	fnloop224:
+	tmp231 := lang.FnFunc1(func(loc232 any) any {
+	fnloop233:
 		for {
-			tmp225 := lang.Apply1(loc223, int64(1))
-			tmp226 := rt.EQBool(v_clojure_DOT_core_X_EQ_, kw_end, tmp225)
-			var tmp227 any
-			_ = tmp227
-			if tmp226 {
-				tmp228 := v_clojure_DOT_zip_node.Get()
-				tmp229 := lang.Apply1(tmp228, loc223)
-				tmp227 = tmp229
-			} else {
-				var tmp230 any
-				_ = tmp230
-				{
-					tmp231 := v_clojure_DOT_zip_up.Get()
-					tmp232 := lang.Apply1(tmp231, loc223)
-					var p233 any = tmp232
-					_ = p233
-					var tmp234 any
-					_ = tmp234
-					if lang.IsTruthy(p233) {
-						var tmp235 any = p233
-						loc223 = tmp235
-						continue fnloop224
-					} else {
-						tmp236 := v_clojure_DOT_zip_node.Get()
-						tmp237 := lang.Apply1(tmp236, loc223)
-						tmp234 = tmp237
-					}
-					tmp230 = tmp234
+			tmp234 := lang.Apply1(loc232, int64(1))
+			tmp235 := rt.EQBool(v_clojure_DOT_core_X_EQ_, kw_end, tmp234)
+			var tmp236 any
+			_ = tmp236
+			if tmp235 {
+				tmp237 := v_clojure_DOT_zip_node.Direct()
+				var tmp238 any
+				if !tmp237 {
+					tmp238 = v_clojure_DOT_zip_node.Get()
 				}
-				tmp227 = tmp230
+				var tmp239 any
+				if tmp237 {
+					tmp239 = fnD_clojure_DOT_zip_node(loc232)
+				} else {
+					tmp239 = lang.Apply1(tmp238, loc232)
+				}
+				tmp236 = tmp239
+			} else {
+				var tmp240 any
+				_ = tmp240
+				{
+					tmp241 := v_clojure_DOT_zip_up.Direct()
+					var tmp242 any
+					if !tmp241 {
+						tmp242 = v_clojure_DOT_zip_up.Get()
+					}
+					var tmp243 any
+					if tmp241 {
+						tmp243 = fnD_clojure_DOT_zip_up(loc232)
+					} else {
+						tmp243 = lang.Apply1(tmp242, loc232)
+					}
+					var p244 any = tmp243
+					_ = p244
+					var tmp245 any
+					_ = tmp245
+					if lang.IsTruthy(p244) {
+						var tmp246 any = p244
+						loc232 = tmp246
+						continue fnloop233
+					} else {
+						tmp247 := v_clojure_DOT_zip_node.Direct()
+						var tmp248 any
+						if !tmp247 {
+							tmp248 = v_clojure_DOT_zip_node.Get()
+						}
+						var tmp249 any
+						if tmp247 {
+							tmp249 = fnD_clojure_DOT_zip_node(loc232)
+						} else {
+							tmp249 = lang.Apply1(tmp248, loc232)
+						}
+						tmp245 = tmp249
+					}
+					tmp240 = tmp245
+				}
+				tmp236 = tmp240
 			}
-			return tmp227
+			return tmp236
 		}
 	})
-	tmp238 := &lang.NamedFn1{Name: "clojure.zip/root", Expects: "1: [loc]", F: tmp222}
-	v_clojure_DOT_zip_root.BindRoot(tmp238)
+	tmp250 := &lang.NamedFn1{Name: "clojure.zip/root", Expects: "1: [loc]", F: tmp231}
+	v_clojure_DOT_zip_root.BindRoot(tmp250)
+	fnD_clojure_DOT_zip_root = tmp250.F
+	v_clojure_DOT_zip_root.SealDirect()
 	_ = v_clojure_DOT_zip_root
 	// (def right "Returns the loc of the right sibling of the node at this loc, or nil" (clojure…
 	v_clojure_DOT_zip_right.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(165), kw_column, int64(7), kw_end_line, int64(165), kw_end_column, int64(12), kw_doc, "Returns the loc of the right sibling of the node at this loc, or nil"))
-	tmp239 := lang.FnFunc1(func(loc240 any) any {
-		var tmp241 any
-		_ = tmp241
+	tmp251 := lang.FnFunc1(func(loc252 any) any {
+		var tmp253 any
+		_ = tmp253
 		{
-			var vec__58242 any = loc240
-			_ = vec__58242
-			tmp243 := v_clojure_DOT_core_nth.Get()
-			tmp244 := lang.Apply3(tmp243, vec__58242, int64(0), nil)
-			var node245 any = tmp244
-			_ = node245
-			tmp246 := v_clojure_DOT_core_nth.Get()
-			tmp247 := lang.Apply3(tmp246, vec__58242, int64(1), nil)
-			var map__61248 any = tmp247
-			_ = map__61248
-			tmp249 := v_clojure_DOT_core_seq_QMARK_.Get()
-			tmp250 := lang.Apply1(tmp249, map__61248)
-			var tmp251 any
-			_ = tmp251
-			if lang.IsTruthy(tmp250) {
-				tmp252 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-				tmp253 := lang.Apply1(tmp252, map__61248)
-				tmp251 = tmp253
+			var vec__58254 any = loc252
+			_ = vec__58254
+			tmp255 := v_clojure_DOT_core_nth.Get()
+			tmp256 := lang.Apply3(tmp255, vec__58254, int64(0), nil)
+			var node257 any = tmp256
+			_ = node257
+			tmp258 := v_clojure_DOT_core_nth.Get()
+			tmp259 := lang.Apply3(tmp258, vec__58254, int64(1), nil)
+			var map__61260 any = tmp259
+			_ = map__61260
+			tmp261 := v_clojure_DOT_core_seq_QMARK_.Get()
+			tmp262 := lang.Apply1(tmp261, map__61260)
+			var tmp263 any
+			_ = tmp263
+			if lang.IsTruthy(tmp262) {
+				tmp264 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+				tmp265 := lang.Apply1(tmp264, map__61260)
+				tmp263 = tmp265
 			} else {
-				tmp251 = map__61248
+				tmp263 = map__61260
 			}
-			var map__61254 any = tmp251
-			_ = map__61254
-			var path255 any = map__61254
-			_ = path255
-			tmp256 := v_clojure_DOT_core_get.Get()
-			tmp257 := lang.Apply2(tmp256, map__61254, kw_l)
-			var l258 any = tmp257
-			_ = l258
-			tmp259 := v_clojure_DOT_core_get.Get()
-			tmp260 := lang.Apply2(tmp259, map__61254, kw_r)
-			var vec__62261 any = tmp260
-			_ = vec__62261
-			tmp262 := v_clojure_DOT_core_seq.Get()
-			tmp263 := lang.Apply1(tmp262, vec__62261)
-			var seq__63264 any = tmp263
-			_ = seq__63264
-			tmp265 := v_clojure_DOT_core_first.Get()
-			tmp266 := lang.Apply1(tmp265, seq__63264)
-			var first__64267 any = tmp266
-			_ = first__64267
-			tmp268 := v_clojure_DOT_core_next.Get()
-			tmp269 := lang.Apply1(tmp268, seq__63264)
-			var seq__63270 any = tmp269
-			_ = seq__63270
-			var r271 any = first__64267
-			_ = r271
-			var rnext272 any = seq__63270
-			_ = rnext272
-			var rs273 any = vec__62261
-			_ = rs273
-			var tmp274 any
-			_ = tmp274
+			var map__61266 any = tmp263
+			_ = map__61266
+			var path267 any = map__61266
+			_ = path267
+			tmp268 := v_clojure_DOT_core_get.Get()
+			tmp269 := lang.Apply2(tmp268, map__61266, kw_l)
+			var l270 any = tmp269
+			_ = l270
+			tmp271 := v_clojure_DOT_core_get.Get()
+			tmp272 := lang.Apply2(tmp271, map__61266, kw_r)
+			var vec__62273 any = tmp272
+			_ = vec__62273
+			tmp274 := v_clojure_DOT_core_seq.Get()
+			tmp275 := lang.Apply1(tmp274, vec__62273)
+			var seq__63276 any = tmp275
+			_ = seq__63276
+			tmp277 := v_clojure_DOT_core_first.Get()
+			tmp278 := lang.Apply1(tmp277, seq__63276)
+			var first__64279 any = tmp278
+			_ = first__64279
+			tmp280 := v_clojure_DOT_core_next.Get()
+			tmp281 := lang.Apply1(tmp280, seq__63276)
+			var seq__63282 any = tmp281
+			_ = seq__63282
+			var r283 any = first__64279
+			_ = r283
+			var rnext284 any = seq__63282
+			_ = rnext284
+			var rs285 any = vec__62273
+			_ = rs285
+			var tmp286 any
+			_ = tmp286
 			{
-				var and__1__auto__275 any = path255
-				_ = and__1__auto__275
-				var tmp276 any
-				_ = tmp276
-				if lang.IsTruthy(and__1__auto__275) {
-					tmp276 = rs273
+				var and__1__auto__287 any = path267
+				_ = and__1__auto__287
+				var tmp288 any
+				_ = tmp288
+				if lang.IsTruthy(and__1__auto__287) {
+					tmp288 = rs285
 				} else {
-					tmp276 = and__1__auto__275
+					tmp288 = and__1__auto__287
 				}
-				tmp274 = tmp276
+				tmp286 = tmp288
 			}
-			var tmp277 any
-			_ = tmp277
-			if lang.IsTruthy(tmp274) {
-				tmp278 := v_clojure_DOT_core_with_meta.Get()
-				tmp279 := v_clojure_DOT_core_assoc.Get()
-				tmp280 := v_clojure_DOT_core_conj.Get()
-				tmp281 := lang.Apply2(tmp280, l258, node245)
-				tmp282 := lang.Apply(tmp279, []any{path255, kw_l, tmp281, kw_r, rnext272})
-				tmp283 := lang.NewVector(r271, tmp282)
-				tmp284 := v_clojure_DOT_core_meta.Get()
-				tmp285 := lang.Apply1(tmp284, loc240)
-				tmp286 := lang.Apply2(tmp278, tmp283, tmp285)
-				tmp277 = tmp286
+			var tmp289 any
+			_ = tmp289
+			if lang.IsTruthy(tmp286) {
+				tmp290 := v_clojure_DOT_core_with_meta.Get()
+				tmp291 := v_clojure_DOT_core_assoc.Get()
+				tmp292 := v_clojure_DOT_core_conj.Get()
+				tmp293 := lang.Apply2(tmp292, l270, node257)
+				tmp294 := lang.Apply(tmp291, []any{path267, kw_l, tmp293, kw_r, rnext284})
+				tmp295 := lang.NewVector(r283, tmp294)
+				tmp296 := v_clojure_DOT_core_meta.Get()
+				tmp297 := lang.Apply1(tmp296, loc252)
+				tmp298 := lang.Apply2(tmp290, tmp295, tmp297)
+				tmp289 = tmp298
 			} else {
-				tmp277 = nil
+				tmp289 = nil
 			}
-			tmp241 = tmp277
+			tmp253 = tmp289
 		}
-		return tmp241
+		return tmp253
 	})
-	tmp287 := &lang.NamedFn1{Name: "clojure.zip/right", Expects: "1: [loc]", F: tmp239}
-	v_clojure_DOT_zip_right.BindRoot(tmp287)
+	tmp299 := &lang.NamedFn1{Name: "clojure.zip/right", Expects: "1: [loc]", F: tmp251}
+	v_clojure_DOT_zip_right.BindRoot(tmp299)
+	fnD_clojure_DOT_zip_right = tmp299.F
+	v_clojure_DOT_zip_right.SealDirect()
 	_ = v_clojure_DOT_zip_right
 	// (def rightmost "Returns the loc of the rightmost sibling of the node at this loc, or self"…
 	v_clojure_DOT_zip_rightmost.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(173), kw_column, int64(7), kw_end_line, int64(173), kw_end_column, int64(16), kw_doc, "Returns the loc of the rightmost sibling of the node at this loc, or self"))
-	tmp288 := lang.FnFunc1(func(loc289 any) any {
-		var tmp290 any
-		_ = tmp290
+	tmp300 := lang.FnFunc1(func(loc301 any) any {
+		var tmp302 any
+		_ = tmp302
 		{
-			var vec__65291 any = loc289
-			_ = vec__65291
-			tmp292 := v_clojure_DOT_core_nth.Get()
-			tmp293 := lang.Apply3(tmp292, vec__65291, int64(0), nil)
-			var node294 any = tmp293
-			_ = node294
-			tmp295 := v_clojure_DOT_core_nth.Get()
-			tmp296 := lang.Apply3(tmp295, vec__65291, int64(1), nil)
-			var map__68297 any = tmp296
-			_ = map__68297
-			tmp298 := v_clojure_DOT_core_seq_QMARK_.Get()
-			tmp299 := lang.Apply1(tmp298, map__68297)
-			var tmp300 any
-			_ = tmp300
-			if lang.IsTruthy(tmp299) {
-				tmp301 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-				tmp302 := lang.Apply1(tmp301, map__68297)
-				tmp300 = tmp302
-			} else {
-				tmp300 = map__68297
-			}
-			var map__68303 any = tmp300
-			_ = map__68303
-			var path304 any = map__68303
-			_ = path304
-			tmp305 := v_clojure_DOT_core_get.Get()
-			tmp306 := lang.Apply2(tmp305, map__68303, kw_l)
-			var l307 any = tmp306
-			_ = l307
-			tmp308 := v_clojure_DOT_core_get.Get()
-			tmp309 := lang.Apply2(tmp308, map__68303, kw_r)
-			var r310 any = tmp309
-			_ = r310
-			var tmp311 any
-			_ = tmp311
-			{
-				var and__1__auto__312 any = path304
-				_ = and__1__auto__312
-				var tmp313 any
-				_ = tmp313
-				if lang.IsTruthy(and__1__auto__312) {
-					tmp313 = r310
-				} else {
-					tmp313 = and__1__auto__312
-				}
-				tmp311 = tmp313
-			}
-			var tmp314 any
-			_ = tmp314
+			var vec__65303 any = loc301
+			_ = vec__65303
+			tmp304 := v_clojure_DOT_core_nth.Get()
+			tmp305 := lang.Apply3(tmp304, vec__65303, int64(0), nil)
+			var node306 any = tmp305
+			_ = node306
+			tmp307 := v_clojure_DOT_core_nth.Get()
+			tmp308 := lang.Apply3(tmp307, vec__65303, int64(1), nil)
+			var map__68309 any = tmp308
+			_ = map__68309
+			tmp310 := v_clojure_DOT_core_seq_QMARK_.Get()
+			tmp311 := lang.Apply1(tmp310, map__68309)
+			var tmp312 any
+			_ = tmp312
 			if lang.IsTruthy(tmp311) {
-				tmp315 := v_clojure_DOT_core_with_meta.Get()
-				tmp316 := v_clojure_DOT_core_last.Get()
-				tmp317 := lang.Apply1(tmp316, r310)
-				tmp318 := v_clojure_DOT_core_assoc.Get()
-				tmp319 := v_clojure_DOT_core_apply.Get()
-				tmp320 := v_clojure_DOT_core_conj.Get()
-				tmp321 := v_clojure_DOT_core_butlast.Get()
-				tmp322 := lang.Apply1(tmp321, r310)
-				tmp323 := lang.Apply4(tmp319, tmp320, l307, node294, tmp322)
-				tmp324 := lang.Apply(tmp318, []any{path304, kw_l, tmp323, kw_r, nil})
-				tmp325 := lang.NewVector(tmp317, tmp324)
-				tmp326 := v_clojure_DOT_core_meta.Get()
-				tmp327 := lang.Apply1(tmp326, loc289)
-				tmp328 := lang.Apply2(tmp315, tmp325, tmp327)
-				tmp314 = tmp328
+				tmp313 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+				tmp314 := lang.Apply1(tmp313, map__68309)
+				tmp312 = tmp314
 			} else {
-				tmp314 = loc289
+				tmp312 = map__68309
 			}
-			tmp290 = tmp314
+			var map__68315 any = tmp312
+			_ = map__68315
+			var path316 any = map__68315
+			_ = path316
+			tmp317 := v_clojure_DOT_core_get.Get()
+			tmp318 := lang.Apply2(tmp317, map__68315, kw_l)
+			var l319 any = tmp318
+			_ = l319
+			tmp320 := v_clojure_DOT_core_get.Get()
+			tmp321 := lang.Apply2(tmp320, map__68315, kw_r)
+			var r322 any = tmp321
+			_ = r322
+			var tmp323 any
+			_ = tmp323
+			{
+				var and__1__auto__324 any = path316
+				_ = and__1__auto__324
+				var tmp325 any
+				_ = tmp325
+				if lang.IsTruthy(and__1__auto__324) {
+					tmp325 = r322
+				} else {
+					tmp325 = and__1__auto__324
+				}
+				tmp323 = tmp325
+			}
+			var tmp326 any
+			_ = tmp326
+			if lang.IsTruthy(tmp323) {
+				tmp327 := v_clojure_DOT_core_with_meta.Get()
+				tmp328 := v_clojure_DOT_core_last.Get()
+				tmp329 := lang.Apply1(tmp328, r322)
+				tmp330 := v_clojure_DOT_core_assoc.Get()
+				tmp331 := v_clojure_DOT_core_apply.Get()
+				tmp332 := v_clojure_DOT_core_conj.Get()
+				tmp333 := v_clojure_DOT_core_butlast.Get()
+				tmp334 := lang.Apply1(tmp333, r322)
+				tmp335 := lang.Apply4(tmp331, tmp332, l319, node306, tmp334)
+				tmp336 := lang.Apply(tmp330, []any{path316, kw_l, tmp335, kw_r, nil})
+				tmp337 := lang.NewVector(tmp329, tmp336)
+				tmp338 := v_clojure_DOT_core_meta.Get()
+				tmp339 := lang.Apply1(tmp338, loc301)
+				tmp340 := lang.Apply2(tmp327, tmp337, tmp339)
+				tmp326 = tmp340
+			} else {
+				tmp326 = loc301
+			}
+			tmp302 = tmp326
 		}
-		return tmp290
+		return tmp302
 	})
-	tmp329 := &lang.NamedFn1{Name: "clojure.zip/rightmost", Expects: "1: [loc]", F: tmp288}
-	v_clojure_DOT_zip_rightmost.BindRoot(tmp329)
+	tmp341 := &lang.NamedFn1{Name: "clojure.zip/rightmost", Expects: "1: [loc]", F: tmp300}
+	v_clojure_DOT_zip_rightmost.BindRoot(tmp341)
+	fnD_clojure_DOT_zip_rightmost = tmp341.F
+	v_clojure_DOT_zip_rightmost.SealDirect()
 	_ = v_clojure_DOT_zip_rightmost
 	// (def left "Returns the loc of the left sibling of the node at this loc, or nil" (clojure.c…
 	v_clojure_DOT_zip_left.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(11), kw_doc, "Returns the loc of the left sibling of the node at this loc, or nil"))
-	tmp330 := lang.FnFunc1(func(loc331 any) any {
-		var tmp332 any
-		_ = tmp332
+	tmp342 := lang.FnFunc1(func(loc343 any) any {
+		var tmp344 any
+		_ = tmp344
 		{
-			var vec__69333 any = loc331
-			_ = vec__69333
-			tmp334 := v_clojure_DOT_core_nth.Get()
-			tmp335 := lang.Apply3(tmp334, vec__69333, int64(0), nil)
-			var node336 any = tmp335
-			_ = node336
-			tmp337 := v_clojure_DOT_core_nth.Get()
-			tmp338 := lang.Apply3(tmp337, vec__69333, int64(1), nil)
-			var map__72339 any = tmp338
-			_ = map__72339
-			tmp340 := v_clojure_DOT_core_seq_QMARK_.Get()
-			tmp341 := lang.Apply1(tmp340, map__72339)
-			var tmp342 any
-			_ = tmp342
-			if lang.IsTruthy(tmp341) {
-				tmp343 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-				tmp344 := lang.Apply1(tmp343, map__72339)
-				tmp342 = tmp344
-			} else {
-				tmp342 = map__72339
-			}
-			var map__72345 any = tmp342
-			_ = map__72345
-			var path346 any = map__72345
-			_ = path346
-			tmp347 := v_clojure_DOT_core_get.Get()
-			tmp348 := lang.Apply2(tmp347, map__72345, kw_l)
-			var l349 any = tmp348
-			_ = l349
-			tmp350 := v_clojure_DOT_core_get.Get()
-			tmp351 := lang.Apply2(tmp350, map__72345, kw_r)
-			var r352 any = tmp351
-			_ = r352
-			var tmp353 any
-			_ = tmp353
-			{
-				var and__1__auto__354 any = path346
-				_ = and__1__auto__354
-				var tmp355 any
-				_ = tmp355
-				if lang.IsTruthy(and__1__auto__354) {
-					tmp356 := v_clojure_DOT_core_seq.Get()
-					tmp357 := lang.Apply1(tmp356, l349)
-					tmp355 = tmp357
-				} else {
-					tmp355 = and__1__auto__354
-				}
-				tmp353 = tmp355
-			}
-			var tmp358 any
-			_ = tmp358
+			var vec__69345 any = loc343
+			_ = vec__69345
+			tmp346 := v_clojure_DOT_core_nth.Get()
+			tmp347 := lang.Apply3(tmp346, vec__69345, int64(0), nil)
+			var node348 any = tmp347
+			_ = node348
+			tmp349 := v_clojure_DOT_core_nth.Get()
+			tmp350 := lang.Apply3(tmp349, vec__69345, int64(1), nil)
+			var map__72351 any = tmp350
+			_ = map__72351
+			tmp352 := v_clojure_DOT_core_seq_QMARK_.Get()
+			tmp353 := lang.Apply1(tmp352, map__72351)
+			var tmp354 any
+			_ = tmp354
 			if lang.IsTruthy(tmp353) {
-				tmp359 := v_clojure_DOT_core_with_meta.Get()
-				tmp360 := v_clojure_DOT_core_peek.Get()
-				tmp361 := lang.Apply1(tmp360, l349)
-				tmp362 := v_clojure_DOT_core_assoc.Get()
-				tmp363 := v_clojure_DOT_core_pop.Get()
-				tmp364 := lang.Apply1(tmp363, l349)
-				tmp365 := v_clojure_DOT_core_cons.Get()
-				tmp366 := lang.Apply2(tmp365, node336, r352)
-				tmp367 := lang.Apply(tmp362, []any{path346, kw_l, tmp364, kw_r, tmp366})
-				tmp368 := lang.NewVector(tmp361, tmp367)
-				tmp369 := v_clojure_DOT_core_meta.Get()
-				tmp370 := lang.Apply1(tmp369, loc331)
-				tmp371 := lang.Apply2(tmp359, tmp368, tmp370)
-				tmp358 = tmp371
+				tmp355 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+				tmp356 := lang.Apply1(tmp355, map__72351)
+				tmp354 = tmp356
 			} else {
-				tmp358 = nil
+				tmp354 = map__72351
 			}
-			tmp332 = tmp358
+			var map__72357 any = tmp354
+			_ = map__72357
+			var path358 any = map__72357
+			_ = path358
+			tmp359 := v_clojure_DOT_core_get.Get()
+			tmp360 := lang.Apply2(tmp359, map__72357, kw_l)
+			var l361 any = tmp360
+			_ = l361
+			tmp362 := v_clojure_DOT_core_get.Get()
+			tmp363 := lang.Apply2(tmp362, map__72357, kw_r)
+			var r364 any = tmp363
+			_ = r364
+			var tmp365 any
+			_ = tmp365
+			{
+				var and__1__auto__366 any = path358
+				_ = and__1__auto__366
+				var tmp367 any
+				_ = tmp367
+				if lang.IsTruthy(and__1__auto__366) {
+					tmp368 := v_clojure_DOT_core_seq.Get()
+					tmp369 := lang.Apply1(tmp368, l361)
+					tmp367 = tmp369
+				} else {
+					tmp367 = and__1__auto__366
+				}
+				tmp365 = tmp367
+			}
+			var tmp370 any
+			_ = tmp370
+			if lang.IsTruthy(tmp365) {
+				tmp371 := v_clojure_DOT_core_with_meta.Get()
+				tmp372 := v_clojure_DOT_core_peek.Get()
+				tmp373 := lang.Apply1(tmp372, l361)
+				tmp374 := v_clojure_DOT_core_assoc.Get()
+				tmp375 := v_clojure_DOT_core_pop.Get()
+				tmp376 := lang.Apply1(tmp375, l361)
+				tmp377 := v_clojure_DOT_core_cons.Get()
+				tmp378 := lang.Apply2(tmp377, node348, r364)
+				tmp379 := lang.Apply(tmp374, []any{path358, kw_l, tmp376, kw_r, tmp378})
+				tmp380 := lang.NewVector(tmp373, tmp379)
+				tmp381 := v_clojure_DOT_core_meta.Get()
+				tmp382 := lang.Apply1(tmp381, loc343)
+				tmp383 := lang.Apply2(tmp371, tmp380, tmp382)
+				tmp370 = tmp383
+			} else {
+				tmp370 = nil
+			}
+			tmp344 = tmp370
 		}
-		return tmp332
+		return tmp344
 	})
-	tmp372 := &lang.NamedFn1{Name: "clojure.zip/left", Expects: "1: [loc]", F: tmp330}
-	v_clojure_DOT_zip_left.BindRoot(tmp372)
+	tmp384 := &lang.NamedFn1{Name: "clojure.zip/left", Expects: "1: [loc]", F: tmp342}
+	v_clojure_DOT_zip_left.BindRoot(tmp384)
+	fnD_clojure_DOT_zip_left = tmp384.F
+	v_clojure_DOT_zip_left.SealDirect()
 	_ = v_clojure_DOT_zip_left
 	// (def leftmost "Returns the loc of the leftmost sibling of the node at this loc, or self" (…
 	v_clojure_DOT_zip_leftmost.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(191), kw_column, int64(7), kw_end_line, int64(191), kw_end_column, int64(15), kw_doc, "Returns the loc of the leftmost sibling of the node at this loc, or self"))
-	tmp373 := lang.FnFunc1(func(loc374 any) any {
-		var tmp375 any
-		_ = tmp375
+	tmp385 := lang.FnFunc1(func(loc386 any) any {
+		var tmp387 any
+		_ = tmp387
 		{
-			var vec__73376 any = loc374
-			_ = vec__73376
-			tmp377 := v_clojure_DOT_core_nth.Get()
-			tmp378 := lang.Apply3(tmp377, vec__73376, int64(0), nil)
-			var node379 any = tmp378
-			_ = node379
-			tmp380 := v_clojure_DOT_core_nth.Get()
-			tmp381 := lang.Apply3(tmp380, vec__73376, int64(1), nil)
-			var map__76382 any = tmp381
-			_ = map__76382
-			tmp383 := v_clojure_DOT_core_seq_QMARK_.Get()
-			tmp384 := lang.Apply1(tmp383, map__76382)
-			var tmp385 any
-			_ = tmp385
-			if lang.IsTruthy(tmp384) {
-				tmp386 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-				tmp387 := lang.Apply1(tmp386, map__76382)
-				tmp385 = tmp387
-			} else {
-				tmp385 = map__76382
-			}
-			var map__76388 any = tmp385
-			_ = map__76388
-			var path389 any = map__76388
-			_ = path389
-			tmp390 := v_clojure_DOT_core_get.Get()
-			tmp391 := lang.Apply2(tmp390, map__76388, kw_l)
-			var l392 any = tmp391
-			_ = l392
-			tmp393 := v_clojure_DOT_core_get.Get()
-			tmp394 := lang.Apply2(tmp393, map__76388, kw_r)
-			var r395 any = tmp394
-			_ = r395
-			var tmp396 any
-			_ = tmp396
-			{
-				var and__1__auto__397 any = path389
-				_ = and__1__auto__397
-				var tmp398 any
-				_ = tmp398
-				if lang.IsTruthy(and__1__auto__397) {
-					tmp399 := v_clojure_DOT_core_seq.Get()
-					tmp400 := lang.Apply1(tmp399, l392)
-					tmp398 = tmp400
-				} else {
-					tmp398 = and__1__auto__397
-				}
-				tmp396 = tmp398
-			}
-			var tmp401 any
-			_ = tmp401
+			var vec__73388 any = loc386
+			_ = vec__73388
+			tmp389 := v_clojure_DOT_core_nth.Get()
+			tmp390 := lang.Apply3(tmp389, vec__73388, int64(0), nil)
+			var node391 any = tmp390
+			_ = node391
+			tmp392 := v_clojure_DOT_core_nth.Get()
+			tmp393 := lang.Apply3(tmp392, vec__73388, int64(1), nil)
+			var map__76394 any = tmp393
+			_ = map__76394
+			tmp395 := v_clojure_DOT_core_seq_QMARK_.Get()
+			tmp396 := lang.Apply1(tmp395, map__76394)
+			var tmp397 any
+			_ = tmp397
 			if lang.IsTruthy(tmp396) {
-				tmp402 := v_clojure_DOT_core_with_meta.Get()
-				tmp403 := v_clojure_DOT_core_first.Get()
-				tmp404 := lang.Apply1(tmp403, l392)
-				tmp405 := v_clojure_DOT_core_assoc.Get()
-				tmp406 := lang.NewVector()
-				tmp407 := v_clojure_DOT_core_concat.Get()
-				tmp408 := v_clojure_DOT_core_rest.Get()
-				tmp409 := lang.Apply1(tmp408, l392)
-				tmp410 := lang.NewVector(node379)
-				tmp411 := lang.Apply3(tmp407, tmp409, tmp410, r395)
-				tmp412 := lang.Apply(tmp405, []any{path389, kw_l, tmp406, kw_r, tmp411})
-				tmp413 := lang.NewVector(tmp404, tmp412)
-				tmp414 := v_clojure_DOT_core_meta.Get()
-				tmp415 := lang.Apply1(tmp414, loc374)
-				tmp416 := lang.Apply2(tmp402, tmp413, tmp415)
-				tmp401 = tmp416
+				tmp398 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+				tmp399 := lang.Apply1(tmp398, map__76394)
+				tmp397 = tmp399
 			} else {
-				tmp401 = loc374
+				tmp397 = map__76394
 			}
-			tmp375 = tmp401
+			var map__76400 any = tmp397
+			_ = map__76400
+			var path401 any = map__76400
+			_ = path401
+			tmp402 := v_clojure_DOT_core_get.Get()
+			tmp403 := lang.Apply2(tmp402, map__76400, kw_l)
+			var l404 any = tmp403
+			_ = l404
+			tmp405 := v_clojure_DOT_core_get.Get()
+			tmp406 := lang.Apply2(tmp405, map__76400, kw_r)
+			var r407 any = tmp406
+			_ = r407
+			var tmp408 any
+			_ = tmp408
+			{
+				var and__1__auto__409 any = path401
+				_ = and__1__auto__409
+				var tmp410 any
+				_ = tmp410
+				if lang.IsTruthy(and__1__auto__409) {
+					tmp411 := v_clojure_DOT_core_seq.Get()
+					tmp412 := lang.Apply1(tmp411, l404)
+					tmp410 = tmp412
+				} else {
+					tmp410 = and__1__auto__409
+				}
+				tmp408 = tmp410
+			}
+			var tmp413 any
+			_ = tmp413
+			if lang.IsTruthy(tmp408) {
+				tmp414 := v_clojure_DOT_core_with_meta.Get()
+				tmp415 := v_clojure_DOT_core_first.Get()
+				tmp416 := lang.Apply1(tmp415, l404)
+				tmp417 := v_clojure_DOT_core_assoc.Get()
+				tmp418 := lang.NewVector()
+				tmp419 := v_clojure_DOT_core_concat.Get()
+				tmp420 := v_clojure_DOT_core_rest.Get()
+				tmp421 := lang.Apply1(tmp420, l404)
+				tmp422 := lang.NewVector(node391)
+				tmp423 := lang.Apply3(tmp419, tmp421, tmp422, r407)
+				tmp424 := lang.Apply(tmp417, []any{path401, kw_l, tmp418, kw_r, tmp423})
+				tmp425 := lang.NewVector(tmp416, tmp424)
+				tmp426 := v_clojure_DOT_core_meta.Get()
+				tmp427 := lang.Apply1(tmp426, loc386)
+				tmp428 := lang.Apply2(tmp414, tmp425, tmp427)
+				tmp413 = tmp428
+			} else {
+				tmp413 = loc386
+			}
+			tmp387 = tmp413
 		}
-		return tmp375
+		return tmp387
 	})
-	tmp417 := &lang.NamedFn1{Name: "clojure.zip/leftmost", Expects: "1: [loc]", F: tmp373}
-	v_clojure_DOT_zip_leftmost.BindRoot(tmp417)
+	tmp429 := &lang.NamedFn1{Name: "clojure.zip/leftmost", Expects: "1: [loc]", F: tmp385}
+	v_clojure_DOT_zip_leftmost.BindRoot(tmp429)
+	fnD_clojure_DOT_zip_leftmost = tmp429.F
+	v_clojure_DOT_zip_leftmost.SealDirect()
 	_ = v_clojure_DOT_zip_leftmost
 	// (def insert-left "Inserts the item as the left sibling of the node at this loc,\n without …
 	v_clojure_DOT_zip_insert_left.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(201), kw_column, int64(7), kw_end_line, int64(201), kw_end_column, int64(18), kw_doc, "Inserts the item as the left sibling of the node at this loc,\n without moving"))
-	tmp418 := lang.FnFunc2(func(loc419, item420 any) any {
-		var tmp421 any
-		_ = tmp421
+	tmp430 := lang.FnFunc2(func(loc431, item432 any) any {
+		var tmp433 any
+		_ = tmp433
 		{
-			var vec__77422 any = loc419
-			_ = vec__77422
-			tmp423 := v_clojure_DOT_core_nth.Get()
-			tmp424 := lang.Apply3(tmp423, vec__77422, int64(0), nil)
-			var node425 any = tmp424
-			_ = node425
-			tmp426 := v_clojure_DOT_core_nth.Get()
-			tmp427 := lang.Apply3(tmp426, vec__77422, int64(1), nil)
-			var map__80428 any = tmp427
-			_ = map__80428
-			tmp429 := v_clojure_DOT_core_seq_QMARK_.Get()
-			tmp430 := lang.Apply1(tmp429, map__80428)
-			var tmp431 any
-			_ = tmp431
-			if lang.IsTruthy(tmp430) {
-				tmp432 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-				tmp433 := lang.Apply1(tmp432, map__80428)
-				tmp431 = tmp433
+			var vec__77434 any = loc431
+			_ = vec__77434
+			tmp435 := v_clojure_DOT_core_nth.Get()
+			tmp436 := lang.Apply3(tmp435, vec__77434, int64(0), nil)
+			var node437 any = tmp436
+			_ = node437
+			tmp438 := v_clojure_DOT_core_nth.Get()
+			tmp439 := lang.Apply3(tmp438, vec__77434, int64(1), nil)
+			var map__80440 any = tmp439
+			_ = map__80440
+			tmp441 := v_clojure_DOT_core_seq_QMARK_.Get()
+			tmp442 := lang.Apply1(tmp441, map__80440)
+			var tmp443 any
+			_ = tmp443
+			if lang.IsTruthy(tmp442) {
+				tmp444 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+				tmp445 := lang.Apply1(tmp444, map__80440)
+				tmp443 = tmp445
 			} else {
-				tmp431 = map__80428
+				tmp443 = map__80440
 			}
-			var map__80434 any = tmp431
-			_ = map__80434
-			var path435 any = map__80434
-			_ = path435
-			tmp436 := v_clojure_DOT_core_get.Get()
-			tmp437 := lang.Apply2(tmp436, map__80434, kw_l)
-			var l438 any = tmp437
-			_ = l438
-			tmp439 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp440 := lang.Apply1(tmp439, path435)
-			var tmp441 any
-			_ = tmp441
-			if lang.IsTruthy(tmp440) {
-				tmp442 := v_clojure_DOT_core_ex_info.Get()
-				tmp443 := lang.NewMap()
-				tmp444 := lang.Apply2(tmp442, "Insert at top", tmp443)
-				panic(rt.Throw(tmp444))
+			var map__80446 any = tmp443
+			_ = map__80446
+			var path447 any = map__80446
+			_ = path447
+			tmp448 := v_clojure_DOT_core_get.Get()
+			tmp449 := lang.Apply2(tmp448, map__80446, kw_l)
+			var l450 any = tmp449
+			_ = l450
+			tmp451 := v_clojure_DOT_core_nil_QMARK_.Get()
+			tmp452 := lang.Apply1(tmp451, path447)
+			var tmp453 any
+			_ = tmp453
+			if lang.IsTruthy(tmp452) {
+				tmp454 := v_clojure_DOT_core_ex_info.Get()
+				tmp455 := lang.NewMap()
+				tmp456 := lang.Apply2(tmp454, "Insert at top", tmp455)
+				panic(rt.Throw(tmp456))
 			} else {
-				tmp445 := v_clojure_DOT_core_with_meta.Get()
-				tmp446 := v_clojure_DOT_core_assoc.Get()
-				tmp447 := v_clojure_DOT_core_conj.Get()
-				tmp448 := lang.Apply2(tmp447, l438, item420)
-				tmp449 := lang.Apply(tmp446, []any{path435, kw_l, tmp448, kw_changed_QMARK_, true})
-				tmp450 := lang.NewVector(node425, tmp449)
-				tmp451 := v_clojure_DOT_core_meta.Get()
-				tmp452 := lang.Apply1(tmp451, loc419)
-				tmp453 := lang.Apply2(tmp445, tmp450, tmp452)
-				tmp441 = tmp453
+				tmp457 := v_clojure_DOT_core_with_meta.Get()
+				tmp458 := v_clojure_DOT_core_assoc.Get()
+				tmp459 := v_clojure_DOT_core_conj.Get()
+				tmp460 := lang.Apply2(tmp459, l450, item432)
+				tmp461 := lang.Apply(tmp458, []any{path447, kw_l, tmp460, kw_changed_QMARK_, true})
+				tmp462 := lang.NewVector(node437, tmp461)
+				tmp463 := v_clojure_DOT_core_meta.Get()
+				tmp464 := lang.Apply1(tmp463, loc431)
+				tmp465 := lang.Apply2(tmp457, tmp462, tmp464)
+				tmp453 = tmp465
 			}
-			tmp421 = tmp441
+			tmp433 = tmp453
 		}
-		return tmp421
+		return tmp433
 	})
-	tmp454 := &lang.NamedFn2{Name: "clojure.zip/insert-left", Expects: "2: [loc item]", F: tmp418}
-	v_clojure_DOT_zip_insert_left.BindRoot(tmp454)
+	tmp466 := &lang.NamedFn2{Name: "clojure.zip/insert-left", Expects: "2: [loc item]", F: tmp430}
+	v_clojure_DOT_zip_insert_left.BindRoot(tmp466)
+	fnD_clojure_DOT_zip_insert_left = tmp466.F
+	v_clojure_DOT_zip_insert_left.SealDirect()
 	_ = v_clojure_DOT_zip_insert_left
 	// (def insert-right "Inserts the item as the right sibling of the node at this loc,\n  witho…
 	v_clojure_DOT_zip_insert_right.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(212), kw_column, int64(7), kw_end_line, int64(212), kw_end_column, int64(19), kw_doc, "Inserts the item as the right sibling of the node at this loc,\n  without moving"))
-	tmp455 := lang.FnFunc2(func(loc456, item457 any) any {
-		var tmp458 any
-		_ = tmp458
+	tmp467 := lang.FnFunc2(func(loc468, item469 any) any {
+		var tmp470 any
+		_ = tmp470
 		{
-			var vec__81459 any = loc456
-			_ = vec__81459
-			tmp460 := v_clojure_DOT_core_nth.Get()
-			tmp461 := lang.Apply3(tmp460, vec__81459, int64(0), nil)
-			var node462 any = tmp461
-			_ = node462
-			tmp463 := v_clojure_DOT_core_nth.Get()
-			tmp464 := lang.Apply3(tmp463, vec__81459, int64(1), nil)
-			var map__84465 any = tmp464
-			_ = map__84465
-			tmp466 := v_clojure_DOT_core_seq_QMARK_.Get()
-			tmp467 := lang.Apply1(tmp466, map__84465)
-			var tmp468 any
-			_ = tmp468
-			if lang.IsTruthy(tmp467) {
-				tmp469 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-				tmp470 := lang.Apply1(tmp469, map__84465)
-				tmp468 = tmp470
+			var vec__81471 any = loc468
+			_ = vec__81471
+			tmp472 := v_clojure_DOT_core_nth.Get()
+			tmp473 := lang.Apply3(tmp472, vec__81471, int64(0), nil)
+			var node474 any = tmp473
+			_ = node474
+			tmp475 := v_clojure_DOT_core_nth.Get()
+			tmp476 := lang.Apply3(tmp475, vec__81471, int64(1), nil)
+			var map__84477 any = tmp476
+			_ = map__84477
+			tmp478 := v_clojure_DOT_core_seq_QMARK_.Get()
+			tmp479 := lang.Apply1(tmp478, map__84477)
+			var tmp480 any
+			_ = tmp480
+			if lang.IsTruthy(tmp479) {
+				tmp481 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+				tmp482 := lang.Apply1(tmp481, map__84477)
+				tmp480 = tmp482
 			} else {
-				tmp468 = map__84465
+				tmp480 = map__84477
 			}
-			var map__84471 any = tmp468
-			_ = map__84471
-			var path472 any = map__84471
-			_ = path472
-			tmp473 := v_clojure_DOT_core_get.Get()
-			tmp474 := lang.Apply2(tmp473, map__84471, kw_r)
-			var r475 any = tmp474
-			_ = r475
-			tmp476 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp477 := lang.Apply1(tmp476, path472)
-			var tmp478 any
-			_ = tmp478
-			if lang.IsTruthy(tmp477) {
-				tmp479 := v_clojure_DOT_core_ex_info.Get()
-				tmp480 := lang.NewMap()
-				tmp481 := lang.Apply2(tmp479, "Insert at top", tmp480)
-				panic(rt.Throw(tmp481))
+			var map__84483 any = tmp480
+			_ = map__84483
+			var path484 any = map__84483
+			_ = path484
+			tmp485 := v_clojure_DOT_core_get.Get()
+			tmp486 := lang.Apply2(tmp485, map__84483, kw_r)
+			var r487 any = tmp486
+			_ = r487
+			tmp488 := v_clojure_DOT_core_nil_QMARK_.Get()
+			tmp489 := lang.Apply1(tmp488, path484)
+			var tmp490 any
+			_ = tmp490
+			if lang.IsTruthy(tmp489) {
+				tmp491 := v_clojure_DOT_core_ex_info.Get()
+				tmp492 := lang.NewMap()
+				tmp493 := lang.Apply2(tmp491, "Insert at top", tmp492)
+				panic(rt.Throw(tmp493))
 			} else {
-				tmp482 := v_clojure_DOT_core_with_meta.Get()
-				tmp483 := v_clojure_DOT_core_assoc.Get()
-				tmp484 := v_clojure_DOT_core_cons.Get()
-				tmp485 := lang.Apply2(tmp484, item457, r475)
-				tmp486 := lang.Apply(tmp483, []any{path472, kw_r, tmp485, kw_changed_QMARK_, true})
-				tmp487 := lang.NewVector(node462, tmp486)
-				tmp488 := v_clojure_DOT_core_meta.Get()
-				tmp489 := lang.Apply1(tmp488, loc456)
-				tmp490 := lang.Apply2(tmp482, tmp487, tmp489)
-				tmp478 = tmp490
+				tmp494 := v_clojure_DOT_core_with_meta.Get()
+				tmp495 := v_clojure_DOT_core_assoc.Get()
+				tmp496 := v_clojure_DOT_core_cons.Get()
+				tmp497 := lang.Apply2(tmp496, item469, r487)
+				tmp498 := lang.Apply(tmp495, []any{path484, kw_r, tmp497, kw_changed_QMARK_, true})
+				tmp499 := lang.NewVector(node474, tmp498)
+				tmp500 := v_clojure_DOT_core_meta.Get()
+				tmp501 := lang.Apply1(tmp500, loc468)
+				tmp502 := lang.Apply2(tmp494, tmp499, tmp501)
+				tmp490 = tmp502
 			}
-			tmp458 = tmp478
+			tmp470 = tmp490
 		}
-		return tmp458
+		return tmp470
 	})
-	tmp491 := &lang.NamedFn2{Name: "clojure.zip/insert-right", Expects: "2: [loc item]", F: tmp455}
-	v_clojure_DOT_zip_insert_right.BindRoot(tmp491)
+	tmp503 := &lang.NamedFn2{Name: "clojure.zip/insert-right", Expects: "2: [loc item]", F: tmp467}
+	v_clojure_DOT_zip_insert_right.BindRoot(tmp503)
+	fnD_clojure_DOT_zip_insert_right = tmp503.F
+	v_clojure_DOT_zip_insert_right.SealDirect()
 	_ = v_clojure_DOT_zip_insert_right
 	// (def replace "Replaces the node at this loc, without moving" (clojure.core/fn [loc node] (…
 	v_clojure_DOT_zip_replace.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(222), kw_column, int64(7), kw_end_line, int64(222), kw_end_column, int64(14), kw_doc, "Replaces the node at this loc, without moving"))
-	tmp492 := lang.FnFunc2(func(loc493, node494 any) any {
-		var tmp495 any
-		_ = tmp495
+	tmp504 := lang.FnFunc2(func(loc505, node506 any) any {
+		var tmp507 any
+		_ = tmp507
 		{
-			var vec__85496 any = loc493
-			_ = vec__85496
-			tmp497 := v_clojure_DOT_core_nth.Get()
-			tmp498 := lang.Apply3(tmp497, vec__85496, int64(0), nil)
-			var X_499 any = tmp498
-			_ = X_499
-			tmp500 := v_clojure_DOT_core_nth.Get()
-			tmp501 := lang.Apply3(tmp500, vec__85496, int64(1), nil)
-			var path502 any = tmp501
-			_ = path502
-			tmp503 := v_clojure_DOT_core_with_meta.Get()
-			tmp504 := v_clojure_DOT_core_assoc.Get()
-			tmp505 := lang.Apply3(tmp504, path502, kw_changed_QMARK_, true)
-			tmp506 := lang.NewVector(node494, tmp505)
-			tmp507 := v_clojure_DOT_core_meta.Get()
-			tmp508 := lang.Apply1(tmp507, loc493)
-			tmp509 := lang.Apply2(tmp503, tmp506, tmp508)
-			tmp495 = tmp509
+			var vec__85508 any = loc505
+			_ = vec__85508
+			tmp509 := v_clojure_DOT_core_nth.Get()
+			tmp510 := lang.Apply3(tmp509, vec__85508, int64(0), nil)
+			var X_511 any = tmp510
+			_ = X_511
+			tmp512 := v_clojure_DOT_core_nth.Get()
+			tmp513 := lang.Apply3(tmp512, vec__85508, int64(1), nil)
+			var path514 any = tmp513
+			_ = path514
+			tmp515 := v_clojure_DOT_core_with_meta.Get()
+			tmp516 := v_clojure_DOT_core_assoc.Get()
+			tmp517 := lang.Apply3(tmp516, path514, kw_changed_QMARK_, true)
+			tmp518 := lang.NewVector(node506, tmp517)
+			tmp519 := v_clojure_DOT_core_meta.Get()
+			tmp520 := lang.Apply1(tmp519, loc505)
+			tmp521 := lang.Apply2(tmp515, tmp518, tmp520)
+			tmp507 = tmp521
 		}
-		return tmp495
+		return tmp507
 	})
-	tmp510 := &lang.NamedFn2{Name: "clojure.zip/replace", Expects: "2: [loc node]", F: tmp492}
-	v_clojure_DOT_zip_replace.BindRoot(tmp510)
+	tmp522 := &lang.NamedFn2{Name: "clojure.zip/replace", Expects: "2: [loc node]", F: tmp504}
+	v_clojure_DOT_zip_replace.BindRoot(tmp522)
+	fnD_clojure_DOT_zip_replace = tmp522.F
+	v_clojure_DOT_zip_replace.SealDirect()
 	_ = v_clojure_DOT_zip_replace
 	// (def edit "Replaces the node at this loc with the value of (f node args)" (clojure.core/fn…
 	v_clojure_DOT_zip_edit.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(229), kw_column, int64(7), kw_end_line, int64(229), kw_end_column, int64(11), kw_doc, "Replaces the node at this loc with the value of (f node args)"))
-	tmp511 := lang.FnFunc(func(args ...any) any {
+	tmp523 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 2 {
 				panic(lang.NewArityError(len(args), "clojure.zip/edit", "2+: [loc f args & more]"))
 			}
-			loc512 := args[0]
-			_ = loc512
-			f513 := args[1]
-			_ = f513
-			var args514 any
+			loc524 := args[0]
+			_ = loc524
+			f525 := args[1]
+			_ = f525
+			var args526 any
 			if len(args) > 2 {
-				args514 = lang.NewList(args[2:]...)
+				args526 = lang.NewList(args[2:]...)
 			}
-			_ = args514
-			tmp515 := v_clojure_DOT_zip_replace.Get()
-			tmp516 := v_clojure_DOT_core_apply.Get()
-			tmp517 := v_clojure_DOT_zip_node.Get()
-			tmp518 := lang.Apply1(tmp517, loc512)
-			tmp519 := lang.Apply3(tmp516, f513, tmp518, args514)
-			tmp520 := lang.Apply2(tmp515, loc512, tmp519)
-			return tmp520
+			_ = args526
+			tmp527 := v_clojure_DOT_zip_replace.Direct()
+			var tmp528 any
+			if !tmp527 {
+				tmp528 = v_clojure_DOT_zip_replace.Get()
+			}
+			tmp529 := v_clojure_DOT_core_apply.Get()
+			tmp530 := v_clojure_DOT_zip_node.Direct()
+			var tmp531 any
+			if !tmp530 {
+				tmp531 = v_clojure_DOT_zip_node.Get()
+			}
+			var tmp532 any
+			if tmp530 {
+				tmp532 = fnD_clojure_DOT_zip_node(loc524)
+			} else {
+				tmp532 = lang.Apply1(tmp531, loc524)
+			}
+			tmp533 := lang.Apply3(tmp529, f525, tmp532, args526)
+			var tmp534 any
+			if tmp527 {
+				tmp534 = fnD_clojure_DOT_zip_replace(loc524, tmp533)
+			} else {
+				tmp534 = lang.Apply2(tmp528, loc524, tmp533)
+			}
+			return tmp534
 		}
 	})
-	v_clojure_DOT_zip_edit.BindRoot(tmp511)
+	v_clojure_DOT_zip_edit.BindRoot(tmp523)
 	_ = v_clojure_DOT_zip_edit
 	// (def insert-child "Inserts the item as the leftmost child of the node at this loc,\n  with…
 	v_clojure_DOT_zip_insert_child.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(235), kw_column, int64(7), kw_end_line, int64(235), kw_end_column, int64(19), kw_doc, "Inserts the item as the leftmost child of the node at this loc,\n  without moving"))
-	tmp521 := lang.FnFunc2(func(loc522, item523 any) any {
-		tmp524 := v_clojure_DOT_zip_replace.Get()
-		tmp525 := v_clojure_DOT_zip_make_node.Get()
-		tmp526 := v_clojure_DOT_zip_node.Get()
-		tmp527 := lang.Apply1(tmp526, loc522)
-		tmp528 := v_clojure_DOT_core_cons.Get()
-		tmp529 := v_clojure_DOT_zip_children.Get()
-		tmp530 := lang.Apply1(tmp529, loc522)
-		tmp531 := lang.Apply2(tmp528, item523, tmp530)
-		tmp532 := lang.Apply3(tmp525, loc522, tmp527, tmp531)
-		tmp533 := lang.Apply2(tmp524, loc522, tmp532)
-		return tmp533
+	tmp535 := lang.FnFunc2(func(loc536, item537 any) any {
+		tmp538 := v_clojure_DOT_zip_replace.Direct()
+		var tmp539 any
+		if !tmp538 {
+			tmp539 = v_clojure_DOT_zip_replace.Get()
+		}
+		tmp540 := v_clojure_DOT_zip_make_node.Direct()
+		var tmp541 any
+		if !tmp540 {
+			tmp541 = v_clojure_DOT_zip_make_node.Get()
+		}
+		tmp542 := v_clojure_DOT_zip_node.Direct()
+		var tmp543 any
+		if !tmp542 {
+			tmp543 = v_clojure_DOT_zip_node.Get()
+		}
+		var tmp544 any
+		if tmp542 {
+			tmp544 = fnD_clojure_DOT_zip_node(loc536)
+		} else {
+			tmp544 = lang.Apply1(tmp543, loc536)
+		}
+		tmp545 := v_clojure_DOT_core_cons.Get()
+		tmp546 := v_clojure_DOT_zip_children.Direct()
+		var tmp547 any
+		if !tmp546 {
+			tmp547 = v_clojure_DOT_zip_children.Get()
+		}
+		var tmp548 any
+		if tmp546 {
+			tmp548 = fnD_clojure_DOT_zip_children(loc536)
+		} else {
+			tmp548 = lang.Apply1(tmp547, loc536)
+		}
+		tmp549 := lang.Apply2(tmp545, item537, tmp548)
+		var tmp550 any
+		if tmp540 {
+			tmp550 = fnD_clojure_DOT_zip_make_node(loc536, tmp544, tmp549)
+		} else {
+			tmp550 = lang.Apply3(tmp541, loc536, tmp544, tmp549)
+		}
+		var tmp551 any
+		if tmp538 {
+			tmp551 = fnD_clojure_DOT_zip_replace(loc536, tmp550)
+		} else {
+			tmp551 = lang.Apply2(tmp539, loc536, tmp550)
+		}
+		return tmp551
 	})
-	tmp534 := &lang.NamedFn2{Name: "clojure.zip/insert-child", Expects: "2: [loc item]", F: tmp521}
-	v_clojure_DOT_zip_insert_child.BindRoot(tmp534)
+	tmp552 := &lang.NamedFn2{Name: "clojure.zip/insert-child", Expects: "2: [loc item]", F: tmp535}
+	v_clojure_DOT_zip_insert_child.BindRoot(tmp552)
+	fnD_clojure_DOT_zip_insert_child = tmp552.F
+	v_clojure_DOT_zip_insert_child.SealDirect()
 	_ = v_clojure_DOT_zip_insert_child
 	// (def append-child "Inserts the item as the rightmost child of the node at this loc,\n  wit…
 	v_clojure_DOT_zip_append_child.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(242), kw_column, int64(7), kw_end_line, int64(242), kw_end_column, int64(19), kw_doc, "Inserts the item as the rightmost child of the node at this loc,\n  without moving"))
-	tmp535 := lang.FnFunc2(func(loc536, item537 any) any {
-		tmp538 := v_clojure_DOT_zip_replace.Get()
-		tmp539 := v_clojure_DOT_zip_make_node.Get()
-		tmp540 := v_clojure_DOT_zip_node.Get()
-		tmp541 := lang.Apply1(tmp540, loc536)
-		tmp542 := v_clojure_DOT_core_concat.Get()
-		tmp543 := v_clojure_DOT_zip_children.Get()
-		tmp544 := lang.Apply1(tmp543, loc536)
-		tmp545 := lang.NewVector(item537)
-		tmp546 := lang.Apply2(tmp542, tmp544, tmp545)
-		tmp547 := lang.Apply3(tmp539, loc536, tmp541, tmp546)
-		tmp548 := lang.Apply2(tmp538, loc536, tmp547)
-		return tmp548
+	tmp553 := lang.FnFunc2(func(loc554, item555 any) any {
+		tmp556 := v_clojure_DOT_zip_replace.Direct()
+		var tmp557 any
+		if !tmp556 {
+			tmp557 = v_clojure_DOT_zip_replace.Get()
+		}
+		tmp558 := v_clojure_DOT_zip_make_node.Direct()
+		var tmp559 any
+		if !tmp558 {
+			tmp559 = v_clojure_DOT_zip_make_node.Get()
+		}
+		tmp560 := v_clojure_DOT_zip_node.Direct()
+		var tmp561 any
+		if !tmp560 {
+			tmp561 = v_clojure_DOT_zip_node.Get()
+		}
+		var tmp562 any
+		if tmp560 {
+			tmp562 = fnD_clojure_DOT_zip_node(loc554)
+		} else {
+			tmp562 = lang.Apply1(tmp561, loc554)
+		}
+		tmp563 := v_clojure_DOT_core_concat.Get()
+		tmp564 := v_clojure_DOT_zip_children.Direct()
+		var tmp565 any
+		if !tmp564 {
+			tmp565 = v_clojure_DOT_zip_children.Get()
+		}
+		var tmp566 any
+		if tmp564 {
+			tmp566 = fnD_clojure_DOT_zip_children(loc554)
+		} else {
+			tmp566 = lang.Apply1(tmp565, loc554)
+		}
+		tmp567 := lang.NewVector(item555)
+		tmp568 := lang.Apply2(tmp563, tmp566, tmp567)
+		var tmp569 any
+		if tmp558 {
+			tmp569 = fnD_clojure_DOT_zip_make_node(loc554, tmp562, tmp568)
+		} else {
+			tmp569 = lang.Apply3(tmp559, loc554, tmp562, tmp568)
+		}
+		var tmp570 any
+		if tmp556 {
+			tmp570 = fnD_clojure_DOT_zip_replace(loc554, tmp569)
+		} else {
+			tmp570 = lang.Apply2(tmp557, loc554, tmp569)
+		}
+		return tmp570
 	})
-	tmp549 := &lang.NamedFn2{Name: "clojure.zip/append-child", Expects: "2: [loc item]", F: tmp535}
-	v_clojure_DOT_zip_append_child.BindRoot(tmp549)
+	tmp571 := &lang.NamedFn2{Name: "clojure.zip/append-child", Expects: "2: [loc item]", F: tmp553}
+	v_clojure_DOT_zip_append_child.BindRoot(tmp571)
+	fnD_clojure_DOT_zip_append_child = tmp571.F
+	v_clojure_DOT_zip_append_child.SealDirect()
 	_ = v_clojure_DOT_zip_append_child
 	// (def next "Moves to the next loc in the hierarchy, depth-first. When reaching\n  the end, …
 	v_clojure_DOT_zip_next.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(250), kw_column, int64(7), kw_end_line, int64(250), kw_end_column, int64(11), kw_doc, "Moves to the next loc in the hierarchy, depth-first. When reaching\n  the end, returns a distinguished loc detectable via end?. If already\n  at the end, stays there."))
-	tmp550 := lang.FnFunc1(func(loc551 any) any {
-		tmp552 := lang.Apply1(loc551, int64(1))
-		tmp553 := rt.EQBool(v_clojure_DOT_core_X_EQ_, kw_end, tmp552)
-		var tmp554 any
-		_ = tmp554
-		if tmp553 {
-			tmp554 = loc551
+	tmp572 := lang.FnFunc1(func(loc573 any) any {
+		tmp574 := lang.Apply1(loc573, int64(1))
+		tmp575 := rt.EQBool(v_clojure_DOT_core_X_EQ_, kw_end, tmp574)
+		var tmp576 any
+		_ = tmp576
+		if tmp575 {
+			tmp576 = loc573
 		} else {
-			var tmp555 any
-			_ = tmp555
+			var tmp577 any
+			_ = tmp577
 			{
-				var tmp556 any
-				_ = tmp556
+				var tmp578 any
+				_ = tmp578
 				{
-					tmp557 := v_clojure_DOT_zip_branch_QMARK_.Get()
-					tmp558 := lang.Apply1(tmp557, loc551)
-					var and__1__auto__559 any = tmp558
-					_ = and__1__auto__559
-					var tmp560 any
-					_ = tmp560
-					if lang.IsTruthy(and__1__auto__559) {
-						tmp561 := v_clojure_DOT_zip_down.Get()
-						tmp562 := lang.Apply1(tmp561, loc551)
-						tmp560 = tmp562
-					} else {
-						tmp560 = and__1__auto__559
+					tmp579 := v_clojure_DOT_zip_branch_QMARK_.Direct()
+					var tmp580 any
+					if !tmp579 {
+						tmp580 = v_clojure_DOT_zip_branch_QMARK_.Get()
 					}
-					tmp556 = tmp560
-				}
-				var or__2__auto__563 any = tmp556
-				_ = or__2__auto__563
-				var tmp564 any
-				_ = tmp564
-				if lang.IsTruthy(or__2__auto__563) {
-					tmp564 = or__2__auto__563
-				} else {
-					var tmp565 any
-					_ = tmp565
-					{
-						tmp566 := v_clojure_DOT_zip_right.Get()
-						tmp567 := lang.Apply1(tmp566, loc551)
-						var or__2__auto__568 any = tmp567
-						_ = or__2__auto__568
-						var tmp569 any
-						_ = tmp569
-						if lang.IsTruthy(or__2__auto__568) {
-							tmp569 = or__2__auto__568
+					var tmp581 any
+					if tmp579 {
+						tmp581 = fnD_clojure_DOT_zip_branch_QMARK_(loc573)
+					} else {
+						tmp581 = lang.Apply1(tmp580, loc573)
+					}
+					var and__1__auto__582 any = tmp581
+					_ = and__1__auto__582
+					var tmp583 any
+					_ = tmp583
+					if lang.IsTruthy(and__1__auto__582) {
+						tmp584 := v_clojure_DOT_zip_down.Direct()
+						var tmp585 any
+						if !tmp584 {
+							tmp585 = v_clojure_DOT_zip_down.Get()
+						}
+						var tmp586 any
+						if tmp584 {
+							tmp586 = fnD_clojure_DOT_zip_down(loc573)
 						} else {
-							var tmp570 any
-							_ = tmp570
+							tmp586 = lang.Apply1(tmp585, loc573)
+						}
+						tmp583 = tmp586
+					} else {
+						tmp583 = and__1__auto__582
+					}
+					tmp578 = tmp583
+				}
+				var or__2__auto__587 any = tmp578
+				_ = or__2__auto__587
+				var tmp588 any
+				_ = tmp588
+				if lang.IsTruthy(or__2__auto__587) {
+					tmp588 = or__2__auto__587
+				} else {
+					var tmp589 any
+					_ = tmp589
+					{
+						tmp590 := v_clojure_DOT_zip_right.Direct()
+						var tmp591 any
+						if !tmp590 {
+							tmp591 = v_clojure_DOT_zip_right.Get()
+						}
+						var tmp592 any
+						if tmp590 {
+							tmp592 = fnD_clojure_DOT_zip_right(loc573)
+						} else {
+							tmp592 = lang.Apply1(tmp591, loc573)
+						}
+						var or__2__auto__593 any = tmp592
+						_ = or__2__auto__593
+						var tmp594 any
+						_ = tmp594
+						if lang.IsTruthy(or__2__auto__593) {
+							tmp594 = or__2__auto__593
+						} else {
+							var tmp595 any
+							_ = tmp595
 							{
-								var p571 any = loc551
-								_ = p571
-							loop572:
+								var p596 any = loc573
+								_ = p596
+							loop597:
 								for {
-									tmp573 := v_clojure_DOT_zip_up.Get()
-									tmp574 := lang.Apply1(tmp573, p571)
-									var tmp575 any
-									_ = tmp575
-									if lang.IsTruthy(tmp574) {
-										var tmp576 any
-										_ = tmp576
-										{
-											tmp577 := v_clojure_DOT_zip_right.Get()
-											tmp578 := v_clojure_DOT_zip_up.Get()
-											tmp579 := lang.Apply1(tmp578, p571)
-											tmp580 := lang.Apply1(tmp577, tmp579)
-											var or__2__auto__581 any = tmp580
-											_ = or__2__auto__581
-											var tmp582 any
-											_ = tmp582
-											if lang.IsTruthy(or__2__auto__581) {
-												tmp582 = or__2__auto__581
-											} else {
-												tmp583 := v_clojure_DOT_zip_up.Get()
-												tmp584 := lang.Apply1(tmp583, p571)
-												var tmp585 any = tmp584
-												p571 = tmp585
-												continue loop572
-											}
-											tmp576 = tmp582
-										}
-										tmp575 = tmp576
-									} else {
-										tmp586 := v_clojure_DOT_zip_node.Get()
-										tmp587 := lang.Apply1(tmp586, p571)
-										tmp588 := lang.NewVector(tmp587, kw_end)
-										tmp575 = tmp588
+									tmp598 := v_clojure_DOT_zip_up.Direct()
+									var tmp599 any
+									if !tmp598 {
+										tmp599 = v_clojure_DOT_zip_up.Get()
 									}
-									tmp570 = tmp575
-									break loop572
+									var tmp600 any
+									if tmp598 {
+										tmp600 = fnD_clojure_DOT_zip_up(p596)
+									} else {
+										tmp600 = lang.Apply1(tmp599, p596)
+									}
+									var tmp601 any
+									_ = tmp601
+									if lang.IsTruthy(tmp600) {
+										var tmp602 any
+										_ = tmp602
+										{
+											tmp603 := v_clojure_DOT_zip_right.Direct()
+											var tmp604 any
+											if !tmp603 {
+												tmp604 = v_clojure_DOT_zip_right.Get()
+											}
+											tmp605 := v_clojure_DOT_zip_up.Direct()
+											var tmp606 any
+											if !tmp605 {
+												tmp606 = v_clojure_DOT_zip_up.Get()
+											}
+											var tmp607 any
+											if tmp605 {
+												tmp607 = fnD_clojure_DOT_zip_up(p596)
+											} else {
+												tmp607 = lang.Apply1(tmp606, p596)
+											}
+											var tmp608 any
+											if tmp603 {
+												tmp608 = fnD_clojure_DOT_zip_right(tmp607)
+											} else {
+												tmp608 = lang.Apply1(tmp604, tmp607)
+											}
+											var or__2__auto__609 any = tmp608
+											_ = or__2__auto__609
+											var tmp610 any
+											_ = tmp610
+											if lang.IsTruthy(or__2__auto__609) {
+												tmp610 = or__2__auto__609
+											} else {
+												tmp611 := v_clojure_DOT_zip_up.Direct()
+												var tmp612 any
+												if !tmp611 {
+													tmp612 = v_clojure_DOT_zip_up.Get()
+												}
+												var tmp613 any
+												if tmp611 {
+													tmp613 = fnD_clojure_DOT_zip_up(p596)
+												} else {
+													tmp613 = lang.Apply1(tmp612, p596)
+												}
+												var tmp614 any = tmp613
+												p596 = tmp614
+												continue loop597
+											}
+											tmp602 = tmp610
+										}
+										tmp601 = tmp602
+									} else {
+										tmp615 := v_clojure_DOT_zip_node.Direct()
+										var tmp616 any
+										if !tmp615 {
+											tmp616 = v_clojure_DOT_zip_node.Get()
+										}
+										var tmp617 any
+										if tmp615 {
+											tmp617 = fnD_clojure_DOT_zip_node(p596)
+										} else {
+											tmp617 = lang.Apply1(tmp616, p596)
+										}
+										tmp618 := lang.NewVector(tmp617, kw_end)
+										tmp601 = tmp618
+									}
+									tmp595 = tmp601
+									break loop597
 								}
 							}
-							tmp569 = tmp570
+							tmp594 = tmp595
 						}
-						tmp565 = tmp569
+						tmp589 = tmp594
 					}
-					tmp564 = tmp565
+					tmp588 = tmp589
 				}
-				tmp555 = tmp564
+				tmp577 = tmp588
 			}
-			tmp554 = tmp555
+			tmp576 = tmp577
 		}
-		return tmp554
+		return tmp576
 	})
-	tmp589 := &lang.NamedFn1{Name: "clojure.zip/next", Expects: "1: [loc]", F: tmp550}
-	v_clojure_DOT_zip_next.BindRoot(tmp589)
+	tmp619 := &lang.NamedFn1{Name: "clojure.zip/next", Expects: "1: [loc]", F: tmp572}
+	v_clojure_DOT_zip_next.BindRoot(tmp619)
+	fnD_clojure_DOT_zip_next = tmp619.F
+	v_clojure_DOT_zip_next.SealDirect()
 	_ = v_clojure_DOT_zip_next
 	// (def prev "Moves to the previous loc in the hierarchy, depth-first. If already\n  at the r…
 	v_clojure_DOT_zip_prev.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(267), kw_column, int64(7), kw_end_line, int64(267), kw_end_column, int64(11), kw_doc, "Moves to the previous loc in the hierarchy, depth-first. If already\n  at the root, returns nil."))
-	tmp590 := lang.FnFunc1(func(loc591 any) any {
-		var tmp592 any
-		_ = tmp592
+	tmp620 := lang.FnFunc1(func(loc621 any) any {
+		var tmp622 any
+		_ = tmp622
 		{
-			tmp593 := v_clojure_DOT_zip_left.Get()
-			tmp594 := lang.Apply1(tmp593, loc591)
-			var temp__4__auto__595 any = tmp594
-			_ = temp__4__auto__595
-			var tmp596 any
-			_ = tmp596
-			if lang.IsTruthy(temp__4__auto__595) {
-				var tmp597 any
-				_ = tmp597
+			tmp623 := v_clojure_DOT_zip_left.Direct()
+			var tmp624 any
+			if !tmp623 {
+				tmp624 = v_clojure_DOT_zip_left.Get()
+			}
+			var tmp625 any
+			if tmp623 {
+				tmp625 = fnD_clojure_DOT_zip_left(loc621)
+			} else {
+				tmp625 = lang.Apply1(tmp624, loc621)
+			}
+			var temp__4__auto__626 any = tmp625
+			_ = temp__4__auto__626
+			var tmp627 any
+			_ = tmp627
+			if lang.IsTruthy(temp__4__auto__626) {
+				var tmp628 any
+				_ = tmp628
 				{
-					var lloc598 any = temp__4__auto__595
-					_ = lloc598
-					var tmp599 any
-					_ = tmp599
+					var lloc629 any = temp__4__auto__626
+					_ = lloc629
+					var tmp630 any
+					_ = tmp630
 					{
-						var loc600 any = lloc598
-						_ = loc600
-					loop601:
+						var loc631 any = lloc629
+						_ = loc631
+					loop632:
 						for {
-							var tmp602 any
-							_ = tmp602
+							var tmp633 any
+							_ = tmp633
 							{
-								var tmp603 any
-								_ = tmp603
+								var tmp634 any
+								_ = tmp634
 								{
-									tmp604 := v_clojure_DOT_zip_branch_QMARK_.Get()
-									tmp605 := lang.Apply1(tmp604, loc600)
-									var and__1__auto__606 any = tmp605
-									_ = and__1__auto__606
-									var tmp607 any
-									_ = tmp607
-									if lang.IsTruthy(and__1__auto__606) {
-										tmp608 := v_clojure_DOT_zip_down.Get()
-										tmp609 := lang.Apply1(tmp608, loc600)
-										tmp607 = tmp609
-									} else {
-										tmp607 = and__1__auto__606
+									tmp635 := v_clojure_DOT_zip_branch_QMARK_.Direct()
+									var tmp636 any
+									if !tmp635 {
+										tmp636 = v_clojure_DOT_zip_branch_QMARK_.Get()
 									}
-									tmp603 = tmp607
+									var tmp637 any
+									if tmp635 {
+										tmp637 = fnD_clojure_DOT_zip_branch_QMARK_(loc631)
+									} else {
+										tmp637 = lang.Apply1(tmp636, loc631)
+									}
+									var and__1__auto__638 any = tmp637
+									_ = and__1__auto__638
+									var tmp639 any
+									_ = tmp639
+									if lang.IsTruthy(and__1__auto__638) {
+										tmp640 := v_clojure_DOT_zip_down.Direct()
+										var tmp641 any
+										if !tmp640 {
+											tmp641 = v_clojure_DOT_zip_down.Get()
+										}
+										var tmp642 any
+										if tmp640 {
+											tmp642 = fnD_clojure_DOT_zip_down(loc631)
+										} else {
+											tmp642 = lang.Apply1(tmp641, loc631)
+										}
+										tmp639 = tmp642
+									} else {
+										tmp639 = and__1__auto__638
+									}
+									tmp634 = tmp639
 								}
-								var temp__4__auto__610 any = tmp603
-								_ = temp__4__auto__610
-								var tmp611 any
-								_ = tmp611
-								if lang.IsTruthy(temp__4__auto__610) {
-									var tmp612 any
-									_ = tmp612
+								var temp__4__auto__643 any = tmp634
+								_ = temp__4__auto__643
+								var tmp644 any
+								_ = tmp644
+								if lang.IsTruthy(temp__4__auto__643) {
+									var tmp645 any
+									_ = tmp645
 									{
-										var child613 any = temp__4__auto__610
-										_ = child613
-										tmp614 := v_clojure_DOT_zip_rightmost.Get()
-										tmp615 := lang.Apply1(tmp614, child613)
-										var tmp616 any = tmp615
-										loc600 = tmp616
-										continue loop601
+										var child646 any = temp__4__auto__643
+										_ = child646
+										tmp647 := v_clojure_DOT_zip_rightmost.Direct()
+										var tmp648 any
+										if !tmp647 {
+											tmp648 = v_clojure_DOT_zip_rightmost.Get()
+										}
+										var tmp649 any
+										if tmp647 {
+											tmp649 = fnD_clojure_DOT_zip_rightmost(child646)
+										} else {
+											tmp649 = lang.Apply1(tmp648, child646)
+										}
+										var tmp650 any = tmp649
+										loc631 = tmp650
+										continue loop632
 									}
 								} else {
-									tmp611 = loc600
+									tmp644 = loc631
 								}
-								tmp602 = tmp611
+								tmp633 = tmp644
 							}
-							tmp599 = tmp602
-							break loop601
+							tmp630 = tmp633
+							break loop632
 						}
 					}
-					tmp597 = tmp599
+					tmp628 = tmp630
 				}
-				tmp596 = tmp597
+				tmp627 = tmp628
 			} else {
-				tmp617 := v_clojure_DOT_zip_up.Get()
-				tmp618 := lang.Apply1(tmp617, loc591)
-				tmp596 = tmp618
+				tmp651 := v_clojure_DOT_zip_up.Direct()
+				var tmp652 any
+				if !tmp651 {
+					tmp652 = v_clojure_DOT_zip_up.Get()
+				}
+				var tmp653 any
+				if tmp651 {
+					tmp653 = fnD_clojure_DOT_zip_up(loc621)
+				} else {
+					tmp653 = lang.Apply1(tmp652, loc621)
+				}
+				tmp627 = tmp653
 			}
-			tmp592 = tmp596
+			tmp622 = tmp627
 		}
-		return tmp592
+		return tmp622
 	})
-	tmp619 := &lang.NamedFn1{Name: "clojure.zip/prev", Expects: "1: [loc]", F: tmp590}
-	v_clojure_DOT_zip_prev.BindRoot(tmp619)
+	tmp654 := &lang.NamedFn1{Name: "clojure.zip/prev", Expects: "1: [loc]", F: tmp620}
+	v_clojure_DOT_zip_prev.BindRoot(tmp654)
+	fnD_clojure_DOT_zip_prev = tmp654.F
+	v_clojure_DOT_zip_prev.SealDirect()
 	_ = v_clojure_DOT_zip_prev
 	// (def end? "Returns true if loc represents the end of a depth-first walk" (clojure.core/fn …
 	v_clojure_DOT_zip_end_QMARK_.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(280), kw_column, int64(7), kw_end_line, int64(280), kw_end_column, int64(11), kw_doc, "Returns true if loc represents the end of a depth-first walk"))
-	tmp620 := lang.FnFunc1(func(loc621 any) any {
-		tmp622 := lang.Apply1(loc621, int64(1))
-		tmp623 := rt.EQ2(v_clojure_DOT_core_X_EQ_, kw_end, tmp622)
-		return tmp623
+	tmp655 := lang.FnFunc1(func(loc656 any) any {
+		tmp657 := lang.Apply1(loc656, int64(1))
+		tmp658 := rt.EQ2(v_clojure_DOT_core_X_EQ_, kw_end, tmp657)
+		return tmp658
 	})
-	tmp624 := &lang.NamedFn1{Name: "clojure.zip/end?", Expects: "1: [loc]", F: tmp620}
-	v_clojure_DOT_zip_end_QMARK_.BindRoot(tmp624)
+	tmp659 := &lang.NamedFn1{Name: "clojure.zip/end?", Expects: "1: [loc]", F: tmp655}
+	v_clojure_DOT_zip_end_QMARK_.BindRoot(tmp659)
+	fnD_clojure_DOT_zip_end_QMARK_ = tmp659.F
+	v_clojure_DOT_zip_end_QMARK_.SealDirect()
 	_ = v_clojure_DOT_zip_end_QMARK_
 	// (def remove "Removes the node at loc, returning the loc that would have preceded\n  it in …
 	v_clojure_DOT_zip_remove.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(287), kw_column, int64(7), kw_end_line, int64(287), kw_end_column, int64(13), kw_doc, "Removes the node at loc, returning the loc that would have preceded\n  it in a depth-first walk."))
-	tmp625 := lang.FnFunc1(func(loc626 any) any {
-		var tmp627 any
-		_ = tmp627
+	tmp660 := lang.FnFunc1(func(loc661 any) any {
+		var tmp662 any
+		_ = tmp662
 		{
-			var vec__88628 any = loc626
-			_ = vec__88628
-			tmp629 := v_clojure_DOT_core_nth.Get()
-			tmp630 := lang.Apply3(tmp629, vec__88628, int64(0), nil)
-			var node631 any = tmp630
-			_ = node631
-			tmp632 := v_clojure_DOT_core_nth.Get()
-			tmp633 := lang.Apply3(tmp632, vec__88628, int64(1), nil)
-			var map__91634 any = tmp633
-			_ = map__91634
-			tmp635 := v_clojure_DOT_core_seq_QMARK_.Get()
-			tmp636 := lang.Apply1(tmp635, map__91634)
-			var tmp637 any
-			_ = tmp637
-			if lang.IsTruthy(tmp636) {
-				tmp638 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-				tmp639 := lang.Apply1(tmp638, map__91634)
-				tmp637 = tmp639
+			var vec__88663 any = loc661
+			_ = vec__88663
+			tmp664 := v_clojure_DOT_core_nth.Get()
+			tmp665 := lang.Apply3(tmp664, vec__88663, int64(0), nil)
+			var node666 any = tmp665
+			_ = node666
+			tmp667 := v_clojure_DOT_core_nth.Get()
+			tmp668 := lang.Apply3(tmp667, vec__88663, int64(1), nil)
+			var map__91669 any = tmp668
+			_ = map__91669
+			tmp670 := v_clojure_DOT_core_seq_QMARK_.Get()
+			tmp671 := lang.Apply1(tmp670, map__91669)
+			var tmp672 any
+			_ = tmp672
+			if lang.IsTruthy(tmp671) {
+				tmp673 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+				tmp674 := lang.Apply1(tmp673, map__91669)
+				tmp672 = tmp674
 			} else {
-				tmp637 = map__91634
+				tmp672 = map__91669
 			}
-			var map__91640 any = tmp637
-			_ = map__91640
-			var path641 any = map__91640
-			_ = path641
-			tmp642 := v_clojure_DOT_core_get.Get()
-			tmp643 := lang.Apply2(tmp642, map__91640, kw_l)
-			var l644 any = tmp643
-			_ = l644
-			tmp645 := v_clojure_DOT_core_get.Get()
-			tmp646 := lang.Apply2(tmp645, map__91640, kw_ppath)
-			var ppath647 any = tmp646
-			_ = ppath647
-			tmp648 := v_clojure_DOT_core_get.Get()
-			tmp649 := lang.Apply2(tmp648, map__91640, kw_pnodes)
-			var pnodes650 any = tmp649
-			_ = pnodes650
-			tmp651 := v_clojure_DOT_core_get.Get()
-			tmp652 := lang.Apply2(tmp651, map__91640, kw_r)
-			var rs653 any = tmp652
-			_ = rs653
-			tmp654 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp655 := lang.Apply1(tmp654, path641)
-			var tmp656 any
-			_ = tmp656
-			if lang.IsTruthy(tmp655) {
-				tmp657 := v_clojure_DOT_core_ex_info.Get()
-				tmp658 := lang.NewMap()
-				tmp659 := lang.Apply2(tmp657, "Remove at top", tmp658)
-				panic(rt.Throw(tmp659))
+			var map__91675 any = tmp672
+			_ = map__91675
+			var path676 any = map__91675
+			_ = path676
+			tmp677 := v_clojure_DOT_core_get.Get()
+			tmp678 := lang.Apply2(tmp677, map__91675, kw_l)
+			var l679 any = tmp678
+			_ = l679
+			tmp680 := v_clojure_DOT_core_get.Get()
+			tmp681 := lang.Apply2(tmp680, map__91675, kw_ppath)
+			var ppath682 any = tmp681
+			_ = ppath682
+			tmp683 := v_clojure_DOT_core_get.Get()
+			tmp684 := lang.Apply2(tmp683, map__91675, kw_pnodes)
+			var pnodes685 any = tmp684
+			_ = pnodes685
+			tmp686 := v_clojure_DOT_core_get.Get()
+			tmp687 := lang.Apply2(tmp686, map__91675, kw_r)
+			var rs688 any = tmp687
+			_ = rs688
+			tmp689 := v_clojure_DOT_core_nil_QMARK_.Get()
+			tmp690 := lang.Apply1(tmp689, path676)
+			var tmp691 any
+			_ = tmp691
+			if lang.IsTruthy(tmp690) {
+				tmp692 := v_clojure_DOT_core_ex_info.Get()
+				tmp693 := lang.NewMap()
+				tmp694 := lang.Apply2(tmp692, "Remove at top", tmp693)
+				panic(rt.Throw(tmp694))
 			} else {
-				tmp660 := v_clojure_DOT_core_pos_QMARK_.Get()
-				tmp661 := v_clojure_DOT_core_count.Get()
-				tmp662 := lang.Apply1(tmp661, l644)
-				tmp663 := lang.Apply1(tmp660, tmp662)
-				var tmp664 any
-				_ = tmp664
-				if lang.IsTruthy(tmp663) {
-					var tmp665 any
-					_ = tmp665
+				tmp695 := v_clojure_DOT_core_pos_QMARK_.Get()
+				tmp696 := v_clojure_DOT_core_count.Get()
+				tmp697 := lang.Apply1(tmp696, l679)
+				tmp698 := lang.Apply1(tmp695, tmp697)
+				var tmp699 any
+				_ = tmp699
+				if lang.IsTruthy(tmp698) {
+					var tmp700 any
+					_ = tmp700
 					{
-						tmp666 := v_clojure_DOT_core_with_meta.Get()
-						tmp667 := v_clojure_DOT_core_peek.Get()
-						tmp668 := lang.Apply1(tmp667, l644)
-						tmp669 := v_clojure_DOT_core_assoc.Get()
-						tmp670 := v_clojure_DOT_core_pop.Get()
-						tmp671 := lang.Apply1(tmp670, l644)
-						tmp672 := lang.Apply(tmp669, []any{path641, kw_l, tmp671, kw_changed_QMARK_, true})
-						tmp673 := lang.NewVector(tmp668, tmp672)
-						tmp674 := v_clojure_DOT_core_meta.Get()
-						tmp675 := lang.Apply1(tmp674, loc626)
-						tmp676 := lang.Apply2(tmp666, tmp673, tmp675)
-						var loc677 any = tmp676
-						_ = loc677
-					loop678:
+						tmp701 := v_clojure_DOT_core_with_meta.Get()
+						tmp702 := v_clojure_DOT_core_peek.Get()
+						tmp703 := lang.Apply1(tmp702, l679)
+						tmp704 := v_clojure_DOT_core_assoc.Get()
+						tmp705 := v_clojure_DOT_core_pop.Get()
+						tmp706 := lang.Apply1(tmp705, l679)
+						tmp707 := lang.Apply(tmp704, []any{path676, kw_l, tmp706, kw_changed_QMARK_, true})
+						tmp708 := lang.NewVector(tmp703, tmp707)
+						tmp709 := v_clojure_DOT_core_meta.Get()
+						tmp710 := lang.Apply1(tmp709, loc661)
+						tmp711 := lang.Apply2(tmp701, tmp708, tmp710)
+						var loc712 any = tmp711
+						_ = loc712
+					loop713:
 						for {
-							var tmp679 any
-							_ = tmp679
+							var tmp714 any
+							_ = tmp714
 							{
-								var tmp680 any
-								_ = tmp680
+								var tmp715 any
+								_ = tmp715
 								{
-									tmp681 := v_clojure_DOT_zip_branch_QMARK_.Get()
-									tmp682 := lang.Apply1(tmp681, loc677)
-									var and__1__auto__683 any = tmp682
-									_ = and__1__auto__683
-									var tmp684 any
-									_ = tmp684
-									if lang.IsTruthy(and__1__auto__683) {
-										tmp685 := v_clojure_DOT_zip_down.Get()
-										tmp686 := lang.Apply1(tmp685, loc677)
-										tmp684 = tmp686
-									} else {
-										tmp684 = and__1__auto__683
+									tmp716 := v_clojure_DOT_zip_branch_QMARK_.Direct()
+									var tmp717 any
+									if !tmp716 {
+										tmp717 = v_clojure_DOT_zip_branch_QMARK_.Get()
 									}
-									tmp680 = tmp684
+									var tmp718 any
+									if tmp716 {
+										tmp718 = fnD_clojure_DOT_zip_branch_QMARK_(loc712)
+									} else {
+										tmp718 = lang.Apply1(tmp717, loc712)
+									}
+									var and__1__auto__719 any = tmp718
+									_ = and__1__auto__719
+									var tmp720 any
+									_ = tmp720
+									if lang.IsTruthy(and__1__auto__719) {
+										tmp721 := v_clojure_DOT_zip_down.Direct()
+										var tmp722 any
+										if !tmp721 {
+											tmp722 = v_clojure_DOT_zip_down.Get()
+										}
+										var tmp723 any
+										if tmp721 {
+											tmp723 = fnD_clojure_DOT_zip_down(loc712)
+										} else {
+											tmp723 = lang.Apply1(tmp722, loc712)
+										}
+										tmp720 = tmp723
+									} else {
+										tmp720 = and__1__auto__719
+									}
+									tmp715 = tmp720
 								}
-								var temp__4__auto__687 any = tmp680
-								_ = temp__4__auto__687
-								var tmp688 any
-								_ = tmp688
-								if lang.IsTruthy(temp__4__auto__687) {
-									var tmp689 any
-									_ = tmp689
+								var temp__4__auto__724 any = tmp715
+								_ = temp__4__auto__724
+								var tmp725 any
+								_ = tmp725
+								if lang.IsTruthy(temp__4__auto__724) {
+									var tmp726 any
+									_ = tmp726
 									{
-										var child690 any = temp__4__auto__687
-										_ = child690
-										tmp691 := v_clojure_DOT_zip_rightmost.Get()
-										tmp692 := lang.Apply1(tmp691, child690)
-										var tmp693 any = tmp692
-										loc677 = tmp693
-										continue loop678
+										var child727 any = temp__4__auto__724
+										_ = child727
+										tmp728 := v_clojure_DOT_zip_rightmost.Direct()
+										var tmp729 any
+										if !tmp728 {
+											tmp729 = v_clojure_DOT_zip_rightmost.Get()
+										}
+										var tmp730 any
+										if tmp728 {
+											tmp730 = fnD_clojure_DOT_zip_rightmost(child727)
+										} else {
+											tmp730 = lang.Apply1(tmp729, child727)
+										}
+										var tmp731 any = tmp730
+										loc712 = tmp731
+										continue loop713
 									}
 								} else {
-									tmp688 = loc677
+									tmp725 = loc712
 								}
-								tmp679 = tmp688
+								tmp714 = tmp725
 							}
-							tmp665 = tmp679
-							break loop678
+							tmp700 = tmp714
+							break loop713
 						}
 					}
-					tmp664 = tmp665
+					tmp699 = tmp700
 				} else {
-					tmp694 := v_clojure_DOT_core_with_meta.Get()
-					tmp695 := v_clojure_DOT_zip_make_node.Get()
-					tmp696 := v_clojure_DOT_core_peek.Get()
-					tmp697 := lang.Apply1(tmp696, pnodes650)
-					tmp698 := lang.Apply3(tmp695, loc626, tmp697, rs653)
-					var tmp699 any
-					_ = tmp699
-					{
-						var and__1__auto__700 any = ppath647
-						_ = and__1__auto__700
-						var tmp701 any
-						_ = tmp701
-						if lang.IsTruthy(and__1__auto__700) {
-							tmp702 := v_clojure_DOT_core_assoc.Get()
-							tmp703 := lang.Apply3(tmp702, ppath647, kw_changed_QMARK_, true)
-							tmp701 = tmp703
-						} else {
-							tmp701 = and__1__auto__700
-						}
-						tmp699 = tmp701
+					tmp732 := v_clojure_DOT_core_with_meta.Get()
+					tmp733 := v_clojure_DOT_zip_make_node.Direct()
+					var tmp734 any
+					if !tmp733 {
+						tmp734 = v_clojure_DOT_zip_make_node.Get()
 					}
-					tmp704 := lang.NewVector(tmp698, tmp699)
-					tmp705 := v_clojure_DOT_core_meta.Get()
-					tmp706 := lang.Apply1(tmp705, loc626)
-					tmp707 := lang.Apply2(tmp694, tmp704, tmp706)
-					tmp664 = tmp707
+					tmp735 := v_clojure_DOT_core_peek.Get()
+					tmp736 := lang.Apply1(tmp735, pnodes685)
+					var tmp737 any
+					if tmp733 {
+						tmp737 = fnD_clojure_DOT_zip_make_node(loc661, tmp736, rs688)
+					} else {
+						tmp737 = lang.Apply3(tmp734, loc661, tmp736, rs688)
+					}
+					var tmp738 any
+					_ = tmp738
+					{
+						var and__1__auto__739 any = ppath682
+						_ = and__1__auto__739
+						var tmp740 any
+						_ = tmp740
+						if lang.IsTruthy(and__1__auto__739) {
+							tmp741 := v_clojure_DOT_core_assoc.Get()
+							tmp742 := lang.Apply3(tmp741, ppath682, kw_changed_QMARK_, true)
+							tmp740 = tmp742
+						} else {
+							tmp740 = and__1__auto__739
+						}
+						tmp738 = tmp740
+					}
+					tmp743 := lang.NewVector(tmp737, tmp738)
+					tmp744 := v_clojure_DOT_core_meta.Get()
+					tmp745 := lang.Apply1(tmp744, loc661)
+					tmp746 := lang.Apply2(tmp732, tmp743, tmp745)
+					tmp699 = tmp746
 				}
-				tmp656 = tmp664
+				tmp691 = tmp699
 			}
-			tmp627 = tmp656
+			tmp662 = tmp691
 		}
-		return tmp627
+		return tmp662
 	})
-	tmp708 := &lang.NamedFn1{Name: "clojure.zip/remove", Expects: "1: [loc]", F: tmp625}
-	v_clojure_DOT_zip_remove.BindRoot(tmp708)
+	tmp747 := &lang.NamedFn1{Name: "clojure.zip/remove", Expects: "1: [loc]", F: tmp660}
+	v_clojure_DOT_zip_remove.BindRoot(tmp747)
+	fnD_clojure_DOT_zip_remove = tmp747.F
+	v_clojure_DOT_zip_remove.SealDirect()
 	_ = v_clojure_DOT_zip_remove
 }

@@ -31,6 +31,12 @@ var (
 	v_clojure_DOT_core_test_DOT_portability_when_var_exists = lang.InternVarName(lang.NewSymbol("clojure.core-test.portability"), lang.NewSymbol("when-var-exists"))
 )
 
+var (
+	fnD_clojure_DOT_core_test_DOT_portability_big_int_QMARK_  lang.FnFunc1
+	fnD_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_ lang.FnFunc1
+	fnD_clojure_DOT_core_test_DOT_portability_sleep           lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -118,6 +124,8 @@ func Load() {
 	})
 	tmp29 := &lang.NamedFn1{Name: "clojure.core-test.portability/big-int?", Expects: "1: [n]", F: tmp18}
 	v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_.BindRoot(tmp29)
+	fnD_clojure_DOT_core_test_DOT_portability_big_int_QMARK_ = tmp29.F
+	v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_
 	// (def lazy-seq? (clojure.core/fn [x] (clojure.core/seq? x)))
 	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(16)))
@@ -128,6 +136,8 @@ func Load() {
 	})
 	tmp34 := &lang.NamedFn1{Name: "clojure.core-test.portability/lazy-seq?", Expects: "1: [x]", F: tmp30}
 	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.BindRoot(tmp34)
+	fnD_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_ = tmp34.F
+	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_
 	// (def sleep (clojure.core/fn [ms] (clojure.core/-sleep-ms ms)))
 	v_clojure_DOT_core_test_DOT_portability_sleep.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(50), kw_column, int64(7), kw_end_line, int64(50), kw_end_column, int64(12)))
@@ -138,5 +148,7 @@ func Load() {
 	})
 	tmp39 := &lang.NamedFn1{Name: "clojure.core-test.portability/sleep", Expects: "1: [ms]", F: tmp35}
 	v_clojure_DOT_core_test_DOT_portability_sleep.BindRoot(tmp39)
+	fnD_clojure_DOT_core_test_DOT_portability_sleep = tmp39.F
+	v_clojure_DOT_core_test_DOT_portability_sleep.SealDirect()
 	_ = v_clojure_DOT_core_test_DOT_portability_sleep
 }

@@ -1,0 +1,154 @@
+;; Spike s66 — cljx.test prototype (ADR 0105).
+;;
+;; A working sketch of the Bun-flavoured testing surface, written in pure
+;; Clojure over primitives that spike-probe proved behave IDENTICALLY in the
+;; interpreter and in a compiled binary (with-redefs, with-out-str, atoms, var
+;; metadata, dynamic binding). Nothing here needs a Go shim.
+;;
+;; The point of the spike is to answer: can mock / spy / stub / output-capture
+;; be built with cljgo's existing semantics, and does the SAME test file
+;; produce the SAME report under `cljgo run` and inside a compiled binary?
+(ns cljx.test-proto)
+
+;; --- mocks -------------------------------------------------------------
+;; A mock is a callable that records every call. (mock) returns nil from every
+;; call; (mock f) delegates to f; (mock {:returns v}) always answers v.
+
+;; FINDING (spike s66): cljgo cannot attach metadata to a fn —
+;; (with-meta (fn [] 1) {..}) throws "value of type *eval.evalFn can't have
+;; metadata", while JVM Clojure returns the fn with metadata (verified against
+;; the clojure CLI). So the call log cannot ride on the mock's own meta.
+;; Workaround proven here: a registry keyed by the fn OBJECT (cljgo compares
+;; fns by identity, so they work as map keys — also verified).
+(def ^:private registry (atom {}))
+
+(defn mock
+  ([] (mock (fn [& _] nil)))
+  ([f]
+   (let [calls (atom [])
+         impl (if (map? f)
+                (let [{:keys [returns]} f] (fn [& _] returns))
+                f)
+         m (fn [& args]
+             (swap! calls conj (vec args))
+             (apply impl args))]
+     (swap! registry assoc m calls)
+     m)))
+
+(defn calls "Every call's args, in order." [m] @(get @registry m))
+(defn call-count [m] (count (calls m)))
+(defn called? [m] (pos? (call-count m)))
+(defn called-with? [m & args] (boolean (some #(= % (vec args)) (calls m))))
+
+;; --- spies -------------------------------------------------------------
+;; A spy wraps an EXISTING fn: it passes through to the real implementation
+;; while recording. `spy-on` returns the wrapper; the caller installs it with
+;; with-redefs (the macro sugar `with-spy` does that in the real library).
+
+(defn spy-on
+  "Wrap real fn `f` so calls are recorded AND forwarded."
+  [f]
+  (mock (fn [& args] (apply f args))))
+
+;; --- output capture ----------------------------------------------------
+;; Captured by default in the real library; here it is explicit so the spike
+;; can show the mechanism. with-out-str is the portable primitive.
+
+(defmacro capturing
+  "Run body, return {:value v :printed s}."
+  [& body]
+  `(let [v# (atom nil)
+         s# (with-out-str (reset! v# (do ~@body)))]
+     {:value @v# :printed s#}))
+
+(defn printed?
+  "Did the captured output contain `needle` (string or regex)?"
+  [captured needle]
+  (let [s (:printed captured)]
+    (boolean
+     (if (string? needle)
+       (clojure.string/includes? s needle)
+       (re-find needle s)))))
+
+;; --- expectations ------------------------------------------------------
+;; A tiny reporter so the spike is self-contained (the real library delegates
+;; to clojure.test's `is` so one runner reports everything).
+
+(def ^:dynamic *results* nil)
+
+(defn- record! [ok? label detail]
+  (when *results* (swap! *results* conj {:ok ok? :label label :detail detail}))
+  ok?)
+
+(defn expect-eq [actual expected label]
+  (record! (= actual expected) label
+           (when-not (= actual expected)
+             (str "expected " (pr-str expected) ", found " (pr-str actual)))))
+
+(defn expect-true [actual label]
+  (expect-eq (boolean actual) true label))
+
+(defn report! [suite]
+  (let [rs @*results*
+        bad (remove :ok rs)]
+    (println (str suite ": " (- (count rs) (count bad)) "/" (count rs) " passed"))
+    (doseq [b bad]
+      (println (str "  FAIL " (:label b) " — " (:detail b))))
+    (empty? bad)))
+
+;; --- the code under test (a stand-in for a user's app) -----------------
+
+(defn fetch-user
+  "Pretend this hits a database."
+  [id]
+  {:id id :name "REAL DB HIT"})
+
+(defn render-greeting [id]
+  (let [u (fetch-user id)]
+    (println "rendering for" (:name u))
+    (str "Hello, " (:name u) "!")))
+
+;; --- the tests ---------------------------------------------------------
+
+(defn run-suite []
+  (binding [*results* (atom [])]
+
+    ;; 1. mock: a standalone fake that records calls
+    (let [send-mail (mock {:returns :queued})]
+      (send-mail "asha@example.com" "welcome")
+      (send-mail "ravi@example.com" "welcome")
+      (expect-eq (call-count send-mail) 2 "mock records both calls")
+      (expect-true (called-with? send-mail "asha@example.com" "welcome")
+                   "mock remembers exact args")
+      (expect-eq (send-mail "x" "y") :queued "mock returns configured value"))
+
+    ;; 2. stub: replace a real fn for the duration of a test
+    (with-redefs [fetch-user (fn [id] {:id id :name "Stubbed Asha"})]
+      (expect-eq (render-greeting 1) "Hello, Stubbed Asha!"
+                 "stub replaces the real implementation"))
+
+    ;; 3. stub is undone afterwards
+    (expect-eq (:name (fetch-user 1)) "REAL DB HIT" "stub is restored after use")
+
+    ;; 4. spy: record calls but keep real behaviour
+    (let [real fetch-user
+          spied (spy-on real)]
+      (with-redefs [fetch-user spied]
+        (render-greeting 7)
+        (render-greeting 8))
+      (expect-eq (call-count spied) 2 "spy counted the calls")
+      (expect-true (called-with? spied 7) "spy saw the first argument")
+      (expect-eq (:name (fetch-user 7)) "REAL DB HIT" "spy passed through to the real fn"))
+
+    ;; 5. output capture — the println spy
+    (let [c (capturing (render-greeting 3))]
+      (expect-true (printed? c "rendering for") "captured what the code printed")
+      (expect-eq (:value c) "Hello, REAL DB HIT!" "capture still returns the value")
+      (expect-true (printed? c #"rendering for \w+") "regex matching on output works"))
+
+    ;; 6. capture + stub compose
+    (let [c (with-redefs [fetch-user (fn [_] {:name "Quiet"})]
+              (capturing (render-greeting 9)))]
+      (expect-true (printed? c "rendering for Quiet") "stub and capture compose"))
+
+    (report! "cljx.test prototype")))

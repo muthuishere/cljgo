@@ -1230,22 +1230,72 @@
                nil))
            nil)))))
 
-;; for — simplified list comprehension (v0): one or more [binding coll] pairs,
-;; no modifiers. Expands to nested map/mapcat, so the result is a lazy seq.
-;; oracle: (for [x (range 3)] (* x x)) => (0 1 4)
-;; TODO: :when / :let / :while modifiers.
-(defn -for-expand [pairs body]
-  (if (seq pairs)
-    (let [x (first (first pairs))
-          coll (second (first pairs))
-          more (rest pairs)]
-      (if (seq more)
-        (list 'clojure.core/mapcat (list 'clojure.core/fn (vector x) (-for-expand more body)) coll)
-        (list 'clojure.core/map (list 'clojure.core/fn (vector x) body) coll)))
-    body))
+;; for — list comprehension. One or more [binding coll] pairs, each optionally
+;; followed by :let / :when / :while modifiers (which scope to the nearest
+;; preceding binding). Always returns a lazy seq.
+;;
+;; Each binding level expands to a self-recursive `iter` fn wrapped in
+;; lazy-seq: the loop advances the seq with `recur` when an element produces
+;; nothing (a :when that fails, or an inner level that yielded ()), so
+;; skipping is O(1) stack; `:while` returns nil, terminating THAT level's
+;; loop only (the enclosing levels keep going).
+;;
+;; oracle (JVM Clojure 1.12.5, `clojure` CLI):
+;;   (for [x (range 3)] (* x x))                          => (0 1 4)
+;;   (for [n (range 1 11) :when (even? n)] n)             => (2 4 6 8 10)
+;;   (for [n (range 10) :while (< n 4)] n)                => (0 1 2 3)
+;;   (for [x (range 3) :let [y (* x 10)]] y)              => (0 10 20)
+;;   (for [x (range 4) y (range 4) :while (< y 2)] [x y])
+;;     => ([0 0] [0 1] [1 0] [1 1] [2 0] [2 1] [3 0] [3 1])
+;;   (for [x (range 4) :while (< x 2) y (range 2)] [x y])
+;;     => ([0 0] [0 1] [1 0] [1 1])
+;;   (for [x (range 6) :when (odd? x) :let [y (* x x)] :while (< y 20)] y)
+;;     => (1 9)
+;;   (class (for [x (range 3)] x))                        => clojure.lang.LazySeq
+(defn ^:private -for-expand [bindings body]
+  (if (empty? bindings)
+    nil
+    (let [x     (first bindings)
+          coll  (second bindings)
+          split (-doseq-mods (nnext bindings))
+          mods  (nth split 0)
+          more  (nth split 1)
+          iter  (gensym "iter__")
+          s     (gensym "s__")
+          inner (gensym "inner__")
+          ;; Innermost continuation: either cons the body value directly (last
+          ;; binding level) or splice the inner level's seq, skipping when it
+          ;; is empty so an exhausted inner level does not grow the stack.
+          cont  (if (seq more)
+                  (list 'clojure.core/let
+                        (vector inner (-for-expand more body))
+                        (list 'if (list 'clojure.core/seq inner)
+                              (list 'clojure.core/concat inner (list iter (list 'clojure.core/next s)))
+                              (list 'recur (list 'clojure.core/next s))))
+                  (list 'clojure.core/cons body (list iter (list 'clojure.core/next s))))
+          folded (reduce (fn [acc kv]
+                           (let [k (nth kv 0) v (nth kv 1)]
+                             (cond
+                               (= k :let)   (list 'clojure.core/let v acc)
+                               (= k :when)  (list 'if v acc (list 'recur (list 'clojure.core/next s)))
+                               (= k :while) (list 'if v acc nil)
+                               :else (throw (ex-info (str "Invalid 'for' keyword: " k)
+                                                     {:keyword k})))))
+                         cont
+                         (reverse mods))]
+      (list (list 'clojure.core/fn iter (vector s)
+                  (list 'clojure.core/lazy-seq
+                        (list 'clojure.core/loop (vector s (list 'clojure.core/seq s))
+                              (list 'if s
+                                    (list 'clojure.core/let (vector x (list 'clojure.core/first s))
+                                          folded)
+                                    nil))))
+            coll))))
 
 (defmacro for [bindings body]
-  (-for-expand (-pairs bindings) body))
+  (if (empty? bindings)
+    (list 'clojure.core/list body)
+    (-for-expand bindings body)))
 
 ;; ===========================================================================
 ;; Control-flow macros (clojure.core) — conditional threading, constant/

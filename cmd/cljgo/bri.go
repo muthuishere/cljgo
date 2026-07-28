@@ -20,16 +20,22 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/muthuishere/cljgo/pkg/deps"
+	"github.com/muthuishere/cljgo/pkg/emit"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/nrepl"
 	"github.com/muthuishere/cljgo/pkg/repl"
@@ -281,14 +287,20 @@ func mustGetwd() string {
 // evalAppFile loads one source file through the driver (same load
 // frame as `cljgo run`).
 func evalAppFile(d *repl.Driver, path string) int {
+	return evalAppFileTo(d, path, os.Stderr)
+}
+
+// evalAppFileTo is evalAppFile with an explicit error sink, so a leg that
+// captures its output (cljgo test --both) captures the load errors too.
+func evalAppFileTo(d *repl.Driver, path string, stderr io.Writer) int {
 	f, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Fprintln(stderr, "error:", err)
 		return 1
 	}
 	defer f.Close()
 	if _, err := d.EvalReader(f, path); err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Fprintln(stderr, "error:", err)
 		return 1
 	}
 	return 0
@@ -296,20 +308,51 @@ func evalAppFile(d *repl.Driver, path string) int {
 
 // --- cljgo test -------------------------------------------------------------------
 
-// runTest loads every namespace under src/ (skipping ones a require
-// already pulled in), then every *_test file under test/, then runs
-// clojure.test over all of it. APP_PROFILE defaults to test — the
-// no-I/O-at-load contract is what makes requiring app.main safe here.
+// runTest fronts the three legs of `cljgo test` (ADR 0012's dual-harness
+// promise, made available to USER code by ADR 0105 task 2.2):
+//
+//	cljgo test              interpreted — load src/ then test/, run clojure.test
+//	cljgo test --compiled   AOT — compile the suite to a binary and run that
+//	cljgo test --both       run both legs and diff their output
+//
+// `--both` is the whole point: REPL-vs-binary divergence is cljgo's
+// unforgivable failure mode, and until now users had no way to check their
+// OWN code for it. Every leg exits non-zero when a test fails.
 func runTest(args []string) int {
 	fs := flag.NewFlagSet("test", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
+	compiled := fs.Bool("compiled", false, "run the suite through the AOT path (compile a test binary and run it)")
+	both := fs.Bool("both", false, "run the suite interpreted AND compiled, then diff the output (divergence = failure)")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: cljgo test (run from the app directory)")
+		fmt.Fprintln(os.Stderr, "usage: cljgo test [--compiled | --both] (run from the app directory)")
 		fs.PrintDefaults()
 	}
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
+	if *compiled && *both {
+		fmt.Fprintln(os.Stderr, "cljgo test: --compiled and --both are mutually exclusive")
+		return 2
+	}
+	if code := testPreflight(); code != 0 {
+		return code
+	}
+	switch {
+	case *both:
+		return runTestBoth()
+	case *compiled:
+		return runTestCompiled(os.Stdout, os.Stderr)
+	default:
+		return runTestInterpreted(os.Stdout, os.Stderr)
+	}
+}
+
+// testPreflight is the shared setup for every leg: a test/ directory must
+// exist, APP_PROFILE defaults to test (the no-I/O-at-load contract is what
+// makes requiring app.main safe here), and declared dependencies are resolved
+// so dep namespaces resolve the same way the other entry points see them
+// (ADR 0052).
+func testPreflight() int {
 	if _, err := os.Stat("test"); err != nil {
 		fmt.Fprintln(os.Stderr, "cljgo test: no test/ directory here")
 		return 1
@@ -317,39 +360,195 @@ func runTest(args []string) int {
 	if os.Getenv("APP_PROFILE") == "" {
 		os.Setenv("APP_PROFILE", "test")
 	}
-
-	// ADR 0052: resolve declared dependencies (if locked) and publish their
-	// roots before loading src/ and test/, so `cljgo test` sees dep namespaces
-	// the same way the other entry points do.
 	if err := resolveRunDeps("."); err != nil {
 		fmt.Fprintln(os.Stderr, "cljgo test:", err)
 		return 1
 	}
-	d := repl.New(nil, os.Stdout, os.Stderr)
+	return 0
+}
+
+// runTestInterpreted loads every namespace under src/ (skipping ones a
+// require already pulled in), then every *_test file under test/, then runs
+// clojure.test over all of it.
+func runTestInterpreted(stdout, stderr io.Writer) int {
+	d := repl.New(nil, stdout, stderr)
 	for _, root := range []string{"src", "test"} {
 		files, err := sourceFiles(root)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "cljgo test:", err)
+			fmt.Fprintln(stderr, "cljgo test:", err)
 			return 1
 		}
 		for _, path := range files {
 			if nsAlreadyLoaded(path, root) {
 				continue
 			}
-			if code := evalAppFile(d, path); code != 0 {
+			if code := evalAppFileTo(d, path, stderr); code != 0 {
 				return code
 			}
 		}
 	}
 	res, err := d.EvalString("(clojure.test/successful? (clojure.test/run-all-tests))", "cljgo-test")
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "cljgo test:", err)
+		fmt.Fprintln(stderr, "cljgo test:", err)
 		return 1
 	}
 	if res != true {
 		return 1
 	}
 	return 0
+}
+
+// runTestCompiled runs the SAME suite through the AOT path: it synthesizes an
+// entry namespace that requires every namespace under src/ and test/ and runs
+// clojure.test, compiles that to a native binary, and runs it. The binary's
+// exit code is the suite's — the emitted func main() consults clojure.test's
+// process failure tally (see pkg/emit/rt.TestsFailed), so a red suite is red
+// here too.
+func runTestCompiled(stdout, stderr io.Writer) int {
+	nss, err := testNamespaces()
+	if err != nil {
+		fmt.Fprintln(stderr, "cljgo test --compiled:", err)
+		return 1
+	}
+	if len(nss) == 0 {
+		fmt.Fprintln(stderr, "cljgo test --compiled: no namespaces found under src/ or test/")
+		return 1
+	}
+	// The generated entry file lives outside the project so it can never be
+	// mistaken for a source file; src/ and test/ join the load path instead
+	// (append, never replace — ADR 0052 §2 slot 3), which is how the entry's
+	// requires resolve from a directory that is neither.
+	tmp, err := os.MkdirTemp("", "cljgo-test-*")
+	if err != nil {
+		fmt.Fprintln(stderr, "cljgo test --compiled:", err)
+		return 1
+	}
+	defer os.RemoveAll(tmp)
+
+	// RELATIVE roots on purpose: the path a root yields is what the reader
+	// records as :file and what the emitter bakes into the binary, so
+	// "test/mylib/core_test.cljg" here keeps the compiled failure report
+	// byte-identical to the interpreted one (which loads the same relative
+	// path). Absolute roots would make `--both` report a false divergence.
+	roots := deps.ResolvedRoots()
+	for _, r := range []string{"src", "test"} {
+		if _, err := os.Stat(r); err == nil {
+			roots = append(roots, r)
+		}
+	}
+	deps.SetResolvedRoots(roots)
+
+	entry := filepath.Join(tmp, "cljgo_test_entry.cljg")
+	if err := os.WriteFile(entry, []byte(testEntrySource(nss)), 0o644); err != nil {
+		fmt.Fprintln(stderr, "cljgo test --compiled:", err)
+		return 1
+	}
+	bin := filepath.Join(tmp, "cljgo-test-suite"+emit.ExeSuffix)
+	genDir, err := emit.Build(entry, bin, "", emit.Options{})
+	if genDir != "" {
+		defer os.RemoveAll(genDir)
+	}
+	if err != nil {
+		fmt.Fprintln(stderr, "cljgo test --compiled: build:", err)
+		return 1
+	}
+	cmd := exec.Command(bin)
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+	if err := cmd.Run(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) {
+			return ee.ExitCode()
+		}
+		fmt.Fprintln(stderr, "cljgo test --compiled:", err)
+		return 1
+	}
+	return 0
+}
+
+// testEntrySource renders the synthesized AOT entry namespace: require every
+// discovered namespace, then run every test. Deliberately boring — it is the
+// same (run-all-tests) the interpreted leg runs, so the two legs can be
+// compared line for line.
+func testEntrySource(nss []string) string {
+	var b strings.Builder
+	b.WriteString(";; Generated by `cljgo test --compiled` (ADR 0105). Not user code.\n")
+	b.WriteString("(ns cljgo-test-entry\n  (:require [clojure.test]\n")
+	for _, ns := range nss {
+		fmt.Fprintf(&b, "            [%s]\n", ns)
+	}
+	b.WriteString("            ))\n\n")
+	b.WriteString("(defn -main [& _args]\n  (clojure.test/run-all-tests))\n")
+	return b.String()
+}
+
+// testNamespaces lists the conventional namespace names of every source file
+// under src/ then test/, in load order (the same order the interpreted leg
+// evaluates them), de-duplicated.
+func testNamespaces() ([]string, error) {
+	var out []string
+	seen := map[string]bool{}
+	for _, root := range []string{"src", "test"} {
+		if _, err := os.Stat(root); err != nil {
+			continue
+		}
+		files, err := sourceFiles(root)
+		if err != nil {
+			return nil, err
+		}
+		for _, path := range files {
+			ns := nsNameFor(path, root)
+			if ns == "" || seen[ns] {
+				continue
+			}
+			seen[ns] = true
+			out = append(out, ns)
+		}
+	}
+	return out, nil
+}
+
+// runTestBoth runs the interpreted leg in a child process (a fresh namespace
+// world — an in-process second load would find every namespace already
+// interned and capture nothing), then the compiled leg, and compares. Byte
+// divergence between the two is a failure in its own right: that is the
+// REPL-vs-binary contract, now checkable on user code.
+func runTestBoth() int {
+	self, err := os.Executable()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cljgo test --both:", err)
+		return 1
+	}
+	var evalBuf bytes.Buffer
+	evalCmd := exec.Command(self, "test")
+	evalCmd.Stdout = &evalBuf
+	evalCmd.Stderr = &evalBuf
+	evalCode := 0
+	if err := evalCmd.Run(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) {
+			evalCode = ee.ExitCode()
+		} else {
+			fmt.Fprintln(os.Stderr, "cljgo test --both:", err)
+			return 1
+		}
+	}
+	var binBuf bytes.Buffer
+	binCode := runTestCompiled(&binBuf, &binBuf)
+
+	fmt.Print(evalBuf.String())
+	if evalBuf.String() != binBuf.String() {
+		fmt.Fprintln(os.Stderr, "\ncljgo test --both: REPL/binary DIVERGENCE (release blocker, ADR 0002/0007)")
+		fmt.Fprintf(os.Stderr, "--- interpreted (exit %d) ---\n%s\n--- compiled (exit %d) ---\n%s\n",
+			evalCode, evalBuf.String(), binCode, binBuf.String())
+		return 1
+	}
+	if evalCode != binCode {
+		fmt.Fprintf(os.Stderr, "\ncljgo test --both: exit-code divergence: interpreted %d, compiled %d\n", evalCode, binCode)
+		return 1
+	}
+	fmt.Fprintln(os.Stderr, "cljgo test --both: interpreted and compiled agree (output + exit code)")
+	return evalCode
 }
 
 // sourceFiles lists .clj/.cljg files under root, sorted.
@@ -368,16 +567,27 @@ func sourceFiles(root string) ([]string, error) {
 	return files, err
 }
 
-// nsAlreadyLoaded reports whether path's conventional namespace (its
-// path relative to root, _ → -, / → .) already exists — a require from
-// an earlier file loaded it; evaluating the file again would re-run it.
-func nsAlreadyLoaded(path, root string) bool {
+// nsNameFor is path's conventional namespace name (its path relative to
+// root, extension dropped, / → . and _ → -), or "" when path is not under
+// root. The single owner of that convention — both the interpreted leg's
+// already-loaded check and the compiled leg's require list read it.
+func nsNameFor(path, root string) string {
 	rel, err := filepath.Rel(root, path)
 	if err != nil {
-		return false
+		return ""
 	}
 	stem := strings.TrimSuffix(strings.TrimSuffix(rel, ".cljg"), ".clj")
-	nsName := strings.ReplaceAll(strings.ReplaceAll(filepath.ToSlash(stem), "/", "."), "_", "-")
+	return strings.ReplaceAll(strings.ReplaceAll(filepath.ToSlash(stem), "/", "."), "_", "-")
+}
+
+// nsAlreadyLoaded reports whether path's conventional namespace already
+// exists — a require from an earlier file loaded it; evaluating the file
+// again would re-run it.
+func nsAlreadyLoaded(path, root string) bool {
+	nsName := nsNameFor(path, root)
+	if nsName == "" {
+		return false
+	}
 	return lang.FindNamespace(lang.NewSymbol(nsName)) != nil
 }
 

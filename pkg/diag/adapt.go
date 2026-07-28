@@ -50,6 +50,17 @@ func FromError(err error) Diagnostic {
 	var c Carrier
 	if errors.As(err, &c) {
 		if d, ok := c.Diagnostic(); ok {
+			// A carrier raised during ANALYSIS has no position of its own —
+			// the analyzer supplies it by wrapping the error in a
+			// lang.CompilerError. Read that position back so the enriched
+			// diagnostic keeps its locus instead of trading it for its fixes.
+			if d.Location.File == "" && d.Location.Line == 0 {
+				if m := compilerErrRe.FindStringSubmatch(err.Error()); m != nil {
+					line, _ := strconv.Atoi(m[2])
+					col, _ := strconv.Atoi(m[3])
+					d.Location = Location{File: m[1], Line: line, Column: col}
+				}
+			}
 			return d
 		}
 	}
@@ -117,6 +128,7 @@ func FromError(err error) Diagnostic {
 			Location: Location{File: m[1], Line: line, Column: col},
 		}
 		assignCode(&d, BandAnalyzer)
+		applyJavaStatic(&d)
 		return d
 	}
 
@@ -129,7 +141,62 @@ func FromError(err error) Diagnostic {
 	// handled by their own branches above and never reach this line.
 	d := Diagnostic{Severity: SeverityError, Message: humanizeGoTypes(err.Error()), ErrorCode: "G5000"}
 	setExplainURL(&d)
+	applyJavaStatic(&d)
 	return d
+}
+
+// javaStaticRe recognizes the Java-class-as-namespace diagnosis raised by
+// corelib.noSuchNamespace and captures the offending `Class/member` so the
+// did-you-mean Fix can be looked up. The raise site owns the WORDS (the
+// message is byte-stable, conformance freezes it); the render layer owns the
+// CODE and the Fix, exactly like every reader/analyzer classification.
+var javaStaticRe = regexp.MustCompile(`is a Java class, not a namespace: cljgo hosts Clojure on Go, so the Java static ([A-Za-z]+/[A-Za-z0-9_]+) is unavailable`)
+
+// javaStaticFix maps a Java static to the clojure.core fn that replaces it.
+// Every entry is a REAL clojure.core fn present in both cljgo and JVM Clojure
+// 1.12.5, so the suggested rewrite is portable, not a cljgo-only affordance.
+// Statics with no clojure.core equivalent (System/currentTimeMillis,
+// Thread/sleep, Math/sqrt) are deliberately absent: I4001 still names the
+// problem, and no Fix is better than a wrong one.
+var javaStaticFix = map[string]string{
+	"Integer/parseInt":     "parse-long",
+	"Integer/valueOf":      "parse-long",
+	"Long/parseLong":       "parse-long",
+	"Long/valueOf":         "parse-long",
+	"Short/parseShort":     "parse-long",
+	"Byte/parseByte":       "parse-long",
+	"Double/parseDouble":   "parse-double",
+	"Double/valueOf":       "parse-double",
+	"Float/parseFloat":     "parse-double",
+	"Float/valueOf":        "parse-double",
+	"Boolean/parseBoolean": "parse-boolean",
+	"Boolean/valueOf":      "parse-boolean",
+	"Integer/toString":     "str",
+	"Long/toString":        "str",
+	"Double/toString":      "str",
+	"Boolean/toString":     "str",
+	"String/valueOf":       "str",
+	"Math/abs":             "abs",
+	"String/format":        "format",
+}
+
+// applyJavaStatic upgrades a Java-class-as-namespace diagnostic from the
+// generic analyzer/general code to I4001 and, when the static has a real
+// clojure.core replacement, attaches the did-you-mean Fix. A no-op for every
+// other message.
+func applyJavaStatic(d *Diagnostic) {
+	m := javaStaticRe.FindStringSubmatch(d.Message)
+	if m == nil {
+		return
+	}
+	d.ErrorCode = "I4001"
+	setExplainURL(d)
+	if repl, ok := javaStaticFix[m[1]]; ok {
+		d.Fixes = append(d.Fixes, Fix{
+			Title:       "did you mean " + repl + "?",
+			Replacement: repl,
+		})
+	}
 }
 
 // goTypeWordRe matches the whole-word Go type tokens a `%T` verb leaks into a
@@ -267,6 +334,8 @@ func classify(band Band, msg string) string {
 		case has("variadic overload") || has("overloads with same arity") ||
 			has("fixed arity function"):
 			return "A2008"
+		case has("no such namespace"):
+			return "A2009"
 		}
 	}
 	return ""

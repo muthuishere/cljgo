@@ -39,6 +39,15 @@ var (
 	v_clojure_DOT_core_str                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
 )
 
+var (
+	fnD_cljg_DOT_stream_read_line  lang.FnFunc1
+	fnD_cljg_DOT_stream_read_all   lang.FnFunc1
+	fnD_cljg_DOT_stream_lines      lang.FnFunc1
+	fnD_cljg_DOT_stream_write      lang.FnFunc2
+	fnD_cljg_DOT_stream_write_line lang.FnFunc2
+	fnD_cljg_DOT_stream_close_     lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -95,6 +104,8 @@ func Load() {
 	})
 	tmp18 := &lang.NamedFn1{Name: "cljg.stream/read-line", Expects: "1: [readable]", F: tmp14}
 	v_cljg_DOT_stream_read_line.BindRoot(tmp18)
+	fnD_cljg_DOT_stream_read_line = tmp18.F
+	v_cljg_DOT_stream_read_line.SealDirect()
 	_ = v_cljg_DOT_stream_read_line
 	// (def read-all "Drain the rest of the readable stream into one string." (clojure.core/fn [r…
 	v_cljg_DOT_stream_read_all.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(15), kw_doc, "Drain the rest of the readable stream into one string."))
@@ -105,6 +116,8 @@ func Load() {
 	})
 	tmp23 := &lang.NamedFn1{Name: "cljg.stream/read-all", Expects: "1: [readable]", F: tmp19}
 	v_cljg_DOT_stream_read_all.BindRoot(tmp23)
+	fnD_cljg_DOT_stream_read_all = tmp23.F
+	v_cljg_DOT_stream_read_all.SealDirect()
 	_ = v_cljg_DOT_stream_read_all
 	// (def chunks "A lazy seq of byte-array chunks (default 64 KiB each) drawn from the readable…
 	v_cljg_DOT_stream_chunks.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(58), kw_column, int64(7), kw_end_line, int64(58), kw_end_column, int64(13), kw_doc, "A lazy seq of byte-array chunks (default 64 KiB each) drawn from the readable\n  stream on demand — constant memory, `take`/`reduced` stop the read. This is\n  what the handle's own reducibility bottoms out on."))
@@ -140,6 +153,8 @@ func Load() {
 	})
 	tmp37 := &lang.NamedFn1{Name: "cljg.stream/lines", Expects: "1: [readable]", F: tmp33}
 	v_cljg_DOT_stream_lines.BindRoot(tmp37)
+	fnD_cljg_DOT_stream_lines = tmp37.F
+	v_cljg_DOT_stream_lines.SealDirect()
 	_ = v_cljg_DOT_stream_lines
 	// (def write "Write `data` (a string or byte-array) to the writable stream and flush, so the…
 	v_cljg_DOT_stream_write.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(72), kw_column, int64(7), kw_end_line, int64(72), kw_end_column, int64(12), kw_doc, "Write `data` (a string or byte-array) to the writable stream and flush, so the\n  peer sees it immediately. Returns nil."))
@@ -150,6 +165,8 @@ func Load() {
 	})
 	tmp43 := &lang.NamedFn2{Name: "cljg.stream/write", Expects: "2: [writable data]", F: tmp38}
 	v_cljg_DOT_stream_write.BindRoot(tmp43)
+	fnD_cljg_DOT_stream_write = tmp43.F
+	v_cljg_DOT_stream_write.SealDirect()
 	_ = v_cljg_DOT_stream_write
 	// (def write-line "Write `s` followed by a newline to the writable stream, flushed. Returns …
 	v_cljg_DOT_stream_write_line.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(78), kw_column, int64(7), kw_end_line, int64(78), kw_end_column, int64(17), kw_doc, "Write `s` followed by a newline to the writable stream, flushed. Returns nil."))
@@ -162,6 +179,8 @@ func Load() {
 	})
 	tmp51 := &lang.NamedFn2{Name: "cljg.stream/write-line", Expects: "2: [writable s]", F: tmp44}
 	v_cljg_DOT_stream_write_line.BindRoot(tmp51)
+	fnD_cljg_DOT_stream_write_line = tmp51.F
+	v_cljg_DOT_stream_write_line.SealDirect()
 	_ = v_cljg_DOT_stream_write_line
 	// (def close "Close a stream handle (readable or writable). Closing a writable flushes it\n …
 	v_cljg_DOT_stream_close_.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(12), kw_doc, "Close a stream handle (readable or writable). Closing a writable flushes it\n  and sends EOF to the reader on the other end of the pipe; closing a readable\n  releases the underlying reader. Idempotent. Returns nil."))
@@ -172,5 +191,7 @@ func Load() {
 	})
 	tmp56 := &lang.NamedFn1{Name: "cljg.stream/close", Expects: "1: [stream]", F: tmp52}
 	v_cljg_DOT_stream_close_.BindRoot(tmp56)
+	fnD_cljg_DOT_stream_close_ = tmp56.F
+	v_cljg_DOT_stream_close_.SealDirect()
 	_ = v_cljg_DOT_stream_close_
 }

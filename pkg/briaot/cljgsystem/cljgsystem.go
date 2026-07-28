@@ -23,9 +23,17 @@ var (
 	v_cljg_DOT_system_environ     = lang.InternVarName(lang.NewSymbol("cljg.system"), lang.NewSymbol("environ"))
 	v_cljg_DOT_system_exit        = lang.InternVarName(lang.NewSymbol("cljg.system"), lang.NewSymbol("exit"))
 	v_cljg_DOT_system_getenv      = lang.InternVarName(lang.NewSymbol("cljg.system"), lang.NewSymbol("getenv"))
+	v_cljg_DOT_system_sleep       = lang.InternVarName(lang.NewSymbol("cljg.system"), lang.NewSymbol("sleep"))
+	v_clojure_DOT_core_X_sleep_ms = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-sleep-ms")).SetPrivate()
 	v_clojure_DOT_core_in_ns      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
 	v_clojure_DOT_core_nil_QMARK_ = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("nil?"))
 	v_clojure_DOT_core_refer      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+)
+
+var (
+	fnD_cljg_DOT_system_environ lang.FnFunc0
+	fnD_cljg_DOT_system_args    lang.FnFunc0
+	fnD_cljg_DOT_system_sleep   lang.FnFunc1
 )
 
 var loaded = false
@@ -47,7 +55,7 @@ func Load() {
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
 	// (def getenv "The value of environment variable `name` (a string), or nil when it is not\n …
-	v_cljg_DOT_system_getenv.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(13), kw_doc, "The value of environment variable `name` (a string), or nil when it is not\n  set. With `default`, returns `default` instead of nil when unset. Same\n  contract as System/getenv (the 2-arity default is a cljgo convenience)."))
+	v_cljg_DOT_system_getenv.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(27), kw_column, int64(7), kw_end_line, int64(27), kw_end_column, int64(13), kw_doc, "The value of environment variable `name` (a string), or nil when it is not\n  set. With `default`, returns `default` instead of nil when unset. Same\n  contract as System/getenv (the 2-arity default is a cljgo convenience)."))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -87,7 +95,7 @@ func Load() {
 	v_cljg_DOT_system_getenv.BindRoot(tmp5)
 	_ = v_cljg_DOT_system_getenv
 	// (def environ "The whole process environment as an immutable {name value} map (both\n  stri…
-	v_cljg_DOT_system_environ.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(14), kw_doc, "The whole process environment as an immutable {name value} map (both\n  strings). A snapshot — later setenv by other code is not reflected."))
+	v_cljg_DOT_system_environ.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(36), kw_column, int64(7), kw_end_line, int64(36), kw_end_column, int64(14), kw_doc, "The whole process environment as an immutable {name value} map (both\n  strings). A snapshot — later setenv by other code is not reflected."))
 	tmp18 := lang.FnFunc0(func() any {
 		tmp19 := v_cljg_DOT_system_X_environ.Get()
 		tmp20 := lang.Apply0(tmp19)
@@ -95,9 +103,11 @@ func Load() {
 	})
 	tmp21 := &lang.NamedFn0{Name: "cljg.system/environ", Expects: "0: []", F: tmp18}
 	v_cljg_DOT_system_environ.BindRoot(tmp21)
+	fnD_cljg_DOT_system_environ = tmp21.F
+	v_cljg_DOT_system_environ.SealDirect()
 	_ = v_cljg_DOT_system_environ
 	// (def args "The raw process argument vector as a vector of strings; element 0 is the\n  pro…
-	v_cljg_DOT_system_args.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(41), kw_column, int64(7), kw_end_line, int64(41), kw_end_column, int64(11), kw_doc, "The raw process argument vector as a vector of strings; element 0 is the\n  program path (os.Args). For just the user args after the program, clojure.core\n  keeps *command-line-args*."))
+	v_cljg_DOT_system_args.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(11), kw_doc, "The raw process argument vector as a vector of strings; element 0 is the\n  program path (os.Args). For just the user args after the program, clojure.core\n  keeps *command-line-args*."))
 	tmp22 := lang.FnFunc0(func() any {
 		tmp23 := v_cljg_DOT_system_X_args.Get()
 		tmp24 := lang.Apply0(tmp23)
@@ -105,25 +115,39 @@ func Load() {
 	})
 	tmp25 := &lang.NamedFn0{Name: "cljg.system/args", Expects: "0: []", F: tmp22}
 	v_cljg_DOT_system_args.BindRoot(tmp25)
+	fnD_cljg_DOT_system_args = tmp25.F
+	v_cljg_DOT_system_args.SealDirect()
 	_ = v_cljg_DOT_system_args
+	// (def sleep "Block the current thread for `ms` milliseconds, then return nil — the\n  Thr…
+	v_cljg_DOT_system_sleep.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(12), kw_doc, "Block the current thread for `ms` milliseconds, then return nil — the\n  Thread/sleep analog (cljgo runs on Go, so there is no Thread class; this is\n  Go's time.Sleep). `ms` is an integer count of milliseconds; 0 or negative\n  returns immediately. The sleep is not interruptible.\n\n  Oracle (clojure 1.12.5, 2026-07-28): (Thread/sleep 5) => nil, and a 50 ms\n  sleep advances System/nanoTime by at least 40 ms — the same contract this\n  fn freezes in conformance/tests/cljg-system-sleep.clj."))
+	tmp26 := lang.FnFunc1(func(ms27 any) any {
+		tmp28 := v_clojure_DOT_core_X_sleep_ms.Get()
+		tmp29 := lang.Apply1(tmp28, ms27)
+		return tmp29
+	})
+	tmp30 := &lang.NamedFn1{Name: "cljg.system/sleep", Expects: "1: [ms]", F: tmp26}
+	v_cljg_DOT_system_sleep.BindRoot(tmp30)
+	fnD_cljg_DOT_system_sleep = tmp30.F
+	v_cljg_DOT_system_sleep.SealDirect()
+	_ = v_cljg_DOT_system_sleep
 	// (def exit "Terminate the process immediately with integer exit `status` (default 0).\n  Do…
-	v_cljg_DOT_system_exit.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(11), kw_doc, "Terminate the process immediately with integer exit `status` (default 0).\n  Does not return, and does NOT run pending finally / with-open cleanup — treat\n  it as the very last thing you call, after your own teardown."))
-	tmp26 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_system_exit.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(11), kw_doc, "Terminate the process immediately with integer exit `status` (default 0).\n  Does not return, and does NOT run pending finally / with-open cleanup — treat\n  it as the very last thing you call, after your own teardown."))
+	tmp31 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp27 := v_cljg_DOT_system_exit.Get()
-			tmp28 := lang.Apply1(tmp27, int64(0))
-			return tmp28
+			tmp32 := v_cljg_DOT_system_exit.Get()
+			tmp33 := lang.Apply1(tmp32, int64(0))
+			return tmp33
 		case 1:
-			status29 := args[0]
-			_ = status29
-			tmp30 := v_cljg_DOT_system_X_exit.Get()
-			tmp31 := lang.Apply1(tmp30, status29)
-			return tmp31
+			status34 := args[0]
+			_ = status34
+			tmp35 := v_cljg_DOT_system_X_exit.Get()
+			tmp36 := lang.Apply1(tmp35, status34)
+			return tmp36
 		default:
 			panic(lang.NewArityError(len(args), "cljg.system/exit", "0: [] or 1: [status]"))
 		}
 	})
-	v_cljg_DOT_system_exit.BindRoot(tmp26)
+	v_cljg_DOT_system_exit.BindRoot(tmp31)
 	_ = v_cljg_DOT_system_exit
 }

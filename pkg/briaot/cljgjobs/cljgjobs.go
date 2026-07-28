@@ -63,6 +63,13 @@ var (
 	v_clojure_DOT_core_swap_BANG_                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("swap!"))
 )
 
+var (
+	fnD_cljg_DOT_jobs_worker lang.FnFunc4
+	fnD_cljg_DOT_jobs_drain  lang.FnFunc1
+	fnD_cljg_DOT_jobs_stop   lang.FnFunc1
+	fnD_cljg_DOT_jobs_errors lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -274,6 +281,8 @@ func Load() {
 	})
 	tmp70 := &lang.NamedFn4{Name: "cljg.jobs/worker", Expects: "4: [ch handlers pending errs]", F: tmp33}
 	v_cljg_DOT_jobs_worker.BindRoot(tmp70)
+	fnD_cljg_DOT_jobs_worker = tmp70.F
+	v_cljg_DOT_jobs_worker.SealDirect()
 	_ = v_cljg_DOT_jobs_worker
 	// (def local "The built-in in-process queue: a core.async worker pool over `handlers`\n  ({j…
 	v_cljg_DOT_jobs_local.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(12), kw_doc, "The built-in in-process queue: a core.async worker pool over `handlers`\n  ({job-type handler-fn}; handler values may be vars so they stay live). opts:\n    :workers  worker goroutines (default 4)\n    :buffer   channel buffer (default 1024)\n  Returns a `Queue`."))
@@ -352,12 +361,21 @@ func Load() {
 									var tmp110 any
 									_ = tmp110
 									if tmp109 {
-										tmp111 := v_cljg_DOT_jobs_worker.Get()
-										tmp112 := lang.Apply4(tmp111, ch95, handlers76, pending98, errs102)
-										_ = tmp112
-										var tmp113 int64 = rt.IInc(X_107)
-										var tmp114 int64 = tmp113
-										X_107 = tmp114
+										tmp111 := v_cljg_DOT_jobs_worker.Direct()
+										var tmp112 any
+										if !tmp111 {
+											tmp112 = v_cljg_DOT_jobs_worker.Get()
+										}
+										var tmp113 any
+										if tmp111 {
+											tmp113 = fnD_cljg_DOT_jobs_worker(ch95, handlers76, pending98, errs102)
+										} else {
+											tmp113 = lang.Apply4(tmp112, ch95, handlers76, pending98, errs102)
+										}
+										_ = tmp113
+										var tmp114 int64 = rt.IInc(X_107)
+										var tmp115 int64 = tmp114
+										X_107 = tmp115
 										continue loop108
 									} else {
 										tmp110 = nil
@@ -368,98 +386,107 @@ func Load() {
 							}
 							tmp105 = tmp106
 						} else {
-							var tmp115 any
-							_ = tmp115
+							var tmp116 any
+							_ = tmp116
 							{
-								var X_116 any = int64(0)
-								_ = X_116
-							loop117:
+								var X_117 any = int64(0)
+								_ = X_117
+							loop118:
 								for {
-									tmp118 := rt.LTBool(v_clojure_DOT_core_X_LT_, X_116, n__8__auto__104)
-									var tmp119 any
-									_ = tmp119
-									if tmp118 {
-										tmp120 := v_cljg_DOT_jobs_worker.Get()
-										tmp121 := lang.Apply4(tmp120, ch95, handlers76, pending98, errs102)
-										_ = tmp121
-										tmp122 := v_clojure_DOT_core_inc.Get()
-										tmp123 := lang.Apply1(tmp122, X_116)
-										var tmp124 any = tmp123
-										X_116 = tmp124
-										continue loop117
+									tmp119 := rt.LTBool(v_clojure_DOT_core_X_LT_, X_117, n__8__auto__104)
+									var tmp120 any
+									_ = tmp120
+									if tmp119 {
+										tmp121 := v_cljg_DOT_jobs_worker.Direct()
+										var tmp122 any
+										if !tmp121 {
+											tmp122 = v_cljg_DOT_jobs_worker.Get()
+										}
+										var tmp123 any
+										if tmp121 {
+											tmp123 = fnD_cljg_DOT_jobs_worker(ch95, handlers76, pending98, errs102)
+										} else {
+											tmp123 = lang.Apply4(tmp122, ch95, handlers76, pending98, errs102)
+										}
+										_ = tmp123
+										tmp124 := v_clojure_DOT_core_inc.Get()
+										tmp125 := lang.Apply1(tmp124, X_117)
+										var tmp126 any = tmp125
+										X_117 = tmp126
+										continue loop118
 									} else {
-										tmp119 = nil
+										tmp120 = nil
 									}
-									tmp115 = tmp119
-									break loop117
+									tmp116 = tmp120
+									break loop118
 								}
 							}
-							tmp105 = tmp115
+							tmp105 = tmp116
 						}
 						tmp103 = tmp105
 					}
 					_ = tmp103
-					tmp125 := v_clojure_DOT_core_X_reify.Get()
-					tmp126 := v_cljg_DOT_jobs_Queue.Get()
-					tmp127 := lang.NewVector(tmp126)
+					tmp127 := v_clojure_DOT_core_X_reify.Get()
 					tmp128 := v_cljg_DOT_jobs_Queue.Get()
-					tmp129 := lang.FnFunc3(func(X_130, type_131, payload132 any) any {
-						tmp133 := v_clojure_DOT_core_swap_BANG_.Get()
-						tmp134 := v_clojure_DOT_core_inc.Get()
-						tmp135 := lang.Apply2(tmp133, pending98, tmp134)
-						_ = tmp135
-						tmp136 := v_clojure_DOT_core_DOT_async_X_GT__BANG__BANG_.Get()
-						tmp137 := lang.NewMap(kw_type_, type_131, kw_payload, payload132)
-						tmp138 := lang.Apply2(tmp136, ch95, tmp137)
-						_ = tmp138
+					tmp129 := lang.NewVector(tmp128)
+					tmp130 := v_cljg_DOT_jobs_Queue.Get()
+					tmp131 := lang.FnFunc3(func(X_132, type_133, payload134 any) any {
+						tmp135 := v_clojure_DOT_core_swap_BANG_.Get()
+						tmp136 := v_clojure_DOT_core_inc.Get()
+						tmp137 := lang.Apply2(tmp135, pending98, tmp136)
+						_ = tmp137
+						tmp138 := v_clojure_DOT_core_DOT_async_X_GT__BANG__BANG_.Get()
+						tmp139 := lang.NewMap(kw_type_, type_133, kw_payload, payload134)
+						tmp140 := lang.Apply2(tmp138, ch95, tmp139)
+						_ = tmp140
 						return nil
 					})
-					tmp139 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ type payload]", F: tmp129}
-					tmp140 := v_cljg_DOT_jobs_Queue.Get()
-					tmp141 := lang.FnFunc1(func(X_142 any) any {
-						var tmp143 any
-						_ = tmp143
+					tmp141 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ type payload]", F: tmp131}
+					tmp142 := v_cljg_DOT_jobs_Queue.Get()
+					tmp143 := lang.FnFunc1(func(X_144 any) any {
+						var tmp145 any
+						_ = tmp145
 						{
-						loop144:
+						loop146:
 							for {
-								tmp145 := v_clojure_DOT_core_pos_QMARK_.Get()
-								tmp146 := v_clojure_DOT_core_deref.Get()
-								tmp147 := lang.Apply1(tmp146, pending98)
-								tmp148 := lang.Apply1(tmp145, tmp147)
-								var tmp149 any
-								_ = tmp149
-								if lang.IsTruthy(tmp148) {
-									tmp150 := v_clojure_DOT_core_X_sleep_ms.Get()
-									tmp151 := lang.Apply1(tmp150, int64(2))
-									_ = tmp151
-									continue loop144
+								tmp147 := v_clojure_DOT_core_pos_QMARK_.Get()
+								tmp148 := v_clojure_DOT_core_deref.Get()
+								tmp149 := lang.Apply1(tmp148, pending98)
+								tmp150 := lang.Apply1(tmp147, tmp149)
+								var tmp151 any
+								_ = tmp151
+								if lang.IsTruthy(tmp150) {
+									tmp152 := v_clojure_DOT_core_X_sleep_ms.Get()
+									tmp153 := lang.Apply1(tmp152, int64(2))
+									_ = tmp153
+									continue loop146
 								} else {
-									tmp149 = nil
+									tmp151 = nil
 								}
-								tmp143 = tmp149
-								break loop144
+								tmp145 = tmp151
+								break loop146
 							}
 						}
-						return tmp143
+						return tmp145
 					})
-					tmp152 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp141}
-					tmp153 := v_cljg_DOT_jobs_Queue.Get()
-					tmp154 := lang.FnFunc1(func(X_155 any) any {
-						tmp156 := v_clojure_DOT_core_DOT_async_close_BANG_.Get()
-						tmp157 := lang.Apply1(tmp156, ch95)
-						_ = tmp157
+					tmp154 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp143}
+					tmp155 := v_cljg_DOT_jobs_Queue.Get()
+					tmp156 := lang.FnFunc1(func(X_157 any) any {
+						tmp158 := v_clojure_DOT_core_DOT_async_close_BANG_.Get()
+						tmp159 := lang.Apply1(tmp158, ch95)
+						_ = tmp159
 						return nil
 					})
-					tmp158 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp154}
-					tmp159 := v_cljg_DOT_jobs_Queue.Get()
-					tmp160 := lang.FnFunc1(func(X_161 any) any {
-						tmp162 := v_clojure_DOT_core_deref.Get()
-						tmp163 := lang.Apply1(tmp162, errs102)
-						return tmp163
+					tmp160 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp156}
+					tmp161 := v_cljg_DOT_jobs_Queue.Get()
+					tmp162 := lang.FnFunc1(func(X_163 any) any {
+						tmp164 := v_clojure_DOT_core_deref.Get()
+						tmp165 := lang.Apply1(tmp164, errs102)
+						return tmp165
 					})
-					tmp164 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp160}
-					tmp165 := lang.Apply(tmp125, []any{tmp127, tmp128, "-submit", tmp139, tmp140, "-drain", tmp152, tmp153, "-stop", tmp158, tmp159, "-errors", tmp164})
-					tmp92 = tmp165
+					tmp166 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp162}
+					tmp167 := lang.Apply(tmp127, []any{tmp129, tmp130, "-submit", tmp141, tmp142, "-drain", tmp154, tmp155, "-stop", tmp160, tmp161, "-errors", tmp166})
+					tmp92 = tmp167
 				}
 				tmp78 = tmp92
 			}
@@ -472,60 +499,66 @@ func Load() {
 	_ = v_cljg_DOT_jobs_local
 	// (def submit "Enqueue a job of `type` with `payload` (default nil); a worker runs\n  (handl…
 	v_cljg_DOT_jobs_submit.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(73), kw_column, int64(7), kw_end_line, int64(73), kw_end_column, int64(13), kw_doc, "Enqueue a job of `type` with `payload` (default nil); a worker runs\n  (handler payload)."))
-	tmp166 := lang.FnFunc(func(args ...any) any {
+	tmp168 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
-			q167 := args[0]
-			_ = q167
-			type_168 := args[1]
-			_ = type_168
-			tmp169 := v_cljg_DOT_jobs_X_submit.Get()
-			tmp170 := lang.Apply3(tmp169, q167, type_168, nil)
-			return tmp170
+			q169 := args[0]
+			_ = q169
+			type_170 := args[1]
+			_ = type_170
+			tmp171 := v_cljg_DOT_jobs_X_submit.Get()
+			tmp172 := lang.Apply3(tmp171, q169, type_170, nil)
+			return tmp172
 		case 3:
-			q171 := args[0]
-			_ = q171
-			type_172 := args[1]
-			_ = type_172
-			payload173 := args[2]
-			_ = payload173
-			tmp174 := v_cljg_DOT_jobs_X_submit.Get()
-			tmp175 := lang.Apply3(tmp174, q171, type_172, payload173)
-			return tmp175
+			q173 := args[0]
+			_ = q173
+			type_174 := args[1]
+			_ = type_174
+			payload175 := args[2]
+			_ = payload175
+			tmp176 := v_cljg_DOT_jobs_X_submit.Get()
+			tmp177 := lang.Apply3(tmp176, q173, type_174, payload175)
+			return tmp177
 		default:
 			panic(lang.NewArityError(len(args), "cljg.jobs/submit", "2: [q type] or 3: [q type payload]"))
 		}
 	})
-	v_cljg_DOT_jobs_submit.BindRoot(tmp166)
+	v_cljg_DOT_jobs_submit.BindRoot(tmp168)
 	_ = v_cljg_DOT_jobs_submit
 	// (def drain "Block until every submitted job has finished." (clojure.core/fn [q] (-drain q)…
 	v_cljg_DOT_jobs_drain.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(12), kw_doc, "Block until every submitted job has finished."))
-	tmp176 := lang.FnFunc1(func(q177 any) any {
-		tmp178 := v_cljg_DOT_jobs_X_drain.Get()
-		tmp179 := lang.Apply1(tmp178, q177)
-		return tmp179
+	tmp178 := lang.FnFunc1(func(q179 any) any {
+		tmp180 := v_cljg_DOT_jobs_X_drain.Get()
+		tmp181 := lang.Apply1(tmp180, q179)
+		return tmp181
 	})
-	tmp180 := &lang.NamedFn1{Name: "cljg.jobs/drain", Expects: "1: [q]", F: tmp176}
-	v_cljg_DOT_jobs_drain.BindRoot(tmp180)
+	tmp182 := &lang.NamedFn1{Name: "cljg.jobs/drain", Expects: "1: [q]", F: tmp178}
+	v_cljg_DOT_jobs_drain.BindRoot(tmp182)
+	fnD_cljg_DOT_jobs_drain = tmp182.F
+	v_cljg_DOT_jobs_drain.SealDirect()
 	_ = v_cljg_DOT_jobs_drain
 	// (def stop "Stop the workers; no further jobs are processed." (clojure.core/fn [q] (-stop q…
 	v_cljg_DOT_jobs_stop.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(11), kw_doc, "Stop the workers; no further jobs are processed."))
-	tmp181 := lang.FnFunc1(func(q182 any) any {
-		tmp183 := v_cljg_DOT_jobs_X_stop.Get()
-		tmp184 := lang.Apply1(tmp183, q182)
-		return tmp184
+	tmp183 := lang.FnFunc1(func(q184 any) any {
+		tmp185 := v_cljg_DOT_jobs_X_stop.Get()
+		tmp186 := lang.Apply1(tmp185, q184)
+		return tmp186
 	})
-	tmp185 := &lang.NamedFn1{Name: "cljg.jobs/stop", Expects: "1: [q]", F: tmp181}
-	v_cljg_DOT_jobs_stop.BindRoot(tmp185)
+	tmp187 := &lang.NamedFn1{Name: "cljg.jobs/stop", Expects: "1: [q]", F: tmp183}
+	v_cljg_DOT_jobs_stop.BindRoot(tmp187)
+	fnD_cljg_DOT_jobs_stop = tmp187.F
+	v_cljg_DOT_jobs_stop.SealDirect()
 	_ = v_cljg_DOT_jobs_stop
 	// (def errors "The jobs whose handler threw, as [{:job … :error …} …]." (clojure.core/…
 	v_cljg_DOT_jobs_errors.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(87), kw_column, int64(7), kw_end_line, int64(87), kw_end_column, int64(13), kw_doc, "The jobs whose handler threw, as [{:job … :error …} …]."))
-	tmp186 := lang.FnFunc1(func(q187 any) any {
-		tmp188 := v_cljg_DOT_jobs_X_errors.Get()
-		tmp189 := lang.Apply1(tmp188, q187)
-		return tmp189
+	tmp188 := lang.FnFunc1(func(q189 any) any {
+		tmp190 := v_cljg_DOT_jobs_X_errors.Get()
+		tmp191 := lang.Apply1(tmp190, q189)
+		return tmp191
 	})
-	tmp190 := &lang.NamedFn1{Name: "cljg.jobs/errors", Expects: "1: [q]", F: tmp186}
-	v_cljg_DOT_jobs_errors.BindRoot(tmp190)
+	tmp192 := &lang.NamedFn1{Name: "cljg.jobs/errors", Expects: "1: [q]", F: tmp188}
+	v_cljg_DOT_jobs_errors.BindRoot(tmp192)
+	fnD_cljg_DOT_jobs_errors = tmp192.F
+	v_cljg_DOT_jobs_errors.SealDirect()
 	_ = v_cljg_DOT_jobs_errors
 }

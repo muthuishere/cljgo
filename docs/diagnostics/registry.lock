@@ -6,6 +6,7 @@ A2005 def name is not a symbol
 A2006 malformed binding vector
 A2007 invalid binding form
 A2008 conflicting fn overloads
+A2009 no such namespace
 G5000 uncategorized compiler error
 G5001 value is not a number
 G5002 value is not a function
@@ -14,6 +15,9 @@ G5004 index out of bounds
 G5005 value is not a collection
 G5006 divide by zero
 G5007 no value supplied for key
+G5008 sql params passed as a collection
+G5009 collection value in a row map
+I4001 Java class used as a namespace
 R1001 unterminated form
 R1002 unmatched delimiter
 R1003 map literal with odd number of forms

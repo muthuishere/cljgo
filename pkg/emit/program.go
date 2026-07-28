@@ -65,6 +65,33 @@ type Options struct {
 	// the pre-0049 behavior). A binary has no source tree at runtime, so
 	// this is a logical path — semantics match, not on-disk byte-identity.
 	EntrySrcFile string
+	// SealCore turns on the OPT-IN hard seal of core arithmetic (ADR 0066
+	// alternative 1): direct 2-arg calls to `+ - * / < > = <= >=` emit as
+	// the unguarded rt.Add2S/… helpers and the ADR 0067 typed regions drop
+	// their `if !rt.CoreDirty()` entry, so an arithmetic call site carries
+	// NO operator-var reference and NO dirty-flag load at all.
+	//
+	// COST, stated plainly: a redefinition of a core arithmetic op — `(def
+	// + …)`, `(alter-var-root #'+ …)`, `(with-redefs [+ …] …)` — is NOT
+	// observed at those sites. This matches JVM Clojure exactly (`+` is
+	// :inline there, so a direct 2-arg site never consults the var), but it
+	// differs from cljgo's default, so it is opt-in and never automatic.
+	// `cljgo build --seal-core`, or CLJGO_SEAL_CORE=1 in the environment.
+	// Off → emission is byte-identical to the guarded output.
+	//
+	// Scope: the program being emitted. The pre-compiled core (pkg/coreaot)
+	// and pkg/briaot are committed Go and are unaffected either way.
+	SealCore bool
+}
+
+// sealCore resolves the hard-seal decision: the explicit option, or the
+// CLJGO_SEAL_CORE=1 environment seam (which reaches project builds, the
+// conformance harness, and benchmark runs without a plumbed flag).
+func (o Options) sealCore() bool {
+	if o.SealCore {
+		return true
+	}
+	return os.Getenv("CLJGO_SEAL_CORE") == "1"
 }
 
 // EmitMain compiles analyzed top-level forms into a complete
@@ -134,6 +161,7 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 
 	g := newGenerator()
 	g.host = spec.host
+	g.sealCore = opts.sealCore()
 
 	// Pre-scan for Go-interop references and batch-load their type facts
 	// (ADR 0010, design/05 §2) BEFORE emission — a non-interop program
@@ -160,6 +188,11 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 			return nil, nil, err
 		}
 	}
+
+	// ADR 0064 cross-var direct calls: decide which top-level defns
+	// publish a typed handle BEFORE emission, so a forward reference
+	// (declare + later defn, mutual recursion) resolves to it too.
+	g.planDirectVars(forms)
 
 	printLast := opts.PrintLastValue && spec.isMain
 	for i, n := range forms {
@@ -194,7 +227,7 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	// Lifted typed funcs (g.funcs) sit outside g.buf; scan them too for the
 	// lang./rt. import decisions (but they are emitted separately, not into
 	// Load's body).
-	scanText := body + strings.Join(g.funcs, "")
+	scanText := body + strings.Join(g.funcs, "") + strings.Join(g.handles, "")
 	var declText bytes.Buffer
 	if len(g.decls) > 0 {
 		decls := make([]hoistDecl, len(g.decls))
@@ -290,6 +323,16 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 	out.WriteString(")\n\n")
 
 	out.Write(declText.Bytes())
+	// ADR 0064 cross-var direct-call handles: `var fnD_… lang.FnFuncN`,
+	// published by the owning def and read at matching-arity call sites
+	// while the var's seal bit is armed.
+	if len(g.handles) > 0 {
+		out.WriteString("var (\n")
+		for _, h := range g.handles {
+			out.WriteString(h)
+		}
+		out.WriteString(")\n\n")
+	}
 	// Lifted typed funcs (ADR 0067 rung 3): package-level `func nameL(…
 	// int64) int64` with direct int64 recursion, emitted before Load.
 	for _, fn := range g.funcs {
@@ -345,7 +388,40 @@ func emitPackage(forms []*ast.Node, opts Options, spec pkgSpec) (formatted []byt
 		if printLast {
 			out.WriteString("fmt.Println(lang.PrintString(lastVal))\n")
 		}
+		// A red suite must fail the process (ADR 0105 task 2.1). `cljgo test`
+		// already maps clojure.test's summary to exit 1; without this a
+		// compiled test binary exited 0 on failing tests and CI went green on
+		// red. Last thing in main, after all output, so only the exit code
+		// differs from before — REPL/binary output parity is untouched.
+		out.WriteString("if cljgoTestsFailed() {\nos.Exit(1)\n}\n")
 		out.WriteString("}\n")
+		// The check is emitted INLINE rather than called from pkg/emit/rt on
+		// purpose: a released cljgo pins the PUBLISHED runtime module in the
+		// generated go.mod, so emitted code may only use runtime APIs that
+		// already shipped (pkg/emit TestBuildFromReleasePin guards this).
+		// lang.FindNamespace/FindInternedVar/IDeref are all long-standing.
+		out.WriteString(`
+// cljgoTestsFailed reports whether any clojure.test assertion failed or
+// errored in this process — the clojure.test/-process-failures tally, which
+// do-report keeps for exactly this purpose. False when the program never
+// loaded clojure.test (nothing to interrogate, nothing to fail).
+func cljgoTestsFailed() bool {
+ns := lang.FindNamespace(lang.NewSymbol("clojure.test"))
+if ns == nil {
+return false
+}
+v := ns.FindInternedVar(lang.NewSymbol("-process-failures"))
+if v == nil {
+return false
+}
+d, ok := v.Get().(lang.IDeref)
+if !ok {
+return false
+}
+n, _ := d.Deref().(int64)
+return n > 0
+}
+`)
 	}
 
 	raw = out.Bytes()

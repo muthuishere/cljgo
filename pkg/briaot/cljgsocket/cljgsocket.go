@@ -36,6 +36,13 @@ var (
 	v_clojure_DOT_core_refer          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 )
 
+var (
+	fnD_cljg_DOT_socket_accept   lang.FnFunc1
+	fnD_cljg_DOT_socket_dial     lang.FnFunc1
+	fnD_cljg_DOT_socket_close_   lang.FnFunc1
+	fnD_cljg_DOT_socket_udp_send lang.FnFunc4
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -85,6 +92,8 @@ func Load() {
 	})
 	tmp17 := &lang.NamedFn1{Name: "cljg.socket/accept", Expects: "1: [listener]", F: tmp12}
 	v_cljg_DOT_socket_accept.BindRoot(tmp17)
+	fnD_cljg_DOT_socket_accept = tmp17.F
+	v_cljg_DOT_socket_accept.SealDirect()
 	_ = v_cljg_DOT_socket_accept
 	// (def dial "Connect out and return a connection map (same duplex shape as `accept`).\n  opt…
 	v_cljg_DOT_socket_dial.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(11), kw_doc, "Connect out and return a connection map (same duplex shape as `accept`).\n  opts:\n    :host s        remote host (default \"127.0.0.1\")\n    :port n        remote TCP port (required unless :unix)\n    :unix path     connect to a unix-domain socket at `path` instead\n    :tls true      wrap the connection in TLS (crypto/tls); or a map\n                   {:server-name s} to override the verified server name\n                   (defaults to :host)\n    :timeout-ms n  connect timeout (default: none)"))
@@ -95,6 +104,8 @@ func Load() {
 	})
 	tmp22 := &lang.NamedFn1{Name: "cljg.socket/dial", Expects: "1: [opts]", F: tmp18}
 	v_cljg_DOT_socket_dial.BindRoot(tmp22)
+	fnD_cljg_DOT_socket_dial = tmp22.F
+	v_cljg_DOT_socket_dial.SealDirect()
 	_ = v_cljg_DOT_socket_dial
 	// (def close "Close any cljg.socket handle — a listener, a connection, or a UDP socket.\n …
 	v_cljg_DOT_socket_close_.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(77), kw_column, int64(7), kw_end_line, int64(77), kw_end_column, int64(12), kw_doc, "Close any cljg.socket handle — a listener, a connection, or a UDP socket.\n  Closing a connection closes the underlying socket (both directions);\n  closing a listener stops `accept`. Idempotent. Returns nil."))
@@ -150,6 +161,8 @@ func Load() {
 	})
 	tmp39 := &lang.NamedFn1{Name: "cljg.socket/close", Expects: "1: [handle]", F: tmp23}
 	v_cljg_DOT_socket_close_.BindRoot(tmp39)
+	fnD_cljg_DOT_socket_close_ = tmp39.F
+	v_cljg_DOT_socket_close_.SealDirect()
 	_ = v_cljg_DOT_socket_close_
 	// (def udp-listen "Open a UDP socket bound to {:port n :host s} (defaults: ephemeral port on…
 	v_cljg_DOT_socket_udp_listen.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(86), kw_column, int64(7), kw_end_line, int64(86), kw_end_column, int64(17), kw_doc, "Open a UDP socket bound to {:port n :host s} (defaults: ephemeral port on\n  127.0.0.1) and return {:port <bound-port> :addr <s> :-socket}. The one\n  socket both sends (udp-send) and receives (udp-recv) — bind two for a\n  client/server pair. Close with `close`."))
@@ -182,6 +195,8 @@ func Load() {
 	})
 	tmp55 := &lang.NamedFn4{Name: "cljg.socket/udp-send", Expects: "4: [sock host port data]", F: tmp47}
 	v_cljg_DOT_socket_udp_send.BindRoot(tmp55)
+	fnD_cljg_DOT_socket_udp_send = tmp55.F
+	v_cljg_DOT_socket_udp_send.SealDirect()
 	_ = v_cljg_DOT_socket_udp_send
 	// (def udp-recv "Block until one datagram arrives on `sock`, then return\n  {:data <string> …
 	v_cljg_DOT_socket_udp_recv.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(15), kw_doc, "Block until one datagram arrives on `sock`, then return\n  {:data <string> :host <sender-host> :port <sender-port>}.\n  opts: {:timeout-ms n} — throw if nothing arrives in time (default: block)."))

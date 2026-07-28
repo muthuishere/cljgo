@@ -52,6 +52,10 @@ var (
 	v_clojure_DOT_string_blank_QMARK_           = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("blank?"))
 )
 
+var (
+	fnD_bri_DOT_cli_DOT_auth_account lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -95,6 +99,8 @@ func Load() {
 	})
 	tmp15 := &lang.NamedFn1{Name: "bri.cli.auth/account", Expects: "1: [opts]", F: tmp11}
 	v_bri_DOT_cli_DOT_auth_account.BindRoot(tmp15)
+	fnD_bri_DOT_cli_DOT_auth_account = tmp15.F
+	v_bri_DOT_cli_DOT_auth_account.SealDirect()
 	_ = v_bri_DOT_cli_DOT_auth_account
 	// (def login "Obtain and store a credential for `service` in the OS keychain. With no\n  :ke…
 	v_bri_DOT_cli_DOT_auth_login.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(12), kw_doc, "Obtain and store a credential for `service` in the OS keychain. With no\n  :key, prompts for it with terminal echo off (bri.cli/ask-secret). Returns\n  `service`. opts: :key (skip the prompt), :account (default \"token\"),\n  :label (prompt text). Throws bri.cli.auth/no-credential on an empty value."))
@@ -169,12 +175,21 @@ func Load() {
 				}
 				_ = tmp41
 				tmp47 := v_cljg_DOT_secrets_set.Get()
-				tmp48 := v_bri_DOT_cli_DOT_auth_account.Get()
-				tmp49 := lang.Apply1(tmp48, opts22)
-				tmp50 := v_clojure_DOT_core_str.Get()
-				tmp51 := lang.Apply1(tmp50, key36)
-				tmp52 := lang.Apply3(tmp47, service21, tmp49, tmp51)
-				_ = tmp52
+				tmp48 := v_bri_DOT_cli_DOT_auth_account.Direct()
+				var tmp49 any
+				if !tmp48 {
+					tmp49 = v_bri_DOT_cli_DOT_auth_account.Get()
+				}
+				var tmp50 any
+				if tmp48 {
+					tmp50 = fnD_bri_DOT_cli_DOT_auth_account(opts22)
+				} else {
+					tmp50 = lang.Apply1(tmp49, opts22)
+				}
+				tmp51 := v_clojure_DOT_core_str.Get()
+				tmp52 := lang.Apply1(tmp51, key36)
+				tmp53 := lang.Apply3(tmp47, service21, tmp50, tmp52)
+				_ = tmp53
 				tmp23 = service21
 			}
 			return tmp23
@@ -186,154 +201,172 @@ func Load() {
 	_ = v_bri_DOT_cli_DOT_auth_login
 	// (def token "The stored credential for `service` as a MASKED secret (use\n  cljg.secrets/re…
 	v_bri_DOT_cli_DOT_auth_token.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(12), kw_doc, "The stored credential for `service` as a MASKED secret (use\n  cljg.secrets/reveal for the plaintext), or nil if not logged in."))
-	tmp53 := lang.FnFunc(func(args ...any) any {
+	tmp54 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			service54 := args[0]
-			_ = service54
-			tmp55 := v_bri_DOT_cli_DOT_auth_token.Get()
-			tmp56 := lang.NewMap()
-			tmp57 := lang.Apply2(tmp55, service54, tmp56)
-			return tmp57
+			service55 := args[0]
+			_ = service55
+			tmp56 := v_bri_DOT_cli_DOT_auth_token.Get()
+			tmp57 := lang.NewMap()
+			tmp58 := lang.Apply2(tmp56, service55, tmp57)
+			return tmp58
 		case 2:
-			service58 := args[0]
-			_ = service58
-			opts59 := args[1]
-			_ = opts59
-			tmp60 := v_cljg_DOT_secrets_get.Get()
-			tmp61 := v_bri_DOT_cli_DOT_auth_account.Get()
-			tmp62 := lang.Apply1(tmp61, opts59)
-			tmp63 := lang.Apply2(tmp60, service58, tmp62)
-			return tmp63
+			service59 := args[0]
+			_ = service59
+			opts60 := args[1]
+			_ = opts60
+			tmp61 := v_cljg_DOT_secrets_get.Get()
+			tmp62 := v_bri_DOT_cli_DOT_auth_account.Direct()
+			var tmp63 any
+			if !tmp62 {
+				tmp63 = v_bri_DOT_cli_DOT_auth_account.Get()
+			}
+			var tmp64 any
+			if tmp62 {
+				tmp64 = fnD_bri_DOT_cli_DOT_auth_account(opts60)
+			} else {
+				tmp64 = lang.Apply1(tmp63, opts60)
+			}
+			tmp65 := lang.Apply2(tmp61, service59, tmp64)
+			return tmp65
 		default:
 			panic(lang.NewArityError(len(args), "bri.cli.auth/token", "1: [service] or 2: [service opts]"))
 		}
 	})
-	v_bri_DOT_cli_DOT_auth_token.BindRoot(tmp53)
+	v_bri_DOT_cli_DOT_auth_token.BindRoot(tmp54)
 	_ = v_bri_DOT_cli_DOT_auth_token
 	// (def authed? "Is there a stored credential for `service`?" (clojure.core/fn ([service] (au…
 	v_bri_DOT_cli_DOT_auth_authed_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(59), kw_column, int64(7), kw_end_line, int64(59), kw_end_column, int64(14), kw_doc, "Is there a stored credential for `service`?"))
-	tmp64 := lang.FnFunc(func(args ...any) any {
+	tmp66 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			service65 := args[0]
-			_ = service65
-			tmp66 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
-			tmp67 := lang.NewMap()
-			tmp68 := lang.Apply2(tmp66, service65, tmp67)
-			return tmp68
+			service67 := args[0]
+			_ = service67
+			tmp68 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
+			tmp69 := lang.NewMap()
+			tmp70 := lang.Apply2(tmp68, service67, tmp69)
+			return tmp70
 		case 2:
-			service69 := args[0]
-			_ = service69
-			opts70 := args[1]
-			_ = opts70
-			tmp71 := v_clojure_DOT_core_boolean.Get()
-			tmp72 := v_bri_DOT_cli_DOT_auth_token.Get()
-			tmp73 := lang.Apply2(tmp72, service69, opts70)
-			tmp74 := lang.Apply1(tmp71, tmp73)
-			return tmp74
+			service71 := args[0]
+			_ = service71
+			opts72 := args[1]
+			_ = opts72
+			tmp73 := v_clojure_DOT_core_boolean.Get()
+			tmp74 := v_bri_DOT_cli_DOT_auth_token.Get()
+			tmp75 := lang.Apply2(tmp74, service71, opts72)
+			tmp76 := lang.Apply1(tmp73, tmp75)
+			return tmp76
 		default:
 			panic(lang.NewArityError(len(args), "bri.cli.auth/authed?", "1: [service] or 2: [service opts]"))
 		}
 	})
-	v_bri_DOT_cli_DOT_auth_authed_QMARK_.BindRoot(tmp64)
+	v_bri_DOT_cli_DOT_auth_authed_QMARK_.BindRoot(tmp66)
 	_ = v_bri_DOT_cli_DOT_auth_authed_QMARK_
 	// (def logout "Remove the stored credential for `service`. Returns `service`." (clojure.core…
 	v_bri_DOT_cli_DOT_auth_logout.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(13), kw_doc, "Remove the stored credential for `service`. Returns `service`."))
-	tmp75 := lang.FnFunc(func(args ...any) any {
+	tmp77 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			service76 := args[0]
-			_ = service76
-			tmp77 := v_bri_DOT_cli_DOT_auth_logout.Get()
-			tmp78 := lang.NewMap()
-			tmp79 := lang.Apply2(tmp77, service76, tmp78)
-			return tmp79
+			service78 := args[0]
+			_ = service78
+			tmp79 := v_bri_DOT_cli_DOT_auth_logout.Get()
+			tmp80 := lang.NewMap()
+			tmp81 := lang.Apply2(tmp79, service78, tmp80)
+			return tmp81
 		case 2:
-			service80 := args[0]
-			_ = service80
-			opts81 := args[1]
-			_ = opts81
-			tmp82 := v_cljg_DOT_secrets_delete_.Get()
-			tmp83 := v_bri_DOT_cli_DOT_auth_account.Get()
-			tmp84 := lang.Apply1(tmp83, opts81)
-			tmp85 := lang.Apply2(tmp82, service80, tmp84)
-			_ = tmp85
-			return service80
+			service82 := args[0]
+			_ = service82
+			opts83 := args[1]
+			_ = opts83
+			tmp84 := v_cljg_DOT_secrets_delete_.Get()
+			tmp85 := v_bri_DOT_cli_DOT_auth_account.Direct()
+			var tmp86 any
+			if !tmp85 {
+				tmp86 = v_bri_DOT_cli_DOT_auth_account.Get()
+			}
+			var tmp87 any
+			if tmp85 {
+				tmp87 = fnD_bri_DOT_cli_DOT_auth_account(opts83)
+			} else {
+				tmp87 = lang.Apply1(tmp86, opts83)
+			}
+			tmp88 := lang.Apply2(tmp84, service82, tmp87)
+			_ = tmp88
+			return service82
 		default:
 			panic(lang.NewArityError(len(args), "bri.cli.auth/logout", "1: [service] or 2: [service opts]"))
 		}
 	})
-	v_bri_DOT_cli_DOT_auth_logout.BindRoot(tmp75)
+	v_bri_DOT_cli_DOT_auth_logout.BindRoot(tmp77)
 	_ = v_bri_DOT_cli_DOT_auth_logout
 	// (def auth-header "Build an Authorization header map from the stored credential, or nil if …
 	v_bri_DOT_cli_DOT_auth_auth_header.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(69), kw_column, int64(7), kw_end_line, int64(69), kw_end_column, int64(18), kw_doc, "Build an Authorization header map from the stored credential, or nil if not\n  logged in. This is an explicit UNMASK point — the plaintext credential enters\n  the returned map so you can attach it to a request. opts: :scheme (default\n  \"Bearer\"; use \"\" for a bare token, e.g. an API-key header value)."))
-	tmp86 := lang.FnFunc(func(args ...any) any {
+	tmp89 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			service87 := args[0]
-			_ = service87
-			tmp88 := v_bri_DOT_cli_DOT_auth_auth_header.Get()
-			tmp89 := lang.NewMap()
-			tmp90 := lang.Apply2(tmp88, service87, tmp89)
-			return tmp90
-		case 2:
-			service91 := args[0]
-			_ = service91
-			opts92 := args[1]
-			_ = opts92
-			var tmp93 any
-			_ = tmp93
-			{
-				tmp94 := v_bri_DOT_cli_DOT_auth_token.Get()
-				tmp95 := lang.Apply2(tmp94, service91, opts92)
-				var temp__5__auto__96 any = tmp95
-				_ = temp__5__auto__96
-				var tmp97 any
-				_ = tmp97
-				if lang.IsTruthy(temp__5__auto__96) {
-					var tmp98 any
-					_ = tmp98
-					{
-						var t99 any = temp__5__auto__96
-						_ = t99
-						var tmp100 any
-						_ = tmp100
-						{
-							tmp101 := lang.Apply2(kw_scheme, opts92, "Bearer")
-							var scheme102 any = tmp101
-							_ = scheme102
-							tmp103 := v_cljg_DOT_secrets_reveal.Get()
-							tmp104 := lang.Apply1(tmp103, t99)
-							var raw105 any = tmp104
-							_ = raw105
-							tmp106 := v_clojure_DOT_string_blank_QMARK_.Get()
-							tmp107 := lang.Apply1(tmp106, scheme102)
-							var tmp108 any
-							_ = tmp108
-							if lang.IsTruthy(tmp107) {
-								tmp108 = raw105
-							} else {
-								tmp109 := v_clojure_DOT_core_str.Get()
-								tmp110 := lang.Apply3(tmp109, scheme102, " ", raw105)
-								tmp108 = tmp110
-							}
-							tmp111 := lang.NewMap("Authorization", tmp108)
-							tmp100 = tmp111
-						}
-						tmp98 = tmp100
-					}
-					tmp97 = tmp98
-				} else {
-					tmp97 = nil
-				}
-				tmp93 = tmp97
-			}
+			service90 := args[0]
+			_ = service90
+			tmp91 := v_bri_DOT_cli_DOT_auth_auth_header.Get()
+			tmp92 := lang.NewMap()
+			tmp93 := lang.Apply2(tmp91, service90, tmp92)
 			return tmp93
+		case 2:
+			service94 := args[0]
+			_ = service94
+			opts95 := args[1]
+			_ = opts95
+			var tmp96 any
+			_ = tmp96
+			{
+				tmp97 := v_bri_DOT_cli_DOT_auth_token.Get()
+				tmp98 := lang.Apply2(tmp97, service94, opts95)
+				var temp__5__auto__99 any = tmp98
+				_ = temp__5__auto__99
+				var tmp100 any
+				_ = tmp100
+				if lang.IsTruthy(temp__5__auto__99) {
+					var tmp101 any
+					_ = tmp101
+					{
+						var t102 any = temp__5__auto__99
+						_ = t102
+						var tmp103 any
+						_ = tmp103
+						{
+							tmp104 := lang.Apply2(kw_scheme, opts95, "Bearer")
+							var scheme105 any = tmp104
+							_ = scheme105
+							tmp106 := v_cljg_DOT_secrets_reveal.Get()
+							tmp107 := lang.Apply1(tmp106, t102)
+							var raw108 any = tmp107
+							_ = raw108
+							tmp109 := v_clojure_DOT_string_blank_QMARK_.Get()
+							tmp110 := lang.Apply1(tmp109, scheme105)
+							var tmp111 any
+							_ = tmp111
+							if lang.IsTruthy(tmp110) {
+								tmp111 = raw108
+							} else {
+								tmp112 := v_clojure_DOT_core_str.Get()
+								tmp113 := lang.Apply3(tmp112, scheme105, " ", raw108)
+								tmp111 = tmp113
+							}
+							tmp114 := lang.NewMap("Authorization", tmp111)
+							tmp103 = tmp114
+						}
+						tmp101 = tmp103
+					}
+					tmp100 = tmp101
+				} else {
+					tmp100 = nil
+				}
+				tmp96 = tmp100
+			}
+			return tmp96
 		default:
 			panic(lang.NewArityError(len(args), "bri.cli.auth/auth-header", "1: [service] or 2: [service opts]"))
 		}
 	})
-	v_bri_DOT_cli_DOT_auth_auth_header.BindRoot(tmp86)
+	v_bri_DOT_cli_DOT_auth_auth_header.BindRoot(tmp89)
 	_ = v_bri_DOT_cli_DOT_auth_auth_header
 }

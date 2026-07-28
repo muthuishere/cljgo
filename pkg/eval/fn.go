@@ -36,6 +36,15 @@ type arityError struct {
 	actual int
 	name   string
 
+	// raiser is the evalFn whose arity actually mismatched. invokeAt uses it
+	// to tell "this error is MY callee's" from "this error merely unwound
+	// through me": without it, an arity error raised deep inside a callee
+	// (classically a lazy seq realized by the outer call, `(println (map h
+	// [1] [2] [3]))`) was re-labelled with the OUTER fn's name, so `cljgo
+	// run` blamed clojure.core/println while the JVM, the build phase and a
+	// compiled binary all blamed user/h — a REPL-vs-binary divergence.
+	raiser *evalFn
+
 	// diag is the enriched, positioned diagnostic (spike s28). It is nil at
 	// the throw site inside Invoke (which has no call-site position) and
 	// set at the OpInvoke call site, which does. Error() carries the fn's
@@ -82,7 +91,7 @@ func (e *arityError) Diagnostic() (diag.Diagnostic, bool) {
 func (f *evalFn) Invoke(args ...any) any {
 	m := f.pickMethod(len(args))
 	if m == nil {
-		panic(&arityError{actual: len(args), name: f.name()})
+		panic(&arityError{actual: len(args), name: f.name(), raiser: f})
 	}
 
 	// One value per param: fixed args, then the packed rest for variadics.

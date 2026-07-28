@@ -268,12 +268,14 @@ func (ni *numInfer) computeNode(n *ast.Node) numType {
 	}
 }
 
-// numericBuiltin2 are the pristine core ops yielding int64 from two int64
-// operands (checked; overflow throws — never promotes).
-var numericBuiltin2 = map[string]bool{"+": true, "-": true, "*": true}
-
-// numericBuiltin1 are the 1-arg pristine core ops yielding int64.
-var numericBuiltin1 = map[string]bool{"inc": true, "dec": true}
+// The set of core ops that yield an int64 from int64 operands IS the set
+// the emitter can open-code: emit.go's intUnboxArith2/intUnboxArith1 are
+// keyed by name and hold the Go expression template. Reading them here
+// (same package) makes prover and emitter one table instead of two
+// hand-synced ones — a name can never be typed int64 without an unboxed
+// emission for it, nor the reverse.
+func numericBuiltin2(name string) bool { _, ok := intUnboxArith2[name]; return ok }
+func numericBuiltin1(name string) bool { _, ok := intUnboxArith1[name]; return ok }
 
 func (ni *numInfer) typeInvoke(s *ast.InvokeNode) numType {
 	argt := make([]numType, len(s.Args))
@@ -284,10 +286,10 @@ func (ni *numInfer) typeInvoke(s *ast.InvokeNode) numType {
 		v := s.Fn.Sub.(*ast.VarNode).Var
 		if v.Namespace() == lang.NSCore {
 			name := v.Symbol().Name()
-			if len(argt) == 2 && numericBuiltin2[name] && argt[0] == ntInt64 && argt[1] == ntInt64 {
+			if len(argt) == 2 && numericBuiltin2(name) && argt[0] == ntInt64 && argt[1] == ntInt64 {
 				return ntInt64
 			}
-			if len(argt) == 1 && numericBuiltin1[name] && argt[0] == ntInt64 {
+			if len(argt) == 1 && numericBuiltin1(name) && argt[0] == ntInt64 {
 				return ntInt64
 			}
 		}

@@ -37,6 +37,12 @@ var (
 	v_clojure_DOT_core_refer                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 )
 
+var (
+	fnD_cljg_DOT_compress_gunzip_stream          lang.FnFunc1
+	fnD_cljg_DOT_compress_inflate_stream         lang.FnFunc1
+	fnD_cljg_DOT_compress_zlib_decompress_stream lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -117,6 +123,8 @@ func Load() {
 	})
 	tmp30 := &lang.NamedFn1{Name: "cljg.compress/gunzip-stream", Expects: "1: [source]", F: tmp26}
 	v_cljg_DOT_compress_gunzip_stream.BindRoot(tmp30)
+	fnD_cljg_DOT_compress_gunzip_stream = tmp30.F
+	v_cljg_DOT_compress_gunzip_stream.SealDirect()
 	_ = v_cljg_DOT_compress_gunzip_stream
 	// (def deflate "Compress `data` (a string or byte-array) with raw deflate (RFC 1951 — no\n…
 	v_cljg_DOT_compress_deflate.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(66), kw_column, int64(7), kw_end_line, int64(66), kw_end_column, int64(14), kw_doc, "Compress `data` (a string or byte-array) with raw deflate (RFC 1951 — no\n  header, no checksum), returning the compressed byte-array. `opts` may carry\n  :level (-1 default, 0-9)."))
@@ -180,6 +188,8 @@ func Load() {
 	})
 	tmp56 := &lang.NamedFn1{Name: "cljg.compress/inflate-stream", Expects: "1: [source]", F: tmp52}
 	v_cljg_DOT_compress_inflate_stream.BindRoot(tmp56)
+	fnD_cljg_DOT_compress_inflate_stream = tmp56.F
+	v_cljg_DOT_compress_inflate_stream.SealDirect()
 	_ = v_cljg_DOT_compress_inflate_stream
 	// (def zlib-compress "Compress `data` (a string or byte-array) with zlib (RFC 1950 — defla…
 	v_cljg_DOT_compress_zlib_compress.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(20), kw_doc, "Compress `data` (a string or byte-array) with zlib (RFC 1950 — deflate with\n  a 2-byte header and Adler-32 checksum), returning the compressed byte-array.\n  `opts` may carry :level (-1 default, 0-9)."))
@@ -243,5 +253,7 @@ func Load() {
 	})
 	tmp82 := &lang.NamedFn1{Name: "cljg.compress/zlib-decompress-stream", Expects: "1: [source]", F: tmp78}
 	v_cljg_DOT_compress_zlib_decompress_stream.BindRoot(tmp82)
+	fnD_cljg_DOT_compress_zlib_decompress_stream = tmp82.F
+	v_cljg_DOT_compress_zlib_decompress_stream.SealDirect()
 	_ = v_cljg_DOT_compress_zlib_decompress_stream
 }

@@ -33,6 +33,12 @@ var (
 	v_clojure_DOT_core_str        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
 )
 
+var (
+	fnD_cljg_DOT_http_serve lang.FnFunc1
+	fnD_cljg_DOT_http_addr  lang.FnFunc1
+	fnD_cljg_DOT_http_stop  lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -89,6 +95,8 @@ func Load() {
 	})
 	tmp26 := &lang.NamedFn1{Name: "cljg.http/serve", Expects: "1: [opts]", F: tmp5}
 	v_cljg_DOT_http_serve.BindRoot(tmp26)
+	fnD_cljg_DOT_http_serve = tmp26.F
+	v_cljg_DOT_http_serve.SealDirect()
 	_ = v_cljg_DOT_http_serve
 	// (def addr "The bound \"host:port\" of a server handle — with {:port 0} this is how\n  yo…
 	v_cljg_DOT_http_addr.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(11), kw_doc, "The bound \"host:port\" of a server handle — with {:port 0} this is how\n  you learn the actual port."))
@@ -98,6 +106,8 @@ func Load() {
 	})
 	tmp30 := &lang.NamedFn1{Name: "cljg.http/addr", Expects: "1: [server]", F: tmp27}
 	v_cljg_DOT_http_addr.BindRoot(tmp30)
+	fnD_cljg_DOT_http_addr = tmp30.F
+	v_cljg_DOT_http_addr.SealDirect()
 	_ = v_cljg_DOT_http_addr
 	// (def stop "Gracefully stop a server handle: the listener closes, in-flight requests\n  fin…
 	v_cljg_DOT_http_stop.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(11), kw_doc, "Gracefully stop a server handle: the listener closes, in-flight requests\n  finish (deadline), then the server is down. Returns nil."))
@@ -109,5 +119,7 @@ func Load() {
 	})
 	tmp35 := &lang.NamedFn1{Name: "cljg.http/stop", Expects: "1: [server]", F: tmp31}
 	v_cljg_DOT_http_stop.BindRoot(tmp35)
+	fnD_cljg_DOT_http_stop = tmp35.F
+	v_cljg_DOT_http_stop.SealDirect()
 	_ = v_cljg_DOT_http_stop
 }

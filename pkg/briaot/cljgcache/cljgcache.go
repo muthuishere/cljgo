@@ -65,6 +65,14 @@ var (
 	v_clojure_DOT_core_swap_vals_BANG_              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("swap-vals!"))
 )
 
+var (
+	fnD_cljg_DOT_cache_fresh_QMARK_ lang.FnFunc2
+	fnD_cljg_DOT_cache_fetch        lang.FnFunc3
+	fnD_cljg_DOT_cache_put          lang.FnFunc3
+	fnD_cljg_DOT_cache_evict        lang.FnFunc2
+	fnD_cljg_DOT_cache_clear_       lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -201,6 +209,8 @@ func Load() {
 	})
 	tmp41 := &lang.NamedFn2{Name: "cljg.cache/fresh?", Expects: "2: [e now]", F: tmp33}
 	v_cljg_DOT_cache_fresh_QMARK_.BindRoot(tmp41)
+	fnD_cljg_DOT_cache_fresh_QMARK_ = tmp41.F
+	v_cljg_DOT_cache_fresh_QMARK_.SealDirect()
 	_ = v_cljg_DOT_cache_fresh_QMARK_
 	// (def fill-once "Singleflight: exactly one caller runs `f` for `key`; concurrent callers bl…
 	v_cljg_DOT_cache_fill_once.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(33), kw_column, int64(8), kw_end_line, int64(33), kw_end_column, int64(17), kw_private, true, kw_doc, "Singleflight: exactly one caller runs `f` for `key`; concurrent callers block\n  on its promise and share the result. A throwing `f` is not cached — a waiter\n  retries rather than wedging."))
@@ -235,156 +245,174 @@ func Load() {
 						tmp57 := lang.Apply2(tmp54, tmp56, key46)
 						var e58 any = tmp57
 						_ = e58
-						tmp59 := v_cljg_DOT_cache_fresh_QMARK_.Get()
-						tmp60 := lang.Apply2(tmp59, e58, now53)
+						tmp59 := v_cljg_DOT_cache_fresh_QMARK_.Direct()
+						var tmp60 any
+						if !tmp59 {
+							tmp60 = v_cljg_DOT_cache_fresh_QMARK_.Get()
+						}
 						var tmp61 any
-						_ = tmp61
-						if lang.IsTruthy(tmp60) {
-							tmp62 := lang.Apply1(kw_v, e58)
-							tmp61 = tmp62
+						if tmp59 {
+							tmp61 = fnD_cljg_DOT_cache_fresh_QMARK_(e58, now53)
 						} else {
-							var tmp63 any
-							_ = tmp63
+							tmp61 = lang.Apply2(tmp60, e58, now53)
+						}
+						var tmp62 any
+						_ = tmp62
+						if lang.IsTruthy(tmp61) {
+							tmp63 := lang.Apply1(kw_v, e58)
+							tmp62 = tmp63
+						} else {
+							var tmp64 any
+							_ = tmp64
 							{
-								tmp64 := v_clojure_DOT_core_promise.Get()
-								tmp65 := lang.Apply0(tmp64)
-								var p66 any = tmp65
-								_ = p66
-								tmp67 := v_clojure_DOT_core_swap_vals_BANG_.Get()
-								tmp68 := lang.FnFunc1(func(m69 any) any {
-									tmp70 := v_clojure_DOT_core_contains_QMARK_.Get()
-									tmp71 := lang.Apply2(tmp70, m69, key46)
-									var tmp72 any
-									_ = tmp72
-									if lang.IsTruthy(tmp71) {
-										tmp72 = m69
+								tmp65 := v_clojure_DOT_core_promise.Get()
+								tmp66 := lang.Apply0(tmp65)
+								var p67 any = tmp66
+								_ = p67
+								tmp68 := v_clojure_DOT_core_swap_vals_BANG_.Get()
+								tmp69 := lang.FnFunc1(func(m70 any) any {
+									tmp71 := v_clojure_DOT_core_contains_QMARK_.Get()
+									tmp72 := lang.Apply2(tmp71, m70, key46)
+									var tmp73 any
+									_ = tmp73
+									if lang.IsTruthy(tmp72) {
+										tmp73 = m70
 									} else {
-										tmp73 := v_clojure_DOT_core_assoc.Get()
-										tmp74 := lang.Apply3(tmp73, m69, key46, p66)
-										tmp72 = tmp74
+										tmp74 := v_clojure_DOT_core_assoc.Get()
+										tmp75 := lang.Apply3(tmp74, m70, key46, p67)
+										tmp73 = tmp75
 									}
-									return tmp72
+									return tmp73
 								})
-								tmp75 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp68}
-								tmp76 := lang.Apply2(tmp67, inflight44, tmp75)
-								var vec__18777 any = tmp76
-								_ = vec__18777
-								tmp78 := v_clojure_DOT_core_nth.Get()
-								tmp79 := lang.Apply3(tmp78, vec__18777, int64(0), nil)
-								var X_80 any = tmp79
-								_ = X_80
-								tmp81 := v_clojure_DOT_core_nth.Get()
-								tmp82 := lang.Apply3(tmp81, vec__18777, int64(1), nil)
-								var after83 any = tmp82
-								_ = after83
-								tmp84 := v_clojure_DOT_core_identical_QMARK_.Get()
-								tmp85 := v_clojure_DOT_core_get.Get()
-								tmp86 := lang.Apply2(tmp85, after83, key46)
-								tmp87 := lang.Apply2(tmp84, p66, tmp86)
-								var tmp88 any
-								_ = tmp88
-								if lang.IsTruthy(tmp87) {
-									var tmp89 any
-									_ = tmp89
+								tmp76 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp69}
+								tmp77 := lang.Apply2(tmp68, inflight44, tmp76)
+								var vec__18778 any = tmp77
+								_ = vec__18778
+								tmp79 := v_clojure_DOT_core_nth.Get()
+								tmp80 := lang.Apply3(tmp79, vec__18778, int64(0), nil)
+								var X_81 any = tmp80
+								_ = X_81
+								tmp82 := v_clojure_DOT_core_nth.Get()
+								tmp83 := lang.Apply3(tmp82, vec__18778, int64(1), nil)
+								var after84 any = tmp83
+								_ = after84
+								tmp85 := v_clojure_DOT_core_identical_QMARK_.Get()
+								tmp86 := v_clojure_DOT_core_get.Get()
+								tmp87 := lang.Apply2(tmp86, after84, key46)
+								tmp88 := lang.Apply2(tmp85, p67, tmp87)
+								var tmp89 any
+								_ = tmp89
+								if lang.IsTruthy(tmp88) {
+									var tmp90 any
+									_ = tmp90
 									{
-										tmp90 := v_clojure_DOT_core_get.Get()
-										tmp91 := v_clojure_DOT_core_deref.Get()
-										tmp92 := lang.Apply1(tmp91, store43)
-										tmp93 := lang.Apply2(tmp90, tmp92, key46)
-										var e294 any = tmp93
-										_ = e294
-										tmp95 := v_cljg_DOT_cache_fresh_QMARK_.Get()
-										tmp96 := lang.Apply2(tmp95, e294, now53)
+										tmp91 := v_clojure_DOT_core_get.Get()
+										tmp92 := v_clojure_DOT_core_deref.Get()
+										tmp93 := lang.Apply1(tmp92, store43)
+										tmp94 := lang.Apply2(tmp91, tmp93, key46)
+										var e295 any = tmp94
+										_ = e295
+										tmp96 := v_cljg_DOT_cache_fresh_QMARK_.Direct()
 										var tmp97 any
-										_ = tmp97
-										if lang.IsTruthy(tmp96) {
-											tmp98 := v_clojure_DOT_core_swap_BANG_.Get()
-											tmp99 := v_clojure_DOT_core_dissoc.Get()
-											tmp100 := lang.Apply3(tmp98, inflight44, tmp99, key46)
-											_ = tmp100
-											tmp101 := v_clojure_DOT_core_deliver.Get()
-											tmp102 := lang.Apply1(kw_v, e294)
-											tmp103 := lang.Apply2(tmp101, p66, tmp102)
-											_ = tmp103
-											tmp104 := lang.Apply1(kw_v, e294)
-											tmp97 = tmp104
+										if !tmp96 {
+											tmp97 = v_cljg_DOT_cache_fresh_QMARK_.Get()
+										}
+										var tmp98 any
+										if tmp96 {
+											tmp98 = fnD_cljg_DOT_cache_fresh_QMARK_(e295, now53)
 										} else {
-											var tmp105 any
+											tmp98 = lang.Apply2(tmp97, e295, now53)
+										}
+										var tmp99 any
+										_ = tmp99
+										if lang.IsTruthy(tmp98) {
+											tmp100 := v_clojure_DOT_core_swap_BANG_.Get()
+											tmp101 := v_clojure_DOT_core_dissoc.Get()
+											tmp102 := lang.Apply3(tmp100, inflight44, tmp101, key46)
+											_ = tmp102
+											tmp103 := v_clojure_DOT_core_deliver.Get()
+											tmp104 := lang.Apply1(kw_v, e295)
+											tmp105 := lang.Apply2(tmp103, p67, tmp104)
 											_ = tmp105
+											tmp106 := lang.Apply1(kw_v, e295)
+											tmp99 = tmp106
+										} else {
+											var tmp107 any
+											_ = tmp107
 											{
-												var tmp106 any
-												_ = tmp106
+												var tmp108 any
+												_ = tmp108
 												func() {
 													defer func() {
 														if r := recover(); r != nil {
 															thrown := rt.Recover(r)
 															if rt.CatchMatches("Throwable", thrown) {
-																var ex107 any = thrown
-																_ = ex107
-																tmp108 := v_clojure_DOT_core_swap_BANG_.Get()
-																tmp109 := v_clojure_DOT_core_dissoc.Get()
-																tmp110 := lang.Apply3(tmp108, inflight44, tmp109, key46)
-																_ = tmp110
-																tmp111 := v_clojure_DOT_core_deliver.Get()
-																tmp112 := lang.Apply2(tmp111, p66, kw_cljg_DOT_cache_SLASH_error)
+																var ex109 any = thrown
+																_ = ex109
+																tmp110 := v_clojure_DOT_core_swap_BANG_.Get()
+																tmp111 := v_clojure_DOT_core_dissoc.Get()
+																tmp112 := lang.Apply3(tmp110, inflight44, tmp111, key46)
 																_ = tmp112
-																panic(rt.Throw(ex107))
+																tmp113 := v_clojure_DOT_core_deliver.Get()
+																tmp114 := lang.Apply2(tmp113, p67, kw_cljg_DOT_cache_SLASH_error)
+																_ = tmp114
+																panic(rt.Throw(ex109))
 															}
 															panic(r)
 														}
 													}()
-													tmp113 := lang.Apply0(f47)
-													tmp106 = tmp113
+													tmp115 := lang.Apply0(f47)
+													tmp108 = tmp115
 												}()
-												var v114 any = tmp106
-												_ = v114
-												tmp115 := v_clojure_DOT_core_swap_BANG_.Get()
-												tmp116 := v_clojure_DOT_core_assoc.Get()
-												tmp117 := rt.Add2(v_clojure_DOT_core_X_PLUS_, now53, ttl_ms45)
-												tmp118 := lang.NewMap(kw_v, v114, kw_exp, tmp117)
-												tmp119 := lang.Apply4(tmp115, store43, tmp116, key46, tmp118)
-												_ = tmp119
-												tmp120 := v_clojure_DOT_core_swap_BANG_.Get()
-												tmp121 := v_clojure_DOT_core_dissoc.Get()
-												tmp122 := lang.Apply3(tmp120, inflight44, tmp121, key46)
-												_ = tmp122
-												tmp123 := v_clojure_DOT_core_deliver.Get()
-												tmp124 := lang.Apply2(tmp123, p66, v114)
+												var v116 any = tmp108
+												_ = v116
+												tmp117 := v_clojure_DOT_core_swap_BANG_.Get()
+												tmp118 := v_clojure_DOT_core_assoc.Get()
+												tmp119 := rt.Add2(v_clojure_DOT_core_X_PLUS_, now53, ttl_ms45)
+												tmp120 := lang.NewMap(kw_v, v116, kw_exp, tmp119)
+												tmp121 := lang.Apply4(tmp117, store43, tmp118, key46, tmp120)
+												_ = tmp121
+												tmp122 := v_clojure_DOT_core_swap_BANG_.Get()
+												tmp123 := v_clojure_DOT_core_dissoc.Get()
+												tmp124 := lang.Apply3(tmp122, inflight44, tmp123, key46)
 												_ = tmp124
-												tmp105 = v114
+												tmp125 := v_clojure_DOT_core_deliver.Get()
+												tmp126 := lang.Apply2(tmp125, p67, v116)
+												_ = tmp126
+												tmp107 = v116
 											}
-											tmp97 = tmp105
+											tmp99 = tmp107
 										}
-										tmp89 = tmp97
+										tmp90 = tmp99
 									}
-									tmp88 = tmp89
+									tmp89 = tmp90
 								} else {
-									var tmp125 any
-									_ = tmp125
+									var tmp127 any
+									_ = tmp127
 									{
-										tmp126 := v_clojure_DOT_core_deref.Get()
-										tmp127 := v_clojure_DOT_core_get.Get()
-										tmp128 := lang.Apply2(tmp127, after83, key46)
-										tmp129 := lang.Apply1(tmp126, tmp128)
-										var r130 any = tmp129
-										_ = r130
-										tmp131 := rt.EQBool(v_clojure_DOT_core_X_EQ_, r130, kw_cljg_DOT_cache_SLASH_error)
-										var tmp132 any
-										_ = tmp132
-										if tmp131 {
+										tmp128 := v_clojure_DOT_core_deref.Get()
+										tmp129 := v_clojure_DOT_core_get.Get()
+										tmp130 := lang.Apply2(tmp129, after84, key46)
+										tmp131 := lang.Apply1(tmp128, tmp130)
+										var r132 any = tmp131
+										_ = r132
+										tmp133 := rt.EQBool(v_clojure_DOT_core_X_EQ_, r132, kw_cljg_DOT_cache_SLASH_error)
+										var tmp134 any
+										_ = tmp134
+										if tmp133 {
 											continue loop49
 										} else {
-											tmp132 = r130
+											tmp134 = r132
 										}
-										tmp125 = tmp132
+										tmp127 = tmp134
 									}
-									tmp88 = tmp125
+									tmp89 = tmp127
 								}
-								tmp63 = tmp88
+								tmp64 = tmp89
 							}
-							tmp61 = tmp63
+							tmp62 = tmp64
 						}
-						tmp50 = tmp61
+						tmp50 = tmp62
 					}
 					tmp48 = tmp50
 					break loop49
@@ -399,145 +427,153 @@ func Load() {
 	_ = v_cljg_DOT_cache_fill_once
 	// (def local "The built-in in-process cache: a TTL map with singleflight. opts:\n    :ttl se…
 	v_cljg_DOT_cache_local.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(12), kw_doc, "The built-in in-process cache: a TTL map with singleflight. opts:\n    :ttl seconds each entry lives (default 60). Returns a `Cache`."))
-	tmp133 := lang.FnFunc(func(args ...any) any {
+	tmp135 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp134 := v_cljg_DOT_cache_local.Get()
-			tmp135 := lang.NewMap()
-			tmp136 := lang.Apply1(tmp134, tmp135)
-			return tmp136
-		case 1:
-			p__190137 := args[0]
-			_ = p__190137
-			var tmp138 any
-			_ = tmp138
-			{
-				var map__191139 any = p__190137
-				_ = map__191139
-				tmp140 := v_clojure_DOT_core_seq_QMARK_.Get()
-				tmp141 := lang.Apply1(tmp140, map__191139)
-				var tmp142 any
-				_ = tmp142
-				if lang.IsTruthy(tmp141) {
-					tmp143 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-					tmp144 := lang.Apply1(tmp143, map__191139)
-					tmp142 = tmp144
-				} else {
-					tmp142 = map__191139
-				}
-				var map__191145 any = tmp142
-				_ = map__191145
-				tmp146 := v_clojure_DOT_core_get.Get()
-				tmp147 := lang.Apply3(tmp146, map__191145, kw_ttl, int64(60))
-				var ttl148 any = tmp147
-				_ = ttl148
-				var tmp149 any
-				_ = tmp149
-				{
-					tmp150 := v_clojure_DOT_core_atom.Get()
-					tmp151 := lang.NewMap()
-					tmp152 := lang.Apply1(tmp150, tmp151)
-					var store153 any = tmp152
-					_ = store153
-					tmp154 := v_clojure_DOT_core_atom.Get()
-					tmp155 := lang.NewMap()
-					tmp156 := lang.Apply1(tmp154, tmp155)
-					var inflight157 any = tmp156
-					_ = inflight157
-					tmp158 := rt.Mul2(v_clojure_DOT_core_X_STAR_, int64(1000), ttl148)
-					var ttl_ms159 any = tmp158
-					_ = ttl_ms159
-					tmp160 := v_clojure_DOT_core_X_reify.Get()
-					tmp161 := v_cljg_DOT_cache_Cache.Get()
-					tmp162 := lang.NewVector(tmp161)
-					tmp163 := v_cljg_DOT_cache_Cache.Get()
-					tmp164 := lang.FnFunc3(func(X_165, key166, f167 any) any {
-						tmp168 := v_cljg_DOT_cache_fill_once.Get()
-						tmp169 := lang.Apply(tmp168, []any{store153, inflight157, ttl_ms159, key166, f167})
-						return tmp169
-					})
-					tmp170 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ key f]", F: tmp164}
-					tmp171 := v_cljg_DOT_cache_Cache.Get()
-					tmp172 := lang.FnFunc3(func(X_173, key174, v175 any) any {
-						tmp176 := v_clojure_DOT_core_swap_BANG_.Get()
-						tmp177 := v_clojure_DOT_core_assoc.Get()
-						tmp178 := v_cljg_DOT_os_now.Get()
-						tmp179 := lang.Apply0(tmp178)
-						tmp180 := rt.Add2(v_clojure_DOT_core_X_PLUS_, tmp179, ttl_ms159)
-						tmp181 := lang.NewMap(kw_v, v175, kw_exp, tmp180)
-						tmp182 := lang.Apply4(tmp176, store153, tmp177, key174, tmp181)
-						_ = tmp182
-						return v175
-					})
-					tmp183 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ key v]", F: tmp172}
-					tmp184 := v_cljg_DOT_cache_Cache.Get()
-					tmp185 := lang.FnFunc2(func(X_186, key187 any) any {
-						tmp188 := v_clojure_DOT_core_swap_BANG_.Get()
-						tmp189 := v_clojure_DOT_core_dissoc.Get()
-						tmp190 := lang.Apply3(tmp188, store153, tmp189, key187)
-						_ = tmp190
-						return nil
-					})
-					tmp191 := &lang.NamedFn2{Name: "fn", Expects: "2: [_ key]", F: tmp185}
-					tmp192 := v_cljg_DOT_cache_Cache.Get()
-					tmp193 := lang.FnFunc1(func(X_194 any) any {
-						tmp195 := v_clojure_DOT_core_reset_BANG_.Get()
-						tmp196 := lang.NewMap()
-						tmp197 := lang.Apply2(tmp195, store153, tmp196)
-						_ = tmp197
-						return nil
-					})
-					tmp198 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp193}
-					tmp199 := lang.Apply(tmp160, []any{tmp162, tmp163, "-fetch", tmp170, tmp171, "-put", tmp183, tmp184, "-evict", tmp191, tmp192, "-clear", tmp198})
-					tmp149 = tmp199
-				}
-				tmp138 = tmp149
-			}
+			tmp136 := v_cljg_DOT_cache_local.Get()
+			tmp137 := lang.NewMap()
+			tmp138 := lang.Apply1(tmp136, tmp137)
 			return tmp138
+		case 1:
+			p__190139 := args[0]
+			_ = p__190139
+			var tmp140 any
+			_ = tmp140
+			{
+				var map__191141 any = p__190139
+				_ = map__191141
+				tmp142 := v_clojure_DOT_core_seq_QMARK_.Get()
+				tmp143 := lang.Apply1(tmp142, map__191141)
+				var tmp144 any
+				_ = tmp144
+				if lang.IsTruthy(tmp143) {
+					tmp145 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+					tmp146 := lang.Apply1(tmp145, map__191141)
+					tmp144 = tmp146
+				} else {
+					tmp144 = map__191141
+				}
+				var map__191147 any = tmp144
+				_ = map__191147
+				tmp148 := v_clojure_DOT_core_get.Get()
+				tmp149 := lang.Apply3(tmp148, map__191147, kw_ttl, int64(60))
+				var ttl150 any = tmp149
+				_ = ttl150
+				var tmp151 any
+				_ = tmp151
+				{
+					tmp152 := v_clojure_DOT_core_atom.Get()
+					tmp153 := lang.NewMap()
+					tmp154 := lang.Apply1(tmp152, tmp153)
+					var store155 any = tmp154
+					_ = store155
+					tmp156 := v_clojure_DOT_core_atom.Get()
+					tmp157 := lang.NewMap()
+					tmp158 := lang.Apply1(tmp156, tmp157)
+					var inflight159 any = tmp158
+					_ = inflight159
+					tmp160 := rt.Mul2(v_clojure_DOT_core_X_STAR_, int64(1000), ttl150)
+					var ttl_ms161 any = tmp160
+					_ = ttl_ms161
+					tmp162 := v_clojure_DOT_core_X_reify.Get()
+					tmp163 := v_cljg_DOT_cache_Cache.Get()
+					tmp164 := lang.NewVector(tmp163)
+					tmp165 := v_cljg_DOT_cache_Cache.Get()
+					tmp166 := lang.FnFunc3(func(X_167, key168, f169 any) any {
+						tmp170 := v_cljg_DOT_cache_fill_once.Get()
+						tmp171 := lang.Apply(tmp170, []any{store155, inflight159, ttl_ms161, key168, f169})
+						return tmp171
+					})
+					tmp172 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ key f]", F: tmp166}
+					tmp173 := v_cljg_DOT_cache_Cache.Get()
+					tmp174 := lang.FnFunc3(func(X_175, key176, v177 any) any {
+						tmp178 := v_clojure_DOT_core_swap_BANG_.Get()
+						tmp179 := v_clojure_DOT_core_assoc.Get()
+						tmp180 := v_cljg_DOT_os_now.Get()
+						tmp181 := lang.Apply0(tmp180)
+						tmp182 := rt.Add2(v_clojure_DOT_core_X_PLUS_, tmp181, ttl_ms161)
+						tmp183 := lang.NewMap(kw_v, v177, kw_exp, tmp182)
+						tmp184 := lang.Apply4(tmp178, store155, tmp179, key176, tmp183)
+						_ = tmp184
+						return v177
+					})
+					tmp185 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ key v]", F: tmp174}
+					tmp186 := v_cljg_DOT_cache_Cache.Get()
+					tmp187 := lang.FnFunc2(func(X_188, key189 any) any {
+						tmp190 := v_clojure_DOT_core_swap_BANG_.Get()
+						tmp191 := v_clojure_DOT_core_dissoc.Get()
+						tmp192 := lang.Apply3(tmp190, store155, tmp191, key189)
+						_ = tmp192
+						return nil
+					})
+					tmp193 := &lang.NamedFn2{Name: "fn", Expects: "2: [_ key]", F: tmp187}
+					tmp194 := v_cljg_DOT_cache_Cache.Get()
+					tmp195 := lang.FnFunc1(func(X_196 any) any {
+						tmp197 := v_clojure_DOT_core_reset_BANG_.Get()
+						tmp198 := lang.NewMap()
+						tmp199 := lang.Apply2(tmp197, store155, tmp198)
+						_ = tmp199
+						return nil
+					})
+					tmp200 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp195}
+					tmp201 := lang.Apply(tmp162, []any{tmp164, tmp165, "-fetch", tmp172, tmp173, "-put", tmp185, tmp186, "-evict", tmp193, tmp194, "-clear", tmp200})
+					tmp151 = tmp201
+				}
+				tmp140 = tmp151
+			}
+			return tmp140
 		default:
 			panic(lang.NewArityError(len(args), "cljg.cache/local", "0: [] or 1: [p__190]"))
 		}
 	})
-	v_cljg_DOT_cache_local.BindRoot(tmp133)
+	v_cljg_DOT_cache_local.BindRoot(tmp135)
 	_ = v_cljg_DOT_cache_local
 	// (def fetch "Return the cached value for `key`; on a miss, fill it via (f) exactly once\n  …
 	v_cljg_DOT_cache_fetch.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(81), kw_column, int64(7), kw_end_line, int64(81), kw_end_column, int64(12), kw_doc, "Return the cached value for `key`; on a miss, fill it via (f) exactly once\n  even under a concurrent stampede, cache it, and return it."))
-	tmp200 := lang.FnFunc3(func(c201, key202, f203 any) any {
-		tmp204 := v_cljg_DOT_cache_X_fetch.Get()
-		tmp205 := lang.Apply3(tmp204, c201, key202, f203)
-		return tmp205
+	tmp202 := lang.FnFunc3(func(c203, key204, f205 any) any {
+		tmp206 := v_cljg_DOT_cache_X_fetch.Get()
+		tmp207 := lang.Apply3(tmp206, c203, key204, f205)
+		return tmp207
 	})
-	tmp206 := &lang.NamedFn3{Name: "cljg.cache/fetch", Expects: "3: [c key f]", F: tmp200}
-	v_cljg_DOT_cache_fetch.BindRoot(tmp206)
+	tmp208 := &lang.NamedFn3{Name: "cljg.cache/fetch", Expects: "3: [c key f]", F: tmp202}
+	v_cljg_DOT_cache_fetch.BindRoot(tmp208)
+	fnD_cljg_DOT_cache_fetch = tmp208.F
+	v_cljg_DOT_cache_fetch.SealDirect()
 	_ = v_cljg_DOT_cache_fetch
 	// (def put "Write `v` through under `key`; returns `v`." (clojure.core/fn [c key v] (-put c …
 	v_cljg_DOT_cache_put.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(86), kw_column, int64(7), kw_end_line, int64(86), kw_end_column, int64(10), kw_doc, "Write `v` through under `key`; returns `v`."))
-	tmp207 := lang.FnFunc3(func(c208, key209, v210 any) any {
-		tmp211 := v_cljg_DOT_cache_X_put.Get()
-		tmp212 := lang.Apply3(tmp211, c208, key209, v210)
-		return tmp212
+	tmp209 := lang.FnFunc3(func(c210, key211, v212 any) any {
+		tmp213 := v_cljg_DOT_cache_X_put.Get()
+		tmp214 := lang.Apply3(tmp213, c210, key211, v212)
+		return tmp214
 	})
-	tmp213 := &lang.NamedFn3{Name: "cljg.cache/put", Expects: "3: [c key v]", F: tmp207}
-	v_cljg_DOT_cache_put.BindRoot(tmp213)
+	tmp215 := &lang.NamedFn3{Name: "cljg.cache/put", Expects: "3: [c key v]", F: tmp209}
+	v_cljg_DOT_cache_put.BindRoot(tmp215)
+	fnD_cljg_DOT_cache_put = tmp215.F
+	v_cljg_DOT_cache_put.SealDirect()
 	_ = v_cljg_DOT_cache_put
 	// (def evict "Drop `key` from the cache." (clojure.core/fn [c key] (-evict c key)))
 	v_cljg_DOT_cache_evict.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(12), kw_doc, "Drop `key` from the cache."))
-	tmp214 := lang.FnFunc2(func(c215, key216 any) any {
-		tmp217 := v_cljg_DOT_cache_X_evict.Get()
-		tmp218 := lang.Apply2(tmp217, c215, key216)
-		return tmp218
+	tmp216 := lang.FnFunc2(func(c217, key218 any) any {
+		tmp219 := v_cljg_DOT_cache_X_evict.Get()
+		tmp220 := lang.Apply2(tmp219, c217, key218)
+		return tmp220
 	})
-	tmp219 := &lang.NamedFn2{Name: "cljg.cache/evict", Expects: "2: [c key]", F: tmp214}
-	v_cljg_DOT_cache_evict.BindRoot(tmp219)
+	tmp221 := &lang.NamedFn2{Name: "cljg.cache/evict", Expects: "2: [c key]", F: tmp216}
+	v_cljg_DOT_cache_evict.BindRoot(tmp221)
+	fnD_cljg_DOT_cache_evict = tmp221.F
+	v_cljg_DOT_cache_evict.SealDirect()
 	_ = v_cljg_DOT_cache_evict
 	// (def clear "Drop every entry." (clojure.core/fn [c] (-clear c)))
 	v_cljg_DOT_cache_clear_.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(94), kw_column, int64(7), kw_end_line, int64(94), kw_end_column, int64(12), kw_doc, "Drop every entry."))
-	tmp220 := lang.FnFunc1(func(c221 any) any {
-		tmp222 := v_cljg_DOT_cache_X_clear.Get()
-		tmp223 := lang.Apply1(tmp222, c221)
-		return tmp223
+	tmp222 := lang.FnFunc1(func(c223 any) any {
+		tmp224 := v_cljg_DOT_cache_X_clear.Get()
+		tmp225 := lang.Apply1(tmp224, c223)
+		return tmp225
 	})
-	tmp224 := &lang.NamedFn1{Name: "cljg.cache/clear", Expects: "1: [c]", F: tmp220}
-	v_cljg_DOT_cache_clear_.BindRoot(tmp224)
+	tmp226 := &lang.NamedFn1{Name: "cljg.cache/clear", Expects: "1: [c]", F: tmp222}
+	v_cljg_DOT_cache_clear_.BindRoot(tmp226)
+	fnD_cljg_DOT_cache_clear_ = tmp226.F
+	v_cljg_DOT_cache_clear_.SealDirect()
 	_ = v_cljg_DOT_cache_clear_
 }
