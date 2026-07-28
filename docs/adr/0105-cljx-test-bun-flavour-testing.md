@@ -17,8 +17,8 @@ output capture, rich matchers, lifecycle hooks — today a cljgo user hand-rolls
 "did it print?" check.
 
 Naming: the natural name `cljg.test` would sit in the mechanism tier, but the
-owner names it **`cljx.test`** — introducing the **`cljx.*` prefix: the
-developer-experience tier** (things that wrap the *practice* of programming —
+owner names it **`cljx.test`** — introducing the **`cljx.*` prefix — *clj extensions* (owner's
+reading, 2026-07-28): the developer-experience tier** (things that wrap the *practice* of programming —
 testing today; possibly bench/lint/fmt later). It extends ADR 0085's taxonomy:
 `clojure.*` language · `cljg.*` mechanism · `bri.*` framework · `cljx.*`
 developer experience. Per the precedence principle, `clojure.test` is

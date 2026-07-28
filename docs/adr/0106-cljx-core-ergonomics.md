@@ -3,8 +3,8 @@
 Date: 2026-07-28 · Status: **proposed** (owner-directed: *"`(swap! todo conj
 "buy milk")` … I think we need a better `add!` with variable name and item
 which internally uses swap! — that would be good for UX. People should not
-feel more verbose."*). Sits in the `cljx.*` developer-experience tier
-introduced by ADR 0105.
+feel more verbose."*). Sits in the `cljx.*` tier — ***clj extensions*** (owner's reading,
+2026-07-28) — introduced by ADR 0105.
 
 ## Context
 
@@ -86,6 +86,21 @@ Clojure with no host dependency**, so it can be vendored into a JVM project or
 published as an ordinary library. It is opt-in, so a codebase that values
 portability simply never requires it. We must say this plainly in the docs
 rather than letting people discover it at port time.
+
+## Why `cljx.core` and not `cljg.core` (owner question, 2026-07-28)
+
+`cljg.*` is the tier where something **hostful** happens — sockets, crypto,
+compression, files. `add!` and `dbg` do nothing the host provides; they are
+pure sugar over `clojure.core`, so filing them under `cljg` blurs the one line
+that makes that tier explainable.
+
+And **"core" implies always-on**: `clojure.core` is auto-referred, never
+required. A namespace named `cljg.core` reads as "cljgo's fundamental
+namespace" when it is in fact opt-in sugar you must require — a mismatch that
+would mislead permanently. Inside `cljx`, `core` is conventional and correct
+(the main namespace of the extensions, as in `clojure.core.async`).
+
+Final: `(require '[cljx.core :refer [add! bump! dbg]])`.
 
 ## Consequences
 

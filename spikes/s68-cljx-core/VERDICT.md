@@ -50,3 +50,16 @@ is free), `bump!` reads more like English and avoids implying it is just
 - Dual-harness conformance proving each helper is EXACTLY equivalent to the
   form it claims to replace.
 - Docstrings must show the `swap!` equivalent — the sugar teaches the idiom.
+
+## Dual harness — verified 2026-07-28
+
+The whole prototype was also compiled into a binary and run: output
+`diff`s clean against `cljgo run`. Ergonomics behave identically in both
+harnesses (expected — every helper is a pure-Clojure alias — but the
+project's bar is proof, not expectation).
+
+## Namespace settled
+
+`cljx.core`, where **cljx = "clj extensions"** (owner, 2026-07-28).
+NOT `cljg.core`: `cljg.*` is for hostful mechanism, and a name containing
+"core" would imply always-on when this is opt-in. See ADR 0106.
