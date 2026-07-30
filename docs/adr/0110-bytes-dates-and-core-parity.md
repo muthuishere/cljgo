@@ -1,6 +1,6 @@
 # ADR 0110 — bytes, dates, base64, and three `clojure.core` parity bugs
 
-Date: 2026-07-30 · Status: **proposed**
+Date: 2026-07-30 · Status: **accepted — all five asks implemented and conformance-frozen 2026-07-30** (byte I/O `cljg.io`/`cljg.stream`, `cljg.date` ISO format/parse, `cljg.security` base64, the bare-`str` UUID split, and the fn arity of `clojure.string/replace`/`replace-first`). Two verifier-found defects closed on top: the anchored/zero-width regex walk, and byte-route sign parity so producers and consumers compose.
 
 Follows **ADR 0109** (`require-go` reaches the Go stdlib), which closed the four
 blockers koine was waiting on. This ADR is the *next* koine-side statement of

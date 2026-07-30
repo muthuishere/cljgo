@@ -82,3 +82,44 @@ func TestReadAllReleasesItsHandle(t *testing.T) {
 		t.Fatalf("read-all after drain returned %q, want empty", got)
 	}
 }
+
+// TestPartiallyReadStreamAtEOFReleasesHandle is the shape the drained-stream
+// fix did NOT cover, and the one CI caught on windows-latest:
+//
+//	(first (st/chunks (st/of-file p)))
+//
+// The file is small enough to arrive in ONE chunk, so the read returns every
+// byte with err == nil and EOF only shows up on a call that `first` never
+// makes. The stream was therefore at end-of-file but never "drained", so the
+// handle stayed open and the following delete failed with "The process cannot
+// access the file because it is being used by another process".
+//
+// Expressed as remove-after-one-read rather than an fd count, because removal
+// is exactly what Windows refuses while a handle is open. It passes on every
+// platform but can only FAIL on Windows — deliberately, that being the
+// platform able to detect it.
+func TestPartiallyReadStreamAtEOFReleasesHandle(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "one-chunk.bin")
+	if err := os.WriteFile(path, []byte{0xff, 0x00, 0x41}, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rs := newReadableStream(f, f)
+
+	// ONE read, consuming the whole file. No second read, no explicit close —
+	// exactly what (first (chunks s)) does.
+	if got := rs.readBytes(0); len(got) != 3 {
+		t.Fatalf("readBytes = %v, want the 3 bytes written", got)
+	}
+	if !rs.closed {
+		t.Fatal("stream is positioned at EOF after one read but still holds its handle")
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatalf("remove after a single full read: %v — the handle leaked", err)
+	}
+}
