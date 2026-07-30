@@ -74,6 +74,15 @@ type Diagnostic struct {
 	Fixes   []Fix     `json:"fixes,omitempty"`
 	Related []Related `json:"related,omitempty"`
 
+	// Causes are the inner diagnostics this one wraps, outer-to-inner.
+	// A wrapper (e.g. "this namespace came from a maven dependency and
+	// failed to compile") keeps the specific inner diagnostic HERE rather
+	// than splicing its rendered text into Message: the human rendering
+	// then collapses the chain into ONE coherent diagnostic (deduplicated
+	// notes and fixes, exactly one explain pointer) while the JSON
+	// envelope still carries every code in the chain as structured data.
+	Causes []Diagnostic `json:"causes,omitempty"`
+
 	// ExplainURL points at the code's explain page
 	// (docs/diagnostics/<CODE>.md) when the code is registered.
 	ExplainURL string `json:"explain_url,omitempty"`
@@ -94,7 +103,15 @@ type Envelope struct {
 // marshals as an empty array, never null.
 func NewEnvelope(diags []Diagnostic) Envelope {
 	if diags == nil {
-		diags = []Diagnostic{}
+		return Envelope{Schema: SchemaVersion, Diagnostics: []Diagnostic{}}
 	}
-	return Envelope{Schema: SchemaVersion, Diagnostics: diags}
+	out := make([]Diagnostic, len(diags))
+	for i, d := range diags {
+		// Normalize so a composed diagnostic marshals as structured data —
+		// one message, deduplicated notes/fixes, and every code in the chain
+		// under "causes" — instead of an inner diagnostic's rendered prose
+		// embedded in the outer message.
+		out[i] = Normalize(d)
+	}
+	return Envelope{Schema: SchemaVersion, Diagnostics: out}
 }

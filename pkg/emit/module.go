@@ -18,6 +18,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/bri"
 	"github.com/muthuishere/cljgo/pkg/briloader"
 	"github.com/muthuishere/cljgo/pkg/corelib"
+	"github.com/muthuishere/cljgo/pkg/deps"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -85,6 +86,12 @@ func (mc *moduleCompiler) load(e *eval.Evaluator, lib *lang.Symbol, path string)
 	defer f.Close()
 	forms, err := compileStream(e, f, path)
 	if err != nil {
+		// A Maven-origin namespace that passed the read-time interop-free
+		// classification and then failed to compile gets the G5020 context:
+		// that is a gap in cljgo, not evidence the library is JVM-only.
+		if werr := deps.MavenCompileFailure(name, path, err); werr != nil {
+			panic(werr)
+		}
 		panic(fmt.Errorf("compiling %s (%s): %w", name, path, err))
 	}
 	cns.Forms = forms

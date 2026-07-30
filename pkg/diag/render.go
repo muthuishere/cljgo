@@ -21,6 +21,8 @@ import (
 // The returned string has no "error: " prefix and no trailing newline; the
 // caller owns those (all three contexts already print `error: %s\n`).
 func Render(d Diagnostic) string {
+	d = Normalize(d)
+
 	var b strings.Builder
 	b.WriteString(d.Message)
 
@@ -45,6 +47,19 @@ func Render(d Diagnostic) string {
 		}
 	}
 
+	// The wrapped diagnostics, innermost context first. A cause whose text
+	// the wrapper already quoted carries no Message (Normalize drops it), so
+	// nothing is said twice.
+	for _, c := range d.Causes {
+		if c.Message == "" {
+			continue
+		}
+		fmt.Fprintf(&b, "\nnote: caused by: %s", c.Message)
+		if c.Location.Line > 0 && c.Location.File != "" {
+			fmt.Fprintf(&b, " at %s:%d:%d", c.Location.File, c.Location.Line, c.Location.Column)
+		}
+	}
+
 	// help: applicable fixes (did-you-mean etc.), then the explain pointer.
 	for _, f := range d.Fixes {
 		if f.Title != "" {
@@ -60,12 +75,32 @@ func Render(d Diagnostic) string {
 			}
 		}
 	}
-	if d.ErrorCode != "" {
-		if _, ok := Lookup(d.ErrorCode); ok {
-			fmt.Fprintf(&b, "\nhelp: run `cljgo explain %s`", d.ErrorCode)
-		}
+	// EXACTLY ONE explain pointer, even when several codes are in play. The
+	// innermost registered code wins: the outer code names the CATEGORY the
+	// failure falls into, the inner one names what actually went wrong, and
+	// the inner page is the one that helps. The outer diagnostic's substance
+	// is not lost — its message, notes and fixes are all still rendered above,
+	// and the JSON envelope keeps every code in the chain.
+	if code := explainCode(d); code != "" {
+		fmt.Fprintf(&b, "\nhelp: run `cljgo explain %s`", code)
 	}
 	return b.String()
+}
+
+// explainCode picks the one code whose explain page a human should read:
+// the innermost REGISTERED code in the cause chain, falling back outward.
+func explainCode(d Diagnostic) string {
+	for i := len(d.Causes) - 1; i >= 0; i-- {
+		if c := explainCode(d.Causes[i]); c != "" {
+			return c
+		}
+	}
+	if d.ErrorCode != "" {
+		if _, ok := Lookup(d.ErrorCode); ok {
+			return d.ErrorCode
+		}
+	}
+	return ""
 }
 
 // RenderError is the convenience one-liner every non-REPL caller uses: map

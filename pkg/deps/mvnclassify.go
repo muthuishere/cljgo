@@ -28,6 +28,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/muthuishere/cljgo/pkg/diag"
 	"github.com/muthuishere/cljgo/pkg/javadetect"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
@@ -479,6 +480,43 @@ func CheckMavenLoadable(path string) error {
 	}
 	e.note("it came from the maven dependency " + v.Coord.String())
 	return e.withFix(otherUsableHint(usable, v))
+}
+
+// MavenCompileFailure wraps a COMPILE failure of a Maven-origin namespace in
+// the context the user needs and cannot infer: the namespace passed the
+// read-time interop-free classification (that is why it was allowed to load
+// at all), so a failure here is a gap in cljgo, not proof that the library is
+// JVM-only. It returns nil when the file did not come out of a Maven
+// dependency, so project code and git deps are untouched.
+//
+// The inner diagnostic is carried STRUCTURALLY (Diagnostic.Causes) as well as
+// quoted in the message: the render layer collapses the pair into one
+// coherent diagnostic — deduplicated notes and a single explain pointer at
+// the inner, more specific code — while `--json` keeps both codes.
+func MavenCompileFailure(ns, path string, err error) error {
+	mvnIndexMu.RLock()
+	idx := mvnIndex
+	mvnIndexMu.RUnlock()
+	if idx == nil || err == nil {
+		return nil
+	}
+	abs := path
+	if a, e := filepath.Abs(path); e == nil {
+		abs = a
+	}
+	v, ok := idx[abs]
+	if !ok {
+		return nil
+	}
+	inner := diag.FromError(err)
+	e := codedf("G5020", "namespace %s came from a maven dependency and failed to compile on cljgo — %s",
+		ns, inner.Message)
+	e.D.Causes = []diag.Diagnostic{inner}
+	return e.
+		note("it came from the maven dependency " + v.Coord.String()).
+		note("the resolve report's interop-free count is a read-time measurement, not a promise that the namespace compiles").
+		note("this is a gap in cljgo, not evidence that the library is JVM-only").
+		withFix("report it with the namespace and the error above at https://github.com/muthuishere/cljgo/issues")
 }
 
 // otherUsableHint is the per-namespace granularity made visible: the library
