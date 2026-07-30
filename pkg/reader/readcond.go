@@ -161,20 +161,20 @@ func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again
 	// wrong code later. A conditional with NO branches at all, #?(), is
 	// vacuous rather than starved and stays legal.
 	//
-	// The check is deliberately restricted to a TOP-LEVEL conditional
-	// (nestDepth is back to 0 once our own body read has returned). That is
-	// the shape s50 warns about: whole top-level forms vanishing, leaving a
-	// namespace with no vars. A conditional NESTED inside a form is the
-	// portable-library fencing idiom — medley's
-	// `#?(:clj (java.util.Date.) :default (now))`, an `(:import #?(:clj …))`
-	// clause — and erroring on it would reject exactly the libraries this
-	// change exists to consume. Two consequences, stated rather than hidden:
-	// a starved conditional nested inside a SELECTED branch is elided
-	// silently, and so is one fenced inside a LIST. Both are false NEGATIVES;
-	// a false positive here would break correct code. (Nesting inside a
-	// vector/map/set is NO LONGER in that set — see WithStarvedCollError
-	// immediately below, which was added after a live run proved that case
-	// produces a false "usable" verdict rather than a harmless miss.)
+	// The FIRST check below is the top-level one (nestDepth is back to 0 once
+	// our own body read has returned): whole top-level forms vanishing, leaving
+	// a namespace with no vars — the shape s50 warns about.
+	//
+	// Nesting is covered by two further checks, each keyed on the elision
+	// SILENTLY CHANGING A SHAPE rather than on nesting as such — a starved
+	// conditional whose removal breaks nothing is still the portable-library
+	// fencing idiom, and erroring on it would reject exactly the libraries this
+	// exists to consume. `#?(:clj (java.util.Date.) :default (now))` is not
+	// starved at all (:default matches), and `(:import #?(:clj …))` is starved
+	// but harmless. The remaining documented false NEGATIVE: a starved
+	// conditional inside a SELECTED branch of another conditional is still
+	// elided silently, because the body is read before selection and firing
+	// there would be a false positive on an UNSELECTED branch.
 	//
 	// SHAPE-BREAKING elision comes first, at any depth. A starved conditional
 	// directly inside a vector, map or set silently changes that collection's
@@ -201,6 +201,54 @@ func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again
 		return nil, false, r.errAt(start,
 			"reader conditional supplies no branch for this platform; expected one of :cljgo, :default; found %s",
 			featureList(forms))
+	}
+	// NESTED starved conditional inside a LIST — medley 1.4.0 core.cljc:181,
+	// `(instance? #?(:clj clojure.lang.PersistentQueue :cljs …) x)`. Eliding it
+	// changes the CALL'S ARITY, and the user then reads
+	// "macroexpanding instance?: wrong number of args (1) passed to:
+	// clojure.core/instance?" — a diagnostic that names neither the reader
+	// conditional nor the library. Same shape-breaking argument as the
+	// vector/map/set rule above, so it shares that rule's wording (and, in
+	// pkg/deps, its "never recoverable by re-reading with elision" handling).
+	//
+	// The fire condition is SHIFTING, not nesting: it fires only when forms
+	// FOLLOW the elided conditional in the list, because those forms silently
+	// slide into its place. That is what keeps the portable-library fencing
+	// idioms — the whole point of consuming .cljc at all — readable:
+	//
+	//   - a TRAILING conditional is exempt. `(def ^:private max-number
+	//     #?(:clj Long/MAX_VALUE :cljs js/Number.MAX_VALUE))` (real
+	//     com.stuartsierra/dependency 1.0.0, dependency.cljc:148) stays a
+	//     well-formed def, and `(defn- editable? [coll] #?(:clj … :cljs …))`
+	//     (real medley 1.4.0, core.cljc:79) a well-formed defn. Both libraries
+	//     load and run; erroring there would reject them outright.
+	//   - a list whose HEAD IS A KEYWORD is an ns-clause fence —
+	//     `(ns x (:import #?(:clj [java.util Date])))`. Nothing is CALLED, so
+	//     no arity breaks; the JVM-only import simply never arrives. Frozen as
+	//     corpus case 11.
+	//   - anywhere inside another conditional's BODY. The body is read in full
+	//     BEFORE a branch is selected, so a starved conditional there may live
+	//     in a branch cljgo would never have taken (corpus case 8). Erroring
+	//     would be a false positive on correct portable code. A starved
+	//     conditional inside a SELECTED branch therefore stays the documented
+	//     false negative it already was.
+	//   - inside a #_ discard, a string or a comment: nothing survives to be
+	//     shifted.
+	//
+	// Stated rather than hidden, the trailing exemption's false NEGATIVE: a
+	// trailing starved argument of a real call, `(f 1 #?(:clj 2))`, still
+	// elides to `(f 1)` silently. Distinguishing that from `(def x #?(…))`
+	// needs analysis the reader does not have.
+	if r.starvedCondError && !splicing && len(forms) >= 2 &&
+		r.enclosingColl() == "list" && !r.insideConditionalBody() && r.discardDepth == 0 {
+		if _, headIsKeyword := r.enclosingHead().(lang.Keyword); !headIsKeyword {
+			i := len(r.nestPending) - 1
+			r.nestPending[i] = append(r.nestPending[i], pendingStarved{
+				pos:   start,
+				count: r.nestCounts[i],
+				feats: featureList(forms),
+			})
+		}
 	}
 	return nil, true, nil
 }

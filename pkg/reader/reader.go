@@ -136,6 +136,26 @@ type Reader struct {
 	// "vector", "map", "set"), innermost last. starvedCollError reads its
 	// top.
 	nestKinds []string
+
+	// nestHeads is the stack parallel to nestKinds holding each in-flight
+	// collection's FIRST form (nil until one has been read). The nested
+	// starved-conditional check reads its top to tell an ns-clause fence —
+	// `(:import #?(:clj …))`, head keyword, harmless — from a real call
+	// whose arity the elision would silently change, `(instance? #?(:clj …) x)`.
+	nestHeads []any
+
+	// nestCounts is the stack parallel to nestKinds holding how many forms
+	// each in-flight collection has accumulated so far, and nestPending the
+	// starved conditionals elided inside it that are STILL trailing. When the
+	// collection closes, a pending entry that turned out to have forms after
+	// it is a shape-breaking elision (see readConditional); one that is still
+	// trailing is dropped.
+	nestCounts  []int
+	nestPending [][]pendingStarved
+
+	// discardDepth is how many #_ discarded-form reads are in flight. The
+	// nested starved-conditional check stays silent inside one.
+	discardDepth int
 }
 
 // Option configures a Reader.
@@ -204,7 +224,11 @@ func WithDefaultReader(fn lang.IFn) Option {
 
 // WithStarvedCondError makes a reader conditional that supplies no branch
 // for this platform a read error (R1012) rather than reading as nothing.
-// Opt-in; used only for Maven-origin (Clojars) source (ADR 0095).
+// Opt-in; used only for Maven-origin (Clojars) source (ADR 0095). It fires
+// at the top level, and — since the medley 1.4.0 core.cljc:181 report — for a
+// conditional NESTED IN A LIST with forms AFTER it, whose elision shifts them
+// and changes that call's arity (see readConditional for the exemptions that
+// keep the trailing, ns-clause and unselected-branch fencing idioms readable).
 func WithStarvedCondError() Option {
 	return func(r *Reader) { r.starvedCondError = true }
 }
@@ -216,6 +240,68 @@ func WithStarvedCondError() Option {
 // because the damage is structural rather than "a whole form vanished".
 func WithStarvedCollError() Option {
 	return func(r *Reader) { r.starvedCollError = true }
+}
+
+// pendingStarved is a starved reader conditional that was elided inside a
+// list, held until the list closes so the reader can tell a TRAILING elision
+// (harmless: `(def x #?(:clj …))` stays a well-formed def) from one that
+// SHIFTS the forms after it (`(instance? #?(:clj …) x)` loses an argument).
+type pendingStarved struct {
+	pos   Position
+	count int    // elements the enclosing list held when it was elided
+	feats string // the feature keywords that WERE present
+}
+
+// recordHead remembers the first form of the collection currently being
+// read, once one exists, and its running element count. Called after every
+// append in readDelimited.
+func (r *Reader) recordHead(forms []any) {
+	if len(r.nestKinds) == 0 {
+		return
+	}
+	r.nestCounts[len(r.nestCounts)-1] = len(forms)
+	if len(forms) == 0 {
+		return
+	}
+	if r.nestHeads[len(r.nestHeads)-1] == nil {
+		r.nestHeads[len(r.nestHeads)-1] = forms[0]
+	}
+}
+
+// checkPendingStarved fires R1012 for a starved conditional that turned out
+// NOT to be the last element of its list: forms followed it, so eliding it
+// shifted them and silently changed the enclosing form's shape.
+func (r *Reader) checkPendingStarved(pend []pendingStarved, final int) error {
+	for _, p := range pend {
+		if final > p.count {
+			return r.errAt(p.pos,
+				"reader conditional supplies no branch for this platform, and eliding it would change the shape of the enclosing list; expected one of :cljgo, :default; found %s",
+				p.feats)
+		}
+	}
+	return nil
+}
+
+// enclosingHead returns the first form already read in the innermost
+// enclosing collection, or nil when none has been read yet.
+func (r *Reader) enclosingHead() any {
+	if len(r.nestHeads) == 0 {
+		return nil
+	}
+	return r.nestHeads[len(r.nestHeads)-1]
+}
+
+// insideConditionalBody reports whether any enclosing in-flight read is a
+// reader conditional's own body. A starved conditional there may sit in a
+// branch cljgo never selects — the whole body is read before selection —
+// so the nested check must stay silent, exactly as before.
+func (r *Reader) insideConditionalBody() bool {
+	for _, k := range r.nestKinds {
+		if k == "reader conditional" {
+			return true
+		}
+	}
+	return false
 }
 
 // enclosingColl returns the innermost enclosing collection kind, or "".
@@ -506,8 +592,15 @@ func (r *Reader) readDispatch(start Position, spliceOK bool) (form any, again bo
 		return f, false, err
 	case '_':
 		// Discard the next form; stacked #_#_ works because the
-		// discarded form is read with full recursion.
-		if _, err := r.readForm(); err != nil {
+		// discarded form is read with full recursion. discardDepth silences
+		// the NESTED starved-conditional check while in there: a discarded
+		// form contributes nothing, so nothing it contains can change a
+		// surviving form's shape (same footing as a `#?(` inside a string or
+		// a `;` comment, which the reader never reads at all).
+		r.discardDepth++
+		_, err := r.readForm()
+		r.discardDepth--
+		if err != nil {
 			if errors.Is(err, ErrEOF) {
 				return nil, false, &Error{Pos: r.s.Pos(), Start: &start, Err: ErrIncomplete}
 			}
@@ -703,9 +796,23 @@ func (r *Reader) readDelimited(what string, end rune, start Position) ([]any, er
 	}
 	r.nestDepth++
 	r.nestKinds = append(r.nestKinds, what)
-	defer func() {
+	r.nestHeads = append(r.nestHeads, nil)
+	r.nestCounts = append(r.nestCounts, 0)
+	r.nestPending = append(r.nestPending, nil)
+	pop := func() []pendingStarved {
 		r.nestDepth--
 		r.nestKinds = r.nestKinds[:len(r.nestKinds)-1]
+		r.nestHeads = r.nestHeads[:len(r.nestHeads)-1]
+		r.nestCounts = r.nestCounts[:len(r.nestCounts)-1]
+		pend := r.nestPending[len(r.nestPending)-1]
+		r.nestPending = r.nestPending[:len(r.nestPending)-1]
+		return pend
+	}
+	popped := false
+	defer func() {
+		if !popped {
+			pop()
+		}
 	}()
 	var forms []any
 	for {
@@ -718,13 +825,20 @@ func (r *Reader) readDelimited(what string, end rune, start Position) ([]any, er
 			return nil, err
 		}
 		if f == sentReadFinished {
+			popped = true
+			pend := pop()
+			if err := r.checkPendingStarved(pend, len(forms)); err != nil {
+				return nil, err
+			}
 			return forms, nil
 		}
 		if sp, ok := f.(spliceForms); ok {
 			forms = append(forms, sp.items...)
+			r.recordHead(forms)
 			continue
 		}
 		forms = append(forms, f)
+		r.recordHead(forms)
 	}
 }
 
