@@ -30,6 +30,13 @@ type Dep struct {
 	// git dep can never collide by identity.
 	MvnVersion string
 
+	// MvnDeclared records that the project WROTE :mvn/version, even if the
+	// value is unusable (empty, or not a string). Without it an empty version
+	// makes isMvn() false, the dep falls through to the git path, and the user
+	// gets a raw `git ls-remote  HEAD: fatal: bad repository ''` — an
+	// uncoded subprocess error naming a tool they never invoked.
+	MvnDeclared bool
+
 	// mvnExcl / mvnFrom are resolver-internal provenance for a TRANSITIVE
 	// Maven edge: the inherited <exclusions> patterns, and which coordinate
 	// pulled it in (so G5013 can name both requirers).
@@ -253,6 +260,12 @@ func resolveOne(rd *rdep, root string, opts ResolveOptions) ([]Dep, error) {
 		return nil, codedf("G5015", "dependency %q declares conflicting coordinates: %s",
 			rd.Name, strings.Join(kinds, " and ")).
 			withFix("keep one — :mvn/version (Clojars/Maven), :git, or :path")
+	}
+	// A written-but-unusable :mvn/version is judged by the SAME rule, before
+	// the dispatch below can mistake it for a git dep and surface a raw
+	// subprocess error.
+	if rd.MvnDeclared && !rd.isMvn() {
+		return nil, validateDeclaredVersion(rd.Name, rd.MvnVersion)
 	}
 	switch {
 	case rd.isPath():

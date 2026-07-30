@@ -391,6 +391,13 @@ func unsupportedVersionSyntax(v string) string {
 		return "a -SNAPSHOT version"
 	case v == "LATEST" || v == "RELEASE":
 		return "the floating meta-version " + v
+	case strings.ContainsAny(v, `/\\`) || strings.Contains(v, ".."):
+		// A version is a path SEGMENT in the repository URL. Anything with a
+		// separator or a parent-dir hop is not a version; refusing it here
+		// keeps it out of the fetch URL entirely rather than relying on the
+		// remote to 404. (The on-disk cache path is a sha256, so this was not
+		// a local traversal — but the rule belongs at the declaration.)
+		return "a path separator in a version"
 	}
 	return ""
 }

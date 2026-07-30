@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/muthuishere/cljgo/pkg/diag"
 )
 
 // --- defect 1: <parent> POM inheritance ------------------------------------
@@ -301,4 +303,54 @@ func TestJarRootProjectCljIsNotANamespace(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(res.Roots[0], "project.clj")); !os.IsNotExist(err) {
 		t.Error("project.clj was extracted onto the load path")
 	}
+}
+
+// TestDeclaredVersionEdgeShapes covers the two holes the adversarial verifier
+// found in the declared-version rule. Both used to escape it entirely:
+//
+//   - {:mvn/version ""} left isMvn() false, so the dep fell through to the git
+//     path and the user got `git ls-remote  HEAD: exit status 128: fatal: bad
+//     repository ”` — an uncoded subprocess error naming a tool they never
+//     invoked.
+//   - {:mvn/version "../../etc/passwd"} was URL-joined straight into the
+//     repository fetch. Not a local traversal (the cache path is a sha256), but
+//     a version is a path SEGMENT and a separator has no business reaching the
+//     URL.
+func TestDeclaredVersionEdgeShapes(t *testing.T) {
+	for _, tc := range []struct {
+		name, version, want string
+	}{
+		{"empty", "", "an empty version"},
+		{"traversal", "../../etc/passwd", "a path separator in a version"},
+		{"slash", "1.0/2.0", "a path separator in a version"},
+		{"backslash", `1.0\2.0`, "a path separator in a version"},
+		{"dotdot", "1..2", "a path separator in a version"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateDeclaredVersion("org.clojure/tools.cli", tc.version)
+			if err == nil {
+				t.Fatalf("version %q was accepted; want it named at the declaration", tc.version)
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want it to name %q", err, tc.want)
+			}
+			// It must be the coded diagnostic, never a raw error.
+			if !strings.Contains(err.Error(), "G5016") && !hasDiagCode(err, "G5016") {
+				t.Fatalf("error = %v, want the registered G5016 code", err)
+			}
+		})
+	}
+}
+
+// hasDiagCode reports whether err carries the given registered code.
+func hasDiagCode(err error, code string) bool {
+	type carrier interface {
+		Diagnostic() (diag.Diagnostic, bool)
+	}
+	if c, ok := err.(carrier); ok {
+		if d, ok := c.Diagnostic(); ok {
+			return d.ErrorCode == code
+		}
+	}
+	return false
 }
