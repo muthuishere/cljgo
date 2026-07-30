@@ -80,6 +80,10 @@ func (rs *ReadableStream) readBytes(n int) []byte {
 			return buf[:m]
 		}
 		if err == io.EOF {
+			// EOF is terminal for every consumer built on this (chunks, lines,
+			// read-bytes), so release the handle here too — see readAll for why
+			// leaking it breaks delete on Windows. Idempotent.
+			rs.closeRead()
 			return nil
 		}
 		if err != nil {
@@ -121,6 +125,19 @@ func trimEOL(s string) string {
 }
 
 // readAll drains the rest of the stream into one string.
+// readAll drains the stream and then RELEASES the underlying reader.
+//
+// Draining is terminal — there is nothing left to read — so holding the handle
+// afterwards buys nothing and costs correctness. clojure.core/slurp closes for
+// the same reason.
+//
+// This is not a nicety: on Windows an open handle makes the file UNDELETABLE,
+// so `(st/read-bytes (st/of-file p))` followed by `(io/delete! p)` failed with
+// "The process cannot access the file because it is being used by another
+// process" — while POSIX happily unlinks an open file, which is exactly why
+// macOS and Linux hid the leak and only windows-latest caught it (CI on
+// b8b7718). with-open still works and stays the right habit when you do not
+// drain; closeRead is idempotent.
 func (rs *ReadableStream) readAll() string {
 	if rs.closed {
 		return ""
@@ -129,6 +146,7 @@ func (rs *ReadableStream) readAll() string {
 	if err != nil {
 		panic(fmt.Errorf("cljg.stream: read-all: %w", err))
 	}
+	rs.closeRead()
 	return string(b)
 }
 
