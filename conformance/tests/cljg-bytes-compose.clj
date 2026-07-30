@@ -32,8 +32,14 @@
       _    (io/write-bytes p (byte-array [-1 0 65]))
       _    (io/write-bytes gzp (z/gzip "composed payload"))
       via-io     (io/read-bytes p)
-      via-stream (st/read-bytes (st/of-file p))
-      via-chunk  (first (st/chunks (st/of-file p)))
+      ;; read-bytes/chunks read ONE chunk — they are not terminal, so neither
+      ;; drains to EOF and neither releases the file on its own. That is the
+      ;; API working as documented, and it is exactly what with-open is for.
+      ;; Without it the handle stays open and (io/delete! p) below fails on
+      ;; Windows ("the process cannot access the file"), while POSIX unlinks an
+      ;; open file happily — the divergence CI caught on b8b7718/7f287e9.
+      via-stream (with-open [s (st/of-file p)] (st/read-bytes s))
+      via-chunk  (with-open [s (st/of-file p)] (first (st/chunks s)))
       out
       [;; --- 1. one representation, whatever the route ---
        (vec via-io)
@@ -53,7 +59,7 @@
        ;; base64-decode-bytes -> gunzip: what its docstring advertises.
        (z/gunzip (sec/base64-decode-bytes (sec/base64-encode (z/gzip "b64 blob"))) {:as :string})
        ;; a stream chunk is gunzippable too.
-       (z/gunzip (st/read-bytes (st/of-file gzp)) {:as :string})
+       (with-open [s (st/of-file gzp)] (z/gunzip (st/read-bytes s) {:as :string}))
        ;; digests + codecs over read bytes, no lossy string detour.
        (sec/sha256 (io/read-bytes p))
        (sec/hex (io/read-bytes p))
