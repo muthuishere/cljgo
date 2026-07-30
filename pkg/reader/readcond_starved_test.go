@@ -240,6 +240,96 @@ func TestStarvedCollErrorLeavesListFencingAlone(t *testing.T) {
 	}
 }
 
+// TestStarvedCondErrorCatchesNestedInList — the medley 1.4.0 report. At
+// medley/core.cljc:181, `(instance? #?(:clj clojure.lang.PersistentQueue :cljs
+// cljs.core/PersistentQueue) x)` elided to `(instance? x)` and the user got
+// "macroexpanding instance?: wrong number of args (1) passed to:
+// clojure.core/instance?" — a diagnostic naming neither the conditional nor the
+// library. Eliding a conditional in a list changes the CALL'S ARITY, which is
+// the vector/map/set shape argument applied to a list, so it shares that
+// wording and pkg/deps's never-recoverable handling.
+func TestStarvedCondErrorCatchesNestedInList(t *testing.T) {
+	cases := []struct {
+		name, src, wantPos string
+	}{
+		{"argument position (the medley shape)",
+			`(instance? #?(:clj clojure.lang.PersistentQueue :cljs cljs.core/PersistentQueue) x)`,
+			"corpus.cljc:1:12"},
+		{"deeper inside a defn body",
+			"(defn f [x]\n  (instance? #?(:clj A :cljs B) x))", "corpus.cljc:2:14"},
+		{"a single starved branch still starves", `(f #?(:cljs 1) 2)`, "corpus.cljc:1:4"},
+		{"first argument, forms after it", `(f #?(:clj 1 :cljs 2) 3 4)`, "corpus.cljc:1:4"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			forms, err := readAllWith(tc.src, WithStarvedCondError())
+			if err == nil {
+				t.Fatalf("a nested starved conditional elided silently as %q", printForms(forms))
+			}
+			if !strings.Contains(err.Error(), "supplies no branch for this platform") {
+				t.Fatalf("want the starved diagnostic, got: %v", err)
+			}
+			// Doctrine: located at the CONDITIONAL, expected-vs-found.
+			if !strings.Contains(err.Error(), tc.wantPos) {
+				t.Errorf("want the conditional located at %s, got: %v", tc.wantPos, err)
+			}
+			if !strings.Contains(err.Error(), ":cljgo, :default") {
+				t.Errorf("the error does not state what was expected: %v", err)
+			}
+			// ...and it must stay OPT-IN: project code is unaffected.
+			if _, err := readAllWith(tc.src); err != nil {
+				t.Errorf("default (project) reading must still elide, got: %v", err)
+			}
+		})
+	}
+}
+
+// TestStarvedCondNestedExemptions — the cases the nested check must NOT fire
+// on, because firing would reject the portable libraries the consume path
+// exists to read. Each is a real idiom.
+func TestStarvedCondNestedExemptions(t *testing.T) {
+	cases := []struct {
+		name, src, want string
+	}{
+		{":default supplied at the nested site (the medley date shape)",
+			`(f #?(:clj (java.util.Date.) :default (now)))`, "(f (now))"},
+		{":cljgo supplied at the nested site",
+			`(f #?(:clj :x :cljgo :g))`, "(f :g)"},
+		{"an ns-clause fence: the list head is a keyword, nothing is called",
+			`(ns x (:import #?(:clj [java.util Date])))`, "(ns x (:import))"},
+		{"inside another conditional's body, which is read before selection",
+			`#?(:cljgo :ok :clj (f #?(:clj 1 :cljs 2)))`, ":ok"},
+		{"inside a #_ discard: the whole form is dropped anyway",
+			`[#_(f #?(:clj z)) :end]`, "[:end]"},
+		{"inside a string: never a conditional at all",
+			`["(f #?(:clj x))" :end]`, `["(f #?(:clj x))" :end]`},
+		{"inside a ; comment: never read",
+			"[;; (f #?(:clj y))\n :end]", "[:end]"},
+		{"a starved SPLICE contributes zero elements, so nothing breaks",
+			`(f 1 #?@(:cljr [2]) 3)`, "(f 1 3)"},
+		// TRAILING elisions, both from real libraries that load and run on
+		// cljgo today. The surviving form is well-shaped, so firing here would
+		// reject a working dependency outright.
+		{"trailing in a def: com.stuartsierra/dependency 1.0.0 dependency.cljc:148",
+			`(def ^:private max-number #?(:clj Long/MAX_VALUE :cljs js/Number.MAX_VALUE))`,
+			"(def max-number)"},
+		{"trailing in a defn body: medley 1.4.0 core.cljc:79",
+			`(defn- editable? [coll] #?(:clj (instance? A coll) :cljs (satisfies? B coll)))`,
+			"(defn- editable? [coll])"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			forms, err := readAllWith(tc.src, WithStarvedCondError(), WithStarvedCollError())
+			if err != nil {
+				t.Fatalf("false positive on a portable idiom: %v", err)
+			}
+			if got := printForms(forms); got != tc.want {
+				t.Fatalf("want %q, got %q", tc.want, got)
+			}
+		})
+	}
+}
+
 // TestStarvedCondErrorClassifiesAsR1012 pins the registered code the renderer
 // attaches, so `cljgo explain R1012` is reachable from a real failure.
 func TestStarvedCondErrorClassifiesAsR1012(t *testing.T) {
