@@ -40,7 +40,51 @@ resolver** — not a parallel subsystem. Concretely:
 - Reader conditionals in `.cljc` resolved by the **real reader** (features
   `:cljgo` + `:default`), plus a new **starved-conditional** error so a
   `:clj`-only `.cljc` fails loud instead of loading an empty namespace.
-- 7 new diagnostic codes (append-only) with explain pages.
+- 9 new diagnostic codes (append-only) with explain pages.
+
+### The worked example — verified against the real artifact, 2026-07-30
+
+Not a sketch. `org.clojure/tools.cli 1.1.230` fetched from Maven Central,
+resolved through its real `<parent>org.clojure/pom.contrib 1.2.0</parent>`,
+compiled AOT into a static binary, and run:
+
+```clojure
+;; build.cljgo
+(defn build [b]
+  (dep b "org.clojure/tools.cli" {:mvn/version "1.1.230"})
+  (let [app (exe b {:name "demo" :main "src/app/main.cljg"})]
+    (install b app)
+    (run b app)))
+
+;; src/app/main.cljg
+(ns app.main
+  (:require [clojure.tools.cli :as cli]))
+
+(defn -main [& args]
+  (let [r (cli/parse-opts ["-v" "extra"] [["-v" "--verbose" "Verbose"]])]
+    (println "options:"   (:options r))
+    (println "arguments:" (:arguments r))
+    (println (:summary r))))
+```
+
+```
+$ cljgo build
+cljgo deps: org.clojure/tools.cli 1.1.230 — 1 namespace(s) usable
+  reader conditionals elided a top-level form in clojure.tools.cli (as JVM Clojure would on a platform those branches do not name)
+  inherited from the <parent> POM org.clojure/pom.contrib 1.2.0
+  pruned org.clojure/clojure ${clojure.version} (cljgo IS the Clojure implementation; its clojure.core is embedded)
+cljgo build: installed ./demo
+
+$ ./demo
+options: {:verbose true}
+arguments: [extra]
+  -v, --verbose  Verbose
+```
+
+The elided form is `cli.cljc:74`'s `#?(:cljs (defn- format …))` — a ClojureScript
+helper JVM Clojure elides too. It is reported rather than glossed, because
+"it loads" and "it is the same namespace you get on the JVM" are different
+claims.
 
 Deliberately **out of this change**: the deploy direction (ADR 0095 decision 3,
 spike s51) — a separate change, `adr-0095-clojars-deploy`.

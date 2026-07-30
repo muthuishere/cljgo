@@ -141,10 +141,35 @@ cljgo publish clojars --deploy --repo https://repo.example/…   # any Maven rep
 - **In:** pure-Clojure-source consumption by coordinate; transitive `.pom`
   resolution; real Clojars/Maven deploy of a pure library.
 - **Out, deliberately:** any Java `.class` execution (never — constraint 2); a
-  full Maven/Aether feature surface (profiles, `<exclusions>` beyond the
-  minimum, classifier trees, SNAPSHOT metadata races) — we take the slice real
+  full Maven/Aether feature surface (graph-affecting profiles, classifier
+  trees, version ranges, SNAPSHOT metadata races) — we take the slice real
   pure Clojure libraries actually need and name-error the rest, not silently
   half-support it; and a `deps.edn` reader (cljgo has no `deps.edn` — ADR 0021).
+
+#### 4.1 Amendment, 2026-07-30 — `<parent>` POM inheritance is IN
+
+The implementation first filed `<parent>`, `${property}` interpolation and
+`<dependencyManagement>` version supply together under "name-error, don't
+half-support" (spike s50 finding 1). Verification against the live repositories
+showed that reading of the boundary was wrong: **every `org.clojure` contrib
+artifact carries `<parent>org.clojure/pom.contrib</parent>`**, so the refusal
+excluded `tools.cli`, `data.json`, `data.csv` and `core.match` — the whole s50
+sample set and the reason this ADR exists. A boundary that excludes the target
+set is not a conservative boundary; it is a non-working feature.
+
+Amended boundary: `<parent>` chains ARE resolved and merged (properties,
+dependencyManagement, dependencies, groupId/version defaults), `${property}`
+IS interpolated **from properties that actually exist**, and
+`<dependencyManagement>` DOES supply a missing version **when the merged map
+has one**. What still name-errors is unchanged in spirit and sharper in fact:
+an *undefined* property, a version-less dependency with *no* managed entry, a
+range, a `-SNAPSHOT`/`LATEST`/`RELEASE`, a graph-affecting profile, a
+classifier, non-jar packaging. The principle stands — never guess a version —
+it is only applied where guessing would actually occur.
+
+Evidence: `org.clojure/tools.cli 1.1.230` now resolves through its real parent,
+AOT-compiles and runs (transcript in
+`openspec/changes/adr-0095-clojars-consume/proposal.md`).
 
 ## Consequences
 

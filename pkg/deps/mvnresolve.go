@@ -73,7 +73,12 @@ func resolveMvn(rd *rdep, root string, opts ResolveOptions) ([]Dep, error) {
 	if err != nil {
 		return nil, err
 	}
-	edges, pruned, err := pomChildren(pom, c, rd.mvnExcl)
+	eff, err := effectivePOM(pom, c, parentFetcherFor(root, opts))
+	if err != nil {
+		return nil, err
+	}
+	rd.mvnParents = eff.chain
+	edges, pruned, err := pomChildren(eff, c, rd.mvnExcl)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +124,29 @@ func resolveMvn(rd *rdep, root string, opts ResolveOptions) ([]Dep, error) {
 	rd.base = dst
 
 	return finishMvn(rd, dst, c, edges, opts)
+}
+
+// parentFetcherFor returns the <parent>-POM fetcher effectivePOM walks the
+// chain with. A parent is fetched exactly like any other artifact — same
+// cache, same repository list, same G5010 when it is missing — but with NO
+// pinned repository: a Clojars-hosted child routinely inherits from a POM that
+// only exists on Maven Central (every org.clojure contrib artifact does).
+//
+// Parent POMs are cached as ordinary blobs, so a warm cache resolves them
+// offline. They are NOT hashed into build.lock.edn: the lock records the
+// child's own pom sha and the extracted tree hash, and a parent can only
+// influence the RESULT through the edges it contributes, which are themselves
+// locked coordinates. (Known gap, stated rather than hidden: a mutated parent
+// POM in a repository that also allows re-publishing a child would not be
+// caught by a checksum, only by the resulting edge set changing.)
+func parentFetcherFor(root string, opts ResolveOptions) parentFetcher {
+	return func(pc Coord) (*pomXML, error) {
+		b, _, err := fetchArtifact(root, pc, ".pom", "", opts)
+		if err != nil {
+			return nil, err
+		}
+		return parsePOM(b, pc)
+	}
 }
 
 // publishMvnTree extracts the jar into a temp dir and publishes it atomically,

@@ -23,6 +23,8 @@ G5012 maven artifact checksum mismatch
 G5013 maven version conflict
 G5014 offline: maven coordinate unavailable
 G5015 conflicting dependency coordinates
+G5016 unsupported dependency version syntax
+G5017 maven dependency source file cannot be read
 I4001 Java class used as a namespace
 I4002 namespace requires Java interop and cannot load on cljgo
 R1001 unterminated form
