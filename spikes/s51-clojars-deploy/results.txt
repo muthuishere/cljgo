@@ -1,0 +1,24 @@
+s51 — Clojars/Maven deploy round-trip (pure-Go stdlib only)
+
+1. built artifact: greetlib-0.1.0
+   pom 479 bytes, source jar 301 bytes (sha1 5c19dab4987c…)
+
+2. deployed to local repo /var/folders/cb/fw9_2_fd39n1jn_xm5r7q1dh0000gn/T/s51-repo-1521472511
+   6 files in Maven layout:
+     io/github/muthuishere/greetlib/0.1.0/greetlib-0.1.0.jar.md5
+     io/github/muthuishere/greetlib/0.1.0/greetlib-0.1.0.jar
+     io/github/muthuishere/greetlib/0.1.0/greetlib-0.1.0.jar.sha1
+     io/github/muthuishere/greetlib/0.1.0/greetlib-0.1.0.pom
+     io/github/muthuishere/greetlib/0.1.0/greetlib-0.1.0.pom.sha1
+     io/github/muthuishere/greetlib/0.1.0/greetlib-0.1.0.pom.md5
+
+3. consumed back: 1 source file(s), 1 transitive dep(s), checksums verified
+   ✓ greetlib/core.clj byte-identical (190 bytes)
+   ✓ transitive dep recovered from pom: [{org.clojure tools.cli 1.1.230}]
+
+4. public Clojars deploy path (HTTP PUT + basic-auth deploy token):
+   NOT fired (default). Set CLOJARS_DEPLOY=1 + CLOJARS_USERNAME/CLOJARS_PASSWORD
+   to push for real. The PUT is 6 authenticated requests (jar/pom + .sha1/.md5
+   each) — mechanically identical to the local write above.
+
+═══ VERDICT: ROUND-TRIP MET — published pure source recovered byte-identical, pure-Go, no JVM ═══

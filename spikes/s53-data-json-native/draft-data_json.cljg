@@ -1,0 +1,572 @@
+;; draft-data_json.cljg — cljgo-native port of clojure.data.json (spike s53,
+;; ADR 0096). Satellite shape per ADR 0017/house style (cf. core/string.cljg,
+;; core/async.cljg): opens with (clojure.core/in-ns 'clojure.data.json),
+;; interns the ONE name that collides with clojure.core (`read`) BEFORE the
+;; wholesale (refer 'clojure.core) so no "being replaced" warning fires, then
+;; refers core and defines the rest unqualified.
+;;
+;; Upstream is org.clojure/data.json 2.5.1 (single file clojure/data/json.clj,
+;; EPL-1.0, Stuart Sierra). This is a FAITHFUL native rewrite of the guts:
+;;   * the reader's custom Java PushbackReader (ReaderPBR/StringPBR over
+;;     java.io) is rewritten as a pure-Clojure char cursor over a string with
+;;     an atom position — read-str / read-json (String input) only.
+;;   * the writer's StringBuilder/StringWriter + java.io.Writer + the
+;;     defprotocol JSONWriter that `extend`s ~20 concrete Java classes is
+;;     rewritten as a pure-Clojure `cond` dispatch over cljgo predicates,
+;;     accumulating into a transient vector joined with (apply str …).
+;; The PUBLIC API, option keys, escaping, quoting, number semantics and error
+;; strings are kept byte-identical to the JVM oracle (Clojure 1.12.5 +
+;; data.json 2.5.1); see spikes/s53-data-json-native/draft-conformance-data.json.clj.
+;;
+;; SCOPED OUT this round (need a Go host reader/writer or clojure.pprint; see
+;; VERDICT.md): read/write against a real java.io.Reader/Writer, :extra-data-fn
+;; (needs a live Reader tail), pprint/pprint-json (needs clojure.pprint/cl-format),
+;; and the Java temporal/UUID JSONWriter extensions (Instant/Date/sql.Date/UUID).
+;;
+;; ----------------------------------------------------------------------------
+;; Copyright (c) Stuart Sierra, 2012. All rights reserved.  The use and
+;; distribution terms for this software are covered by the Eclipse Public
+;; License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be
+;; found in the file epl-v10.html at the root of this distribution.  By using
+;; this software in any fashion, you are agreeing to be bound by the terms of
+;; this license.  You must not remove this notice, or any other, from this
+;; software.
+;; ----------------------------------------------------------------------------
+
+(clojure.core/in-ns 'clojure.data.json)
+
+;; `read` collides with clojure.core/read. Claim the name in this namespace
+;; BEFORE the wholesale refer so (refer 'clojure.core) skips it (same trick
+;; core/string.cljg uses for reverse/replace/replace-first). Everything read
+;; needs is declared so the analyzer resolves forward references.
+(clojure.core/declare read read-str -read1 -read string-stream
+                      default-read-options write write-str -write
+                      default-write-options)
+(clojure.core/intern 'clojure.data.json 'read)
+
+(clojure.core/refer 'clojure.core)
+
+;;; ---------------------------------------------------------------------------
+;;; JSON READER  (pure-Clojure char cursor over a String)
+;;; ---------------------------------------------------------------------------
+
+;; The upstream InternalPBR (readChar / unreadChar / readChars / unreadChars /
+;; toReader) exists only to give the parser a pushback char stream. Over a
+;; String we need just a position we can advance and back up by one. A stream
+;; is {:s <string> :len <int> :pos <atom int>}; readChar returns the int code
+;; point or -1 at EOF, unreadChar backs up one. (readChars/toReader — the
+;; array fast-path and the Reader tail for :extra-data-fn — are intentionally
+;; not modelled; the correctness-equivalent slow path is always taken.)
+
+(defn- string-stream [s]
+  {:s s :len (count s) :pos (atom 0)})
+
+(defn- read-char
+  "Return the int code of the next char, or -1 at end of input."
+  [stream]
+  (let [p @(:pos stream)]
+    (if (< p (:len stream))
+      (do (swap! (:pos stream) inc)
+          (int (nth (:s stream) p)))
+      -1)))
+
+(defn- unread-char
+  "Back the cursor up by one char (ASSERT: never called at EOF)."
+  [stream]
+  (swap! (:pos stream) dec)
+  nil)
+
+;; hex-digit / parse-hex replace Integer/parseInt(…,16) — no Java static
+;; interop in cljgo. Returns the int value of a hex string.
+(defn- hex-digit [c]
+  (cond
+    (and (>= c (int \0)) (<= c (int \9))) (- c (int \0))
+    (and (>= c (int \a)) (<= c (int \f))) (+ 10 (- c (int \a)))
+    (and (>= c (int \A)) (<= c (int \F))) (+ 10 (- c (int \A)))
+    :else (throw (ex-info "JSON error (invalid hex digit in unicode escape)" {}))))
+
+(defn- read-hex-char
+  "Called with the head of the stream AFTER the initial \\u. Reads four hex
+  chars and returns the char."
+  [stream]
+  (let [a (read-char stream)
+        b (read-char stream)
+        c (read-char stream)
+        d (read-char stream)]
+    (when (or (neg? a) (neg? b) (neg? c) (neg? d))
+      (throw (ex-info "JSON error (end-of-file inside Unicode character escape)" {})))
+    (char (+ (* 4096 (hex-digit a))
+             (* 256 (hex-digit b))
+             (* 16 (hex-digit c))
+             (hex-digit d)))))
+
+(defn- read-escaped-char
+  "Called with the head of the stream AFTER the initial backslash."
+  [stream]
+  (let [c (read-char stream)]
+    (when (neg? c)
+      (throw (ex-info "JSON error (end-of-file inside escaped char)" {})))
+    (condp = c
+      (int \") \"
+      (int \\) \\
+      (int \/) \/
+      (int \b) \backspace
+      (int \f) \formfeed
+      (int \n) \newline
+      (int \r) \return
+      (int \t) \tab
+      (int \u) (read-hex-char stream)
+      (throw (ex-info "JSON error (invalid escaped char)" {})))))
+
+(defn- read-quoted-string
+  "Called with the head of the stream AFTER the opening quote."
+  [stream]
+  (let [buffer (transient [])]
+    (loop [b buffer]
+      (let [c (read-char stream)]
+        (when (neg? c)
+          (throw (ex-info "JSON error (end-of-file inside string)" {})))
+        (condp = c
+          (int \") (apply str (persistent! b))
+          (int \\) (recur (conj! b (read-escaped-char stream)))
+          (recur (conj! b (char c))))))))
+
+(defn- read-integer [string]
+  ;; Long if it fits, else promote to BigInt — the oracle behaviour.
+  (or (parse-long string)
+      (bigint string)))
+
+(defn- read-decimal [string bigdec?]
+  (if bigdec?
+    (bigdec string)
+    (parse-double string)))
+
+;; digit? on an int code
+(defn- digit-code? [c]
+  (and (>= c (int \0)) (<= c (int \9))))
+
+(defn- read-number
+  "Read a JSON number literal. The upstream state machine (minus/int-zero/
+  int-digit/frac-point/frac-first/frac-digit/exp-symbol/exp-first/exp-digit)
+  is preserved verbatim so the SAME inputs are accepted/rejected."
+  [stream bigdec?]
+  (let [buffer (transient [])
+        append (fn [b c] (conj! b (char c)))
+        ws? (fn [c] (or (= c 9) (= c 10) (= c 13) (= c 32)))
+        term? (fn [c] (or (= c (int \,)) (= c (int \])) (= c (int \}))))
+        decimal?
+        (loop [stage :minus b buffer]
+          (let [c (read-char stream)]
+            (case stage
+              :minus
+              (cond
+                (= c (int \-)) (recur :int-zero (append b c))
+                (= c (int \0)) (recur :frac-point (append b c))
+                (digit-code? c) (recur :int-digit (append b c))
+                :else (throw (ex-info "JSON error (invalid number literal)" {})))
+              :int-zero
+              (cond
+                (= c (int \0)) (recur :frac-point (append b c))
+                (digit-code? c) (recur :int-digit (append b c))
+                :else (throw (ex-info "JSON error (invalid number literal)" {})))
+              :int-digit
+              (cond
+                (digit-code? c) (recur :int-digit (append b c))
+                (= c (int \.)) (recur :frac-first (append b c))
+                (or (= c (int \e)) (= c (int \E))) (recur :exp-symbol (append b c))
+                (ws? c) (do (unread-char stream) false)
+                (term? c) (do (unread-char stream) false)
+                (= c -1) false
+                :else (throw (ex-info "JSON error (invalid number literal)" {})))
+              :frac-point
+              (cond
+                (= c (int \.)) (recur :frac-first (append b c))
+                (or (= c (int \e)) (= c (int \E))) (recur :exp-symbol (append b c))
+                (ws? c) (do (unread-char stream) false)
+                (term? c) (do (unread-char stream) false)
+                (= c -1) false
+                :else (throw (ex-info "JSON error (invalid number literal)" {})))
+              :frac-first
+              (cond
+                (digit-code? c) (recur :frac-digit (append b c))
+                :else (throw (ex-info "JSON error (invalid number literal)" {})))
+              :frac-digit
+              (cond
+                (digit-code? c) (recur :frac-digit (append b c))
+                (or (= c (int \e)) (= c (int \E))) (recur :exp-symbol (append b c))
+                (ws? c) (do (unread-char stream) true)
+                (term? c) (do (unread-char stream) true)
+                (= c -1) true
+                :else (throw (ex-info "JSON error (invalid number literal)" {})))
+              :exp-symbol
+              (cond
+                (or (= c (int \-)) (= c (int \+))) (recur :exp-first (append b c))
+                (digit-code? c) (recur :exp-digit (append b c))
+                :else (throw (ex-info "JSON error (invalid number literal)" {})))
+              :exp-first
+              (cond
+                (digit-code? c) (recur :exp-digit (append b c))
+                :else (throw (ex-info "JSON error (invalid number literal)" {})))
+              :exp-digit
+              (cond
+                (digit-code? c) (recur :exp-digit (append b c))
+                (ws? c) (do (unread-char stream) true)
+                (term? c) (do (unread-char stream) true)
+                (= c -1) true
+                :else (throw (ex-info "JSON error (invalid number literal)" {}))))))
+        s (apply str (persistent! buffer))]
+    (if decimal?
+      (read-decimal s bigdec?)
+      (read-integer s))))
+
+(defn- next-token
+  "Skip whitespace, return the int code of the next significant char or -1."
+  [stream]
+  (loop [c (read-char stream)]
+    (if (< 32 c)
+      c
+      (cond
+        (or (= c 9) (= c 10) (= c 13) (= c 32)) (recur (read-char stream))
+        (= c -1) -1
+        :else c))))
+
+(defn- read-array
+  "Called with the head of the stream AFTER the opening bracket."
+  [stream options]
+  (let [c (next-token stream)]
+    (cond
+      (= c (int \])) []
+      (= c (int \,)) (throw (ex-info "JSON error (invalid array)" {}))
+      (= c -1) (throw (ex-info "JSON error (EOF in array)" {}))
+      :else
+      (do (unread-char stream)
+          (loop [result (transient [])]
+            (let [r (conj! result (-read stream true nil options))
+                  t (next-token stream)]
+              (cond
+                (= t (int \])) (persistent! r)
+                (= t (int \,)) (recur r)
+                (= t -1) (throw (ex-info "JSON error (EOF in array)" {}))
+                :else (throw (ex-info "JSON error (invalid array)" {})))))))))
+
+(defn- read-key [stream]
+  (let [c (next-token stream)]
+    (cond
+      (= c (int \")) (let [k (read-quoted-string stream)]
+                       (if (= (int \:) (next-token stream))
+                         k
+                         (throw (ex-info "JSON error (missing `:` in object)" {}))))
+      (= c (int \})) nil
+      (= c -1) (throw (ex-info "JSON error (EOF in object)" {}))
+      :else (throw (ex-info (str "JSON error (non-string key in object), found `"
+                                 (char c) "`, expected `\"`") {})))))
+
+(defn- read-object
+  "Called with the head of the stream AFTER the opening brace."
+  [stream options]
+  (let [key-fn (get options :key-fn)
+        value-fn (get options :value-fn)]
+    (loop [result (transient {})]
+      (if-let [key (read-key stream)]
+        (let [key (cond-> key key-fn key-fn)
+              value (-read stream true nil options)
+              r (if value-fn
+                  (let [out-value (value-fn key value)]
+                    (if-not (= value-fn out-value)
+                      (assoc! result key out-value)
+                      result))
+                  (assoc! result key value))
+              t (next-token stream)]
+          (cond
+            (= t (int \,)) (recur r)
+            (= t (int \})) (persistent! r)
+            (= t -1) (throw (ex-info "JSON error (EOF in object)" {}))
+            :else (throw (ex-info "JSON error (missing entry in object)" {}))))
+        (let [r (persistent! result)]
+          (if (empty? r)
+            r
+            (throw (ex-info "JSON error empty entry in object is not allowed" {}))))))))
+
+(defn- -read
+  [stream eof-error? eof-value options]
+  (let [c (next-token stream)]
+    (cond
+      ;; numbers
+      (or (= c (int \-)) (digit-code? c))
+      (do (unread-char stream)
+          (read-number stream (:bigdec options)))
+      ;; strings
+      (= c (int \")) (read-quoted-string stream)
+      ;; null
+      (= c (int \n))
+      (if (and (= (int \u) (read-char stream))
+               (= (int \l) (read-char stream))
+               (= (int \l) (read-char stream)))
+        nil
+        (throw (ex-info "JSON error (expected null)" {})))
+      ;; true
+      (= c (int \t))
+      (if (and (= (int \r) (read-char stream))
+               (= (int \u) (read-char stream))
+               (= (int \e) (read-char stream)))
+        true
+        (throw (ex-info "JSON error (expected true)" {})))
+      ;; false
+      (= c (int \f))
+      (if (and (= (int \a) (read-char stream))
+               (= (int \l) (read-char stream))
+               (= (int \s) (read-char stream))
+               (= (int \e) (read-char stream)))
+        false
+        (throw (ex-info "JSON error (expected false)" {})))
+      ;; object
+      (= c (int \{)) (read-object stream options)
+      ;; array
+      (= c (int \[)) (read-array stream options)
+      ;; EOF / unexpected
+      :else
+      (if (neg? c)
+        (if eof-error?
+          (throw (ex-info "JSON error (end-of-file)" {}))
+          eof-value)
+        (throw (ex-info (str "JSON error (unexpected character): " (char c)) {}))))))
+
+(defn- -read1
+  [stream eof-error? eof-value options]
+  ;; :extra-data-fn needs a live Reader tail (toReader) — scoped out; the
+  ;; single-value read below is the whole supported surface.
+  (-read stream eof-error? eof-value options))
+
+(def default-read-options {:bigdec false
+                           :key-fn nil
+                           :value-fn nil})
+
+(defn read-str
+  "Reads one JSON value from input String. Options are key-value pairs, valid
+  options are :eof-error?, :eof-value, :bigdec, :key-fn, :value-fn (see the
+  data.json docs). :extra-data-fn is not supported in cljgo (needs a host
+  Reader)."
+  [string & {:as options}]
+  (let [{:keys [eof-error? eof-value] :or {eof-error? true}} options]
+    (-read1 (string-stream string)
+            eof-error? eof-value
+            (merge default-read-options options))))
+
+;; `read` is claimed above (interned before the refer). cljgo has no
+;; java.io.Reader; when given a String it delegates to read-str, otherwise it
+;; reports the scoped-out host-reader path plainly.
+(clojure.core/defn read
+  "Reads a single JSON value. In cljgo the input must be a String (there is no
+  host java.io.Reader yet — see spike s53 VERDICT). Options match read-str."
+  [input & {:as options}]
+  (if (string? input)
+    (apply read-str input (mapcat identity options))
+    (throw (ex-info "cljgo clojure.data.json/read: reading from a host Reader is not yet supported; pass a String or use read-str" {}))))
+
+;;; ---------------------------------------------------------------------------
+;;; JSON WRITER  (pure-Clojure cond dispatch, transient-vector accumulator)
+;;; ---------------------------------------------------------------------------
+
+;; The upstream JSONWriter protocol extends ~20 concrete Java classes. cljgo
+;; has no Java class hierarchy, so -write dispatches by cljgo predicate. The
+;; Appendable `out` becomes an ATOM holding a transient vector of string parts;
+;; `app` appends, and write-str joins at the end.
+
+(defn- app [out s]
+  (swap! out conj! s)
+  nil)
+
+(defn- default-write-key-fn [x]
+  (cond
+    (or (keyword? x) (symbol? x)) (name x)
+    (nil? x) (throw (ex-info "JSON object properties may not be nil" {}))
+    :else (str x)))
+
+(defn- default-value-fn [k v] v)
+
+(defn- hex4
+  "Lower-case, zero-padded to 4, hex — matches Integer/toHexString with the
+  upstream 000/00/0 padding."
+  [cp]
+  (format "%04x" (long cp)))
+
+(defn- ->hex-string [out cp]
+  (app out "\\u")
+  (app out (hex4 cp)))
+
+;; classify a <128 code point the way the upstream codepoint-decoder short[]
+;; does: 0 literal, 1 backslash-escaped (" and \), 2 slash, 3 \b, 4 \f,
+;; 5 \n, 6 \r, 7 \t, 8 control -> \uXXXX.
+(defn- decoder-class [cp]
+  (cond
+    (or (= cp (int \")) (= cp (int \\))) 1
+    (= cp (int \/)) 2
+    (= cp (int \backspace)) 3
+    (= cp (int \formfeed)) 4
+    (= cp (int \newline)) 5
+    (= cp (int \return)) 6
+    (= cp (int \tab)) 7
+    (< cp 32) 8
+    :else 0))
+
+(defn- write-string [s out options]
+  (let [slash (get options :escape-slash)
+        escape-js-separators (get options :escape-js-separators)
+        escape-unicode (get options :escape-unicode)]
+    (app out "\"")
+    (dotimes [i (count s)]
+      (let [cp (int (nth s i))]
+        (if (< cp 128)
+          (case (decoder-class cp)
+            0 (app out (str (char cp)))
+            1 (app out (str "\\" (char cp)))
+            2 (app out (if slash "\\/" "/"))
+            3 (app out "\\b")
+            4 (app out "\\f")
+            5 (app out "\\n")
+            6 (app out "\\r")
+            7 (app out "\\t")
+            8 (->hex-string out cp))
+          (cond
+            (or (= cp 8232) (= cp 8233)) ; U+2028 / U+2029
+            (if escape-js-separators
+              (->hex-string out cp)
+              (app out (str (char cp))))
+            escape-unicode (->hex-string out cp)
+            :else (app out (str (char cp)))))))
+    (app out "\"")))
+
+(defn- write-indent [out options]
+  (let [indent-depth (:indent-depth options)]
+    (app out "\n")
+    (loop [i indent-depth]
+      (when (pos? i)
+        (app out "  ")
+        (recur (dec i))))))
+
+(defn- write-object [m out options]
+  (let [key-fn (get options :key-fn)
+        value-fn (get options :value-fn)
+        indent (get options :indent)
+        opts (cond-> options indent (update :indent-depth inc))]
+    (app out "{")
+    (when (and indent (seq m))
+      (write-indent out opts))
+    (loop [x (seq m) have-printed-kv false]
+      (when x
+        (let [[k v] (first x)
+              out-key (key-fn k)
+              out-value (value-fn k v)
+              nxt (next x)]
+          (when-not (string? out-key)
+            (throw (ex-info "JSON object keys must be strings" {})))
+          (if-not (= value-fn out-value)
+            (do
+              (when have-printed-kv
+                (app out ",")
+                (when indent (write-indent out opts)))
+              (write-string out-key out opts)
+              (app out ":")
+              (when indent (app out " "))
+              (-write out-value out opts)
+              (when nxt (recur nxt true)))
+            (when nxt (recur nxt have-printed-kv))))))
+    (when (and indent (seq m))
+      (write-indent out options))
+    (app out "}")))
+
+(defn- write-array [s out options]
+  (let [indent (get options :indent)
+        opts (cond-> options indent (update :indent-depth inc))]
+    (app out "[")
+    (when (and indent (seq s))
+      (write-indent out opts))
+    (loop [x (seq s)]
+      (when x
+        (let [fst (first x) nxt (next x)]
+          (-write fst out opts)
+          (when nxt
+            (app out ",")
+            (when indent (write-indent out opts))
+            (recur nxt)))))
+    (when (and indent (seq s))
+      (write-indent out options))
+    (app out "]")))
+
+(defn- write-float [x out options]
+  ;; cljgo doubles cover both Float/Double; NaN/Inf rejected like the oracle.
+  (cond
+    (NaN? x) (throw (ex-info "JSON error: cannot write Double NaN" {}))
+    (infinite? x) (throw (ex-info "JSON error: cannot write infinite Double" {}))
+    :else (app out (str x))))
+
+(defn- default-write-fn [x out options]
+  (throw (ex-info (str "Don't know how to write JSON of " (type x)) {})))
+
+;; The protocol dispatch, as a cond over cljgo predicates. Order matters:
+;; nil/boolean first, then named (kw/sym) as strings, string, the numeric
+;; family (ratio -> double, float rejects NaN/Inf, everything else str), maps,
+;; then seqable collections, else the :default-write-fn.
+(defn- -write [x out options]
+  (cond
+    (nil? x) (app out "null")
+    (or (true? x) (false? x)) (app out (str x))
+    (or (keyword? x) (symbol? x)) (write-string (name x) out options)
+    (string? x) (write-string x out options)
+    (ratio? x) (-write (double x) out options)
+    (and (number? x) (or (float? x))) (write-float x out options)
+    (number? x) (app out (str x))
+    (map? x) (write-object x out options)
+    (or (vector? x) (seq? x) (list? x) (set? x)) (write-array x out options)
+    (coll? x) (write-array x out options)
+    :else ((:default-write-fn options) x out options)))
+
+(def default-write-options {:escape-unicode true
+                            :escape-js-separators true
+                            :escape-slash true
+                            :key-fn default-write-key-fn
+                            :value-fn default-value-fn
+                            :default-write-fn default-write-fn
+                            :indent false
+                            :indent-depth 0})
+
+(defn write-str
+  "Converts x to a JSON-formatted String. Options are the same as the JVM
+  data.json `write`/`write-str` (:escape-unicode, :escape-js-separators,
+  :escape-slash, :key-fn, :value-fn, :indent, :default-write-fn).
+  :date-formatter/:sql-date-converter and the Java temporal/UUID writers are
+  scoped out in cljgo (see spike s53 VERDICT)."
+  [x & {:as options}]
+  (let [out (atom (transient []))]
+    (-write x out (merge default-write-options options))
+    (apply str (persistent! @out))))
+
+(defn write
+  "In cljgo there is no host java.io.Writer; `write` builds the JSON string and
+  returns it (identical to write-str). Options match write-str."
+  [x & {:as options}]
+  (apply write-str x (mapcat identity options)))
+
+;;; ---------------------------------------------------------------------------
+;;; DEPRECATED 0.1.x APIs that are string-based (port cleanly)
+;;; ---------------------------------------------------------------------------
+
+(defn read-json
+  "DEPRECATED; replaced by read-str. String input only in cljgo."
+  ([input] (read-json input true true nil))
+  ([input keywordize?] (read-json input keywordize? true nil))
+  ([input keywordize? eof-error? eof-value]
+   (let [key-fn (if keywordize? keyword identity)]
+     (read-str input :key-fn key-fn :eof-error? eof-error? :eof-value eof-value))))
+
+(defn json-str
+  "DEPRECATED; replaced by write-str."
+  [x & options]
+  (apply write-str x options))
+
+;; NOTE (integration): the following upstream names are intentionally NOT
+;; provided this round because they need a host Writer / *out* / clojure.pprint:
+;;   write (to a real Writer), print-json, write-json, pprint, pprint-json,
+;;   on-extra-throw, on-extra-throw-remaining (the :extra-data-fn helpers).
+;; They become available once cljg.io grows a host reader/writer and cljgo
+;; ships clojure.pprint. See VERDICT.md.

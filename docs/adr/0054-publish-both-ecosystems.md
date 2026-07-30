@@ -1,6 +1,9 @@
 # ADR 0054 — `publish`: one library, both ecosystems, purity-gated
 
-Date: 2026-07-22 · Status: **accepted** — implemented (OpenSpec change
+Date: 2026-07-22 · Status: **accepted** — implemented; its two deferred items
+(consuming Maven/Clojars, and the real Clojars coordinate/source-jar upload) are
+taken on by **ADR 0095**, which extends this without changing decisions 1–4.
+(OpenSpec change
 `apply-adr-0054-publish`; `cljgo publish go|clojars`, the Go-interop taint
 classifier, and `certain-java?`). Evidence: spikes S34, S35 — both closed.
 Extends the producer side of **ADR 0013** (every project is a library); rides

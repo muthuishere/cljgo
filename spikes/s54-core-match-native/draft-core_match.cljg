@@ -1,0 +1,275 @@
+;; draft-core_match.cljg — cljgo-native clojure.core.match (SCOPED first cut).
+;;
+;;   Copyright (c) Rich Hickey and contributors. All rights reserved.
+;;   Portions Copyright (c) the cljgo authors.
+;;   The use and distribution terms for this software are covered by the
+;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;;   which can be found in the file epl-v10.html at the root of the upstream
+;;   org.clojure/core.match distribution (version 1.1.1). By using this
+;;   software in any fashion, you are agreeing to be bound by the terms of
+;;   this license. You must not remove this notice.
+;;
+;; ---------------------------------------------------------------------------
+;; PORT STRATEGY (spike s54, ADR 0096)
+;;
+;; Upstream clojure.core.match compiles pattern rows to a decision-tree DAG
+;; using Maranget's algorithm. Its internal representation is a tower of
+;; `deftype`s that implement JVM HOST interfaces — clojure.lang.ISeq,
+;; ILookup, IFn, Associative, Indexed, IPersistentCollection, IObj — plus
+;; clojure.lang.Compiler/LOOP_LOCALS, java.io.Writer / print-method,
+;; Class/forName, .isArray, and IllegalArgumentException/AssertionError.
+;; NONE of that host surface exists in cljgo (Clojure-on-Go), so the upstream
+;; matrix engine does NOT port verbatim.
+;;
+;; This first cut instead re-derives the SAME OBSERVABLE SEMANTICS with a
+;; pure-Clojure *linear* pattern compiler: each clause is compiled, in
+;; source order, to a nested test/bind expression that either yields the
+;; clause action or tail-calls the next clause's fail-continuation (a
+;; zero-arg fn, so no code duplication and no host backtracking-exception).
+;; The frozen return values are identical to the JVM oracle for the
+;; supported surface (see draft-conformance-core.match.clj). What is traded
+;; away vs. upstream is the decision-tree *optimization* and the
+;; redundancy/exhaustiveness *warnings* — neither changes a return value.
+;;
+;; SUPPORTED this cut: literal (number / string / char / bool / keyword /
+;;   nil / quoted symbol|keyword), wildcard `_`, binding symbol, vector
+;;   pattern (fixed + `&` rest), seq pattern `(... :seq)` (fixed + rest),
+;;   map pattern + `:only`, `:or`, `:as`, `:guard`, `:when` (as a plain
+;;   guard — no defpred registry), app `:<<`, nested combinations, and the
+;;   trailing `:else` row (else falls through to a thrown "No matching
+;;   clause: <vals>"). Public API: match, matchv, matchm, match-let.
+;;
+;; SCOPED OUT (documented in VERDICT.md): decision-tree optimization,
+;;   *no-backtrack*/recur code-size modes, duplicate-wildcard &
+;;   exhaustiveness syntax checks, the &env local-shadowing rule (a symbol
+;;   that names a surrounding local is treated here as a fresh binding, not
+;;   a literal), IMatchLookup on arbitrary objects, and the optional
+;;   date/regex/java/array/binary matcher namespaces (Java-only upstream).
+;;
+;; Semantics frozen against JVM org.clojure/core.match 1.1.1 on Clojure
+;; 1.12.5 — see draft-conformance-core.match.clj.
+;; ---------------------------------------------------------------------------
+
+(clojure.core/in-ns 'clojure.core.match)
+(clojure.core/refer 'clojure.core)
+
+(declare cp cp-vector cp-map cp-seq-form cp-seq cp-or cp-guard cp-map-only
+         index-of-amp literal-syntax? compile-row)
+
+;; index of the `&` marker in a pattern vector, or nil.
+(defn ^:private index-of-amp [ps]
+  (loop [i 0 s (seq ps)]
+    (cond
+      (nil? s) nil
+      (= (first s) '&) i
+      :else (recur (inc i) (next s)))))
+
+;; a "plain literal" — matched with =, never a binding or a compound.
+(defn ^:private literal-syntax? [p]
+  (or (keyword? p) (number? p) (string? p) (char? p)
+      (true? p) (false? p)))
+
+;; ---------------------------------------------------------------------------
+;; cp — compile ONE pattern `pat` against occurrence symbol `ocr`.
+;; Returns an expression that evaluates `success` (with this pattern's
+;; bindings in scope) on a match, or `fail` (a `(fail-fn)` call) otherwise.
+;; ---------------------------------------------------------------------------
+(defn ^:private cp [pat ocr success fail]
+  (cond
+    (= pat '_)          success
+    (= pat '&)          success
+    (nil? pat)          `(if (nil? ~ocr) ~success ~fail)
+    (symbol? pat)       `(let [~pat ~ocr] ~success)
+    (literal-syntax? pat) `(if (= ~ocr ~pat) ~success ~fail)
+    (vector? pat)       (cp-vector pat ocr success fail)
+    (map? pat)          (cp-map pat ocr success fail)
+    (seq? pat)          (cp-seq-form pat ocr success fail)
+    :else               `(if (= ~ocr ~pat) ~success ~fail)))
+
+;; vector pattern: matches vector? of the right shape, binding by position.
+(defn ^:private cp-vector [pat ocr success fail]
+  (let [idx (index-of-amp pat)]
+    (if idx
+      (let [heads (subvec pat 0 idx)
+            restp (nth pat (inc idx))
+            n     (count heads)
+            subs  (mapv (fn [_] (gensym "v__")) heads)
+            rocr  (gensym "vr__")
+            inner (reduce (fn [succ [p o]] (cp p o succ fail))
+                          (cp restp rocr success fail)
+                          (reverse (map vector heads subs)))
+            binds (vec (concat
+                         (mapcat (fn [[o i]] [o `(nth ~ocr ~i)])
+                                 (map vector subs (range)))
+                         [rocr `(subvec ~ocr ~n)]))]
+        `(if (and (vector? ~ocr) (>= (count ~ocr) ~n))
+           (let ~binds ~inner)
+           ~fail))
+      (let [n     (count pat)
+            subs  (mapv (fn [_] (gensym "v__")) pat)
+            inner (reduce (fn [succ [p o]] (cp p o succ fail))
+                          success
+                          (reverse (map vector pat subs)))
+            binds (vec (mapcat (fn [[o i]] [o `(nth ~ocr ~i)])
+                               (map vector subs (range))))]
+        `(if (and (vector? ~ocr) (= (count ~ocr) ~n))
+           (let ~binds ~inner)
+           ~fail)))))
+
+;; map pattern: matches map? with every named key present, binding values.
+(defn ^:private cp-map [pat ocr success fail]
+  (let [ks      (vec (keys pat))
+        vs      (vec (vals pat))
+        subs    (mapv (fn [_] (gensym "m__")) ks)
+        inner   (reduce (fn [succ [p o]] (cp p o succ fail))
+                        success
+                        (reverse (map vector vs subs)))
+        binds   (vec (mapcat (fn [[k o]] [o `(get ~ocr ~k)])
+                             (map vector ks subs)))
+        present (map (fn [k] `(contains? ~ocr ~k)) ks)]
+    `(if (and (map? ~ocr) ~@present)
+       (let ~binds ~inner)
+       ~fail)))
+
+;; seq pattern `(... :seq)`: matches seq?/sequential?, positional like a
+;; vector but realised via (vec (seq ocr)); `&` rest binds a lazy tail.
+(defn ^:private cp-seq [ps ocr success fail]
+  (let [idx (index-of-amp ps)
+        sv  (gensym "sq__")]
+    (if idx
+      (let [heads (subvec ps 0 idx)
+            restp (nth ps (inc idx))
+            n     (count heads)
+            subs  (mapv (fn [_] (gensym "s__")) heads)
+            rocr  (gensym "sr__")
+            inner (reduce (fn [succ [p o]] (cp p o succ fail))
+                          (cp restp rocr success fail)
+                          (reverse (map vector heads subs)))
+            binds (vec (concat
+                         (mapcat (fn [[o i]] [o `(nth ~sv ~i)])
+                                 (map vector subs (range)))
+                         [rocr `(nthnext ~ocr ~n)]))]
+        `(if (or (seq? ~ocr) (sequential? ~ocr))
+           (let [~sv (vec (seq ~ocr))]
+             (if (>= (count ~sv) ~n) (let ~binds ~inner) ~fail))
+           ~fail))
+      (let [n     (count ps)
+            subs  (mapv (fn [_] (gensym "s__")) ps)
+            inner (reduce (fn [succ [p o]] (cp p o succ fail))
+                          success
+                          (reverse (map vector ps subs)))
+            binds (vec (mapcat (fn [[o i]] [o `(nth ~sv ~i)])
+                               (map vector subs (range))))]
+        `(if (or (seq? ~ocr) (sequential? ~ocr))
+           (let [~sv (vec (seq ~ocr))]
+             (if (= (count ~sv) ~n) (let ~binds ~inner) ~fail))
+           ~fail)))))
+
+;; :or — match if ANY alternative matches. Alternatives are literals or
+;; wildcards this cut (binding alternatives are scoped out).
+(defn ^:private cp-or [alts ocr success fail]
+  (let [alt-test
+        (fn [alt]
+          (cond
+            (= alt '_)  true
+            (nil? alt)  `(nil? ~ocr)
+            (and (seq? alt) (= (first alt) 'quote)) `(= ~ocr ~alt)
+            (symbol? alt) `(= ~ocr '~alt)
+            :else       `(= ~ocr ~alt)))]
+    `(if (or ~@(map alt-test alts)) ~success ~fail)))
+
+;; :guard / :when — match inner pattern then require every guard truthy.
+(defn ^:private cp-guard [pat ocr success fail]
+  (let [p  (first pat)
+        gs (nth pat 2)
+        gs (if (vector? gs) gs [gs])]
+    (cp p ocr `(if (and ~@(map (fn [g] `(~g ~ocr)) gs)) ~success ~fail) fail)))
+
+;; :only — map pattern whose key set must EXACTLY equal the :only vector.
+(defn ^:private cp-map-only [mpat only ocr success fail]
+  (cp-map mpat ocr
+          `(if (= (set (keys ~ocr)) ~(set only)) ~success ~fail)
+          fail))
+
+;; seq-headed special forms.
+(defn ^:private cp-seq-form [pat ocr success fail]
+  (let [f (first pat)
+        s (second pat)]
+    (cond
+      (= f 'quote) `(if (= ~ocr ~pat) ~success ~fail)
+      (= f :or)    (cp-or (rest pat) ocr success fail)
+      (= s :as)    (let [p (first pat) sym (nth pat 2)]
+                     (cp p ocr `(let [~sym ~ocr] ~success) fail))
+      (= s :guard) (cp-guard pat ocr success fail)
+      (= s :when)  (cp-guard pat ocr success fail)
+      (= s :<<)    (let [p (first pat) form (nth pat 2) g (gensym "app__")]
+                     `(let [~g (~form ~ocr)] ~(cp p g success fail)))
+      (= s :seq)   (cp-seq (first pat) ocr success fail)
+      (= s :only)  (cp-map-only (first pat) (nth pat 2) ocr success fail)
+      :else        `(if (= ~ocr ~pat) ~success ~fail))))
+
+;; compile a whole pattern ROW (a vector of sub-patterns, one per occurrence).
+(defn ^:private compile-row [patvec ocrs fail action]
+  (reduce (fn [succ [p o]] (cp p o succ fail))
+          action
+          (reverse (map vector patvec ocrs))))
+
+;; core expansion shared by match / matchv / matchm.
+(defn ^:private emit-match [vars clauses]
+  (let [[vars clauses]
+        (if (vector? vars)
+          [vars clauses]
+          [[vars]
+           (mapcat (fn [[c a]] [(if (= c :else) c [c]) a])
+                   (partition 2 clauses))])
+        pairs     (partition 2 clauses)
+        ocrs      (mapv (fn [_] (gensym "ocr__")) vars)
+        last-pair (last pairs)
+        else?     (= (first last-pair) :else)
+        body      (if else? (butlast pairs) pairs)
+        final     (if else?
+                    (second last-pair)
+                    `(throw (ex-info
+                              (str "No matching clause: "
+                                   ~@(interpose " " ocrs)) {})))
+        expr      (reduce
+                    (fn [acc [pat action]]
+                      (let [fsym (gensym "fail__")]
+                        `(let [~fsym (fn [] ~acc)]
+                           ~(compile-row pat ocrs `(~fsym) action))))
+                    final
+                    (reverse body))]
+    `(let [~@(mapcat vector ocrs vars)] ~expr)))
+
+;; ---------------------------------------------------------------------------
+;; Public macros
+;; ---------------------------------------------------------------------------
+
+(defmacro match
+  "Pattern match a row of occurrences. Take a vector of occurrences, vars.
+  Clause question-answer syntax is like `cond`. Questions must be wrapped in
+  a vector with the same arity as vars. The last question may be :else,
+  which matches anything. A single var not wrapped in a vector is also
+  allowed; questions then need not be wrapped."
+  [vars & clauses]
+  (emit-match vars clauses))
+
+(defmacro matchv
+  "Like match, with an explicit vector-type as the first argument. cljgo has
+  a single (persistent) vector representation, so the type is accepted and
+  ignored — behaviour is identical to match."
+  [_type vars & clauses]
+  (emit-match vars clauses))
+
+(defmacro matchm
+  "Like match. Upstream matchm additionally consults IMatchLookup for map
+  matching; cljgo map matching uses map?/get, so matchm == match here."
+  [vars & clauses]
+  (emit-match vars clauses))
+
+(defmacro match-let
+  "Like let, then match over the bound names."
+  [bindings & body]
+  (let [bindvars (take-nth 2 bindings)]
+    `(let ~bindings
+       (clojure.core.match/match [~@bindvars] ~@body))))

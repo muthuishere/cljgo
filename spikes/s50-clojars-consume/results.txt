@@ -1,0 +1,98 @@
+s50 — Clojars/Maven consume spike (pure-Go stdlib only, live network)
+repos: https://repo.clojars.org then https://repo1.maven.org/maven2
+
+━━━ org.clojure/data.json 2.5.1 ━━━
+  transitive graph: 1 coordinate(s)
+    - org.clojure/data.json 2.5.1              [central]
+  jar: 10235 bytes from central — 1 .clj/.cljc source, 0 .class
+  source purity: 0 loadable (0 fenced-.cljc), 1 hard-Java
+    ✗ clojure/data/json.clj → "(:import" (hard)
+  VERDICT: UNUSABLE — every namespace is hard-Java-tainted; nothing loads on cljgo's Go host
+
+━━━ org.clojure/tools.cli 1.1.230 ━━━
+  transitive graph: 1 coordinate(s)
+    - org.clojure/tools.cli 1.1.230            [central]
+  jar: 11177 bytes from central — 1 .clj/.cljc source, 0 .class
+  source purity: 1 loadable (0 fenced-.cljc), 0 hard-Java
+  VERDICT: FULLY CONSUMABLE — all 1 namespaces loadable (Java, if any, fenced in reader conditionals cljgo skips)
+
+━━━ medley/medley 1.4.0 ━━━
+  transitive graph: 4 coordinate(s)
+    - medley/medley 1.4.0                      [clojars]
+    - org.clojure/clojure 1.9.0                [central]
+    - org.clojure/spec.alpha 0.1.143           [central]
+    - org.clojure/core.specs.alpha 0.1.24      [central]
+  jar: 12703 bytes from clojars — 2 .clj/.cljc source, 0 .class
+  source purity: 2 loadable (1 fenced-.cljc), 0 hard-Java
+  VERDICT: FULLY CONSUMABLE — all 2 namespaces loadable (Java, if any, fenced in reader conditionals cljgo skips)
+
+━━━ hiccup/hiccup 1.0.5 ━━━
+  transitive graph: 2 coordinate(s)
+    - hiccup/hiccup 1.0.5                      [clojars]
+    - org.clojure/clojure 1.2.1                [central]
+  jar: 16324 bytes from clojars — 10 .clj/.cljc source, 0 .class
+  source purity: 8 loadable (0 fenced-.cljc), 2 hard-Java
+    ✗ hiccup/compiler.clj → "(:import" (hard)
+    ✗ hiccup/util.clj → "(:import" (hard)
+  VERDICT: PARTIALLY CONSUMABLE — 8 ns loadable; 2 hard-Java ns fail loud per-namespace at require (ADR 0054 dec 4)
+
+━━━ org.clojure/core.match 1.1.0 ━━━
+  transitive graph: 2 coordinate(s)
+    - org.clojure/core.match 1.1.0             [central]
+    - org.clojure/clojure ${clojure.version}   [MISS(HTTP 404 from central)]
+  jar: 27364 bytes from central — 10 .clj/.cljc source, 0 .class
+  source purity: 5 loadable (0 fenced-.cljc), 5 hard-Java
+    ✗ clojure/core/match/date.clj → "java.u" (hard)
+    ✗ clojure/core/match/regex.clj → "(:import" (hard)
+    ✗ clojure/core/match/java.clj → "java.l" (hard)
+    ✗ clojure/core/match/protocols.clj → "(definterface" (hard)
+  VERDICT: PARTIALLY CONSUMABLE — 5 ns loadable; 5 hard-Java ns fail loud per-namespace at require (ADR 0054 dec 4)
+
+━━━ cheshire/cheshire 5.13.0 ━━━
+  transitive graph: 5 coordinate(s)
+    - cheshire/cheshire 5.13.0                 [clojars]
+    - com.fasterxml.jackson.core/jackson-core 2.17.0 [central]
+    - com.fasterxml.jackson.dataformat/jackson-dataformat-smile 2.17.0 [central]
+    - com.fasterxml.jackson.dataformat/jackson-dataformat-cbor 2.17.0 [central]
+    - tigris/tigris 0.1.2                      [clojars]
+  jar: 25054 bytes from clojars — 10 .clj/.cljc source, 1 .class
+  source purity: 2 loadable (0 fenced-.cljc), 8 hard-Java
+    ✗ cheshire/generate_seq.clj → "(:import" (hard)
+    ✗ cheshire/core.clj → "(:import" (hard)
+    ✗ cheshire/parse.clj → "(:import" (hard)
+    ✗ cheshire/factory.clj → "(:import" (hard)
+  VERDICT: PARTIALLY CONSUMABLE — 2 ns loadable; 8 hard-Java ns fail loud per-namespace at require (ADR 0054 dec 4)
+
+━━━ clj-http/clj-http 3.13.0 ━━━
+  transitive graph: 11 coordinate(s)
+    - clj-http/clj-http 3.13.0                 [clojars]
+    - org.apache.httpcomponents/httpcore 4.4.16 [central]
+    - org.apache.httpcomponents/httpclient 4.5.14 [central]
+    - org.apache.httpcomponents/httpclient-cache 4.5.14 [central]
+    - org.apache.httpcomponents/httpasyncclient 4.1.5 [central]
+    - org.apache.httpcomponents/httpmime 4.5.14 [central]
+    - commons-codec/commons-codec 1.16.1       [central]
+    - commons-io/commons-io 2.16.1             [central]
+    - slingshot/slingshot 0.12.2               [clojars]
+    - potemkin/potemkin 0.4.7                  [clojars]
+    - riddley/riddley 0.1.12                   [clojars]
+  jar: 60433 bytes from clojars — 10 .clj/.cljc source, 0 .class
+  source purity: 1 loadable (0 fenced-.cljc), 9 hard-Java
+    ✗ META-INF/leiningen/clj-http/clj-http/project.clj → "javax.s" (hard)
+    ✗ clj_http/util.clj → "(:import" (hard)
+    ✗ clj_http/core.clj → "(:import" (hard)
+    ✗ clj_http/client.clj → "(:import" (hard)
+  VERDICT: PARTIALLY CONSUMABLE — 1 ns loadable; 9 hard-Java ns fail loud per-namespace at require (ADR 0054 dec 4)
+
+
+═══ SUBSET MEASUREMENT (n=7) ═══
+  cheshire/cheshire 5.13.0         PARTIALLY (pure ns usable, Java ns fail loud)
+  clj-http/clj-http 3.13.0         PARTIALLY (pure ns usable, Java ns fail loud)
+  hiccup/hiccup 1.0.5              PARTIALLY (pure ns usable, Java ns fail loud)
+  medley/medley 1.4.0              FULLY consumable (all pure)
+  org.clojure/core.match 1.1.0     PARTIALLY (pure ns usable, Java ns fail loud)
+  org.clojure/data.json 2.5.1      UNUSABLE (no source / fetch fail)
+  org.clojure/tools.cli 1.1.230    FULLY consumable (all pure)
+
+  fully-consumable: 2   partially: 4   unusable: 1
+  → pure-subset reach (full+partial): 6/7 libraries yield usable source
