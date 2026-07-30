@@ -82,16 +82,19 @@ func installSecurityShims(def func(name string, fn func(args ...any) any)) {
 	def("-getenv", getenvShim)
 
 	// --- crypto primitives (ADR 0103) ---------------------------------------
+	// -sha256 hashes a string OR a byte-array (ADR 0110): a digest over a
+	// blob read with cljg.io/read-bytes or decoded with base64-decode-bytes
+	// must not have to detour through a lossy string.
 	def("-sha256", func(args ...any) any {
-		sum := sha256.Sum256([]byte(asString(one("-sha256", args))))
+		sum := sha256.Sum256(toGoBytes("cljg.security/sha256", one("-sha256", args)))
 		return hex.EncodeToString(sum[:])
 	})
 	def("-hmac-sha256", func(args ...any) any {
 		if len(args) != 2 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: -hmac-sha256 (expects 2: [key message])", len(args)))
 		}
-		mac := hmac.New(sha256.New, []byte(asString(args[0])))
-		mac.Write([]byte(asString(args[1])))
+		mac := hmac.New(sha256.New, toGoBytes("cljg.security/hmac-sha256", args[0]))
+		mac.Write(toGoBytes("cljg.security/hmac-sha256", args[1]))
 		return hex.EncodeToString(mac.Sum(nil))
 	})
 	def("-secure-random", func(args ...any) any {
@@ -129,8 +132,9 @@ func installSecurityShims(def func(name string, fn func(args ...any) any)) {
 		}
 		return toClojureBytes(b)
 	})
+	// -hex-encode, like base64-encode, takes a string or a byte-array (ADR 0110).
 	def("-hex-encode", func(args ...any) any {
-		return hex.EncodeToString([]byte(asString(one("-hex-encode", args))))
+		return hex.EncodeToString(toGoBytes("cljg.security/hex", one("-hex-encode", args)))
 	})
 	def("-hex-decode", func(args ...any) any {
 		b, err := hex.DecodeString(asString(one("-hex-decode", args)))

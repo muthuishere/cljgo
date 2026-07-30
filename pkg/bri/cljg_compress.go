@@ -53,16 +53,14 @@ func compressPublicName(codec string, decompress bool) string {
 	return "cljg.compress"
 }
 
-// compressInput coerces v (a string or []byte) to the bytes a codec consumes.
+// compressInput coerces v (a string or any byte-array) to the bytes a codec
+// consumes. It goes through toGoBytes so the SIGNED byte-arrays every cljg
+// byte producer returns — cljg.io/read-bytes, cljg.security/base64-decode-bytes,
+// cljg.stream/read-bytes — feed gunzip/inflate directly (ADR 0110: producers
+// and consumers must compose; a value that answers `bytes?` true must be
+// accepted wherever bytes are asked for).
 func compressInput(name string, v any) []byte {
-	switch b := v.(type) {
-	case string:
-		return []byte(b)
-	case []byte:
-		return b
-	default:
-		panic(fmt.Errorf("%s expects a string or byte-array, got: %s", name, lang.PrintString(v)))
-	}
+	return toGoBytes(name, v)
 }
 
 // compressLevel validates a flate-family compression level: -1 (default) or
@@ -153,7 +151,7 @@ func installCompressShims(def func(name string, fn func(args ...any) any)) {
 		if err := w.Close(); err != nil {
 			panic(fmt.Errorf("%s: %w", name, err))
 		}
-		return buf.Bytes()
+		return toClojureBytes(buf.Bytes())
 	})
 
 	// -decompress (codec data as-string?) -> decompressed []byte, or a string
@@ -177,7 +175,7 @@ func installCompressShims(def func(name string, fn func(args ...any) any)) {
 		if args[2] == true {
 			return string(out)
 		}
-		return out
+		return toClojureBytes(out)
 	})
 
 	// -decompress-stream (codec source) -> a NEW ReadableStream yielding the
@@ -196,6 +194,9 @@ func installCompressShims(def func(name string, fn func(args ...any) any)) {
 			return newReadableStream(dr, &compressCloser{decompressor: dr, source: src})
 		case []byte:
 			dr := newDecompressReader(name, codec, bytes.NewReader(src))
+			return newReadableStream(dr, dr)
+		case []int8:
+			dr := newDecompressReader(name, codec, bytes.NewReader(toGoBytes(name, src)))
 			return newReadableStream(dr, dr)
 		default:
 			panic(fmt.Errorf("%s expects a readable stream or byte-array, got: %s", name, lang.PrintString(args[1])))

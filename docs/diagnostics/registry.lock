@@ -17,6 +17,7 @@ G5006 divide by zero
 G5007 no value supplied for key
 G5008 sql params passed as a collection
 G5009 collection value in a row map
+G5010 options argument is not a map
 I4001 Java class used as a namespace
 R1001 unterminated form
 R1002 unmatched delimiter

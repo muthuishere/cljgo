@@ -144,6 +144,22 @@ func (rs *ReadableStream) closeRead() {
 	}
 }
 
+// Close makes a ReadableStream an io.Closer, which is what `with-open` looks
+// for (corelib's -close-resource): (with-open [s (of-file "x")] …) releases the
+// file on every exit path, so the docstring's advice is true (ADR 0110).
+// Idempotent, same as cljg.stream/close.
+func (rs *ReadableStream) Close() error {
+	rs.closeRead()
+	return nil
+}
+
+// Close makes a WritableStream an io.Closer for `with-open` — flush, then close
+// the underlying writer. Idempotent, same as cljg.stream/close.
+func (ws *WritableStream) Close() error {
+	ws.closeWrite()
+	return nil
+}
+
 // Seq makes a ReadableStream a first-class reducible: (reduce f init readable),
 // (into [] readable), (doseq [c readable] …) all walk it as a lazy seq of
 // []byte chunks (defaultChunkSize each), pulled on demand — constant memory,
@@ -162,7 +178,9 @@ func (rs *ReadableStream) chunkSeq(n int) lang.ISeq {
 		if chunk == nil {
 			return nil
 		}
-		return lang.NewCons(chunk, rs.chunkSeq(n))
+		// SIGNED bytes, like every other cljg byte route (ADR 0110): a chunk
+		// read from a file must equal the same bytes read by cljg.io/read-bytes.
+		return lang.NewCons(toClojureBytes(chunk), rs.chunkSeq(n))
 	})
 }
 
@@ -183,19 +201,9 @@ func (ws *WritableStream) write(v any) {
 	if ws.closed {
 		panic(fmt.Errorf("cljg.stream: write to a closed stream"))
 	}
-	var err error
-	switch b := v.(type) {
-	case string:
-		_, err = ws.bw.WriteString(b)
-	case []byte:
-		_, err = ws.bw.Write(b)
-	case []int8:
-		// what clojure.core/byte-array builds (ADR 0110 ask 1) — an honest
-		// byte-array on this host, so it writes like []byte.
-		_, err = ws.bw.Write(toGoBytes("cljg.stream/write", b))
-	default:
-		panic(fmt.Errorf("cljg.stream: write expects a string or byte-array, got: %s", lang.PrintString(v)))
-	}
+	// string, []byte, or the signed []int8 every cljg byte producer returns —
+	// one coercion, so anything `bytes?` accepts writes (ADR 0110).
+	_, err := ws.bw.Write(toGoBytes("cljg.stream/write", v))
 	if err == nil {
 		err = ws.bw.Flush()
 	}
@@ -222,10 +230,15 @@ func (ws *WritableStream) closeWrite() {
 // way to touch them, and the ergonomic chunks/lines/write/close live in
 // core/cljg/stream.cljg.
 func installStreamShims(def func(name string, fn func(args ...any) any)) {
-	// -stream-read-bytes (readable n) -> []byte chunk, or nil at EOF.
+	// -stream-read-bytes (readable n) -> a signed byte-array chunk, or nil at
+	// EOF (nil, not an empty array — the seq terminates on it).
 	def("-stream-read-bytes", func(args ...any) any {
 		rs := asReadable("-stream-read-bytes", args, 2)
-		return rs.readBytes(asInt(args[1]))
+		chunk := rs.readBytes(asInt(args[1]))
+		if chunk == nil {
+			return nil
+		}
+		return toClojureBytes(chunk)
 	})
 	// -stream-read-line (readable) -> line string (no trailing newline), or nil at EOF.
 	def("-stream-read-line", func(args ...any) any {
@@ -264,15 +277,17 @@ func installStreamShims(def func(name string, fn func(args ...any) any)) {
 		}
 		return newReadableStream(f, f)
 	})
-	// -stream-to-file (path append?) -> a WritableStream over the file at
-	// path, truncating it unless append? is truthy. close flushes and closes.
+	// -stream-to-file (path opts) -> a WritableStream over the file at path,
+	// truncating it unless {:append true} is given. close flushes and closes.
+	// opts is validated here (nil or a map) for the same reason write-bytes
+	// validates it: a non-map would destructure to nil and silently truncate.
 	def("-stream-to-file", func(args ...any) any {
 		if len(args) != 2 {
-			panic(fmt.Errorf("wrong number of args (%d) passed to: -stream-to-file (expects 2: [path append?])", len(args)))
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -stream-to-file (expects 2: [path opts])", len(args)))
 		}
 		path := asString(args[0])
 		flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-		if isTruthy(args[1]) {
+		if isTruthy(optsAppend("cljg.stream/to-file", args[1])) {
 			flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
 		}
 		f, err := os.OpenFile(path, flags, 0o644)

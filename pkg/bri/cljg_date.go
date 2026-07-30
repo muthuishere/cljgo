@@ -61,6 +61,14 @@ func installDateShims(def func(name string, fn func(args ...any) any)) {
 		s := asString(one("-parse-iso", args))
 		t, err := time.Parse(time.RFC3339, s)
 		if err != nil {
+			// RFC 3339 §5.6 says the 'T' and 'Z' are case-INSENSITIVE, and the
+			// JVM agrees: (.toEpochMilli (Instant/parse "2026-07-30T12:00:00z"))
+			// => 1785412800000, same as the uppercase form (oracle 1.12.5,
+			// 2026-07-30). Go's RFC3339 layout only matches the uppercase
+			// spelling, so retry once on the upcased separators.
+			t, err = time.Parse(time.RFC3339, upcaseISOSeparators(s))
+		}
+		if err != nil {
 			panic(fmt.Errorf("cljg.date/parse-iso: not an ISO-8601 instant: %q (expected e.g. 2026-07-30T12:00:00Z)", s))
 		}
 		return t.UnixMilli()
@@ -120,4 +128,19 @@ func asInt64(name string, v any) int64 {
 	default:
 		panic(fmt.Errorf("%s: expected epoch milliseconds (an integer), got: %v", name, v))
 	}
+}
+
+// upcaseISOSeparators upcases the date/time separator (position 10) and a
+// trailing zone designator, so the lowercase spellings RFC 3339 §5.6 permits —
+// "2026-07-30t12:00:00z" — parse like the uppercase ones, matching
+// java.time.Instant.parse. Nothing else in the string is touched.
+func upcaseISOSeparators(s string) string {
+	b := []byte(s)
+	if len(b) > 10 && b[10] == 't' {
+		b[10] = 'T'
+	}
+	if n := len(b); n > 0 && b[n-1] == 'z' {
+		b[n-1] = 'Z'
+	}
+	return string(b)
 }

@@ -18,6 +18,12 @@
 ;;   (.toEpochMilli (java.time.Instant/parse "2026-07-30T12:00:00Z"))     => 1785412800000
 ;;   (.toEpochMilli (java.time.Instant/parse "2026-07-30T12:00:00.123Z")) => 1785412800123
 ;;   (.toEpochMilli (java.time.Instant/parse "2026-07-30T12:00:00+05:30")) => 1785393000000
+;;   (.toEpochMilli (java.time.Instant/parse "2026-07-30T12:00:00z"))     => 1785412800000
+;;   (.toEpochMilli (java.time.Instant/parse "2026-07-30t12:00:00Z"))     => 1785412800000
+;;   (.toEpochMilli (java.time.Instant/parse "2026-07-30T12:00:00.500z")) => 1785412800500
+;; The 'T' and 'Z' are case-INSENSITIVE (RFC 3339 §5.6) and the JVM accepts the
+;; lowercase spellings, so cljgo does too — a lowercase z off the wire must not
+;; throw.
 ;; The strings and longs below are those JVM values verbatim.
 (require '[cljg.date :as date])
 [(date/format-iso 0)
@@ -27,6 +33,9 @@
  (date/parse-iso "2026-07-30T12:00:00Z")
  (date/parse-iso "2026-07-30T12:00:00.123Z")
  (date/parse-iso "2026-07-30T12:00:00+05:30")
+ (date/parse-iso "2026-07-30T12:00:00z")
+ (date/parse-iso "2026-07-30t12:00:00Z")
+ (date/parse-iso "2026-07-30T12:00:00.500z")
  (= 1753900000123 (date/parse-iso (date/format-iso 1753900000123)))
  (date/format 1753900000123 "2006-01-02 15:04:05")
  (date/parse "2025-07-30 18:26:40" "2006-01-02 15:04:05")
@@ -34,4 +43,4 @@
  (try (date/parse "2025" "2006-01-02 15:04:05") (catch Throwable e :threw))
  (string? (date/format-iso))
  (format "%05.2f" 3.14159)]
-;; expect: ["1970-01-01T00:00:00Z" "1970-01-01T00:00:01.500Z" "2025-07-30T18:26:40.123Z" "2025-07-30T18:26:40Z" 1785412800000 1785412800123 1785393000000 true "2025-07-30 18:26:40" 1753900000000 :threw :threw true "03.14"]
+;; expect: ["1970-01-01T00:00:00Z" "1970-01-01T00:00:01.500Z" "2025-07-30T18:26:40.123Z" "2025-07-30T18:26:40Z" 1785412800000 1785412800123 1785393000000 1785412800000 1785412800000 1785412800500 true "2025-07-30 18:26:40" 1753900000000 :threw :threw true "03.14"]

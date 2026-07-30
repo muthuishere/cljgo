@@ -162,9 +162,11 @@
 (defn write-bytes
   "Write `data` — a byte-array or a string — to the file at `path`, creating it
   if needed, and return the number of bytes written. Truncates by default;
-  with {:append true} appends instead. Throws if the file cannot be written."
+  with {:append true} appends instead. `opts` must be a map (or nil) — a
+  non-map is rejected rather than quietly truncating. Throws if the file
+  cannot be written."
   ([path data] (write-bytes path data nil))
-  ([path data opts] (-fs-write-bytes path data (:append opts))))
+  ([path data opts] (-fs-write-bytes path data opts)))
 
 ;; --- locations / temp --------------------------------------------------------
 

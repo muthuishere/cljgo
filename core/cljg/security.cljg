@@ -111,12 +111,15 @@
 
 ;; --- crypto primitives (the Bun.hash/crypto tier, ADR 0103) ------------
 (defn sha256
-  "SHA-256 digest of a string, as lowercase hex."
+  "SHA-256 digest of a string OR a byte-array, as lowercase hex — so a blob
+  read with cljg.io/read-bytes or decoded with `base64-decode-bytes` hashes
+  directly, with no lossy detour through a string."
   [s]
   (-sha256 s))
 
 (defn hmac
-  "HMAC-SHA256 of message with key, as lowercase hex."
+  "HMAC-SHA256 of message with key, as lowercase hex. Both may be a string or
+  a byte-array."
   [key message]
   (-hmac-sha256 key message))
 
@@ -167,7 +170,7 @@
   (-b64-decode-bytes s))
 
 (defn hex
-  "Lowercase hex of a string's bytes."
+  "Lowercase hex of a string's bytes, or of a byte-array."
   [s]
   (-hex-encode s))
 
