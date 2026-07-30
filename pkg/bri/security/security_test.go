@@ -7,6 +7,7 @@ package security
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -76,8 +77,24 @@ func TestFileBackendEncryptsAtRest(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// The load-bearing assertion, and it runs EVERYWHERE: the blob and the
+		// machine key must never hold the secret in the clear. Encryption is
+		// what actually protects the store; the mode bits below are defence in
+		// depth on top of it.
 		if strings.Contains(string(b), secret) {
 			t.Fatalf("%s holds the secret in plaintext — the file backend must encrypt at rest", e.Name())
+		}
+		// Windows does not have POSIX permission bits. Go models only the
+		// read-only attribute there, so os.WriteFile(..., 0o600) yields a file
+		// that reports 0666 and this check can never pass — it is asserting
+		// something the platform does not implement, not catching a bug. (The
+		// writer passes 0o600 unconditionally; see security.go.) On Windows the
+		// store's confidentiality rests on the age encryption above; restricting
+		// it further would need a real ACL via golang.org/x/sys/windows, which
+		// this backend does not yet do — documented as a limitation rather than
+		// asserted away.
+		if runtime.GOOS == "windows" {
+			continue
 		}
 		info, err := e.Info()
 		if err != nil {

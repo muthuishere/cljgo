@@ -21,6 +21,17 @@
 // go-keyring is PURE GO on every platform and age is pure Go, so a
 // cljg.security app still AOT-compiles to a CGO_ENABLED=0 static binary.
 // Secret VALUES never appear in any error, log, or print path here.
+//
+// PLATFORM LIMITATION — the :file backend on Windows. Every write below
+// passes 0o600, but Windows has no POSIX permission bits: Go models only the
+// read-only attribute, so the files end up world-readable by ACL default and
+// report mode 0666. Confidentiality there rests entirely on the age
+// encryption, which holds — the blob and the machine identity are both
+// ciphertext — but the defence-in-depth of a 0600 mode does NOT apply on
+// Windows. Tightening it needs a real ACL via golang.org/x/sys/windows and is
+// not implemented. On a shared Windows host, prefer :native (Credential
+// Manager). Stated here rather than left implicit because the doc comment
+// above says "0600" and that is only true on Unix.
 package security
 
 import (
