@@ -102,6 +102,11 @@ func (rs *ReadableStream) readLine() any {
 	}
 	line, err := rs.br.ReadString('\n')
 	if err == io.EOF {
+		// EOF on the line path is terminal too — release the handle here for
+		// the same reason readBytes/readAll do (an open handle makes the file
+		// undeletable on Windows). A final unterminated line still comes back
+		// on this call; the NEXT call sees rs.closed and returns nil.
+		rs.closeRead()
 		if line == "" {
 			return nil
 		}
@@ -124,7 +129,6 @@ func trimEOL(s string) string {
 	return s
 }
 
-// readAll drains the rest of the stream into one string.
 // readAll drains the stream and then RELEASES the underlying reader.
 //
 // Draining is terminal — there is nothing left to read — so holding the handle
