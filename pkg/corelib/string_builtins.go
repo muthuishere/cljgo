@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/reader"
@@ -477,6 +478,14 @@ func replaceImpl(op string, args []any, first bool) any {
 	switch match := args[1].(type) {
 	case *reader.Regex:
 		re := lang.CachedCompileRegexp(match.Pattern)
+		// The JVM dispatches on the REPLACEMENT here: a CharSequence is a
+		// $-group template, anything else is called as a function on each
+		// match (clojure.string/replace -> replace-by). Mirroring that
+		// dispatch is ADR 0110 ask 3 — the fn arity is documented
+		// clojure.string and was previously a throw in cljgo.
+		if f, ok := args[2].(lang.IFn); ok {
+			return replaceByFn(op, re, s, f, first)
+		}
 		repl := strArg(op, args[2])
 		if !first {
 			return re.ReplaceAllString(s, repl)
@@ -496,4 +505,95 @@ func replaceImpl(op string, args []any, first bool) any {
 	default:
 		panic(fmt.Errorf("%s: match must be a string, char, or pattern, got: %s", op, lang.PrintString(args[1])))
 	}
+}
+
+// replaceByFn is clojure.string's private replace-by: walk the matches, call
+// f on each one, and splice its result in LITERALLY (the JVM wraps it in
+// Matcher/quoteReplacement, so "$1" from f is the two characters "$1", not a
+// group reference — oracle 1.12.5: (str/replace "a1" #"(\d)" (fn [m] "$1"))
+// => "a$1").
+//
+// What f RECEIVES is clojure.core/re-groups of the current match: the whole
+// matched string when the pattern has NO capturing groups, else a vector
+// [whole g1 g2 …] with nil for a group that did not participate (oracle
+// 1.12.5: (str/replace "aXb" #"(x)?b" (fn [m] (pr-str m))) => "aX[\"b\" nil]").
+// That is matchResult, the same helper re-groups uses.
+func replaceByFn(op string, re *regexp.Regexp, s string, f lang.IFn, first bool) any {
+	var sb strings.Builder
+	cursor := 0 // everything before this is already in sb
+	search := 0 // where the next Find starts
+	matched := false
+	for search <= len(s) {
+		loc := re.FindStringSubmatchIndex(s[search:])
+		if loc == nil {
+			break
+		}
+		abs := make([]int, len(loc))
+		for i, v := range loc {
+			if v < 0 {
+				abs[i] = -1
+			} else {
+				abs[i] = v + search
+			}
+		}
+		matched = true
+		sb.WriteString(s[cursor:abs[0]])
+		sb.WriteString(replacementString(op, f.Invoke(reGroupsAt(s, abs, re.NumSubexp()))))
+		cursor = abs[1]
+		if first {
+			break
+		}
+		if abs[1] == abs[0] {
+			// Zero-width match: step one character forward, exactly like
+			// java.util.regex.Matcher.find, or we would loop forever
+			// (oracle 1.12.5: (str/replace "aaa" #"" (fn [m] "-"))
+			// => "-a-a-a-" — the skipped character is KEPT).
+			_, w := utf8.DecodeRuneInString(s[abs[1]:])
+			if w == 0 {
+				w = 1
+			}
+			search = abs[1] + w
+		} else {
+			search = abs[1]
+		}
+	}
+	if !matched {
+		return s
+	}
+	sb.WriteString(s[cursor:])
+	return sb.String()
+}
+
+// reGroupsAt is clojure.core/re-groups over a submatch-index slice: the whole
+// match when the pattern has no capturing groups, else [whole g1 g2 …] with
+// nil for a non-participating group.
+func reGroupsAt(s string, abs []int, groups int) any {
+	if groups == 0 {
+		return s[abs[0]:abs[1]]
+	}
+	parts := make([]any, groups+1)
+	for i := 0; i <= groups; i++ {
+		start, end := abs[2*i], abs[2*i+1]
+		if start < 0 || end < 0 {
+			parts[i] = nil
+			continue
+		}
+		parts[i] = s[start:end]
+	}
+	return lang.NewVector(parts...)
+}
+
+// replacementString enforces the JVM's contract on what the replacement fn
+// may return: a String. The JVM signals a bare ClassCastException from
+// Matcher/quoteReplacement (oracle 1.12.5: (str/replace "a1" #"\d" (fn [m] 42))
+// => ClassCastException Long cannot be cast to String); cljgo names the fn's
+// role and the value instead, per the error doctrine.
+func replacementString(op string, v any) string {
+	s, ok := v.(string)
+	if !ok {
+		panic(lang.NewCodedError("G5010", fmt.Sprintf(
+			"clojure.string/%s: the replacement fn must return a string (found: %s)",
+			op, lang.PrintString(v))))
+	}
+	return s
 }

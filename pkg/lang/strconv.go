@@ -80,6 +80,20 @@ func floatValue(x interface{}) (float64, bool) {
 	return 0, false
 }
 
+// TaggedPrinter is implemented by values whose PRINTED form (print / pr /
+// prn / print-method) is a reader tag while their toString — what `str`,
+// `format "%s"` and string concatenation see — is the bare value.
+// java.util.UUID is the case on the JVM (oracle 1.12.5):
+//
+//	(str (random-uuid))                    ;=> "bb333d59-…"        (36 chars)
+//	(pr-str (random-uuid))                 ;=> "#uuid \"bb333d59-…\"" (44)
+//	(with-out-str (print (random-uuid)))   ;=> "#uuid \"bb333d59-…\""
+//
+// Getting this split wrong is silent wire corruption: an id built with `str`
+// picks up `#uuid "` and a trailing quote and the peer sees a malformed id
+// (ADR 0110 ask 2).
+type TaggedPrinter interface{ PrintTagged() string }
+
 // ToString converts a value to a string a la Java's .toString method.
 func ToString(v interface{}) string {
 	switch v := v.(type) {
@@ -487,6 +501,12 @@ func PrintNative(x interface{}, w io.Writer) {
 		io.WriteString(w, "N")
 	} else if v, ok := x.(*Var); ok {
 		io.WriteString(w, "#=(var "+v.Namespace().Name().Name()+"/"+v.Symbol().Name()+")")
+	} else if tp, ok := x.(TaggedPrinter); ok {
+		// A value whose printed form is a reader tag but whose toString is
+		// bare (UUID). Checked BEFORE the generic ToString fallback and
+		// independently of *print-readably*: the JVM prints the tag for
+		// both print and pr (oracle 1.12.5 — see TaggedPrinter).
+		io.WriteString(w, tp.PrintTagged())
 	} else if v, ok := x.(*regexp.Regexp); ok {
 		io.WriteString(w, "#\""+v.String()+"\"")
 	} else if t, ok := x.(*TaggedLiteral); ok {

@@ -7,9 +7,9 @@
 ;; oracle (clojure 1.12.5, 2026-07-23, scratch tailwave/o3.clj):
 ;;   #uuid "550e8400-e29b-41d4-a716-446655440000" prints as itself
 ;;   (= #uuid "550e8400-..." #uuid "550E8400-...") => true (case-folded)
-;; (Not frozen: (str u) — the JVM yields the bare "550e8400-..." while
-;; cljgo's UUID stringer yields the tagged literal form; a pre-existing
-;; divergence outside this change's scope.)
+;; ((str u) — the JVM's bare "550e8400-..." vs the tagged printed form — was
+;; a known divergence when this file was written; it is fixed and frozen in
+;; uuid-str-vs-pr-str.clj, ADR 0110 ask 2.)
 (def u #uuid "550e8400-e29b-41d4-a716-446655440000")
 (def coll {:id #uuid "f81d4fae-7dec-11d0-a765-00a0c91e6bf6" :xs [#uuid "550e8400-e29b-41d4-a716-446655440000"]})
 [u
