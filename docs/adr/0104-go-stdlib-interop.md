@@ -1,4 +1,4 @@
-# ADR 0096 — `require-go` reaches the Go standard library
+# ADR 0104 — `require-go` reaches the Go standard library
 
 Date: 2026-07-27 · Status: **proposed**
 
@@ -17,13 +17,23 @@ entries in `pkg/corelib/host.go:33-80`.
 Everything else fails:
 
 ```clojure
-(require-go '[os])          ;=> error: no such namespace: os
+(require-go '[os])          ;=> returns cleanly, exit 0, interns NOTHING
+                            ;   the later os/Getenv -> "no such namespace: os"
 (require-go '[net/http])    ;=> returns cleanly, interns NOTHING
                             ;   the later http/Get -> "no such namespace: http"
+(require-go '[nope/nope])   ;=> returns cleanly too — even a package that
+                            ;   does not exist at all is silently accepted
 ```
 
 Both modes fail — `cljgo run` **and** `cljgo build` (measured 2026-07-27,
 installed and in-repo binaries).
+
+> **Correction (S56, 2026-07-30).** An earlier draft of this section reported
+> `(require-go '[os])` as erroring at the form with `no such namespace: os`.
+> Re-measured: it does **not**. It returns cleanly with exit 0 and interns
+> nothing, exactly like `net/http` — the error surfaces later at the *call
+> site*. So `os` was never a special case; it is one more instance of the
+> decision-3 silent-no-op bug, which is also why the bug is worth fixing.
 
 ### The driver
 
@@ -142,6 +152,58 @@ the same pass so `(go/new os.File)` and struct constructors work.
 - Generated code grows the repo. Bounded by the declared list, and the drift
   test keeps it honest.
 
+### Spikes S56–S58 (2026-07-30) — decision 1 IMPLEMENTED and all four blockers CLOSED
+
+Decision 1 was not merely re-argued, it was **built and run**. A worktree off
+`dd0c314` with the gate changed from `isThirdPartyGoPath(path)` to "declared via
+`require-go`" produces working AOT binaries against the Go stdlib:
+
+| spike | what was built | result |
+|---|---|---|
+| **S56** | `os.Getenv` in a `cljgo build` binary | ✅ 6.7 MB binary prints the real env var; unset yields `""` (the Go-vs-JVM empty/nil trap koine already normalizes) |
+| **S57** | `exec.Command` + `StdinPipe`/`StdoutPipe`, long-lived child, **two** stdin→stdout round trips | ✅ 6.8 MB binary — **this is MCP stdio transport working** |
+| **S58** | `resp.Body` read line-by-line through `bufio.NewReader`, plus `time.Now`/`Since`/`Sleep` | ✅ reads the first two lines only, body still open — genuinely streamed, not `io.ReadAll`; monotonic elapsed verified ≥ 10 ms |
+
+Blockers **1, 2, 3 and 4 are therefore closed** — env, streaming subprocess,
+streaming HTTP response, monotonic clock — by a change to **one file**. Structs,
+methods, fields and interfaces (`io.Reader`) all resolve through go/packages with
+zero hand-written bindings, so decision 2's "hostile signature" worry does **not**
+apply to the AOT path.
+
+Dual-mode parity was checked explicitly and **holds**: `cljgo run` fails loudly
+(`go module os is not linked into the interpreter (accessing member Getenv) …
+build it (cljgo build)`) while `cljgo build` produces a working binary. Clojure
+precedence still wins, and the `!` bang-retry (`sc/Atoi!`) still works.
+
+#### Two findings that the ADR did not anticipate
+
+**A. `isThirdPartyGoPath` has 3 call sites, but the fix needs 5.** `OpHostMethod`
+and `OpHostField` (`pkg/eval/host.go:80`, `:99`) have **no `HostUnlinkedTolerant`
+branch at all**. During the AOT discovery pass an unlinked host call returns
+`nil`, so *any* method on a host-returned value — `(.StdinPipe cmd)`,
+`(.-Body resp)` — dies at build time with `cannot call method .StdinPipe on nil`.
+The original uuid spike never hit this because it only chained a plain function
+whose result was printed. Both ops need the same `recv == nil &&
+e.HostUnlinkedTolerant → nil, nil` guard. Without it decision 1 closes blocker 1
+and **none** of blockers 2–4, since every one of those is method-shaped.
+
+**B. The discovery pass runs user Clojure with `nil` for every host result.**
+This is by design (args run for side effects) but it means a nil-intolerant pure
+function applied to a host value breaks the *build*, not just the run:
+`(clojure.string/trim (.ReadString! rdr 10))` fails with `trim expects a string,
+got: nil`. This is a real constraint on how koine's wrappers must be written —
+host results have to reach a nil-tolerant path, or the discovery pass needs a
+typed zero value rather than `nil`. **Worth its own decision before koine's cljgo
+branch is written**; it is the most likely source of future "works in `run`,
+fails in `build`" reports.
+
+**C. Minor coercion gap.** `lang.Char` does not coerce to Go `byte`:
+`(.ReadString! rdr (char 10))` → `cannot coerce lang.Char to Go Byte`. Passing
+the integer `10` works. Cheap to fix in `CallHostFn`.
+
+Regression gate on the patched tree: `go build ./...`, `go vet ./...` and
+`gofmt -l pkg cmd core` all clean; `pkg/eval` and `pkg/corelib` suites pass.
+
 ### Spike (2026-07-27) — decision 1's assumption is PROVEN, and it surfaced a bug
 
 A real third-party module was built end-to-end (`github.com/google/uuid v1.6.0`,
@@ -182,17 +244,20 @@ in-repo binaries); nothing here is inferred from documentation.
 | 1 | **No environment-variable access at all.** `cljg.os` is cron/service only; no `System/getenv`; `(getenv …)` unresolvable; `require-go '[os]` fails | probed all four routes | **blocker** — kills `${ENV_VAR}` expansion, hence all remote-MCP auth | **yes** — `os.Getenv` |
 | 2 | **No streaming subprocess.** `cljg.io/exec` takes `:in` as a *string* and returns after exit | `core/cljg/io.cljg:155` | **blocker** — kills MCP stdio transport | **yes** — `exec.Cmd.StdinPipe` |
 | 3 | **No streaming HTTP response.** The only shim ends in `io.ReadAll` + `defer resp.Body.Close()`; namespace exposes no other entry | `pkg/bri/net_http.go` | **blocker** — kills streaming LLM responses | **yes** — `resp.Body` |
-| 4 | **No public monotonic clock or sleep.** `-nano-time` is a real `time.Since(bootInstant)`; `-sleep-ms` likewise — both `defPrivate` into `clojure.core`, unresolvable | `pkg/corelib/macro_support_builtins.go:6` | major — durations wrong across an NTP step | **yes** — `time.Since` / `time.Sleep` |
+| 4 | **No *documented* monotonic clock or sleep.** ~~unresolvable~~ **corrected (S56):** `-nano-time` and `-sleep-ms` are `defPrivate` but ARE reachable fully-qualified — `(clojure.core/-nano-time)` returns, `(clojure.core/-sleep-ms 1)` sleeps. So this is a *contract* gap (no public name, no guarantee), not a capability gap | `pkg/corelib/macro_support_builtins.go:6`; re-probed 2026-07-30 | **minor** (was: major) — a private var is not an API, but the capability is there | **yes** — `time.Since` / `time.Sleep` |
 | 5 | **`require-go` returns cleanly and interns nothing.** `(require-go '[net/http])` succeeds; the later `http/Get` fails `no such namespace: http` | measured | major — a clean return reads as a successful capability probe; cost real debugging time | **yes** — decision 3 |
 | 6 | **core.async aliases are referred into the `user` ns only.** `<!!` `timeout` `chan` `go` resolve in a script but fail at **compile time** inside any `(ns …)` file | `pkg/corelib/chan_builtins.go:632`, applied by `InitUserNS` | major — a working script is a misleading probe for library code | **no** — separate |
-| 7 | **Inconsistent private visibility.** Privates in the `cljg.os` *namespace* ARE reachable fully-qualified (`cljg.os/-sleep-millis`); privates in `clojure.core` are not | measured | minor — confusing, and tempts dependence on non-contract vars | **no** — separate |
+| 7 | ~~**Inconsistent private visibility.**~~ **RETRACTED (S56)** — the claim was backwards. Privates in `clojure.core` ARE reachable fully-qualified too (`clojure.core/-nano-time` returns a value). Visibility is *consistent*: privates are hidden from bare resolution and reachable when fully qualified, in both namespaces. There is no inconsistency to fix | re-probed 2026-07-30 | — | n/a — not a bug |
 | 8 | **`(str e)` on an exception prints `#object[*lang.ExceptionInfo]`** | measured | minor — a test asserting on error *text* silently passes. `ex-message` works | **no** — separate |
 | 9 | **No process exit code.** No `System/exit` equivalent found | measured | minor — but every CLI needs one | partially — `os.Exit` |
-| 10 | **`cljg.io` lacks `mkdir-p`, `rename`, `stat` (mtime/size), `temp-dir`, binary `read-bytes`/`write-bytes`** | `core/cljg/io.cljg` publics | major — `rename` is what makes a crash-safe write possible (write temp, rename); needed by durable task stores | **yes** — `os` + `path/filepath` |
+| 10 | **`cljg.io` lacks binary `read-bytes`/`write-bytes`.** ~~also mkdir-p, rename, stat, temp-dir~~ **corrected (S56):** those four all exist already — `mkdirs`, `move!` (= rename), `stat`/`size`/`modified`, `temp-dir`/`temp-file` are in `ns-publics 'cljg.io`. Only the binary read/write pair is genuinely missing | `ns-publics 'cljg.io`, re-probed 2026-07-30 | **minor** (was: major) — crash-safe write is already possible today via `move!` | **yes** — `os` |
 | 11 | Cannot consume from Clojars | — | — | **already addressed by ADR 0095** (proposed same day, S50/S51 closed MET) |
 
 Nine of eleven are closed by this ADR, seven of them purely because Go's stdlib
-already has the primitive. That ratio is the argument for doing interop
+already has the primitive. **After the S56 re-measurement three rows shrank** —
+one retracted outright (7), two downgraded from major to minor (4, 10) — so the
+honest count of *blockers* is **four** (1, 2, 3 and, for koine's purposes, 5),
+and all four are now proven closed by the S56–S58 spikes below. That ratio is the argument for doing interop
 properly rather than writing `cljg.*` shims one at a time.
 
 **Not cljgo's bug, recorded for context:** `file-seq` takes a string path on
@@ -205,7 +270,7 @@ Measured against the code, not estimated in the abstract.
 
 | decision | scope | size | confidence |
 |---|---|---|---|
-| **1 — AOT stdlib** | `isThirdPartyGoPath` has exactly **3 call sites, all in `pkg/eval/host.go`** (:26, :61, :168) | **~½ day** inc. conformance | **high** — the spike proved the downstream go/packages path works end-to-end |
+| **1 — AOT stdlib** | ~~3 call sites~~ **5** — `isThirdPartyGoPath` at `pkg/eval/host.go` :26, :61, :168, **plus** the missing `HostUnlinkedTolerant` guards on `OpHostMethod` (:80) and `OpHostField` (:99), see finding A | **DONE — implemented and proven in S56–S58** (~15 lines, one file) | **certain** — working AOT binaries for all four blockers |
 | **3 — loud `require-go`** | `unlinkedGoError` already exists; only the form-level check is new | **~2 hours** | high |
 | **2 — interpreted registry** | `cmd/genhost`; precedent `genbri` = 235 lines, `gencore` = 147 | **3–5 days** | **medium** |
 
