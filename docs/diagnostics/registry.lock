@@ -24,6 +24,7 @@ G5013 maven version conflict
 G5014 offline: maven coordinate unavailable
 G5015 conflicting dependency coordinates
 G5016 replacement fn did not return a string
+G5017 options argument is not a map
 I4001 Java class used as a namespace
 I4002 namespace requires Java interop and cannot load on cljgo
 R1001 unterminated form

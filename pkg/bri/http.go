@@ -305,6 +305,10 @@ func writeResponse(w http.ResponseWriter, res any) {
 		io.WriteString(w, b)
 	case []byte:
 		w.Write(b)
+	case []int8:
+		// the signed byte-array every cljg byte producer returns (ADR 0110):
+		// a handler may answer with read-bytes / gzip output directly.
+		w.Write(toGoBytes("bri.web.http response :body", b))
 	case nil:
 	default:
 		io.WriteString(w, lang.ToString(b))

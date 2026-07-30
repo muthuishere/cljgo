@@ -23,7 +23,7 @@
 ;; pkg/bri/security so the keyring client never links unrequired):
 ;; -jwt-sign -jwt-verify -argon2-hash -argon2-verify -bcrypt-verify
 ;; -rand-token -now-millis -getenv -sha256 -hmac-sha256 -secure-random
-;; -uuid -b64-encode -b64-decode -hex-encode -hex-decode -keychain-set
+;; -uuid -b64-encode -b64-decode -b64-decode-bytes -hex-encode -hex-decode -keychain-set
 ;; -keychain-get -keychain-del.
 (clojure.core/in-ns 'cljg.security)
 (clojure.core/refer 'clojure.core)
@@ -111,12 +111,15 @@
 
 ;; --- crypto primitives (the Bun.hash/crypto tier, ADR 0103) ------------
 (defn sha256
-  "SHA-256 digest of a string, as lowercase hex."
+  "SHA-256 digest of a string OR a byte-array, as lowercase hex — so a blob
+  read with cljg.io/read-bytes or decoded with `base64-decode-bytes` hashes
+  directly, with no lossy detour through a string."
   [s]
   (-sha256 s))
 
 (defn hmac
-  "HMAC-SHA256 of message with key, as lowercase hex."
+  "HMAC-SHA256 of message with key, as lowercase hex. Both may be a string or
+  a byte-array."
   [key message]
   (-hmac-sha256 key message))
 
@@ -138,17 +141,36 @@
   (-uuid))
 
 (defn base64
-  "Standard base64 of a string."
-  [s]
-  (-b64-encode s))
+  "Standard base64 of a string or byte-array. `base64-encode` is the same fn
+  under the name the rest of the base64 family uses."
+  [data]
+  (-b64-encode data))
+
+(defn base64-encode
+  "Standard (RFC 4648, padded) base64 of `data` — a string, whose UTF-8 bytes
+  are encoded, or a byte-array (e.g. from cljg.io/read-bytes or
+  cljg.compress/gzip). Matches java.util.Base64/getEncoder: (base64-encode
+  \"hello\") => \"aGVsbG8=\", (base64-encode \"\") => \"\" (oracle 1.12.5)."
+  [data]
+  (-b64-encode data))
 
 (defn base64-decode
-  "Decode standard base64 back to the string, or nil on invalid input."
+  "Decode standard base64 back to a STRING, or nil on invalid input. Lossy for
+  a payload that is not valid UTF-8 — use `base64-decode-bytes` for binary."
   [s]
   (-b64-decode s))
 
+(defn base64-decode-bytes
+  "Decode standard base64 to a BYTE-ARRAY, or nil on invalid input. This is the
+  half a string cannot carry: an image, a gzip blob, any non-UTF-8 payload.
+  Pairs with cljg.io/write-bytes. Elements are SIGNED like the JVM's byte[]:
+  (vec (base64-decode-bytes \"AAECgA==\")) => [0 1 2 -128] (oracle 1.12.5,
+  java.util.Base64/getDecoder)."
+  [s]
+  (-b64-decode-bytes s))
+
 (defn hex
-  "Lowercase hex of a string's bytes."
+  "Lowercase hex of a string's bytes, or of a byte-array."
   [s]
   (-hex-encode s))
 

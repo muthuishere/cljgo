@@ -12,19 +12,21 @@
 ;;   (require '[cljg.stream :as st])
 ;;   (reduce (fn [n c] (+ n (count c))) 0 readable)   ; the handle IS reducible
 ;;   (st/lines readable)      ; lazy seq of line strings
-;;   (st/chunks readable)     ; lazy seq of []byte chunks (default 64 KiB)
+;;   (st/chunks readable)     ; lazy seq of signed byte-array chunks (64 KiB)
 ;;   (st/read-line readable)  ; one line string, or nil at EOF
-;;   (st/read-bytes readable) ; one []byte chunk, or nil at EOF
+;;   (st/read-bytes readable) ; one signed byte-array chunk, or nil at EOF
 ;;   (st/read-all readable)   ; drain the rest as one string
 ;;   (st/write writable "hi\n")   (st/close writable)   (st/close readable)
 ;;
-;; The handles come from cljg.process/spawn and (cljg.net.http/request … {:as
-;; :stream}); this namespace never creates one, it only operates on them. The Go
+;;   (st/of-file "big.log")   (st/to-file "out.txt" {:append true})  ; ADR 0110
+;;
+;; The handles come from cljg.process/spawn, (cljg.net.http/request … {:as
+;; :stream}) and — since ADR 0110 — `of-file` / `to-file` here. The Go
 ;; half (pkg/bri/stream.go) is thin shims over stdlib bufio/io; everything here
 ;; is portable Clojure, so it runs identically interpreted and AOT-compiled.
 ;; Private Go shims interned before this loads: -stream-read-bytes
 ;; -stream-read-line -stream-read-all -stream-chunk-seq -stream-line-seq
-;; -stream-write -stream-close.
+;; -stream-write -stream-close -stream-of-file -stream-to-file.
 ;;
 ;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
 ;; fully-qualified in-ns + refer open the file. `read-line` is defined here
@@ -35,12 +37,42 @@
 
 (def ^:private default-chunk 65536)
 
+;; --- opening a file as a stream (ADR 0110 ask 1) -----------------------------
+;;
+;; Before this, a stream handle could only be OBTAINED from a process pipe
+;; (cljg.process/spawn) or an HTTP body (:as :stream) — never from a path. These
+;; two make the ONE stream abstraction cover files too, so `lines` / `chunks` /
+;; `reduce` / a transducer walk a file of any size in constant memory.
+
+(defn of-file
+  "Open the file at `path` as a READABLE stream — the same handle
+  cljg.process/spawn and cljg.net.http (:as :stream) hand back, so `lines`,
+  `chunks`, `read-line`, `read-all`, `reduce` and transducers all apply. The
+  caller closes it (`close`), ideally with `with-open` — the handle IS
+  closeable, so (with-open [s (of-file p)] …) releases the file on every exit
+  path. Throws if the file cannot be opened.
+
+  This is the cljgo analog of (clojure.java.io/reader path) — cljgo has no
+  java.io, and a cljg.stream handle is a reducible Go reader, not a
+  java.io.Reader, so the name and the surface are this host's, not the JVM's."
+  [path]
+  (-stream-of-file path))
+
+(defn to-file
+  "Open the file at `path` as a WRITABLE stream, creating it if needed and
+  truncating it unless {:append true} is given — `opts` must be a map (or nil);
+  a non-map is rejected rather than quietly truncating. `write` / `write-line`
+  append and flush; `close` flushes and closes (and the handle works with
+  `with-open`). Throws if the file cannot be opened."
+  ([path] (to-file path nil))
+  ([path opts] (-stream-to-file path opts)))
+
 ;; --- reading ----------------------------------------------------------------
 
 (defn read-bytes
   "Read one chunk of up to `n` bytes (default 64 KiB) from the readable stream,
-  as a byte-array, or nil at end-of-stream. Fewer than `n` bytes is normal —
-  whatever is available now."
+  as a byte-array (SIGNED elements, like every other cljg byte route), or nil
+  at end-of-stream. Fewer than `n` bytes is normal — whatever is available now."
   ([readable] (read-bytes readable default-chunk))
   ([readable n] (-stream-read-bytes readable n)))
 
@@ -56,8 +88,8 @@
   (-stream-read-all readable))
 
 (defn chunks
-  "A lazy seq of byte-array chunks (default 64 KiB each) drawn from the readable
-  stream on demand — constant memory, `take`/`reduced` stop the read. This is
+  "A lazy seq of byte-array chunks (SIGNED elements; default 64 KiB each)
+  drawn from the readable stream on demand — constant memory, `take`/`reduced` stop the read. This is
   what the handle's own reducibility bottoms out on."
   ([readable] (chunks readable default-chunk))
   ([readable n] (-stream-chunk-seq readable n)))
@@ -83,8 +115,8 @@
 ;; --- lifecycle --------------------------------------------------------------
 
 (defn close
-  "Close a stream handle (readable or writable). Closing a writable flushes it
-  and sends EOF to the reader on the other end of the pipe; closing a readable
-  releases the underlying reader. Idempotent. Returns nil."
+  "Close a stream handle (readable or writable); `with-open` does this for you.
+  Closing a writable flushes it and sends EOF to the reader on the other end
+  of the pipe; closing a readable releases the underlying reader. Idempotent. Returns nil."
   [stream]
   (-stream-close stream))

@@ -78,6 +78,7 @@ var (
 	v_cljg_DOT_security_X_argon2_hash         = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("-argon2-hash")).SetPrivate()
 	v_cljg_DOT_security_X_argon2_verify       = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("-argon2-verify")).SetPrivate()
 	v_cljg_DOT_security_X_b64_decode          = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("-b64-decode")).SetPrivate()
+	v_cljg_DOT_security_X_b64_decode_bytes    = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("-b64-decode-bytes")).SetPrivate()
 	v_cljg_DOT_security_X_b64_encode          = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("-b64-encode")).SetPrivate()
 	v_cljg_DOT_security_X_bcrypt_verify       = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("-bcrypt-verify")).SetPrivate()
 	v_cljg_DOT_security_X_getenv              = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("-getenv")).SetPrivate()
@@ -101,6 +102,8 @@ var (
 	v_cljg_DOT_security_ban_store             = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("ban-store")).SetPrivate()
 	v_cljg_DOT_security_base64                = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("base64"))
 	v_cljg_DOT_security_base64_decode         = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("base64-decode"))
+	v_cljg_DOT_security_base64_decode_bytes   = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("base64-decode-bytes"))
+	v_cljg_DOT_security_base64_encode         = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("base64-encode"))
 	v_cljg_DOT_security_bearer                = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("bearer")).SetPrivate()
 	v_cljg_DOT_security_check_password        = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("check-password"))
 	v_cljg_DOT_security_delete_from_keychain  = lang.InternVarName(lang.NewSymbol("cljg.security"), lang.NewSymbol("delete-from-keychain"))
@@ -165,26 +168,28 @@ var (
 )
 
 var (
-	fnD_cljg_DOT_security_resolve_secret lang.FnFunc1
-	fnD_cljg_DOT_security_now_seconds    lang.FnFunc1
-	fnD_cljg_DOT_security_subject        lang.FnFunc1
-	fnD_cljg_DOT_security_hash_password  lang.FnFunc1
-	fnD_cljg_DOT_security_check_password lang.FnFunc2
-	fnD_cljg_DOT_security_sha256         lang.FnFunc1
-	fnD_cljg_DOT_security_hmac           lang.FnFunc2
-	fnD_cljg_DOT_security_random         lang.FnFunc1
-	fnD_cljg_DOT_security_token          lang.FnFunc0
-	fnD_cljg_DOT_security_uuid           lang.FnFunc0
-	fnD_cljg_DOT_security_base64         lang.FnFunc1
-	fnD_cljg_DOT_security_base64_decode  lang.FnFunc1
-	fnD_cljg_DOT_security_hex            lang.FnFunc1
-	fnD_cljg_DOT_security_hex_decode     lang.FnFunc1
-	fnD_cljg_DOT_security_backend_name   lang.FnFunc1
-	fnD_cljg_DOT_security_bearer         lang.FnFunc1
-	fnD_cljg_DOT_security_authenticate   lang.FnFunc1
-	fnD_cljg_DOT_security_deny_401       lang.FnFunc1
-	fnD_cljg_DOT_security_deny_403       lang.FnFunc2
-	fnD_cljg_DOT_security_wrap_guard     lang.FnFunc2
+	fnD_cljg_DOT_security_resolve_secret      lang.FnFunc1
+	fnD_cljg_DOT_security_now_seconds         lang.FnFunc1
+	fnD_cljg_DOT_security_subject             lang.FnFunc1
+	fnD_cljg_DOT_security_hash_password       lang.FnFunc1
+	fnD_cljg_DOT_security_check_password      lang.FnFunc2
+	fnD_cljg_DOT_security_sha256              lang.FnFunc1
+	fnD_cljg_DOT_security_hmac                lang.FnFunc2
+	fnD_cljg_DOT_security_random              lang.FnFunc1
+	fnD_cljg_DOT_security_token               lang.FnFunc0
+	fnD_cljg_DOT_security_uuid                lang.FnFunc0
+	fnD_cljg_DOT_security_base64              lang.FnFunc1
+	fnD_cljg_DOT_security_base64_encode       lang.FnFunc1
+	fnD_cljg_DOT_security_base64_decode       lang.FnFunc1
+	fnD_cljg_DOT_security_base64_decode_bytes lang.FnFunc1
+	fnD_cljg_DOT_security_hex                 lang.FnFunc1
+	fnD_cljg_DOT_security_hex_decode          lang.FnFunc1
+	fnD_cljg_DOT_security_backend_name        lang.FnFunc1
+	fnD_cljg_DOT_security_bearer              lang.FnFunc1
+	fnD_cljg_DOT_security_authenticate        lang.FnFunc1
+	fnD_cljg_DOT_security_deny_401            lang.FnFunc1
+	fnD_cljg_DOT_security_deny_403            lang.FnFunc2
+	fnD_cljg_DOT_security_wrap_guard          lang.FnFunc2
 )
 
 var loaded = false
@@ -652,8 +657,8 @@ func Load() {
 	fnD_cljg_DOT_security_check_password = tmp169.F
 	v_cljg_DOT_security_check_password.SealDirect()
 	_ = v_cljg_DOT_security_check_password
-	// (def sha256 "SHA-256 digest of a string, as lowercase hex." (clojure.core/fn [s] (-sha256 …
-	v_cljg_DOT_security_sha256.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(13), kw_doc, "SHA-256 digest of a string, as lowercase hex."))
+	// (def sha256 "SHA-256 digest of a string OR a byte-array, as lowercase hex — so a blob\n …
+	v_cljg_DOT_security_sha256.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(13), kw_doc, "SHA-256 digest of a string OR a byte-array, as lowercase hex — so a blob\n  read with cljg.io/read-bytes or decoded with `base64-decode-bytes` hashes\n  directly, with no lossy detour through a string."))
 	tmp170 := lang.FnFunc1(func(s171 any) any {
 		tmp172 := v_cljg_DOT_security_X_sha256.Get()
 		tmp173 := lang.Apply1(tmp172, s171)
@@ -664,8 +669,8 @@ func Load() {
 	fnD_cljg_DOT_security_sha256 = tmp174.F
 	v_cljg_DOT_security_sha256.SealDirect()
 	_ = v_cljg_DOT_security_sha256
-	// (def hmac "HMAC-SHA256 of message with key, as lowercase hex." (clojure.core/fn [key messa…
-	v_cljg_DOT_security_hmac.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(118), kw_column, int64(7), kw_end_line, int64(118), kw_end_column, int64(11), kw_doc, "HMAC-SHA256 of message with key, as lowercase hex."))
+	// (def hmac "HMAC-SHA256 of message with key, as lowercase hex. Both may be a string or\n  a…
+	v_cljg_DOT_security_hmac.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(120), kw_column, int64(7), kw_end_line, int64(120), kw_end_column, int64(11), kw_doc, "HMAC-SHA256 of message with key, as lowercase hex. Both may be a string or\n  a byte-array."))
 	tmp175 := lang.FnFunc2(func(key176, message177 any) any {
 		tmp178 := v_cljg_DOT_security_X_hmac_sha256.Get()
 		tmp179 := lang.Apply2(tmp178, key176, message177)
@@ -677,7 +682,7 @@ func Load() {
 	v_cljg_DOT_security_hmac.SealDirect()
 	_ = v_cljg_DOT_security_hmac
 	// (def random "n cryptographically secure random bytes (crypto/rand), as lowercase\n  hex (a…
-	v_cljg_DOT_security_random.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(123), kw_column, int64(7), kw_end_line, int64(123), kw_end_column, int64(13), kw_doc, "n cryptographically secure random bytes (crypto/rand), as lowercase\n  hex (a 2n-char string)."))
+	v_cljg_DOT_security_random.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(126), kw_column, int64(7), kw_end_line, int64(126), kw_end_column, int64(13), kw_doc, "n cryptographically secure random bytes (crypto/rand), as lowercase\n  hex (a 2n-char string)."))
 	tmp181 := lang.FnFunc1(func(n182 any) any {
 		tmp183 := v_cljg_DOT_security_X_secure_random.Get()
 		tmp184 := lang.Apply1(tmp183, n182)
@@ -689,7 +694,7 @@ func Load() {
 	v_cljg_DOT_security_random.SealDirect()
 	_ = v_cljg_DOT_security_random
 	// (def token "A 256-bit URL-safe random token (crypto/rand, base64url) — session\n  ids, A…
-	v_cljg_DOT_security_token.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(129), kw_column, int64(7), kw_end_line, int64(129), kw_end_column, int64(12), kw_doc, "A 256-bit URL-safe random token (crypto/rand, base64url) — session\n  ids, API keys, CSRF tokens."))
+	v_cljg_DOT_security_token.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(132), kw_column, int64(7), kw_end_line, int64(132), kw_end_column, int64(12), kw_doc, "A 256-bit URL-safe random token (crypto/rand, base64url) — session\n  ids, API keys, CSRF tokens."))
 	tmp186 := lang.FnFunc0(func() any {
 		tmp187 := v_cljg_DOT_security_X_rand_token.Get()
 		tmp188 := lang.Apply0(tmp187)
@@ -701,7 +706,7 @@ func Load() {
 	v_cljg_DOT_security_token.SealDirect()
 	_ = v_cljg_DOT_security_token
 	// (def uuid "A random (v4) UUID string from crypto/rand." (clojure.core/fn [] (-uuid)))
-	v_cljg_DOT_security_uuid.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(11), kw_doc, "A random (v4) UUID string from crypto/rand."))
+	v_cljg_DOT_security_uuid.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(138), kw_column, int64(7), kw_end_line, int64(138), kw_end_column, int64(11), kw_doc, "A random (v4) UUID string from crypto/rand."))
 	tmp190 := lang.FnFunc0(func() any {
 		tmp191 := v_cljg_DOT_security_X_uuid.Get()
 		tmp192 := lang.Apply0(tmp191)
@@ -712,747 +717,737 @@ func Load() {
 	fnD_cljg_DOT_security_uuid = tmp193.F
 	v_cljg_DOT_security_uuid.SealDirect()
 	_ = v_cljg_DOT_security_uuid
-	// (def base64 "Standard base64 of a string." (clojure.core/fn [s] (-b64-encode s)))
-	v_cljg_DOT_security_base64.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(140), kw_column, int64(7), kw_end_line, int64(140), kw_end_column, int64(13), kw_doc, "Standard base64 of a string."))
-	tmp194 := lang.FnFunc1(func(s195 any) any {
+	// (def base64 "Standard base64 of a string or byte-array. `base64-encode` is the same fn\n  …
+	v_cljg_DOT_security_base64.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(143), kw_column, int64(7), kw_end_line, int64(143), kw_end_column, int64(13), kw_doc, "Standard base64 of a string or byte-array. `base64-encode` is the same fn\n  under the name the rest of the base64 family uses."))
+	tmp194 := lang.FnFunc1(func(data195 any) any {
 		tmp196 := v_cljg_DOT_security_X_b64_encode.Get()
-		tmp197 := lang.Apply1(tmp196, s195)
+		tmp197 := lang.Apply1(tmp196, data195)
 		return tmp197
 	})
-	tmp198 := &lang.NamedFn1{Name: "cljg.security/base64", Expects: "1: [s]", F: tmp194}
+	tmp198 := &lang.NamedFn1{Name: "cljg.security/base64", Expects: "1: [data]", F: tmp194}
 	v_cljg_DOT_security_base64.BindRoot(tmp198)
 	fnD_cljg_DOT_security_base64 = tmp198.F
 	v_cljg_DOT_security_base64.SealDirect()
 	_ = v_cljg_DOT_security_base64
-	// (def base64-decode "Decode standard base64 back to the string, or nil on invalid input." (…
-	v_cljg_DOT_security_base64_decode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(145), kw_column, int64(7), kw_end_line, int64(145), kw_end_column, int64(20), kw_doc, "Decode standard base64 back to the string, or nil on invalid input."))
-	tmp199 := lang.FnFunc1(func(s200 any) any {
-		tmp201 := v_cljg_DOT_security_X_b64_decode.Get()
-		tmp202 := lang.Apply1(tmp201, s200)
+	// (def base64-encode "Standard (RFC 4648, padded) base64 of `data` — a string, whose UTF-8…
+	v_cljg_DOT_security_base64_encode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(149), kw_column, int64(7), kw_end_line, int64(149), kw_end_column, int64(20), kw_doc, "Standard (RFC 4648, padded) base64 of `data` — a string, whose UTF-8 bytes\n  are encoded, or a byte-array (e.g. from cljg.io/read-bytes or\n  cljg.compress/gzip). Matches java.util.Base64/getEncoder: (base64-encode\n  \"hello\") => \"aGVsbG8=\", (base64-encode \"\") => \"\" (oracle 1.12.5)."))
+	tmp199 := lang.FnFunc1(func(data200 any) any {
+		tmp201 := v_cljg_DOT_security_X_b64_encode.Get()
+		tmp202 := lang.Apply1(tmp201, data200)
 		return tmp202
 	})
-	tmp203 := &lang.NamedFn1{Name: "cljg.security/base64-decode", Expects: "1: [s]", F: tmp199}
-	v_cljg_DOT_security_base64_decode.BindRoot(tmp203)
-	fnD_cljg_DOT_security_base64_decode = tmp203.F
-	v_cljg_DOT_security_base64_decode.SealDirect()
-	_ = v_cljg_DOT_security_base64_decode
-	// (def hex "Lowercase hex of a string's bytes." (clojure.core/fn [s] (-hex-encode s)))
-	v_cljg_DOT_security_hex.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(150), kw_column, int64(7), kw_end_line, int64(150), kw_end_column, int64(10), kw_doc, "Lowercase hex of a string's bytes."))
+	tmp203 := &lang.NamedFn1{Name: "cljg.security/base64-encode", Expects: "1: [data]", F: tmp199}
+	v_cljg_DOT_security_base64_encode.BindRoot(tmp203)
+	fnD_cljg_DOT_security_base64_encode = tmp203.F
+	v_cljg_DOT_security_base64_encode.SealDirect()
+	_ = v_cljg_DOT_security_base64_encode
+	// (def base64-decode "Decode standard base64 back to a STRING, or nil on invalid input. Loss…
+	v_cljg_DOT_security_base64_decode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(157), kw_column, int64(7), kw_end_line, int64(157), kw_end_column, int64(20), kw_doc, "Decode standard base64 back to a STRING, or nil on invalid input. Lossy for\n  a payload that is not valid UTF-8 — use `base64-decode-bytes` for binary."))
 	tmp204 := lang.FnFunc1(func(s205 any) any {
-		tmp206 := v_cljg_DOT_security_X_hex_encode.Get()
+		tmp206 := v_cljg_DOT_security_X_b64_decode.Get()
 		tmp207 := lang.Apply1(tmp206, s205)
 		return tmp207
 	})
-	tmp208 := &lang.NamedFn1{Name: "cljg.security/hex", Expects: "1: [s]", F: tmp204}
-	v_cljg_DOT_security_hex.BindRoot(tmp208)
-	fnD_cljg_DOT_security_hex = tmp208.F
-	v_cljg_DOT_security_hex.SealDirect()
-	_ = v_cljg_DOT_security_hex
-	// (def hex-decode "Decode hex back to the string, or nil on invalid input." (clojure.core/fn…
-	v_cljg_DOT_security_hex_decode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(155), kw_column, int64(7), kw_end_line, int64(155), kw_end_column, int64(17), kw_doc, "Decode hex back to the string, or nil on invalid input."))
+	tmp208 := &lang.NamedFn1{Name: "cljg.security/base64-decode", Expects: "1: [s]", F: tmp204}
+	v_cljg_DOT_security_base64_decode.BindRoot(tmp208)
+	fnD_cljg_DOT_security_base64_decode = tmp208.F
+	v_cljg_DOT_security_base64_decode.SealDirect()
+	_ = v_cljg_DOT_security_base64_decode
+	// (def base64-decode-bytes "Decode standard base64 to a BYTE-ARRAY, or nil on invalid input.…
+	v_cljg_DOT_security_base64_decode_bytes.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(163), kw_column, int64(7), kw_end_line, int64(163), kw_end_column, int64(26), kw_doc, "Decode standard base64 to a BYTE-ARRAY, or nil on invalid input. This is the\n  half a string cannot carry: an image, a gzip blob, any non-UTF-8 payload.\n  Pairs with cljg.io/write-bytes. Elements are SIGNED like the JVM's byte[]:\n  (vec (base64-decode-bytes \"AAECgA==\")) => [0 1 2 -128] (oracle 1.12.5,\n  java.util.Base64/getDecoder)."))
 	tmp209 := lang.FnFunc1(func(s210 any) any {
-		tmp211 := v_cljg_DOT_security_X_hex_decode.Get()
+		tmp211 := v_cljg_DOT_security_X_b64_decode_bytes.Get()
 		tmp212 := lang.Apply1(tmp211, s210)
 		return tmp212
 	})
-	tmp213 := &lang.NamedFn1{Name: "cljg.security/hex-decode", Expects: "1: [s]", F: tmp209}
-	v_cljg_DOT_security_hex_decode.BindRoot(tmp213)
-	fnD_cljg_DOT_security_hex_decode = tmp213.F
+	tmp213 := &lang.NamedFn1{Name: "cljg.security/base64-decode-bytes", Expects: "1: [s]", F: tmp209}
+	v_cljg_DOT_security_base64_decode_bytes.BindRoot(tmp213)
+	fnD_cljg_DOT_security_base64_decode_bytes = tmp213.F
+	v_cljg_DOT_security_base64_decode_bytes.SealDirect()
+	_ = v_cljg_DOT_security_base64_decode_bytes
+	// (def hex "Lowercase hex of a string's bytes, or of a byte-array." (clojure.core/fn [s] (-h…
+	v_cljg_DOT_security_hex.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(172), kw_column, int64(7), kw_end_line, int64(172), kw_end_column, int64(10), kw_doc, "Lowercase hex of a string's bytes, or of a byte-array."))
+	tmp214 := lang.FnFunc1(func(s215 any) any {
+		tmp216 := v_cljg_DOT_security_X_hex_encode.Get()
+		tmp217 := lang.Apply1(tmp216, s215)
+		return tmp217
+	})
+	tmp218 := &lang.NamedFn1{Name: "cljg.security/hex", Expects: "1: [s]", F: tmp214}
+	v_cljg_DOT_security_hex.BindRoot(tmp218)
+	fnD_cljg_DOT_security_hex = tmp218.F
+	v_cljg_DOT_security_hex.SealDirect()
+	_ = v_cljg_DOT_security_hex
+	// (def hex-decode "Decode hex back to the string, or nil on invalid input." (clojure.core/fn…
+	v_cljg_DOT_security_hex_decode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(177), kw_column, int64(7), kw_end_line, int64(177), kw_end_column, int64(17), kw_doc, "Decode hex back to the string, or nil on invalid input."))
+	tmp219 := lang.FnFunc1(func(s220 any) any {
+		tmp221 := v_cljg_DOT_security_X_hex_decode.Get()
+		tmp222 := lang.Apply1(tmp221, s220)
+		return tmp222
+	})
+	tmp223 := &lang.NamedFn1{Name: "cljg.security/hex-decode", Expects: "1: [s]", F: tmp219}
+	v_cljg_DOT_security_hex_decode.BindRoot(tmp223)
+	fnD_cljg_DOT_security_hex_decode = tmp223.F
 	v_cljg_DOT_security_hex_decode.SealDirect()
 	_ = v_cljg_DOT_security_hex_decode
 	// (def backend-name (clojure.core/fn [opts] (name (or (:backend opts) :auto))))
-	v_cljg_DOT_security_backend_name.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(166), kw_column, int64(7), kw_end_line, int64(166), kw_end_column, int64(29), kw_private, true))
-	tmp214 := lang.FnFunc1(func(opts215 any) any {
-		tmp216 := v_clojure_DOT_core_name.Get()
-		var tmp217 any
-		_ = tmp217
+	v_cljg_DOT_security_backend_name.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(188), kw_column, int64(7), kw_end_line, int64(188), kw_end_column, int64(29), kw_private, true))
+	tmp224 := lang.FnFunc1(func(opts225 any) any {
+		tmp226 := v_clojure_DOT_core_name.Get()
+		var tmp227 any
+		_ = tmp227
 		{
-			tmp218 := lang.Apply1(kw_backend, opts215)
-			var or__2__auto__219 any = tmp218
-			_ = or__2__auto__219
-			var tmp220 any
-			_ = tmp220
-			if lang.IsTruthy(or__2__auto__219) {
-				tmp220 = or__2__auto__219
+			tmp228 := lang.Apply1(kw_backend, opts225)
+			var or__2__auto__229 any = tmp228
+			_ = or__2__auto__229
+			var tmp230 any
+			_ = tmp230
+			if lang.IsTruthy(or__2__auto__229) {
+				tmp230 = or__2__auto__229
 			} else {
-				tmp220 = kw_auto
+				tmp230 = kw_auto
 			}
-			tmp217 = tmp220
+			tmp227 = tmp230
 		}
-		tmp221 := lang.Apply1(tmp216, tmp217)
-		return tmp221
+		tmp231 := lang.Apply1(tmp226, tmp227)
+		return tmp231
 	})
-	tmp222 := &lang.NamedFn1{Name: "cljg.security/backend-name", Expects: "1: [opts]", F: tmp214}
-	v_cljg_DOT_security_backend_name.BindRoot(tmp222)
-	fnD_cljg_DOT_security_backend_name = tmp222.F
+	tmp232 := &lang.NamedFn1{Name: "cljg.security/backend-name", Expects: "1: [opts]", F: tmp224}
+	v_cljg_DOT_security_backend_name.BindRoot(tmp232)
+	fnD_cljg_DOT_security_backend_name = tmp232.F
 	v_cljg_DOT_security_backend_name.SealDirect()
 	_ = v_cljg_DOT_security_backend_name
 	// (def save-to-keychain "Store secret value under (service, account). Returns the backend\n …
-	v_cljg_DOT_security_save_to_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(169), kw_column, int64(7), kw_end_line, int64(169), kw_end_column, int64(23), kw_doc, "Store secret value under (service, account). Returns the backend\n  keyword that stored it (:native or :file). The value is never printed\n  or logged."))
-	tmp223 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_save_to_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(191), kw_column, int64(7), kw_end_line, int64(191), kw_end_column, int64(23), kw_doc, "Store secret value under (service, account). Returns the backend\n  keyword that stored it (:native or :file). The value is never printed\n  or logged."))
+	tmp233 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 3:
-			service224 := args[0]
-			_ = service224
-			account225 := args[1]
-			_ = account225
-			value226 := args[2]
-			_ = value226
-			tmp227 := v_cljg_DOT_security_save_to_keychain.Get()
-			tmp228 := lang.NewMap()
-			tmp229 := lang.Apply4(tmp227, service224, account225, value226, tmp228)
-			return tmp229
+			service234 := args[0]
+			_ = service234
+			account235 := args[1]
+			_ = account235
+			value236 := args[2]
+			_ = value236
+			tmp237 := v_cljg_DOT_security_save_to_keychain.Get()
+			tmp238 := lang.NewMap()
+			tmp239 := lang.Apply4(tmp237, service234, account235, value236, tmp238)
+			return tmp239
 		case 4:
-			service230 := args[0]
-			_ = service230
-			account231 := args[1]
-			_ = account231
-			value232 := args[2]
-			_ = value232
-			opts233 := args[3]
-			_ = opts233
-			tmp234 := v_clojure_DOT_core_keyword.Get()
-			tmp235 := v_cljg_DOT_security_X_keychain_set.Get()
-			tmp236 := v_clojure_DOT_core_str.Get()
-			tmp237 := lang.Apply1(tmp236, service230)
-			tmp238 := v_clojure_DOT_core_str.Get()
-			tmp239 := lang.Apply1(tmp238, account231)
-			tmp240 := v_clojure_DOT_core_str.Get()
-			tmp241 := lang.Apply1(tmp240, value232)
-			tmp242 := v_cljg_DOT_security_backend_name.Direct()
-			var tmp243 any
-			if !tmp242 {
-				tmp243 = v_cljg_DOT_security_backend_name.Get()
+			service240 := args[0]
+			_ = service240
+			account241 := args[1]
+			_ = account241
+			value242 := args[2]
+			_ = value242
+			opts243 := args[3]
+			_ = opts243
+			tmp244 := v_clojure_DOT_core_keyword.Get()
+			tmp245 := v_cljg_DOT_security_X_keychain_set.Get()
+			tmp246 := v_clojure_DOT_core_str.Get()
+			tmp247 := lang.Apply1(tmp246, service240)
+			tmp248 := v_clojure_DOT_core_str.Get()
+			tmp249 := lang.Apply1(tmp248, account241)
+			tmp250 := v_clojure_DOT_core_str.Get()
+			tmp251 := lang.Apply1(tmp250, value242)
+			tmp252 := v_cljg_DOT_security_backend_name.Direct()
+			var tmp253 any
+			if !tmp252 {
+				tmp253 = v_cljg_DOT_security_backend_name.Get()
 			}
-			var tmp244 any
-			if tmp242 {
-				tmp244 = fnD_cljg_DOT_security_backend_name(opts233)
+			var tmp254 any
+			if tmp252 {
+				tmp254 = fnD_cljg_DOT_security_backend_name(opts243)
 			} else {
-				tmp244 = lang.Apply1(tmp243, opts233)
+				tmp254 = lang.Apply1(tmp253, opts243)
 			}
-			tmp245 := lang.Apply4(tmp235, tmp237, tmp239, tmp241, tmp244)
-			tmp246 := lang.Apply1(tmp234, tmp245)
-			return tmp246
+			tmp255 := lang.Apply4(tmp245, tmp247, tmp249, tmp251, tmp254)
+			tmp256 := lang.Apply1(tmp244, tmp255)
+			return tmp256
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/save-to-keychain", "3: [service account value] or 4: [service account value opts]"))
 		}
 	})
-	v_cljg_DOT_security_save_to_keychain.BindRoot(tmp223)
+	v_cljg_DOT_security_save_to_keychain.BindRoot(tmp233)
 	_ = v_cljg_DOT_security_save_to_keychain
 	// (def get-from-keychain "The secret for (service, account), or nil when absent." (clojure.c…
-	v_cljg_DOT_security_get_from_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(177), kw_column, int64(7), kw_end_line, int64(177), kw_end_column, int64(24), kw_doc, "The secret for (service, account), or nil when absent."))
-	tmp247 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_get_from_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(199), kw_column, int64(7), kw_end_line, int64(199), kw_end_column, int64(24), kw_doc, "The secret for (service, account), or nil when absent."))
+	tmp257 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
-			service248 := args[0]
-			_ = service248
-			account249 := args[1]
-			_ = account249
-			tmp250 := v_cljg_DOT_security_get_from_keychain.Get()
-			tmp251 := lang.NewMap()
-			tmp252 := lang.Apply3(tmp250, service248, account249, tmp251)
-			return tmp252
+			service258 := args[0]
+			_ = service258
+			account259 := args[1]
+			_ = account259
+			tmp260 := v_cljg_DOT_security_get_from_keychain.Get()
+			tmp261 := lang.NewMap()
+			tmp262 := lang.Apply3(tmp260, service258, account259, tmp261)
+			return tmp262
 		case 3:
-			service253 := args[0]
-			_ = service253
-			account254 := args[1]
-			_ = account254
-			opts255 := args[2]
-			_ = opts255
-			tmp256 := v_cljg_DOT_security_X_keychain_get.Get()
-			tmp257 := v_clojure_DOT_core_str.Get()
-			tmp258 := lang.Apply1(tmp257, service253)
-			tmp259 := v_clojure_DOT_core_str.Get()
-			tmp260 := lang.Apply1(tmp259, account254)
-			tmp261 := v_cljg_DOT_security_backend_name.Direct()
-			var tmp262 any
-			if !tmp261 {
-				tmp262 = v_cljg_DOT_security_backend_name.Get()
+			service263 := args[0]
+			_ = service263
+			account264 := args[1]
+			_ = account264
+			opts265 := args[2]
+			_ = opts265
+			tmp266 := v_cljg_DOT_security_X_keychain_get.Get()
+			tmp267 := v_clojure_DOT_core_str.Get()
+			tmp268 := lang.Apply1(tmp267, service263)
+			tmp269 := v_clojure_DOT_core_str.Get()
+			tmp270 := lang.Apply1(tmp269, account264)
+			tmp271 := v_cljg_DOT_security_backend_name.Direct()
+			var tmp272 any
+			if !tmp271 {
+				tmp272 = v_cljg_DOT_security_backend_name.Get()
 			}
-			var tmp263 any
-			if tmp261 {
-				tmp263 = fnD_cljg_DOT_security_backend_name(opts255)
+			var tmp273 any
+			if tmp271 {
+				tmp273 = fnD_cljg_DOT_security_backend_name(opts265)
 			} else {
-				tmp263 = lang.Apply1(tmp262, opts255)
+				tmp273 = lang.Apply1(tmp272, opts265)
 			}
-			tmp264 := lang.Apply3(tmp256, tmp258, tmp260, tmp263)
-			return tmp264
+			tmp274 := lang.Apply3(tmp266, tmp268, tmp270, tmp273)
+			return tmp274
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/get-from-keychain", "2: [service account] or 3: [service account opts]"))
 		}
 	})
-	v_cljg_DOT_security_get_from_keychain.BindRoot(tmp247)
+	v_cljg_DOT_security_get_from_keychain.BindRoot(tmp257)
 	_ = v_cljg_DOT_security_get_from_keychain
 	// (def delete-from-keychain "Delete (service, account); absent is a no-op. Returns the backe…
-	v_cljg_DOT_security_delete_from_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(27), kw_doc, "Delete (service, account); absent is a no-op. Returns the backend\n  keyword that handled it (:native or :file)."))
-	tmp265 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_delete_from_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(205), kw_column, int64(7), kw_end_line, int64(205), kw_end_column, int64(27), kw_doc, "Delete (service, account); absent is a no-op. Returns the backend\n  keyword that handled it (:native or :file)."))
+	tmp275 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
-			service266 := args[0]
-			_ = service266
-			account267 := args[1]
-			_ = account267
-			tmp268 := v_cljg_DOT_security_delete_from_keychain.Get()
-			tmp269 := lang.NewMap()
-			tmp270 := lang.Apply3(tmp268, service266, account267, tmp269)
-			return tmp270
+			service276 := args[0]
+			_ = service276
+			account277 := args[1]
+			_ = account277
+			tmp278 := v_cljg_DOT_security_delete_from_keychain.Get()
+			tmp279 := lang.NewMap()
+			tmp280 := lang.Apply3(tmp278, service276, account277, tmp279)
+			return tmp280
 		case 3:
-			service271 := args[0]
-			_ = service271
-			account272 := args[1]
-			_ = account272
-			opts273 := args[2]
-			_ = opts273
-			tmp274 := v_clojure_DOT_core_keyword.Get()
-			tmp275 := v_cljg_DOT_security_X_keychain_del.Get()
-			tmp276 := v_clojure_DOT_core_str.Get()
-			tmp277 := lang.Apply1(tmp276, service271)
-			tmp278 := v_clojure_DOT_core_str.Get()
-			tmp279 := lang.Apply1(tmp278, account272)
-			tmp280 := v_cljg_DOT_security_backend_name.Direct()
-			var tmp281 any
-			if !tmp280 {
-				tmp281 = v_cljg_DOT_security_backend_name.Get()
+			service281 := args[0]
+			_ = service281
+			account282 := args[1]
+			_ = account282
+			opts283 := args[2]
+			_ = opts283
+			tmp284 := v_clojure_DOT_core_keyword.Get()
+			tmp285 := v_cljg_DOT_security_X_keychain_del.Get()
+			tmp286 := v_clojure_DOT_core_str.Get()
+			tmp287 := lang.Apply1(tmp286, service281)
+			tmp288 := v_clojure_DOT_core_str.Get()
+			tmp289 := lang.Apply1(tmp288, account282)
+			tmp290 := v_cljg_DOT_security_backend_name.Direct()
+			var tmp291 any
+			if !tmp290 {
+				tmp291 = v_cljg_DOT_security_backend_name.Get()
 			}
-			var tmp282 any
-			if tmp280 {
-				tmp282 = fnD_cljg_DOT_security_backend_name(opts273)
+			var tmp292 any
+			if tmp290 {
+				tmp292 = fnD_cljg_DOT_security_backend_name(opts283)
 			} else {
-				tmp282 = lang.Apply1(tmp281, opts273)
+				tmp292 = lang.Apply1(tmp291, opts283)
 			}
-			tmp283 := lang.Apply3(tmp275, tmp277, tmp279, tmp282)
-			tmp284 := lang.Apply1(tmp274, tmp283)
-			return tmp284
+			tmp293 := lang.Apply3(tmp285, tmp287, tmp289, tmp292)
+			tmp294 := lang.Apply1(tmp284, tmp293)
+			return tmp294
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/delete-from-keychain", "2: [service account] or 3: [service account opts]"))
 		}
 	})
-	v_cljg_DOT_security_delete_from_keychain.BindRoot(tmp265)
+	v_cljg_DOT_security_delete_from_keychain.BindRoot(tmp275)
 	_ = v_cljg_DOT_security_delete_from_keychain
 	// (def bearer (clojure.core/fn [req] (let [h (get (:headers req) "authorization")] (when (an…
-	v_cljg_DOT_security_bearer.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(191), kw_column, int64(7), kw_end_line, int64(191), kw_end_column, int64(23), kw_private, true))
-	tmp285 := lang.FnFunc1(func(req286 any) any {
-		var tmp287 any
-		_ = tmp287
+	v_cljg_DOT_security_bearer.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(213), kw_column, int64(7), kw_end_line, int64(213), kw_end_column, int64(23), kw_private, true))
+	tmp295 := lang.FnFunc1(func(req296 any) any {
+		var tmp297 any
+		_ = tmp297
 		{
-			tmp288 := v_clojure_DOT_core_get.Get()
-			tmp289 := lang.Apply1(kw_headers, req286)
-			tmp290 := lang.Apply2(tmp288, tmp289, "authorization")
-			var h291 any = tmp290
-			_ = h291
-			var tmp292 any
-			_ = tmp292
+			tmp298 := v_clojure_DOT_core_get.Get()
+			tmp299 := lang.Apply1(kw_headers, req296)
+			tmp300 := lang.Apply2(tmp298, tmp299, "authorization")
+			var h301 any = tmp300
+			_ = h301
+			var tmp302 any
+			_ = tmp302
 			{
-				tmp293 := v_clojure_DOT_core_string_QMARK_.Get()
-				tmp294 := lang.Apply1(tmp293, h291)
-				var and__1__auto__295 any = tmp294
-				_ = and__1__auto__295
-				var tmp296 any
-				_ = tmp296
-				if lang.IsTruthy(and__1__auto__295) {
-					tmp297 := v_clojure_DOT_string_starts_with_QMARK_.Get()
-					tmp298 := lang.Apply2(tmp297, h291, "Bearer ")
-					tmp296 = tmp298
+				tmp303 := v_clojure_DOT_core_string_QMARK_.Get()
+				tmp304 := lang.Apply1(tmp303, h301)
+				var and__1__auto__305 any = tmp304
+				_ = and__1__auto__305
+				var tmp306 any
+				_ = tmp306
+				if lang.IsTruthy(and__1__auto__305) {
+					tmp307 := v_clojure_DOT_string_starts_with_QMARK_.Get()
+					tmp308 := lang.Apply2(tmp307, h301, "Bearer ")
+					tmp306 = tmp308
 				} else {
-					tmp296 = and__1__auto__295
+					tmp306 = and__1__auto__305
 				}
-				tmp292 = tmp296
+				tmp302 = tmp306
 			}
-			var tmp299 any
-			_ = tmp299
-			if lang.IsTruthy(tmp292) {
-				tmp300 := v_clojure_DOT_core_subs.Get()
-				tmp301 := lang.Apply2(tmp300, h291, int64(7))
-				tmp299 = tmp301
+			var tmp309 any
+			_ = tmp309
+			if lang.IsTruthy(tmp302) {
+				tmp310 := v_clojure_DOT_core_subs.Get()
+				tmp311 := lang.Apply2(tmp310, h301, int64(7))
+				tmp309 = tmp311
 			} else {
-				tmp299 = nil
+				tmp309 = nil
 			}
-			tmp287 = tmp299
+			tmp297 = tmp309
 		}
-		return tmp287
+		return tmp297
 	})
-	tmp302 := &lang.NamedFn1{Name: "cljg.security/bearer", Expects: "1: [req]", F: tmp285}
-	v_cljg_DOT_security_bearer.BindRoot(tmp302)
-	fnD_cljg_DOT_security_bearer = tmp302.F
+	tmp312 := &lang.NamedFn1{Name: "cljg.security/bearer", Expects: "1: [req]", F: tmp295}
+	v_cljg_DOT_security_bearer.BindRoot(tmp312)
+	fnD_cljg_DOT_security_bearer = tmp312.F
 	v_cljg_DOT_security_bearer.SealDirect()
 	_ = v_cljg_DOT_security_bearer
 	// (def authenticate "Claims from the request: an already-populated :auth/claims, else the\n …
-	v_cljg_DOT_security_authenticate.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(196), kw_column, int64(7), kw_end_line, int64(196), kw_end_column, int64(29), kw_private, true, kw_doc, "Claims from the request: an already-populated :auth/claims, else the\n  Bearer token verified."))
-	tmp303 := lang.FnFunc1(func(req304 any) any {
-		var tmp305 any
-		_ = tmp305
+	v_cljg_DOT_security_authenticate.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(218), kw_column, int64(7), kw_end_line, int64(218), kw_end_column, int64(29), kw_private, true, kw_doc, "Claims from the request: an already-populated :auth/claims, else the\n  Bearer token verified."))
+	tmp313 := lang.FnFunc1(func(req314 any) any {
+		var tmp315 any
+		_ = tmp315
 		{
-			tmp306 := lang.Apply1(kw_auth_SLASH_claims, req304)
-			var or__2__auto__307 any = tmp306
-			_ = or__2__auto__307
-			var tmp308 any
-			_ = tmp308
-			if lang.IsTruthy(or__2__auto__307) {
-				tmp308 = or__2__auto__307
+			tmp316 := lang.Apply1(kw_auth_SLASH_claims, req314)
+			var or__2__auto__317 any = tmp316
+			_ = or__2__auto__317
+			var tmp318 any
+			_ = tmp318
+			if lang.IsTruthy(or__2__auto__317) {
+				tmp318 = or__2__auto__317
 			} else {
-				var tmp309 any
-				_ = tmp309
+				var tmp319 any
+				_ = tmp319
 				{
-					tmp310 := v_cljg_DOT_security_bearer.Direct()
-					var tmp311 any
-					if !tmp310 {
-						tmp311 = v_cljg_DOT_security_bearer.Get()
+					tmp320 := v_cljg_DOT_security_bearer.Direct()
+					var tmp321 any
+					if !tmp320 {
+						tmp321 = v_cljg_DOT_security_bearer.Get()
 					}
-					var tmp312 any
-					if tmp310 {
-						tmp312 = fnD_cljg_DOT_security_bearer(req304)
+					var tmp322 any
+					if tmp320 {
+						tmp322 = fnD_cljg_DOT_security_bearer(req314)
 					} else {
-						tmp312 = lang.Apply1(tmp311, req304)
+						tmp322 = lang.Apply1(tmp321, req314)
 					}
-					var some__116313 any = tmp312
-					_ = some__116313
-					var tmp314 any
-					_ = tmp314
+					var some__116323 any = tmp322
+					_ = some__116323
+					var tmp324 any
+					_ = tmp324
 					{
-						tmp315 := v_clojure_DOT_core_nil_QMARK_.Get()
-						tmp316 := lang.Apply1(tmp315, some__116313)
-						var tmp317 any
-						_ = tmp317
-						if lang.IsTruthy(tmp316) {
-							tmp317 = nil
+						tmp325 := v_clojure_DOT_core_nil_QMARK_.Get()
+						tmp326 := lang.Apply1(tmp325, some__116323)
+						var tmp327 any
+						_ = tmp327
+						if lang.IsTruthy(tmp326) {
+							tmp327 = nil
 						} else {
-							tmp318 := v_cljg_DOT_security_verify.Get()
-							tmp319 := lang.Apply1(tmp318, some__116313)
-							tmp317 = tmp319
+							tmp328 := v_cljg_DOT_security_verify.Get()
+							tmp329 := lang.Apply1(tmp328, some__116323)
+							tmp327 = tmp329
 						}
-						var some__117320 any = tmp317
-						_ = some__117320
-						tmp314 = some__117320
+						var some__117330 any = tmp327
+						_ = some__117330
+						tmp324 = some__117330
 					}
-					tmp309 = tmp314
+					tmp319 = tmp324
 				}
-				tmp308 = tmp309
+				tmp318 = tmp319
 			}
-			tmp305 = tmp308
+			tmp315 = tmp318
 		}
-		return tmp305
+		return tmp315
 	})
-	tmp321 := &lang.NamedFn1{Name: "cljg.security/authenticate", Expects: "1: [req]", F: tmp303}
-	v_cljg_DOT_security_authenticate.BindRoot(tmp321)
-	fnD_cljg_DOT_security_authenticate = tmp321.F
+	tmp331 := &lang.NamedFn1{Name: "cljg.security/authenticate", Expects: "1: [req]", F: tmp313}
+	v_cljg_DOT_security_authenticate.BindRoot(tmp331)
+	fnD_cljg_DOT_security_authenticate = tmp331.F
 	v_cljg_DOT_security_authenticate.SealDirect()
 	_ = v_cljg_DOT_security_authenticate
 	// (def deny-401 (clojure.core/fn [req] (audit/record {:action :auth/denied, :severity :warni…
-	v_cljg_DOT_security_deny_401.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(202), kw_column, int64(7), kw_end_line, int64(202), kw_end_column, int64(25), kw_private, true))
-	tmp322 := lang.FnFunc1(func(req323 any) any {
-		tmp324 := v_bri_DOT_core_DOT_audit_record.Get()
-		tmp325 := lang.Apply1(kw_uri, req323)
-		tmp326 := lang.Apply1(kw_request_SLASH_id, req323)
-		tmp327 := lang.NewMap(kw_action, kw_auth_SLASH_denied, kw_severity, kw_warning, kw_reason, kw_unauthenticated, kw_target, tmp325, kw_request_SLASH_id, tmp326)
-		tmp328 := lang.Apply1(tmp324, tmp327)
-		_ = tmp328
-		tmp329 := lang.NewMap(kw_error_, "unauthorized")
-		tmp330 := lang.NewMap(kw_status, int64(401), kw_body, tmp329)
-		return tmp330
+	v_cljg_DOT_security_deny_401.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(224), kw_column, int64(7), kw_end_line, int64(224), kw_end_column, int64(25), kw_private, true))
+	tmp332 := lang.FnFunc1(func(req333 any) any {
+		tmp334 := v_bri_DOT_core_DOT_audit_record.Get()
+		tmp335 := lang.Apply1(kw_uri, req333)
+		tmp336 := lang.Apply1(kw_request_SLASH_id, req333)
+		tmp337 := lang.NewMap(kw_action, kw_auth_SLASH_denied, kw_severity, kw_warning, kw_reason, kw_unauthenticated, kw_target, tmp335, kw_request_SLASH_id, tmp336)
+		tmp338 := lang.Apply1(tmp334, tmp337)
+		_ = tmp338
+		tmp339 := lang.NewMap(kw_error_, "unauthorized")
+		tmp340 := lang.NewMap(kw_status, int64(401), kw_body, tmp339)
+		return tmp340
 	})
-	tmp331 := &lang.NamedFn1{Name: "cljg.security/deny-401", Expects: "1: [req]", F: tmp322}
-	v_cljg_DOT_security_deny_401.BindRoot(tmp331)
-	fnD_cljg_DOT_security_deny_401 = tmp331.F
+	tmp341 := &lang.NamedFn1{Name: "cljg.security/deny-401", Expects: "1: [req]", F: tmp332}
+	v_cljg_DOT_security_deny_401.BindRoot(tmp341)
+	fnD_cljg_DOT_security_deny_401 = tmp341.F
 	v_cljg_DOT_security_deny_401.SealDirect()
 	_ = v_cljg_DOT_security_deny_401
 	// (def deny-403 (clojure.core/fn [req claims] (audit/record {:action :auth/forbidden, :sever…
-	v_cljg_DOT_security_deny_403.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(207), kw_column, int64(7), kw_end_line, int64(207), kw_end_column, int64(25), kw_private, true))
-	tmp332 := lang.FnFunc2(func(req333, claims334 any) any {
-		tmp335 := v_bri_DOT_core_DOT_audit_record.Get()
-		tmp336 := v_cljg_DOT_security_subject.Direct()
-		var tmp337 any
-		if !tmp336 {
-			tmp337 = v_cljg_DOT_security_subject.Get()
+	v_cljg_DOT_security_deny_403.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(229), kw_column, int64(7), kw_end_line, int64(229), kw_end_column, int64(25), kw_private, true))
+	tmp342 := lang.FnFunc2(func(req343, claims344 any) any {
+		tmp345 := v_bri_DOT_core_DOT_audit_record.Get()
+		tmp346 := v_cljg_DOT_security_subject.Direct()
+		var tmp347 any
+		if !tmp346 {
+			tmp347 = v_cljg_DOT_security_subject.Get()
 		}
-		var tmp338 any
-		if tmp336 {
-			tmp338 = fnD_cljg_DOT_security_subject(claims334)
+		var tmp348 any
+		if tmp346 {
+			tmp348 = fnD_cljg_DOT_security_subject(claims344)
 		} else {
-			tmp338 = lang.Apply1(tmp337, claims334)
+			tmp348 = lang.Apply1(tmp347, claims344)
 		}
-		tmp339 := lang.Apply1(kw_uri, req333)
-		tmp340 := lang.Apply1(kw_request_SLASH_id, req333)
-		tmp341 := lang.NewMap(kw_action, kw_auth_SLASH_forbidden, kw_severity, kw_warning, kw_reason, kw_not_authorized, kw_actor, tmp338, kw_target, tmp339, kw_request_SLASH_id, tmp340)
-		tmp342 := lang.Apply1(tmp335, tmp341)
-		_ = tmp342
-		tmp343 := lang.NewMap(kw_error_, "forbidden")
-		tmp344 := lang.NewMap(kw_status, int64(403), kw_body, tmp343)
-		return tmp344
+		tmp349 := lang.Apply1(kw_uri, req343)
+		tmp350 := lang.Apply1(kw_request_SLASH_id, req343)
+		tmp351 := lang.NewMap(kw_action, kw_auth_SLASH_forbidden, kw_severity, kw_warning, kw_reason, kw_not_authorized, kw_actor, tmp348, kw_target, tmp349, kw_request_SLASH_id, tmp350)
+		tmp352 := lang.Apply1(tmp345, tmp351)
+		_ = tmp352
+		tmp353 := lang.NewMap(kw_error_, "forbidden")
+		tmp354 := lang.NewMap(kw_status, int64(403), kw_body, tmp353)
+		return tmp354
 	})
-	tmp345 := &lang.NamedFn2{Name: "cljg.security/deny-403", Expects: "2: [req claims]", F: tmp332}
-	v_cljg_DOT_security_deny_403.BindRoot(tmp345)
-	fnD_cljg_DOT_security_deny_403 = tmp345.F
+	tmp355 := &lang.NamedFn2{Name: "cljg.security/deny-403", Expects: "2: [req claims]", F: tmp342}
+	v_cljg_DOT_security_deny_403.BindRoot(tmp355)
+	fnD_cljg_DOT_security_deny_403 = tmp355.F
 	v_cljg_DOT_security_deny_403.SealDirect()
 	_ = v_cljg_DOT_security_deny_403
 	// (def wrap-guard (clojure.core/fn [req-pred handler] (fn [req] (let [claims (authenticate r…
-	v_cljg_DOT_security_wrap_guard.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(212), kw_column, int64(7), kw_end_line, int64(212), kw_end_column, int64(27), kw_private, true))
-	tmp346 := lang.FnFunc2(func(req_pred347, handler348 any) any {
-		tmp349 := lang.FnFunc1(func(req350 any) any {
-			var tmp351 any
-			_ = tmp351
+	v_cljg_DOT_security_wrap_guard.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(234), kw_column, int64(7), kw_end_line, int64(234), kw_end_column, int64(27), kw_private, true))
+	tmp356 := lang.FnFunc2(func(req_pred357, handler358 any) any {
+		tmp359 := lang.FnFunc1(func(req360 any) any {
+			var tmp361 any
+			_ = tmp361
 			{
-				tmp352 := v_cljg_DOT_security_authenticate.Direct()
-				var tmp353 any
-				if !tmp352 {
-					tmp353 = v_cljg_DOT_security_authenticate.Get()
+				tmp362 := v_cljg_DOT_security_authenticate.Direct()
+				var tmp363 any
+				if !tmp362 {
+					tmp363 = v_cljg_DOT_security_authenticate.Get()
 				}
-				var tmp354 any
-				if tmp352 {
-					tmp354 = fnD_cljg_DOT_security_authenticate(req350)
+				var tmp364 any
+				if tmp362 {
+					tmp364 = fnD_cljg_DOT_security_authenticate(req360)
 				} else {
-					tmp354 = lang.Apply1(tmp353, req350)
+					tmp364 = lang.Apply1(tmp363, req360)
 				}
-				var claims355 any = tmp354
-				_ = claims355
-				tmp356 := v_clojure_DOT_core_nil_QMARK_.Get()
-				tmp357 := lang.Apply1(tmp356, claims355)
-				var tmp358 any
-				_ = tmp358
-				if lang.IsTruthy(tmp357) {
-					tmp359 := v_cljg_DOT_security_deny_401.Direct()
-					var tmp360 any
-					if !tmp359 {
-						tmp360 = v_cljg_DOT_security_deny_401.Get()
+				var claims365 any = tmp364
+				_ = claims365
+				tmp366 := v_clojure_DOT_core_nil_QMARK_.Get()
+				tmp367 := lang.Apply1(tmp366, claims365)
+				var tmp368 any
+				_ = tmp368
+				if lang.IsTruthy(tmp367) {
+					tmp369 := v_cljg_DOT_security_deny_401.Direct()
+					var tmp370 any
+					if !tmp369 {
+						tmp370 = v_cljg_DOT_security_deny_401.Get()
 					}
-					var tmp361 any
-					if tmp359 {
-						tmp361 = fnD_cljg_DOT_security_deny_401(req350)
+					var tmp371 any
+					if tmp369 {
+						tmp371 = fnD_cljg_DOT_security_deny_401(req360)
 					} else {
-						tmp361 = lang.Apply1(tmp360, req350)
+						tmp371 = lang.Apply1(tmp370, req360)
 					}
-					tmp358 = tmp361
+					tmp368 = tmp371
 				} else {
-					var tmp362 any
-					_ = tmp362
+					var tmp372 any
+					_ = tmp372
 					{
-						tmp363 := v_clojure_DOT_core_assoc.Get()
-						tmp364 := lang.Apply3(tmp363, req350, kw_auth_SLASH_claims, claims355)
-						var req_SINGLEQUOTE_365 any = tmp364
-						_ = req_SINGLEQUOTE_365
-						tmp366 := v_bri_DOT_web_DOT_http_mark_subject_BANG_.Get()
-						tmp367 := v_cljg_DOT_security_subject.Direct()
-						var tmp368 any
-						if !tmp367 {
-							tmp368 = v_cljg_DOT_security_subject.Get()
+						tmp373 := v_clojure_DOT_core_assoc.Get()
+						tmp374 := lang.Apply3(tmp373, req360, kw_auth_SLASH_claims, claims365)
+						var req_SINGLEQUOTE_375 any = tmp374
+						_ = req_SINGLEQUOTE_375
+						tmp376 := v_bri_DOT_web_DOT_http_mark_subject_BANG_.Get()
+						tmp377 := v_cljg_DOT_security_subject.Direct()
+						var tmp378 any
+						if !tmp377 {
+							tmp378 = v_cljg_DOT_security_subject.Get()
 						}
-						var tmp369 any
-						if tmp367 {
-							tmp369 = fnD_cljg_DOT_security_subject(claims355)
+						var tmp379 any
+						if tmp377 {
+							tmp379 = fnD_cljg_DOT_security_subject(claims365)
 						} else {
-							tmp369 = lang.Apply1(tmp368, claims355)
+							tmp379 = lang.Apply1(tmp378, claims365)
 						}
-						tmp370 := lang.Apply2(tmp366, req_SINGLEQUOTE_365, tmp369)
-						_ = tmp370
-						var tmp371 any
-						_ = tmp371
+						tmp380 := lang.Apply2(tmp376, req_SINGLEQUOTE_375, tmp379)
+						_ = tmp380
+						var tmp381 any
+						_ = tmp381
 						func() {
 							defer func() {
 								if r := recover(); r != nil {
 									thrown := rt.Recover(r)
 									if rt.CatchMatches("Throwable", thrown) {
-										var X_372 any = thrown
-										_ = X_372
-										tmp371 = false
+										var X_382 any = thrown
+										_ = X_382
+										tmp381 = false
 										return
 									}
 									panic(r)
 								}
 							}()
-							tmp373 := v_clojure_DOT_core_boolean.Get()
-							tmp374 := lang.Apply1(req_pred347, req_SINGLEQUOTE_365)
-							tmp375 := lang.Apply1(tmp373, tmp374)
-							tmp371 = tmp375
+							tmp383 := v_clojure_DOT_core_boolean.Get()
+							tmp384 := lang.Apply1(req_pred357, req_SINGLEQUOTE_375)
+							tmp385 := lang.Apply1(tmp383, tmp384)
+							tmp381 = tmp385
 						}()
-						var tmp376 any
-						_ = tmp376
-						if lang.IsTruthy(tmp371) {
-							tmp377 := lang.Apply1(handler348, req_SINGLEQUOTE_365)
-							tmp376 = tmp377
+						var tmp386 any
+						_ = tmp386
+						if lang.IsTruthy(tmp381) {
+							tmp387 := lang.Apply1(handler358, req_SINGLEQUOTE_375)
+							tmp386 = tmp387
 						} else {
-							tmp378 := v_cljg_DOT_security_deny_403.Direct()
-							var tmp379 any
-							if !tmp378 {
-								tmp379 = v_cljg_DOT_security_deny_403.Get()
+							tmp388 := v_cljg_DOT_security_deny_403.Direct()
+							var tmp389 any
+							if !tmp388 {
+								tmp389 = v_cljg_DOT_security_deny_403.Get()
 							}
-							var tmp380 any
-							if tmp378 {
-								tmp380 = fnD_cljg_DOT_security_deny_403(req_SINGLEQUOTE_365, claims355)
+							var tmp390 any
+							if tmp388 {
+								tmp390 = fnD_cljg_DOT_security_deny_403(req_SINGLEQUOTE_375, claims365)
 							} else {
-								tmp380 = lang.Apply2(tmp379, req_SINGLEQUOTE_365, claims355)
+								tmp390 = lang.Apply2(tmp389, req_SINGLEQUOTE_375, claims365)
 							}
-							tmp376 = tmp380
+							tmp386 = tmp390
 						}
-						tmp362 = tmp376
+						tmp372 = tmp386
 					}
-					tmp358 = tmp362
+					tmp368 = tmp372
 				}
-				tmp351 = tmp358
+				tmp361 = tmp368
 			}
-			return tmp351
+			return tmp361
 		})
-		tmp381 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp349}
-		return tmp381
+		tmp391 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp359}
+		return tmp391
 	})
-	tmp382 := &lang.NamedFn2{Name: "cljg.security/wrap-guard", Expects: "2: [req-pred handler]", F: tmp346}
-	v_cljg_DOT_security_wrap_guard.BindRoot(tmp382)
-	fnD_cljg_DOT_security_wrap_guard = tmp382.F
+	tmp392 := &lang.NamedFn2{Name: "cljg.security/wrap-guard", Expects: "2: [req-pred handler]", F: tmp356}
+	v_cljg_DOT_security_wrap_guard.BindRoot(tmp392)
+	fnD_cljg_DOT_security_wrap_guard = tmp392.F
 	v_cljg_DOT_security_wrap_guard.SealDirect()
 	_ = v_cljg_DOT_security_wrap_guard
 	// (def guard "The GENERAL authorization guard and the framework's authz seam:\n  (guard req-…
-	v_cljg_DOT_security_guard.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(223), kw_column, int64(7), kw_end_line, int64(223), kw_end_column, int64(12), kw_doc, "The GENERAL authorization guard and the framework's authz seam:\n  (guard req-pred) → middleware; (guard req-pred handler) → wrapped\n  handler. req-pred is (req -> boolean) with :auth/claims populated. No/\n  invalid token → 401; authenticated but pred false → 403 (RFC 6750).\n  logged-in-only / role-only / user-only / admin-only are all thin\n  specializations of this. Tenant check in one line:\n  (guard #(= (get-in % [:auth/claims :org]) (get-in % [:path-params :org])))."))
-	tmp383 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_guard.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(245), kw_column, int64(7), kw_end_line, int64(245), kw_end_column, int64(12), kw_doc, "The GENERAL authorization guard and the framework's authz seam:\n  (guard req-pred) → middleware; (guard req-pred handler) → wrapped\n  handler. req-pred is (req -> boolean) with :auth/claims populated. No/\n  invalid token → 401; authenticated but pred false → 403 (RFC 6750).\n  logged-in-only / role-only / user-only / admin-only are all thin\n  specializations of this. Tenant check in one line:\n  (guard #(= (get-in % [:auth/claims :org]) (get-in % [:path-params :org])))."))
+	tmp393 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			req_pred384 := args[0]
-			_ = req_pred384
-			tmp385 := lang.FnFunc1(func(h386 any) any {
-				tmp387 := v_cljg_DOT_security_wrap_guard.Direct()
-				var tmp388 any
-				if !tmp387 {
-					tmp388 = v_cljg_DOT_security_wrap_guard.Get()
+			req_pred394 := args[0]
+			_ = req_pred394
+			tmp395 := lang.FnFunc1(func(h396 any) any {
+				tmp397 := v_cljg_DOT_security_wrap_guard.Direct()
+				var tmp398 any
+				if !tmp397 {
+					tmp398 = v_cljg_DOT_security_wrap_guard.Get()
 				}
-				var tmp389 any
-				if tmp387 {
-					tmp389 = fnD_cljg_DOT_security_wrap_guard(req_pred384, h386)
+				var tmp399 any
+				if tmp397 {
+					tmp399 = fnD_cljg_DOT_security_wrap_guard(req_pred394, h396)
 				} else {
-					tmp389 = lang.Apply2(tmp388, req_pred384, h386)
+					tmp399 = lang.Apply2(tmp398, req_pred394, h396)
 				}
-				return tmp389
+				return tmp399
 			})
-			tmp390 := &lang.NamedFn1{Name: "fn", Expects: "1: [h]", F: tmp385}
-			tmp391 := lang.NewMap(kw_name, kw_guard, kw_wrap, tmp390)
-			return tmp391
+			tmp400 := &lang.NamedFn1{Name: "fn", Expects: "1: [h]", F: tmp395}
+			tmp401 := lang.NewMap(kw_name, kw_guard, kw_wrap, tmp400)
+			return tmp401
 		case 2:
-			req_pred392 := args[0]
-			_ = req_pred392
-			handler393 := args[1]
-			_ = handler393
-			tmp394 := v_cljg_DOT_security_wrap_guard.Direct()
-			var tmp395 any
-			if !tmp394 {
-				tmp395 = v_cljg_DOT_security_wrap_guard.Get()
+			req_pred402 := args[0]
+			_ = req_pred402
+			handler403 := args[1]
+			_ = handler403
+			tmp404 := v_cljg_DOT_security_wrap_guard.Direct()
+			var tmp405 any
+			if !tmp404 {
+				tmp405 = v_cljg_DOT_security_wrap_guard.Get()
 			}
-			var tmp396 any
-			if tmp394 {
-				tmp396 = fnD_cljg_DOT_security_wrap_guard(req_pred392, handler393)
+			var tmp406 any
+			if tmp404 {
+				tmp406 = fnD_cljg_DOT_security_wrap_guard(req_pred402, handler403)
 			} else {
-				tmp396 = lang.Apply2(tmp395, req_pred392, handler393)
+				tmp406 = lang.Apply2(tmp405, req_pred402, handler403)
 			}
-			return tmp396
+			return tmp406
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/guard", "1: [req-pred] or 2: [req-pred handler]"))
 		}
 	})
-	v_cljg_DOT_security_guard.BindRoot(tmp383)
+	v_cljg_DOT_security_guard.BindRoot(tmp393)
 	_ = v_cljg_DOT_security_guard
 	// (def guard-claims "guard whose predicate sees the CLAIMS map directly (the common case)." …
-	v_cljg_DOT_security_guard_claims.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(234), kw_column, int64(7), kw_end_line, int64(234), kw_end_column, int64(19), kw_doc, "guard whose predicate sees the CLAIMS map directly (the common case)."))
-	tmp397 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_guard_claims.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(256), kw_column, int64(7), kw_end_line, int64(256), kw_end_column, int64(19), kw_doc, "guard whose predicate sees the CLAIMS map directly (the common case)."))
+	tmp407 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			claims_pred398 := args[0]
-			_ = claims_pred398
-			tmp399 := v_cljg_DOT_security_guard.Get()
-			tmp400 := lang.FnFunc1(func(req401 any) any {
-				tmp402 := lang.Apply1(kw_auth_SLASH_claims, req401)
-				tmp403 := lang.Apply1(claims_pred398, tmp402)
-				return tmp403
+			claims_pred408 := args[0]
+			_ = claims_pred408
+			tmp409 := v_cljg_DOT_security_guard.Get()
+			tmp410 := lang.FnFunc1(func(req411 any) any {
+				tmp412 := lang.Apply1(kw_auth_SLASH_claims, req411)
+				tmp413 := lang.Apply1(claims_pred408, tmp412)
+				return tmp413
 			})
-			tmp404 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp400}
-			tmp405 := lang.Apply1(tmp399, tmp404)
-			return tmp405
+			tmp414 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp410}
+			tmp415 := lang.Apply1(tmp409, tmp414)
+			return tmp415
 		case 2:
-			claims_pred406 := args[0]
-			_ = claims_pred406
-			handler407 := args[1]
-			_ = handler407
-			tmp408 := v_cljg_DOT_security_guard.Get()
-			tmp409 := lang.FnFunc1(func(req410 any) any {
-				tmp411 := lang.Apply1(kw_auth_SLASH_claims, req410)
-				tmp412 := lang.Apply1(claims_pred406, tmp411)
-				return tmp412
+			claims_pred416 := args[0]
+			_ = claims_pred416
+			handler417 := args[1]
+			_ = handler417
+			tmp418 := v_cljg_DOT_security_guard.Get()
+			tmp419 := lang.FnFunc1(func(req420 any) any {
+				tmp421 := lang.Apply1(kw_auth_SLASH_claims, req420)
+				tmp422 := lang.Apply1(claims_pred416, tmp421)
+				return tmp422
 			})
-			tmp413 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp409}
-			tmp414 := lang.Apply2(tmp408, tmp413, handler407)
-			return tmp414
+			tmp423 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp419}
+			tmp424 := lang.Apply2(tmp418, tmp423, handler417)
+			return tmp424
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/guard-claims", "1: [claims-pred] or 2: [claims-pred handler]"))
 		}
 	})
-	v_cljg_DOT_security_guard_claims.BindRoot(tmp397)
+	v_cljg_DOT_security_guard_claims.BindRoot(tmp407)
 	_ = v_cljg_DOT_security_guard_claims
 	// (def logged-in-only "Require a valid token (any claims). 401 otherwise." (clojure.core/fn …
-	v_cljg_DOT_security_logged_in_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(239), kw_column, int64(7), kw_end_line, int64(239), kw_end_column, int64(21), kw_doc, "Require a valid token (any claims). 401 otherwise."))
-	tmp415 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_logged_in_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(261), kw_column, int64(7), kw_end_line, int64(261), kw_end_column, int64(21), kw_doc, "Require a valid token (any claims). 401 otherwise."))
+	tmp425 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp416 := v_cljg_DOT_security_guard.Get()
-			tmp417 := lang.FnFunc1(func(X_418 any) any {
+			tmp426 := v_cljg_DOT_security_guard.Get()
+			tmp427 := lang.FnFunc1(func(X_428 any) any {
 				return true
 			})
-			tmp419 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp417}
-			tmp420 := lang.Apply1(tmp416, tmp419)
-			return tmp420
+			tmp429 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp427}
+			tmp430 := lang.Apply1(tmp426, tmp429)
+			return tmp430
 		case 1:
-			handler421 := args[0]
-			_ = handler421
-			tmp422 := v_cljg_DOT_security_guard.Get()
-			tmp423 := lang.FnFunc1(func(X_424 any) any {
+			handler431 := args[0]
+			_ = handler431
+			tmp432 := v_cljg_DOT_security_guard.Get()
+			tmp433 := lang.FnFunc1(func(X_434 any) any {
 				return true
 			})
-			tmp425 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp423}
-			tmp426 := lang.Apply2(tmp422, tmp425, handler421)
-			return tmp426
+			tmp435 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp433}
+			tmp436 := lang.Apply2(tmp432, tmp435, handler431)
+			return tmp436
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/logged-in-only", "0: [] or 1: [handler]"))
 		}
 	})
-	v_cljg_DOT_security_logged_in_only.BindRoot(tmp415)
+	v_cljg_DOT_security_logged_in_only.BindRoot(tmp425)
 	_ = v_cljg_DOT_security_logged_in_only
 	// (def role-only "Require the token's :role to equal role. 401 (no token) or 403 (wrong\n  r…
-	v_cljg_DOT_security_role_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(244), kw_column, int64(7), kw_end_line, int64(244), kw_end_column, int64(16), kw_doc, "Require the token's :role to equal role. 401 (no token) or 403 (wrong\n  role)."))
-	tmp427 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_role_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(266), kw_column, int64(7), kw_end_line, int64(266), kw_end_column, int64(16), kw_doc, "Require the token's :role to equal role. 401 (no token) or 403 (wrong\n  role)."))
+	tmp437 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			role428 := args[0]
-			_ = role428
-			tmp429 := v_cljg_DOT_security_guard_claims.Get()
-			tmp430 := lang.FnFunc1(func(c431 any) any {
-				tmp432 := v_clojure_DOT_core_name.Get()
-				tmp433 := lang.Apply1(tmp432, role428)
-				tmp434 := v_clojure_DOT_core_str.Get()
-				tmp435 := lang.Apply1(kw_role, c431)
-				tmp436 := lang.Apply1(tmp434, tmp435)
-				tmp437 := rt.EQ2(v_clojure_DOT_core_X_EQ_, tmp433, tmp436)
-				return tmp437
+			role438 := args[0]
+			_ = role438
+			tmp439 := v_cljg_DOT_security_guard_claims.Get()
+			tmp440 := lang.FnFunc1(func(c441 any) any {
+				tmp442 := v_clojure_DOT_core_name.Get()
+				tmp443 := lang.Apply1(tmp442, role438)
+				tmp444 := v_clojure_DOT_core_str.Get()
+				tmp445 := lang.Apply1(kw_role, c441)
+				tmp446 := lang.Apply1(tmp444, tmp445)
+				tmp447 := rt.EQ2(v_clojure_DOT_core_X_EQ_, tmp443, tmp446)
+				return tmp447
 			})
-			tmp438 := &lang.NamedFn1{Name: "fn", Expects: "1: [c]", F: tmp430}
-			tmp439 := lang.Apply1(tmp429, tmp438)
-			return tmp439
+			tmp448 := &lang.NamedFn1{Name: "fn", Expects: "1: [c]", F: tmp440}
+			tmp449 := lang.Apply1(tmp439, tmp448)
+			return tmp449
 		case 2:
-			role440 := args[0]
-			_ = role440
-			handler441 := args[1]
-			_ = handler441
-			tmp442 := v_cljg_DOT_security_guard_claims.Get()
-			tmp443 := lang.FnFunc1(func(c444 any) any {
-				tmp445 := v_clojure_DOT_core_name.Get()
-				tmp446 := lang.Apply1(tmp445, role440)
-				tmp447 := v_clojure_DOT_core_str.Get()
-				tmp448 := lang.Apply1(kw_role, c444)
-				tmp449 := lang.Apply1(tmp447, tmp448)
-				tmp450 := rt.EQ2(v_clojure_DOT_core_X_EQ_, tmp446, tmp449)
-				return tmp450
+			role450 := args[0]
+			_ = role450
+			handler451 := args[1]
+			_ = handler451
+			tmp452 := v_cljg_DOT_security_guard_claims.Get()
+			tmp453 := lang.FnFunc1(func(c454 any) any {
+				tmp455 := v_clojure_DOT_core_name.Get()
+				tmp456 := lang.Apply1(tmp455, role450)
+				tmp457 := v_clojure_DOT_core_str.Get()
+				tmp458 := lang.Apply1(kw_role, c454)
+				tmp459 := lang.Apply1(tmp457, tmp458)
+				tmp460 := rt.EQ2(v_clojure_DOT_core_X_EQ_, tmp456, tmp459)
+				return tmp460
 			})
-			tmp451 := &lang.NamedFn1{Name: "fn", Expects: "1: [c]", F: tmp443}
-			tmp452 := lang.Apply2(tmp442, tmp451, handler441)
-			return tmp452
+			tmp461 := &lang.NamedFn1{Name: "fn", Expects: "1: [c]", F: tmp453}
+			tmp462 := lang.Apply2(tmp452, tmp461, handler451)
+			return tmp462
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/role-only", "1: [role] or 2: [role handler]"))
 		}
 	})
-	v_cljg_DOT_security_role_only.BindRoot(tmp427)
+	v_cljg_DOT_security_role_only.BindRoot(tmp437)
 	_ = v_cljg_DOT_security_role_only
 	// (def user-only "Sugar: (role-only :user)." (clojure.core/fn ([] (role-only "user")) ([hand…
-	v_cljg_DOT_security_user_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(250), kw_column, int64(7), kw_end_line, int64(250), kw_end_column, int64(16), kw_doc, "Sugar: (role-only :user)."))
-	tmp453 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_user_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(272), kw_column, int64(7), kw_end_line, int64(272), kw_end_column, int64(16), kw_doc, "Sugar: (role-only :user)."))
+	tmp463 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp454 := v_cljg_DOT_security_role_only.Get()
-			tmp455 := lang.Apply1(tmp454, "user")
-			return tmp455
+			tmp464 := v_cljg_DOT_security_role_only.Get()
+			tmp465 := lang.Apply1(tmp464, "user")
+			return tmp465
 		case 1:
-			handler456 := args[0]
-			_ = handler456
-			tmp457 := v_cljg_DOT_security_role_only.Get()
-			tmp458 := lang.Apply2(tmp457, "user", handler456)
-			return tmp458
+			handler466 := args[0]
+			_ = handler466
+			tmp467 := v_cljg_DOT_security_role_only.Get()
+			tmp468 := lang.Apply2(tmp467, "user", handler466)
+			return tmp468
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/user-only", "0: [] or 1: [handler]"))
 		}
 	})
-	v_cljg_DOT_security_user_only.BindRoot(tmp453)
+	v_cljg_DOT_security_user_only.BindRoot(tmp463)
 	_ = v_cljg_DOT_security_user_only
 	// (def admin-only "Sugar: (role-only :admin)." (clojure.core/fn ([] (role-only "admin")) ([h…
-	v_cljg_DOT_security_admin_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(255), kw_column, int64(7), kw_end_line, int64(255), kw_end_column, int64(17), kw_doc, "Sugar: (role-only :admin)."))
-	tmp459 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_admin_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(277), kw_column, int64(7), kw_end_line, int64(277), kw_end_column, int64(17), kw_doc, "Sugar: (role-only :admin)."))
+	tmp469 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp460 := v_cljg_DOT_security_role_only.Get()
-			tmp461 := lang.Apply1(tmp460, "admin")
-			return tmp461
+			tmp470 := v_cljg_DOT_security_role_only.Get()
+			tmp471 := lang.Apply1(tmp470, "admin")
+			return tmp471
 		case 1:
-			handler462 := args[0]
-			_ = handler462
-			tmp463 := v_cljg_DOT_security_role_only.Get()
-			tmp464 := lang.Apply2(tmp463, "admin", handler462)
-			return tmp464
+			handler472 := args[0]
+			_ = handler472
+			tmp473 := v_cljg_DOT_security_role_only.Get()
+			tmp474 := lang.Apply2(tmp473, "admin", handler472)
+			return tmp474
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/admin-only", "0: [] or 1: [handler]"))
 		}
 	})
-	v_cljg_DOT_security_admin_only.BindRoot(tmp459)
+	v_cljg_DOT_security_admin_only.BindRoot(tmp469)
 	_ = v_cljg_DOT_security_admin_only
 	// (def ban-store (atom {}))
-	v_cljg_DOT_security_ban_store.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(269), kw_column, int64(6), kw_end_line, int64(269), kw_end_column, int64(25), kw_private, true))
-	tmp465 := v_clojure_DOT_core_atom.Get()
-	tmp466 := lang.NewMap()
-	tmp467 := lang.Apply1(tmp465, tmp466)
-	v_cljg_DOT_security_ban_store.BindRoot(tmp467)
+	v_cljg_DOT_security_ban_store.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(291), kw_column, int64(6), kw_end_line, int64(291), kw_end_column, int64(25), kw_private, true))
+	tmp475 := v_clojure_DOT_core_atom.Get()
+	tmp476 := lang.NewMap()
+	tmp477 := lang.Apply1(tmp475, tmp476)
+	v_cljg_DOT_security_ban_store.BindRoot(tmp477)
 	_ = v_cljg_DOT_security_ban_store
 	// (def auto-ban "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),\n  :co…
-	v_cljg_DOT_security_auto_ban.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(271), kw_column, int64(7), kw_end_line, int64(271), kw_end_column, int64(15), kw_doc, "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),\n  :cooldown-ms (300000), :key (:ip | :subject | (fn [req] key)),\n  :should-ban? ((fn [denial-count req] boolean) — custom ban policy),\n  :clock ((fn [] millis), for tests), :store (atom, for test isolation)."))
-	tmp468 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_security_auto_ban.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(293), kw_column, int64(7), kw_end_line, int64(293), kw_end_column, int64(15), kw_doc, "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),\n  :cooldown-ms (300000), :key (:ip | :subject | (fn [req] key)),\n  :should-ban? ((fn [denial-count req] boolean) — custom ban policy),\n  :clock ((fn [] millis), for tests), :store (atom, for test isolation)."))
+	tmp478 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp469 := v_cljg_DOT_security_auto_ban.Get()
-			tmp470 := lang.NewMap()
-			tmp471 := lang.Apply1(tmp469, tmp470)
-			return tmp471
+			tmp479 := v_cljg_DOT_security_auto_ban.Get()
+			tmp480 := lang.NewMap()
+			tmp481 := lang.Apply1(tmp479, tmp480)
+			return tmp481
 		case 1:
-			opts472 := args[0]
-			_ = opts472
-			var tmp473 any
-			_ = tmp473
+			opts482 := args[0]
+			_ = opts482
+			var tmp483 any
+			_ = tmp483
 			{
-				var tmp474 any
-				_ = tmp474
-				{
-					tmp475 := lang.Apply1(kw_threshold, opts472)
-					var or__2__auto__476 any = tmp475
-					_ = or__2__auto__476
-					var tmp477 any
-					_ = tmp477
-					if lang.IsTruthy(or__2__auto__476) {
-						tmp477 = or__2__auto__476
-					} else {
-						tmp477 = int64(5)
-					}
-					tmp474 = tmp477
-				}
-				var threshold478 any = tmp474
-				_ = threshold478
-				var tmp479 any
-				_ = tmp479
-				{
-					tmp480 := lang.Apply1(kw_window_ms, opts472)
-					var or__2__auto__481 any = tmp480
-					_ = or__2__auto__481
-					var tmp482 any
-					_ = tmp482
-					if lang.IsTruthy(or__2__auto__481) {
-						tmp482 = or__2__auto__481
-					} else {
-						tmp482 = int64(60000)
-					}
-					tmp479 = tmp482
-				}
-				var window483 any = tmp479
-				_ = window483
 				var tmp484 any
 				_ = tmp484
 				{
-					tmp485 := lang.Apply1(kw_cooldown_ms, opts472)
+					tmp485 := lang.Apply1(kw_threshold, opts482)
 					var or__2__auto__486 any = tmp485
 					_ = or__2__auto__486
 					var tmp487 any
@@ -1460,16 +1455,16 @@ func Load() {
 					if lang.IsTruthy(or__2__auto__486) {
 						tmp487 = or__2__auto__486
 					} else {
-						tmp487 = int64(300000)
+						tmp487 = int64(5)
 					}
 					tmp484 = tmp487
 				}
-				var cooldown488 any = tmp484
-				_ = cooldown488
+				var threshold488 any = tmp484
+				_ = threshold488
 				var tmp489 any
 				_ = tmp489
 				{
-					tmp490 := lang.Apply1(kw_clock, opts472)
+					tmp490 := lang.Apply1(kw_window_ms, opts482)
 					var or__2__auto__491 any = tmp490
 					_ = or__2__auto__491
 					var tmp492 any
@@ -1477,254 +1472,288 @@ func Load() {
 					if lang.IsTruthy(or__2__auto__491) {
 						tmp492 = or__2__auto__491
 					} else {
-						tmp493 := lang.FnFunc0(func() any {
-							tmp494 := v_cljg_DOT_security_X_now_millis.Get()
-							tmp495 := lang.Apply0(tmp494)
-							return tmp495
-						})
-						tmp496 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp493}
-						tmp492 = tmp496
+						tmp492 = int64(60000)
 					}
 					tmp489 = tmp492
 				}
-				var clock497 any = tmp489
-				_ = clock497
-				var tmp498 any
-				_ = tmp498
+				var window493 any = tmp489
+				_ = window493
+				var tmp494 any
+				_ = tmp494
 				{
-					tmp499 := lang.Apply1(kw_store, opts472)
-					var or__2__auto__500 any = tmp499
-					_ = or__2__auto__500
-					var tmp501 any
-					_ = tmp501
-					if lang.IsTruthy(or__2__auto__500) {
-						tmp501 = or__2__auto__500
+					tmp495 := lang.Apply1(kw_cooldown_ms, opts482)
+					var or__2__auto__496 any = tmp495
+					_ = or__2__auto__496
+					var tmp497 any
+					_ = tmp497
+					if lang.IsTruthy(or__2__auto__496) {
+						tmp497 = or__2__auto__496
 					} else {
-						tmp502 := v_cljg_DOT_security_ban_store.Get()
-						tmp501 = tmp502
+						tmp497 = int64(300000)
 					}
-					tmp498 = tmp501
+					tmp494 = tmp497
 				}
-				var store503 any = tmp498
-				_ = store503
-				var tmp504 any
-				_ = tmp504
+				var cooldown498 any = tmp494
+				_ = cooldown498
+				var tmp499 any
+				_ = tmp499
 				{
-					tmp505 := lang.Apply1(kw_key, opts472)
-					var or__2__auto__506 any = tmp505
-					_ = or__2__auto__506
-					var tmp507 any
-					_ = tmp507
-					if lang.IsTruthy(or__2__auto__506) {
-						tmp507 = or__2__auto__506
+					tmp500 := lang.Apply1(kw_clock, opts482)
+					var or__2__auto__501 any = tmp500
+					_ = or__2__auto__501
+					var tmp502 any
+					_ = tmp502
+					if lang.IsTruthy(or__2__auto__501) {
+						tmp502 = or__2__auto__501
 					} else {
-						tmp507 = kw_ip
-					}
-					tmp504 = tmp507
-				}
-				tmp508 := lang.NewMap(kw_key, tmp504)
-				var key_opts509 any = tmp508
-				_ = key_opts509
-				var tmp510 any
-				_ = tmp510
-				{
-					tmp511 := lang.Apply1(kw_should_ban_QMARK_, opts472)
-					var or__2__auto__512 any = tmp511
-					_ = or__2__auto__512
-					var tmp513 any
-					_ = tmp513
-					if lang.IsTruthy(or__2__auto__512) {
-						tmp513 = or__2__auto__512
-					} else {
-						tmp514 := lang.FnFunc2(func(n515, X_req516 any) any {
-							tmp517 := rt.GE2(v_clojure_DOT_core_X_GT__EQ_, n515, threshold478)
-							return tmp517
+						tmp503 := lang.FnFunc0(func() any {
+							tmp504 := v_cljg_DOT_security_X_now_millis.Get()
+							tmp505 := lang.Apply0(tmp504)
+							return tmp505
 						})
-						tmp518 := &lang.NamedFn2{Name: "fn", Expects: "2: [n _req]", F: tmp514}
-						tmp513 = tmp518
+						tmp506 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp503}
+						tmp502 = tmp506
 					}
-					tmp510 = tmp513
+					tmp499 = tmp502
 				}
-				var should_ban_QMARK_519 any = tmp510
-				_ = should_ban_QMARK_519
-				tmp520 := lang.FnFunc1(func(handler521 any) any {
-					tmp522 := lang.FnFunc1(func(req523 any) any {
-						var tmp524 any
-						_ = tmp524
+				var clock507 any = tmp499
+				_ = clock507
+				var tmp508 any
+				_ = tmp508
+				{
+					tmp509 := lang.Apply1(kw_store, opts482)
+					var or__2__auto__510 any = tmp509
+					_ = or__2__auto__510
+					var tmp511 any
+					_ = tmp511
+					if lang.IsTruthy(or__2__auto__510) {
+						tmp511 = or__2__auto__510
+					} else {
+						tmp512 := v_cljg_DOT_security_ban_store.Get()
+						tmp511 = tmp512
+					}
+					tmp508 = tmp511
+				}
+				var store513 any = tmp508
+				_ = store513
+				var tmp514 any
+				_ = tmp514
+				{
+					tmp515 := lang.Apply1(kw_key, opts482)
+					var or__2__auto__516 any = tmp515
+					_ = or__2__auto__516
+					var tmp517 any
+					_ = tmp517
+					if lang.IsTruthy(or__2__auto__516) {
+						tmp517 = or__2__auto__516
+					} else {
+						tmp517 = kw_ip
+					}
+					tmp514 = tmp517
+				}
+				tmp518 := lang.NewMap(kw_key, tmp514)
+				var key_opts519 any = tmp518
+				_ = key_opts519
+				var tmp520 any
+				_ = tmp520
+				{
+					tmp521 := lang.Apply1(kw_should_ban_QMARK_, opts482)
+					var or__2__auto__522 any = tmp521
+					_ = or__2__auto__522
+					var tmp523 any
+					_ = tmp523
+					if lang.IsTruthy(or__2__auto__522) {
+						tmp523 = or__2__auto__522
+					} else {
+						tmp524 := lang.FnFunc2(func(n525, X_req526 any) any {
+							tmp527 := rt.GE2(v_clojure_DOT_core_X_GT__EQ_, n525, threshold488)
+							return tmp527
+						})
+						tmp528 := &lang.NamedFn2{Name: "fn", Expects: "2: [n _req]", F: tmp524}
+						tmp523 = tmp528
+					}
+					tmp520 = tmp523
+				}
+				var should_ban_QMARK_529 any = tmp520
+				_ = should_ban_QMARK_529
+				tmp530 := lang.FnFunc1(func(handler531 any) any {
+					tmp532 := lang.FnFunc1(func(req533 any) any {
+						var tmp534 any
+						_ = tmp534
 						{
-							tmp525 := v_bri_DOT_web_DOT_http_client_key.Get()
-							tmp526 := lang.Apply2(tmp525, req523, key_opts509)
-							var ck527 any = tmp526
-							_ = ck527
-							tmp528 := lang.Apply0(clock497)
-							var now529 any = tmp528
-							_ = now529
-							tmp530 := v_clojure_DOT_core_get.Get()
-							tmp531 := v_clojure_DOT_core_deref.Get()
-							tmp532 := lang.Apply1(tmp531, store503)
-							tmp533 := lang.Apply2(tmp530, tmp532, ck527)
-							var st534 any = tmp533
-							_ = st534
-							var tmp535 any
-							_ = tmp535
+							tmp535 := v_bri_DOT_web_DOT_http_client_key.Get()
+							tmp536 := lang.Apply2(tmp535, req533, key_opts519)
+							var ck537 any = tmp536
+							_ = ck537
+							tmp538 := lang.Apply0(clock507)
+							var now539 any = tmp538
+							_ = now539
+							tmp540 := v_clojure_DOT_core_get.Get()
+							tmp541 := v_clojure_DOT_core_deref.Get()
+							tmp542 := lang.Apply1(tmp541, store513)
+							tmp543 := lang.Apply2(tmp540, tmp542, ck537)
+							var st544 any = tmp543
+							_ = st544
+							var tmp545 any
+							_ = tmp545
 							{
-								var and__1__auto__536 any = st534
-								_ = and__1__auto__536
-								var tmp537 any
-								_ = tmp537
-								if lang.IsTruthy(and__1__auto__536) {
-									var tmp538 any
-									_ = tmp538
+								var and__1__auto__546 any = st544
+								_ = and__1__auto__546
+								var tmp547 any
+								_ = tmp547
+								if lang.IsTruthy(and__1__auto__546) {
+									var tmp548 any
+									_ = tmp548
 									{
-										tmp539 := lang.Apply1(kw_banned_until, st534)
-										var and__1__auto__540 any = tmp539
-										_ = and__1__auto__540
-										var tmp541 any
-										_ = tmp541
-										if lang.IsTruthy(and__1__auto__540) {
-											tmp542 := lang.Apply1(kw_banned_until, st534)
-											tmp543 := rt.LT2(v_clojure_DOT_core_X_LT_, now529, tmp542)
-											tmp541 = tmp543
+										tmp549 := lang.Apply1(kw_banned_until, st544)
+										var and__1__auto__550 any = tmp549
+										_ = and__1__auto__550
+										var tmp551 any
+										_ = tmp551
+										if lang.IsTruthy(and__1__auto__550) {
+											tmp552 := lang.Apply1(kw_banned_until, st544)
+											tmp553 := rt.LT2(v_clojure_DOT_core_X_LT_, now539, tmp552)
+											tmp551 = tmp553
 										} else {
-											tmp541 = and__1__auto__540
+											tmp551 = and__1__auto__550
 										}
-										tmp538 = tmp541
+										tmp548 = tmp551
 									}
-									tmp537 = tmp538
+									tmp547 = tmp548
 								} else {
-									tmp537 = and__1__auto__536
+									tmp547 = and__1__auto__546
 								}
-								tmp535 = tmp537
+								tmp545 = tmp547
 							}
-							var tmp544 any
-							_ = tmp544
-							if lang.IsTruthy(tmp535) {
-								tmp545 := v_bri_DOT_core_DOT_audit_record.Get()
-								tmp546 := lang.Apply1(kw_banned_until, st534)
-								tmp547 := rt.Sub2(v_clojure_DOT_core_X_, tmp546, now529)
-								tmp548 := lang.Apply1(kw_request_SLASH_id, req523)
-								tmp549 := lang.NewMap(kw_action, kw_auth_SLASH_banned_request, kw_actor, ck527, kw_severity, kw_warning, kw_cooldown_ms, tmp547, kw_request_SLASH_id, tmp548)
-								tmp550 := lang.Apply1(tmp545, tmp549)
-								_ = tmp550
-								tmp551 := v_clojure_DOT_core_str.Get()
-								tmp552 := v_clojure_DOT_core_max_.Get()
-								tmp553 := v_clojure_DOT_core_quot.Get()
-								tmp554 := lang.Apply1(kw_banned_until, st534)
-								tmp555 := rt.Sub2(v_clojure_DOT_core_X_, tmp554, now529)
-								tmp556 := lang.Apply2(tmp553, tmp555, int64(1000))
-								tmp557 := lang.Apply2(tmp552, int64(1), tmp556)
-								tmp558 := lang.Apply1(tmp551, tmp557)
-								tmp559 := lang.NewMap("retry-after", tmp558)
-								tmp560 := lang.NewMap(kw_error_, "too many requests")
-								tmp561 := lang.NewMap(kw_status, int64(429), kw_headers, tmp559, kw_body, tmp560)
-								tmp544 = tmp561
+							var tmp554 any
+							_ = tmp554
+							if lang.IsTruthy(tmp545) {
+								tmp555 := v_bri_DOT_core_DOT_audit_record.Get()
+								tmp556 := lang.Apply1(kw_banned_until, st544)
+								tmp557 := rt.Sub2(v_clojure_DOT_core_X_, tmp556, now539)
+								tmp558 := lang.Apply1(kw_request_SLASH_id, req533)
+								tmp559 := lang.NewMap(kw_action, kw_auth_SLASH_banned_request, kw_actor, ck537, kw_severity, kw_warning, kw_cooldown_ms, tmp557, kw_request_SLASH_id, tmp558)
+								tmp560 := lang.Apply1(tmp555, tmp559)
+								_ = tmp560
+								tmp561 := v_clojure_DOT_core_str.Get()
+								tmp562 := v_clojure_DOT_core_max_.Get()
+								tmp563 := v_clojure_DOT_core_quot.Get()
+								tmp564 := lang.Apply1(kw_banned_until, st544)
+								tmp565 := rt.Sub2(v_clojure_DOT_core_X_, tmp564, now539)
+								tmp566 := lang.Apply2(tmp563, tmp565, int64(1000))
+								tmp567 := lang.Apply2(tmp562, int64(1), tmp566)
+								tmp568 := lang.Apply1(tmp561, tmp567)
+								tmp569 := lang.NewMap("retry-after", tmp568)
+								tmp570 := lang.NewMap(kw_error_, "too many requests")
+								tmp571 := lang.NewMap(kw_status, int64(429), kw_headers, tmp569, kw_body, tmp570)
+								tmp554 = tmp571
 							} else {
-								var tmp562 any
-								_ = tmp562
+								var tmp572 any
+								_ = tmp572
 								{
-									tmp563 := lang.Apply1(handler521, req523)
-									var res564 any = tmp563
-									_ = res564
-									tmp565 := v_clojure_DOT_core_contains_QMARK_.Get()
-									tmp566 := lang.NewSet(int64(401), int64(403))
-									tmp567 := lang.Apply1(kw_status, res564)
-									tmp568 := lang.Apply2(tmp565, tmp566, tmp567)
-									var tmp569 any
-									_ = tmp569
-									if lang.IsTruthy(tmp568) {
-										var tmp570 any
-										_ = tmp570
+									tmp573 := lang.Apply1(handler531, req533)
+									var res574 any = tmp573
+									_ = res574
+									tmp575 := v_clojure_DOT_core_contains_QMARK_.Get()
+									tmp576 := lang.NewSet(int64(401), int64(403))
+									tmp577 := lang.Apply1(kw_status, res574)
+									tmp578 := lang.Apply2(tmp575, tmp576, tmp577)
+									var tmp579 any
+									_ = tmp579
+									if lang.IsTruthy(tmp578) {
+										var tmp580 any
+										_ = tmp580
 										{
-											tmp571 := v_clojure_DOT_core_conj.Get()
-											tmp572 := v_clojure_DOT_core_filterv.Get()
-											tmp573 := lang.FnFunc1(func(p1__43_SHARP_574 any) any {
-												tmp575 := rt.Sub2(v_clojure_DOT_core_X_, now529, window483)
-												tmp576 := rt.GT2(v_clojure_DOT_core_X_GT_, p1__43_SHARP_574, tmp575)
-												return tmp576
+											tmp581 := v_clojure_DOT_core_conj.Get()
+											tmp582 := v_clojure_DOT_core_filterv.Get()
+											tmp583 := lang.FnFunc1(func(p1__43_SHARP_584 any) any {
+												tmp585 := rt.Sub2(v_clojure_DOT_core_X_, now539, window493)
+												tmp586 := rt.GT2(v_clojure_DOT_core_X_GT_, p1__43_SHARP_584, tmp585)
+												return tmp586
 											})
-											tmp577 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__43#]", F: tmp573}
-											tmp578 := lang.NewVector()
-											tmp579 := lang.Apply2(kw_denials, st534, tmp578)
-											tmp580 := lang.Apply2(tmp572, tmp577, tmp579)
-											tmp581 := lang.Apply2(tmp571, tmp580, now529)
-											var recent582 any = tmp581
-											_ = recent582
-											tmp583 := v_clojure_DOT_core_count.Get()
-											tmp584 := lang.Apply1(tmp583, recent582)
-											tmp585 := lang.Apply2(should_ban_QMARK_519, tmp584, req523)
-											var tmp586 any
-											_ = tmp586
-											if lang.IsTruthy(tmp585) {
-												tmp587 := v_clojure_DOT_core_reset_BANG_.Get()
-												tmp588 := v_clojure_DOT_core_assoc.Get()
-												tmp589 := v_clojure_DOT_core_deref.Get()
-												tmp590 := lang.Apply1(tmp589, store503)
-												tmp591 := lang.NewVector()
-												tmp592 := rt.Add2(v_clojure_DOT_core_X_PLUS_, now529, cooldown488)
-												tmp593 := lang.NewMap(kw_denials, tmp591, kw_banned_until, tmp592)
-												tmp594 := lang.Apply3(tmp588, tmp590, ck527, tmp593)
-												tmp595 := lang.Apply2(tmp587, store503, tmp594)
-												_ = tmp595
-												tmp596 := v_bri_DOT_core_DOT_audit_record.Get()
-												tmp597 := v_clojure_DOT_core_count.Get()
-												tmp598 := lang.Apply1(tmp597, recent582)
-												tmp599 := lang.Apply1(kw_request_SLASH_id, req523)
-												tmp600 := lang.NewMap(kw_action, kw_auth_SLASH_auto_banned, kw_actor, ck527, kw_count, tmp598, kw_cooldown_ms, cooldown488, kw_severity, kw_warning, kw_request_SLASH_id, tmp599)
-												tmp601 := lang.Apply1(tmp596, tmp600)
-												tmp586 = tmp601
+											tmp587 := &lang.NamedFn1{Name: "fn", Expects: "1: [p1__43#]", F: tmp583}
+											tmp588 := lang.NewVector()
+											tmp589 := lang.Apply2(kw_denials, st544, tmp588)
+											tmp590 := lang.Apply2(tmp582, tmp587, tmp589)
+											tmp591 := lang.Apply2(tmp581, tmp590, now539)
+											var recent592 any = tmp591
+											_ = recent592
+											tmp593 := v_clojure_DOT_core_count.Get()
+											tmp594 := lang.Apply1(tmp593, recent592)
+											tmp595 := lang.Apply2(should_ban_QMARK_529, tmp594, req533)
+											var tmp596 any
+											_ = tmp596
+											if lang.IsTruthy(tmp595) {
+												tmp597 := v_clojure_DOT_core_reset_BANG_.Get()
+												tmp598 := v_clojure_DOT_core_assoc.Get()
+												tmp599 := v_clojure_DOT_core_deref.Get()
+												tmp600 := lang.Apply1(tmp599, store513)
+												tmp601 := lang.NewVector()
+												tmp602 := rt.Add2(v_clojure_DOT_core_X_PLUS_, now539, cooldown498)
+												tmp603 := lang.NewMap(kw_denials, tmp601, kw_banned_until, tmp602)
+												tmp604 := lang.Apply3(tmp598, tmp600, ck537, tmp603)
+												tmp605 := lang.Apply2(tmp597, store513, tmp604)
+												_ = tmp605
+												tmp606 := v_bri_DOT_core_DOT_audit_record.Get()
+												tmp607 := v_clojure_DOT_core_count.Get()
+												tmp608 := lang.Apply1(tmp607, recent592)
+												tmp609 := lang.Apply1(kw_request_SLASH_id, req533)
+												tmp610 := lang.NewMap(kw_action, kw_auth_SLASH_auto_banned, kw_actor, ck537, kw_count, tmp608, kw_cooldown_ms, cooldown498, kw_severity, kw_warning, kw_request_SLASH_id, tmp609)
+												tmp611 := lang.Apply1(tmp606, tmp610)
+												tmp596 = tmp611
 											} else {
-												tmp602 := v_clojure_DOT_core_reset_BANG_.Get()
-												tmp603 := v_clojure_DOT_core_assoc.Get()
-												tmp604 := v_clojure_DOT_core_deref.Get()
-												tmp605 := lang.Apply1(tmp604, store503)
-												tmp606 := v_clojure_DOT_core_assoc.Get()
-												var tmp607 any
-												_ = tmp607
+												tmp612 := v_clojure_DOT_core_reset_BANG_.Get()
+												tmp613 := v_clojure_DOT_core_assoc.Get()
+												tmp614 := v_clojure_DOT_core_deref.Get()
+												tmp615 := lang.Apply1(tmp614, store513)
+												tmp616 := v_clojure_DOT_core_assoc.Get()
+												var tmp617 any
+												_ = tmp617
 												{
-													var or__2__auto__608 any = st534
-													_ = or__2__auto__608
-													var tmp609 any
-													_ = tmp609
-													if lang.IsTruthy(or__2__auto__608) {
-														tmp609 = or__2__auto__608
+													var or__2__auto__618 any = st544
+													_ = or__2__auto__618
+													var tmp619 any
+													_ = tmp619
+													if lang.IsTruthy(or__2__auto__618) {
+														tmp619 = or__2__auto__618
 													} else {
-														tmp610 := lang.NewMap()
-														tmp609 = tmp610
+														tmp620 := lang.NewMap()
+														tmp619 = tmp620
 													}
-													tmp607 = tmp609
+													tmp617 = tmp619
 												}
-												tmp611 := lang.Apply3(tmp606, tmp607, kw_denials, recent582)
-												tmp612 := lang.Apply3(tmp603, tmp605, ck527, tmp611)
-												tmp613 := lang.Apply2(tmp602, store503, tmp612)
-												tmp586 = tmp613
+												tmp621 := lang.Apply3(tmp616, tmp617, kw_denials, recent592)
+												tmp622 := lang.Apply3(tmp613, tmp615, ck537, tmp621)
+												tmp623 := lang.Apply2(tmp612, store513, tmp622)
+												tmp596 = tmp623
 											}
-											tmp570 = tmp586
+											tmp580 = tmp596
 										}
-										tmp569 = tmp570
+										tmp579 = tmp580
 									} else {
-										tmp569 = nil
+										tmp579 = nil
 									}
-									_ = tmp569
-									tmp562 = res564
+									_ = tmp579
+									tmp572 = res574
 								}
-								tmp544 = tmp562
+								tmp554 = tmp572
 							}
-							tmp524 = tmp544
+							tmp534 = tmp554
 						}
-						return tmp524
+						return tmp534
 					})
-					tmp614 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp522}
-					return tmp614
+					tmp624 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp532}
+					return tmp624
 				})
-				tmp615 := &lang.NamedFn1{Name: "fn", Expects: "1: [handler]", F: tmp520}
-				tmp616 := lang.NewMap(kw_name, kw_auto_ban, kw_wrap, tmp615)
-				tmp473 = tmp616
+				tmp625 := &lang.NamedFn1{Name: "fn", Expects: "1: [handler]", F: tmp530}
+				tmp626 := lang.NewMap(kw_name, kw_auto_ban, kw_wrap, tmp625)
+				tmp483 = tmp626
 			}
-			return tmp473
+			return tmp483
 		default:
 			panic(lang.NewArityError(len(args), "cljg.security/auto-ban", "0: [] or 1: [opts]"))
 		}
 	})
-	v_cljg_DOT_security_auto_ban.BindRoot(tmp468)
+	v_cljg_DOT_security_auto_ban.BindRoot(tmp478)
 	_ = v_cljg_DOT_security_auto_ban
 }
