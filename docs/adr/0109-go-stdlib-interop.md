@@ -1,4 +1,4 @@
-# ADR 0104 — `require-go` reaches the Go standard library
+# ADR 0109 — `require-go` reaches the Go standard library
 
 Date: 2026-07-27 · Status: **proposed**
 
