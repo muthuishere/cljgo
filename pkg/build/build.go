@@ -469,6 +469,18 @@ func (p *Plan) resolveDeps() ([]GoRequire, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Write the lock the MOMENT the graph resolves, before anything that can
+	// still fail (the go-require merge below hard-errors on a conflict, and
+	// compilation fails on any Java-only namespace). The graph is already
+	// pinned and its bytes are already in the cache at this point, so
+	// deferring the write to the end of a successful build left the cache
+	// populated with NO manifest — the build was not reproducible and the
+	// warm-cache offline story had nothing to work from.
+	if update {
+		if err := deps.WriteLock(lockPath, resolved.Lock); err != nil {
+			return nil, err
+		}
+	}
 	// Slot 3: publish resolved roots so both legs' interpreter loads see them.
 	deps.SetResolvedRoots(resolved.Roots)
 	// The per-namespace Java gate (ADR 0054 dec 4 / ADR 0095): classified at
@@ -500,12 +512,6 @@ func (p *Plan) resolveDeps() ([]GoRequire, error) {
 	merged := make([]GoRequire, len(mergedReq))
 	for i, g := range mergedReq {
 		merged[i] = GoRequire{Path: g.Path, Version: g.Version}
-	}
-
-	if update {
-		if err := deps.WriteLock(lockPath, resolved.Lock); err != nil {
-			return nil, err
-		}
 	}
 	return merged, nil
 }
