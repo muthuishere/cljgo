@@ -115,10 +115,27 @@ type Reader struct {
 	// consume path fails loud at the conditional instead.
 	starvedCondError bool
 
+	// starvedCollError makes a STARVED reader conditional a hard error when
+	// eliding it would change the SHAPE of the vector, map or set it sits
+	// in — `[a 1 b #?(:clj x)]` silently becomes a 3-element binding vector,
+	// and `{:k #?(:clj v)}` silently becomes an odd map. Like
+	// starvedCondError this is opt-in and set only for Maven-origin source:
+	// real camel-snake-kebab 0.4.3 has exactly this shape at
+	// internals/string_separator.cljc, and eliding it produced a namespace
+	// that classified as usable and then failed to compile with "let*
+	// requires an even number of forms in binding vector" — a diagnostic
+	// pointing at a library the user never wrote.
+	starvedCollError bool
+
 	// nestDepth is how many enclosing collection/body reads are in flight.
 	// The starved-conditional check consults it: only a TOP-LEVEL starved
 	// conditional is a hard error (see readConditional).
 	nestDepth int
+
+	// nestKinds is the stack of enclosing collection kinds ("list",
+	// "vector", "map", "set"), innermost last. starvedCollError reads its
+	// top.
+	nestKinds []string
 }
 
 // Option configures a Reader.
@@ -190,6 +207,23 @@ func WithDefaultReader(fn lang.IFn) Option {
 // Opt-in; used only for Maven-origin (Clojars) source (ADR 0095).
 func WithStarvedCondError() Option {
 	return func(r *Reader) { r.starvedCondError = true }
+}
+
+// WithStarvedCollError makes a starved reader conditional a read error
+// (R1012) when it sits directly inside a vector, map or set, where eliding it
+// SILENTLY CHANGES THE COLLECTION'S SHAPE. Opt-in, Maven-origin source only
+// (ADR 0095). Unlike WithStarvedCondError this fires at any nesting depth,
+// because the damage is structural rather than "a whole form vanished".
+func WithStarvedCollError() Option {
+	return func(r *Reader) { r.starvedCollError = true }
+}
+
+// enclosingColl returns the innermost enclosing collection kind, or "".
+func (r *Reader) enclosingColl() string {
+	if len(r.nestKinds) == 0 {
+		return ""
+	}
+	return r.nestKinds[len(r.nestKinds)-1]
 }
 
 // New creates a Reader over rs.
@@ -668,7 +702,11 @@ func (r *Reader) readDelimited(what string, end rune, start Position) ([]any, er
 		}
 	}
 	r.nestDepth++
-	defer func() { r.nestDepth-- }()
+	r.nestKinds = append(r.nestKinds, what)
+	defer func() {
+		r.nestDepth--
+		r.nestKinds = r.nestKinds[:len(r.nestKinds)-1]
+	}()
 	var forms []any
 	for {
 		f, err := r.readWithDelim(end, true, true)

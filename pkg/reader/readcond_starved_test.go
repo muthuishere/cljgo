@@ -188,6 +188,58 @@ func TestStarvedCondIsOptIn(t *testing.T) {
 	}
 }
 
+// TestStarvedCollErrorCatchesShapeBreakingElision — the case
+// WithStarvedCondError structurally cannot see, because it fires only at
+// nestDepth 0. A starved conditional INSIDE a vector/map/set silently changes
+// that collection's element count; real camel-snake-kebab 0.4.3 has
+// `(let [cs … ss-length #?(:clj … :cljs …)] …)` at
+// internals/string_separator.cljc:44, and eliding it produced a namespace that
+// classified as usable and then failed to compile with "let* requires an even
+// number of forms in binding vector" — an error naming a library the user
+// never wrote. medley.core:456 is the same shape.
+func TestStarvedCollErrorCatchesShapeBreakingElision(t *testing.T) {
+	for _, src := range []string{
+		`(let [a 1 b #?(:clj 2 :cljs 3)] a)`, // vector: the csk / medley shape
+		`{:a 1 :b #?(:clj 2 :cljs 3)}`,       // map: silently odd
+		`#{1 #?(:clj 2 :cljs 3)}`,            // set
+	} {
+		_, err := readAllWith(src, WithStarvedCollError())
+		if err == nil {
+			t.Errorf("a shape-breaking elision was allowed: %s", src)
+			continue
+		}
+		if !strings.Contains(err.Error(), "would change the shape of the enclosing") {
+			t.Errorf("the error does not say the shape changed: %v", err)
+		}
+	}
+}
+
+// TestStarvedCollErrorLeavesListFencingAlone — a starved conditional nested in
+// a LIST is the portable-fencing idiom ((:import #?(:clj …))). Erroring there
+// would reject exactly the libraries this exists to consume, so it stays a
+// documented false negative.
+func TestStarvedCollErrorLeavesListFencingAlone(t *testing.T) {
+	if _, err := readAllWith(`(ns x (:import #?(:clj (java.io File))))`, WithStarvedCollError()); err != nil {
+		t.Fatalf("list-nested fencing must still elide, got: %v", err)
+	}
+	// A starved SPLICING conditional inside a collection is also fine: `#?@`
+	// contributes a sequence, so a starved one contributes ZERO elements and
+	// removes nothing. Real tools.cli 1.1.230 has exactly this in a `let`
+	// binding vector (cli.cljc:108, `#?@(:cljr (req …))`), and treating it as
+	// shape-breaking reported a fully consumable library as unusable.
+	forms, err := readAllWith(`(let [a 1 #?@(:cljr (b 2)) c 3] a)`, WithStarvedCollError())
+	if err != nil {
+		t.Fatalf("a starved #?@ splice removes nothing and must elide, got: %v", err)
+	}
+	if got := printForms(forms); got != "(let [a 1 c 3] a)" {
+		t.Errorf("want the splice elided leaving an even binding vector, got %q", got)
+	}
+	// And it is still OPT-IN: project code is read without it.
+	if _, err := readAllWith(`(let [a 1 b #?(:clj 2)] a)`); err != nil {
+		t.Fatalf("default reading must not error: %v", err)
+	}
+}
+
 // TestStarvedCondErrorClassifiesAsR1012 pins the registered code the renderer
 // attaches, so `cljgo explain R1012` is reachable from a real failure.
 func TestStarvedCondErrorClassifiesAsR1012(t *testing.T) {

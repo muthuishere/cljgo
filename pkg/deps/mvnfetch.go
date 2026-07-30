@@ -238,6 +238,13 @@ func extractJar(jar []byte, dir string, c Coord) error {
 		if strings.HasPrefix(name, "META-INF/") {
 			continue
 		}
+		// A jar-root build script (Leiningen's project.clj and friends) is
+		// not a library namespace. Dropping it at extraction keeps it off the
+		// load path AND out of the namespace count — the same reason META-INF/
+		// is dropped one line above.
+		if isMvnBuildScript(name) {
+			continue
+		}
 		// zip-slip: refuse absolute paths and any ".." segment outright.
 		clean := path.Clean("/" + name)
 		if clean == "/" {

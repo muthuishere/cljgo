@@ -1578,18 +1578,36 @@
 ;; Expands to: switch to the namespace (in-ns), refer clojure.core, then one
 ;; require per :require libspec. Reader conditionals in libspecs are already
 ;; resolved by the reader before this macro sees the clauses (a #?(:clj …)
-;; clause the reader elides never reaches here). Clauses other than :require
-;; (:import / :use / :refer-clojure / :gen-class …) are currently ignored —
-;; the suite gates its only :import behind #?(:clj …), which cljgo elides.
+;; clause the reader elides never reaches here). Clauses other than
+;; :require/:use (:import / :refer-clojure / :gen-class …) are currently
+;; ignored — the suite gates its only :import behind #?(:clj …), which cljgo
+;; elides.
+;;
+;; :use IS expanded (2026-07-30). It used to be dropped on the floor, and that
+;; silence was a HOLE IN THE MAVEN JAVA GATE: (ns app (:use hiccup.compiler))
+;; never called loadLib, so a namespace the resolver had classified :java
+;; reached a compiled binary without ever meeting the gate, while the
+;; equivalent (:require [hiccup.compiler :as c]) correctly raised I4002. It is
+;; also the shape real libraries use — hiccup.core is (:use hiccup.compiler
+;; hiccup.util) — where dropping it turned a precise I4002 into a bare
+;; "unable to resolve symbol". Routing :use through clojure.core/use puts it on
+;; exactly the same load path as :require, so the gate is unbypassable by
+;; construction rather than by inspection.
+;;
 ;; oracle (Clojure 1.12.5): (ns foo (:require [clojure.string :as s]))
-;;   makes s/upper-case resolve in foo.
+;;   makes s/upper-case resolve in foo; (ns bar (:use clojure.set)) makes
+;;   (union #{1} #{2}) => #{1 2} in bar.
 (defmacro ns [nsname & clauses]
   (let [requires (mapcat
                   (fn [clause]
-                    (when (and (seq? clause) (= :require (first clause)))
-                      (map (fn [spec]
-                             (list 'clojure.core/require (list 'quote spec)))
-                           (rest clause))))
+                    (when (seq? clause)
+                      (let [head (first clause)
+                            f    (cond (= :require head) 'clojure.core/require
+                                       (= :use head)     'clojure.core/use
+                                       :else             nil)]
+                        (when f
+                          (map (fn [spec] (list f (list 'quote spec)))
+                               (rest clause))))))
                   clauses)]
     (cons 'do
           (cons (list 'clojure.core/in-ns (list 'quote nsname))

@@ -125,6 +125,54 @@ func TestMavenStarvedNamespaceFailsLoudAtRequire(t *testing.T) {
 	}
 }
 
+// TestMavenGateIsNotBypassedByUse — the gate must be unbypassable by
+// CONSTRUCTION, not by inspection. `(use 'demo.javaish)` and
+// `(ns … (:use demo.javaish))` used to sail straight past it: the `ns` macro
+// dropped every clause that was not :require, so a namespace the resolver had
+// classified :java reached a compiled binary having never met the gate, while
+// the equivalent :require correctly raised I4002. That is the real shape
+// hiccup uses (hiccup.core is `(:use hiccup.compiler hiccup.util)`).
+func TestMavenGateIsNotBypassedByUse(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		form any
+	}{
+		{"use", list(sym("use"), list(sym("quote"), sym("demo.javaish")))},
+		{"ns :use", list(sym("ns"), sym("app.viause"), list(kw("use"), sym("demo.javaish")))},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mountMavenLib(t, mavenDemoLib())
+			e := eval.New()
+
+			err := mustErr(t, e, tc.form)
+			rendered := diag.RenderError(err)
+			if !strings.Contains(rendered, "I4002") {
+				t.Fatalf("a :java namespace reached the program through %s ungated:\n%s", tc.name, rendered)
+			}
+			if !strings.Contains(rendered, "demo.javaish") {
+				t.Errorf("the error does not name the namespace:\n%s", rendered)
+			}
+			if ns := lang.FindNamespace(lang.NewSymbol("demo.javaish")); ns != nil {
+				t.Error("a Java-tainted namespace was installed anyway")
+			}
+		})
+	}
+}
+
+// TestNsUseLoadsAndRefersAPureNamespace — the gate fix must not have made
+// :use a no-op in the other direction: a PURE namespace pulled in with :use
+// still refers its publics, as JVM Clojure does.
+func TestNsUseLoadsAndRefersAPureNamespace(t *testing.T) {
+	mountMavenLib(t, mavenDemoLib())
+	e := eval.New()
+
+	evalAll(t, e, list(sym("ns"), sym("app.viausepure"), list(kw("use"), sym("demo.pure"))))
+	got := evalAll(t, e, list(sym("greet"), "world"))
+	if got != "hello, world" {
+		t.Fatalf(":use did not refer the pure namespace's vars: %#v", got)
+	}
+}
+
 // TestNonMavenSourceIsNeverGated — project code and git deps must be entirely
 // unaffected, even when they contain the very forms the gate flags.
 func TestNonMavenSourceIsNeverGated(t *testing.T) {

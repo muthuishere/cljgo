@@ -307,19 +307,27 @@ func TestUnsupportedPOMFeaturesNameError(t *testing.T) {
 		pom  string
 		want string
 	}{
-		{"property interpolation",
+		// An UNDEFINED property still name-errors: interpolation now happens,
+		// but only from properties that actually exist. An uninterpolated
+		// version is a wrong version — that half of s50 finding 1 stands.
+		{"property interpolation with no definition",
 			`<project><groupId>a</groupId><artifactId>a</artifactId><version>1.0.0</version>
 			 <dependencies>` + depXML("z", "z", "${z.version}") + `</dependencies></project>`,
 			"${property} interpolation"},
-		{"dependencyManagement version supply",
+		// A missing <version> with NO managed entry anywhere still name-errors.
+		{"dependency with no version at all",
 			`<project><groupId>a</groupId><artifactId>a</artifactId><version>1.0.0</version>
-			 <dependencyManagement><dependencies>` + depXML("z", "z", "1.0.0") + `</dependencies></dependencyManagement>
 			 <dependencies><dependency><groupId>z</groupId><artifactId>z</artifactId></dependency></dependencies></project>`,
-			"<dependencyManagement>"},
-		{"parent inheritance",
-			`<project><parent><groupId>p</groupId><artifactId>p</artifactId><version>1</version></parent>
+			"no <version>"},
+		// A <parent> we cannot even name a coordinate for still name-errors.
+		{"parent with no version",
+			`<project><parent><groupId>p</groupId><artifactId>p</artifactId></parent>
 			 <groupId>a</groupId><artifactId>a</artifactId><version>1.0.0</version></project>`,
-			"<parent>"},
+			"<parent> with no resolvable"},
+		{"LATEST meta-version in a POM edge",
+			`<project><groupId>a</groupId><artifactId>a</artifactId><version>1.0.0</version>
+			 <dependencies>` + depXML("z", "z", "LATEST") + `</dependencies></project>`,
+			"floating meta-version LATEST"},
 		{"version range",
 			`<project><groupId>a</groupId><artifactId>a</artifactId><version>1.0.0</version>
 			 <dependencies>` + depXML("z", "z", "[1.0,2.0)") + `</dependencies></project>`,
@@ -328,10 +336,13 @@ func TestUnsupportedPOMFeaturesNameError(t *testing.T) {
 			`<project><groupId>a</groupId><artifactId>a</artifactId><version>1.0.0</version>
 			 <dependencies>` + depXML("z", "z", "1.0.0-SNAPSHOT") + `</dependencies></project>`,
 			"-SNAPSHOT"},
-		{"profiles",
+		// A profile that can change the GRAPH. A build-only profile no longer
+		// name-errors (TestBuildOnlyProfileIsNotRefused proves that), because
+		// refusing on one would exclude every org.clojure contrib artifact.
+		{"graph-affecting profile",
 			`<project><groupId>a</groupId><artifactId>a</artifactId><version>1.0.0</version>
-			 <profiles><profile><id>dev</id></profile></profiles></project>`,
-			"<profiles>"},
+			 <profiles><profile><id>dev</id><dependencies>` + depXML("q", "q", "1.0.0") + `</dependencies></profile></profiles></project>`,
+			"<profile> that can change the dependency graph"},
 		{"classifier",
 			`<project><groupId>a</groupId><artifactId>a</artifactId><version>1.0.0</version>
 			 <dependencies>` + depXML("z", "z", "1.0.0", "<classifier>sources</classifier>") + `</dependencies></project>`,
@@ -356,6 +367,11 @@ func TestUnsupportedPOMFeaturesNameError(t *testing.T) {
 			// It names the coordinate that needs it, not "a pom failed".
 			if !strings.Contains(err.Error(), "a/a 1.0.0") {
 				t.Errorf("G5011 does not name the coordinate:\n%s", err)
+			}
+			// A WRONG Fix is worse than none (CLAUDE.md): accept-version is a
+			// version-CONFLICT override and can supply none of these.
+			if strings.Contains(err.Error(), "accept-version") {
+				t.Errorf("G5011 suggests accept-version, which cannot fix any of these:\n%s", err)
 			}
 		})
 	}

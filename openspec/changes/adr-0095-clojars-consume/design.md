@@ -63,6 +63,15 @@ Extraction from the jar keeps only `**/*.clj`, `**/*.cljc`, `**/*.cljs`†,
 namespace. † `.cljs` is kept only so a `.cljc`'s sibling doesn't look missing;
 it is never a load-path candidate.
 
+Extraction also drops **jar-root build scripts** — `project.clj`, `build.clj`,
+`build.boot`, `boot.clj`, `shadow-cljs.clj` — which is the same false positive
+one level up. `META-INF/leiningen/…/project.clj` was fixed; the copy Leiningen
+also packages at the *root* was not, so hiccup's lock listed a bogus `project`
+in `:mvn/pure` and the report claimed "7 namespaces usable" for a library with
+6. Dropping it at extraction keeps it off the load path as well as out of the
+count; `classifyTree` repeats the check for a **vendored** tree it did not
+extract itself.
+
 ### 1.3 Offline behaviour — identical to git, no new policy
 
 | state | behaviour |
@@ -111,25 +120,58 @@ for a Maven dep is the coordinate string `"group/artifact"`.
 `<optional>`, `<exclusions>` (incl. `*` wildcards), `<packaging>jar</packaging>`,
 `.sha1` checksum verification, multi-repo fallback.
 
-### 2.2 Out of scope — **name-errored, never half-supported** (s50 finding 1, binding)
+### 2.2 `<parent>` POM inheritance IS implemented — **decision reversed 2026-07-30**
 
-Each of these is detected in `validate(pom)` and raised as `G5011`, naming the
-feature, the coordinate, the offending element, and what to do instead
-(`accept-version`, or a `:git`/`:path` dep):
+The original design filed `<parent>`, `${property}` and `<dependencyManagement>`
+together under "name-error, don't half-support". Adversarial verification
+against the live repositories showed that was **right about guessing and wrong
+about scope**: every `org.clojure` contrib artifact carries
+`<parent>org.clojure/pom.contrib</parent>`, so the refusal made `tools.cli`,
+`data.json`, `data.csv` and `core.match` — the entire s50 sample set and the
+whole reason this change exists — unresolvable. A rule that excludes the target
+set is not conservatism, it is a broken feature with a polite error message.
+
+What is implemented (`effectivePOM` in `pkg/deps/mvnpom.go`):
+
+| feature | behaviour |
+|---|---|
+| `<parent>` | the parent POM is fetched like any other artifact (same cache, same repo list, **no pinned repo** — a Clojars child routinely inherits from a Central-only parent) and merged: `groupId`/`version` defaults, `<properties>`, `<dependencyManagement>`, `<dependencies>`, child-wins on conflict. Chains walk to depth 8; cycles and depth overruns are named `G5011`. An unresolvable parent is `G5010` with a `note:` saying **whose** parent it is. |
+| `${property}` in a `<version>` | interpolated from the merged parent-then-child property map plus built-in `project.*`/`pom.*` |
+| `<dependencyManagement>` | supplies a missing `<version>` when the merged map has one |
+| `<profiles>` | refused **only** when the profile declares `<dependencies>`, `<dependencyManagement>` or `<properties>`. `pom.contrib` carries a gpg-signing profile touching only `<build>`; a build-plugin profile provably cannot change what we resolve. |
+
+Parent POMs are **not** hashed into `build.lock.edn` (stated, not hidden): the
+lock records the child's own pom sha and the extracted tree hash, and a parent
+influences the result only through edges that are themselves locked coordinates.
+
+### 2.3 Out of scope — **name-errored, never half-supported** (s50 finding 1, the part that stands)
 
 | feature | why it must error, not guess |
 |---|---|
-| `${property}` interpolation in a `<version>` | an uninterpolated version is a *wrong* version; s50 saw it live (`core.match` → `org.clojure/clojure ${clojure.version}` 404) |
-| `<dependencyManagement>` supplying a missing `<version>` | same — a silently-omitted version resolves to nothing or to the wrong thing |
-| `<parent>` POM inheritance | would be needed only to serve the two above |
+| a `${property}` with **no definition** in the merged map | an uninterpolated version is a *wrong* version |
+| a `<dependency>` with no `<version>` and no managed entry | resolves to nothing or to the wrong thing |
 | version **ranges** `[1.0,2.0)` | requires a solver; cljgo has none by design |
-| `-SNAPSHOT` versions | mutable identity, incompatible with a content-verified lock |
-| `<profiles>`, `<classifier>`, `<packaging>` ≠ `jar`/`bundle` | Aether surface, out per ADR 0095 dec 4 |
+| `-SNAPSHOT`, `LATEST`, `RELEASE` | mutable/floating identity, incompatible with a content-verified lock |
+| a graph-affecting `<profile>`, `<classifier>`, `<packaging>` ≠ `jar`/`bundle` | Aether surface, out per ADR 0095 dec 4 |
 
 A `G5011` is raised **at the coordinate that needs it**, so the message can say
 "`org.clojure/core.match 1.1.0` needs `${clojure.version}`", not "a pom failed".
 
-### 2.3 `org.clojure/clojure` is never fetched — **a decision this change makes**
+Its `Fix` **must not** mention `accept-version`. That is a version-*conflict*
+override and can supply neither a parent POM, nor a property, nor a managed
+version; the original text suggested it, and a wrong Fix is worse than no Fix
+(CLAUDE.md). The Fixes are `:git`/`:path`/`vendor/`.
+
+### 2.3a The USER's declared version is validated too (`G5016`)
+
+`validateEdgeVersion` was called only from `pomChildren`, so
+`{:mvn/version "1.0-SNAPSHOT"}`, `"[1.0,2.0)"`, `"LATEST"` and `"RELEASE"`
+written by hand produced `G5010` *"not found in any repository"* — blaming a
+repository for syntax cljgo never supported. `unsupportedVersionSyntax` is now
+the single rule, called from `resolveOne` (as `G5016`, before any network call)
+and from `pomChildren` (as `G5011`).
+
+### 2.4 `org.clojure/clojure` is never fetched — **a decision this change makes**
 
 `org.clojure/clojure`, `org.clojure/spec.alpha` and `org.clojure/core.specs.alpha`
 are added to a `CLOJURE_ITSELF` skip set and pruned from every transitive graph.
@@ -169,6 +211,31 @@ the REPL leg and the AOT leg hit the same gate — parity by construction. The A
 leg is the important one: the emitter discovers namespaces by evaluating
 requires (ADR 0042), so a Java namespace can never be silently emitted.
 
+#### 3.1a `:use` goes through the same gate (fixed 2026-07-30)
+
+"There is one resolver, therefore the gate is unbypassable" was reasoning, not a
+fact, and adversarial verification refuted it. `core/core.clj`'s `ns` macro
+expanded **only** `:require` clauses and silently dropped everything else, so
+`(ns app (:use hiccup.compiler))` never called `loadLib` at all: a namespace the
+resolver had classified `:java` **built and ran clean in a compiled binary**,
+while the equivalent `(:require [hiccup.compiler :as c])` correctly raised
+`I4002`. It is also the shape real libraries use — `hiccup.core` is
+`(:use hiccup.compiler hiccup.util)` — where the silent drop turned a precise
+`I4002` into a bare `G5000 unable to resolve symbol: *html-mode*`.
+
+`ns` now expands `:use` to `clojure.core/use`, which goes through `loadLib` →
+`libFileLoader` → `loadLibFile` → `CheckMavenLoadable`, i.e. **exactly** the
+`:require` path. Regression tests: `TestMavenGateIsNotBypassedByUse` (both the
+`(use …)` call and the `(ns … (:use …))` clause) and
+`TestNsUseLoadsAndRefersAPureNamespace` in `pkg/eval/mvngate_test.go`.
+
+Audit of the remaining load paths: `require`, `use` and the `ns` clauses are the
+only routes to `ResolveLibPath`/`loadLibFile`; there is no `load` or `load-file`
+builtin that resolves a *namespace* to a load-path file (`clojure.core/load-string`
+takes source text, and nREPL's `load-file` op takes an explicit user path — neither
+resolves a lib name against a dependency root). Other `ns` clauses (`:import`,
+`:refer-clojure`, `:gen-class`) remain unexpanded and load nothing.
+
 ### 3.2 The classifier
 
 Reuses `pkg/publish.CertainJava` (`pkg/publish/java.go` — zero-false-positive by
@@ -185,9 +252,38 @@ the publish side never needed:
 It still MUST NOT flag bare `(.method obj)` — undecidable, Go-valid — nor
 class-ref values, `(instance? String x)` or `(catch Exception e)`. **The
 classifier runs on the reader's output, after reader conditionals are resolved**
-(§4), which is what makes `medley` fully consumable: its `java.util` lives in a
-`#?(:clj …)` branch cljgo never reads, so it is not in the forms and cannot be
-flagged.
+(§4).
+
+#### 3.2a "zero false positives" must hold of the GATE, not just of `javadetect`
+
+`javadetect` was precise; the code around it was not. `classifyFile` built its
+`reader.New` with `WithFilename` + `WithStarvedCondError` and **no
+`WithResolver`**, so every `::auto-resolved-keyword` was a read error — and
+`classifyFile` mapped every non-starve read error to `I4002`. The live result
+for `com.stuartsierra/dependency 1.0.0`, which is 100% pure Clojure:
+
+```
+error: namespace com.stuartsierra.dependency requires Java interop and cannot load on cljgo — …:91:32 Invalid token (auto-resolved keyword requires a resolver): ::circular-dependency
+help: no namespace in com.stuartsierra/dependency 1.0.0 is usable on cljgo — it is a JVM-only library
+```
+
+Every clause of that is false. Same root cause hit `medley` (`::none`) and
+`hiccup.compiler` (`::all-literal`). Three changes:
+
+1. `classifyFile` passes a `classifyResolver` — static, evaluator-free
+   (`pkg/deps` cannot import `pkg/eval`): `CurrentNS` is the path-derived
+   namespace, `ResolveAlias` echoes the alias, `ResolveVar`/`ResolveType` are
+   nil. Enough for `::kw` and `::alias/kw`; classification cares about form
+   *shapes*, never keyword identity.
+2. A read/parse failure gets its **own** code, `G5017`, whose message says
+   "cannot be read by cljgo's reader" plus a `note:` "this is a cljgo reader
+   limitation, not a statement about the library". A file cljgo cannot parse is
+   evidence about cljgo, never about Java.
+3. The zero-usable hint no longer asserts "it is a JVM-only library" — it states
+   the measurement ("no namespace … loaded on cljgo") and points at the
+   per-namespace report. The resolve report likewise splits the counts by code
+   (`require Java interop` / `have no cljgo branch` / `reader could not parse`)
+   instead of lumping them under "require Java".
 
 ### 3.3 The purity map is recorded in the lock
 
@@ -265,6 +361,35 @@ If a whole file is starved, the namespace fails **loud on require** — never an
 empty namespace. Default reading semantics are unchanged, so no conformance
 file moves.
 
+#### 4.1a Refined 2026-07-30: "is there a starve" → "is anything left / is the shape intact"
+
+Treating any top-level starve as fatal-for-the-file was too blunt to survive
+contact with the real artifacts. `clojure/tools/cli.cljc:74` has a single
+`#?(:cljs (defn- format …))` helper — a form JVM Clojure also elides — and that
+alone reported a **fully consumable** library as unusable. The rule is now two
+questions, each matching a real failure mode:
+
+- **Is anything left?** A top-level starve is elided as the JVM does, then the
+  file is re-read and its non-`ns` top-level forms counted. Zero survivors ⇒
+  `R1012` (the s50 trap: a namespace with no vars). Some survivors ⇒ loadable,
+  and the resolve report **says** a form was elided, because "it loads" and "it
+  is the same namespace you get on the JVM" are different claims.
+- **Is the shape intact?** New reader option `WithStarvedCollError`: a starved
+  conditional sitting directly inside a **vector, map or set** is `R1012` at any
+  depth, because eliding it silently changes the collection's element count.
+  Real `camel-snake-kebab 0.4.3` has
+  `(let [cs … ss-length #?(:clj … :cljs …)] …)` at
+  `internals/string_separator.cljc:44`; eliding it made the namespace classify
+  as *usable* and then fail to compile with
+  `let* requires an even number of forms in binding vector` — a diagnostic
+  naming a library the user never wrote. `medley.core:456` is the same shape
+  (`part #?(:clj (java.util.ArrayList.) :cljs (array-list))`), which is why
+  medley is honestly **not** loadable — for a true reason now, not a bogus one.
+
+A starve nested inside a *list* remains a documented false negative (it is the
+portable `(:import #?(:clj …))` fencing idiom, and erroring on it would reject
+correct libraries).
+
 ### 4.2 The test corpus (s50 asks for this explicitly)
 
 `pkg/deps/testdata/readcond/*.cljc` + a table test, one file per case:
@@ -306,13 +431,15 @@ adding one is a bigger decision than this change should make; see §7).
 | **R1012** | reader conditional supplies no branch for this platform | file:line:col, Expected `:cljgo`/`:default`, Found the branches present, `help:` that the namespace is JVM-only |
 | **I4002** | namespace requires Java interop and cannot load on cljgo | names ns + coordinate + `file:line` + the offending form; `Fix`: "N other namespaces in `<coord>` are usable — see `cljgo resolve`"; states plainly that cljgo compiles to Go and runs no `.class` |
 | **G5010** | maven coordinate not found | coordinate, every repo URL tried, the HTTP status from each; `Fix` on a plausible typo (Levenshtein over already-locked coords) |
-| **G5011** | unsupported Maven POM feature | the feature (`${property}` / `dependencyManagement` / `<parent>` / range / SNAPSHOT / profile / classifier), the coordinate, the offending element; `Fix`: pin with `accept-version`, or depend via `:git`/`:path` |
+| **G5011** | unsupported Maven POM feature | the feature (an *undefined* `${property}` / a version-less dependency with no managed entry / range / SNAPSHOT / LATEST / RELEASE / graph-affecting profile / classifier / non-jar packaging / cyclic or too-deep parent chain), the coordinate, the offending element; `Fix`: `:git`/`:path`/`vendor/` — **never** `accept-version`, which cannot supply any of them |
 | **G5012** | maven artifact checksum mismatch | coordinate, Expected sha256 (lock or repo `.sha1`), Found, cache path; `Fix`: `cljgo cache clean` |
 | **G5013** | maven version conflict | coordinate, both versions, **both requirers**; `Fix`: `(accept-version b "group/artifact" "1.2.3")` |
 | **G5014** | offline: maven coordinate unavailable | coordinate, whether the lock has it, the cache path checked; `Fix`: drop `-offline`, or `cljgo resolve -update` |
 | **G5015** | conflicting dependency coordinates | dep name + the coordinate keys given (`:mvn/version` with `:git`/`:path`); `Fix`: keep one |
+| **G5016** | unsupported dependency version syntax | the dep name + which syntax (`-SNAPSHOT` / range / `LATEST` / `RELEASE` / `${…}`), Expected a fixed version vs Found; raised in `resolveOne` **before any network call**, so the repository is never blamed for the user's syntax |
+| **G5017** | maven dependency source file cannot be read | ns + coordinate + `file:line:col` + the reader error, plus a `note:` that this is a cljgo reader limitation and **not** a statement about the library |
 
-That is 8 codes (7 new + the R band one). Every message follows the doctrine:
+That is 10 codes (9 new + the R band one). Every message follows the doctrine:
 name the thing, locate it, Expected vs Found, registered code, suggestions as
 `Fix`es. **No raw Go panic and no bare `fmt.Errorf` on this path** — including
 the network path: a DNS failure, a TLS error, a 500, and a truncated zip each
@@ -326,11 +453,20 @@ map to a named diagnostic, never a wrapped `*url.Error` dumped at the user.
   layout (`group/path/artifact/version/artifact-version.pom|jar|jar.sha1`) served
   by an `httptest.Server`; the repo list is injectable in `ResolveOptions`, so
   the same code path under test is the production one.
-- **Fixture jars are built by the test**, in-process with `archive/zip`, from
-  `testdata/` source trees — no binary jars committed, and the fixtures encode
-  the s50 shapes verbatim: a 1-ns pure lib (`tools.cli`), a mixed 8+2 lib
-  (`hiccup`), a fully-Java lib (`data.json`), a fenced-`.cljc` lib (`medley`),
-  a `${property}` lib (`core.match`), and a 4-deep transitive graph.
+- **Fixture jars are built by the test**, in-process with `archive/zip` — no
+  binary jars committed.
+- **The fixtures must have the SHAPE of the artifacts they are named after.**
+  This is the root cause of all six defects the verifier found, and the first
+  thing that was fixed. `putPOM` synthesized a standalone POM with no
+  `<parent>`, so the fixture called "the tools.cli shape" *did not have
+  tools.cli's shape*, and a green suite hid the fact that the entire target set
+  was unresolvable. The fixtures now carry, transcribed from the live
+  artifacts: `putContribPOM`/`putContribParent` (the org.clojure `<parent>` +
+  `<properties>` + inherited `${clojure.version}` clojure dep + a build-only
+  `<profile>`), `pureAutoResolvedKeywords` (com.stuartsierra/dependency's
+  `::circular-dependency` and `::set/unknown`), `mixedHiccup` with
+  `hiccup.core` pulling its Java namespaces in via `(:use …)` and a
+  Leiningen `project.clj` at the **jar root**.
 - **A network-touching test is a broken test.** A `TestNoNetworkInDepsTests`
   guard installs an `http.RoundTripper` that fails any request not aimed at the
   test server, so a future test cannot regress this by accident.

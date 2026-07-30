@@ -162,7 +162,8 @@ func planFromValue(v any) (*Plan, error) {
 			Path:   str(lang.Get(d, kw("path"))),
 			// {:mvn/version "…"} — a Clojars/Maven coordinate (ADR 0095).
 			// The dep NAME is the coordinate "group/artifact".
-			MvnVersion: str(lang.Get(d, kw("mvn/version"))),
+			MvnVersion:  str(lang.Get(d, kw("mvn/version"))),
+			MvnDeclared: lang.Get(d, kw("mvn/version")) != nil,
 		})
 	}
 	// (mvn-repo b url) — prepends to the default repository list.

@@ -30,6 +30,13 @@ type Dep struct {
 	// git dep can never collide by identity.
 	MvnVersion string
 
+	// MvnDeclared records that the project WROTE :mvn/version, even if the
+	// value is unusable (empty, or not a string). Without it an empty version
+	// makes isMvn() false, the dep falls through to the git path, and the user
+	// gets a raw `git ls-remote  HEAD: fatal: bad repository ''` — an
+	// uncoded subprocess error naming a tool they never invoked.
+	MvnDeclared bool
+
 	// mvnExcl / mvnFrom are resolver-internal provenance for a TRANSITIVE
 	// Maven edge: the inherited <exclusions> patterns, and which coordinate
 	// pulled it in (so G5013 can name both requirers).
@@ -96,6 +103,7 @@ type rdep struct {
 	mvnJarSHA   string
 	mvnPomSHA   string
 	mvnPruned   []Coord
+	mvnParents  []Coord // the <parent> chain merged in, nearest first
 	mvnNS       *nsPurity
 	mvnVerdicts []NSVerdict
 }
@@ -194,15 +202,48 @@ func mvnReportLine(rd *rdep) string {
 	pure, java := len(rd.mvnNS.Pure), len(rd.mvnNS.Java)
 	line := fmt.Sprintf("%s/%s %s — %d namespace(s) usable", rd.mvnGroup, rd.mvnArtifact, rd.MvnVersion, pure)
 	if java > 0 {
-		names := make([]string, 0, java)
-		for ns := range rd.mvnNS.Java {
-			names = append(names, ns)
+		// Split by CODE, not lumped together. "requires Java interop" and
+		// "cljgo could not read it" are different claims about someone else's
+		// library, and reporting the second as the first is the false
+		// positive this whole pass exists to remove.
+		byCode := map[string][]string{}
+		for _, v := range rd.mvnVerdicts {
+			if !v.Loadable() {
+				byCode[v.Code] = append(byCode[v.Code], v.NS)
+			}
 		}
-		sort.Strings(names)
-		line += fmt.Sprintf(", %d require Java (%s)", java, strings.Join(names, ", "))
+		for _, band := range []struct{ code, label string }{
+			{"I4002", "require Java interop"},
+			{"R1012", "have no cljgo branch in a reader conditional"},
+			{"G5019", "cljgo's reader could not parse"},
+		} {
+			names := byCode[band.code]
+			if len(names) == 0 {
+				continue
+			}
+			sort.Strings(names)
+			line += fmt.Sprintf(", %d %s (%s)", len(names), band.label, strings.Join(names, ", "))
+		}
 	}
 	if pure == 0 {
 		line += " — WARNING: this dependency contributes no usable namespaces on cljgo"
+	}
+	// A namespace that loads but is NOT byte-identical to the JVM's (a
+	// `#?(:cljs …)` helper cljgo gets nothing from) is named here. "It loads"
+	// and "it is the same namespace you get on the JVM" are different claims.
+	var elided []string
+	for _, v := range rd.mvnVerdicts {
+		if v.Elided && v.Loadable() {
+			elided = append(elided, v.NS)
+		}
+	}
+	if len(elided) > 0 {
+		sort.Strings(elided)
+		line += "\n  reader conditionals elided a top-level form in " + strings.Join(elided, ", ") +
+			" (as JVM Clojure would on a platform those branches do not name)"
+	}
+	for _, p := range rd.mvnParents {
+		line += "\n  inherited from the <parent> POM " + p.String()
 	}
 	for _, p := range rd.mvnPruned {
 		line += "\n  pruned " + p.Key() + " " + p.Version + " (cljgo IS the Clojure implementation; its clojure.core is embedded)"
@@ -220,10 +261,24 @@ func resolveOne(rd *rdep, root string, opts ResolveOptions) ([]Dep, error) {
 			rd.Name, strings.Join(kinds, " and ")).
 			withFix("keep one — :mvn/version (Clojars/Maven), :git, or :path")
 	}
+	// A written-but-unusable :mvn/version is judged by the SAME rule, before
+	// the dispatch below can mistake it for a git dep and surface a raw
+	// subprocess error.
+	if rd.MvnDeclared && !rd.isMvn() {
+		return nil, validateDeclaredVersion(rd.Name, rd.MvnVersion)
+	}
 	switch {
 	case rd.isPath():
 		return resolvePath(rd, opts)
 	case rd.isMvn():
+		// The DECLARED version is validated here, by the same rule a
+		// transitive POM edge is judged by. Without this a -SNAPSHOT, a
+		// range, LATEST or RELEASE produced G5010 "not found in any
+		// repository" — an error that blamed the repository for syntax cljgo
+		// never supported.
+		if err := validateDeclaredVersion(rd.Name, rd.MvnVersion); err != nil {
+			return nil, err
+		}
 		g, a, ok := splitCoordName(rd.Name)
 		if !ok {
 			return nil, codedf("G5010", "dependency %q is not a maven coordinate", rd.Name).

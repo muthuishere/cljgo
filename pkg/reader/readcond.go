@@ -170,8 +170,33 @@ func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again
 	// clause — and erroring on it would reject exactly the libraries this
 	// change exists to consume. Two consequences, stated rather than hidden:
 	// a starved conditional nested inside a SELECTED branch is elided
-	// silently, and so is one fenced inside a form. Both are false NEGATIVES;
-	// a false positive here would break correct code.
+	// silently, and so is one fenced inside a LIST. Both are false NEGATIVES;
+	// a false positive here would break correct code. (Nesting inside a
+	// vector/map/set is NO LONGER in that set — see WithStarvedCollError
+	// immediately below, which was added after a live run proved that case
+	// produces a false "usable" verdict rather than a harmless miss.)
+	//
+	// SHAPE-BREAKING elision comes first, at any depth. A starved conditional
+	// directly inside a vector, map or set silently changes that collection's
+	// element count — `[a 1 b #?(:clj x)]` becomes a 3-element binding vector.
+	// Real camel-snake-kebab 0.4.3 has exactly that, and eliding it made the
+	// namespace classify as usable and then fail to compile with an error
+	// naming a library the user never wrote. That is a false "usable" claim,
+	// so it is a hard error rather than a documented false negative.
+	//
+	// SPLICING conditionals are exempt: `#?@(…)` contributes a SEQUENCE, so a
+	// starved one contributes zero elements — it removes nothing and the
+	// enclosing collection keeps its shape. Real tools.cli 1.1.230 has
+	// `#?@(:cljr (req …))` inside a `let` binding vector at cli.cljc:108, and
+	// JVM Clojure elides it to nothing on every non-cljr platform too.
+	if r.starvedCollError && !splicing && len(forms) >= 2 {
+		switch r.enclosingColl() {
+		case "vector", "map", "set":
+			return nil, false, r.errAt(start,
+				"reader conditional supplies no branch for this platform, and eliding it would change the shape of the enclosing %s; expected one of :cljgo, :default; found %s",
+				r.enclosingColl(), featureList(forms))
+		}
+	}
 	if r.starvedCondError && r.nestDepth == 0 && len(forms) >= 2 {
 		return nil, false, r.errAt(start,
 			"reader conditional supplies no branch for this platform; expected one of :cljgo, :default; found %s",
