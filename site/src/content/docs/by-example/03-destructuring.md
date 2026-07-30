@@ -48,14 +48,14 @@ binding side.
 Most real data is a map. `:keys` pulls out exactly the ones you need:
 
 ```clojure
-(let [{:keys [name city]} {:name "Asha" :city "Chennai"}]
+(let [{:keys [name city]} {:name "Sreyash" :city "Chennai"}]
   (println name city))
 ```
 
 Output:
 
 ```
-Asha Chennai
+Sreyash Chennai
 ```
 
 ## Defaults for missing keys
@@ -63,14 +63,14 @@ Asha Chennai
 What if a key isn't there? `:or` gives it a fallback instead of `nil`:
 
 ```clojure
-(let [{:keys [name city] :or {city "unknown"}} {:name "Ravi"}]
+(let [{:keys [name city] :or {city "unknown"}} {:name "Vidya"}]
   (println name city))
 ```
 
 Output:
 
 ```
-Ravi unknown
+Vidya unknown
 ```
 
 ## Put it together: a function with friendly options
@@ -82,15 +82,15 @@ Clojure APIs take "options maps" without any boilerplate:
 (defn greet [{:keys [name city] :or {city "somewhere"}}]
   (str "Hello " name " from " city "!"))
 
-(println (greet {:name "Asha" :city "Chennai"}))
-(println (greet {:name "Ravi"}))
+(println (greet {:name "Sreyash" :city "Chennai"}))
+(println (greet {:name "Vidya"}))
 ```
 
 Output:
 
 ```
-Hello Asha from Chennai!
-Hello Ravi from somewhere!
+Hello Sreyash from Chennai!
+Hello Vidya from somewhere!
 ```
 
 One argument, self-documenting, forgiving about what's missing. You'll see

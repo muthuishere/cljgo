@@ -55,10 +55,21 @@ export default defineConfig({
 					],
 				},
 				{
+					// ADR 0104 — per-language on-ramps: fundamentals-first bridges
+					// for readers arriving from another language.
+					label: 'Coming from…',
+					items: [{ autogenerate: { directory: 'coming-from' } }],
+				},
+				{
 					// ADR 0104 spike s67 — Rust-By-Example-style numbered course.
 					// Labels are human topic names; namespaces stay inside the pages.
 					label: 'By example',
 					items: [{ autogenerate: { directory: 'by-example' } }],
+				},
+				{
+					// ADR 0104 pillar 4 — which-to-use-when deciders.
+					label: 'Choosing',
+					items: [{ autogenerate: { directory: 'choosing' } }],
 				},
 				{
 					label: 'Build an app — bri',
