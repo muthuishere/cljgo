@@ -18,13 +18,15 @@
 ;;   (st/read-all readable)   ; drain the rest as one string
 ;;   (st/write writable "hi\n")   (st/close writable)   (st/close readable)
 ;;
-;; The handles come from cljg.process/spawn and (cljg.net.http/request … {:as
-;; :stream}); this namespace never creates one, it only operates on them. The Go
+;;   (st/of-file "big.log")   (st/to-file "out.txt" {:append true})  ; ADR 0110
+;;
+;; The handles come from cljg.process/spawn, (cljg.net.http/request … {:as
+;; :stream}) and — since ADR 0110 — `of-file` / `to-file` here. The Go
 ;; half (pkg/bri/stream.go) is thin shims over stdlib bufio/io; everything here
 ;; is portable Clojure, so it runs identically interpreted and AOT-compiled.
 ;; Private Go shims interned before this loads: -stream-read-bytes
 ;; -stream-read-line -stream-read-all -stream-chunk-seq -stream-line-seq
-;; -stream-write -stream-close.
+;; -stream-write -stream-close -stream-of-file -stream-to-file.
 ;;
 ;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
 ;; fully-qualified in-ns + refer open the file. `read-line` is defined here
@@ -34,6 +36,33 @@
 (clojure.core/refer 'clojure.core :exclude '[read-line])
 
 (def ^:private default-chunk 65536)
+
+;; --- opening a file as a stream (ADR 0110 ask 1) -----------------------------
+;;
+;; Before this, a stream handle could only be OBTAINED from a process pipe
+;; (cljg.process/spawn) or an HTTP body (:as :stream) — never from a path. These
+;; two make the ONE stream abstraction cover files too, so `lines` / `chunks` /
+;; `reduce` / a transducer walk a file of any size in constant memory.
+
+(defn of-file
+  "Open the file at `path` as a READABLE stream — the same handle
+  cljg.process/spawn and cljg.net.http (:as :stream) hand back, so `lines`,
+  `chunks`, `read-line`, `read-all`, `reduce` and transducers all apply. The
+  caller closes it (`close`), ideally with `with-open`. Throws if the file
+  cannot be opened.
+
+  This is the cljgo analog of (clojure.java.io/reader path) — cljgo has no
+  java.io, and a cljg.stream handle is a reducible Go reader, not a
+  java.io.Reader, so the name and the surface are this host's, not the JVM's."
+  [path]
+  (-stream-of-file path))
+
+(defn to-file
+  "Open the file at `path` as a WRITABLE stream, creating it if needed and
+  truncating it unless {:append true} is given. `write` / `write-line` append
+  and flush; `close` flushes and closes. Throws if the file cannot be opened."
+  ([path] (to-file path nil))
+  ([path opts] (-stream-to-file path (:append opts))))
 
 ;; --- reading ----------------------------------------------------------------
 

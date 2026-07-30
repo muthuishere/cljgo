@@ -191,7 +191,94 @@ func installIOShims(def func(name string, fn func(args ...any) any)) {
 	// -path-ext path -> the extension including the dot ("" if none).
 	def("-path-ext", func(args ...any) any { return filepath.Ext(asString(one("-path-ext", args))) })
 
+	// --- byte-level whole-file I/O (ADR 0110 ask 1) --------------------------
+	// The route between a path and BYTES that neither slurp nor spit can give:
+	// they go through a string, and a string round-trip is lossy for non-UTF-8
+	// content (invalid sequences become U+FFFD) on this host exactly as it is
+	// on the JVM. These two read/write the raw bytes.
+	//
+	// -fs-read-bytes path -> the whole file as a byte-array ([]byte).
+	def("-fs-read-bytes", func(args ...any) any {
+		path := asString(one("-fs-read-bytes", args))
+		b, err := os.ReadFile(path)
+		if err != nil {
+			panic(fmt.Errorf("cljg.io/read-bytes: cannot read %s: %w", path, err))
+		}
+		return toClojureBytes(b)
+	})
+	// -fs-write-bytes (path data append?) -> the number of bytes written.
+	// data is a byte-array or a string; append? truncates when falsey.
+	def("-fs-write-bytes", func(args ...any) any {
+		if len(args) != 3 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -fs-write-bytes (expects 3: [path data append?])", len(args)))
+		}
+		path := asString(args[0])
+		data := toGoBytes("cljg.io/write-bytes", args[1])
+		flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+		if isTruthy(args[2]) {
+			flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
+		}
+		f, err := os.OpenFile(path, flags, 0o644)
+		if err != nil {
+			panic(fmt.Errorf("cljg.io/write-bytes: cannot open %s: %w", path, err))
+		}
+		defer f.Close()
+		n, err := f.Write(data)
+		if err != nil {
+			panic(fmt.Errorf("cljg.io/write-bytes: cannot write %s: %w", path, err))
+		}
+		return int64(n)
+	})
+
 	installProcShims(def) // cljg.io also owns process exec (io_proc.go)
+}
+
+// isTruthy is Clojure truthiness (everything but nil and false).
+func isTruthy(v any) bool {
+	if v == nil {
+		return false
+	}
+	if b, ok := v.(bool); ok {
+		return b
+	}
+	return true
+}
+
+// toGoBytes coerces a Clojure byte payload to Go bytes: a string (its UTF-8
+// bytes), a Go-native []byte (what the cljg.* shims hand back), or the []int8
+// clojure.core/byte-array builds — all three answer true to `bytes?`/`string?`,
+// so all three are accepted wherever a byte payload is asked for. name is the
+// PUBLIC fn name, so the message points at what the caller wrote.
+func toGoBytes(name string, v any) []byte {
+	switch b := v.(type) {
+	case string:
+		return []byte(b)
+	case []byte:
+		return b
+	case []int8:
+		out := make([]byte, len(b))
+		for i, c := range b {
+			out[i] = byte(c)
+		}
+		return out
+	default:
+		panic(fmt.Errorf("%s: expected a byte-array or string, got: %s", name, lang.PrintString(v)))
+	}
+}
+
+// toClojureBytes wraps Go bytes as the SIGNED []int8 clojure.core/byte-array
+// builds, which is what the JVM's byte[] is: (vec (Files/readAllBytes p)) over
+// a 0xFF byte is [-1] on clojure 1.12.5, not [255] (oracle, 2026-07-30). Every
+// byte-producing fn that HAS a JVM equivalent (cljg.io/read-bytes,
+// cljg.security/base64-decode-bytes) returns this, so its elements read the
+// same on both hosts and it feeds straight back into write-bytes / aget /
+// alength / bytes?.
+func toClojureBytes(b []byte) []int8 {
+	out := make([]int8, len(b))
+	for i, c := range b {
+		out[i] = int8(c)
+	}
+	return out
 }
 
 // copyFile copies src to dst, preserving the source file mode.

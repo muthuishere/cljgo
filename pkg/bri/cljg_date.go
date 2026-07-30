@@ -42,4 +42,82 @@ func installDateShims(def func(name string, fn func(args ...any) any)) {
 		}
 		return time.Now().UnixMilli()
 	})
+
+	// --- ISO-8601 / RFC 3339 (ADR 0110 ask 4) --------------------------------
+	// -format-iso millis -> the instant as an ISO-8601 UTC string, matching
+	// java.time.Instant.toString() at millisecond precision: no fraction when
+	// the instant is a whole second, exactly three fractional digits otherwise
+	// (oracle clojure 1.12.5 / JDK: (str (Instant/ofEpochMilli 0)) =>
+	// "1970-01-01T00:00:00Z"; 1500 => "1970-01-01T00:00:01.500Z").
+	def("-format-iso", func(args ...any) any {
+		ms := asInt64("cljg.date/format-iso", one("-format-iso", args))
+		return formatISO(ms)
+	})
+	// -parse-iso s -> epoch milliseconds. Accepts any RFC 3339 timestamp,
+	// with or without a fractional part and with any offset ("Z" or ±hh:mm) —
+	// the offset is honoured, not dropped (oracle: (.toEpochMilli (Instant/parse
+	// "2026-07-30T12:00:00+05:30")) => 1785393000000).
+	def("-parse-iso", func(args ...any) any {
+		s := asString(one("-parse-iso", args))
+		t, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			panic(fmt.Errorf("cljg.date/parse-iso: not an ISO-8601 instant: %q (expected e.g. 2026-07-30T12:00:00Z)", s))
+		}
+		return t.UnixMilli()
+	})
+	// -format-layout (millis layout) -> the UTC instant rendered with a GO
+	// reference-time layout ("2006-01-02 15:04:05"). This is a Go host, not a
+	// JVM one: there is deliberately no java.time DateTimeFormatter pattern
+	// translation behind it (see the docstring in core/cljg/date.cljg).
+	def("-format-layout", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -format-layout (expects 2: [millis layout])", len(args)))
+		}
+		ms := asInt64("cljg.date/format", args[0])
+		return time.UnixMilli(ms).UTC().Format(asString(args[1]))
+	})
+	// -parse-layout (s layout) -> epoch milliseconds, parsing s with a GO
+	// reference-time layout. A layout with no zone parses as UTC.
+	def("-parse-layout", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -parse-layout (expects 2: [s layout])", len(args)))
+		}
+		s, layout := asString(args[0]), asString(args[1])
+		t, err := time.Parse(layout, s)
+		if err != nil {
+			panic(fmt.Errorf("cljg.date/parse: cannot parse %q with layout %q (Go reference-time layout, e.g. \"2006-01-02 15:04:05\")", s, layout))
+		}
+		return t.UnixMilli()
+	})
+}
+
+// formatISO renders epoch millis the way java.time.Instant.toString() does at
+// millisecond precision: always UTC, the fractional part omitted on a whole
+// second and exactly three digits otherwise.
+func formatISO(ms int64) string {
+	t := time.UnixMilli(ms).UTC()
+	// The zone suffix is appended literally rather than through a layout
+	// element: the instant is already UTC, and a bare "Z" in a Go layout is
+	// zone SYNTAX (Z07:00), not a character.
+	if ms%1000 == 0 {
+		return t.Format("2006-01-02T15:04:05") + "Z"
+	}
+	return t.Format("2006-01-02T15:04:05.000") + "Z"
+}
+
+// asInt64 coerces a Clojure integer (a fixnum int64, or an int from an
+// arithmetic path) to int64, naming the PUBLIC fn in the failure message.
+func asInt64(name string, v any) int64 {
+	switch n := v.(type) {
+	case int64:
+		return n
+	case int:
+		return int64(n)
+	case int32:
+		return int64(n)
+	case float64:
+		return int64(n)
+	default:
+		panic(fmt.Errorf("%s: expected epoch milliseconds (an integer), got: %v", name, v))
+	}
 }

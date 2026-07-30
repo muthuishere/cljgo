@@ -106,8 +106,11 @@ func installSecurityShims(def func(name string, fn func(args ...any) any)) {
 		return hex.EncodeToString(b)
 	})
 	def("-uuid", func(args ...any) any { return uuidV4() })
+	// -b64-encode takes a string OR a byte-array (ADR 0110 ask 5: base64 over
+	// bytes and strings — base64 without a byte route only solves half). A
+	// string encodes its UTF-8 bytes, which is what it did before.
 	def("-b64-encode", func(args ...any) any {
-		return base64.StdEncoding.EncodeToString([]byte(asString(one("-b64-encode", args))))
+		return base64.StdEncoding.EncodeToString(toGoBytes("cljg.security/base64-encode", one("-b64-encode", args)))
 	})
 	def("-b64-decode", func(args ...any) any {
 		b, err := base64.StdEncoding.DecodeString(asString(one("-b64-decode", args)))
@@ -115,6 +118,16 @@ func installSecurityShims(def func(name string, fn func(args ...any) any)) {
 			return nil
 		}
 		return string(b)
+	})
+	// -b64-decode-bytes -> the decoded BYTES (a byte-array), or nil on invalid
+	// input — the half -b64-decode cannot express, since a string round-trip
+	// is lossy for any payload that is not valid UTF-8 (an image, a gzip blob).
+	def("-b64-decode-bytes", func(args ...any) any {
+		b, err := base64.StdEncoding.DecodeString(asString(one("-b64-decode-bytes", args)))
+		if err != nil {
+			return nil
+		}
+		return toClojureBytes(b)
 	})
 	def("-hex-encode", func(args ...any) any {
 		return hex.EncodeToString([]byte(asString(one("-hex-encode", args))))

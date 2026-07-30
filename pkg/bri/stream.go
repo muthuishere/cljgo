@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -188,6 +189,10 @@ func (ws *WritableStream) write(v any) {
 		_, err = ws.bw.WriteString(b)
 	case []byte:
 		_, err = ws.bw.Write(b)
+	case []int8:
+		// what clojure.core/byte-array builds (ADR 0110 ask 1) — an honest
+		// byte-array on this host, so it writes like []byte.
+		_, err = ws.bw.Write(toGoBytes("cljg.stream/write", b))
 	default:
 		panic(fmt.Errorf("cljg.stream: write expects a string or byte-array, got: %s", lang.PrintString(v)))
 	}
@@ -245,6 +250,36 @@ func installStreamShims(def func(name string, fn func(args ...any) any)) {
 		}
 		asWritable("-stream-write", args[0]).write(args[1])
 		return nil
+	})
+	// -stream-of-file (path) -> a ReadableStream over the file at path (ADR
+	// 0110 ask 1). The ONE stream abstraction now covers files too, not just
+	// process pipes and sockets: the handle is the same seqable readable, so
+	// lines/chunks/reduce/transducers walk a file in constant memory. The
+	// caller closes it.
+	def("-stream-of-file", func(args ...any) any {
+		path := asString(one("-stream-of-file", args))
+		f, err := os.Open(path)
+		if err != nil {
+			panic(fmt.Errorf("cljg.stream/of-file: cannot open %s: %w", path, err))
+		}
+		return newReadableStream(f, f)
+	})
+	// -stream-to-file (path append?) -> a WritableStream over the file at
+	// path, truncating it unless append? is truthy. close flushes and closes.
+	def("-stream-to-file", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -stream-to-file (expects 2: [path append?])", len(args)))
+		}
+		path := asString(args[0])
+		flags := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+		if isTruthy(args[1]) {
+			flags = os.O_WRONLY | os.O_CREATE | os.O_APPEND
+		}
+		f, err := os.OpenFile(path, flags, 0o644)
+		if err != nil {
+			panic(fmt.Errorf("cljg.stream/to-file: cannot open %s: %w", path, err))
+		}
+		return newWritableStream(f, f)
 	})
 	// -stream-close (stream) -> nil. Works on either a readable or a writable.
 	def("-stream-close", func(args ...any) any {
