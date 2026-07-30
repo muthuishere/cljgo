@@ -94,6 +94,7 @@ var registry = []Entry{
 	{Code: "G5013", Title: "maven version conflict", Since: "M5"},
 	{Code: "G5014", Title: "offline: maven coordinate unavailable", Since: "M5"},
 	{Code: "G5015", Title: "conflicting dependency coordinates", Since: "M5"},
+	{Code: "G5016", Title: "replacement fn did not return a string", Since: "M5"},
 }
 
 // Lookup returns the registry entry for code.

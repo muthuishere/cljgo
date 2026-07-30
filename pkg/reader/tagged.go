@@ -31,7 +31,18 @@ import (
 // VALUE, exactly like java.util.UUID.equals/hashCode.
 type UUID struct{ s string }
 
-func (u *UUID) String() string { return `#uuid "` + u.s + `"` }
+// String is java.util.UUID.toString: the BARE canonical 36-char form, with
+// no reader tag. This is what (str u), (format "%s" u) and string
+// concatenation see (oracle 1.12.5: (count (str (random-uuid))) => 36).
+// The tagged, round-trippable `#uuid "..."` form is the PRINTED form and
+// lives in PrintTagged below — printing a UUID with the tag while str'ing
+// it bare is exactly the JVM's split (toString vs print-method).
+func (u *UUID) String() string { return u.s }
+
+// PrintTagged implements lang.TaggedPrinter: print / pr / prn / print-method
+// of a UUID emit the reader tag, readably or not (oracle 1.12.5:
+// (with-out-str (print (random-uuid))) => `#uuid "…"`, same as pr-str).
+func (u *UUID) PrintTagged() string { return `#uuid "` + u.s + `"` }
 
 // Value returns the canonical (lowercase) UUID string.
 func (u *UUID) Value() string { return u.s }
