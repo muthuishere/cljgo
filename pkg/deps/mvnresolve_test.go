@@ -489,3 +489,42 @@ func TestNoNetworkInDepsTests(t *testing.T) {
 		}
 	}
 }
+
+// TestJarBuildFilesAreNotNamespaces pins the honest-report fix: a jar root very
+// commonly carries project.clj / data_readers.clj (Leiningen's build script and
+// a reader-tag map), and neither is a requirable namespace. Counting them made a
+// ONE-namespace library report "3 namespace(s) usable" — a number the user
+// cannot reconcile with the library's own docs.
+//
+// The gate was never wrong (it keys on file path); only the count was. Found by
+// the adversarial verifier on the ADR 0095 consume work, 2026-07-30.
+func TestJarBuildFilesAreNotNamespaces(t *testing.T) {
+	r := newMvnRepo(t)
+	c := Coord{Group: "noise", Artifact: "lib", Version: "1.0.0"}
+	r.publish(c, "", map[string]string{
+		"project.clj":      `(defproject noise/lib "1.0.0" :dependencies [])`,
+		"data_readers.clj": `{noise/tag noise.core/read-tag}`,
+		"noise/core.clj":   `(ns noise.core) (defn f [x] x)`,
+		// A NESTED file named project.clj IS a real namespace — noise.project —
+		// so the exclusion must be root-level only.
+		"noise/project.clj": `(ns noise.project) (defn g [] :g)`,
+	})
+
+	res := mustResolve(t, r, []Dep{{Name: "noise/lib", MvnVersion: "1.0.0"}}, nil)
+	lk := res.Lock.find("noise/lib")
+	if lk == nil {
+		t.Fatal("no lock entry")
+	}
+	want := []string{"noise.core", "noise.project"}
+	if len(lk.MvnPureNS) != len(want) {
+		t.Fatalf("want exactly %v, got %v (build files counted as namespaces?)", want, lk.MvnPureNS)
+	}
+	for i, w := range want {
+		if lk.MvnPureNS[i] != w {
+			t.Errorf("namespace %d = %q, want %q", i, lk.MvnPureNS[i], w)
+		}
+	}
+	if len(lk.MvnJavaNS) != 0 {
+		t.Errorf("nothing here is Java, got %v", lk.MvnJavaNS)
+	}
+}

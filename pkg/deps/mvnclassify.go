@@ -69,6 +69,9 @@ func classifyTree(dir string, c Coord) (*nsPurity, []NSVerdict, error) {
 		}
 		switch strings.ToLower(filepath.Ext(p)) {
 		case ".clj", ".cljc":
+			if isJarNoise(dir, p) {
+				return nil
+			}
 			files = append(files, p)
 		}
 		return nil
@@ -144,6 +147,37 @@ func classifyFile(path, ns string, c Coord) NSVerdict {
 // nsNameFor maps an extracted-tree relative path to its namespace name,
 // undoing the JVM munging: hiccup/util.clj -> hiccup.util,
 // clojure/tools/cli.cljc -> clojure.tools.cli, my_app/core.clj -> my-app.core.
+// isJarNoise reports whether a root-level .clj is a BUILD/tooling file rather
+// than a namespace. Clojars jars very commonly ship project.clj, build.boot or
+// data_readers.clj at the jar root, and none of them is a requirable namespace
+// — project.clj is Leiningen's build script, data_readers.clj is a reader-tag
+// map the runtime consumes directly.
+//
+// Counting them inflated the usable-namespace figure the resolve report and
+// the I4002 fix line quote: a one-namespace library shipping project.clj and
+// data_readers.clj reported "3 namespace(s) usable". The GATE was always
+// correct (it keys on file path, not on this count) — the honest NUMBER was
+// not, and a number a user cannot reconcile with the library's own docs is
+// worse than no number. Found by the adversarial verifier, 2026-07-30.
+//
+// Root-level only: a real namespace can legitimately be called
+// my.lib.project, and that lives at my/lib/project.clj, not at the root.
+func isJarNoise(dir, p string) bool {
+	rel, err := filepath.Rel(dir, p)
+	if err != nil {
+		return false
+	}
+	rel = filepath.ToSlash(rel)
+	if strings.Contains(rel, "/") {
+		return false // nested: a genuine namespace path
+	}
+	switch strings.ToLower(rel) {
+	case "project.clj", "build.boot", "data_readers.clj", "data_readers.cljc":
+		return true
+	}
+	return false
+}
+
 func nsNameFor(rel string) string {
 	rel = filepath.ToSlash(rel)
 	rel = strings.TrimSuffix(rel, filepath.Ext(rel))
@@ -253,14 +287,17 @@ func otherUsableHint(usable map[string][]string, v NSVerdict) string {
 	if n == 0 {
 		return "no namespace in " + v.Coord.String() + " is usable on cljgo — it is a JVM-only library"
 	}
-	return plural(n) + " in " + v.Coord.String() + " are usable — see the resolve report, or :mvn/namespaces in build.lock.edn"
+	return plural(n) + " in " + v.Coord.String() + " — see the resolve report, or :mvn/namespaces in build.lock.edn"
 }
 
+// plural carries its own verb: "1 other namespace IS usable" but "3 other
+// namespaces ARE usable". The verb used to sit in the caller, which read
+// "1 other namespace … are usable".
 func plural(n int) string {
 	if n == 1 {
-		return "1 other namespace"
+		return "1 other namespace is usable"
 	}
-	return itoa(n) + " other namespaces"
+	return itoa(n) + " other namespaces are usable"
 }
 
 func itoa(n int) string {
