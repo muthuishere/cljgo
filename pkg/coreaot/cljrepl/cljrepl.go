@@ -29,9 +29,26 @@ var (
 	sym_clojure_DOT_repl_SLASH_dir_fn          = lang.NewSymbol("clojure.repl/dir-fn")
 	sym_clojure_DOT_repl_SLASH_print_doc       = lang.NewSymbol("clojure.repl/print-doc")
 	sym_clojure_DOT_repl_SLASH_source_fn       = lang.NewSymbol("clojure.repl/source-fn")
+	sym_depth                                  = lang.NewSymbol("depth")
+	sym_e                                      = lang.NewSymbol("e")
+	sym_e_or_depth                             = lang.NewSymbol("e-or-depth")
+	sym_el                                     = lang.NewSymbol("el")
+	sym_f                                      = lang.NewSymbol("f")
+	sym_fn_name                                = lang.NewSymbol("fn-name")
+	sym_n                                      = lang.NewSymbol("n")
+	sym_name                                   = lang.NewSymbol("name")
+	sym_ns                                     = lang.NewSymbol("ns")
+	sym_nsname                                 = lang.NewSymbol("nsname")
 	sym_quote                                  = lang.NewSymbol("quote")
+	sym_re_string_or_pattern                   = lang.NewSymbol("re-string-or-pattern")
+	sym_s                                      = lang.NewSymbol("s")
+	sym_str_or_pattern                         = lang.NewSymbol("str-or-pattern")
+	sym_t                                      = lang.NewSymbol("t")
+	sym_thread                                 = lang.NewSymbol("thread")
+	sym_v                                      = lang.NewSymbol("v")
 	sym_v__40__auto__                          = lang.NewSymbol("v__40__auto__")
 	sym_var_                                   = lang.NewSymbol("var")
+	sym_x                                      = lang.NewSymbol("x")
 	v_clojure_DOT_core_X_EQ_                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
 	v_clojure_DOT_core_X_GT__EQ_               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol(">="))
 	v_clojure_DOT_core_X_STAR_e                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*e"))
@@ -139,8 +156,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def print-doc "Prints the documentation block for var v to *out* (the JVM shape;\n  publi…
-	v_clojure_DOT_repl_print_doc.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(16), kw_doc, "Prints the documentation block for var v to *out* (the JVM shape;\n  public here because cljgo has no private defs yet)."))
+	// (def print-doc (clojure.core/fn ([v] (let [m (meta v)] (println "-------------------------…
+	v_clojure_DOT_repl_print_doc.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_v)), kw_doc, "Prints the documentation block for var v to *out* (the JVM shape;\n  public here because cljgo has no private defs yet)."))
 	tmp5 := lang.FnFunc1(func(v6 any) any {
 		var tmp7 any
 		_ = tmp7
@@ -202,8 +219,8 @@ func Load() {
 	fnD_clojure_DOT_repl_print_doc = tmp33.F
 	v_clojure_DOT_repl_print_doc.SealDirect()
 	_ = v_clojure_DOT_repl_print_doc
-	// (do (def doc "Prints documentation for a var, given its name. Prints nothing when\n  the n…
-	v_clojure_DOT_repl_doc.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(47), kw_column, int64(11), kw_end_line, int64(47), kw_end_column, int64(14), kw_doc, "Prints documentation for a var, given its name. Prints nothing when\n  the name does not resolve."))
+	// (do (def doc (fn* doc ([&form &env name] (when (resolve name) (list (quote clojure.repl/pr…
+	v_clojure_DOT_repl_doc.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_name)), kw_doc, "Prints documentation for a var, given its name. Prints nothing when\n  the name does not resolve.", kw_file, "repl.cljg", kw_line, int64(47), kw_column, int64(11), kw_end_line, int64(47), kw_end_column, int64(14)))
 	var doc34 any
 	_ = doc34
 	var doc34d lang.FnFunc3
@@ -263,8 +280,8 @@ func Load() {
 	tmp72 := lang.NewVector(tmp49, tmp50, tmp51, tmp52, tmp53, tmp54, tmp55, tmp56, tmp57, tmp58, tmp59, tmp60, tmp61, tmp62, tmp63, tmp64, tmp65, tmp66, tmp67, tmp68, tmp69, tmp70, tmp71)
 	v_clojure_DOT_repl_X_demunge_pairs.BindRoot(tmp72)
 	_ = v_clojure_DOT_repl_X_demunge_pairs
-	// (def -demunge-token "The [token replacement] pair s starts with, or nil." (clojure.core/fn…
-	v_clojure_DOT_repl_X_demunge_token.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(86), kw_column, int64(7), kw_end_line, int64(86), kw_end_column, int64(31), kw_private, true, kw_doc, "The [token replacement] pair s starts with, or nil."))
+	// (def -demunge-token (clojure.core/fn ([s] (some (fn [pair] (let [tok (first pair)] (when (…
+	v_clojure_DOT_repl_X_demunge_token.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(86), kw_column, int64(7), kw_end_line, int64(86), kw_end_column, int64(31), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "The [token replacement] pair s starts with, or nil."))
 	tmp73 := lang.FnFunc1(func(s74 any) any {
 		tmp75 := v_clojure_DOT_core_some.Get()
 		tmp76 := lang.FnFunc1(func(pair77 any) any {
@@ -320,8 +337,8 @@ func Load() {
 	fnD_clojure_DOT_repl_X_demunge_token = tmp99.F
 	v_clojure_DOT_repl_X_demunge_token.SealDirect()
 	_ = v_clojure_DOT_repl_X_demunge_token
-	// (def demunge "Given a string representation of a fn class,\n  as in a stack trace element,…
-	v_clojure_DOT_repl_demunge.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(14), kw_doc, "Given a string representation of a fn class,\n  as in a stack trace element, returns a readable version."))
+	// (def demunge (clojure.core/fn ([fn-name] (loop [s fn-name acc ""] (if (= s "") acc (let [c…
+	v_clojure_DOT_repl_demunge.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_fn_name)), kw_doc, "Given a string representation of a fn class,\n  as in a stack trace element, returns a readable version."))
 	tmp100 := lang.FnFunc1(func(fn_name101 any) any {
 		var tmp102 any
 		_ = tmp102
@@ -450,8 +467,8 @@ func Load() {
 	fnD_clojure_DOT_repl_demunge = tmp155.F
 	v_clojure_DOT_repl_demunge.SealDirect()
 	_ = v_clojure_DOT_repl_demunge
-	// (def root-cause "Returns the initial cause of an exception or error by peeling off all of\…
-	v_clojure_DOT_repl_root_cause.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(116), kw_column, int64(7), kw_end_line, int64(116), kw_end_column, int64(17), kw_doc, "Returns the initial cause of an exception or error by peeling off all of\n  its wrappers"))
+	// (def root-cause (clojure.core/fn ([t] (loop [cause t] (let [c (ex-cause cause)] (if c (rec…
+	v_clojure_DOT_repl_root_cause.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(116), kw_column, int64(7), kw_end_line, int64(116), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_t)), kw_doc, "Returns the initial cause of an exception or error by peeling off all of\n  its wrappers"))
 	tmp156 := lang.FnFunc1(func(t157 any) any {
 		var tmp158 any
 		_ = tmp158
@@ -489,8 +506,8 @@ func Load() {
 	fnD_clojure_DOT_repl_root_cause = tmp167.F
 	v_clojure_DOT_repl_root_cause.SealDirect()
 	_ = v_clojure_DOT_repl_root_cause
-	// (def apropos "Given a regular expression or stringable thing, return a seq of all\n  publi…
-	v_clojure_DOT_repl_apropos.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(129), kw_column, int64(7), kw_end_line, int64(129), kw_end_column, int64(14), kw_doc, "Given a regular expression or stringable thing, return a seq of all\n  public definitions in all currently-loaded namespaces that match the\n  str-or-pattern."))
+	// (def apropos (clojure.core/fn ([str-or-pattern] (let [matches? (if (or (string? str-or-pat…
+	v_clojure_DOT_repl_apropos.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(129), kw_column, int64(7), kw_end_line, int64(129), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_str_or_pattern)), kw_doc, "Given a regular expression or stringable thing, return a seq of all\n  public definitions in all currently-loaded namespaces that match the\n  str-or-pattern."))
 	tmp168 := lang.FnFunc1(func(str_or_pattern169 any) any {
 		var tmp170 any
 		_ = tmp170
@@ -602,8 +619,8 @@ func Load() {
 	fnD_clojure_DOT_repl_apropos = tmp231.F
 	v_clojure_DOT_repl_apropos.SealDirect()
 	_ = v_clojure_DOT_repl_apropos
-	// (def dir-fn "Returns a sorted seq of symbols naming public vars in\n  a namespace or names…
-	v_clojure_DOT_repl_dir_fn.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(150), kw_column, int64(7), kw_end_line, int64(150), kw_end_column, int64(13), kw_doc, "Returns a sorted seq of symbols naming public vars in\n  a namespace or namespace alias. Looks for aliases in *ns*"))
+	// (def dir-fn (clojure.core/fn ([ns] (sort (map first (ns-publics (the-ns (get (ns-aliases *…
+	v_clojure_DOT_repl_dir_fn.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(150), kw_column, int64(7), kw_end_line, int64(150), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_ns)), kw_doc, "Returns a sorted seq of symbols naming public vars in\n  a namespace or namespace alias. Looks for aliases in *ns*"))
 	tmp232 := lang.FnFunc1(func(ns233 any) any {
 		tmp234 := v_clojure_DOT_core_sort.Get()
 		tmp235 := v_clojure_DOT_core_map_.Get()
@@ -626,8 +643,8 @@ func Load() {
 	fnD_clojure_DOT_repl_dir_fn = tmp248.F
 	v_clojure_DOT_repl_dir_fn.SealDirect()
 	_ = v_clojure_DOT_repl_dir_fn
-	// (do (def dir "Prints a sorted directory of public vars in a namespace" (fn* dir ([&form &e…
-	v_clojure_DOT_repl_dir.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(157), kw_column, int64(11), kw_end_line, int64(157), kw_end_column, int64(14), kw_doc, "Prints a sorted directory of public vars in a namespace"))
+	// (do (def dir (fn* dir ([&form &env nsname] (clojure.core/seq (clojure.core/concat (clojure…
+	v_clojure_DOT_repl_dir.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_nsname)), kw_doc, "Prints a sorted directory of public vars in a namespace", kw_file, "repl.cljg", kw_line, int64(157), kw_column, int64(11), kw_end_line, int64(157), kw_end_column, int64(14)))
 	var dir249 any
 	_ = dir249
 	var dir249d lang.FnFunc3
@@ -691,8 +708,8 @@ func Load() {
 	tmp301 := lang.Apply1(tmp300, v_clojure_DOT_repl_dir)
 	_ = tmp301
 	_ = v_clojure_DOT_repl_dir
-	// (def find-doc "Prints documentation for any var whose documentation or name\n contains a m…
-	v_clojure_DOT_repl_find_doc.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(167), kw_column, int64(7), kw_end_line, int64(167), kw_end_column, int64(15), kw_doc, "Prints documentation for any var whose documentation or name\n contains a match for re-string-or-pattern"))
+	// (def find-doc (clojure.core/fn ([re-string-or-pattern] (let [re (re-pattern re-string-or-p…
+	v_clojure_DOT_repl_find_doc.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(167), kw_column, int64(7), kw_end_line, int64(167), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_re_string_or_pattern)), kw_doc, "Prints documentation for any var whose documentation or name\n contains a match for re-string-or-pattern"))
 	tmp302 := lang.FnFunc1(func(re_string_or_pattern303 any) any {
 		var tmp304 any
 		_ = tmp304
@@ -840,8 +857,8 @@ func Load() {
 	fnD_clojure_DOT_repl_find_doc = tmp368.F
 	v_clojure_DOT_repl_find_doc.SealDirect()
 	_ = v_clojure_DOT_repl_find_doc
-	// (def source-fn "Returns a string of the source code for the given symbol, if it can\n  fin…
-	v_clojure_DOT_repl_source_fn.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(188), kw_column, int64(7), kw_end_line, int64(188), kw_end_column, int64(16), kw_doc, "Returns a string of the source code for the given symbol, if it can\n  find it. Returns nil if it can't find the source.\n\n  Example: (source-fn 'filter)"))
+	// (def source-fn (clojure.core/fn ([x] (when-let [v (resolve x)] (let [m (meta v)] (when (an…
+	v_clojure_DOT_repl_source_fn.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(188), kw_column, int64(7), kw_end_line, int64(188), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Returns a string of the source code for the given symbol, if it can\n  find it. Returns nil if it can't find the source.\n\n  Example: (source-fn 'filter)"))
 	tmp369 := lang.FnFunc1(func(x370 any) any {
 		var tmp371 any
 		_ = tmp371
@@ -909,8 +926,8 @@ func Load() {
 	fnD_clojure_DOT_repl_source_fn = tmp392.F
 	v_clojure_DOT_repl_source_fn.SealDirect()
 	_ = v_clojure_DOT_repl_source_fn
-	// (do (def source "Prints the source code for the given symbol, if it can find it.\n  This r…
-	v_clojure_DOT_repl_source.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(200), kw_column, int64(11), kw_end_line, int64(200), kw_end_column, int64(17), kw_doc, "Prints the source code for the given symbol, if it can find it.\n  This requires that the symbol resolve to a Var defined in a\n  namespace for which the source is available.\n\n  Example: (source filter)"))
+	// (do (def source (fn* source ([&form &env n] (clojure.core/seq (clojure.core/concat (clojur…
+	v_clojure_DOT_repl_source.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_n)), kw_doc, "Prints the source code for the given symbol, if it can find it.\n  This requires that the symbol resolve to a Var defined in a\n  namespace for which the source is available.\n\n  Example: (source filter)", kw_file, "repl.cljg", kw_line, int64(200), kw_column, int64(11), kw_end_line, int64(200), kw_end_column, int64(17)))
 	var source393 any
 	_ = source393
 	var source393d lang.FnFunc3
@@ -963,8 +980,8 @@ func Load() {
 	tmp434 := lang.Apply1(tmp433, v_clojure_DOT_repl_source)
 	_ = tmp434
 	_ = v_clojure_DOT_repl_source
-	// (def -ex-class-name "The exception value's short type name (ExceptionInfo for ex-info),\n …
-	v_clojure_DOT_repl_X_ex_class_name.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(211), kw_column, int64(7), kw_end_line, int64(211), kw_end_column, int64(31), kw_private, true, kw_doc, "The exception value's short type name (ExceptionInfo for ex-info),\n  standing in for the JVM's (.getSimpleName (class e))."))
+	// (def -ex-class-name (clojure.core/fn ([e] (last (clojure.string/split (str (type e)) #"\."…
+	v_clojure_DOT_repl_X_ex_class_name.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(211), kw_column, int64(7), kw_end_line, int64(211), kw_end_column, int64(31), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_e)), kw_doc, "The exception value's short type name (ExceptionInfo for ex-info),\n  standing in for the JVM's (.getSimpleName (class e))."))
 	tmp435 := lang.FnFunc1(func(e436 any) any {
 		tmp437 := v_clojure_DOT_core_last.Get()
 		tmp438 := v_clojure_DOT_string_split.Get()
@@ -981,8 +998,8 @@ func Load() {
 	fnD_clojure_DOT_repl_X_ex_class_name = tmp446.F
 	v_clojure_DOT_repl_X_ex_class_name.SealDirect()
 	_ = v_clojure_DOT_repl_X_ex_class_name
-	// (def pst "Prints a stack trace of the exception, to the depth requested. If none supplied,…
-	v_clojure_DOT_repl_pst.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(221), kw_column, int64(7), kw_end_line, int64(221), kw_end_column, int64(10), kw_doc, "Prints a stack trace of the exception, to the depth requested. If none supplied, uses the root cause of the\n  most recent repl exception (*e), and a depth of 12."))
+	// (def pst (clojure.core/fn ([] (pst 12)) ([e-or-depth] (if (number? e-or-depth) (when-let […
+	v_clojure_DOT_repl_pst.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(221), kw_column, int64(7), kw_end_line, int64(221), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_e_or_depth), lang.NewVector(sym_e, sym_depth)), kw_doc, "Prints a stack trace of the exception, to the depth requested. If none supplied, uses the root cause of the\n  most recent repl exception (*e), and a depth of 12."))
 	tmp447 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -1125,8 +1142,8 @@ func Load() {
 	})
 	v_clojure_DOT_repl_pst.BindRoot(tmp447)
 	_ = v_clojure_DOT_repl_pst
-	// (def stack-element-str "Returns a (possibly unmunged) string representation of a StackTrac…
-	v_clojure_DOT_repl_stack_element_str.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(240), kw_column, int64(7), kw_end_line, int64(240), kw_end_column, int64(24), kw_doc, "Returns a (possibly unmunged) string representation of a StackTraceElement"))
+	// (def stack-element-str (clojure.core/fn ([el] (if true (throw (ex-info "Unimplemented: sta…
+	v_clojure_DOT_repl_stack_element_str.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(240), kw_column, int64(7), kw_end_line, int64(240), kw_end_column, int64(24), kw_arglists, lang.NewList(lang.NewVector(sym_el)), kw_doc, "Returns a (possibly unmunged) string representation of a StackTraceElement"))
 	tmp500 := lang.FnFunc1(func(el501 any) any {
 		var tmp502 any
 		_ = tmp502
@@ -1145,8 +1162,8 @@ func Load() {
 	fnD_clojure_DOT_repl_stack_element_str = tmp506.F
 	v_clojure_DOT_repl_stack_element_str.SealDirect()
 	_ = v_clojure_DOT_repl_stack_element_str
-	// (def set-break-handler! "Register INT signal handler. DEVIATION: Unimplemented — JVM\n  …
-	v_clojure_DOT_repl_set_break_handler_BANG_.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(248), kw_column, int64(7), kw_end_line, int64(248), kw_end_column, int64(25), kw_doc, "Register INT signal handler. DEVIATION: Unimplemented — JVM\n  sun.misc.Signal machinery does not exist on a Go host."))
+	// (def set-break-handler! (clojure.core/fn ([] (set-break-handler! nil)) ([f] (if true (thro…
+	v_clojure_DOT_repl_set_break_handler_BANG_.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(248), kw_column, int64(7), kw_end_line, int64(248), kw_end_column, int64(25), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_f)), kw_doc, "Register INT signal handler. DEVIATION: Unimplemented — JVM\n  sun.misc.Signal machinery does not exist on a Go host."))
 	tmp507 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -1173,8 +1190,8 @@ func Load() {
 	})
 	v_clojure_DOT_repl_set_break_handler_BANG_.BindRoot(tmp507)
 	_ = v_clojure_DOT_repl_set_break_handler_BANG_
-	// (def thread-stopper "Returns a function that takes one arg and uses that as an exception m…
-	v_clojure_DOT_repl_thread_stopper.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(258), kw_column, int64(7), kw_end_line, int64(258), kw_end_column, int64(21), kw_doc, "Returns a function that takes one arg and uses that as an exception message\n  to stop the given thread. DEVIATION: Unimplemented — cljgo has no JVM\n  Thread objects."))
+	// (def thread-stopper (clojure.core/fn ([] (thread-stopper nil)) ([thread] (if true (throw (…
+	v_clojure_DOT_repl_thread_stopper.SetMeta(lang.NewMap(kw_file, "repl.cljg", kw_line, int64(258), kw_column, int64(7), kw_end_line, int64(258), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_thread)), kw_doc, "Returns a function that takes one arg and uses that as an exception message\n  to stop the given thread. DEVIATION: Unimplemented — cljgo has no JVM\n  Thread objects."))
 	tmp515 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:

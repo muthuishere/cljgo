@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                                     = lang.InternKeywordString("arglists")
 	kw_as                                           = lang.InternKeywordString("as")
 	kw_buffer                                       = lang.InternKeywordString("buffer")
 	kw_column                                       = lang.InternKeywordString("column")
@@ -17,15 +18,26 @@ var (
 	kw_error_                                       = lang.InternKeywordString("error")
 	kw_file                                         = lang.InternKeywordString("file")
 	kw_job                                          = lang.InternKeywordString("job")
+	kw_keys                                         = lang.InternKeywordString("keys")
 	kw_line                                         = lang.InternKeywordString("line")
+	kw_or                                           = lang.InternKeywordString("or")
 	kw_payload                                      = lang.InternKeywordString("payload")
 	kw_private                                      = lang.InternKeywordString("private")
 	kw_type_                                        = lang.InternKeywordString("type")
 	kw_workers                                      = lang.InternKeywordString("workers")
 	sym_a                                           = lang.NewSymbol("a")
+	sym_buffer                                      = lang.NewSymbol("buffer")
+	sym_ch                                          = lang.NewSymbol("ch")
 	sym_cljg_DOT_jobs                               = lang.NewSymbol("cljg.jobs")
 	sym_clojure_DOT_core                            = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_core_DOT_async                  = lang.NewSymbol("clojure.core.async")
+	sym_errs                                        = lang.NewSymbol("errs")
+	sym_handlers                                    = lang.NewSymbol("handlers")
+	sym_payload                                     = lang.NewSymbol("payload")
+	sym_pending                                     = lang.NewSymbol("pending")
+	sym_q                                           = lang.NewSymbol("q")
+	sym_type_                                       = lang.NewSymbol("type")
+	sym_workers                                     = lang.NewSymbol("workers")
 	v_cljg_DOT_jobs_Queue                           = lang.InternVarName(lang.NewSymbol("cljg.jobs"), lang.NewSymbol("Queue"))
 	v_cljg_DOT_jobs_X_drain                         = lang.InternVarName(lang.NewSymbol("cljg.jobs"), lang.NewSymbol("-drain"))
 	v_cljg_DOT_jobs_X_errors                        = lang.InternVarName(lang.NewSymbol("cljg.jobs"), lang.NewSymbol("-errors"))
@@ -183,8 +195,8 @@ func Load() {
 	_ = v_cljg_DOT_jobs_X_errors
 	tmp32 := v_cljg_DOT_jobs_Queue.Get()
 	_ = tmp32
-	// (def worker "One worker goroutine: pull jobs off `ch`, dispatch by :type through\n  `handl…
-	v_cljg_DOT_jobs_worker.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(32), kw_column, int64(8), kw_end_line, int64(32), kw_end_column, int64(14), kw_private, true, kw_doc, "One worker goroutine: pull jobs off `ch`, dispatch by :type through\n  `handlers`, capture a throw, and decrement `pending` when each job settles."))
+	// (def worker (clojure.core/fn ([ch handlers pending errs] (a/go (loop [] (when-let [job (a/…
+	v_cljg_DOT_jobs_worker.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(32), kw_column, int64(8), kw_end_line, int64(32), kw_end_column, int64(14), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_ch, sym_handlers, sym_pending, sym_errs)), kw_doc, "One worker goroutine: pull jobs off `ch`, dispatch by :type through\n  `handlers`, capture a throw, and decrement `pending` when each job settles."))
 	tmp33 := lang.FnFunc4(func(ch34, handlers35, pending36, errs37 any) any {
 		tmp38 := v_clojure_DOT_core_DOT_async_go_STAR_.Get()
 		tmp39 := lang.FnFunc0(func() any {
@@ -284,8 +296,8 @@ func Load() {
 	fnD_cljg_DOT_jobs_worker = tmp70.F
 	v_cljg_DOT_jobs_worker.SealDirect()
 	_ = v_cljg_DOT_jobs_worker
-	// (def local "The built-in in-process queue: a core.async worker pool over `handlers`\n  ({j…
-	v_cljg_DOT_jobs_local.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(12), kw_doc, "The built-in in-process queue: a core.async worker pool over `handlers`\n  ({job-type handler-fn}; handler values may be vars so they stay live). opts:\n    :workers  worker goroutines (default 4)\n    :buffer   channel buffer (default 1024)\n  Returns a `Queue`."))
+	// (def local (clojure.core/fn ([handlers] (local handlers {})) ([handlers {:keys [workers bu…
+	v_cljg_DOT_jobs_local.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_handlers), lang.NewVector(sym_handlers, lang.NewMap(kw_keys, lang.NewVector(sym_workers, sym_buffer), kw_or, lang.NewMap(sym_workers, int64(4), sym_buffer, int64(1024))))), kw_doc, "The built-in in-process queue: a core.async worker pool over `handlers`\n  ({job-type handler-fn}; handler values may be vars so they stay live). opts:\n    :workers  worker goroutines (default 4)\n    :buffer   channel buffer (default 1024)\n  Returns a `Queue`."))
 	tmp71 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -497,8 +509,8 @@ func Load() {
 	})
 	v_cljg_DOT_jobs_local.BindRoot(tmp71)
 	_ = v_cljg_DOT_jobs_local
-	// (def submit "Enqueue a job of `type` with `payload` (default nil); a worker runs\n  (handl…
-	v_cljg_DOT_jobs_submit.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(73), kw_column, int64(7), kw_end_line, int64(73), kw_end_column, int64(13), kw_doc, "Enqueue a job of `type` with `payload` (default nil); a worker runs\n  (handler payload)."))
+	// (def submit (clojure.core/fn ([q type] (-submit q type nil)) ([q type payload] (-submit q …
+	v_cljg_DOT_jobs_submit.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(73), kw_column, int64(7), kw_end_line, int64(73), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_q, sym_type_), lang.NewVector(sym_q, sym_type_, sym_payload)), kw_doc, "Enqueue a job of `type` with `payload` (default nil); a worker runs\n  (handler payload)."))
 	tmp168 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -525,8 +537,8 @@ func Load() {
 	})
 	v_cljg_DOT_jobs_submit.BindRoot(tmp168)
 	_ = v_cljg_DOT_jobs_submit
-	// (def drain "Block until every submitted job has finished." (clojure.core/fn [q] (-drain q)…
-	v_cljg_DOT_jobs_drain.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(12), kw_doc, "Block until every submitted job has finished."))
+	// (def drain (clojure.core/fn ([q] (-drain q))))
+	v_cljg_DOT_jobs_drain.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_q)), kw_doc, "Block until every submitted job has finished."))
 	tmp178 := lang.FnFunc1(func(q179 any) any {
 		tmp180 := v_cljg_DOT_jobs_X_drain.Get()
 		tmp181 := lang.Apply1(tmp180, q179)
@@ -537,8 +549,8 @@ func Load() {
 	fnD_cljg_DOT_jobs_drain = tmp182.F
 	v_cljg_DOT_jobs_drain.SealDirect()
 	_ = v_cljg_DOT_jobs_drain
-	// (def stop "Stop the workers; no further jobs are processed." (clojure.core/fn [q] (-stop q…
-	v_cljg_DOT_jobs_stop.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(11), kw_doc, "Stop the workers; no further jobs are processed."))
+	// (def stop (clojure.core/fn ([q] (-stop q))))
+	v_cljg_DOT_jobs_stop.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_q)), kw_doc, "Stop the workers; no further jobs are processed."))
 	tmp183 := lang.FnFunc1(func(q184 any) any {
 		tmp185 := v_cljg_DOT_jobs_X_stop.Get()
 		tmp186 := lang.Apply1(tmp185, q184)
@@ -549,8 +561,8 @@ func Load() {
 	fnD_cljg_DOT_jobs_stop = tmp187.F
 	v_cljg_DOT_jobs_stop.SealDirect()
 	_ = v_cljg_DOT_jobs_stop
-	// (def errors "The jobs whose handler threw, as [{:job … :error …} …]." (clojure.core/…
-	v_cljg_DOT_jobs_errors.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(87), kw_column, int64(7), kw_end_line, int64(87), kw_end_column, int64(13), kw_doc, "The jobs whose handler threw, as [{:job … :error …} …]."))
+	// (def errors (clojure.core/fn ([q] (-errors q))))
+	v_cljg_DOT_jobs_errors.SetMeta(lang.NewMap(kw_file, "cljg/jobs.cljg", kw_line, int64(87), kw_column, int64(7), kw_end_line, int64(87), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_q)), kw_doc, "The jobs whose handler threw, as [{:job … :error …} …]."))
 	tmp188 := lang.FnFunc1(func(q189 any) any {
 		tmp190 := v_cljg_DOT_jobs_X_errors.Get()
 		tmp191 := lang.Apply1(tmp190, q189)

@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                                = lang.InternKeywordString("arglists")
 	kw_as                                      = lang.InternKeywordString("as")
 	kw_column                                  = lang.InternKeywordString("column")
 	kw_doc                                     = lang.InternKeywordString("doc")
@@ -19,6 +20,9 @@ var (
 	kw_string_                                 = lang.InternKeywordString("string")
 	sym_cljg_DOT_compress                      = lang.NewSymbol("cljg.compress")
 	sym_clojure_DOT_core                       = lang.NewSymbol("clojure.core")
+	sym_data                                   = lang.NewSymbol("data")
+	sym_opts                                   = lang.NewSymbol("opts")
+	sym_source                                 = lang.NewSymbol("source")
 	v_cljg_DOT_compress_X_compress             = lang.InternVarName(lang.NewSymbol("cljg.compress"), lang.NewSymbol("-compress")).SetPrivate()
 	v_cljg_DOT_compress_X_decompress           = lang.InternVarName(lang.NewSymbol("cljg.compress"), lang.NewSymbol("-decompress")).SetPrivate()
 	v_cljg_DOT_compress_X_decompress_stream    = lang.InternVarName(lang.NewSymbol("cljg.compress"), lang.NewSymbol("-decompress-stream")).SetPrivate()
@@ -61,8 +65,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def gzip "Compress `data` (a string or byte-array) with gzip, returning the compressed\n …
-	v_cljg_DOT_compress_gzip.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(11), kw_doc, "Compress `data` (a string or byte-array) with gzip, returning the compressed\n  byte-array. `opts` may carry :level — -1 (default balance) or 0 (store)\n  through 9 (best compression). Note: gzip headers embed an OS byte, so the\n  compressed bytes are not identical across platforms — compare round-trips,\n  not raw compressed output."))
+	// (def gzip (clojure.core/fn ([data] (gzip data nil)) ([data opts] (-compress "gzip" data (g…
+	v_cljg_DOT_compress_gzip.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_data), lang.NewVector(sym_data, sym_opts)), kw_doc, "Compress `data` (a string or byte-array) with gzip, returning the compressed\n  byte-array. `opts` may carry :level — -1 (default balance) or 0 (store)\n  through 9 (best compression). Note: gzip headers embed an OS byte, so the\n  compressed bytes are not identical across platforms — compare round-trips,\n  not raw compressed output."))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -87,8 +91,8 @@ func Load() {
 	})
 	v_cljg_DOT_compress_gzip.BindRoot(tmp5)
 	_ = v_cljg_DOT_compress_gzip
-	// (def gunzip "Decompress gzip-compressed `data` (a byte-array), returning the original\n  b…
-	v_cljg_DOT_compress_gunzip.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(13), kw_doc, "Decompress gzip-compressed `data` (a byte-array), returning the original\n  bytes as a byte-array — or as a string with {:as :string} (use it when the\n  original was text)."))
+	// (def gunzip (clojure.core/fn ([data] (gunzip data nil)) ([data opts] (-decompress "gzip" d…
+	v_cljg_DOT_compress_gunzip.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_data), lang.NewVector(sym_data, sym_opts)), kw_doc, "Decompress gzip-compressed `data` (a byte-array), returning the original\n  bytes as a byte-array — or as a string with {:as :string} (use it when the\n  original was text)."))
 	tmp15 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -114,8 +118,8 @@ func Load() {
 	})
 	v_cljg_DOT_compress_gunzip.BindRoot(tmp15)
 	_ = v_cljg_DOT_compress_gunzip
-	// (def gunzip-stream "Wrap a source of gzip-compressed data — a cljg.stream readable or a\…
-	v_cljg_DOT_compress_gunzip_stream.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(20), kw_doc, "Wrap a source of gzip-compressed data — a cljg.stream readable or a\n  byte-array — as a new readable stream that yields the DECOMPRESSED bytes on\n  demand (constant memory; cljg.stream/read-all, lines, reduce all apply).\n  Closing the returned stream closes the wrapped source."))
+	// (def gunzip-stream (clojure.core/fn ([source] (-decompress-stream "gzip" source))))
+	v_cljg_DOT_compress_gunzip_stream.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_source)), kw_doc, "Wrap a source of gzip-compressed data — a cljg.stream readable or a\n  byte-array — as a new readable stream that yields the DECOMPRESSED bytes on\n  demand (constant memory; cljg.stream/read-all, lines, reduce all apply).\n  Closing the returned stream closes the wrapped source."))
 	tmp26 := lang.FnFunc1(func(source27 any) any {
 		tmp28 := v_cljg_DOT_compress_X_decompress_stream.Get()
 		tmp29 := lang.Apply2(tmp28, "gzip", source27)
@@ -126,8 +130,8 @@ func Load() {
 	fnD_cljg_DOT_compress_gunzip_stream = tmp30.F
 	v_cljg_DOT_compress_gunzip_stream.SealDirect()
 	_ = v_cljg_DOT_compress_gunzip_stream
-	// (def deflate "Compress `data` (a string or byte-array) with raw deflate (RFC 1951 — no\n…
-	v_cljg_DOT_compress_deflate.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(66), kw_column, int64(7), kw_end_line, int64(66), kw_end_column, int64(14), kw_doc, "Compress `data` (a string or byte-array) with raw deflate (RFC 1951 — no\n  header, no checksum), returning the compressed byte-array. `opts` may carry\n  :level (-1 default, 0-9)."))
+	// (def deflate (clojure.core/fn ([data] (deflate data nil)) ([data opts] (-compress "deflate…
+	v_cljg_DOT_compress_deflate.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(66), kw_column, int64(7), kw_end_line, int64(66), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_data), lang.NewVector(sym_data, sym_opts)), kw_doc, "Compress `data` (a string or byte-array) with raw deflate (RFC 1951 — no\n  header, no checksum), returning the compressed byte-array. `opts` may carry\n  :level (-1 default, 0-9)."))
 	tmp31 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -152,8 +156,8 @@ func Load() {
 	})
 	v_cljg_DOT_compress_deflate.BindRoot(tmp31)
 	_ = v_cljg_DOT_compress_deflate
-	// (def inflate "Decompress raw-deflate `data` (a byte-array), returning the original bytes\n…
-	v_cljg_DOT_compress_inflate.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(73), kw_column, int64(7), kw_end_line, int64(73), kw_end_column, int64(14), kw_doc, "Decompress raw-deflate `data` (a byte-array), returning the original bytes\n  as a byte-array — or as a string with {:as :string}."))
+	// (def inflate (clojure.core/fn ([data] (inflate data nil)) ([data opts] (-decompress "defla…
+	v_cljg_DOT_compress_inflate.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(73), kw_column, int64(7), kw_end_line, int64(73), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_data), lang.NewVector(sym_data, sym_opts)), kw_doc, "Decompress raw-deflate `data` (a byte-array), returning the original bytes\n  as a byte-array — or as a string with {:as :string}."))
 	tmp41 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -179,8 +183,8 @@ func Load() {
 	})
 	v_cljg_DOT_compress_inflate.BindRoot(tmp41)
 	_ = v_cljg_DOT_compress_inflate
-	// (def inflate-stream "Wrap a source of raw-deflate data — a cljg.stream readable or a byt…
-	v_cljg_DOT_compress_inflate_stream.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(21), kw_doc, "Wrap a source of raw-deflate data — a cljg.stream readable or a byte-array —\n  as a new readable stream yielding the decompressed bytes on demand. Closing\n  the returned stream closes the wrapped source."))
+	// (def inflate-stream (clojure.core/fn ([source] (-decompress-stream "deflate" source))))
+	v_cljg_DOT_compress_inflate_stream.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(sym_source)), kw_doc, "Wrap a source of raw-deflate data — a cljg.stream readable or a byte-array —\n  as a new readable stream yielding the decompressed bytes on demand. Closing\n  the returned stream closes the wrapped source."))
 	tmp52 := lang.FnFunc1(func(source53 any) any {
 		tmp54 := v_cljg_DOT_compress_X_decompress_stream.Get()
 		tmp55 := lang.Apply2(tmp54, "deflate", source53)
@@ -191,8 +195,8 @@ func Load() {
 	fnD_cljg_DOT_compress_inflate_stream = tmp56.F
 	v_cljg_DOT_compress_inflate_stream.SealDirect()
 	_ = v_cljg_DOT_compress_inflate_stream
-	// (def zlib-compress "Compress `data` (a string or byte-array) with zlib (RFC 1950 — defla…
-	v_cljg_DOT_compress_zlib_compress.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(20), kw_doc, "Compress `data` (a string or byte-array) with zlib (RFC 1950 — deflate with\n  a 2-byte header and Adler-32 checksum), returning the compressed byte-array.\n  `opts` may carry :level (-1 default, 0-9)."))
+	// (def zlib-compress (clojure.core/fn ([data] (zlib-compress data nil)) ([data opts] (-compr…
+	v_cljg_DOT_compress_zlib_compress.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_data), lang.NewVector(sym_data, sym_opts)), kw_doc, "Compress `data` (a string or byte-array) with zlib (RFC 1950 — deflate with\n  a 2-byte header and Adler-32 checksum), returning the compressed byte-array.\n  `opts` may carry :level (-1 default, 0-9)."))
 	tmp57 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -217,8 +221,8 @@ func Load() {
 	})
 	v_cljg_DOT_compress_zlib_compress.BindRoot(tmp57)
 	_ = v_cljg_DOT_compress_zlib_compress
-	// (def zlib-decompress "Decompress zlib-compressed `data` (a byte-array), returning the orig…
-	v_cljg_DOT_compress_zlib_decompress.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(95), kw_column, int64(7), kw_end_line, int64(95), kw_end_column, int64(22), kw_doc, "Decompress zlib-compressed `data` (a byte-array), returning the original\n  bytes as a byte-array — or as a string with {:as :string}."))
+	// (def zlib-decompress (clojure.core/fn ([data] (zlib-decompress data nil)) ([data opts] (-d…
+	v_cljg_DOT_compress_zlib_decompress.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(95), kw_column, int64(7), kw_end_line, int64(95), kw_end_column, int64(22), kw_arglists, lang.NewList(lang.NewVector(sym_data), lang.NewVector(sym_data, sym_opts)), kw_doc, "Decompress zlib-compressed `data` (a byte-array), returning the original\n  bytes as a byte-array — or as a string with {:as :string}."))
 	tmp67 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -244,8 +248,8 @@ func Load() {
 	})
 	v_cljg_DOT_compress_zlib_decompress.BindRoot(tmp67)
 	_ = v_cljg_DOT_compress_zlib_decompress
-	// (def zlib-decompress-stream "Wrap a source of zlib-compressed data — a cljg.stream reada…
-	v_cljg_DOT_compress_zlib_decompress_stream.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(101), kw_column, int64(7), kw_end_line, int64(101), kw_end_column, int64(29), kw_doc, "Wrap a source of zlib-compressed data — a cljg.stream readable or a\n  byte-array — as a new readable stream yielding the decompressed bytes on\n  demand. Closing the returned stream closes the wrapped source."))
+	// (def zlib-decompress-stream (clojure.core/fn ([source] (-decompress-stream "zlib" source))…
+	v_cljg_DOT_compress_zlib_decompress_stream.SetMeta(lang.NewMap(kw_file, "cljg/compress.cljg", kw_line, int64(101), kw_column, int64(7), kw_end_line, int64(101), kw_end_column, int64(29), kw_arglists, lang.NewList(lang.NewVector(sym_source)), kw_doc, "Wrap a source of zlib-compressed data — a cljg.stream readable or a\n  byte-array — as a new readable stream yielding the decompressed bytes on\n  demand. Closing the returned stream closes the wrapped source."))
 	tmp78 := lang.FnFunc1(func(source79 any) any {
 		tmp80 := v_cljg_DOT_compress_X_decompress_stream.Get()
 		tmp81 := lang.Apply2(tmp80, "zlib", source79)

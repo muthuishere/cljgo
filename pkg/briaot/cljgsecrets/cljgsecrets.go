@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                          = lang.InternKeywordString("arglists")
 	kw_as                                = lang.InternKeywordString("as")
 	kw_bri_SLASH_error                   = lang.InternKeywordString("bri/error")
 	kw_cljg_DOT_secrets_SLASH_bad_arg    = lang.InternKeywordString("cljg.secrets/bad-arg")
@@ -27,12 +28,26 @@ var (
 	kw_private                           = lang.InternKeywordString("private")
 	kw_service                           = lang.InternKeywordString("service")
 	kw_value                             = lang.InternKeywordString("value")
+	sym_account                          = lang.NewSymbol("account")
 	sym_cljg_DOT_secrets                 = lang.NewSymbol("cljg.secrets")
 	sym_clojure_DOT_core                 = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string               = lang.NewSymbol("clojure.string")
 	sym_get                              = lang.NewSymbol("get")
+	sym_key                              = lang.NewSymbol("key")
+	sym_name                             = lang.NewSymbol("name")
+	sym_name_or_key                      = lang.NewSymbol("name-or-key")
+	sym_raw                              = lang.NewSymbol("raw")
+	sym_s                                = lang.NewSymbol("s")
+	sym_service                          = lang.NewSymbol("service")
+	sym_service_or_uri                   = lang.NewSymbol("service-or-uri")
 	sym_set                              = lang.NewSymbol("set")
+	sym_spec                             = lang.NewSymbol("spec")
 	sym_str                              = lang.NewSymbol("str")
+	sym_uri                              = lang.NewSymbol("uri")
+	sym_uris                             = lang.NewSymbol("uris")
+	sym_v                                = lang.NewSymbol("v")
+	sym_value                            = lang.NewSymbol("value")
+	sym_x                                = lang.NewSymbol("x")
 	v_cljg_DOT_secrets_X_keychain_del    = lang.InternVarName(lang.NewSymbol("cljg.secrets"), lang.NewSymbol("-keychain-del")).SetPrivate()
 	v_cljg_DOT_secrets_X_keychain_get    = lang.InternVarName(lang.NewSymbol("cljg.secrets"), lang.NewSymbol("-keychain-get")).SetPrivate()
 	v_cljg_DOT_secrets_X_keychain_set    = lang.InternVarName(lang.NewSymbol("cljg.secrets"), lang.NewSymbol("-keychain-set")).SetPrivate()
@@ -103,8 +118,8 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (def mask "Render a value safe for any surface: never the plaintext. `len=N ***…xy`\n  k…
-	v_cljg_DOT_secrets_mask.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(42), kw_column, int64(8), kw_end_line, int64(42), kw_end_column, int64(12), kw_private, true, kw_doc, "Render a value safe for any surface: never the plaintext. `len=N ***…xy`\n  keeps only the last 2 chars as a disambiguator; tiny values leak neither."))
+	// (def mask (clojure.core/fn ([v] (let [n (count v)] (cond (zero? n) "***(empty)" (< n 4) (s…
+	v_cljg_DOT_secrets_mask.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(42), kw_column, int64(8), kw_end_line, int64(42), kw_end_column, int64(12), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_v)), kw_doc, "Render a value safe for any surface: never the plaintext. `len=N ***…xy`\n  keeps only the last 2 chars as a disambiguator; tiny values leak neither."))
 	tmp7 := lang.FnFunc1(func(v8 any) any {
 		var tmp9 any
 		_ = tmp9
@@ -153,8 +168,8 @@ func Load() {
 	fnD_cljg_DOT_secrets_mask = tmp26.F
 	v_cljg_DOT_secrets_mask.SealDirect()
 	_ = v_cljg_DOT_secrets_mask
-	// (def secret "Wrap a raw string as a masked secret: the map prints as its mask only, the\n …
-	v_cljg_DOT_secrets_secret.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(13), kw_doc, "Wrap a raw string as a masked secret: the map prints as its mask only, the\n  plaintext lives in metadata (pr/println don't print metadata)."))
+	// (def secret (clojure.core/fn ([raw] (with-meta {:cljg.secrets/secret true, :masked (mask r…
+	v_cljg_DOT_secrets_secret.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_raw)), kw_doc, "Wrap a raw string as a masked secret: the map prints as its mask only, the\n  plaintext lives in metadata (pr/println don't print metadata)."))
 	tmp27 := lang.FnFunc1(func(raw28 any) any {
 		tmp29 := v_clojure_DOT_core_with_meta.Get()
 		tmp30 := v_cljg_DOT_secrets_mask.Direct()
@@ -178,8 +193,8 @@ func Load() {
 	fnD_cljg_DOT_secrets_secret = tmp36.F
 	v_cljg_DOT_secrets_secret.SealDirect()
 	_ = v_cljg_DOT_secrets_secret
-	// (def secret? "Is x a masked secret object?" (clojure.core/fn [x] (boolean (and (map? x) (:…
-	v_cljg_DOT_secrets_secret_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(59), kw_column, int64(7), kw_end_line, int64(59), kw_end_column, int64(14), kw_doc, "Is x a masked secret object?"))
+	// (def secret? (clojure.core/fn ([x] (boolean (and (map? x) (:cljg.secrets/secret x))))))
+	v_cljg_DOT_secrets_secret_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(59), kw_column, int64(7), kw_end_line, int64(59), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Is x a masked secret object?"))
 	tmp37 := lang.FnFunc1(func(x38 any) any {
 		tmp39 := v_clojure_DOT_core_boolean.Get()
 		var tmp40 any
@@ -207,8 +222,8 @@ func Load() {
 	fnD_cljg_DOT_secrets_secret_QMARK_ = tmp47.F
 	v_cljg_DOT_secrets_secret_QMARK_.SealDirect()
 	_ = v_cljg_DOT_secrets_secret_QMARK_
-	// (def reveal "Return a secret's plaintext — THE explicit, auditable unmask seam. Grep for…
-	v_cljg_DOT_secrets_reveal.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(13), kw_doc, "Return a secret's plaintext — THE explicit, auditable unmask seam. Grep for\n  `reveal` to find every place a value is unwrapped. A bare string passes\n  through, so callers can `(reveal maybe-secret)` uniformly."))
+	// (def reveal (clojure.core/fn ([s] (if (secret? s) (:cljg.secrets/raw (meta s)) s))))
+	v_cljg_DOT_secrets_reveal.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Return a secret's plaintext — THE explicit, auditable unmask seam. Grep for\n  `reveal` to find every place a value is unwrapped. A bare string passes\n  through, so callers can `(reveal maybe-secret)` uniformly."))
 	tmp48 := lang.FnFunc1(func(s49 any) any {
 		tmp50 := v_cljg_DOT_secrets_secret_QMARK_.Direct()
 		var tmp51 any
@@ -238,8 +253,8 @@ func Load() {
 	fnD_cljg_DOT_secrets_reveal = tmp57.F
 	v_cljg_DOT_secrets_reveal.SealDirect()
 	_ = v_cljg_DOT_secrets_reveal
-	// (def uri-string? (clojure.core/fn [x] (and (string? x) (str/includes? x "://"))))
-	v_cljg_DOT_secrets_uri_string_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(78), kw_column, int64(8), kw_end_line, int64(78), kw_end_column, int64(19), kw_private, true))
+	// (def uri-string? (clojure.core/fn ([x] (and (string? x) (str/includes? x "://")))))
+	v_cljg_DOT_secrets_uri_string_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(78), kw_column, int64(8), kw_end_line, int64(78), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x))))
 	tmp58 := lang.FnFunc1(func(x59 any) any {
 		var tmp60 any
 		_ = tmp60
@@ -266,8 +281,8 @@ func Load() {
 	fnD_cljg_DOT_secrets_uri_string_QMARK_ = tmp67.F
 	v_cljg_DOT_secrets_uri_string_QMARK_.SealDirect()
 	_ = v_cljg_DOT_secrets_uri_string_QMARK_
-	// (def kc-get (clojure.core/fn [service account] (when-let [raw (-keychain-get (str service)…
-	v_cljg_DOT_secrets_kc_get.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(80), kw_column, int64(8), kw_end_line, int64(80), kw_end_column, int64(14), kw_private, true))
+	// (def kc-get (clojure.core/fn ([service account] (when-let [raw (-keychain-get (str service…
+	v_cljg_DOT_secrets_kc_get.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(80), kw_column, int64(8), kw_end_line, int64(80), kw_end_column, int64(14), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_service, sym_account))))
 	tmp68 := lang.FnFunc2(func(service69, account70 any) any {
 		var tmp71 any
 		_ = tmp71
@@ -314,8 +329,8 @@ func Load() {
 	fnD_cljg_DOT_secrets_kc_get = tmp85.F
 	v_cljg_DOT_secrets_kc_get.SealDirect()
 	_ = v_cljg_DOT_secrets_kc_get
-	// (def chain-get (clojure.core/fn [uris key] (loop [us uris] (when-let [u (first us)] (if-le…
-	v_cljg_DOT_secrets_chain_get.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(84), kw_column, int64(8), kw_end_line, int64(84), kw_end_column, int64(17), kw_private, true))
+	// (def chain-get (clojure.core/fn ([uris key] (loop [us uris] (when-let [u (first us)] (if-l…
+	v_cljg_DOT_secrets_chain_get.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(84), kw_column, int64(8), kw_end_line, int64(84), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_uris, sym_key))))
 	tmp86 := lang.FnFunc2(func(uris87, key88 any) any {
 		var tmp89 any
 		_ = tmp89
@@ -410,8 +425,8 @@ func Load() {
 	fnD_cljg_DOT_secrets_chain_get = tmp115.F
 	v_cljg_DOT_secrets_chain_get.SealDirect()
 	_ = v_cljg_DOT_secrets_chain_get
-	// (def get "Fetch a secret; MASKED (use `reveal` for the plaintext), or nil if absent.\n\n  …
-	v_cljg_DOT_secrets_get.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(91), kw_column, int64(7), kw_end_line, int64(91), kw_end_column, int64(10), kw_doc, "Fetch a secret; MASKED (use `reveal` for the plaintext), or nil if absent.\n\n  Bun.secrets front door (the OS keychain — Keychain / Secret Service /\n  Credential Manager):\n    (get \"my-app\" \"api-key\")\n    (get {:service \"my-app\" :name \"api-key\"})\n\n  Advanced (scheme URIs): a single URI, or a vector tried left→right (first hit\n  wins; a real backend failure aborts, never falling through to a weaker\n  source):\n    (get \"env://DATABASE_URL\")\n    (get [\"keychain://my-app/db\" \"env://DATABASE_URL\"])"))
+	// (def get (clojure.core/fn ([spec] (cond (map? spec) (kc-get (:service spec) (:name spec)) …
+	v_cljg_DOT_secrets_get.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(91), kw_column, int64(7), kw_end_line, int64(91), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_spec), lang.NewVector(sym_service_or_uri, sym_name_or_key)), kw_doc, "Fetch a secret; MASKED (use `reveal` for the plaintext), or nil if absent.\n\n  Bun.secrets front door (the OS keychain — Keychain / Secret Service /\n  Credential Manager):\n    (get \"my-app\" \"api-key\")\n    (get {:service \"my-app\" :name \"api-key\"})\n\n  Advanced (scheme URIs): a single URI, or a vector tried left→right (first hit\n  wins; a real backend failure aborts, never falling through to a weaker\n  source):\n    (get \"env://DATABASE_URL\")\n    (get [\"keychain://my-app/db\" \"env://DATABASE_URL\"])"))
 	tmp116 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -569,8 +584,8 @@ func Load() {
 	})
 	v_cljg_DOT_secrets_get.BindRoot(tmp116)
 	_ = v_cljg_DOT_secrets_get
-	// (def set "Store a secret. `value` may be a raw string or a secret (revealed at the\n  boun…
-	v_cljg_DOT_secrets_set.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(116), kw_column, int64(7), kw_end_line, int64(116), kw_end_column, int64(10), kw_doc, "Store a secret. `value` may be a raw string or a secret (revealed at the\n  boundary). Returns nil.\n\n  Bun.secrets front door (writes the OS keychain):\n    (set \"my-app\" \"api-key\" \"sk-live-…\")\n    (set {:service \"my-app\" :name \"api-key\" :value \"sk-live-…\"})\n\n  Advanced: (set \"keychain://svc/acct\" value) — env:// is read-only."))
+	// (def set (clojure.core/fn ([spec] (if (map? spec) (do (-keychain-set (str (:service spec))…
+	v_cljg_DOT_secrets_set.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(116), kw_column, int64(7), kw_end_line, int64(116), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_spec), lang.NewVector(sym_uri, sym_value), lang.NewVector(sym_service_or_uri, sym_name, sym_value)), kw_doc, "Store a secret. `value` may be a raw string or a secret (revealed at the\n  boundary). Returns nil.\n\n  Bun.secrets front door (writes the OS keychain):\n    (set \"my-app\" \"api-key\" \"sk-live-…\")\n    (set {:service \"my-app\" :name \"api-key\" :value \"sk-live-…\"})\n\n  Advanced: (set \"keychain://svc/acct\" value) — env:// is read-only."))
 	tmp162 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -707,8 +722,8 @@ func Load() {
 	})
 	v_cljg_DOT_secrets_set.BindRoot(tmp162)
 	_ = v_cljg_DOT_secrets_set
-	// (def delete "Remove a secret. Deleting an absent key is a no-op. Returns nil.\n\n  Bun.sec…
-	v_cljg_DOT_secrets_delete_.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(138), kw_column, int64(7), kw_end_line, int64(138), kw_end_column, int64(13), kw_doc, "Remove a secret. Deleting an absent key is a no-op. Returns nil.\n\n  Bun.secrets front door: (delete \"my-app\" \"api-key\") or\n  (delete {:service \"my-app\" :name \"api-key\"}).\n  Advanced: (delete \"keychain://svc/acct\")."))
+	// (def delete (clojure.core/fn ([spec] (cond (map? spec) (-keychain-del (str (:service spec)…
+	v_cljg_DOT_secrets_delete_.SetMeta(lang.NewMap(kw_file, "cljg/secrets.cljg", kw_line, int64(138), kw_column, int64(7), kw_end_line, int64(138), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_spec), lang.NewVector(sym_service_or_uri, sym_name)), kw_doc, "Remove a secret. Deleting an absent key is a no-op. Returns nil.\n\n  Bun.secrets front door: (delete \"my-app\" \"api-key\") or\n  (delete {:service \"my-app\" :name \"api-key\"}).\n  Advanced: (delete \"keychain://svc/acct\")."))
 	tmp213 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:

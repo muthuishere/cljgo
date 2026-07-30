@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                         = lang.InternKeywordString("arglists")
 	kw_column                           = lang.InternKeywordString("column")
 	kw_doc                              = lang.InternKeywordString("doc")
 	kw_end_column                       = lang.InternKeywordString("end-column")
@@ -15,8 +16,24 @@ var (
 	kw_file                             = lang.InternKeywordString("file")
 	kw_line                             = lang.InternKeywordString("line")
 	kw_private                          = lang.InternKeywordString("private")
+	sym_X_AMP_                          = lang.NewSymbol("&")
 	sym_clojure_DOT_core                = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_set                 = lang.NewSymbol("clojure.set")
+	sym_coll                            = lang.NewSymbol("coll")
+	sym_k                               = lang.NewSymbol("k")
+	sym_km                              = lang.NewSymbol("km")
+	sym_kmap                            = lang.NewSymbol("kmap")
+	sym_ks                              = lang.NewSymbol("ks")
+	sym_m                               = lang.NewSymbol("m")
+	sym_pred                            = lang.NewSymbol("pred")
+	sym_s1                              = lang.NewSymbol("s1")
+	sym_s2                              = lang.NewSymbol("s2")
+	sym_set1                            = lang.NewSymbol("set1")
+	sym_set2                            = lang.NewSymbol("set2")
+	sym_sets                            = lang.NewSymbol("sets")
+	sym_xrel                            = lang.NewSymbol("xrel")
+	sym_xset                            = lang.NewSymbol("xset")
+	sym_yrel                            = lang.NewSymbol("yrel")
 	v_clojure_DOT_core_X_               = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
 	v_clojure_DOT_core_X_GT__EQ_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol(">="))
 	v_clojure_DOT_core_X_LT_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("<"))
@@ -99,8 +116,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def -bubble-max-key "Move a maximal element of coll according to fn k (which returns a\n …
-	v_clojure_DOT_set_X_bubble_max_key.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(18), kw_column, int64(7), kw_end_line, int64(18), kw_end_column, int64(32), kw_private, true, kw_doc, "Move a maximal element of coll according to fn k (which returns a\n  number) to the front of coll."))
+	// (def -bubble-max-key (clojure.core/fn ([k coll] (let [mx (apply max-key k coll)] (cons mx …
+	v_clojure_DOT_set_X_bubble_max_key.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(18), kw_column, int64(7), kw_end_line, int64(18), kw_end_column, int64(32), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_k, sym_coll)), kw_doc, "Move a maximal element of coll according to fn k (which returns a\n  number) to the front of coll."))
 	tmp5 := lang.FnFunc2(func(k6, coll7 any) any {
 		var tmp8 any
 		_ = tmp8
@@ -130,7 +147,7 @@ func Load() {
 	v_clojure_DOT_set_X_bubble_max_key.SealDirect()
 	_ = v_clojure_DOT_set_X_bubble_max_key
 	// (def union (clojure.core/fn ([] #{}) ([s1] s1) ([s1 s2] (if (< (count s1) (count s2)) (red…
-	v_clojure_DOT_set_union.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(12)))
+	v_clojure_DOT_set_union.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_s1), lang.NewVector(sym_s1, sym_s2), lang.NewVector(sym_s1, sym_s2, sym_X_AMP_, sym_sets))))
 	tmp23 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -211,7 +228,7 @@ func Load() {
 	v_clojure_DOT_set_union.BindRoot(tmp23)
 	_ = v_clojure_DOT_set_union
 	// (def intersection (clojure.core/fn ([s1] s1) ([s1 s2] (if (< (count s2) (count s1)) (inter…
-	v_clojure_DOT_set_intersection.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(19)))
+	v_clojure_DOT_set_intersection.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_s1), lang.NewVector(sym_s1, sym_s2), lang.NewVector(sym_s1, sym_s2, sym_X_AMP_, sym_sets))))
 	tmp58 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -309,7 +326,7 @@ func Load() {
 	v_clojure_DOT_set_intersection.BindRoot(tmp58)
 	_ = v_clojure_DOT_set_intersection
 	// (def difference (clojure.core/fn ([s1] s1) ([s1 s2] (if (< (count s1) (count s2)) (reduce …
-	v_clojure_DOT_set_difference.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(17)))
+	v_clojure_DOT_set_difference.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_s1), lang.NewVector(sym_s1, sym_s2), lang.NewVector(sym_s1, sym_s2, sym_X_AMP_, sym_sets))))
 	tmp105 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -377,8 +394,8 @@ func Load() {
 	})
 	v_clojure_DOT_set_difference.BindRoot(tmp105)
 	_ = v_clojure_DOT_set_difference
-	// (def select (clojure.core/fn [pred xset] (reduce (fn [s k] (if (pred k) s (disj s k))) xse…
-	v_clojure_DOT_set_select_.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(67), kw_column, int64(7), kw_end_line, int64(67), kw_end_column, int64(13)))
+	// (def select (clojure.core/fn ([pred xset] (reduce (fn [s k] (if (pred k) s (disj s k))) xs…
+	v_clojure_DOT_set_select_.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(67), kw_column, int64(7), kw_end_line, int64(67), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_pred, sym_xset))))
 	tmp137 := lang.FnFunc2(func(pred138, xset139 any) any {
 		tmp140 := v_clojure_DOT_core_reduce.Get()
 		tmp141 := lang.FnFunc2(func(s142, k143 any) any {
@@ -403,8 +420,8 @@ func Load() {
 	fnD_clojure_DOT_set_select_ = tmp150.F
 	v_clojure_DOT_set_select_.SealDirect()
 	_ = v_clojure_DOT_set_select_
-	// (def project (clojure.core/fn [xrel ks] (with-meta (set (map (fn* [p1__24#] (select-keys p…
-	v_clojure_DOT_set_project.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(14)))
+	// (def project (clojure.core/fn ([xrel ks] (with-meta (set (map (fn* [p1__24#] (select-keys …
+	v_clojure_DOT_set_project.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_xrel, sym_ks))))
 	tmp151 := lang.FnFunc2(func(xrel152, ks153 any) any {
 		tmp154 := v_clojure_DOT_core_with_meta.Get()
 		tmp155 := v_clojure_DOT_core_set.Get()
@@ -427,8 +444,8 @@ func Load() {
 	fnD_clojure_DOT_set_project = tmp167.F
 	v_clojure_DOT_set_project.SealDirect()
 	_ = v_clojure_DOT_set_project
-	// (def rename-keys (clojure.core/fn [m kmap] (reduce (fn [acc [old newk]] (if (contains? m o…
-	v_clojure_DOT_set_rename_keys.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(18)))
+	// (def rename-keys (clojure.core/fn ([m kmap] (reduce (fn [acc [old newk]] (if (contains? m …
+	v_clojure_DOT_set_rename_keys.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_m, sym_kmap))))
 	tmp168 := lang.FnFunc2(func(m169, kmap170 any) any {
 		tmp171 := v_clojure_DOT_core_reduce.Get()
 		tmp172 := lang.FnFunc2(func(acc173, p__38174 any) any {
@@ -476,8 +493,8 @@ func Load() {
 	fnD_clojure_DOT_set_rename_keys = tmp197.F
 	v_clojure_DOT_set_rename_keys.SealDirect()
 	_ = v_clojure_DOT_set_rename_keys
-	// (def rename (clojure.core/fn [xrel kmap] (with-meta (set (map (fn* [p1__25#] (rename-keys …
-	v_clojure_DOT_set_rename.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(13)))
+	// (def rename (clojure.core/fn ([xrel kmap] (with-meta (set (map (fn* [p1__25#] (rename-keys…
+	v_clojure_DOT_set_rename.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_xrel, sym_kmap))))
 	tmp198 := lang.FnFunc2(func(xrel199, kmap200 any) any {
 		tmp201 := v_clojure_DOT_core_with_meta.Get()
 		tmp202 := v_clojure_DOT_core_set.Get()
@@ -509,8 +526,8 @@ func Load() {
 	fnD_clojure_DOT_set_rename = tmp215.F
 	v_clojure_DOT_set_rename.SealDirect()
 	_ = v_clojure_DOT_set_rename
-	// (def index (clojure.core/fn [xrel ks] (reduce (fn [m x] (let [ik (select-keys x ks)] (asso…
-	v_clojure_DOT_set_index.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(12)))
+	// (def index (clojure.core/fn ([xrel ks] (reduce (fn [m x] (let [ik (select-keys x ks)] (ass…
+	v_clojure_DOT_set_index.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_xrel, sym_ks))))
 	tmp216 := lang.FnFunc2(func(xrel217, ks218 any) any {
 		tmp219 := v_clojure_DOT_core_reduce.Get()
 		tmp220 := lang.FnFunc2(func(m221, x222 any) any {
@@ -542,8 +559,8 @@ func Load() {
 	fnD_clojure_DOT_set_index = tmp237.F
 	v_clojure_DOT_set_index.SealDirect()
 	_ = v_clojure_DOT_set_index
-	// (def map-invert (clojure.core/fn [m] (persistent! (reduce-kv (fn [acc k v] (assoc! acc v k…
-	v_clojure_DOT_set_map_invert.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(17)))
+	// (def map-invert (clojure.core/fn ([m] (persistent! (reduce-kv (fn [acc k v] (assoc! acc v …
+	v_clojure_DOT_set_map_invert.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_m))))
 	tmp238 := lang.FnFunc1(func(m239 any) any {
 		tmp240 := v_clojure_DOT_core_persistent_BANG_.Get()
 		tmp241 := v_clojure_DOT_core_reduce_kv.Get()
@@ -566,7 +583,7 @@ func Load() {
 	v_clojure_DOT_set_map_invert.SealDirect()
 	_ = v_clojure_DOT_set_map_invert
 	// (def join (clojure.core/fn ([xrel yrel] (if (and (seq xrel) (seq yrel)) (let [ks (intersec…
-	v_clojure_DOT_set_join.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(104), kw_column, int64(7), kw_end_line, int64(104), kw_end_column, int64(11)))
+	v_clojure_DOT_set_join.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(104), kw_column, int64(7), kw_end_line, int64(104), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_xrel, sym_yrel), lang.NewVector(sym_xrel, sym_yrel, sym_km))))
 	tmp255 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -813,8 +830,8 @@ func Load() {
 	})
 	v_clojure_DOT_set_join.BindRoot(tmp255)
 	_ = v_clojure_DOT_set_join
-	// (def subset? (clojure.core/fn [set1 set2] (and (<= (count set1) (count set2)) (every? (fn*…
-	v_clojure_DOT_set_subset_QMARK_.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(132), kw_column, int64(7), kw_end_line, int64(132), kw_end_column, int64(14)))
+	// (def subset? (clojure.core/fn ([set1 set2] (and (<= (count set1) (count set2)) (every? (fn…
+	v_clojure_DOT_set_subset_QMARK_.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(132), kw_column, int64(7), kw_end_line, int64(132), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_set1, sym_set2))))
 	tmp384 := lang.FnFunc2(func(set1385, set2386 any) any {
 		var tmp387 any
 		_ = tmp387
@@ -850,8 +867,8 @@ func Load() {
 	fnD_clojure_DOT_set_subset_QMARK_ = tmp402.F
 	v_clojure_DOT_set_subset_QMARK_.SealDirect()
 	_ = v_clojure_DOT_set_subset_QMARK_
-	// (def superset? (clojure.core/fn [set1 set2] (and (>= (count set1) (count set2)) (every? (f…
-	v_clojure_DOT_set_superset_QMARK_.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(137), kw_column, int64(7), kw_end_line, int64(137), kw_end_column, int64(16)))
+	// (def superset? (clojure.core/fn ([set1 set2] (and (>= (count set1) (count set2)) (every? (…
+	v_clojure_DOT_set_superset_QMARK_.SetMeta(lang.NewMap(kw_file, "set.cljg", kw_line, int64(137), kw_column, int64(7), kw_end_line, int64(137), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_set1, sym_set2))))
 	tmp403 := lang.FnFunc2(func(set1404, set2405 any) any {
 		var tmp406 any
 		_ = tmp406

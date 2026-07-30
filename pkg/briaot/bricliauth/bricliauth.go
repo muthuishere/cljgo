@@ -9,6 +9,7 @@ import (
 
 var (
 	kw_account                                  = lang.InternKeywordString("account")
+	kw_arglists                                 = lang.InternKeywordString("arglists")
 	kw_as                                       = lang.InternKeywordString("as")
 	kw_bri_DOT_cli_DOT_auth_SLASH_no_credential = lang.InternKeywordString("bri.cli.auth/no-credential")
 	kw_bri_SLASH_error                          = lang.InternKeywordString("bri/error")
@@ -29,7 +30,9 @@ var (
 	sym_cljg_DOT_secrets                        = lang.NewSymbol("cljg.secrets")
 	sym_clojure_DOT_core                        = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                      = lang.NewSymbol("clojure.string")
+	sym_opts                                    = lang.NewSymbol("opts")
 	sym_secrets                                 = lang.NewSymbol("secrets")
+	sym_service                                 = lang.NewSymbol("service")
 	sym_str                                     = lang.NewSymbol("str")
 	v_bri_DOT_cli_DOT_auth_account              = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("account")).SetPrivate()
 	v_bri_DOT_cli_DOT_auth_auth_header          = lang.InternVarName(lang.NewSymbol("bri.cli.auth"), lang.NewSymbol("auth-header"))
@@ -90,8 +93,8 @@ func Load() {
 	v_bri_DOT_cli_DOT_auth_default_account.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(34), kw_column, int64(6), kw_end_line, int64(34), kw_end_column, int64(31), kw_private, true))
 	v_bri_DOT_cli_DOT_auth_default_account.BindRoot("token")
 	_ = v_bri_DOT_cli_DOT_auth_default_account
-	// (def account (clojure.core/fn [opts] (:account opts default-account)))
-	v_bri_DOT_cli_DOT_auth_account.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(36), kw_column, int64(8), kw_end_line, int64(36), kw_end_column, int64(15), kw_private, true))
+	// (def account (clojure.core/fn ([opts] (:account opts default-account))))
+	v_bri_DOT_cli_DOT_auth_account.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(36), kw_column, int64(8), kw_end_line, int64(36), kw_end_column, int64(15), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_opts))))
 	tmp11 := lang.FnFunc1(func(opts12 any) any {
 		tmp13 := v_bri_DOT_cli_DOT_auth_default_account.Get()
 		tmp14 := lang.Apply2(kw_account, opts12, tmp13)
@@ -102,8 +105,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_auth_account = tmp15.F
 	v_bri_DOT_cli_DOT_auth_account.SealDirect()
 	_ = v_bri_DOT_cli_DOT_auth_account
-	// (def login "Obtain and store a credential for `service` in the OS keychain. With no\n  :ke…
-	v_bri_DOT_cli_DOT_auth_login.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(12), kw_doc, "Obtain and store a credential for `service` in the OS keychain. With no\n  :key, prompts for it with terminal echo off (bri.cli/ask-secret). Returns\n  `service`. opts: :key (skip the prompt), :account (default \"token\"),\n  :label (prompt text). Throws bri.cli.auth/no-credential on an empty value."))
+	// (def login (clojure.core/fn ([service] (login service {})) ([service opts] (let [key (or (…
+	v_bri_DOT_cli_DOT_auth_login.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_service), lang.NewVector(sym_service, sym_opts)), kw_doc, "Obtain and store a credential for `service` in the OS keychain. With no\n  :key, prompts for it with terminal echo off (bri.cli/ask-secret). Returns\n  `service`. opts: :key (skip the prompt), :account (default \"token\"),\n  :label (prompt text). Throws bri.cli.auth/no-credential on an empty value."))
 	tmp16 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -199,8 +202,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_DOT_auth_login.BindRoot(tmp16)
 	_ = v_bri_DOT_cli_DOT_auth_login
-	// (def token "The stored credential for `service` as a MASKED secret (use\n  cljg.secrets/re…
-	v_bri_DOT_cli_DOT_auth_token.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(12), kw_doc, "The stored credential for `service` as a MASKED secret (use\n  cljg.secrets/reveal for the plaintext), or nil if not logged in."))
+	// (def token (clojure.core/fn ([service] (token service {})) ([service opts] (secrets/get se…
+	v_bri_DOT_cli_DOT_auth_token.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_service), lang.NewVector(sym_service, sym_opts)), kw_doc, "The stored credential for `service` as a MASKED secret (use\n  cljg.secrets/reveal for the plaintext), or nil if not logged in."))
 	tmp54 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -235,8 +238,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_DOT_auth_token.BindRoot(tmp54)
 	_ = v_bri_DOT_cli_DOT_auth_token
-	// (def authed? "Is there a stored credential for `service`?" (clojure.core/fn ([service] (au…
-	v_bri_DOT_cli_DOT_auth_authed_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(59), kw_column, int64(7), kw_end_line, int64(59), kw_end_column, int64(14), kw_doc, "Is there a stored credential for `service`?"))
+	// (def authed? (clojure.core/fn ([service] (authed? service {})) ([service opts] (boolean (t…
+	v_bri_DOT_cli_DOT_auth_authed_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(59), kw_column, int64(7), kw_end_line, int64(59), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_service), lang.NewVector(sym_service, sym_opts)), kw_doc, "Is there a stored credential for `service`?"))
 	tmp66 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -262,8 +265,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_DOT_auth_authed_QMARK_.BindRoot(tmp66)
 	_ = v_bri_DOT_cli_DOT_auth_authed_QMARK_
-	// (def logout "Remove the stored credential for `service`. Returns `service`." (clojure.core…
-	v_bri_DOT_cli_DOT_auth_logout.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(13), kw_doc, "Remove the stored credential for `service`. Returns `service`."))
+	// (def logout (clojure.core/fn ([service] (logout service {})) ([service opts] (secrets/dele…
+	v_bri_DOT_cli_DOT_auth_logout.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_service), lang.NewVector(sym_service, sym_opts)), kw_doc, "Remove the stored credential for `service`. Returns `service`."))
 	tmp77 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -299,8 +302,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_DOT_auth_logout.BindRoot(tmp77)
 	_ = v_bri_DOT_cli_DOT_auth_logout
-	// (def auth-header "Build an Authorization header map from the stored credential, or nil if …
-	v_bri_DOT_cli_DOT_auth_auth_header.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(69), kw_column, int64(7), kw_end_line, int64(69), kw_end_column, int64(18), kw_doc, "Build an Authorization header map from the stored credential, or nil if not\n  logged in. This is an explicit UNMASK point — the plaintext credential enters\n  the returned map so you can attach it to a request. opts: :scheme (default\n  \"Bearer\"; use \"\" for a bare token, e.g. an API-key header value)."))
+	// (def auth-header (clojure.core/fn ([service] (auth-header service {})) ([service opts] (wh…
+	v_bri_DOT_cli_DOT_auth_auth_header.SetMeta(lang.NewMap(kw_file, "bri/cli_auth.cljg", kw_line, int64(69), kw_column, int64(7), kw_end_line, int64(69), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_service), lang.NewVector(sym_service, sym_opts)), kw_doc, "Build an Authorization header map from the stored credential, or nil if not\n  logged in. This is an explicit UNMASK point — the plaintext credential enters\n  the returned map so you can attach it to a request. opts: :scheme (default\n  \"Bearer\"; use \"\" for a bare token, e.g. an API-key header value)."))
 	tmp89 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:

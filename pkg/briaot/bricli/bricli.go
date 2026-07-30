@@ -10,6 +10,7 @@ import (
 
 var (
 	kw_about                                        = lang.InternKeywordString("about")
+	kw_arglists                                     = lang.InternKeywordString("arglists")
 	kw_as                                           = lang.InternKeywordString("as")
 	kw_backspace                                    = lang.InternKeywordString("backspace")
 	kw_bool_                                        = lang.InternKeywordString("bool")
@@ -85,14 +86,54 @@ var (
 	kw_version                                      = lang.InternKeywordString("version")
 	kw_view                                         = lang.InternKeywordString("view")
 	re_376                                          = &reader.Regex{Pattern: ","}
+	sym_X_AMP_                                      = lang.NewSymbol("&")
+	sym_a                                           = lang.NewSymbol("a")
+	sym_app                                         = lang.NewSymbol("app")
+	sym_argv                                        = lang.NewSymbol("argv")
+	sym_b                                           = lang.NewSymbol("b")
+	sym_body                                        = lang.NewSymbol("body")
+	sym_bool_QMARK_                                 = lang.NewSymbol("bool?")
 	sym_bri_DOT_cli                                 = lang.NewSymbol("bri.cli")
 	sym_bri_DOT_cli_SLASH_app                       = lang.NewSymbol("bri.cli/app")
 	sym_bri_DOT_cli_SLASH_command                   = lang.NewSymbol("bri.cli/command")
+	sym_choices                                     = lang.NewSymbol("choices")
 	sym_clojure_DOT_core                            = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_core_SLASH_fn                   = lang.NewSymbol("clojure.core/fn")
 	sym_clojure_DOT_string                          = lang.NewSymbol("clojure.string")
+	sym_cmd                                         = lang.NewSymbol("cmd")
+	sym_cmd_forms                                   = lang.NewSymbol("cmd-forms")
+	sym_cmd_name                                    = lang.NewSymbol("cmd-name")
+	sym_cmds                                        = lang.NewSymbol("cmds")
+	sym_cx                                          = lang.NewSymbol("cx")
 	sym_def                                         = lang.NewSymbol("def")
+	sym_default_                                    = lang.NewSymbol("default")
+	sym_doc                                         = lang.NewSymbol("doc")
+	sym_flags                                       = lang.NewSymbol("flags")
+	sym_handler                                     = lang.NewSymbol("handler")
+	sym_label                                       = lang.NewSymbol("label")
+	sym_line                                        = lang.NewSymbol("line")
+	sym_lines                                       = lang.NewSymbol("lines")
+	sym_meta                                        = lang.NewSymbol("meta")
+	sym_msg                                         = lang.NewSymbol("msg")
+	sym_nm                                          = lang.NewSymbol("nm")
+	sym_opts                                        = lang.NewSymbol("opts")
+	sym_p                                           = lang.NewSymbol("p")
+	sym_params                                      = lang.NewSymbol("params")
+	sym_pos                                         = lang.NewSymbol("pos")
+	sym_pos_atom                                    = lang.NewSymbol("pos-atom")
+	sym_prev                                        = lang.NewSymbol("prev")
+	sym_raw                                         = lang.NewSymbol("raw")
+	sym_read_key                                    = lang.NewSymbol("read-key")
+	sym_s                                           = lang.NewSymbol("s")
 	sym_str                                         = lang.NewSymbol("str")
+	sym_tail                                        = lang.NewSymbol("tail")
+	sym_title                                       = lang.NewSymbol("title")
+	sym_token                                       = lang.NewSymbol("token")
+	sym_v                                           = lang.NewSymbol("v")
+	sym_value                                       = lang.NewSymbol("value")
+	sym_values                                      = lang.NewSymbol("values")
+	sym_widget                                      = lang.NewSymbol("widget")
+	sym_write                                       = lang.NewSymbol("write")
 	v_bri_DOT_cli_X_STAR_prompt_STAR_               = lang.InternVarName(lang.NewSymbol("bri.cli"), lang.NewSymbol("*prompt*")).SetDynamic()
 	v_bri_DOT_cli_X_getenv                          = lang.InternVarName(lang.NewSymbol("bri.cli"), lang.NewSymbol("-getenv")).SetPrivate()
 	v_bri_DOT_cli_X_raw_enter                       = lang.InternVarName(lang.NewSymbol("bri.cli"), lang.NewSymbol("-raw-enter")).SetPrivate()
@@ -340,8 +381,8 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (def command "Build a command value from a name, opts {:about :params}, and a handler\n  f…
-	v_bri_DOT_cli_command.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(28), kw_column, int64(7), kw_end_line, int64(28), kw_end_column, int64(14), kw_doc, "Build a command value from a name, opts {:about :params}, and a handler\n  fn of the resolved-parameter map. Usually written with `defcommand`."))
+	// (def command (clojure.core/fn ([cmd-name opts handler] (merge {:bri.cli/command true, :nam…
+	v_bri_DOT_cli_command.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(28), kw_column, int64(7), kw_end_line, int64(28), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_cmd_name, sym_opts, sym_handler)), kw_doc, "Build a command value from a name, opts {:about :params}, and a handler\n  fn of the resolved-parameter map. Usually written with `defcommand`."))
 	tmp7 := lang.FnFunc3(func(cmd_name8, opts9, handler10 any) any {
 		tmp11 := v_clojure_DOT_core_merge.Get()
 		tmp12 := lang.NewVector()
@@ -357,8 +398,8 @@ func Load() {
 	fnD_bri_DOT_cli_command = tmp18.F
 	v_bri_DOT_cli_command.SealDirect()
 	_ = v_bri_DOT_cli_command
-	// (def commands "Concatenate command values into one vector — the routes-analog, so a\n  c…
-	v_bri_DOT_cli_commands.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(15), kw_doc, "Concatenate command values into one vector — the routes-analog, so a\n  command set can be built from data (for/map) as well as literals."))
+	// (def commands (clojure.core/fn ([& values] (vec (mapcat (fn [v] (if (:bri.cli/command v) […
+	v_bri_DOT_cli_commands.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_values)), kw_doc, "Concatenate command values into one vector — the routes-analog, so a\n  command set can be built from data (for/map) as well as literals."))
 	tmp19 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -394,8 +435,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_commands.BindRoot(tmp19)
 	_ = v_bri_DOT_cli_commands
-	// (def app "Assemble a CLI app from meta {:name :version :about} + command values." (clojure…
-	v_bri_DOT_cli_app.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(41), kw_column, int64(7), kw_end_line, int64(41), kw_end_column, int64(10), kw_doc, "Assemble a CLI app from meta {:name :version :about} + command values."))
+	// (def app (clojure.core/fn ([meta & cmds] (assoc meta :commands (vec cmds)))))
+	v_bri_DOT_cli_app.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(41), kw_column, int64(7), kw_end_line, int64(41), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_meta, sym_X_AMP_, sym_cmds)), kw_doc, "Assemble a CLI app from meta {:name :version :about} + command values."))
 	tmp33 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -418,8 +459,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_app.BindRoot(tmp33)
 	_ = v_bri_DOT_cli_app
-	// (do (def defcommand "Name a command, reading like a defn: a docstring (its :about), a\n  p…
-	v_bri_DOT_cli_defcommand.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(48), kw_column, int64(11), kw_end_line, int64(48), kw_end_column, int64(21), kw_doc, "Name a command, reading like a defn: a docstring (its :about), a\n  parameter vector of `name {opts}` pairs, and a body that uses the params\n  directly. Mirrors `defroute`.\n\n    (defcommand add \"Add an item\"\n      [text     {:type :string :about \"item text\"}\n       priority {:type :int    :about \"1-5\" :default 3}]\n      (println \"added\" text \"@\" priority))"))
+	// (do (def defcommand (fn* defcommand ([&form &env nm doc params & body] (let [pairs (partit…
+	v_bri_DOT_cli_defcommand.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_nm, sym_doc, sym_params, sym_X_AMP_, sym_body)), kw_doc, "Name a command, reading like a defn: a docstring (its :about), a\n  parameter vector of `name {opts}` pairs, and a body that uses the params\n  directly. Mirrors `defroute`.\n\n    (defcommand add \"Add an item\"\n      [text     {:type :string :about \"item text\"}\n       priority {:type :int    :about \"1-5\" :default 3}]\n      (println \"added\" text \"@\" priority))", kw_file, "bri/cli.cljg", kw_line, int64(48), kw_column, int64(11), kw_end_line, int64(48), kw_end_column, int64(21)))
 	var defcommand40 any
 	_ = defcommand40
 	tmp41 := lang.FnFunc(func(args ...any) any {
@@ -570,8 +611,8 @@ func Load() {
 	tmp151 := lang.Apply1(tmp150, v_bri_DOT_cli_defcommand)
 	_ = tmp151
 	_ = v_bri_DOT_cli_defcommand
-	// (do (def defcommands "Name a CLI app from meta + command vars. Mirrors `defroutes`.\n    (…
-	v_bri_DOT_cli_defcommands.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(66), kw_column, int64(11), kw_end_line, int64(66), kw_end_column, int64(22), kw_doc, "Name a CLI app from meta + command vars. Mirrors `defroutes`.\n    (defcommands app {:name \"todo\" :version \"1.0\"} add ls)"))
+	// (do (def defcommands (fn* defcommands ([&form &env nm meta & cmd-forms] (clojure.core/seq …
+	v_bri_DOT_cli_defcommands.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_nm, sym_meta, sym_X_AMP_, sym_cmd_forms)), kw_doc, "Name a CLI app from meta + command vars. Mirrors `defroutes`.\n    (defcommands app {:name \"todo\" :version \"1.0\"} add ls)", kw_file, "bri/cli.cljg", kw_line, int64(66), kw_column, int64(11), kw_end_line, int64(66), kw_end_column, int64(22)))
 	var defcommands152 any
 	_ = defcommands152
 	tmp153 := lang.FnFunc(func(args ...any) any {
@@ -626,8 +667,8 @@ func Load() {
 	tmp179 := lang.NewSet(kw_path, kw_file, kw_multiline, kw_string_)
 	v_bri_DOT_cli_string_like.BindRoot(tmp179)
 	_ = v_bri_DOT_cli_string_like
-	// (def coerce "Trim (§2 default: string-like values, unless :trim false) then coerce a\n  r…
-	v_bri_DOT_cli_coerce.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(76), kw_column, int64(8), kw_end_line, int64(76), kw_end_column, int64(14), kw_private, true, kw_doc, "Trim (§2 default: string-like values, unless :trim false) then coerce a\n  raw string flag/positional to the param's :type, validating :one-of\n  membership. Returns the value or throws a bri.cli/bad-arg."))
+	// (def coerce (clojure.core/fn ([p raw] (let [t (:type p :string) k (:name p) raw (if (and (…
+	v_bri_DOT_cli_coerce.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(76), kw_column, int64(8), kw_end_line, int64(76), kw_end_column, int64(14), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p, sym_raw)), kw_doc, "Trim (§2 default: string-like values, unless :trim false) then coerce a\n  raw string flag/positional to the param's :type, validating :one-of\n  membership. Returns the value or throws a bri.cli/bad-arg."))
 	tmp180 := lang.FnFunc2(func(p181, raw182 any) any {
 		var tmp183 any
 		_ = tmp183
@@ -839,8 +880,8 @@ func Load() {
 	fnD_bri_DOT_cli_coerce = tmp269.F
 	v_bri_DOT_cli_coerce.SealDirect()
 	_ = v_bri_DOT_cli_coerce
-	// (def as-validators "Normalize :validate (a fn, a vector of fns = logical AND, or nil) into…
-	v_bri_DOT_cli_as_validators.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(103), kw_column, int64(8), kw_end_line, int64(103), kw_end_column, int64(21), kw_private, true, kw_doc, "Normalize :validate (a fn, a vector of fns = logical AND, or nil) into a\n  seq of validator fns."))
+	// (def as-validators (clojure.core/fn ([v] (cond (nil? v) [] (sequential? v) (vec v) :else […
+	v_bri_DOT_cli_as_validators.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(103), kw_column, int64(8), kw_end_line, int64(103), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_v)), kw_doc, "Normalize :validate (a fn, a vector of fns = logical AND, or nil) into a\n  seq of validator fns."))
 	tmp270 := lang.FnFunc1(func(v271 any) any {
 		tmp272 := v_clojure_DOT_core_nil_QMARK_.Get()
 		tmp273 := lang.Apply1(tmp272, v271)
@@ -878,8 +919,8 @@ func Load() {
 	fnD_bri_DOT_cli_as_validators = tmp283.F
 	v_bri_DOT_cli_as_validators.SealDirect()
 	_ = v_bri_DOT_cli_as_validators
-	// (def validate! "Run a param's :validate chain on a coerced value; the first validator that…
-	v_bri_DOT_cli_validate_BANG_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(109), kw_column, int64(8), kw_end_line, int64(109), kw_end_column, int64(17), kw_private, true, kw_doc, "Run a param's :validate chain on a coerced value; the first validator that\n  returns a (truthy) message throws a bri.cli/invalid with the param named."))
+	// (def validate! (clojure.core/fn ([p value] (doseq [vf (as-validators (:validate p))] (when…
+	v_bri_DOT_cli_validate_BANG_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(109), kw_column, int64(8), kw_end_line, int64(109), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p, sym_value)), kw_doc, "Run a param's :validate chain on a coerced value; the first validator that\n  returns a (truthy) message throws a bri.cli/invalid with the param named."))
 	tmp284 := lang.FnFunc2(func(p285, value286 any) any {
 		var tmp287 any
 		_ = tmp287
@@ -972,8 +1013,8 @@ func Load() {
 	fnD_bri_DOT_cli_validate_BANG_ = tmp320.F
 	v_bri_DOT_cli_validate_BANG_.SealDirect()
 	_ = v_bri_DOT_cli_validate_BANG_
-	// (def supplied "Coerce a user-supplied raw value and run its validators (both surfaces run\…
-	v_bri_DOT_cli_supplied.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(119), kw_column, int64(8), kw_end_line, int64(119), kw_end_column, int64(16), kw_private, true, kw_doc, "Coerce a user-supplied raw value and run its validators (both surfaces run\n  through here, ADR 0078 §3)."))
+	// (def supplied (clojure.core/fn ([p raw] (validate! p (coerce p raw)))))
+	v_bri_DOT_cli_supplied.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(119), kw_column, int64(8), kw_end_line, int64(119), kw_end_column, int64(16), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p, sym_raw)), kw_doc, "Coerce a user-supplied raw value and run its validators (both surfaces run\n  through here, ADR 0078 §3)."))
 	tmp321 := lang.FnFunc2(func(p322, raw323 any) any {
 		tmp324 := v_bri_DOT_cli_validate_BANG_.Direct()
 		var tmp325 any
@@ -1004,8 +1045,8 @@ func Load() {
 	fnD_bri_DOT_cli_supplied = tmp330.F
 	v_bri_DOT_cli_supplied.SealDirect()
 	_ = v_bri_DOT_cli_supplied
-	// (def multi-param? (clojure.core/fn [p] (boolean (:multi p))))
-	v_bri_DOT_cli_multi_param_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(127), kw_column, int64(8), kw_end_line, int64(127), kw_end_column, int64(20), kw_private, true))
+	// (def multi-param? (clojure.core/fn ([p] (boolean (:multi p)))))
+	v_bri_DOT_cli_multi_param_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(127), kw_column, int64(8), kw_end_line, int64(127), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p))))
 	tmp331 := lang.FnFunc1(func(p332 any) any {
 		tmp333 := v_clojure_DOT_core_boolean.Get()
 		tmp334 := lang.Apply1(kw_multi, p332)
@@ -1017,8 +1058,8 @@ func Load() {
 	fnD_bri_DOT_cli_multi_param_QMARK_ = tmp336.F
 	v_bri_DOT_cli_multi_param_QMARK_.SealDirect()
 	_ = v_bri_DOT_cli_multi_param_QMARK_
-	// (def element-param "A single-element view of a :multi param. The element type is :of (defa…
-	v_bri_DOT_cli_element_param.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(129), kw_column, int64(8), kw_end_line, int64(129), kw_end_column, int64(21), kw_private, true, kw_doc, "A single-element view of a :multi param. The element type is :of (default\n  :keyword when :one-of is set — matching :enum — else :string); it carries the\n  param's :one-of + :trim for per-element coercion, but NOT its :validate,\n  which runs on the whole vector."))
+	// (def element-param (clojure.core/fn ([p] {:name (:name p), :type (or (:of p) (when (seq (:…
+	v_bri_DOT_cli_element_param.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(129), kw_column, int64(8), kw_end_line, int64(129), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p)), kw_doc, "A single-element view of a :multi param. The element type is :of (default\n  :keyword when :one-of is set — matching :enum — else :string); it carries the\n  param's :one-of + :trim for per-element coercion, but NOT its :validate,\n  which runs on the whole vector."))
 	tmp337 := lang.FnFunc1(func(p338 any) any {
 		tmp339 := lang.Apply1(kw_name, p338)
 		var tmp340 any
@@ -1070,8 +1111,8 @@ func Load() {
 	fnD_bri_DOT_cli_element_param = tmp354.F
 	v_bri_DOT_cli_element_param.SealDirect()
 	_ = v_bri_DOT_cli_element_param
-	// (def supplied-multi "Coerce a comma-separated raw (or an already-sequential value) into a …
-	v_bri_DOT_cli_supplied_multi.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(140), kw_column, int64(8), kw_end_line, int64(140), kw_end_column, int64(22), kw_private, true, kw_doc, "Coerce a comma-separated raw (or an already-sequential value) into a vector,\n  coercing each element by :of + :one-of, then running the param's validators\n  on the whole vector. `--tags a,b,c` -> [coerced …]; blank -> []."))
+	// (def supplied-multi (clojure.core/fn ([p raw] (let [ep (element-param p) parts (cond (sequ…
+	v_bri_DOT_cli_supplied_multi.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(140), kw_column, int64(8), kw_end_line, int64(140), kw_end_column, int64(22), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p, sym_raw)), kw_doc, "Coerce a comma-separated raw (or an already-sequential value) into a vector,\n  coercing each element by :of + :one-of, then running the param's validators\n  on the whole vector. `--tags a,b,c` -> [coerced …]; blank -> []."))
 	tmp355 := lang.FnFunc2(func(p356, raw357 any) any {
 		var tmp358 any
 		_ = tmp358
@@ -1166,8 +1207,8 @@ func Load() {
 	fnD_bri_DOT_cli_supplied_multi = tmp395.F
 	v_bri_DOT_cli_supplied_multi.SealDirect()
 	_ = v_bri_DOT_cli_supplied_multi
-	// (def bool-param? (clojure.core/fn [p] (= :bool (:type p :string))))
-	v_bri_DOT_cli_bool_param_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(155), kw_column, int64(8), kw_end_line, int64(155), kw_end_column, int64(19), kw_private, true))
+	// (def bool-param? (clojure.core/fn ([p] (= :bool (:type p :string)))))
+	v_bri_DOT_cli_bool_param_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(155), kw_column, int64(8), kw_end_line, int64(155), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p))))
 	tmp396 := lang.FnFunc1(func(p397 any) any {
 		tmp398 := lang.Apply2(kw_type_, p397, kw_string_)
 		tmp399 := rt.EQ2(v_clojure_DOT_core_X_EQ_, kw_bool_, tmp398)
@@ -1178,8 +1219,8 @@ func Load() {
 	fnD_bri_DOT_cli_bool_param_QMARK_ = tmp400.F
 	v_bri_DOT_cli_bool_param_QMARK_.SealDirect()
 	_ = v_bri_DOT_cli_bool_param_QMARK_
-	// (def parse-argv "Split a command's argv tail into {:flags {\"name\" raw} :pos [..]}. Honor…
-	v_bri_DOT_cli_parse_argv.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(157), kw_column, int64(8), kw_end_line, int64(157), kw_end_column, int64(18), kw_private, true, kw_doc, "Split a command's argv tail into {:flags {\"name\" raw} :pos [..]}. Honors\n  --k v, --k=v, and bare --bool. `bool?` is the set of bool flag names (they\n  don't consume the next token)."))
+	// (def parse-argv (clojure.core/fn ([argv bool?] (loop [args argv flags {} pos []] (if-let […
+	v_bri_DOT_cli_parse_argv.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(157), kw_column, int64(8), kw_end_line, int64(157), kw_end_column, int64(18), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_argv, sym_bool_QMARK_)), kw_doc, "Split a command's argv tail into {:flags {\"name\" raw} :pos [..]}. Honors\n  --k v, --k=v, and bare --bool. `bool?` is the set of bool flag names (they\n  don't consume the next token)."))
 	tmp401 := lang.FnFunc2(func(argv402, bool_QMARK_403 any) any {
 		var tmp404 any
 		_ = tmp404
@@ -1338,8 +1379,8 @@ func Load() {
 	tmp478 := lang.Apply1(tmp475, tmp477)
 	v_bri_DOT_cli_esc.BindRoot(tmp478)
 	_ = v_bri_DOT_cli_esc
-	// (def decode-key "Decode raw key bytes (the int-vector -read-key returns) into a key event:…
-	v_bri_DOT_cli_decode_key.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(191), kw_column, int64(7), kw_end_line, int64(191), kw_end_column, int64(17), kw_doc, "Decode raw key bytes (the int-vector -read-key returns) into a key event:\n  a keyword (:up :down :left :right :enter :esc :backspace :ctrl-c :tab) or\n  [:rune ch]. Portable: the JVM host feeds the same bytes here (s47)."))
+	// (def decode-key (clojure.core/fn ([b] (let [n (count b)] (cond (zero? n) :esc (and (= n 3)…
+	v_bri_DOT_cli_decode_key.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(191), kw_column, int64(7), kw_end_line, int64(191), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_b)), kw_doc, "Decode raw key bytes (the int-vector -read-key returns) into a key event:\n  a keyword (:up :down :left :right :enter :esc :backspace :ctrl-c :tab) or\n  [:rune ch]. Portable: the JVM host feeds the same bytes here (s47)."))
 	tmp479 := lang.FnFunc1(func(b480 any) any {
 		var tmp481 any
 		_ = tmp481
@@ -1568,8 +1609,8 @@ func Load() {
 	fnD_bri_DOT_cli_decode_key = tmp546.F
 	v_bri_DOT_cli_decode_key.SealDirect()
 	_ = v_bri_DOT_cli_decode_key
-	// (def render-diff "Repaint only the lines that changed from `prev` (a flicker-free line dif…
-	v_bri_DOT_cli_render_diff.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(214), kw_column, int64(7), kw_end_line, int64(214), kw_end_column, int64(18), kw_doc, "Repaint only the lines that changed from `prev` (a flicker-free line diff);\n  clears trailing removed lines. Writes one ANSI string via `write` and\n  returns `lines` as the new previous frame."))
+	// (def render-diff (clojure.core/fn ([prev lines write] (let [changed (keep-indexed (fn [i l…
+	v_bri_DOT_cli_render_diff.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(214), kw_column, int64(7), kw_end_line, int64(214), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_prev, sym_lines, sym_write)), kw_doc, "Repaint only the lines that changed from `prev` (a flicker-free line diff);\n  clears trailing removed lines. Writes one ANSI string via `write` and\n  returns `lines` as the new previous frame."))
 	tmp547 := lang.FnFunc3(func(prev548, lines549, write550 any) any {
 		var tmp551 any
 		_ = tmp551
@@ -1645,8 +1686,8 @@ func Load() {
 	fnD_bri_DOT_cli_render_diff = tmp597.F
 	v_bri_DOT_cli_render_diff.SealDirect()
 	_ = v_bri_DOT_cli_render_diff
-	// (def drive "The Elm loop: paint the widget, read a key, update, repeat until done —\n  t…
-	v_bri_DOT_cli_drive.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(230), kw_column, int64(7), kw_end_line, int64(230), kw_end_column, int64(12), kw_doc, "The Elm loop: paint the widget, read a key, update, repeat until done —\n  then return (:value w). `read-key` is a 0-arg fn -> key event; `write` a\n  1-arg fn <- ANSI string. Both are injected, so the whole loop (renderer\n  included) is testable with a scripted key queue + a string sink."))
+	// (def drive (clojure.core/fn ([widget read-key write] (loop [w widget prev []] (let [prev' …
+	v_bri_DOT_cli_drive.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(230), kw_column, int64(7), kw_end_line, int64(230), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_widget, sym_read_key, sym_write)), kw_doc, "The Elm loop: paint the widget, read a key, update, repeat until done —\n  then return (:value w). `read-key` is a 0-arg fn -> key event; `write` a\n  1-arg fn <- ANSI string. Both are injected, so the whole loop (renderer\n  included) is testable with a scripted key queue + a string sink."))
 	tmp598 := lang.FnFunc3(func(widget599, read_key600, write601 any) any {
 		var tmp602 any
 		_ = tmp602
@@ -1715,8 +1756,8 @@ func Load() {
 	fnD_bri_DOT_cli_drive = tmp629.F
 	v_bri_DOT_cli_drive.SealDirect()
 	_ = v_bri_DOT_cli_drive
-	// (def select-widget "An arrow-key single-choice list (the :one-of / :enum widget). :value i…
-	v_bri_DOT_cli_select_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(241), kw_column, int64(7), kw_end_line, int64(241), kw_end_column, int64(20), kw_doc, "An arrow-key single-choice list (the :one-of / :enum widget). :value is\n  the chosen index, or -1 if cancelled (esc/ctrl-c)."))
+	// (def select-widget (clojure.core/fn ([title opts] {:title (str title), :opts (vec opts), :…
+	v_bri_DOT_cli_select_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(241), kw_column, int64(7), kw_end_line, int64(241), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_title, sym_opts)), kw_doc, "An arrow-key single-choice list (the :one-of / :enum widget). :value is\n  the chosen index, or -1 if cancelled (esc/ctrl-c)."))
 	tmp630 := lang.FnFunc2(func(title631, opts632 any) any {
 		tmp633 := v_clojure_DOT_core_str.Get()
 		tmp634 := lang.Apply1(tmp633, title631)
@@ -1871,8 +1912,8 @@ func Load() {
 	fnD_bri_DOT_cli_select_widget = tmp727.F
 	v_bri_DOT_cli_select_widget.SealDirect()
 	_ = v_bri_DOT_cli_select_widget
-	// (def multiselect-widget "An arrow-key multi-choice list (the :multi widget): up/down move,…
-	v_bri_DOT_cli_multiselect_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(263), kw_column, int64(7), kw_end_line, int64(263), kw_end_column, int64(25), kw_doc, "An arrow-key multi-choice list (the :multi widget): up/down move, space\n  toggles the current row, enter accepts. :value is the vector of chosen\n  indices (in list order), or nil if cancelled (esc/ctrl-c)."))
+	// (def multiselect-widget (clojure.core/fn ([title opts] {:cur 0, :value (fn [w] (when-not (…
+	v_bri_DOT_cli_multiselect_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(263), kw_column, int64(7), kw_end_line, int64(263), kw_end_column, int64(25), kw_arglists, lang.NewList(lang.NewVector(sym_title, sym_opts)), kw_doc, "An arrow-key multi-choice list (the :multi widget): up/down move, space\n  toggles the current row, enter accepts. :value is the vector of chosen\n  indices (in list order), or nil if cancelled (esc/ctrl-c)."))
 	tmp728 := lang.FnFunc2(func(title729, opts730 any) any {
 		tmp731 := lang.FnFunc1(func(w732 any) any {
 			tmp733 := lang.Apply1(kw_cancel, w732)
@@ -2080,8 +2121,8 @@ func Load() {
 	fnD_bri_DOT_cli_multiselect_widget = tmp853.F
 	v_bri_DOT_cli_multiselect_widget.SealDirect()
 	_ = v_bri_DOT_cli_multiselect_widget
-	// (def confirm-widget "A yes/no confirm (the :bool prompt widget): ←/→ (or y/n) toggle, …
-	v_bri_DOT_cli_confirm_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(289), kw_column, int64(7), kw_end_line, int64(289), kw_end_column, int64(21), kw_doc, "A yes/no confirm (the :bool prompt widget): ←/→ (or y/n) toggle, enter\n  accepts. :value is true/false, or nil if cancelled."))
+	// (def confirm-widget (clojure.core/fn ([title default] {:title (str title), :choice (boolea…
+	v_bri_DOT_cli_confirm_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(289), kw_column, int64(7), kw_end_line, int64(289), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(sym_title, sym_default_)), kw_doc, "A yes/no confirm (the :bool prompt widget): ←/→ (or y/n) toggle, enter\n  accepts. :value is true/false, or nil if cancelled."))
 	tmp854 := lang.FnFunc2(func(title855, default_856 any) any {
 		tmp857 := v_clojure_DOT_core_str.Get()
 		tmp858 := lang.Apply1(tmp857, title855)
@@ -2223,8 +2264,8 @@ func Load() {
 	fnD_bri_DOT_cli_confirm_widget = tmp929.F
 	v_bri_DOT_cli_confirm_widget.SealDirect()
 	_ = v_bri_DOT_cli_confirm_widget
-	// (def ed-cursor "Render one line with a reverse-video cell at column cx (padding a space\n …
-	v_bri_DOT_cli_ed_cursor.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(317), kw_column, int64(8), kw_end_line, int64(317), kw_end_column, int64(17), kw_private, true, kw_doc, "Render one line with a reverse-video cell at column cx (padding a space\n  when the cursor sits past the end)."))
+	// (def ed-cursor (clojure.core/fn ([line cx] (let [padded (if (>= cx (count line)) (str line…
+	v_bri_DOT_cli_ed_cursor.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(317), kw_column, int64(8), kw_end_line, int64(317), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_line, sym_cx)), kw_doc, "Render one line with a reverse-video cell at column cx (padding a space\n  when the cursor sits past the end)."))
 	tmp930 := lang.FnFunc2(func(line931, cx932 any) any {
 		var tmp933 any
 		_ = tmp933
@@ -2266,8 +2307,8 @@ func Load() {
 	fnD_bri_DOT_cli_ed_cursor = tmp955.F
 	v_bri_DOT_cli_ed_cursor.SealDirect()
 	_ = v_bri_DOT_cli_ed_cursor
-	// (def editor-widget "A minimal multi-line editor (:multiline / :editor). Type to insert; ar…
-	v_bri_DOT_cli_editor_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(325), kw_column, int64(7), kw_end_line, int64(325), kw_end_column, int64(20), kw_doc, "A minimal multi-line editor (:multiline / :editor). Type to insert; arrows\n  navigate; enter splits the line; backspace deletes / joins; esc finishes.\n  :value is the buffer joined by newlines."))
+	// (def editor-widget (clojure.core/fn ([title] {:title (str title), :lines [""], :cx 0, :cy …
+	v_bri_DOT_cli_editor_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(325), kw_column, int64(7), kw_end_line, int64(325), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_title)), kw_doc, "A minimal multi-line editor (:multiline / :editor). Type to insert; arrows\n  navigate; enter splits the line; backspace deletes / joins; esc finishes.\n  :value is the buffer joined by newlines."))
 	tmp956 := lang.FnFunc1(func(title957 any) any {
 		tmp958 := v_clojure_DOT_core_str.Get()
 		tmp959 := lang.Apply1(tmp958, title957)
@@ -2673,8 +2714,8 @@ func Load() {
 	fnD_bri_DOT_cli_editor_widget = tmp1187.F
 	v_bri_DOT_cli_editor_widget.SealDirect()
 	_ = v_bri_DOT_cli_editor_widget
-	// (def host-read-key (clojure.core/fn [] (decode-key (-read-key))))
-	v_bri_DOT_cli_host_read_key.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(372), kw_column, int64(8), kw_end_line, int64(372), kw_end_column, int64(21), kw_private, true))
+	// (def host-read-key (clojure.core/fn ([] (decode-key (-read-key)))))
+	v_bri_DOT_cli_host_read_key.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(372), kw_column, int64(8), kw_end_line, int64(372), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector())))
 	tmp1188 := lang.FnFunc0(func() any {
 		tmp1189 := v_bri_DOT_cli_decode_key.Direct()
 		var tmp1190 any
@@ -2696,8 +2737,8 @@ func Load() {
 	fnD_bri_DOT_cli_host_read_key = tmp1194.F
 	v_bri_DOT_cli_host_read_key.SealDirect()
 	_ = v_bri_DOT_cli_host_read_key
-	// (def host-write (clojure.core/fn [s] (-raw-write s)))
-	v_bri_DOT_cli_host_write.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(373), kw_column, int64(8), kw_end_line, int64(373), kw_end_column, int64(18), kw_private, true))
+	// (def host-write (clojure.core/fn ([s] (-raw-write s))))
+	v_bri_DOT_cli_host_write.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(373), kw_column, int64(8), kw_end_line, int64(373), kw_end_column, int64(18), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_s))))
 	tmp1195 := lang.FnFunc1(func(s1196 any) any {
 		tmp1197 := v_bri_DOT_cli_X_raw_write.Get()
 		tmp1198 := lang.Apply1(tmp1197, s1196)
@@ -2708,8 +2749,8 @@ func Load() {
 	fnD_bri_DOT_cli_host_write = tmp1199.F
 	v_bri_DOT_cli_host_write.SealDirect()
 	_ = v_bri_DOT_cli_host_write
-	// (def run-widget "Drive a widget on the REAL terminal: raw mode + alt-screen around the Elm…
-	v_bri_DOT_cli_run_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(375), kw_column, int64(7), kw_end_line, int64(375), kw_end_column, int64(17), kw_doc, "Drive a widget on the REAL terminal: raw mode + alt-screen around the Elm\n  loop, always restored. Returns (:value w)."))
+	// (def run-widget (clojure.core/fn ([widget] (-raw-enter) (try (drive widget host-read-key h…
+	v_bri_DOT_cli_run_widget.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(375), kw_column, int64(7), kw_end_line, int64(375), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_widget)), kw_doc, "Drive a widget on the REAL terminal: raw mode + alt-screen around the Elm\n  loop, always restored. Returns (:value w)."))
 	tmp1200 := lang.FnFunc1(func(widget1201 any) any {
 		tmp1202 := v_bri_DOT_cli_X_raw_enter.Get()
 		tmp1203 := lang.Apply0(tmp1202)
@@ -2748,8 +2789,8 @@ func Load() {
 	v_bri_DOT_cli_X_STAR_prompt_STAR_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(393), kw_column, int64(6), kw_end_line, int64(393), kw_end_column, int64(24), kw_dynamic, true, kw_doc, "The prompt backend, or nil to use the host terminal. When bound it is a\n  fn (label secret?) -> raw-string, letting tests/non-TTY code script answers\n  without a real terminal. nil => -read-input / -read-secret on the TTY."))
 	v_bri_DOT_cli_X_STAR_prompt_STAR_.BindRoot(nil)
 	_ = v_bri_DOT_cli_X_STAR_prompt_STAR_
-	// (def interactive? "Should a missing value be prompted for? True when a *prompt* backend is…
-	v_bri_DOT_cli_interactive_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(399), kw_column, int64(8), kw_end_line, int64(399), kw_end_column, int64(20), kw_private, true, kw_doc, "Should a missing value be prompted for? True when a *prompt* backend is\n  bound (tests/embedding) or stdin is a real terminal."))
+	// (def interactive? (clojure.core/fn ([] (if *prompt* true (boolean (-tty?))))))
+	v_bri_DOT_cli_interactive_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(399), kw_column, int64(8), kw_end_line, int64(399), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "Should a missing value be prompted for? True when a *prompt* backend is\n  bound (tests/embedding) or stdin is a real terminal."))
 	tmp1213 := lang.FnFunc0(func() any {
 		tmp1214 := v_bri_DOT_cli_X_STAR_prompt_STAR_.Get()
 		var tmp1215 any
@@ -2770,8 +2811,8 @@ func Load() {
 	fnD_bri_DOT_cli_interactive_QMARK_ = tmp1220.F
 	v_bri_DOT_cli_interactive_QMARK_.SealDirect()
 	_ = v_bri_DOT_cli_interactive_QMARK_
-	// (def prompt-raw "Ask once for a param's raw value via the active backend." (clojure.core/f…
-	v_bri_DOT_cli_prompt_raw.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(405), kw_column, int64(8), kw_end_line, int64(405), kw_end_column, int64(18), kw_private, true, kw_doc, "Ask once for a param's raw value via the active backend."))
+	// (def prompt-raw (clojure.core/fn ([p] (let [label (or (:prompt p) (:about p) (name (:name …
+	v_bri_DOT_cli_prompt_raw.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(405), kw_column, int64(8), kw_end_line, int64(405), kw_end_column, int64(18), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p)), kw_doc, "Ask once for a param's raw value via the active backend."))
 	tmp1221 := lang.FnFunc1(func(p1222 any) any {
 		var tmp1223 any
 		_ = tmp1223
@@ -2863,8 +2904,8 @@ func Load() {
 	fnD_bri_DOT_cli_prompt_raw = tmp1256.F
 	v_bri_DOT_cli_prompt_raw.SealDirect()
 	_ = v_bri_DOT_cli_prompt_raw
-	// (def prompt-note "Show a re-prompt reason on stderr (kept off stdout)." (clojure.core/fn […
-	v_bri_DOT_cli_prompt_note.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(416), kw_column, int64(8), kw_end_line, int64(416), kw_end_column, int64(19), kw_private, true, kw_doc, "Show a re-prompt reason on stderr (kept off stdout)."))
+	// (def prompt-note (clojure.core/fn ([msg] (binding [*out* *err*] (println (str "  " msg))))…
+	v_bri_DOT_cli_prompt_note.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(416), kw_column, int64(8), kw_end_line, int64(416), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_msg)), kw_doc, "Show a re-prompt reason on stderr (kept off stdout)."))
 	tmp1257 := lang.FnFunc1(func(msg1258 any) any {
 		tmp1259 := v_clojure_DOT_core_X_STAR_err_STAR_.Get()
 		lang.PushThreadBindings(lang.NewMap(v_clojure_DOT_core_X_STAR_out_STAR_, tmp1259))
@@ -2881,8 +2922,8 @@ func Load() {
 	fnD_bri_DOT_cli_prompt_note = tmp1265.F
 	v_bri_DOT_cli_prompt_note.SealDirect()
 	_ = v_bri_DOT_cli_prompt_note
-	// (def prompt-text "Prompt for a param via a free-text (or :secret) line, coercing + validat…
-	v_bri_DOT_cli_prompt_text.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(421), kw_column, int64(8), kw_end_line, int64(421), kw_end_column, int64(19), kw_private, true, kw_doc, "Prompt for a param via a free-text (or :secret) line, coercing + validating\n  through `supplied`, re-prompting up to (:tries p, default 3) times on an\n  invalid/bad value. Empty input with a :default present yields the default;\n  empty input on a required param with no default re-prompts (then errors)\n  rather than silently passing nil."))
+	// (def prompt-text (clojure.core/fn ([p] (loop [n (:tries p 3)] (let [raw (prompt-raw p) bla…
+	v_bri_DOT_cli_prompt_text.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(421), kw_column, int64(8), kw_end_line, int64(421), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p)), kw_doc, "Prompt for a param via a free-text (or :secret) line, coercing + validating\n  through `supplied`, re-prompting up to (:tries p, default 3) times on an\n  invalid/bad value. Empty input with a :default present yields the default;\n  empty input on a required param with no default re-prompts (then errors)\n  rather than silently passing nil."))
 	tmp1266 := lang.FnFunc1(func(p1267 any) any {
 		var tmp1268 any
 		_ = tmp1268
@@ -3085,8 +3126,8 @@ func Load() {
 	fnD_bri_DOT_cli_prompt_text = tmp1333.F
 	v_bri_DOT_cli_prompt_text.SealDirect()
 	_ = v_bri_DOT_cli_prompt_text
-	// (def widget-title (clojure.core/fn [p] (str (or (:prompt p) (:about p) (name (:name p))) "…
-	v_bri_DOT_cli_widget_title.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(445), kw_column, int64(8), kw_end_line, int64(445), kw_end_column, int64(20), kw_private, true))
+	// (def widget-title (clojure.core/fn ([p] (str (or (:prompt p) (:about p) (name (:name p))) …
+	v_bri_DOT_cli_widget_title.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(445), kw_column, int64(8), kw_end_line, int64(445), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p))))
 	tmp1334 := lang.FnFunc1(func(p1335 any) any {
 		tmp1336 := v_clojure_DOT_core_str.Get()
 		var tmp1337 any
@@ -3130,8 +3171,8 @@ func Load() {
 	fnD_bri_DOT_cli_widget_title = tmp1349.F
 	v_bri_DOT_cli_widget_title.SealDirect()
 	_ = v_bri_DOT_cli_widget_title
-	// (def use-select? (clojure.core/fn [p] (and (nil? *prompt*) (-tty?) (seq (:one-of p)))))
-	v_bri_DOT_cli_use_select_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(453), kw_column, int64(8), kw_end_line, int64(453), kw_end_column, int64(19), kw_private, true))
+	// (def use-select? (clojure.core/fn ([p] (and (nil? *prompt*) (-tty?) (seq (:one-of p))))))
+	v_bri_DOT_cli_use_select_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(453), kw_column, int64(8), kw_end_line, int64(453), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p))))
 	tmp1350 := lang.FnFunc1(func(p1351 any) any {
 		var tmp1352 any
 		_ = tmp1352
@@ -3176,8 +3217,8 @@ func Load() {
 	fnD_bri_DOT_cli_use_select_QMARK_ = tmp1366.F
 	v_bri_DOT_cli_use_select_QMARK_.SealDirect()
 	_ = v_bri_DOT_cli_use_select_QMARK_
-	// (def use-editor? (clojure.core/fn [p] (and (nil? *prompt*) (-tty?) (contains? #{:multiline…
-	v_bri_DOT_cli_use_editor_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(454), kw_column, int64(8), kw_end_line, int64(454), kw_end_column, int64(19), kw_private, true))
+	// (def use-editor? (clojure.core/fn ([p] (and (nil? *prompt*) (-tty?) (contains? #{:multilin…
+	v_bri_DOT_cli_use_editor_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(454), kw_column, int64(8), kw_end_line, int64(454), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p))))
 	tmp1367 := lang.FnFunc1(func(p1368 any) any {
 		var tmp1369 any
 		_ = tmp1369
@@ -3223,8 +3264,8 @@ func Load() {
 	fnD_bri_DOT_cli_use_editor_QMARK_ = tmp1384.F
 	v_bri_DOT_cli_use_editor_QMARK_.SealDirect()
 	_ = v_bri_DOT_cli_use_editor_QMARK_
-	// (def required-missing (clojure.core/fn [p] (throw (ex-info (str "--" (name (:name p)) " is…
-	v_bri_DOT_cli_required_missing.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(456), kw_column, int64(8), kw_end_line, int64(456), kw_end_column, int64(24), kw_private, true))
+	// (def required-missing (clojure.core/fn ([p] (throw (ex-info (str "--" (name (:name p)) " i…
+	v_bri_DOT_cli_required_missing.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(456), kw_column, int64(8), kw_end_line, int64(456), kw_end_column, int64(24), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p))))
 	tmp1385 := lang.FnFunc1(func(p1386 any) any {
 		tmp1387 := v_clojure_DOT_core_ex_info.Get()
 		tmp1388 := v_clojure_DOT_core_str.Get()
@@ -3242,8 +3283,8 @@ func Load() {
 	fnD_bri_DOT_cli_required_missing = tmp1396.F
 	v_bri_DOT_cli_required_missing.SealDirect()
 	_ = v_bri_DOT_cli_required_missing
-	// (def select-flow "Select widget over a :one-of param's choices → the canonical (validate…
-	v_bri_DOT_cli_select_flow.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(460), kw_column, int64(8), kw_end_line, int64(460), kw_end_column, int64(19), kw_private, true, kw_doc, "Select widget over a :one-of param's choices → the canonical (validated)\n  choice; a cancel falls to :default, else required-error, else nil."))
+	// (def select-flow (clojure.core/fn ([p] (let [choices (vec (:one-of p)) labels (mapv (fn [c…
+	v_bri_DOT_cli_select_flow.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(460), kw_column, int64(8), kw_end_line, int64(460), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p)), kw_doc, "Select widget over a :one-of param's choices → the canonical (validated)\n  choice; a cancel falls to :default, else required-error, else nil."))
 	tmp1397 := lang.FnFunc1(func(p1398 any) any {
 		var tmp1399 any
 		_ = tmp1399
@@ -3378,8 +3419,8 @@ func Load() {
 	fnD_bri_DOT_cli_select_flow = tmp1447.F
 	v_bri_DOT_cli_select_flow.SealDirect()
 	_ = v_bri_DOT_cli_select_flow
-	// (def multiselect-flow "Multiselect widget over a :one-of :multi param's choices → the ve…
-	v_bri_DOT_cli_multiselect_flow.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(473), kw_column, int64(8), kw_end_line, int64(473), kw_end_column, int64(24), kw_private, true, kw_doc, "Multiselect widget over a :one-of :multi param's choices → the vector of\n  chosen (validated) values; a cancel falls to :default, else required-error,\n  else []."))
+	// (def multiselect-flow (clojure.core/fn ([p] (let [choices (vec (:one-of p)) labels (mapv (…
+	v_bri_DOT_cli_multiselect_flow.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(473), kw_column, int64(8), kw_end_line, int64(473), kw_end_column, int64(24), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p)), kw_doc, "Multiselect widget over a :one-of :multi param's choices → the vector of\n  chosen (validated) values; a cancel falls to :default, else required-error,\n  else []."))
 	tmp1448 := lang.FnFunc1(func(p1449 any) any {
 		var tmp1450 any
 		_ = tmp1450
@@ -3519,8 +3560,8 @@ func Load() {
 	fnD_bri_DOT_cli_multiselect_flow = tmp1502.F
 	v_bri_DOT_cli_multiselect_flow.SealDirect()
 	_ = v_bri_DOT_cli_multiselect_flow
-	// (def editor-flow "Editor widget → the entered text, coerced (trimmed) + validated like a…
-	v_bri_DOT_cli_editor_flow.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(487), kw_column, int64(8), kw_end_line, int64(487), kw_end_column, int64(19), kw_private, true, kw_doc, "Editor widget → the entered text, coerced (trimmed) + validated like any\n  supplied value."))
+	// (def editor-flow (clojure.core/fn ([p] (supplied p (run-widget (editor-widget (widget-titl…
+	v_bri_DOT_cli_editor_flow.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(487), kw_column, int64(8), kw_end_line, int64(487), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p)), kw_doc, "Editor widget → the entered text, coerced (trimmed) + validated like any\n  supplied value."))
 	tmp1503 := lang.FnFunc1(func(p1504 any) any {
 		tmp1505 := v_bri_DOT_cli_supplied.Direct()
 		var tmp1506 any
@@ -3573,8 +3614,8 @@ func Load() {
 	fnD_bri_DOT_cli_editor_flow = tmp1517.F
 	v_bri_DOT_cli_editor_flow.SealDirect()
 	_ = v_bri_DOT_cli_editor_flow
-	// (def confirm-flow "Confirm widget → true/false, validated; a cancel falls to (:default f…
-	v_bri_DOT_cli_confirm_flow.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(493), kw_column, int64(8), kw_end_line, int64(493), kw_end_column, int64(20), kw_private, true, kw_doc, "Confirm widget → true/false, validated; a cancel falls to (:default false)."))
+	// (def confirm-flow (clojure.core/fn ([p] (let [v (run-widget (confirm-widget (widget-title …
+	v_bri_DOT_cli_confirm_flow.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(493), kw_column, int64(8), kw_end_line, int64(493), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p)), kw_doc, "Confirm widget → true/false, validated; a cancel falls to (:default false)."))
 	tmp1518 := lang.FnFunc1(func(p1519 any) any {
 		var tmp1520 any
 		_ = tmp1520
@@ -3645,8 +3686,8 @@ func Load() {
 	fnD_bri_DOT_cli_confirm_flow = tmp1539.F
 	v_bri_DOT_cli_confirm_flow.SealDirect()
 	_ = v_bri_DOT_cli_confirm_flow
-	// (def prompt-param "Prompt for a missing value, choosing the widget by param shape on a rea…
-	v_bri_DOT_cli_prompt_param.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(499), kw_column, int64(8), kw_end_line, int64(499), kw_end_column, int64(20), kw_private, true, kw_doc, "Prompt for a missing value, choosing the widget by param shape on a real\n  TTY (confirm for a bool · select for :one-of · editor for :multiline),\n  else a free-text/secret line. Every path runs the param's validators."))
+	// (def prompt-param (clojure.core/fn ([p] (cond (bool-param? p) (confirm-flow p) (use-select…
+	v_bri_DOT_cli_prompt_param.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(499), kw_column, int64(8), kw_end_line, int64(499), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p)), kw_doc, "Prompt for a missing value, choosing the widget by param shape on a real\n  TTY (confirm for a bool · select for :one-of · editor for :multiline),\n  else a free-text/secret line. Every path runs the param's validators."))
 	tmp1540 := lang.FnFunc1(func(p1541 any) any {
 		tmp1542 := v_bri_DOT_cli_bool_param_QMARK_.Direct()
 		var tmp1543 any
@@ -3760,8 +3801,8 @@ func Load() {
 	fnD_bri_DOT_cli_prompt_param = tmp1567.F
 	v_bri_DOT_cli_prompt_param.SealDirect()
 	_ = v_bri_DOT_cli_prompt_param
-	// (def prompt-spec "Synthesize a one-off parameter from a label + opts for the prompt flows.…
-	v_bri_DOT_cli_prompt_spec.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(518), kw_column, int64(8), kw_end_line, int64(518), kw_end_column, int64(19), kw_private, true, kw_doc, "Synthesize a one-off parameter from a label + opts for the prompt flows."))
+	// (def prompt-spec (clojure.core/fn ([label opts] (merge {:name (or (:name opts) :input), :p…
+	v_bri_DOT_cli_prompt_spec.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(518), kw_column, int64(8), kw_end_line, int64(518), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_label, sym_opts)), kw_doc, "Synthesize a one-off parameter from a label + opts for the prompt flows."))
 	tmp1568 := lang.FnFunc2(func(label1569, opts1570 any) any {
 		tmp1571 := v_clojure_DOT_core_merge.Get()
 		var tmp1572 any
@@ -3788,8 +3829,8 @@ func Load() {
 	fnD_bri_DOT_cli_prompt_spec = tmp1578.F
 	v_bri_DOT_cli_prompt_spec.SealDirect()
 	_ = v_bri_DOT_cli_prompt_spec
-	// (def ask "Prompt for a line of text; returns the coerced + validated value. opts:\n  :defa…
-	v_bri_DOT_cli_ask.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(523), kw_column, int64(7), kw_end_line, int64(523), kw_end_column, int64(10), kw_doc, "Prompt for a line of text; returns the coerced + validated value. opts:\n  :default :validate :required :type (default :string) :trim :secret :tries."))
+	// (def ask (clojure.core/fn ([label] (ask label {})) ([label opts] (if (interactive?) (promp…
+	v_bri_DOT_cli_ask.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(523), kw_column, int64(7), kw_end_line, int64(523), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_label), lang.NewVector(sym_label, sym_opts)), kw_doc, "Prompt for a line of text; returns the coerced + validated value. opts:\n  :default :validate :required :type (default :string) :trim :secret :tries."))
 	tmp1579 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -3852,8 +3893,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_ask.BindRoot(tmp1579)
 	_ = v_bri_DOT_cli_ask
-	// (def ask-secret "Prompt for a secret with terminal echo OFF; returns the string." (clojure…
-	v_bri_DOT_cli_ask_secret.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(532), kw_column, int64(7), kw_end_line, int64(532), kw_end_column, int64(17), kw_doc, "Prompt for a secret with terminal echo OFF; returns the string."))
+	// (def ask-secret (clojure.core/fn ([label] (ask-secret label {})) ([label opts] (ask label …
+	v_bri_DOT_cli_ask_secret.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(532), kw_column, int64(7), kw_end_line, int64(532), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_label), lang.NewVector(sym_label, sym_opts)), kw_doc, "Prompt for a secret with terminal echo OFF; returns the string."))
 	tmp1597 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -3879,8 +3920,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_ask_secret.BindRoot(tmp1597)
 	_ = v_bri_DOT_cli_ask_secret
-	// (def ask-editor "Prompt for multi-line text via the editor widget; returns the string." (c…
-	v_bri_DOT_cli_ask_editor.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(537), kw_column, int64(7), kw_end_line, int64(537), kw_end_column, int64(17), kw_doc, "Prompt for multi-line text via the editor widget; returns the string."))
+	// (def ask-editor (clojure.core/fn ([label] (ask-editor label {})) ([label opts] (if (intera…
+	v_bri_DOT_cli_ask_editor.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(537), kw_column, int64(7), kw_end_line, int64(537), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_label), lang.NewVector(sym_label, sym_opts)), kw_doc, "Prompt for multi-line text via the editor widget; returns the string."))
 	tmp1608 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -3945,8 +3986,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_ask_editor.BindRoot(tmp1608)
 	_ = v_bri_DOT_cli_ask_editor
-	// (def select "Prompt to choose ONE of `choices` (a vector); returns the chosen value.\n  Ar…
-	v_bri_DOT_cli_select_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(545), kw_column, int64(7), kw_end_line, int64(545), kw_end_column, int64(13), kw_doc, "Prompt to choose ONE of `choices` (a vector); returns the chosen value.\n  Arrow-key widget on a real TTY, a typed answer otherwise."))
+	// (def select (clojure.core/fn ([label choices] (select label choices {})) ([label choices o…
+	v_bri_DOT_cli_select_.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(545), kw_column, int64(7), kw_end_line, int64(545), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_label, sym_choices), lang.NewVector(sym_label, sym_choices, sym_opts)), kw_doc, "Prompt to choose ONE of `choices` (a vector); returns the chosen value.\n  Arrow-key widget on a real TTY, a typed answer otherwise."))
 	tmp1628 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -4018,8 +4059,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_select_.BindRoot(tmp1628)
 	_ = v_bri_DOT_cli_select_
-	// (def confirm "Prompt a yes/no; returns true or false. opts: :default (default false)." (cl…
-	v_bri_DOT_cli_confirm.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(555), kw_column, int64(7), kw_end_line, int64(555), kw_end_column, int64(14), kw_doc, "Prompt a yes/no; returns true or false. opts: :default (default false)."))
+	// (def confirm (clojure.core/fn ([label] (confirm label {})) ([label opts] (let [p (prompt-s…
+	v_bri_DOT_cli_confirm.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(555), kw_column, int64(7), kw_end_line, int64(555), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_label), lang.NewVector(sym_label, sym_opts)), kw_doc, "Prompt a yes/no; returns true or false. opts: :default (default false)."))
 	tmp1653 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -4167,8 +4208,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_confirm.BindRoot(tmp1653)
 	_ = v_bri_DOT_cli_confirm
-	// (def multiselect "Prompt to choose ANY of `choices`; returns a vector of chosen values.\n …
-	v_bri_DOT_cli_multiselect.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(566), kw_column, int64(7), kw_end_line, int64(566), kw_end_column, int64(18), kw_doc, "Prompt to choose ANY of `choices`; returns a vector of chosen values.\n  Multiselect widget on a real TTY, a comma-separated answer otherwise."))
+	// (def multiselect (clojure.core/fn ([label choices] (multiselect label choices {})) ([label…
+	v_bri_DOT_cli_multiselect.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(566), kw_column, int64(7), kw_end_line, int64(566), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_label, sym_choices), lang.NewVector(sym_label, sym_choices, sym_opts)), kw_doc, "Prompt to choose ANY of `choices`; returns a vector of chosen values.\n  Multiselect widget on a real TTY, a comma-separated answer otherwise."))
 	tmp1701 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -4305,8 +4346,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_multiselect.BindRoot(tmp1701)
 	_ = v_bri_DOT_cli_multiselect
-	// (def env-raw "The param's :env value (an env-var name, string or keyword) if set, else\n  …
-	v_bri_DOT_cli_env_raw.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(578), kw_column, int64(8), kw_end_line, int64(578), kw_end_column, int64(15), kw_private, true, kw_doc, "The param's :env value (an env-var name, string or keyword) if set, else\n  nil — resolved through the -getenv host shim."))
+	// (def env-raw (clojure.core/fn ([p] (when-let [e (:env p)] (-getenv (if (keyword? e) (name …
+	v_bri_DOT_cli_env_raw.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(578), kw_column, int64(8), kw_end_line, int64(578), kw_end_column, int64(15), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p)), kw_doc, "The param's :env value (an env-var name, string or keyword) if set, else\n  nil — resolved through the -getenv host shim."))
 	tmp1747 := lang.FnFunc1(func(p1748 any) any {
 		var tmp1749 any
 		_ = tmp1749
@@ -4352,8 +4393,8 @@ func Load() {
 	fnD_bri_DOT_cli_env_raw = tmp1764.F
 	v_bri_DOT_cli_env_raw.SealDirect()
 	_ = v_bri_DOT_cli_env_raw
-	// (def resolve-multi "Resolve a :multi param to a vector: a repeated/comma flag -> :env -> t…
-	v_bri_DOT_cli_resolve_multi.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(586), kw_column, int64(8), kw_end_line, int64(586), kw_end_column, int64(21), kw_private, true, kw_doc, "Resolve a :multi param to a vector: a repeated/comma flag -> :env -> the\n  multiselect widget (a :one-of param on a real TTY) -> :default -> required\n  -error -> []. Multi params are flag/env/prompt driven (no positional)."))
+	// (def resolve-multi (clojure.core/fn ([p flags] (let [fname (name (:name p))] (cond (contai…
+	v_bri_DOT_cli_resolve_multi.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(586), kw_column, int64(8), kw_end_line, int64(586), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p, sym_flags)), kw_doc, "Resolve a :multi param to a vector: a repeated/comma flag -> :env -> the\n  multiselect widget (a :one-of param on a real TTY) -> :default -> required\n  -error -> []. Multi params are flag/env/prompt driven (no positional)."))
 	tmp1765 := lang.FnFunc2(func(p1766, flags1767 any) any {
 		var tmp1768 any
 		_ = tmp1768
@@ -4533,8 +4574,8 @@ func Load() {
 	fnD_bri_DOT_cli_resolve_multi = tmp1830.F
 	v_bri_DOT_cli_resolve_multi.SealDirect()
 	_ = v_bri_DOT_cli_resolve_multi
-	// (def resolve-param "Resolve one parameter to its value, in precedence order (ADR 0078):\n …
-	v_bri_DOT_cli_resolve_param.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(612), kw_column, int64(8), kw_end_line, int64(612), kw_end_column, int64(21), kw_private, true, kw_doc, "Resolve one parameter to its value, in precedence order (ADR 0078):\n  flag -> positional -> :env -> prompt-if-interactive -> :default -> required\n  -error. A :multi param collects into a vector (resolve-multi). A bool with no\n  flag is its :default (false); the one exception is a REQUIRED bool on a real\n  TTY, which asks with the confirm widget. Every user-supplied path\n  (flag/positional/env/prompt) runs the param's coercion + validators."))
+	// (def resolve-param (clojure.core/fn ([p flags pos-atom] (let [k (:name p) fname (name k)] …
+	v_bri_DOT_cli_resolve_param.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(612), kw_column, int64(8), kw_end_line, int64(612), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p, sym_flags, sym_pos_atom)), kw_doc, "Resolve one parameter to its value, in precedence order (ADR 0078):\n  flag -> positional -> :env -> prompt-if-interactive -> :default -> required\n  -error. A :multi param collects into a vector (resolve-multi). A bool with no\n  flag is its :default (false); the one exception is a REQUIRED bool on a real\n  TTY, which asks with the confirm widget. Every user-supplied path\n  (flag/positional/env/prompt) runs the param's coercion + validators."))
 	tmp1831 := lang.FnFunc3(func(p1832, flags1833, pos_atom1834 any) any {
 		var tmp1835 any
 		_ = tmp1835
@@ -4826,8 +4867,8 @@ func Load() {
 	fnD_bri_DOT_cli_resolve_param = tmp1930.F
 	v_bri_DOT_cli_resolve_param.SealDirect()
 	_ = v_bri_DOT_cli_resolve_param
-	// (def resolve-params "Resolve every param of a command into the handler's argument map." (c…
-	v_bri_DOT_cli_resolve_params.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(653), kw_column, int64(8), kw_end_line, int64(653), kw_end_column, int64(22), kw_private, true, kw_doc, "Resolve every param of a command into the handler's argument map."))
+	// (def resolve-params (clojure.core/fn ([cmd flags pos] (let [pos-atom (atom pos)] (reduce (…
+	v_bri_DOT_cli_resolve_params.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(653), kw_column, int64(8), kw_end_line, int64(653), kw_end_column, int64(22), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_cmd, sym_flags, sym_pos)), kw_doc, "Resolve every param of a command into the handler's argument map."))
 	tmp1931 := lang.FnFunc3(func(cmd1932, flags1933, pos1934 any) any {
 		var tmp1935 any
 		_ = tmp1935
@@ -4867,8 +4908,8 @@ func Load() {
 	fnD_bri_DOT_cli_resolve_params = tmp1953.F
 	v_bri_DOT_cli_resolve_params.SealDirect()
 	_ = v_bri_DOT_cli_resolve_params
-	// (def type-label (clojure.core/fn [p] (let [base (if-let [c (:one-of p)] (str "{" (str/join…
-	v_bri_DOT_cli_type_label.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(662), kw_column, int64(8), kw_end_line, int64(662), kw_end_column, int64(18), kw_private, true))
+	// (def type-label (clojure.core/fn ([p] (let [base (if-let [c (:one-of p)] (str "{" (str/joi…
+	v_bri_DOT_cli_type_label.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(662), kw_column, int64(8), kw_end_line, int64(662), kw_end_column, int64(18), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_p))))
 	tmp1954 := lang.FnFunc1(func(p1955 any) any {
 		var tmp1956 any
 		_ = tmp1956
@@ -4933,8 +4974,8 @@ func Load() {
 	fnD_bri_DOT_cli_type_label = tmp1984.F
 	v_bri_DOT_cli_type_label.SealDirect()
 	_ = v_bri_DOT_cli_type_label
-	// (def command-usage (clojure.core/fn [app cmd] (let [lines (map (fn [p] (format "  --%-14s …
-	v_bri_DOT_cli_command_usage.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(668), kw_column, int64(8), kw_end_line, int64(668), kw_end_column, int64(21), kw_private, true))
+	// (def command-usage (clojure.core/fn ([app cmd] (let [lines (map (fn [p] (format "  --%-14s…
+	v_bri_DOT_cli_command_usage.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(668), kw_column, int64(8), kw_end_line, int64(668), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_app, sym_cmd))))
 	tmp1985 := lang.FnFunc2(func(app1986, cmd1987 any) any {
 		var tmp1988 any
 		_ = tmp1988
@@ -5049,8 +5090,8 @@ func Load() {
 	fnD_bri_DOT_cli_command_usage = tmp2045.F
 	v_bri_DOT_cli_command_usage.SealDirect()
 	_ = v_bri_DOT_cli_command_usage
-	// (def app-usage (clojure.core/fn [app] (str/join "\n" (concat [(str (:name app) (when (:ver…
-	v_bri_DOT_cli_app_usage.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(684), kw_column, int64(8), kw_end_line, int64(684), kw_end_column, int64(17), kw_private, true))
+	// (def app-usage (clojure.core/fn ([app] (str/join "\n" (concat [(str (:name app) (when (:ve…
+	v_bri_DOT_cli_app_usage.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(684), kw_column, int64(8), kw_end_line, int64(684), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_app))))
 	tmp2046 := lang.FnFunc1(func(app2047 any) any {
 		tmp2048 := v_clojure_DOT_string_join.Get()
 		tmp2049 := v_clojure_DOT_core_concat.Get()
@@ -5121,8 +5162,8 @@ func Load() {
 	fnD_bri_DOT_cli_app_usage = tmp2086.F
 	v_bri_DOT_cli_app_usage.SealDirect()
 	_ = v_bri_DOT_cli_app_usage
-	// (def edit-distance (clojure.core/fn [a b] (let [la (count a) lb (count b)] (loop [i 1 prev…
-	v_bri_DOT_cli_edit_distance.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(698), kw_column, int64(8), kw_end_line, int64(698), kw_end_column, int64(21), kw_private, true))
+	// (def edit-distance (clojure.core/fn ([a b] (let [la (count a) lb (count b)] (loop [i 1 pre…
+	v_bri_DOT_cli_edit_distance.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(698), kw_column, int64(8), kw_end_line, int64(698), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_a, sym_b))))
 	tmp2087 := lang.FnFunc2(func(a2088, b2089 any) any {
 		var tmp2090 any
 		_ = tmp2090
@@ -5350,8 +5391,8 @@ func Load() {
 	fnD_bri_DOT_cli_edit_distance = tmp2209.F
 	v_bri_DOT_cli_edit_distance.SealDirect()
 	_ = v_bri_DOT_cli_edit_distance
-	// (def nearest-command (clojure.core/fn [app token] (->> (:commands app) (map (fn [c] [(:nam…
-	v_bri_DOT_cli_nearest_command.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(713), kw_column, int64(8), kw_end_line, int64(713), kw_end_column, int64(23), kw_private, true))
+	// (def nearest-command (clojure.core/fn ([app token] (->> (:commands app) (map (fn [c] [(:na…
+	v_bri_DOT_cli_nearest_command.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(713), kw_column, int64(8), kw_end_line, int64(713), kw_end_column, int64(23), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_app, sym_token))))
 	tmp2210 := lang.FnFunc2(func(app2211, token2212 any) any {
 		tmp2213 := v_clojure_DOT_core_ffirst.Get()
 		tmp2214 := v_clojure_DOT_core_sort_by.Get()
@@ -5408,8 +5449,8 @@ func Load() {
 	fnD_bri_DOT_cli_nearest_command = tmp2244.F
 	v_bri_DOT_cli_nearest_command.SealDirect()
 	_ = v_bri_DOT_cli_nearest_command
-	// (def find-command (clojure.core/fn [app nm] (first (filter (fn* [p1__55#] (= nm (:name p1_…
-	v_bri_DOT_cli_find_command.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(722), kw_column, int64(8), kw_end_line, int64(722), kw_end_column, int64(20), kw_private, true))
+	// (def find-command (clojure.core/fn ([app nm] (first (filter (fn* [p1__55#] (= nm (:name p1…
+	v_bri_DOT_cli_find_command.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(722), kw_column, int64(8), kw_end_line, int64(722), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_app, sym_nm))))
 	tmp2245 := lang.FnFunc2(func(app2246, nm2247 any) any {
 		tmp2248 := v_clojure_DOT_core_first.Get()
 		tmp2249 := v_clojure_DOT_core_filter.Get()
@@ -5429,8 +5470,8 @@ func Load() {
 	fnD_bri_DOT_cli_find_command = tmp2258.F
 	v_bri_DOT_cli_find_command.SealDirect()
 	_ = v_bri_DOT_cli_find_command
-	// (def command-args "Parse a command's argv tail and resolve every parameter into the\n  han…
-	v_bri_DOT_cli_command_args.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(724), kw_column, int64(8), kw_end_line, int64(724), kw_end_column, int64(20), kw_private, true, kw_doc, "Parse a command's argv tail and resolve every parameter into the\n  handler-argument map (throwing on a bad/missing/invalid arg)."))
+	// (def command-args (clojure.core/fn ([cmd tail] (let [bool? (set (map (fn* [p1__56#] (name …
+	v_bri_DOT_cli_command_args.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(724), kw_column, int64(8), kw_end_line, int64(724), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_cmd, sym_tail)), kw_doc, "Parse a command's argv tail and resolve every parameter into the\n  handler-argument map (throwing on a bad/missing/invalid arg)."))
 	tmp2259 := lang.FnFunc2(func(cmd2260, tail2261 any) any {
 		var tmp2262 any
 		_ = tmp2262
@@ -5506,8 +5547,8 @@ func Load() {
 	fnD_bri_DOT_cli_command_args = tmp2297.F
 	v_bri_DOT_cli_command_args.SealDirect()
 	_ = v_bri_DOT_cli_command_args
-	// (def parse "Find the command named by (first argv) and resolve its parameters into the\n  …
-	v_bri_DOT_cli_parse.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(732), kw_column, int64(7), kw_end_line, int64(732), kw_end_column, int64(12), kw_doc, "Find the command named by (first argv) and resolve its parameters into the\n  handler-argument map, THROWING ex-info on an unknown command or a\n  bad/missing/invalid argument. This is run's inspectable core — no dispatch,\n  no printing — useful for testing and for driving a command programmatically."))
+	// (def parse (clojure.core/fn ([app argv] (let [argv (vec argv) head (first argv) cmd (find-…
+	v_bri_DOT_cli_parse.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(732), kw_column, int64(7), kw_end_line, int64(732), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_app, sym_argv)), kw_doc, "Find the command named by (first argv) and resolve its parameters into the\n  handler-argument map, THROWING ex-info on an unknown command or a\n  bad/missing/invalid argument. This is run's inspectable core — no dispatch,\n  no printing — useful for testing and for driving a command programmatically."))
 	tmp2298 := lang.FnFunc2(func(app2299, argv2300 any) any {
 		var tmp2301 any
 		_ = tmp2301
@@ -5570,8 +5611,8 @@ func Load() {
 	fnD_bri_DOT_cli_parse = tmp2325.F
 	v_bri_DOT_cli_parse.SealDirect()
 	_ = v_bri_DOT_cli_parse
-	// (def run "Parse argv against the app, resolve the matched command's parameters,\n  and inv…
-	v_bri_DOT_cli_run.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(746), kw_column, int64(7), kw_end_line, int64(746), kw_end_column, int64(10), kw_doc, "Parse argv against the app, resolve the matched command's parameters,\n  and invoke its handler. Prints `--help`/`--version` and usage/errors.\n  The entry point: `(defn -main [& args] (cli/run app args))`."))
+	// (def run (clojure.core/fn ([app argv] (let [argv (vec argv) head (first argv)] (cond (or (…
+	v_bri_DOT_cli_run.SetMeta(lang.NewMap(kw_file, "bri/cli.cljg", kw_line, int64(746), kw_column, int64(7), kw_end_line, int64(746), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_app, sym_argv)), kw_doc, "Parse argv against the app, resolve the matched command's parameters,\n  and invoke its handler. Prints `--help`/`--version` and usage/errors.\n  The entry point: `(defn -main [& args] (cli/run app args))`."))
 	tmp2326 := lang.FnFunc2(func(app2327, argv2328 any) any {
 		var tmp2329 any
 		_ = tmp2329

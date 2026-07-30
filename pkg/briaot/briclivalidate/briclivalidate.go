@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	kw_arglists                          = lang.InternKeywordString("arglists")
 	kw_as                                = lang.InternKeywordString("as")
 	kw_column                            = lang.InternKeywordString("column")
 	kw_doc                               = lang.InternKeywordString("doc")
@@ -18,14 +19,23 @@ var (
 	kw_file                              = lang.InternKeywordString("file")
 	kw_line                              = lang.InternKeywordString("line")
 	re_127                               = &reader.Regex{Pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"}
+	sym_X_AMP_                           = lang.NewSymbol("&")
 	sym_bri_DOT_cli_DOT_validate         = lang.NewSymbol("bri.cli.validate")
+	sym_choices                          = lang.NewSymbol("choices")
 	sym_clojure_DOT_core                 = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string               = lang.NewSymbol("clojure.string")
+	sym_hi                               = lang.NewSymbol("hi")
+	sym_lo                               = lang.NewSymbol("lo")
 	sym_max_                             = lang.NewSymbol("max")
 	sym_min_                             = lang.NewSymbol("min")
+	sym_msg                              = lang.NewSymbol("msg")
+	sym_n                                = lang.NewSymbol("n")
 	sym_not                              = lang.NewSymbol("not")
 	sym_range_                           = lang.NewSymbol("range")
+	sym_re                               = lang.NewSymbol("re")
 	sym_str                              = lang.NewSymbol("str")
+	sym_vf                               = lang.NewSymbol("vf")
+	sym_vs                               = lang.NewSymbol("vs")
 	v_bri_DOT_cli_DOT_validate_all       = lang.InternVarName(lang.NewSymbol("bri.cli.validate"), lang.NewSymbol("all"))
 	v_bri_DOT_cli_DOT_validate_any_      = lang.InternVarName(lang.NewSymbol("bri.cli.validate"), lang.NewSymbol("any"))
 	v_bri_DOT_cli_DOT_validate_email     = lang.InternVarName(lang.NewSymbol("bri.cli.validate"), lang.NewSymbol("email"))
@@ -93,8 +103,8 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (def min "value >= n." (clojure.core/fn [n] (fn [v] (when (clojure.core/< v n) (str "must …
-	v_bri_DOT_cli_DOT_validate_min_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(22), kw_column, int64(7), kw_end_line, int64(22), kw_end_column, int64(10), kw_doc, "value >= n."))
+	// (def min (clojure.core/fn ([n] (fn [v] (when (clojure.core/< v n) (str "must be >= " n ", …
+	v_bri_DOT_cli_DOT_validate_min_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(22), kw_column, int64(7), kw_end_line, int64(22), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_n)), kw_doc, "value >= n."))
 	tmp7 := lang.FnFunc1(func(n8 any) any {
 		tmp9 := lang.FnFunc1(func(v10 any) any {
 			tmp11 := rt.LTBool(v_clojure_DOT_core_X_LT_, v10, n8)
@@ -117,8 +127,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_min_ = tmp16.F
 	v_bri_DOT_cli_DOT_validate_min_.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_min_
-	// (def max "value <= n." (clojure.core/fn [n] (fn [v] (when (clojure.core/> v n) (str "must …
-	v_bri_DOT_cli_DOT_validate_max_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(23), kw_column, int64(7), kw_end_line, int64(23), kw_end_column, int64(10), kw_doc, "value <= n."))
+	// (def max (clojure.core/fn ([n] (fn [v] (when (clojure.core/> v n) (str "must be <= " n ", …
+	v_bri_DOT_cli_DOT_validate_max_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(23), kw_column, int64(7), kw_end_line, int64(23), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_n)), kw_doc, "value <= n."))
 	tmp17 := lang.FnFunc1(func(n18 any) any {
 		tmp19 := lang.FnFunc1(func(v20 any) any {
 			tmp21 := rt.GTBool(v_clojure_DOT_core_X_GT_, v20, n18)
@@ -141,8 +151,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_max_ = tmp26.F
 	v_bri_DOT_cli_DOT_validate_max_.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_max_
-	// (def range "lo <= value <= hi." (clojure.core/fn [lo hi] (fn [v] (when-not (clojure.core/<…
-	v_bri_DOT_cli_DOT_validate_range_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(24), kw_column, int64(7), kw_end_line, int64(24), kw_end_column, int64(12), kw_doc, "lo <= value <= hi."))
+	// (def range (clojure.core/fn ([lo hi] (fn [v] (when-not (clojure.core/<= lo v hi) (str "mus…
+	v_bri_DOT_cli_DOT_validate_range_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(24), kw_column, int64(7), kw_end_line, int64(24), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_lo, sym_hi)), kw_doc, "lo <= value <= hi."))
 	tmp27 := lang.FnFunc2(func(lo28, hi29 any) any {
 		tmp30 := lang.FnFunc1(func(v31 any) any {
 			tmp32 := v_clojure_DOT_core_X_LT__EQ_.Get()
@@ -166,8 +176,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_range_ = tmp38.F
 	v_bri_DOT_cli_DOT_validate_range_.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_range_
-	// (def positive "value > 0." (clojure.core/fn [] (fn [v] (when (clojure.core/<= v 0) "must b…
-	v_bri_DOT_cli_DOT_validate_positive.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(15), kw_doc, "value > 0."))
+	// (def positive (clojure.core/fn ([] (fn [v] (when (clojure.core/<= v 0) "must be positive")…
+	v_bri_DOT_cli_DOT_validate_positive.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "value > 0."))
 	tmp39 := lang.FnFunc0(func() any {
 		tmp40 := lang.FnFunc1(func(v41 any) any {
 			tmp42 := rt.LEBool(v_clojure_DOT_core_X_LT__EQ_, v41, int64(0))
@@ -188,8 +198,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_positive = tmp45.F
 	v_bri_DOT_cli_DOT_validate_positive.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_positive
-	// (def non-empty "not blank." (clojure.core/fn [] (fn [v] (when (or (nil? v) (and (string? v…
-	v_bri_DOT_cli_DOT_validate_non_empty.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(29), kw_column, int64(7), kw_end_line, int64(29), kw_end_column, int64(16), kw_doc, "not blank."))
+	// (def non-empty (clojure.core/fn ([] (fn [v] (when (or (nil? v) (and (string? v) (str/blank…
+	v_bri_DOT_cli_DOT_validate_non_empty.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(29), kw_column, int64(7), kw_end_line, int64(29), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "not blank."))
 	tmp46 := lang.FnFunc0(func() any {
 		tmp47 := lang.FnFunc1(func(v48 any) any {
 			var tmp49 any
@@ -243,8 +253,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_non_empty = tmp63.F
 	v_bri_DOT_cli_DOT_validate_non_empty.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_non_empty
-	// (def min-len "at least n chars." (clojure.core/fn [n] (fn [v] (when (clojure.core/< (count…
-	v_bri_DOT_cli_DOT_validate_min_len.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(30), kw_column, int64(7), kw_end_line, int64(30), kw_end_column, int64(14), kw_doc, "at least n chars."))
+	// (def min-len (clojure.core/fn ([n] (fn [v] (when (clojure.core/< (count (str v)) n) (str "…
+	v_bri_DOT_cli_DOT_validate_min_len.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(30), kw_column, int64(7), kw_end_line, int64(30), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_n)), kw_doc, "at least n chars."))
 	tmp64 := lang.FnFunc1(func(n65 any) any {
 		tmp66 := lang.FnFunc1(func(v67 any) any {
 			tmp68 := v_clojure_DOT_core_count.Get()
@@ -271,8 +281,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_min_len = tmp77.F
 	v_bri_DOT_cli_DOT_validate_min_len.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_min_len
-	// (def max-len "at most n chars." (clojure.core/fn [n] (fn [v] (when (clojure.core/> (count …
-	v_bri_DOT_cli_DOT_validate_max_len.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(14), kw_doc, "at most n chars."))
+	// (def max-len (clojure.core/fn ([n] (fn [v] (when (clojure.core/> (count (str v)) n) (str "…
+	v_bri_DOT_cli_DOT_validate_max_len.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_n)), kw_doc, "at most n chars."))
 	tmp78 := lang.FnFunc1(func(n79 any) any {
 		tmp80 := lang.FnFunc1(func(v81 any) any {
 			tmp82 := v_clojure_DOT_core_count.Get()
@@ -299,8 +309,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_max_len = tmp91.F
 	v_bri_DOT_cli_DOT_validate_max_len.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_max_len
-	// (def matches "matches a regex." (clojure.core/fn [re] (fn [v] (when-not (re-find re (str v…
-	v_bri_DOT_cli_DOT_validate_matches.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(14), kw_doc, "matches a regex."))
+	// (def matches (clojure.core/fn ([re] (fn [v] (when-not (re-find re (str v)) (str "must matc…
+	v_bri_DOT_cli_DOT_validate_matches.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_re)), kw_doc, "matches a regex."))
 	tmp92 := lang.FnFunc1(func(re93 any) any {
 		tmp94 := lang.FnFunc1(func(v95 any) any {
 			tmp96 := v_clojure_DOT_core_re_find.Get()
@@ -328,8 +338,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_matches = tmp106.F
 	v_bri_DOT_cli_DOT_validate_matches.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_matches
-	// (def one-of "member of a set." (clojure.core/fn [choices] (fn [v] (when-not (some #{v} cho…
-	v_bri_DOT_cli_DOT_validate_one_of.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(13), kw_doc, "member of a set."))
+	// (def one-of (clojure.core/fn ([choices] (fn [v] (when-not (some #{v} choices) (str "must b…
+	v_bri_DOT_cli_DOT_validate_one_of.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_choices)), kw_doc, "member of a set."))
 	tmp107 := lang.FnFunc1(func(choices108 any) any {
 		tmp109 := lang.FnFunc1(func(v110 any) any {
 			tmp111 := v_clojure_DOT_core_some.Get()
@@ -359,8 +369,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_one_of = tmp123.F
 	v_bri_DOT_cli_DOT_validate_one_of.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_one_of
-	// (def email "looks like an email." (clojure.core/fn [] (matches #"^[^@\s]+@[^@\s]+\.[^@\s]+…
-	v_bri_DOT_cli_DOT_validate_email.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(12), kw_doc, "looks like an email."))
+	// (def email (clojure.core/fn ([] (matches #"^[^@\s]+@[^@\s]+\.[^@\s]+$"))))
+	v_bri_DOT_cli_DOT_validate_email.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "looks like an email."))
 	tmp124 := lang.FnFunc0(func() any {
 		tmp125 := v_bri_DOT_cli_DOT_validate_matches.Direct()
 		var tmp126 any
@@ -380,8 +390,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_validate_email = tmp129.F
 	v_bri_DOT_cli_DOT_validate_email.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_email
-	// (def all "AND: passes only if every validator passes; the FIRST failure's message\n  wins.…
-	v_bri_DOT_cli_DOT_validate_all.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(10), kw_doc, "AND: passes only if every validator passes; the FIRST failure's message\n  wins. A :validate vector is sugar for this."))
+	// (def all (clojure.core/fn ([& vs] (fn [v] (some (fn [f] (f v)) vs)))))
+	v_bri_DOT_cli_DOT_validate_all.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_vs)), kw_doc, "AND: passes only if every validator passes; the FIRST failure's message\n  wins. A :validate vector is sugar for this."))
 	tmp130 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -409,8 +419,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_DOT_validate_all.BindRoot(tmp130)
 	_ = v_bri_DOT_cli_DOT_validate_all
-	// (def any "OR: passes if ANY validator passes; fails (with msg) only if all fail." (clojure…
-	v_bri_DOT_cli_DOT_validate_any_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(10), kw_doc, "OR: passes if ANY validator passes; fails (with msg) only if all fail."))
+	// (def any (clojure.core/fn ([& vs] (fn [v] (when (not-any? (fn [f] (nil? (f v))) vs) "did n…
+	v_bri_DOT_cli_DOT_validate_any_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_vs)), kw_doc, "OR: passes if ANY validator passes; fails (with msg) only if all fail."))
 	tmp141 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -447,8 +457,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_DOT_validate_any_.BindRoot(tmp141)
 	_ = v_bri_DOT_cli_DOT_validate_any_
-	// (def not "Invert a validator: passes when `vf` fails, else reports `msg`." (clojure.core/f…
-	v_bri_DOT_cli_DOT_validate_not.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(10), kw_doc, "Invert a validator: passes when `vf` fails, else reports `msg`."))
+	// (def not (clojure.core/fn ([vf msg] (fn [v] (when (nil? (vf v)) msg)))))
+	v_bri_DOT_cli_DOT_validate_not.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_vf, sym_msg)), kw_doc, "Invert a validator: passes when `vf` fails, else reports `msg`."))
 	tmp155 := lang.FnFunc2(func(vf156, msg157 any) any {
 		tmp158 := lang.FnFunc1(func(v159 any) any {
 			tmp160 := v_clojure_DOT_core_nil_QMARK_.Get()

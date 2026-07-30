@@ -7,17 +7,30 @@ import (
 )
 
 var (
+	kw_arglists                          = lang.InternKeywordString("arglists")
 	kw_column                            = lang.InternKeywordString("column")
 	kw_doc                               = lang.InternKeywordString("doc")
 	kw_end_column                        = lang.InternKeywordString("end-column")
 	kw_end_line                          = lang.InternKeywordString("end-line")
 	kw_file                              = lang.InternKeywordString("file")
 	kw_line                              = lang.InternKeywordString("line")
+	sym_X_AMP_                           = lang.NewSymbol("&")
+	sym_a                                = lang.NewSymbol("a")
+	sym_args                             = lang.NewSymbol("args")
 	sym_cljx_DOT_core                    = lang.NewSymbol("cljx.core")
 	sym_cljx_DOT_core_SLASH_dbg          = lang.NewSymbol("cljx.core/dbg")
 	sym_clojure_DOT_core                 = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_core_SLASH___GT_     = lang.NewSymbol("clojure.core/->")
 	sym_clojure_DOT_core_SLASH___GT__GT_ = lang.NewSymbol("clojure.core/->>")
+	sym_f                                = lang.NewSymbol("f")
+	sym_forms                            = lang.NewSymbol("forms")
+	sym_k                                = lang.NewSymbol("k")
+	sym_kvs                              = lang.NewSymbol("kvs")
+	sym_label                            = lang.NewSymbol("label")
+	sym_n                                = lang.NewSymbol("n")
+	sym_path                             = lang.NewSymbol("path")
+	sym_v                                = lang.NewSymbol("v")
+	sym_x                                = lang.NewSymbol("x")
 	v_cljx_DOT_core_add_BANG_            = lang.InternVarName(lang.NewSymbol("cljx.core"), lang.NewSymbol("add!"))
 	v_cljx_DOT_core_bump_BANG_           = lang.InternVarName(lang.NewSymbol("cljx.core"), lang.NewSymbol("bump!"))
 	v_cljx_DOT_core_clear_BANG_          = lang.InternVarName(lang.NewSymbol("cljx.core"), lang.NewSymbol("clear!"))
@@ -86,8 +99,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def add! "Add to a collection atom, returning the new value.\n\n  On a vector/list/set:  …
-	v_cljx_DOT_core_add_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(11), kw_doc, "Add to a collection atom, returning the new value.\n\n  On a vector/list/set:  (add! a x)      =>  (swap! a conj x)\n  On a map:              (add! a k v)    =>  (swap! a assoc k v)\n\n  Extra args work like the form they replace: (add! a x y z) conjes all\n  three; (add! a k1 v1 k2 v2) assocs both pairs."))
+	// (def add! (clojure.core/fn ([a x] (swap! a conj x)) ([a k v] (swap! a assoc k v)) ([a k v …
+	v_cljx_DOT_core_add_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_a, sym_x), lang.NewVector(sym_a, sym_k, sym_v), lang.NewVector(sym_a, sym_k, sym_v, sym_X_AMP_, sym_kvs)), kw_doc, "Add to a collection atom, returning the new value.\n\n  On a vector/list/set:  (add! a x)      =>  (swap! a conj x)\n  On a map:              (add! a k v)    =>  (swap! a assoc k v)\n\n  Extra args work like the form they replace: (add! a x y z) conjes all\n  three; (add! a k1 v1 k2 v2) assocs both pairs."))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -149,8 +162,8 @@ func Load() {
 	})
 	v_cljx_DOT_core_add_BANG_.BindRoot(tmp5)
 	_ = v_cljx_DOT_core_add_BANG_
-	// (def del! "Remove a key (map) or member (set) from an atom, returning the new value.\n\n  …
-	v_cljx_DOT_core_del_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(11), kw_doc, "Remove a key (map) or member (set) from an atom, returning the new value.\n\n  (del! a k)  =>  (swap! a dissoc k)   for a map\n              =>  (swap! a disj k)     for a set"))
+	// (def del! (clojure.core/fn ([a k] (swap! a (fn [c] (if (set? c) (disj c k) (dissoc c k))))…
+	v_cljx_DOT_core_del_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_a, sym_k)), kw_doc, "Remove a key (map) or member (set) from an atom, returning the new value.\n\n  (del! a k)  =>  (swap! a dissoc k)   for a map\n              =>  (swap! a disj k)     for a set"))
 	tmp34 := lang.FnFunc2(func(a35, k36 any) any {
 		tmp37 := v_clojure_DOT_core_swap_BANG_.Get()
 		tmp38 := lang.FnFunc1(func(c39 any) any {
@@ -178,8 +191,8 @@ func Load() {
 	fnD_cljx_DOT_core_del_BANG_ = tmp49.F
 	v_cljx_DOT_core_del_BANG_.SealDirect()
 	_ = v_cljx_DOT_core_del_BANG_
-	// (def bump! "Increment — a counter in one word, returning the new value.\n\n  (bump! a)  …
-	v_cljx_DOT_core_bump_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(12), kw_doc, "Increment — a counter in one word, returning the new value.\n\n  (bump! a)        =>  (swap! a inc)\n  (bump! a k)      =>  (swap! a update k (fnil inc 0))   ; absent key starts at 0\n  (bump! a k n)    =>  (swap! a update k (fnil + 0) n)   ; by n"))
+	// (def bump! (clojure.core/fn ([a] (swap! a inc)) ([a k] (swap! a update k (fnil inc 0))) ([…
+	v_cljx_DOT_core_bump_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_a), lang.NewVector(sym_a, sym_k), lang.NewVector(sym_a, sym_k, sym_n)), kw_doc, "Increment — a counter in one word, returning the new value.\n\n  (bump! a)        =>  (swap! a inc)\n  (bump! a k)      =>  (swap! a update k (fnil inc 0))   ; absent key starts at 0\n  (bump! a k n)    =>  (swap! a update k (fnil + 0) n)   ; by n"))
 	tmp50 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -221,8 +234,8 @@ func Load() {
 	})
 	v_cljx_DOT_core_bump_BANG_.BindRoot(tmp50)
 	_ = v_cljx_DOT_core_bump_BANG_
-	// (def upd! "Apply a function to one key of a map atom, returning the new value.\n\n  (upd! …
-	v_cljx_DOT_core_upd_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(67), kw_column, int64(7), kw_end_line, int64(67), kw_end_column, int64(11), kw_doc, "Apply a function to one key of a map atom, returning the new value.\n\n  (upd! a k f & args)  =>  (swap! a update k f & args)"))
+	// (def upd! (clojure.core/fn ([a k f & args] (apply swap! a update k f args))))
+	v_cljx_DOT_core_upd_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(67), kw_column, int64(7), kw_end_line, int64(67), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_a, sym_k, sym_f, sym_X_AMP_, sym_args)), kw_doc, "Apply a function to one key of a map atom, returning the new value.\n\n  (upd! a k f & args)  =>  (swap! a update k f & args)"))
 	tmp72 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -249,8 +262,8 @@ func Load() {
 	})
 	v_cljx_DOT_core_upd_BANG_.BindRoot(tmp72)
 	_ = v_cljx_DOT_core_upd_BANG_
-	// (def put-in! "Set a nested value in a map atom, returning the new value.\n\n  (put-in! a p…
-	v_cljx_DOT_core_put_in_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(74), kw_column, int64(7), kw_end_line, int64(74), kw_end_column, int64(14), kw_doc, "Set a nested value in a map atom, returning the new value.\n\n  (put-in! a path v)  =>  (swap! a assoc-in path v)"))
+	// (def put-in! (clojure.core/fn ([a path v] (swap! a assoc-in path v))))
+	v_cljx_DOT_core_put_in_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(74), kw_column, int64(7), kw_end_line, int64(74), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_a, sym_path, sym_v)), kw_doc, "Set a nested value in a map atom, returning the new value.\n\n  (put-in! a path v)  =>  (swap! a assoc-in path v)"))
 	tmp81 := lang.FnFunc3(func(a82, path83, v84 any) any {
 		tmp85 := v_clojure_DOT_core_swap_BANG_.Get()
 		tmp86 := v_clojure_DOT_core_assoc_in.Get()
@@ -262,8 +275,8 @@ func Load() {
 	fnD_cljx_DOT_core_put_in_BANG_ = tmp88.F
 	v_cljx_DOT_core_put_in_BANG_.SealDirect()
 	_ = v_cljx_DOT_core_put_in_BANG_
-	// (def upd-in! "Apply a function to a nested value in a map atom, returning the new value.\n…
-	v_cljx_DOT_core_upd_in_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(81), kw_column, int64(7), kw_end_line, int64(81), kw_end_column, int64(14), kw_doc, "Apply a function to a nested value in a map atom, returning the new value.\n\n  (upd-in! a path f & args)  =>  (swap! a update-in path f & args)"))
+	// (def upd-in! (clojure.core/fn ([a path f & args] (apply swap! a update-in path f args))))
+	v_cljx_DOT_core_upd_in_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(81), kw_column, int64(7), kw_end_line, int64(81), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_a, sym_path, sym_f, sym_X_AMP_, sym_args)), kw_doc, "Apply a function to a nested value in a map atom, returning the new value.\n\n  (upd-in! a path f & args)  =>  (swap! a update-in path f & args)"))
 	tmp89 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -290,8 +303,8 @@ func Load() {
 	})
 	v_cljx_DOT_core_upd_in_BANG_.BindRoot(tmp89)
 	_ = v_cljx_DOT_core_upd_in_BANG_
-	// (def clear! "Empty an atom's collection, keeping its type (a vector stays a vector),\n  re…
-	v_cljx_DOT_core_clear_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(13), kw_doc, "Empty an atom's collection, keeping its type (a vector stays a vector),\n  returning the new value.\n\n  (clear! a)  =>  (reset! a (empty @a))"))
+	// (def clear! (clojure.core/fn ([a] (reset! a (empty (clojure.core/deref a))))))
+	v_cljx_DOT_core_clear_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_a)), kw_doc, "Empty an atom's collection, keeping its type (a vector stays a vector),\n  returning the new value.\n\n  (clear! a)  =>  (reset! a (empty @a))"))
 	tmp98 := lang.FnFunc1(func(a99 any) any {
 		tmp100 := v_clojure_DOT_core_reset_BANG_.Get()
 		tmp101 := v_clojure_DOT_core_empty.Get()
@@ -306,8 +319,8 @@ func Load() {
 	fnD_cljx_DOT_core_clear_BANG_ = tmp106.F
 	v_cljx_DOT_core_clear_BANG_.SealDirect()
 	_ = v_cljx_DOT_core_clear_BANG_
-	// (def toggle! "Flip a boolean atom, returning the new value.\n\n  (toggle! a)  =>  (swap! a…
-	v_cljx_DOT_core_toggle_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(14), kw_doc, "Flip a boolean atom, returning the new value.\n\n  (toggle! a)  =>  (swap! a not)"))
+	// (def toggle! (clojure.core/fn ([a] (swap! a not))))
+	v_cljx_DOT_core_toggle_BANG_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_a)), kw_doc, "Flip a boolean atom, returning the new value.\n\n  (toggle! a)  =>  (swap! a not)"))
 	tmp107 := lang.FnFunc1(func(a108 any) any {
 		tmp109 := v_clojure_DOT_core_swap_BANG_.Get()
 		tmp110 := v_clojure_DOT_core_not.Get()
@@ -319,8 +332,8 @@ func Load() {
 	fnD_cljx_DOT_core_toggle_BANG_ = tmp112.F
 	v_cljx_DOT_core_toggle_BANG_.SealDirect()
 	_ = v_cljx_DOT_core_toggle_BANG_
-	// (def dbg "Print a value and RETURN it unchanged — so it drops into any pipeline\n  witho…
-	v_cljx_DOT_core_dbg.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(105), kw_column, int64(7), kw_end_line, int64(105), kw_end_column, int64(10), kw_doc, "Print a value and RETURN it unchanged — so it drops into any pipeline\n  without altering the result.\n\n  (dbg x)        prints  dbg: <x>\n  (dbg label x)  prints  <label>: <x>\n\n  (->> prices (dbg \"prices\") (filter big?) (reduce +))"))
+	// (def dbg (clojure.core/fn ([x] (println "dbg:" (pr-str x)) x) ([label x] (println (str lab…
+	v_cljx_DOT_core_dbg.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(105), kw_column, int64(7), kw_end_line, int64(105), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_x), lang.NewVector(sym_label, sym_x)), kw_doc, "Print a value and RETURN it unchanged — so it drops into any pipeline\n  without altering the result.\n\n  (dbg x)        prints  dbg: <x>\n  (dbg label x)  prints  <label>: <x>\n\n  (->> prices (dbg \"prices\") (filter big?) (reduce +))"))
 	tmp113 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -351,8 +364,8 @@ func Load() {
 	})
 	v_cljx_DOT_core_dbg.BindRoot(tmp113)
 	_ = v_cljx_DOT_core_dbg
-	// (do (def dbg-> "Like ->, but prints the value after every step. Returns the same result\n …
-	v_cljx_DOT_core_dbg__GT_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(116), kw_column, int64(11), kw_end_line, int64(116), kw_end_column, int64(16), kw_doc, "Like ->, but prints the value after every step. Returns the same result\n  the equivalent -> would."))
+	// (do (def dbg-> (fn* dbg-> ([&form &env x & forms] (let [steps (map (fn [f] (clojure.core/s…
+	v_cljx_DOT_core_dbg__GT_.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_x, sym_X_AMP_, sym_forms)), kw_doc, "Like ->, but prints the value after every step. Returns the same result\n  the equivalent -> would.", kw_file, "cljx/core.cljg", kw_line, int64(116), kw_column, int64(11), kw_end_line, int64(116), kw_end_column, int64(16)))
 	var dbg__GT_127 any
 	_ = dbg__GT_127
 	tmp128 := lang.FnFunc(func(args ...any) any {
@@ -415,8 +428,8 @@ func Load() {
 	tmp161 := lang.Apply1(tmp160, v_cljx_DOT_core_dbg__GT_)
 	_ = tmp161
 	_ = v_cljx_DOT_core_dbg__GT_
-	// (do (def dbg->> "Like ->>, but prints the value after every step. Returns the same result\…
-	v_cljx_DOT_core_dbg__GT__GT_.SetMeta(lang.NewMap(kw_file, "cljx/core.cljg", kw_line, int64(123), kw_column, int64(11), kw_end_line, int64(123), kw_end_column, int64(17), kw_doc, "Like ->>, but prints the value after every step. Returns the same result\n  the equivalent ->> would."))
+	// (do (def dbg->> (fn* dbg->> ([&form &env x & forms] (let [steps (map (fn [f] (clojure.core…
+	v_cljx_DOT_core_dbg__GT__GT_.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_x, sym_X_AMP_, sym_forms)), kw_doc, "Like ->>, but prints the value after every step. Returns the same result\n  the equivalent ->> would.", kw_file, "cljx/core.cljg", kw_line, int64(123), kw_column, int64(11), kw_end_line, int64(123), kw_end_column, int64(17)))
 	var dbg__GT__GT_162 any
 	_ = dbg__GT__GT_162
 	tmp163 := lang.FnFunc(func(args ...any) any {

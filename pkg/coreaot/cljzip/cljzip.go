@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                                     = lang.InternKeywordString("arglists")
 	kw_changed_QMARK_                               = lang.InternKeywordString("changed?")
 	kw_column                                       = lang.InternKeywordString("column")
 	kw_content                                      = lang.InternKeywordString("content")
@@ -25,11 +26,21 @@ var (
 	kw_zip_SLASH_branch_QMARK_                      = lang.InternKeywordString("zip/branch?")
 	kw_zip_SLASH_children                           = lang.InternKeywordString("zip/children")
 	kw_zip_SLASH_make_node                          = lang.InternKeywordString("zip/make-node")
+	sym_X_AMP_                                      = lang.NewSymbol("&")
+	sym_args                                        = lang.NewSymbol("args")
+	sym_branch_QMARK_                               = lang.NewSymbol("branch?")
+	sym_children                                    = lang.NewSymbol("children")
 	sym_clojure_DOT_core                            = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_zip                             = lang.NewSymbol("clojure.zip")
+	sym_f                                           = lang.NewSymbol("f")
+	sym_item                                        = lang.NewSymbol("item")
+	sym_loc                                         = lang.NewSymbol("loc")
+	sym_make_node                                   = lang.NewSymbol("make-node")
 	sym_next                                        = lang.NewSymbol("next")
+	sym_node                                        = lang.NewSymbol("node")
 	sym_remove                                      = lang.NewSymbol("remove")
 	sym_replace                                     = lang.NewSymbol("replace")
+	sym_root                                        = lang.NewSymbol("root")
 	v_clojure_DOT_core_X_EQ_                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
 	v_clojure_DOT_core_apply                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
 	v_clojure_DOT_core_assoc                        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
@@ -141,8 +152,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply3(tmp3, sym_clojure_DOT_core, kw_exclude, lang.NewVector(sym_replace, sym_remove, sym_next))
 	_ = tmp4
-	// (def zipper "Creates a new zipper structure.\n\n  branch? is a fn that, given a node, retu…
-	v_clojure_DOT_zip_zipper.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(28), kw_column, int64(7), kw_end_line, int64(28), kw_end_column, int64(13), kw_doc, "Creates a new zipper structure.\n\n  branch? is a fn that, given a node, returns true if can have\n  children, even if it currently doesn't.\n\n  children is a fn that, given a branch node, returns a seq of its\n  children.\n\n  make-node is a fn that, given an existing node and a seq of\n  children, returns a new branch node with the supplied children.\n  root is the root node."))
+	// (def zipper (clojure.core/fn ([branch? children make-node root] (with-meta [root nil] #:zi…
+	v_clojure_DOT_zip_zipper.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(28), kw_column, int64(7), kw_end_line, int64(28), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_branch_QMARK_, sym_children, sym_make_node, sym_root)), kw_doc, "Creates a new zipper structure.\n\n  branch? is a fn that, given a node, returns true if can have\n  children, even if it currently doesn't.\n\n  children is a fn that, given a branch node, returns a seq of its\n  children.\n\n  make-node is a fn that, given an existing node and a seq of\n  children, returns a new branch node with the supplied children.\n  root is the root node."))
 	tmp5 := lang.FnFunc4(func(branch_QMARK_6, children7, make_node8, root9 any) any {
 		tmp10 := v_clojure_DOT_core_with_meta.Get()
 		tmp11 := lang.NewVector(root9, nil)
@@ -155,8 +166,8 @@ func Load() {
 	fnD_clojure_DOT_zip_zipper = tmp14.F
 	v_clojure_DOT_zip_zipper.SealDirect()
 	_ = v_clojure_DOT_zip_zipper
-	// (def seq-zip "Returns a zipper for nested sequences, given a root sequence" (clojure.core/…
-	v_clojure_DOT_zip_seq_zip.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(45), kw_column, int64(7), kw_end_line, int64(45), kw_end_column, int64(14), kw_doc, "Returns a zipper for nested sequences, given a root sequence"))
+	// (def seq-zip (clojure.core/fn ([root] (zipper seq? identity (fn [node children] (with-meta…
+	v_clojure_DOT_zip_seq_zip.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(45), kw_column, int64(7), kw_end_line, int64(45), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_root)), kw_doc, "Returns a zipper for nested sequences, given a root sequence"))
 	tmp15 := lang.FnFunc1(func(root16 any) any {
 		tmp17 := v_clojure_DOT_zip_zipper.Direct()
 		var tmp18 any
@@ -186,8 +197,8 @@ func Load() {
 	fnD_clojure_DOT_zip_seq_zip = tmp30.F
 	v_clojure_DOT_zip_seq_zip.SealDirect()
 	_ = v_clojure_DOT_zip_seq_zip
-	// (def vector-zip "Returns a zipper for nested vectors, given a root vector" (clojure.core/f…
-	v_clojure_DOT_zip_vector_zip.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(54), kw_column, int64(7), kw_end_line, int64(54), kw_end_column, int64(17), kw_doc, "Returns a zipper for nested vectors, given a root vector"))
+	// (def vector-zip (clojure.core/fn ([root] (zipper vector? seq (fn [node children] (with-met…
+	v_clojure_DOT_zip_vector_zip.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(54), kw_column, int64(7), kw_end_line, int64(54), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_root)), kw_doc, "Returns a zipper for nested vectors, given a root vector"))
 	tmp31 := lang.FnFunc1(func(root32 any) any {
 		tmp33 := v_clojure_DOT_zip_zipper.Direct()
 		var tmp34 any
@@ -219,8 +230,8 @@ func Load() {
 	fnD_clojure_DOT_zip_vector_zip = tmp48.F
 	v_clojure_DOT_zip_vector_zip.SealDirect()
 	_ = v_clojure_DOT_zip_vector_zip
-	// (def xml-zip "Returns a zipper for xml elements (as from xml/parse),\n  given a root eleme…
-	v_clojure_DOT_zip_xml_zip.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(14), kw_doc, "Returns a zipper for xml elements (as from xml/parse),\n  given a root element"))
+	// (def xml-zip (clojure.core/fn ([root] (zipper (complement string?) (comp seq :content) (fn…
+	v_clojure_DOT_zip_xml_zip.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_root)), kw_doc, "Returns a zipper for xml elements (as from xml/parse),\n  given a root element"))
 	tmp49 := lang.FnFunc1(func(root50 any) any {
 		tmp51 := v_clojure_DOT_zip_zipper.Direct()
 		var tmp52 any
@@ -269,8 +280,8 @@ func Load() {
 	fnD_clojure_DOT_zip_xml_zip = tmp72.F
 	v_clojure_DOT_zip_xml_zip.SealDirect()
 	_ = v_clojure_DOT_zip_xml_zip
-	// (def node "Returns the node at loc" (clojure.core/fn [loc] (loc 0)))
-	v_clojure_DOT_zip_node.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(11), kw_doc, "Returns the node at loc"))
+	// (def node (clojure.core/fn ([loc] (loc 0))))
+	v_clojure_DOT_zip_node.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns the node at loc"))
 	tmp73 := lang.FnFunc1(func(loc74 any) any {
 		tmp75 := lang.Apply1(loc74, int64(0))
 		return tmp75
@@ -280,8 +291,8 @@ func Load() {
 	fnD_clojure_DOT_zip_node = tmp76.F
 	v_clojure_DOT_zip_node.SealDirect()
 	_ = v_clojure_DOT_zip_node
-	// (def branch? "Returns true if the node at loc is a branch" (clojure.core/fn [loc] ((:zip/b…
-	v_clojure_DOT_zip_branch_QMARK_.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(81), kw_column, int64(7), kw_end_line, int64(81), kw_end_column, int64(14), kw_doc, "Returns true if the node at loc is a branch"))
+	// (def branch? (clojure.core/fn ([loc] ((:zip/branch? (meta loc)) (node loc)))))
+	v_clojure_DOT_zip_branch_QMARK_.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(81), kw_column, int64(7), kw_end_line, int64(81), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns true if the node at loc is a branch"))
 	tmp77 := lang.FnFunc1(func(loc78 any) any {
 		tmp79 := v_clojure_DOT_core_meta.Get()
 		tmp80 := lang.Apply1(tmp79, loc78)
@@ -305,8 +316,8 @@ func Load() {
 	fnD_clojure_DOT_zip_branch_QMARK_ = tmp86.F
 	v_clojure_DOT_zip_branch_QMARK_.SealDirect()
 	_ = v_clojure_DOT_zip_branch_QMARK_
-	// (def children "Returns a seq of the children of node at loc, which must be a branch" (cloj…
-	v_clojure_DOT_zip_children.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(15), kw_doc, "Returns a seq of the children of node at loc, which must be a branch"))
+	// (def children (clojure.core/fn ([loc] (if (branch? loc) ((:zip/children (meta loc)) (node …
+	v_clojure_DOT_zip_children.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(88), kw_column, int64(7), kw_end_line, int64(88), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns a seq of the children of node at loc, which must be a branch"))
 	tmp87 := lang.FnFunc1(func(loc88 any) any {
 		tmp89 := v_clojure_DOT_zip_branch_QMARK_.Direct()
 		var tmp90 any
@@ -351,8 +362,8 @@ func Load() {
 	fnD_clojure_DOT_zip_children = tmp103.F
 	v_clojure_DOT_zip_children.SealDirect()
 	_ = v_clojure_DOT_zip_children
-	// (def make-node "Returns a new branch node, given an existing node and new\n  children. The…
-	v_clojure_DOT_zip_make_node.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(16), kw_doc, "Returns a new branch node, given an existing node and new\n  children. The loc is only used to supply the constructor."))
+	// (def make-node (clojure.core/fn ([loc node children] ((:zip/make-node (meta loc)) node chi…
+	v_clojure_DOT_zip_make_node.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_loc, sym_node, sym_children)), kw_doc, "Returns a new branch node, given an existing node and new\n  children. The loc is only used to supply the constructor."))
 	tmp104 := lang.FnFunc3(func(loc105, node106, children107 any) any {
 		tmp108 := v_clojure_DOT_core_meta.Get()
 		tmp109 := lang.Apply1(tmp108, loc105)
@@ -365,8 +376,8 @@ func Load() {
 	fnD_clojure_DOT_zip_make_node = tmp112.F
 	v_clojure_DOT_zip_make_node.SealDirect()
 	_ = v_clojure_DOT_zip_make_node
-	// (def path "Returns a seq of nodes leading to this loc" (clojure.core/fn [loc] (:pnodes (lo…
-	v_clojure_DOT_zip_path.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(103), kw_column, int64(7), kw_end_line, int64(103), kw_end_column, int64(11), kw_doc, "Returns a seq of nodes leading to this loc"))
+	// (def path (clojure.core/fn ([loc] (:pnodes (loc 1)))))
+	v_clojure_DOT_zip_path.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(103), kw_column, int64(7), kw_end_line, int64(103), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns a seq of nodes leading to this loc"))
 	tmp113 := lang.FnFunc1(func(loc114 any) any {
 		tmp115 := lang.Apply1(loc114, int64(1))
 		tmp116 := lang.Apply1(kw_pnodes, tmp115)
@@ -377,8 +388,8 @@ func Load() {
 	fnD_clojure_DOT_zip_path = tmp117.F
 	v_clojure_DOT_zip_path.SealDirect()
 	_ = v_clojure_DOT_zip_path
-	// (def lefts "Returns a seq of the left siblings of this loc" (clojure.core/fn [loc] (seq (:…
-	v_clojure_DOT_zip_lefts.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(12), kw_doc, "Returns a seq of the left siblings of this loc"))
+	// (def lefts (clojure.core/fn ([loc] (seq (:l (loc 1))))))
+	v_clojure_DOT_zip_lefts.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns a seq of the left siblings of this loc"))
 	tmp118 := lang.FnFunc1(func(loc119 any) any {
 		tmp120 := v_clojure_DOT_core_seq.Get()
 		tmp121 := lang.Apply1(loc119, int64(1))
@@ -391,8 +402,8 @@ func Load() {
 	fnD_clojure_DOT_zip_lefts = tmp124.F
 	v_clojure_DOT_zip_lefts.SealDirect()
 	_ = v_clojure_DOT_zip_lefts
-	// (def rights "Returns a seq of the right siblings of this loc" (clojure.core/fn [loc] (:r (…
-	v_clojure_DOT_zip_rights.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(115), kw_column, int64(7), kw_end_line, int64(115), kw_end_column, int64(13), kw_doc, "Returns a seq of the right siblings of this loc"))
+	// (def rights (clojure.core/fn ([loc] (:r (loc 1)))))
+	v_clojure_DOT_zip_rights.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(115), kw_column, int64(7), kw_end_line, int64(115), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns a seq of the right siblings of this loc"))
 	tmp125 := lang.FnFunc1(func(loc126 any) any {
 		tmp127 := lang.Apply1(loc126, int64(1))
 		tmp128 := lang.Apply1(kw_r, tmp127)
@@ -403,8 +414,8 @@ func Load() {
 	fnD_clojure_DOT_zip_rights = tmp129.F
 	v_clojure_DOT_zip_rights.SealDirect()
 	_ = v_clojure_DOT_zip_rights
-	// (def down "Returns the loc of the leftmost child of the node at this loc, or\n  nil if no …
-	v_clojure_DOT_zip_down.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(122), kw_column, int64(7), kw_end_line, int64(122), kw_end_column, int64(11), kw_doc, "Returns the loc of the leftmost child of the node at this loc, or\n  nil if no children"))
+	// (def down (clojure.core/fn ([loc] (when (branch? loc) (let [[node path] loc [c & cnext :as…
+	v_clojure_DOT_zip_down.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(122), kw_column, int64(7), kw_end_line, int64(122), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns the loc of the leftmost child of the node at this loc, or\n  nil if no children"))
 	tmp130 := lang.FnFunc1(func(loc131 any) any {
 		tmp132 := v_clojure_DOT_zip_branch_QMARK_.Direct()
 		var tmp133 any
@@ -502,8 +513,8 @@ func Load() {
 	fnD_clojure_DOT_zip_down = tmp173.F
 	v_clojure_DOT_zip_down.SealDirect()
 	_ = v_clojure_DOT_zip_down
-	// (def up "Returns the loc of the parent of the node at this loc, or nil if at\n  the top" (…
-	v_clojure_DOT_zip_up.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(137), kw_column, int64(7), kw_end_line, int64(137), kw_end_column, int64(9), kw_doc, "Returns the loc of the parent of the node at this loc, or nil if at\n  the top"))
+	// (def up (clojure.core/fn ([loc] (let [[node {l :l, ppath :ppath, pnodes :pnodes, r :r, cha…
+	v_clojure_DOT_zip_up.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(137), kw_column, int64(7), kw_end_line, int64(137), kw_end_column, int64(9), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns the loc of the parent of the node at this loc, or nil if at\n  the top"))
 	tmp174 := lang.FnFunc1(func(loc175 any) any {
 		var tmp176 any
 		_ = tmp176
@@ -622,8 +633,8 @@ func Load() {
 	fnD_clojure_DOT_zip_up = tmp230.F
 	v_clojure_DOT_zip_up.SealDirect()
 	_ = v_clojure_DOT_zip_up
-	// (def root "zips all the way up and returns the root node, reflecting any\n changes." (cloj…
-	v_clojure_DOT_zip_root.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(152), kw_column, int64(7), kw_end_line, int64(152), kw_end_column, int64(11), kw_doc, "zips all the way up and returns the root node, reflecting any\n changes."))
+	// (def root (clojure.core/fn ([loc] (if (= :end (loc 1)) (node loc) (let [p (up loc)] (if p …
+	v_clojure_DOT_zip_root.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(152), kw_column, int64(7), kw_end_line, int64(152), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "zips all the way up and returns the root node, reflecting any\n changes."))
 	tmp231 := lang.FnFunc1(func(loc232 any) any {
 	fnloop233:
 		for {
@@ -693,8 +704,8 @@ func Load() {
 	fnD_clojure_DOT_zip_root = tmp250.F
 	v_clojure_DOT_zip_root.SealDirect()
 	_ = v_clojure_DOT_zip_root
-	// (def right "Returns the loc of the right sibling of the node at this loc, or nil" (clojure…
-	v_clojure_DOT_zip_right.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(165), kw_column, int64(7), kw_end_line, int64(165), kw_end_column, int64(12), kw_doc, "Returns the loc of the right sibling of the node at this loc, or nil"))
+	// (def right (clojure.core/fn ([loc] (let [[node {l :l, [r & rnext :as rs] :r, :as path}] lo…
+	v_clojure_DOT_zip_right.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(165), kw_column, int64(7), kw_end_line, int64(165), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns the loc of the right sibling of the node at this loc, or nil"))
 	tmp251 := lang.FnFunc1(func(loc252 any) any {
 		var tmp253 any
 		_ = tmp253
@@ -789,8 +800,8 @@ func Load() {
 	fnD_clojure_DOT_zip_right = tmp299.F
 	v_clojure_DOT_zip_right.SealDirect()
 	_ = v_clojure_DOT_zip_right
-	// (def rightmost "Returns the loc of the rightmost sibling of the node at this loc, or self"…
-	v_clojure_DOT_zip_rightmost.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(173), kw_column, int64(7), kw_end_line, int64(173), kw_end_column, int64(16), kw_doc, "Returns the loc of the rightmost sibling of the node at this loc, or self"))
+	// (def rightmost (clojure.core/fn ([loc] (let [[node {l :l, r :r, :as path}] loc] (if (and p…
+	v_clojure_DOT_zip_rightmost.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(173), kw_column, int64(7), kw_end_line, int64(173), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns the loc of the rightmost sibling of the node at this loc, or self"))
 	tmp300 := lang.FnFunc1(func(loc301 any) any {
 		var tmp302 any
 		_ = tmp302
@@ -872,8 +883,8 @@ func Load() {
 	fnD_clojure_DOT_zip_rightmost = tmp341.F
 	v_clojure_DOT_zip_rightmost.SealDirect()
 	_ = v_clojure_DOT_zip_rightmost
-	// (def left "Returns the loc of the left sibling of the node at this loc, or nil" (clojure.c…
-	v_clojure_DOT_zip_left.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(11), kw_doc, "Returns the loc of the left sibling of the node at this loc, or nil"))
+	// (def left (clojure.core/fn ([loc] (let [[node {l :l, r :r, :as path}] loc] (when (and path…
+	v_clojure_DOT_zip_left.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns the loc of the left sibling of the node at this loc, or nil"))
 	tmp342 := lang.FnFunc1(func(loc343 any) any {
 		var tmp344 any
 		_ = tmp344
@@ -956,8 +967,8 @@ func Load() {
 	fnD_clojure_DOT_zip_left = tmp384.F
 	v_clojure_DOT_zip_left.SealDirect()
 	_ = v_clojure_DOT_zip_left
-	// (def leftmost "Returns the loc of the leftmost sibling of the node at this loc, or self" (…
-	v_clojure_DOT_zip_leftmost.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(191), kw_column, int64(7), kw_end_line, int64(191), kw_end_column, int64(15), kw_doc, "Returns the loc of the leftmost sibling of the node at this loc, or self"))
+	// (def leftmost (clojure.core/fn ([loc] (let [[node {l :l, r :r, :as path}] loc] (if (and pa…
+	v_clojure_DOT_zip_leftmost.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(191), kw_column, int64(7), kw_end_line, int64(191), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns the loc of the leftmost sibling of the node at this loc, or self"))
 	tmp385 := lang.FnFunc1(func(loc386 any) any {
 		var tmp387 any
 		_ = tmp387
@@ -1042,8 +1053,8 @@ func Load() {
 	fnD_clojure_DOT_zip_leftmost = tmp429.F
 	v_clojure_DOT_zip_leftmost.SealDirect()
 	_ = v_clojure_DOT_zip_leftmost
-	// (def insert-left "Inserts the item as the left sibling of the node at this loc,\n without …
-	v_clojure_DOT_zip_insert_left.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(201), kw_column, int64(7), kw_end_line, int64(201), kw_end_column, int64(18), kw_doc, "Inserts the item as the left sibling of the node at this loc,\n without moving"))
+	// (def insert-left (clojure.core/fn ([loc item] (let [[node {l :l, :as path}] loc] (if (nil?…
+	v_clojure_DOT_zip_insert_left.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(201), kw_column, int64(7), kw_end_line, int64(201), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_loc, sym_item)), kw_doc, "Inserts the item as the left sibling of the node at this loc,\n without moving"))
 	tmp430 := lang.FnFunc2(func(loc431, item432 any) any {
 		var tmp433 any
 		_ = tmp433
@@ -1107,8 +1118,8 @@ func Load() {
 	fnD_clojure_DOT_zip_insert_left = tmp466.F
 	v_clojure_DOT_zip_insert_left.SealDirect()
 	_ = v_clojure_DOT_zip_insert_left
-	// (def insert-right "Inserts the item as the right sibling of the node at this loc,\n  witho…
-	v_clojure_DOT_zip_insert_right.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(212), kw_column, int64(7), kw_end_line, int64(212), kw_end_column, int64(19), kw_doc, "Inserts the item as the right sibling of the node at this loc,\n  without moving"))
+	// (def insert-right (clojure.core/fn ([loc item] (let [[node {r :r, :as path}] loc] (if (nil…
+	v_clojure_DOT_zip_insert_right.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(212), kw_column, int64(7), kw_end_line, int64(212), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_loc, sym_item)), kw_doc, "Inserts the item as the right sibling of the node at this loc,\n  without moving"))
 	tmp467 := lang.FnFunc2(func(loc468, item469 any) any {
 		var tmp470 any
 		_ = tmp470
@@ -1172,8 +1183,8 @@ func Load() {
 	fnD_clojure_DOT_zip_insert_right = tmp503.F
 	v_clojure_DOT_zip_insert_right.SealDirect()
 	_ = v_clojure_DOT_zip_insert_right
-	// (def replace "Replaces the node at this loc, without moving" (clojure.core/fn [loc node] (…
-	v_clojure_DOT_zip_replace.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(222), kw_column, int64(7), kw_end_line, int64(222), kw_end_column, int64(14), kw_doc, "Replaces the node at this loc, without moving"))
+	// (def replace (clojure.core/fn ([loc node] (let [[_ path] loc] (with-meta [node (assoc path…
+	v_clojure_DOT_zip_replace.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(222), kw_column, int64(7), kw_end_line, int64(222), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_loc, sym_node)), kw_doc, "Replaces the node at this loc, without moving"))
 	tmp504 := lang.FnFunc2(func(loc505, node506 any) any {
 		var tmp507 any
 		_ = tmp507
@@ -1204,8 +1215,8 @@ func Load() {
 	fnD_clojure_DOT_zip_replace = tmp522.F
 	v_clojure_DOT_zip_replace.SealDirect()
 	_ = v_clojure_DOT_zip_replace
-	// (def edit "Replaces the node at this loc with the value of (f node args)" (clojure.core/fn…
-	v_clojure_DOT_zip_edit.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(229), kw_column, int64(7), kw_end_line, int64(229), kw_end_column, int64(11), kw_doc, "Replaces the node at this loc with the value of (f node args)"))
+	// (def edit (clojure.core/fn ([loc f & args] (replace loc (apply f (node loc) args)))))
+	v_clojure_DOT_zip_edit.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(229), kw_column, int64(7), kw_end_line, int64(229), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_loc, sym_f, sym_X_AMP_, sym_args)), kw_doc, "Replaces the node at this loc with the value of (f node args)"))
 	tmp523 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -1250,8 +1261,8 @@ func Load() {
 	})
 	v_clojure_DOT_zip_edit.BindRoot(tmp523)
 	_ = v_clojure_DOT_zip_edit
-	// (def insert-child "Inserts the item as the leftmost child of the node at this loc,\n  with…
-	v_clojure_DOT_zip_insert_child.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(235), kw_column, int64(7), kw_end_line, int64(235), kw_end_column, int64(19), kw_doc, "Inserts the item as the leftmost child of the node at this loc,\n  without moving"))
+	// (def insert-child (clojure.core/fn ([loc item] (replace loc (make-node loc (node loc) (con…
+	v_clojure_DOT_zip_insert_child.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(235), kw_column, int64(7), kw_end_line, int64(235), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_loc, sym_item)), kw_doc, "Inserts the item as the leftmost child of the node at this loc,\n  without moving"))
 	tmp535 := lang.FnFunc2(func(loc536, item537 any) any {
 		tmp538 := v_clojure_DOT_zip_replace.Direct()
 		var tmp539 any
@@ -1306,8 +1317,8 @@ func Load() {
 	fnD_clojure_DOT_zip_insert_child = tmp552.F
 	v_clojure_DOT_zip_insert_child.SealDirect()
 	_ = v_clojure_DOT_zip_insert_child
-	// (def append-child "Inserts the item as the rightmost child of the node at this loc,\n  wit…
-	v_clojure_DOT_zip_append_child.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(242), kw_column, int64(7), kw_end_line, int64(242), kw_end_column, int64(19), kw_doc, "Inserts the item as the rightmost child of the node at this loc,\n  without moving"))
+	// (def append-child (clojure.core/fn ([loc item] (replace loc (make-node loc (node loc) (con…
+	v_clojure_DOT_zip_append_child.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(242), kw_column, int64(7), kw_end_line, int64(242), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_loc, sym_item)), kw_doc, "Inserts the item as the rightmost child of the node at this loc,\n  without moving"))
 	tmp553 := lang.FnFunc2(func(loc554, item555 any) any {
 		tmp556 := v_clojure_DOT_zip_replace.Direct()
 		var tmp557 any
@@ -1363,8 +1374,8 @@ func Load() {
 	fnD_clojure_DOT_zip_append_child = tmp571.F
 	v_clojure_DOT_zip_append_child.SealDirect()
 	_ = v_clojure_DOT_zip_append_child
-	// (def next "Moves to the next loc in the hierarchy, depth-first. When reaching\n  the end, …
-	v_clojure_DOT_zip_next.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(250), kw_column, int64(7), kw_end_line, int64(250), kw_end_column, int64(11), kw_doc, "Moves to the next loc in the hierarchy, depth-first. When reaching\n  the end, returns a distinguished loc detectable via end?. If already\n  at the end, stays there."))
+	// (def next (clojure.core/fn ([loc] (if (= :end (loc 1)) loc (or (and (branch? loc) (down lo…
+	v_clojure_DOT_zip_next.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(250), kw_column, int64(7), kw_end_line, int64(250), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Moves to the next loc in the hierarchy, depth-first. When reaching\n  the end, returns a distinguished loc detectable via end?. If already\n  at the end, stays there."))
 	tmp572 := lang.FnFunc1(func(loc573 any) any {
 		tmp574 := lang.Apply1(loc573, int64(1))
 		tmp575 := rt.EQBool(v_clojure_DOT_core_X_EQ_, kw_end, tmp574)
@@ -1547,8 +1558,8 @@ func Load() {
 	fnD_clojure_DOT_zip_next = tmp619.F
 	v_clojure_DOT_zip_next.SealDirect()
 	_ = v_clojure_DOT_zip_next
-	// (def prev "Moves to the previous loc in the hierarchy, depth-first. If already\n  at the r…
-	v_clojure_DOT_zip_prev.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(267), kw_column, int64(7), kw_end_line, int64(267), kw_end_column, int64(11), kw_doc, "Moves to the previous loc in the hierarchy, depth-first. If already\n  at the root, returns nil."))
+	// (def prev (clojure.core/fn ([loc] (if-let [lloc (left loc)] (loop [loc lloc] (if-let [chil…
+	v_clojure_DOT_zip_prev.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(267), kw_column, int64(7), kw_end_line, int64(267), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Moves to the previous loc in the hierarchy, depth-first. If already\n  at the root, returns nil."))
 	tmp620 := lang.FnFunc1(func(loc621 any) any {
 		var tmp622 any
 		_ = tmp622
@@ -1680,8 +1691,8 @@ func Load() {
 	fnD_clojure_DOT_zip_prev = tmp654.F
 	v_clojure_DOT_zip_prev.SealDirect()
 	_ = v_clojure_DOT_zip_prev
-	// (def end? "Returns true if loc represents the end of a depth-first walk" (clojure.core/fn …
-	v_clojure_DOT_zip_end_QMARK_.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(280), kw_column, int64(7), kw_end_line, int64(280), kw_end_column, int64(11), kw_doc, "Returns true if loc represents the end of a depth-first walk"))
+	// (def end? (clojure.core/fn ([loc] (= :end (loc 1)))))
+	v_clojure_DOT_zip_end_QMARK_.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(280), kw_column, int64(7), kw_end_line, int64(280), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Returns true if loc represents the end of a depth-first walk"))
 	tmp655 := lang.FnFunc1(func(loc656 any) any {
 		tmp657 := lang.Apply1(loc656, int64(1))
 		tmp658 := rt.EQ2(v_clojure_DOT_core_X_EQ_, kw_end, tmp657)
@@ -1692,8 +1703,8 @@ func Load() {
 	fnD_clojure_DOT_zip_end_QMARK_ = tmp659.F
 	v_clojure_DOT_zip_end_QMARK_.SealDirect()
 	_ = v_clojure_DOT_zip_end_QMARK_
-	// (def remove "Removes the node at loc, returning the loc that would have preceded\n  it in …
-	v_clojure_DOT_zip_remove.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(287), kw_column, int64(7), kw_end_line, int64(287), kw_end_column, int64(13), kw_doc, "Removes the node at loc, returning the loc that would have preceded\n  it in a depth-first walk."))
+	// (def remove (clojure.core/fn ([loc] (let [[node {l :l, ppath :ppath, pnodes :pnodes, rs :r…
+	v_clojure_DOT_zip_remove.SetMeta(lang.NewMap(kw_file, "zip.cljg", kw_line, int64(287), kw_column, int64(7), kw_end_line, int64(287), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_loc)), kw_doc, "Removes the node at loc, returning the loc that would have preceded\n  it in a depth-first walk."))
 	tmp660 := lang.FnFunc1(func(loc661 any) any {
 		var tmp662 any
 		_ = tmp662

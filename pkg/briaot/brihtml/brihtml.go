@@ -10,6 +10,7 @@ import (
 
 var (
 	kw_action                              = lang.InternKeywordString("action")
+	kw_arglists                            = lang.InternKeywordString("arglists")
 	kw_as                                  = lang.InternKeywordString("as")
 	kw_body                                = lang.InternKeywordString("body")
 	kw_bri_DOT_web_DOT_html_SLASH_unsafe   = lang.InternKeywordString("bri.web.html/unsafe")
@@ -43,11 +44,19 @@ var (
 	kw_value                               = lang.InternKeywordString("value")
 	re_132                                 = &reader.Regex{Pattern: "#"}
 	re_138                                 = &reader.Regex{Pattern: "\\."}
+	sym_X_AMP_                             = lang.NewSymbol("&")
+	sym_attrs                              = lang.NewSymbol("attrs")
+	sym_body                               = lang.NewSymbol("body")
 	sym_bri_DOT_web_DOT_html               = lang.NewSymbol("bri.web.html")
 	sym_bri_DOT_web_DOT_http               = lang.NewSymbol("bri.web.http")
 	sym_clojure_DOT_core                   = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                 = lang.NewSymbol("clojure.string")
+	sym_node                               = lang.NewSymbol("node")
+	sym_opts                               = lang.NewSymbol("opts")
+	sym_s                                  = lang.NewSymbol("s")
 	sym_str                                = lang.NewSymbol("str")
+	sym_t                                  = lang.NewSymbol("t")
+	sym_x                                  = lang.NewSymbol("x")
 	v_bri_DOT_web_DOT_html_escape          = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("escape"))
 	v_bri_DOT_web_DOT_html_form            = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("form"))
 	v_bri_DOT_web_DOT_html_page            = lang.InternVarName(lang.NewSymbol("bri.web.html"), lang.NewSymbol("page"))
@@ -135,8 +144,8 @@ func Load() {
 	tmp7 := v_clojure_DOT_core_require.Get()
 	tmp8 := lang.Apply1(tmp7, sym_bri_DOT_web_DOT_http)
 	_ = tmp8
-	// (def escape "HTML-escape a string: & < > \" ' — applied to every text node and\n  attrib…
-	v_bri_DOT_web_DOT_html_escape.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(14), kw_column, int64(7), kw_end_line, int64(14), kw_end_column, int64(13), kw_doc, "HTML-escape a string: & < > \" ' — applied to every text node and\n  attribute value."))
+	// (def escape (clojure.core/fn ([s] (-> (str s) (str/replace "&" "&amp;") (str/replace "<" "…
+	v_bri_DOT_web_DOT_html_escape.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(14), kw_column, int64(7), kw_end_line, int64(14), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "HTML-escape a string: & < > \" ' — applied to every text node and\n  attribute value."))
 	tmp9 := lang.FnFunc1(func(s10 any) any {
 		tmp11 := v_clojure_DOT_string_replace.Get()
 		tmp12 := v_clojure_DOT_string_replace.Get()
@@ -157,8 +166,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_html_escape = tmp23.F
 	v_bri_DOT_web_DOT_html_escape.SealDirect()
 	_ = v_bri_DOT_web_DOT_html_escape
-	// (def unsafe-raw-html "The EXPLICIT, deliberately ugly escape hatch: marks a string to be\n…
-	v_bri_DOT_web_DOT_html_unsafe_raw_html.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(22), kw_doc, "The EXPLICIT, deliberately ugly escape hatch: marks a string to be\n  emitted verbatim, unescaped. You own every byte you pass here."))
+	// (def unsafe-raw-html (clojure.core/fn ([s] #:bri.web.html{:unsafe (str s)})))
+	v_bri_DOT_web_DOT_html_unsafe_raw_html.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(22), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "The EXPLICIT, deliberately ugly escape hatch: marks a string to be\n  emitted verbatim, unescaped. You own every byte you pass here."))
 	tmp24 := lang.FnFunc1(func(s25 any) any {
 		tmp26 := v_clojure_DOT_core_str.Get()
 		tmp27 := lang.Apply1(tmp26, s25)
@@ -170,8 +179,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_html_unsafe_raw_html = tmp29.F
 	v_bri_DOT_web_DOT_html_unsafe_raw_html.SealDirect()
 	_ = v_bri_DOT_web_DOT_html_unsafe_raw_html
-	// (def unsafe? (clojure.core/fn [x] (and (map? x) (contains? x :bri.web.html/unsafe))))
-	v_bri_DOT_web_DOT_html_unsafe_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(24), kw_private, true))
+	// (def unsafe? (clojure.core/fn ([x] (and (map? x) (contains? x :bri.web.html/unsafe)))))
+	v_bri_DOT_web_DOT_html_unsafe_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(24), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x))))
 	tmp30 := lang.FnFunc1(func(x31 any) any {
 		var tmp32 any
 		_ = tmp32
@@ -203,8 +212,8 @@ func Load() {
 	tmp40 := lang.NewSet("track", "br", "img", "area", "base", "hr", "col", "input", "link", "source", "meta", "wbr", "embed")
 	v_bri_DOT_web_DOT_html_void_tags.BindRoot(tmp40)
 	_ = v_bri_DOT_web_DOT_html_void_tags
-	// (def render-attrs (clojure.core/fn [attrs] (apply str (map (fn [kv] (let [k (name (key kv)…
-	v_bri_DOT_web_DOT_html_render_attrs.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(29), kw_private, true))
+	// (def render-attrs (clojure.core/fn ([attrs] (apply str (map (fn [kv] (let [k (name (key kv…
+	v_bri_DOT_web_DOT_html_render_attrs.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_attrs))))
 	tmp41 := lang.FnFunc1(func(attrs42 any) any {
 		tmp43 := v_clojure_DOT_core_apply.Get()
 		tmp44 := v_clojure_DOT_core_str.Get()
@@ -295,8 +304,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_html_render_attrs = tmp81.F
 	v_bri_DOT_web_DOT_html_render_attrs.SealDirect()
 	_ = v_bri_DOT_web_DOT_html_render_attrs
-	// (def parse-tag "Hiccup tag sugar: :div#id.a.b → [\"div\" {:id \"id\" :class \"a b\"}]." …
-	v_bri_DOT_web_DOT_html_parse_tag.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(26), kw_private, true, kw_doc, "Hiccup tag sugar: :div#id.a.b → [\"div\" {:id \"id\" :class \"a b\"}]."))
+	// (def parse-tag (clojure.core/fn ([t] (let [id-i (str/index-of t "#") cls-i (str/index-of t…
+	v_bri_DOT_web_DOT_html_parse_tag.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_t)), kw_doc, "Hiccup tag sugar: :div#id.a.b → [\"div\" {:id \"id\" :class \"a b\"}]."))
 	tmp82 := lang.FnFunc1(func(t83 any) any {
 		var tmp84 any
 		_ = tmp84
@@ -483,8 +492,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_html_parse_tag = tmp164.F
 	v_bri_DOT_web_DOT_html_parse_tag.SealDirect()
 	_ = v_bri_DOT_web_DOT_html_parse_tag
-	// (def render "Render one hiccup node — a vector element, a string/number (escaped),\n  ni…
-	v_bri_DOT_web_DOT_html_render.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(13), kw_doc, "Render one hiccup node — a vector element, a string/number (escaped),\n  nil (nothing), a seq (concatenated), or (unsafe-raw-html s) — to an\n  HTML string."))
+	// (def render (clojure.core/fn ([node] (cond (nil? node) "" (string? node) (escape node) (un…
+	v_bri_DOT_web_DOT_html_render.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_node)), kw_doc, "Render one hiccup node — a vector element, a string/number (escaped),\n  nil (nothing), a seq (concatenated), or (unsafe-raw-html s) — to an\n  HTML string."))
 	tmp165 := lang.FnFunc1(func(node166 any) any {
 		tmp167 := v_clojure_DOT_core_nil_QMARK_.Get()
 		tmp168 := lang.Apply1(tmp167, node166)
@@ -725,8 +734,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_html_render = tmp268.F
 	v_bri_DOT_web_DOT_html_render.SealDirect()
 	_ = v_bri_DOT_web_DOT_html_render
-	// (def page "A complete HTML document from body nodes. An optional leading opts\n  map sets …
-	v_bri_DOT_web_DOT_html_page.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(11), kw_doc, "A complete HTML document from body nodes. An optional leading opts\n  map sets :title and :stylesheet (default \"/static/app.css\")."))
+	// (def page (clojure.core/fn ([& body] (let [opts? (map? (first body)) opts (if opts? (first…
+	v_bri_DOT_web_DOT_html_page.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_body)), kw_doc, "A complete HTML document from body nodes. An optional leading opts\n  map sets :title and :stylesheet (default \"/static/app.css\")."))
 	tmp269 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -806,8 +815,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_html_page.BindRoot(tmp269)
 	_ = v_bri_DOT_web_DOT_html_page
-	// (def form "A form element that MINTS THE CSRF TOKEN (the reason this fn exists —\n  and …
-	v_bri_DOT_web_DOT_html_form.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(114), kw_column, int64(7), kw_end_line, int64(114), kw_end_column, int64(11), kw_doc, "A form element that MINTS THE CSRF TOKEN (the reason this fn exists —\n  and the outer boundary of bri.web.html). (form {:post \"/signup\"} …)\n  or (form {:get \"/search\"} …); other opts keys pass through as\n  attributes. Returns hiccup data — compose it, then render/page it."))
+	// (def form (clojure.core/fn ([opts & body] (let [method (cond (:post opts) "post" (:get opt…
+	v_bri_DOT_web_DOT_html_form.SetMeta(lang.NewMap(kw_file, "bri/html.cljg", kw_line, int64(114), kw_column, int64(7), kw_end_line, int64(114), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_opts, sym_X_AMP_, sym_body)), kw_doc, "A form element that MINTS THE CSRF TOKEN (the reason this fn exists —\n  and the outer boundary of bri.web.html). (form {:post \"/signup\"} …)\n  or (form {:get \"/search\"} …); other opts keys pass through as\n  attributes. Returns hiccup data — compose it, then render/page it."))
 	tmp307 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:

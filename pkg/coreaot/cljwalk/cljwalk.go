@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	kw_arglists                         = lang.InternKeywordString("arglists")
 	kw_column                           = lang.InternKeywordString("column")
 	kw_doc                              = lang.InternKeywordString("doc")
 	kw_else_                            = lang.InternKeywordString("else")
@@ -16,6 +17,12 @@ var (
 	kw_line                             = lang.InternKeywordString("line")
 	sym_clojure_DOT_core                = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_walk                = lang.NewSymbol("clojure.walk")
+	sym_f                               = lang.NewSymbol("f")
+	sym_form                            = lang.NewSymbol("form")
+	sym_inner                           = lang.NewSymbol("inner")
+	sym_m                               = lang.NewSymbol("m")
+	sym_outer                           = lang.NewSymbol("outer")
+	sym_smap                            = lang.NewSymbol("smap")
 	v_clojure_DOT_core_apply            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
 	v_clojure_DOT_core_coll_QMARK_      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("coll?"))
 	v_clojure_DOT_core_conj             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("conj"))
@@ -88,8 +95,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def walk "Traverses form, an arbitrary data structure.  inner and outer are\n  functions.…
-	v_clojure_DOT_walk_walk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(11), kw_doc, "Traverses form, an arbitrary data structure.  inner and outer are\n  functions.  Applies inner to each element of form, building up a\n  data structure of the same type, then applies outer to the result.\n  Recognizes all Clojure data structures. Consumes seqs as with doall."))
+	// (def walk (clojure.core/fn ([inner outer form] (cond (list? form) (outer (apply list (map …
+	v_clojure_DOT_walk_walk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_inner, sym_outer, sym_form)), kw_doc, "Traverses form, an arbitrary data structure.  inner and outer are\n  functions.  Applies inner to each element of form, building up a\n  data structure of the same type, then applies outer to the result.\n  Recognizes all Clojure data structures. Consumes seqs as with doall."))
 	tmp5 := lang.FnFunc3(func(inner6, outer7, form8 any) any {
 		tmp9 := v_clojure_DOT_core_list_QMARK_.Get()
 		tmp10 := lang.Apply1(tmp9, form8)
@@ -187,8 +194,8 @@ func Load() {
 	fnD_clojure_DOT_walk_walk = tmp62.F
 	v_clojure_DOT_walk_walk.SealDirect()
 	_ = v_clojure_DOT_walk_walk
-	// (def postwalk "Performs a depth-first, post-order traversal of form.  Calls f on\n  each s…
-	v_clojure_DOT_walk_postwalk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(15), kw_doc, "Performs a depth-first, post-order traversal of form.  Calls f on\n  each sub-form, uses f's return value in place of the original.\n  Recognizes all Clojure data structures. Consumes seqs as with doall."))
+	// (def postwalk (clojure.core/fn ([f form] (walk (partial postwalk f) f form))))
+	v_clojure_DOT_walk_postwalk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_f, sym_form)), kw_doc, "Performs a depth-first, post-order traversal of form.  Calls f on\n  each sub-form, uses f's return value in place of the original.\n  Recognizes all Clojure data structures. Consumes seqs as with doall."))
 	tmp63 := lang.FnFunc2(func(f64, form65 any) any {
 		tmp66 := v_clojure_DOT_walk_walk.Direct()
 		var tmp67 any
@@ -211,8 +218,8 @@ func Load() {
 	fnD_clojure_DOT_walk_postwalk = tmp72.F
 	v_clojure_DOT_walk_postwalk.SealDirect()
 	_ = v_clojure_DOT_walk_postwalk
-	// (def prewalk "Like postwalk, but does pre-order traversal." (clojure.core/fn [f form] (wal…
-	v_clojure_DOT_walk_prewalk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(55), kw_column, int64(7), kw_end_line, int64(55), kw_end_column, int64(14), kw_doc, "Like postwalk, but does pre-order traversal."))
+	// (def prewalk (clojure.core/fn ([f form] (walk (partial prewalk f) identity (f form)))))
+	v_clojure_DOT_walk_prewalk.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(55), kw_column, int64(7), kw_end_line, int64(55), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_f, sym_form)), kw_doc, "Like postwalk, but does pre-order traversal."))
 	tmp73 := lang.FnFunc2(func(f74, form75 any) any {
 		tmp76 := v_clojure_DOT_walk_walk.Direct()
 		var tmp77 any
@@ -237,8 +244,8 @@ func Load() {
 	fnD_clojure_DOT_walk_prewalk = tmp84.F
 	v_clojure_DOT_walk_prewalk.SealDirect()
 	_ = v_clojure_DOT_walk_prewalk
-	// (def postwalk-demo "Demonstrates the behavior of postwalk by printing each form as it is\n…
-	v_clojure_DOT_walk_postwalk_demo.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(62), kw_column, int64(7), kw_end_line, int64(62), kw_end_column, int64(20), kw_doc, "Demonstrates the behavior of postwalk by printing each form as it is\n  walked.  Returns form."))
+	// (def postwalk-demo (clojure.core/fn ([form] (postwalk (fn [x] (print "Walked: ") (prn x) x…
+	v_clojure_DOT_walk_postwalk_demo.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(62), kw_column, int64(7), kw_end_line, int64(62), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_form)), kw_doc, "Demonstrates the behavior of postwalk by printing each form as it is\n  walked.  Returns form."))
 	tmp85 := lang.FnFunc1(func(form86 any) any {
 		tmp87 := v_clojure_DOT_walk_postwalk.Direct()
 		var tmp88 any
@@ -268,8 +275,8 @@ func Load() {
 	fnD_clojure_DOT_walk_postwalk_demo = tmp97.F
 	v_clojure_DOT_walk_postwalk_demo.SealDirect()
 	_ = v_clojure_DOT_walk_postwalk_demo
-	// (def prewalk-demo "Demonstrates the behavior of prewalk by printing each form as it is\n  …
-	v_clojure_DOT_walk_prewalk_demo.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(68), kw_column, int64(7), kw_end_line, int64(68), kw_end_column, int64(19), kw_doc, "Demonstrates the behavior of prewalk by printing each form as it is\n  walked.  Returns form."))
+	// (def prewalk-demo (clojure.core/fn ([form] (prewalk (fn [x] (print "Walked: ") (prn x) x) …
+	v_clojure_DOT_walk_prewalk_demo.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(68), kw_column, int64(7), kw_end_line, int64(68), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_form)), kw_doc, "Demonstrates the behavior of prewalk by printing each form as it is\n  walked.  Returns form."))
 	tmp98 := lang.FnFunc1(func(form99 any) any {
 		tmp100 := v_clojure_DOT_walk_prewalk.Direct()
 		var tmp101 any
@@ -299,8 +306,8 @@ func Load() {
 	fnD_clojure_DOT_walk_prewalk_demo = tmp110.F
 	v_clojure_DOT_walk_prewalk_demo.SealDirect()
 	_ = v_clojure_DOT_walk_prewalk_demo
-	// (def keywordize-keys "Recursively transforms all map keys from strings to keywords." (cloj…
-	v_clojure_DOT_walk_keywordize_keys.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(22), kw_doc, "Recursively transforms all map keys from strings to keywords."))
+	// (def keywordize-keys (clojure.core/fn ([m] (let [f (fn [[k v]] (if (string? k) [(keyword k…
+	v_clojure_DOT_walk_keywordize_keys.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(22), kw_arglists, lang.NewList(lang.NewVector(sym_m)), kw_doc, "Recursively transforms all map keys from strings to keywords."))
 	tmp111 := lang.FnFunc1(func(m112 any) any {
 		var tmp113 any
 		_ = tmp113
@@ -377,8 +384,8 @@ func Load() {
 	fnD_clojure_DOT_walk_keywordize_keys = tmp147.F
 	v_clojure_DOT_walk_keywordize_keys.SealDirect()
 	_ = v_clojure_DOT_walk_keywordize_keys
-	// (def stringify-keys "Recursively transforms all map keys from keywords to strings." (cloju…
-	v_clojure_DOT_walk_stringify_keys.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(21), kw_doc, "Recursively transforms all map keys from keywords to strings."))
+	// (def stringify-keys (clojure.core/fn ([m] (let [f (fn [[k v]] (if (keyword? k) [(name k) v…
+	v_clojure_DOT_walk_stringify_keys.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(sym_m)), kw_doc, "Recursively transforms all map keys from keywords to strings."))
 	tmp148 := lang.FnFunc1(func(m149 any) any {
 		var tmp150 any
 		_ = tmp150
@@ -455,8 +462,8 @@ func Load() {
 	fnD_clojure_DOT_walk_stringify_keys = tmp184.F
 	v_clojure_DOT_walk_stringify_keys.SealDirect()
 	_ = v_clojure_DOT_walk_stringify_keys
-	// (def prewalk-replace "Recursively transforms form by replacing keys in smap with their\n  …
-	v_clojure_DOT_walk_prewalk_replace.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(92), kw_column, int64(7), kw_end_line, int64(92), kw_end_column, int64(22), kw_doc, "Recursively transforms form by replacing keys in smap with their\n  values.  Like clojure/replace but works on any data structure.  Does\n  replacement at the root of the tree first."))
+	// (def prewalk-replace (clojure.core/fn ([smap form] (prewalk (fn [x] (if (contains? smap x)…
+	v_clojure_DOT_walk_prewalk_replace.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(92), kw_column, int64(7), kw_end_line, int64(92), kw_end_column, int64(22), kw_arglists, lang.NewList(lang.NewVector(sym_smap, sym_form)), kw_doc, "Recursively transforms form by replacing keys in smap with their\n  values.  Like clojure/replace but works on any data structure.  Does\n  replacement at the root of the tree first."))
 	tmp185 := lang.FnFunc2(func(smap186, form187 any) any {
 		tmp188 := v_clojure_DOT_walk_prewalk.Direct()
 		var tmp189 any
@@ -490,8 +497,8 @@ func Load() {
 	fnD_clojure_DOT_walk_prewalk_replace = tmp198.F
 	v_clojure_DOT_walk_prewalk_replace.SealDirect()
 	_ = v_clojure_DOT_walk_prewalk_replace
-	// (def postwalk-replace "Recursively transforms form by replacing keys in smap with their\n …
-	v_clojure_DOT_walk_postwalk_replace.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(23), kw_doc, "Recursively transforms form by replacing keys in smap with their\n  values.  Like clojure/replace but works on any data structure.  Does\n  replacement at the leaves of the tree first."))
+	// (def postwalk-replace (clojure.core/fn ([smap form] (postwalk (fn [x] (if (contains? smap …
+	v_clojure_DOT_walk_postwalk_replace.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(23), kw_arglists, lang.NewList(lang.NewVector(sym_smap, sym_form)), kw_doc, "Recursively transforms form by replacing keys in smap with their\n  values.  Like clojure/replace but works on any data structure.  Does\n  replacement at the leaves of the tree first."))
 	tmp199 := lang.FnFunc2(func(smap200, form201 any) any {
 		tmp202 := v_clojure_DOT_walk_postwalk.Direct()
 		var tmp203 any
@@ -525,8 +532,8 @@ func Load() {
 	fnD_clojure_DOT_walk_postwalk_replace = tmp212.F
 	v_clojure_DOT_walk_postwalk_replace.SealDirect()
 	_ = v_clojure_DOT_walk_postwalk_replace
-	// (def macroexpand-all "Recursively performs all possible macroexpansions in form." (clojure…
-	v_clojure_DOT_walk_macroexpand_all.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(22), kw_doc, "Recursively performs all possible macroexpansions in form."))
+	// (def macroexpand-all (clojure.core/fn ([form] (prewalk (fn [x] (if (seq? x) (macroexpand x…
+	v_clojure_DOT_walk_macroexpand_all.SetMeta(lang.NewMap(kw_file, "walk.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(22), kw_arglists, lang.NewList(lang.NewVector(sym_form)), kw_doc, "Recursively performs all possible macroexpansions in form."))
 	tmp213 := lang.FnFunc1(func(form214 any) any {
 		tmp215 := v_clojure_DOT_walk_prewalk.Direct()
 		var tmp216 any

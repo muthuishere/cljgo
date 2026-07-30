@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                                = lang.InternKeywordString("arglists")
 	kw_as                                      = lang.InternKeywordString("as")
 	kw_audit                                   = lang.InternKeywordString("audit")
 	kw_column                                  = lang.InternKeywordString("column")
@@ -24,8 +25,11 @@ var (
 	kw_sub                                     = lang.InternKeywordString("sub")
 	kw_ts                                      = lang.InternKeywordString("ts")
 	sym_bri_DOT_core_DOT_audit                 = lang.NewSymbol("bri.core.audit")
+	sym_claims                                 = lang.NewSymbol("claims")
 	sym_clojure_DOT_core                       = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                     = lang.NewSymbol("clojure.string")
+	sym_ev                                     = lang.NewSymbol("ev")
+	sym_f                                      = lang.NewSymbol("f")
 	sym_str                                    = lang.NewSymbol("str")
 	v_bri_DOT_core_DOT_audit_X_STAR_sink_STAR_ = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("*sink*")).SetDynamic()
 	v_bri_DOT_core_DOT_audit_X_eprintln        = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("-eprintln")).SetPrivate()
@@ -79,8 +83,8 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (def dev? (clojure.core/fn [] (= "1" (-getenv "BRI_DEV"))))
-	v_bri_DOT_core_DOT_audit_dev_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(16), kw_column, int64(7), kw_end_line, int64(16), kw_end_column, int64(21), kw_private, true))
+	// (def dev? (clojure.core/fn ([] (= "1" (-getenv "BRI_DEV")))))
+	v_bri_DOT_core_DOT_audit_dev_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(16), kw_column, int64(7), kw_end_line, int64(16), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector())))
 	tmp7 := lang.FnFunc0(func() any {
 		tmp8 := v_bri_DOT_core_DOT_audit_X_getenv.Get()
 		tmp9 := lang.Apply1(tmp8, "BRI_DEV")
@@ -102,8 +106,8 @@ func Load() {
 	tmp13 := lang.Apply1(tmp12, nil)
 	v_bri_DOT_core_DOT_audit_process_sink.BindRoot(tmp13)
 	_ = v_bri_DOT_core_DOT_audit_process_sink
-	// (def set-sink! "Install the process-wide audit sink: a fn of the event map. The T2\n  seam…
-	v_bri_DOT_core_DOT_audit_set_sink_BANG_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(16), kw_doc, "Install the process-wide audit sink: a fn of the event map. The T2\n  seam — point it at cljg.data.cast + notify.Send. Passing nil restores the\n  default structured-stderr sink."))
+	// (def set-sink! (clojure.core/fn ([f] (reset! process-sink f))))
+	v_bri_DOT_core_DOT_audit_set_sink_BANG_.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_f)), kw_doc, "Install the process-wide audit sink: a fn of the event map. The T2\n  seam — point it at cljg.data.cast + notify.Send. Passing nil restores the\n  default structured-stderr sink."))
 	tmp14 := lang.FnFunc1(func(f15 any) any {
 		tmp16 := v_clojure_DOT_core_reset_BANG_.Get()
 		tmp17 := v_bri_DOT_core_DOT_audit_process_sink.Get()
@@ -115,8 +119,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_audit_set_sink_BANG_ = tmp19.F
 	v_bri_DOT_core_DOT_audit_set_sink_BANG_.SealDirect()
 	_ = v_bri_DOT_core_DOT_audit_set_sink_BANG_
-	// (def default-sink (clojure.core/fn [ev] (if (dev?) (-eprintln (pr-str ev)) (-eprintln (-js…
-	v_bri_DOT_core_DOT_audit_default_sink.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(29), kw_private, true))
+	// (def default-sink (clojure.core/fn ([ev] (if (dev?) (-eprintln (pr-str ev)) (-eprintln (-j…
+	v_bri_DOT_core_DOT_audit_default_sink.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_ev))))
 	tmp20 := lang.FnFunc1(func(ev21 any) any {
 		tmp22 := v_bri_DOT_core_DOT_audit_dev_QMARK_.Direct()
 		var tmp23 any
@@ -151,8 +155,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_audit_default_sink = tmp34.F
 	v_bri_DOT_core_DOT_audit_default_sink.SealDirect()
 	_ = v_bri_DOT_core_DOT_audit_default_sink
-	// (def record "Record ONE audit event. Merges a :ts (epoch millis), :kind :audit and\n  a de…
-	v_bri_DOT_core_DOT_audit_record.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(13), kw_doc, "Record ONE audit event. Merges a :ts (epoch millis), :kind :audit and\n  a default :severity :info; the caller supplies :action (required by\n  convention), :actor (subject or client key), :target, and any extra\n  keys. Returns the completed event. Routing: a thread-bound *sink* wins\n  (tests), else the process sink, else structured stderr."))
+	// (def record (clojure.core/fn ([ev] (let [event (merge {:ts (-now-millis), :kind :audit, :s…
+	v_bri_DOT_core_DOT_audit_record.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_ev)), kw_doc, "Record ONE audit event. Merges a :ts (epoch millis), :kind :audit and\n  a default :severity :info; the caller supplies :action (required by\n  convention), :actor (subject or client key), :target, and any extra\n  keys. Returns the completed event. Routing: a thread-bound *sink* wins\n  (tests), else the process sink, else structured stderr."))
 	tmp35 := lang.FnFunc1(func(ev36 any) any {
 		var tmp37 any
 		_ = tmp37
@@ -210,8 +214,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_audit_record = tmp57.F
 	v_bri_DOT_core_DOT_audit_record.SealDirect()
 	_ = v_bri_DOT_core_DOT_audit_record
-	// (def subject "The audit actor for a claims map — the JWT subject." (clojure.core/fn [cla…
-	v_bri_DOT_core_DOT_audit_subject.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(14), kw_doc, "The audit actor for a claims map — the JWT subject."))
+	// (def subject (clojure.core/fn ([claims] (:sub claims))))
+	v_bri_DOT_core_DOT_audit_subject.SetMeta(lang.NewMap(kw_file, "bri/audit.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_claims)), kw_doc, "The audit actor for a claims map — the JWT subject."))
 	tmp58 := lang.FnFunc1(func(claims59 any) any {
 		tmp60 := lang.Apply1(kw_sub, claims59)
 		return tmp60

@@ -9,6 +9,7 @@ import (
 
 var (
 	kw_access_token                                    = lang.InternKeywordString("access_token")
+	kw_arglists                                        = lang.InternKeywordString("arglists")
 	kw_as                                              = lang.InternKeywordString("as")
 	kw_auth                                            = lang.InternKeywordString("auth")
 	kw_auth_fn                                         = lang.InternKeywordString("auth-fn")
@@ -61,7 +62,10 @@ var (
 	kw_username_label                                  = lang.InternKeywordString("username-label")
 	kw_verification_uri                                = lang.InternKeywordString("verification_uri")
 	kw_verification_uri_complete                       = lang.InternKeywordString("verification_uri_complete")
+	sym_a                                              = lang.NewSymbol("a")
+	sym_args                                           = lang.NewSymbol("args")
 	sym_auth                                           = lang.NewSymbol("auth")
+	sym_boot                                           = lang.NewSymbol("boot")
 	sym_bri_DOT_cli                                    = lang.NewSymbol("bri.cli")
 	sym_bri_DOT_cli_DOT_api                            = lang.NewSymbol("bri.cli.api")
 	sym_bri_DOT_cli_DOT_auth                           = lang.NewSymbol("bri.cli.auth")
@@ -71,8 +75,14 @@ var (
 	sym_clojure_DOT_core                               = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                             = lang.NewSymbol("clojure.string")
 	sym_http                                           = lang.NewSymbol("http")
+	sym_id                                             = lang.NewSymbol("id")
 	sym_openapi                                        = lang.NewSymbol("openapi")
+	sym_opts                                           = lang.NewSymbol("opts")
+	sym_resp                                           = lang.NewSymbol("resp")
+	sym_service                                        = lang.NewSymbol("service")
+	sym_spec                                           = lang.NewSymbol("spec")
 	sym_str                                            = lang.NewSymbol("str")
+	sym_strategy                                       = lang.NewSymbol("strategy")
 	v_bri_DOT_cli_DOT_api_acquire_BANG_                = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("acquire!")).SetPrivate()
 	v_bri_DOT_cli_DOT_api_api                          = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("api"))
 	v_bri_DOT_cli_DOT_api_auth_value                   = lang.InternVarName(lang.NewSymbol("bri.cli.api"), lang.NewSymbol("auth-value")).SetPrivate()
@@ -175,8 +185,8 @@ func Load() {
 	tmp15 := lang.NewVector(kw_auth, kw_service, kw_login, kw_username_label, kw_password_label, kw_device, kw_poll_interval_ms)
 	v_bri_DOT_cli_DOT_api_control_keys.BindRoot(tmp15)
 	_ = v_bri_DOT_cli_DOT_api_control_keys
-	// (def device-acquire! "OAuth 2.0 Device Authorization Grant (RFC 8628, ADR 0092): the 'bett…
-	v_bri_DOT_cli_DOT_api_device_acquire_BANG_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(32), kw_column, int64(8), kw_end_line, int64(32), kw_end_column, int64(23), kw_private, true, kw_doc, "OAuth 2.0 Device Authorization Grant (RFC 8628, ADR 0092): the 'better way' —\n  NO secret is ever typed into the terminal. Ask the authorization server for a\n  short user code, show the user a URL + code to authorize in a browser, then poll\n  the token endpoint until an access token drops out; cache it like any credential.\n\n  `(:device opts)` carries the endpoints (none of them secret):\n    :device-url  the device authorization endpoint (REQUIRED)\n    :token-url   the token endpoint (REQUIRED)\n    :client-id   the public client id (REQUIRED, not a secret)\n    :scope       optional space-separated scopes\n  `:poll-interval-ms` (opts) overrides the server's poll interval (tests use ms)."))
+	// (def device-acquire! (clojure.core/fn ([service opts] (let [dc (:device opts) device-url (…
+	v_bri_DOT_cli_DOT_api_device_acquire_BANG_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(32), kw_column, int64(8), kw_end_line, int64(32), kw_end_column, int64(23), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_service, sym_opts)), kw_doc, "OAuth 2.0 Device Authorization Grant (RFC 8628, ADR 0092): the 'better way' —\n  NO secret is ever typed into the terminal. Ask the authorization server for a\n  short user code, show the user a URL + code to authorize in a browser, then poll\n  the token endpoint until an access token drops out; cache it like any credential.\n\n  `(:device opts)` carries the endpoints (none of them secret):\n    :device-url  the device authorization endpoint (REQUIRED)\n    :token-url   the token endpoint (REQUIRED)\n    :client-id   the public client id (REQUIRED, not a secret)\n    :scope       optional space-separated scopes\n  `:poll-interval-ms` (opts) overrides the server's poll interval (tests use ms)."))
 	tmp16 := lang.FnFunc2(func(service17, opts18 any) any {
 		var tmp19 any
 		_ = tmp19
@@ -510,8 +520,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_api_device_acquire_BANG_ = tmp176.F
 	v_bri_DOT_cli_DOT_api_device_acquire_BANG_.SealDirect()
 	_ = v_bri_DOT_cli_DOT_api_device_acquire_BANG_
-	// (def acquire! "Obtain + cache a credential for `service` per `strategy`, using `boot` (a\n…
-	v_bri_DOT_cli_DOT_api_acquire_BANG_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(97), kw_column, int64(8), kw_end_line, int64(97), kw_end_column, int64(16), kw_private, true, kw_doc, "Obtain + cache a credential for `service` per `strategy`, using `boot` (a\n  no-auth bri.web.openapi client) for the :password token exchange."))
+	// (def acquire! (clojure.core/fn ([service strategy boot opts] (case strategy :token (auth/l…
+	v_bri_DOT_cli_DOT_api_acquire_BANG_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(97), kw_column, int64(8), kw_end_line, int64(97), kw_end_column, int64(16), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_service, sym_strategy, sym_boot, sym_opts)), kw_doc, "Obtain + cache a credential for `service` per `strategy`, using `boot` (a\n  no-auth bri.web.openapi client) for the :password token exchange."))
 	tmp177 := lang.FnFunc4(func(service178, strategy179, boot180, opts181 any) any {
 		var tmp182 any
 		_ = tmp182
@@ -645,8 +655,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_api_acquire_BANG_ = tmp249.F
 	v_bri_DOT_cli_DOT_api_acquire_BANG_.SealDirect()
 	_ = v_bri_DOT_cli_DOT_api_acquire_BANG_
-	// (def auth-value "The openapi :auth-fn: ensure a credential (logging in if absent) and retu…
-	v_bri_DOT_cli_DOT_api_auth_value.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(127), kw_column, int64(8), kw_end_line, int64(127), kw_end_column, int64(18), kw_private, true, kw_doc, "The openapi :auth-fn: ensure a credential (logging in if absent) and return the\n  Authorization value to attach."))
+	// (def auth-value (clojure.core/fn ([service strategy boot opts] (when-not (auth/authed? ser…
+	v_bri_DOT_cli_DOT_api_auth_value.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(127), kw_column, int64(8), kw_end_line, int64(127), kw_end_column, int64(18), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_service, sym_strategy, sym_boot, sym_opts)), kw_doc, "The openapi :auth-fn: ensure a credential (logging in if absent) and return the\n  Authorization value to attach."))
 	tmp250 := lang.FnFunc4(func(service251, strategy252, boot253, opts254 any) any {
 		tmp255 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
 		tmp256 := lang.Apply2(tmp255, service251, opts254)
@@ -680,8 +690,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_api_auth_value = tmp265.F
 	v_bri_DOT_cli_DOT_api_auth_value.SealDirect()
 	_ = v_bri_DOT_cli_DOT_api_auth_value
-	// (def api "Build an OpenAPI client with AUTOMATIC login. The first authenticated call with\…
-	v_bri_DOT_cli_DOT_api_api.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(10), kw_doc, "Build an OpenAPI client with AUTOMATIC login. The first authenticated call with\n  no cached credential logs in (per :auth strategy), caches it in the OS keychain\n  (bri.cli.auth), and attaches it; later runs reuse it; a 401 drops the stale\n  credential and re-logs in once.\n\n  `spec` is anything bri.web.openapi/client accepts (map | JSON string | URL |\n  file). opts:\n    :service   keychain service name (REQUIRED)\n    :auth      :token (default — API key, prompted once) | :password | :device\n    :login     for :password: {:op <login-operation> :username-field :password-field\n               :token-path [:token]}\n    :device    for :device (OAuth 2.0 device flow, RFC 8628 — no secret typed into\n               the terminal): {:device-url … :token-url … :client-id … :scope …}\n    :account :label :username-label :password-label   (prompt/store tuning)\n    …plus every bri.web.openapi client opt (:base-url :headers :timeout :retry)."))
+	// (def api (clojure.core/fn ([spec] (api spec {})) ([spec opts] (let [service (or (:service …
+	v_bri_DOT_cli_DOT_api_api.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_spec), lang.NewVector(sym_spec, sym_opts)), kw_doc, "Build an OpenAPI client with AUTOMATIC login. The first authenticated call with\n  no cached credential logs in (per :auth strategy), caches it in the OS keychain\n  (bri.cli.auth), and attaches it; later runs reuse it; a 401 drops the stale\n  credential and re-logs in once.\n\n  `spec` is anything bri.web.openapi/client accepts (map | JSON string | URL |\n  file). opts:\n    :service   keychain service name (REQUIRED)\n    :auth      :token (default — API key, prompted once) | :password | :device\n    :login     for :password: {:op <login-operation> :username-field :password-field\n               :token-path [:token]}\n    :device    for :device (OAuth 2.0 device flow, RFC 8628 — no secret typed into\n               the terminal): {:device-url … :token-url … :client-id … :scope …}\n    :account :label :username-label :password-label   (prompt/store tuning)\n    …plus every bri.web.openapi client opt (:base-url :headers :timeout :retry)."))
 	tmp266 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -762,8 +772,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_DOT_api_api.BindRoot(tmp266)
 	_ = v_bri_DOT_cli_DOT_api_api
-	// (def operations "The client's operation-id keywords (from the spec)." (clojure.core/fn [a]…
-	v_bri_DOT_cli_DOT_api_operations.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(162), kw_column, int64(7), kw_end_line, int64(162), kw_end_column, int64(17), kw_doc, "The client's operation-id keywords (from the spec)."))
+	// (def operations (clojure.core/fn ([a] (openapi/operations (:client a)))))
+	v_bri_DOT_cli_DOT_api_operations.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(162), kw_column, int64(7), kw_end_line, int64(162), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_a)), kw_doc, "The client's operation-id keywords (from the spec)."))
 	tmp302 := lang.FnFunc1(func(a303 any) any {
 		tmp304 := v_bri_DOT_web_DOT_openapi_operations.Get()
 		tmp305 := lang.Apply1(kw_client, a303)
@@ -775,8 +785,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_api_operations = tmp307.F
 	v_bri_DOT_cli_DOT_api_operations.SealDirect()
 	_ = v_bri_DOT_cli_DOT_api_operations
-	// (def call "Invoke operation `id` with automatic auth. On a 401 the stale credential is\n  …
-	v_bri_DOT_cli_DOT_api_call.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(167), kw_column, int64(7), kw_end_line, int64(167), kw_end_column, int64(11), kw_doc, "Invoke operation `id` with automatic auth. On a 401 the stale credential is\n  dropped and the call retried once (the retry re-logs in via :auth-fn)."))
+	// (def call (clojure.core/fn ([a id] (call a id {})) ([a id args] (let [resp (openapi/call (…
+	v_bri_DOT_cli_DOT_api_call.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(167), kw_column, int64(7), kw_end_line, int64(167), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_a, sym_id), lang.NewVector(sym_a, sym_id, sym_args)), kw_doc, "Invoke operation `id` with automatic auth. On a 401 the stale credential is\n  dropped and the call retried once (the retry re-logs in via :auth-fn)."))
 	tmp308 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -847,8 +857,8 @@ func Load() {
 	})
 	v_bri_DOT_cli_DOT_api_call.BindRoot(tmp308)
 	_ = v_bri_DOT_cli_DOT_api_call
-	// (def result "Decode a response's JSON body (bri.web.openapi/result)." (clojure.core/fn [re…
-	v_bri_DOT_cli_DOT_api_result.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(178), kw_column, int64(7), kw_end_line, int64(178), kw_end_column, int64(13), kw_doc, "Decode a response's JSON body (bri.web.openapi/result)."))
+	// (def result (clojure.core/fn ([resp] (openapi/result resp))))
+	v_bri_DOT_cli_DOT_api_result.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(178), kw_column, int64(7), kw_end_line, int64(178), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_resp)), kw_doc, "Decode a response's JSON body (bri.web.openapi/result)."))
 	tmp339 := lang.FnFunc1(func(resp340 any) any {
 		tmp341 := v_bri_DOT_web_DOT_openapi_result.Get()
 		tmp342 := lang.Apply1(tmp341, resp340)
@@ -859,8 +869,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_api_result = tmp343.F
 	v_bri_DOT_cli_DOT_api_result.SealDirect()
 	_ = v_bri_DOT_cli_DOT_api_result
-	// (def login "Force a (re)login now, caching the credential. Returns the service." (clojure.…
-	v_bri_DOT_cli_DOT_api_login.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(12), kw_doc, "Force a (re)login now, caching the credential. Returns the service."))
+	// (def login (clojure.core/fn ([a] (acquire! (:service a) (:strategy a) (:boot a) (:opts a))…
+	v_bri_DOT_cli_DOT_api_login.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_a)), kw_doc, "Force a (re)login now, caching the credential. Returns the service."))
 	tmp344 := lang.FnFunc1(func(a345 any) any {
 		tmp346 := v_bri_DOT_cli_DOT_api_acquire_BANG_.Direct()
 		var tmp347 any
@@ -886,8 +896,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_api_login = tmp354.F
 	v_bri_DOT_cli_DOT_api_login.SealDirect()
 	_ = v_bri_DOT_cli_DOT_api_login
-	// (def logout "Forget the cached credential. Returns the service." (clojure.core/fn [a] (aut…
-	v_bri_DOT_cli_DOT_api_logout.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(189), kw_column, int64(7), kw_end_line, int64(189), kw_end_column, int64(13), kw_doc, "Forget the cached credential. Returns the service."))
+	// (def logout (clojure.core/fn ([a] (auth/logout (:service a) (:opts a)) (:service a))))
+	v_bri_DOT_cli_DOT_api_logout.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(189), kw_column, int64(7), kw_end_line, int64(189), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_a)), kw_doc, "Forget the cached credential. Returns the service."))
 	tmp355 := lang.FnFunc1(func(a356 any) any {
 		tmp357 := v_bri_DOT_cli_DOT_auth_logout.Get()
 		tmp358 := lang.Apply1(kw_service, a356)
@@ -902,8 +912,8 @@ func Load() {
 	fnD_bri_DOT_cli_DOT_api_logout = tmp362.F
 	v_bri_DOT_cli_DOT_api_logout.SealDirect()
 	_ = v_bri_DOT_cli_DOT_api_logout
-	// (def authed? "Is there a cached credential for the api's service?" (clojure.core/fn [a] (a…
-	v_bri_DOT_cli_DOT_api_authed_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(195), kw_column, int64(7), kw_end_line, int64(195), kw_end_column, int64(14), kw_doc, "Is there a cached credential for the api's service?"))
+	// (def authed? (clojure.core/fn ([a] (auth/authed? (:service a) (:opts a)))))
+	v_bri_DOT_cli_DOT_api_authed_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/cli_api.cljg", kw_line, int64(195), kw_column, int64(7), kw_end_line, int64(195), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_a)), kw_doc, "Is there a cached credential for the api's service?"))
 	tmp363 := lang.FnFunc1(func(a364 any) any {
 		tmp365 := v_bri_DOT_cli_DOT_auth_authed_QMARK_.Get()
 		tmp366 := lang.Apply1(kw_service, a364)

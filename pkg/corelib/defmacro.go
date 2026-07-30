@@ -3,11 +3,12 @@ package corelib
 // The bootstrap defmacro (design/03 §4): a hand-built macro fn — a Var
 // flagged :macro whose value rewrites
 //
-//	(defmacro name doc? ([params] body...)+)   ; or single [params] body...
+//	(defmacro name doc? attr-map? ([params] body...)+ attr-map?)
+//	                                ; or single [params] body...
 //
 // into
 //
-//	(do (def name doc? (fn* name ([&form &env params...] body...)+))
+//	(do (def ^{:doc … :arglists …} name (fn* name ([&form &env params...] body...)+))
 //	    (clojure.core/-set-macro! (var name))
 //	    (var name))
 //
@@ -40,6 +41,33 @@ var (
 	symSetMacroBang = lang.NewSymbol("clojure.core/-set-macro!")
 )
 
+var symQuote = lang.NewSymbol("quote")
+
+// mergeAttrMap conj's an attr-map onto the accumulated var metadata (the
+// later map wins on key conflicts, as in clojure.core/defn's `conj`), and
+// unwraps one level of (quote x) from each value. See the -defn-unquote-vals
+// note in core/core.clj: cljgo applies def metadata as a CONSTANT rather than
+// evaluating it like the JVM compiler, so {:arglists '([x])} would otherwise
+// read back as the literal (quote ([x])) form.
+func mergeAttrMap(acc, attrs lang.IPersistentMap) lang.IPersistentMap {
+	for s := lang.Seq(attrs); s != nil; s = s.Next() {
+		e, ok := s.First().(lang.IMapEntry)
+		if !ok {
+			continue
+		}
+		val := e.Val()
+		if q, isSeq := val.(lang.ISeq); isSeq {
+			if sym, isSym := q.First().(*lang.Symbol); isSym && sym.Equals(symQuote) {
+				if rest := q.Next(); rest != nil {
+					val = rest.First()
+				}
+			}
+		}
+		acc = acc.Assoc(e.Key(), val).(lang.IPersistentMap)
+	}
+	return acc
+}
+
 // registerDefmacro interns the bootstrap defmacro into clojure.core and
 // flags it :macro. Called from RegisterAll, before any core source loads.
 func registerDefmacro() {
@@ -60,32 +88,51 @@ func defmacroExpand(args ...any) any {
 	}
 	fdecl := args[3:]
 
-	var doc any
+	// (defmacro name doc-string? attr-map? ...) — same prefix as defn, and
+	// like clojure.core/defmacro the accumulated map (plus a trailing
+	// attr-map) lands on the var, not on a positional docstring.
+	m := lang.NewMap()
 	if s, isStr := fdecl[0].(string); isStr && len(fdecl) > 1 {
-		doc = s
+		m = m.Assoc(lang.KWDoc, s).(lang.IPersistentMap)
+		fdecl = fdecl[1:]
+	}
+	if am, isMap := fdecl[0].(lang.IPersistentMap); isMap && len(fdecl) > 1 {
+		m = mergeAttrMap(m, am)
 		fdecl = fdecl[1:]
 	}
 
 	// Normalize the single-arity shorthand [params] body... to one
 	// ([params] body...) method; otherwise every element is a method.
+	// Normalizing BEFORE taking the trailing attr-map is what keeps a macro
+	// whose body IS a map from being read as an attr-map.
 	var methods []any
 	if _, isVec := fdecl[0].(lang.IPersistentVector); isVec {
 		methods = []any{lang.NewList(fdecl...)}
 	} else {
 		methods = fdecl
 	}
+	if len(methods) > 1 {
+		if am, isMap := methods[len(methods)-1].(lang.IPersistentMap); isMap {
+			m = mergeAttrMap(m, am)
+			methods = methods[:len(methods)-1]
+		}
+	}
 
 	fnParts := []any{symFnStar, name}
-	for _, m := range methods {
-		mseq, isSeq := m.(lang.ISeq)
+	arglists := []any{}
+	for _, mth := range methods {
+		mseq, isSeq := mth.(lang.ISeq)
 		if !isSeq {
-			panic(fmt.Errorf("invalid defmacro method form: %s", lang.PrintString(m)))
+			panic(fmt.Errorf("invalid defmacro method form: %s", lang.PrintString(mth)))
 		}
 		parts := lang.ToSlice(mseq)
 		pvec, isVec := parts[0].(lang.IPersistentVector)
 		if !isVec {
 			panic(fmt.Errorf("defmacro method requires a parameter vector, got: %s", lang.PrintString(parts[0])))
 		}
+		// :arglists records the USER-visible params (clojure.core/defmacro
+		// does the same) — &form/&env are not part of them.
+		arglists = append(arglists, pvec)
 		// Prepend the hidden params. A trailing "& rest" pair keeps its
 		// invariant (& stays second-to-last).
 		params := append([]any{symAmpForm, symAmpEnv}, lang.ToSlice(pvec)...)
@@ -93,10 +140,15 @@ func defmacroExpand(args ...any) any {
 		fnParts = append(fnParts, lang.NewList(method...))
 	}
 
-	defParts := []any{symDef, name}
-	if doc != nil {
-		defParts = append(defParts, doc)
+	// {:arglists ...} first so a user-supplied :arglists wins, then the
+	// name symbol's own metadata on top — clojure.core/defn's conj order.
+	m = mergeAttrMap(lang.NewMap(lang.NewKeyword("arglists"), lang.NewList(arglists...)), m)
+	if nm := name.Meta(); nm != nil {
+		m = mergeAttrMap(m, nm)
 	}
+	name = name.WithMeta(m).(*lang.Symbol)
+
+	defParts := []any{symDef, name}
 	defParts = append(defParts, lang.NewList(fnParts...))
 
 	theVar := lang.NewList(symVar, name)

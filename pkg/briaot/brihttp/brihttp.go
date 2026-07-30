@@ -12,6 +12,7 @@ var (
 	kw_X__csrf                                     = lang.InternKeywordString("__csrf")
 	kw_access                                      = lang.InternKeywordString("access")
 	kw_access_log                                  = lang.InternKeywordString("access-log")
+	kw_arglists                                    = lang.InternKeywordString("arglists")
 	kw_as                                          = lang.InternKeywordString("as")
 	kw_auth_SLASH_claims                           = lang.InternKeywordString("auth/claims")
 	kw_auto_ban                                    = lang.InternKeywordString("auto-ban")
@@ -100,6 +101,10 @@ var (
 	re_1811                                        = &reader.Regex{Pattern: ","}
 	re_284                                         = &reader.Regex{Pattern: ";"}
 	re_455                                         = &reader.Regex{Pattern: ";"}
+	sym_X_AMP_                                     = lang.NewSymbol("&")
+	sym_app                                        = lang.NewSymbol("app")
+	sym_args                                       = lang.NewSymbol("args")
+	sym_body                                       = lang.NewSymbol("body")
 	sym_bri_DOT_web_DOT_http                       = lang.NewSymbol("bri.web.http")
 	sym_bri_DOT_web_DOT_http_SLASH_routes          = lang.NewSymbol("bri.web.http/routes")
 	sym_cljg_DOT_http                              = lang.NewSymbol("cljg.http")
@@ -108,10 +113,51 @@ var (
 	sym_clojure_DOT_core                           = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_edn                            = lang.NewSymbol("clojure.edn")
 	sym_clojure_DOT_string                         = lang.NewSymbol("clojure.string")
+	sym_data                                       = lang.NewSymbol("data")
 	sym_def                                        = lang.NewSymbol("def")
+	sym_deps                                       = lang.NewSymbol("deps")
 	sym_edn                                        = lang.NewSymbol("edn")
+	sym_entry                                      = lang.NewSymbol("entry")
+	sym_ev                                         = lang.NewSymbol("ev")
+	sym_f                                          = lang.NewSymbol("f")
+	sym_form                                       = lang.NewSymbol("form")
+	sym_forms                                      = lang.NewSymbol("forms")
+	sym_h                                          = lang.NewSymbol("h")
+	sym_handler                                    = lang.NewSymbol("handler")
+	sym_k                                          = lang.NewSymbol("k")
+	sym_m                                          = lang.NewSymbol("m")
+	sym_method                                     = lang.NewSymbol("method")
+	sym_more                                       = lang.NewSymbol("more")
+	sym_mw                                         = lang.NewSymbol("mw")
+	sym_mws                                        = lang.NewSymbol("mws")
+	sym_n                                          = lang.NewSymbol("n")
+	sym_nm                                         = lang.NewSymbol("nm")
 	sym_ok                                         = lang.NewSymbol("ok")
+	sym_opts                                       = lang.NewSymbol("opts")
+	sym_params                                     = lang.NewSymbol("params")
+	sym_pat                                        = lang.NewSymbol("pat")
+	sym_path                                       = lang.NewSymbol("path")
+	sym_pattern                                    = lang.NewSymbol("pattern")
+	sym_port                                       = lang.NewSymbol("port")
+	sym_prefix                                     = lang.NewSymbol("prefix")
+	sym_query                                      = lang.NewSymbol("query")
+	sym_req                                        = lang.NewSymbol("req")
+	sym_res                                        = lang.NewSymbol("res")
+	sym_result                                     = lang.NewSymbol("result")
+	sym_route                                      = lang.NewSymbol("route")
+	sym_routes                                     = lang.NewSymbol("routes")
+	sym_rts                                        = lang.NewSymbol("rts")
+	sym_s                                          = lang.NewSymbol("s")
+	sym_sess                                       = lang.NewSymbol("sess")
+	sym_stack                                      = lang.NewSymbol("stack")
+	sym_status                                     = lang.NewSymbol("status")
 	sym_str                                        = lang.NewSymbol("str")
+	sym_sub                                        = lang.NewSymbol("sub")
+	sym_target                                     = lang.NewSymbol("target")
+	sym_targets                                    = lang.NewSymbol("targets")
+	sym_type_                                      = lang.NewSymbol("type")
+	sym_values                                     = lang.NewSymbol("values")
+	sym_x                                          = lang.NewSymbol("x")
 	v_bri_DOT_web_DOT_http_ANY                     = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("ANY"))
 	v_bri_DOT_web_DOT_http_DELETE                  = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("DELETE"))
 	v_bri_DOT_web_DOT_http_GET                     = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("GET"))
@@ -405,8 +451,8 @@ func Load() {
 	tmp9 := v_clojure_DOT_core_require.Get()
 	tmp10 := lang.Apply1(tmp9, lang.NewVector(sym_cljg_DOT_http))
 	_ = tmp10
-	// (def dev? (clojure.core/fn [] (= "1" (-getenv "BRI_DEV"))))
-	v_bri_DOT_web_DOT_http_dev_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(21), kw_private, true))
+	// (def dev? (clojure.core/fn ([] (= "1" (-getenv "BRI_DEV")))))
+	v_bri_DOT_web_DOT_http_dev_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector())))
 	tmp11 := lang.FnFunc0(func() any {
 		tmp12 := v_bri_DOT_web_DOT_http_X_getenv.Get()
 		tmp13 := lang.Apply1(tmp12, "BRI_DEV")
@@ -423,8 +469,8 @@ func Load() {
 	tmp16 := lang.NewMap(kw_http_SLASH_bad_param, int64(400), kw_cast_SLASH_invalid, int64(422), kw_db_SLASH_not_found, int64(404), kw_db_SLASH_constraint, int64(409), kw_else_, int64(500))
 	v_bri_DOT_web_DOT_http_default_error_map.BindRoot(tmp16)
 	_ = v_bri_DOT_web_DOT_http_default_error_map
-	// (def ok (clojure.core/fn [body] {:status 200, :body body}))
-	v_bri_DOT_web_DOT_http_ok.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(51), kw_column, int64(7), kw_end_line, int64(51), kw_end_column, int64(9)))
+	// (def ok (clojure.core/fn ([body] {:status 200, :body body})))
+	v_bri_DOT_web_DOT_http_ok.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(51), kw_column, int64(7), kw_end_line, int64(51), kw_end_column, int64(9), kw_arglists, lang.NewList(lang.NewVector(sym_body))))
 	tmp17 := lang.FnFunc1(func(body18 any) any {
 		tmp19 := lang.NewMap(kw_status, int64(200), kw_body, body18)
 		return tmp19
@@ -434,8 +480,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_ok = tmp20.F
 	v_bri_DOT_web_DOT_http_ok.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_ok
-	// (def created (clojure.core/fn [body] {:status 201, :body body}))
-	v_bri_DOT_web_DOT_http_created.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(14)))
+	// (def created (clojure.core/fn ([body] {:status 201, :body body})))
+	v_bri_DOT_web_DOT_http_created.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_body))))
 	tmp21 := lang.FnFunc1(func(body22 any) any {
 		tmp23 := lang.NewMap(kw_status, int64(201), kw_body, body22)
 		return tmp23
@@ -445,8 +491,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_created = tmp24.F
 	v_bri_DOT_web_DOT_http_created.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_created
-	// (def no-content (clojure.core/fn [] {:status 204, :body ""}))
-	v_bri_DOT_web_DOT_http_no_content.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(17)))
+	// (def no-content (clojure.core/fn ([] {:status 204, :body ""})))
+	v_bri_DOT_web_DOT_http_no_content.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector())))
 	tmp25 := lang.FnFunc0(func() any {
 		tmp26 := lang.NewMap(kw_status, int64(204), kw_body, "")
 		return tmp26
@@ -456,8 +502,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_no_content = tmp27.F
 	v_bri_DOT_web_DOT_http_no_content.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_no_content
-	// (def not-found (clojure.core/fn [body] {:status 404, :body body}))
-	v_bri_DOT_web_DOT_http_not_found.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(54), kw_column, int64(7), kw_end_line, int64(54), kw_end_column, int64(16)))
+	// (def not-found (clojure.core/fn ([body] {:status 404, :body body})))
+	v_bri_DOT_web_DOT_http_not_found.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(54), kw_column, int64(7), kw_end_line, int64(54), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_body))))
 	tmp28 := lang.FnFunc1(func(body29 any) any {
 		tmp30 := lang.NewMap(kw_status, int64(404), kw_body, body29)
 		return tmp30
@@ -467,8 +513,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_not_found = tmp31.F
 	v_bri_DOT_web_DOT_http_not_found.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_not_found
-	// (def json "A JSON response regardless of negotiation: encodes data and sets the\n  content…
-	v_bri_DOT_web_DOT_http_json.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(11), kw_doc, "A JSON response regardless of negotiation: encodes data and sets the\n  content type."))
+	// (def json (clojure.core/fn ([data] (json 200 data)) ([status data] {:status status, :heade…
+	v_bri_DOT_web_DOT_http_json.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_data), lang.NewVector(sym_status, sym_data)), kw_doc, "A JSON response regardless of negotiation: encodes data and sets the\n  content type."))
 	tmp32 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -493,8 +539,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_json.BindRoot(tmp32)
 	_ = v_bri_DOT_web_DOT_http_json
-	// (def param! "The blessed typed accessor for path params (spec: HTTP is the Ring\n  contrac…
-	v_bri_DOT_web_DOT_http_param_BANG_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(66), kw_column, int64(7), kw_end_line, int64(66), kw_end_column, int64(13), kw_doc, "The blessed typed accessor for path params (spec: HTTP is the Ring\n  contract). (param! req :id :int) — :params bind as strings; failure\n  throws :http/bad-param, which the funnel maps to 400."))
+	// (def param! (clojure.core/fn ([req k] (param! req k :string)) ([req k type] (let [s (get (…
+	v_bri_DOT_web_DOT_http_param_BANG_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(66), kw_column, int64(7), kw_end_line, int64(66), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_req, sym_k), lang.NewVector(sym_req, sym_k, sym_type_)), kw_doc, "The blessed typed accessor for path params (spec: HTTP is the Ring\n  contract). (param! req :id :int) — :params bind as strings; failure\n  throws :http/bad-param, which the funnel maps to 400."))
 	tmp42 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -636,8 +682,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_param_BANG_.BindRoot(tmp42)
 	_ = v_bri_DOT_web_DOT_http_param_BANG_
-	// (def render "The VISIBLE bridge for Result values at the http boundary (ADR 0041\n  §5): …
-	v_bri_DOT_web_DOT_http_render.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(89), kw_column, int64(7), kw_end_line, int64(89), kw_end_column, int64(13), kw_doc, "The VISIBLE bridge for Result values at the http boundary (ADR 0041\n  §5): (ok resp) → resp; (err e) → thrown through the funnel table (an\n  err payload map may carry :bri/error to pick its row; anything else\n  maps through :else). A non-Result value passes through unchanged."))
+	// (def render (clojure.core/fn ([result] (cond (ok? result) (-result-payload result) (err? r…
+	v_bri_DOT_web_DOT_http_render.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(89), kw_column, int64(7), kw_end_line, int64(89), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_result)), kw_doc, "The VISIBLE bridge for Result values at the http boundary (ADR 0041\n  §5): (ok resp) → resp; (err e) → thrown through the funnel table (an\n  err payload map may carry :bri/error to pick its row; anything else\n  maps through :else). A non-Result value passes through unchanged."))
 	tmp103 := lang.FnFunc1(func(result104 any) any {
 		tmp105 := v_clojure_DOT_core_ok_QMARK_.Get()
 		tmp106 := lang.Apply1(tmp105, result104)
@@ -709,8 +755,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_render = tmp133.F
 	v_bri_DOT_web_DOT_http_render.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_render
-	// (def dir "Static file handler for a directory, served by Go's http.FileServer.\n  Mount un…
-	v_bri_DOT_web_DOT_http_dir.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(106), kw_column, int64(7), kw_end_line, int64(106), kw_end_column, int64(10), kw_doc, "Static file handler for a directory, served by Go's http.FileServer.\n  Mount under a trailing-slash pattern: [\"GET /static/\" (dir \"public\")]."))
+	// (def dir (clojure.core/fn ([path] #:bri.web.http{:dir path})))
+	v_bri_DOT_web_DOT_http_dir.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(106), kw_column, int64(7), kw_end_line, int64(106), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "Static file handler for a directory, served by Go's http.FileServer.\n  Mount under a trailing-slash pattern: [\"GET /static/\" (dir \"public\")]."))
 	tmp134 := lang.FnFunc1(func(path135 any) any {
 		tmp136 := lang.NewMap(kw_bri_DOT_web_DOT_http_SLASH_dir, path135)
 		return tmp136
@@ -720,8 +766,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_dir = tmp137.F
 	v_bri_DOT_web_DOT_http_dir.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_dir
-	// (def managed "Mark a bri-produced plain-fn handler so dev mode does not warn\n  about it (…
-	v_bri_DOT_web_DOT_http_managed.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(14), kw_doc, "Mark a bri-produced plain-fn handler so dev mode does not warn\n  about it (the liveness warning is for USER handlers that forgot the\n  #'var; a bri helper's closure is deliberate)."))
+	// (def managed (clojure.core/fn ([f] #:bri.web.http{:handler f})))
+	v_bri_DOT_web_DOT_http_managed.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_f)), kw_doc, "Mark a bri-produced plain-fn handler so dev mode does not warn\n  about it (the liveness warning is for USER handlers that forgot the\n  #'var; a bri helper's closure is deliberate)."))
 	tmp138 := lang.FnFunc1(func(f139 any) any {
 		tmp140 := lang.NewMap(kw_bri_DOT_web_DOT_http_SLASH_handler, f139)
 		return tmp140
@@ -731,8 +777,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_managed = tmp141.F
 	v_bri_DOT_web_DOT_http_managed.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_managed
-	// (def health "A health handler. T1 edition: reports the process up; deps whose\n  values ar…
-	v_bri_DOT_web_DOT_http_health.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(13), kw_doc, "A health handler. T1 edition: reports the process up; deps whose\n  values are zero-arg fns are pinged and reported (db pools arrive with\n  T2)."))
+	// (def health (clojure.core/fn ([deps] (managed (fn [_req] (let [checks (reduce (fn [m kv] (…
+	v_bri_DOT_web_DOT_http_health.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_deps)), kw_doc, "A health handler. T1 edition: reports the process up; deps whose\n  values are zero-arg fns are pinged and reported (db pools arrive with\n  T2)."))
 	tmp142 := lang.FnFunc1(func(deps143 any) any {
 		tmp144 := v_bri_DOT_web_DOT_http_managed.Direct()
 		var tmp145 any
@@ -858,8 +904,8 @@ func Load() {
 	tmp198 := lang.Apply1(tmp188, tmp197)
 	v_bri_DOT_web_DOT_http_session_key.BindRoot(tmp198)
 	_ = v_bri_DOT_web_DOT_http_session_key
-	// (def encode-session (clojure.core/fn [m] (let [payload (-b64-encode (pr-str m))] (str payl…
-	v_bri_DOT_web_DOT_http_encode_session.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(145), kw_column, int64(7), kw_end_line, int64(145), kw_end_column, int64(31), kw_private, true))
+	// (def encode-session (clojure.core/fn ([m] (let [payload (-b64-encode (pr-str m))] (str pay…
+	v_bri_DOT_web_DOT_http_encode_session.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(145), kw_column, int64(7), kw_end_line, int64(145), kw_end_column, int64(31), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_m))))
 	tmp199 := lang.FnFunc1(func(m200 any) any {
 		var tmp201 any
 		_ = tmp201
@@ -886,8 +932,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_encode_session = tmp214.F
 	v_bri_DOT_web_DOT_http_encode_session.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_encode_session
-	// (def decode-session (clojure.core/fn [s] (when (string? s) (let [i (str/last-index-of s ".…
-	v_bri_DOT_web_DOT_http_decode_session.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(149), kw_column, int64(7), kw_end_line, int64(149), kw_end_column, int64(31), kw_private, true))
+	// (def decode-session (clojure.core/fn ([s] (when (string? s) (let [i (str/last-index-of s "…
+	v_bri_DOT_web_DOT_http_decode_session.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(149), kw_column, int64(7), kw_end_line, int64(149), kw_end_column, int64(31), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_s))))
 	tmp215 := lang.FnFunc1(func(s216 any) any {
 		tmp217 := v_clojure_DOT_core_string_QMARK_.Get()
 		tmp218 := lang.Apply1(tmp217, s216)
@@ -987,8 +1033,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_decode_session = tmp253.F
 	v_bri_DOT_web_DOT_http_decode_session.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_decode_session
-	// (def parse-cookies (clojure.core/fn [req] (reduce (fn [m kv] (let [i (str/index-of kv "=")…
-	v_bri_DOT_web_DOT_http_parse_cookies.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(160), kw_column, int64(7), kw_end_line, int64(160), kw_end_column, int64(30), kw_private, true))
+	// (def parse-cookies (clojure.core/fn ([req] (reduce (fn [m kv] (let [i (str/index-of kv "="…
+	v_bri_DOT_web_DOT_http_parse_cookies.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(160), kw_column, int64(7), kw_end_line, int64(160), kw_end_column, int64(30), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req))))
 	tmp254 := lang.FnFunc1(func(req255 any) any {
 		tmp256 := v_clojure_DOT_core_reduce.Get()
 		tmp257 := lang.FnFunc2(func(m258, kv259 any) any {
@@ -1168,8 +1214,8 @@ func Load() {
 	v_bri_DOT_web_DOT_http_X_STAR_csrf_token_STAR_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(188), kw_column, int64(6), kw_end_line, int64(188), kw_end_column, int64(28), kw_dynamic, true))
 	v_bri_DOT_web_DOT_http_X_STAR_csrf_token_STAR_.BindRoot(nil)
 	_ = v_bri_DOT_web_DOT_http_X_STAR_csrf_token_STAR_
-	// (def form-token "The CSRF token for the current request (bound by the csrf\n  middleware).…
-	v_bri_DOT_web_DOT_http_form_token.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(193), kw_column, int64(7), kw_end_line, int64(193), kw_end_column, int64(17), kw_doc, "The CSRF token for the current request (bound by the csrf\n  middleware). bri.web.html/form calls this; user code can too, for\n  hand-rolled forms or JS that sets the x-csrf-token header."))
+	// (def form-token (clojure.core/fn ([] *csrf-token*)))
+	v_bri_DOT_web_DOT_http_form_token.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(193), kw_column, int64(7), kw_end_line, int64(193), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The CSRF token for the current request (bound by the csrf\n  middleware). bri.web.html/form calls this; user code can too, for\n  hand-rolled forms or JS that sets the x-csrf-token header."))
 	tmp338 := lang.FnFunc0(func() any {
 		tmp339 := v_bri_DOT_web_DOT_http_X_STAR_csrf_token_STAR_.Get()
 		return tmp339
@@ -1179,8 +1225,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_form_token = tmp340.F
 	v_bri_DOT_web_DOT_http_form_token.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_form_token
-	// (def mutating? (clojure.core/fn [req] (contains? #{:patch :delete :post :put} (:request-me…
-	v_bri_DOT_web_DOT_http_mutating_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(200), kw_column, int64(7), kw_end_line, int64(200), kw_end_column, int64(26), kw_private, true))
+	// (def mutating? (clojure.core/fn ([req] (contains? #{:patch :delete :post :put} (:request-m…
+	v_bri_DOT_web_DOT_http_mutating_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(200), kw_column, int64(7), kw_end_line, int64(200), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req))))
 	tmp341 := lang.FnFunc1(func(req342 any) any {
 		tmp343 := v_clojure_DOT_core_contains_QMARK_.Get()
 		tmp344 := lang.NewSet(kw_patch, kw_delete_, kw_post, kw_put)
@@ -1193,8 +1239,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_mutating_QMARK_ = tmp347.F
 	v_bri_DOT_web_DOT_http_mutating_QMARK_.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_mutating_QMARK_
-	// (def csrf-ok? (clojure.core/fn [req] (let [expected (get (:session req) :bri.web.http/csrf…
-	v_bri_DOT_web_DOT_http_csrf_ok_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(203), kw_column, int64(7), kw_end_line, int64(203), kw_end_column, int64(25), kw_private, true))
+	// (def csrf-ok? (clojure.core/fn ([req] (let [expected (get (:session req) :bri.web.http/csr…
+	v_bri_DOT_web_DOT_http_csrf_ok_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(203), kw_column, int64(7), kw_end_line, int64(203), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req))))
 	tmp348 := lang.FnFunc1(func(req349 any) any {
 		var tmp350 any
 		_ = tmp350
@@ -1424,8 +1470,8 @@ func Load() {
 	tmp435 := lang.NewMap(kw_name, kw_csrf, kw_wrap, tmp434)
 	v_bri_DOT_web_DOT_http_csrf.BindRoot(tmp435)
 	_ = v_bri_DOT_web_DOT_http_csrf
-	// (def start-session "Attach a session map to a response — the explicit way a handler\n  b…
-	v_bri_DOT_web_DOT_http_start_session.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(232), kw_column, int64(7), kw_end_line, int64(232), kw_end_column, int64(20), kw_doc, "Attach a session map to a response — the explicit way a handler\n  begins (or updates) the browser session the CSRF gate protects."))
+	// (def start-session (clojure.core/fn ([res sess] (assoc res :session sess))))
+	v_bri_DOT_web_DOT_http_start_session.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(232), kw_column, int64(7), kw_end_line, int64(232), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_res, sym_sess)), kw_doc, "Attach a session map to a response — the explicit way a handler\n  begins (or updates) the browser session the CSRF gate protects."))
 	tmp436 := lang.FnFunc2(func(res437, sess438 any) any {
 		tmp439 := v_clojure_DOT_core_assoc.Get()
 		tmp440 := lang.Apply3(tmp439, res437, kw_session, sess438)
@@ -1436,8 +1482,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_start_session = tmp441.F
 	v_bri_DOT_web_DOT_http_start_session.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_start_session
-	// (def content-type (clojure.core/fn [req] (let [ct (or (get (:headers req) "content-type") …
-	v_bri_DOT_web_DOT_http_content_type.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(239), kw_column, int64(7), kw_end_line, int64(239), kw_end_column, int64(29), kw_private, true))
+	// (def content-type (clojure.core/fn ([req] (let [ct (or (get (:headers req) "content-type")…
+	v_bri_DOT_web_DOT_http_content_type.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(239), kw_column, int64(7), kw_end_line, int64(239), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req))))
 	tmp442 := lang.FnFunc1(func(req443 any) any {
 		var tmp444 any
 		_ = tmp444
@@ -1723,8 +1769,8 @@ func Load() {
 	tmp565 := lang.NewMap(kw_name, kw_json, kw_wrap, tmp564)
 	v_bri_DOT_web_DOT_http_negotiate.BindRoot(tmp565)
 	_ = v_bri_DOT_web_DOT_http_negotiate
-	// (def recover "The error funnel: catches anything a handler throws and maps\n  (:bri/error …
-	v_bri_DOT_web_DOT_http_recover_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(283), kw_column, int64(7), kw_end_line, int64(283), kw_end_column, int64(14), kw_doc, "The error funnel: catches anything a handler throws and maps\n  (:bri/error (ex-data t)) through the table — 400 bad param, 422\n  invalid cast, 404 not found, 409 constraint, else 500. Bodies name\n  the error kind; messages appear in dev only. Override rows with\n  (recover {:error-map {...}})."))
+	// (def recover (clojure.core/fn ([] (recover {})) ([opts] (let [table (merge default-error-m…
+	v_bri_DOT_web_DOT_http_recover_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(283), kw_column, int64(7), kw_end_line, int64(283), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "The error funnel: catches anything a handler throws and maps\n  (:bri/error (ex-data t)) through the table — 400 bad param, 422\n  invalid cast, 404 not found, 409 constraint, else 500. Bodies name\n  the error kind; messages appear in dev only. Override rows with\n  (recover {:error-map {...}})."))
 	tmp566 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -1883,8 +1929,8 @@ func Load() {
 	tmp645 := lang.NewMap(kw_name, kw_access_log, kw_wrap, tmp644)
 	v_bri_DOT_web_DOT_http_access_log.BindRoot(tmp645)
 	_ = v_bri_DOT_web_DOT_http_access_log
-	// (def defaults "The default-on middleware stack — applied when :middleware is\n  omitted;…
-	v_bri_DOT_web_DOT_http_defaults.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(320), kw_column, int64(7), kw_end_line, int64(320), kw_end_column, int64(15), kw_doc, "The default-on middleware stack — applied when :middleware is\n  omitted; a plain VECTOR of {:name kw :wrap (fn [handler] handler)}\n  entries, outermost first. conj onto it, remove by name with\n  (without stack :csrf); `cljgo routes` prints it."))
+	// (def defaults (clojure.core/fn ([] [access-log (recover) sessions negotiate csrf])))
+	v_bri_DOT_web_DOT_http_defaults.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(320), kw_column, int64(7), kw_end_line, int64(320), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The default-on middleware stack — applied when :middleware is\n  omitted; a plain VECTOR of {:name kw :wrap (fn [handler] handler)}\n  entries, outermost first. conj onto it, remove by name with\n  (without stack :csrf); `cljgo routes` prints it."))
 	tmp646 := lang.FnFunc0(func() any {
 		tmp647 := v_bri_DOT_web_DOT_http_access_log.Get()
 		tmp648 := v_bri_DOT_web_DOT_http_recover_.Get()
@@ -1900,8 +1946,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_defaults = tmp654.F
 	v_bri_DOT_web_DOT_http_defaults.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_defaults
-	// (def without "Remove a middleware entry from a stack by :name." (clojure.core/fn [stack nm…
-	v_bri_DOT_web_DOT_http_without.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(328), kw_column, int64(7), kw_end_line, int64(328), kw_end_column, int64(14), kw_doc, "Remove a middleware entry from a stack by :name."))
+	// (def without (clojure.core/fn ([stack nm] (vec (remove (fn [e] (= nm (:name e))) stack))))…
+	v_bri_DOT_web_DOT_http_without.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(328), kw_column, int64(7), kw_end_line, int64(328), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_stack, sym_nm)), kw_doc, "Remove a middleware entry from a stack by :name."))
 	tmp655 := lang.FnFunc2(func(stack656, nm657 any) any {
 		tmp658 := v_clojure_DOT_core_vec.Get()
 		tmp659 := v_clojure_DOT_core_remove.Get()
@@ -1920,8 +1966,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_without = tmp667.F
 	v_bri_DOT_web_DOT_http_without.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_without
-	// (def stack-names (clojure.core/fn [stack] (mapv :name stack)))
-	v_bri_DOT_web_DOT_http_stack_names.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(333), kw_column, int64(7), kw_end_line, int64(333), kw_end_column, int64(18)))
+	// (def stack-names (clojure.core/fn ([stack] (mapv :name stack))))
+	v_bri_DOT_web_DOT_http_stack_names.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(333), kw_column, int64(7), kw_end_line, int64(333), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_stack))))
 	tmp668 := lang.FnFunc1(func(stack669 any) any {
 		tmp670 := v_clojure_DOT_core_mapv.Get()
 		tmp671 := lang.Apply2(tmp670, kw_name, stack669)
@@ -1932,8 +1978,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_stack_names = tmp672.F
 	v_bri_DOT_web_DOT_http_stack_names.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_stack_names
-	// (def warn-custom-stack (clojure.core/fn [stack] (let [names (set (stack-names stack))] (wh…
-	v_bri_DOT_web_DOT_http_warn_custom_stack.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(335), kw_column, int64(7), kw_end_line, int64(335), kw_end_column, int64(34), kw_private, true))
+	// (def warn-custom-stack (clojure.core/fn ([stack] (let [names (set (stack-names stack))] (w…
+	v_bri_DOT_web_DOT_http_warn_custom_stack.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(335), kw_column, int64(7), kw_end_line, int64(335), kw_end_column, int64(34), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_stack))))
 	tmp673 := lang.FnFunc1(func(stack674 any) any {
 		var tmp675 any
 		_ = tmp675
@@ -1975,8 +2021,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_warn_custom_stack = tmp689.F
 	v_bri_DOT_web_DOT_http_warn_custom_stack.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_warn_custom_stack
-	// (def wrap-stack (clojure.core/fn [stack handler] (reduce (fn [h entry] ((:wrap entry) h)) …
-	v_bri_DOT_web_DOT_http_wrap_stack.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(343), kw_column, int64(7), kw_end_line, int64(343), kw_end_column, int64(27), kw_private, true))
+	// (def wrap-stack (clojure.core/fn ([stack handler] (reduce (fn [h entry] ((:wrap entry) h))…
+	v_bri_DOT_web_DOT_http_wrap_stack.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(343), kw_column, int64(7), kw_end_line, int64(343), kw_end_column, int64(27), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_stack, sym_handler))))
 	tmp690 := lang.FnFunc2(func(stack691, handler692 any) any {
 		tmp693 := v_clojure_DOT_core_reduce.Get()
 		tmp694 := lang.FnFunc2(func(h695, entry696 any) any {
@@ -1995,8 +2041,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_wrap_stack = tmp703.F
 	v_bri_DOT_web_DOT_http_wrap_stack.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_wrap_stack
-	// (def base-handler "The liveness line: a #'var route handler is DEREFED PER REQUEST, so a\n…
-	v_bri_DOT_web_DOT_http_base_handler.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(346), kw_column, int64(7), kw_end_line, int64(346), kw_end_column, int64(29), kw_private, true, kw_doc, "The liveness line: a #'var route handler is DEREFED PER REQUEST, so a\n  re-def at the REPL changes the live server. Plain fns skip the deref;\n  dev mode warns about them at mount time (silent non-liveness)."))
+	// (def base-handler (clojure.core/fn ([pattern h] (cond (var? h) (fn [req] ((deref h) req)) …
+	v_bri_DOT_web_DOT_http_base_handler.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(346), kw_column, int64(7), kw_end_line, int64(346), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_pattern, sym_h)), kw_doc, "The liveness line: a #'var route handler is DEREFED PER REQUEST, so a\n  re-def at the REPL changes the live server. Plain fns skip the deref;\n  dev mode warns about them at mount time (silent non-liveness)."))
 	tmp704 := lang.FnFunc2(func(pattern705, h706 any) any {
 		tmp707 := v_clojure_DOT_core_var_QMARK_.Get()
 		tmp708 := lang.Apply1(tmp707, h706)
@@ -2083,8 +2129,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_base_handler = tmp739.F
 	v_bri_DOT_web_DOT_http_base_handler.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_base_handler
-	// (def mount "Compile routes-as-data + a middleware stack into [pattern handler-fn]\n  pairs…
-	v_bri_DOT_web_DOT_http_mount.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(359), kw_column, int64(7), kw_end_line, int64(359), kw_end_column, int64(22), kw_private, true, kw_doc, "Compile routes-as-data + a middleware stack into [pattern handler-fn]\n  pairs for the Go adapter ({:bri.web.http/dir ...} markers pass through)."))
+	// (def mount (clojure.core/fn ([routes stack] (mapv (fn [route] (let [pattern (nth route 0) …
+	v_bri_DOT_web_DOT_http_mount.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(359), kw_column, int64(7), kw_end_line, int64(359), kw_end_column, int64(22), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_routes, sym_stack)), kw_doc, "Compile routes-as-data + a middleware stack into [pattern handler-fn]\n  pairs for the Go adapter ({:bri.web.http/dir ...} markers pass through)."))
 	tmp740 := lang.FnFunc2(func(routes741, stack742 any) any {
 		tmp743 := v_clojure_DOT_core_mapv.Get()
 		tmp744 := lang.FnFunc1(func(route745 any) any {
@@ -2161,8 +2207,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_mount = tmp771.F
 	v_bri_DOT_web_DOT_http_mount.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_mount
-	// (def group "Prefix a route group, optionally wrapping extra middleware around\n  each hand…
-	v_bri_DOT_web_DOT_http_group.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(371), kw_column, int64(7), kw_end_line, int64(371), kw_end_column, int64(12), kw_doc, "Prefix a route group, optionally wrapping extra middleware around\n  each handler: (group \"/admin\" [require-admin] routes)."))
+	// (def group (clojure.core/fn ([prefix routes] (group prefix [] routes)) ([prefix mw routes]…
+	v_bri_DOT_web_DOT_http_group.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(371), kw_column, int64(7), kw_end_line, int64(371), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_prefix, sym_routes), lang.NewVector(sym_prefix, sym_mw, sym_routes)), kw_doc, "Prefix a route group, optionally wrapping extra middleware around\n  each handler: (group \"/admin\" [require-admin] routes)."))
 	tmp772 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -2259,8 +2305,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_group.BindRoot(tmp772)
 	_ = v_bri_DOT_web_DOT_http_group
-	// (def describe "The `cljgo routes` body: the effective middleware stack and every\n  route …
-	v_bri_DOT_web_DOT_http_describe.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(389), kw_column, int64(7), kw_end_line, int64(389), kw_end_column, int64(15), kw_doc, "The `cljgo routes` body: the effective middleware stack and every\n  route with its handler."))
+	// (def describe (clojure.core/fn ([routes opts] (let [custom (:middleware opts) stack (or cu…
+	v_bri_DOT_web_DOT_http_describe.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(389), kw_column, int64(7), kw_end_line, int64(389), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_routes, sym_opts)), kw_doc, "The `cljgo routes` body: the effective middleware stack and every\n  route with its handler."))
 	tmp819 := lang.FnFunc2(func(routes820, opts821 any) any {
 		var tmp822 any
 		_ = tmp822
@@ -2422,8 +2468,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_describe = tmp890.F
 	v_bri_DOT_web_DOT_http_describe.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_describe
-	// (def ->mw (clojure.core/fn [m] (if (and (map? m) (contains? m :wrap)) m {:wrap m})))
-	v_bri_DOT_web_DOT_http_X__GT_mw.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(424), kw_column, int64(7), kw_end_line, int64(424), kw_end_column, int64(21), kw_private, true))
+	// (def ->mw (clojure.core/fn ([m] (if (and (map? m) (contains? m :wrap)) m {:wrap m}))))
+	v_bri_DOT_web_DOT_http_X__GT_mw.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(424), kw_column, int64(7), kw_end_line, int64(424), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_m))))
 	tmp891 := lang.FnFunc1(func(m892 any) any {
 		var tmp893 any
 		_ = tmp893
@@ -2458,8 +2504,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_X__GT_mw = tmp902.F
 	v_bri_DOT_web_DOT_http_X__GT_mw.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_X__GT_mw
-	// (def ->mws (clojure.core/fn [mw] (cond (nil? mw) [] (vector? mw) mw :else [mw])))
-	v_bri_DOT_web_DOT_http_X__GT_mws.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(425), kw_column, int64(7), kw_end_line, int64(425), kw_end_column, int64(22), kw_private, true))
+	// (def ->mws (clojure.core/fn ([mw] (cond (nil? mw) [] (vector? mw) mw :else [mw]))))
+	v_bri_DOT_web_DOT_http_X__GT_mws.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(425), kw_column, int64(7), kw_end_line, int64(425), kw_end_column, int64(22), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_mw))))
 	tmp903 := lang.FnFunc1(func(mw904 any) any {
 		tmp905 := v_clojure_DOT_core_nil_QMARK_.Get()
 		tmp906 := lang.Apply1(tmp905, mw904)
@@ -2495,8 +2541,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_X__GT_mws = tmp914.F
 	v_bri_DOT_web_DOT_http_X__GT_mws.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_X__GT_mws
-	// (def wrap-request "Write a middleware that pre-processes the request in ~1 line: (f req)\n…
-	v_bri_DOT_web_DOT_http_wrap_request.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(427), kw_column, int64(7), kw_end_line, int64(427), kw_end_column, int64(19), kw_doc, "Write a middleware that pre-processes the request in ~1 line: (f req)\n  returns a new request (threaded on) OR a response map with :status\n  (short-circuits before the handler)."))
+	// (def wrap-request (clojure.core/fn ([f] (fn [handler] (fn [req] (let [r (f req)] (if (and …
+	v_bri_DOT_web_DOT_http_wrap_request.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(427), kw_column, int64(7), kw_end_line, int64(427), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_f)), kw_doc, "Write a middleware that pre-processes the request in ~1 line: (f req)\n  returns a new request (threaded on) OR a response map with :status\n  (short-circuits before the handler)."))
 	tmp915 := lang.FnFunc1(func(f916 any) any {
 		tmp917 := lang.FnFunc1(func(handler918 any) any {
 			tmp919 := lang.FnFunc1(func(req920 any) any {
@@ -2547,8 +2593,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_wrap_request = tmp935.F
 	v_bri_DOT_web_DOT_http_wrap_request.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_wrap_request
-	// (def wrap-response "Write a middleware that post-processes the response: (f response) ->\n…
-	v_bri_DOT_web_DOT_http_wrap_response.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(437), kw_column, int64(7), kw_end_line, int64(437), kw_end_column, int64(20), kw_doc, "Write a middleware that post-processes the response: (f response) ->\n  response."))
+	// (def wrap-response (clojure.core/fn ([f] (fn [handler] (fn [req] (f (handler req)))))))
+	v_bri_DOT_web_DOT_http_wrap_response.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(437), kw_column, int64(7), kw_end_line, int64(437), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_f)), kw_doc, "Write a middleware that post-processes the response: (f response) ->\n  response."))
 	tmp936 := lang.FnFunc1(func(f937 any) any {
 		tmp938 := lang.FnFunc1(func(handler939 any) any {
 			tmp940 := lang.FnFunc1(func(req941 any) any {
@@ -2567,8 +2613,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_wrap_response = tmp946.F
 	v_bri_DOT_web_DOT_http_wrap_response.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_wrap_response
-	// (def opts-arg? "A route-options map ({:name .. :as ..}) — distinguished from a\n  middle…
-	v_bri_DOT_web_DOT_http_opts_arg_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(444), kw_column, int64(7), kw_end_line, int64(444), kw_end_column, int64(26), kw_private, true, kw_doc, "A route-options map ({:name .. :as ..}) — distinguished from a\n  middleware map by the ABSENCE of :wrap."))
+	// (def opts-arg? (clojure.core/fn ([x] (and (map? x) (not (contains? x :wrap)) (or (contains…
+	v_bri_DOT_web_DOT_http_opts_arg_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(444), kw_column, int64(7), kw_end_line, int64(444), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "A route-options map ({:name .. :as ..}) — distinguished from a\n  middleware map by the ABSENCE of :wrap."))
 	tmp947 := lang.FnFunc1(func(x948 any) any {
 		var tmp949 any
 		_ = tmp949
@@ -2629,8 +2675,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_opts_arg_QMARK_ = tmp968.F
 	v_bri_DOT_web_DOT_http_opts_arg_QMARK_.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_opts_arg_QMARK_
-	// (def wrap-handler (clojure.core/fn [mw pat handler] (let [mws (->mws mw)] (if (empty? mws)…
-	v_bri_DOT_web_DOT_http_wrap_handler.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(450), kw_column, int64(7), kw_end_line, int64(450), kw_end_column, int64(29), kw_private, true))
+	// (def wrap-handler (clojure.core/fn ([mw pat handler] (let [mws (->mws mw)] (if (empty? mws…
+	v_bri_DOT_web_DOT_http_wrap_handler.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(450), kw_column, int64(7), kw_end_line, int64(450), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_mw, sym_pat, sym_handler))))
 	tmp969 := lang.FnFunc3(func(mw970, pat971, handler972 any) any {
 		var tmp973 any
 		_ = tmp973
@@ -2702,8 +2748,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_wrap_handler = tmp993.F
 	v_bri_DOT_web_DOT_http_wrap_handler.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_wrap_handler
-	// (def make-route "Build a routes value (a 1-route vector) from (method path [opts] [mw]\n  …
-	v_bri_DOT_web_DOT_http_make_route.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(456), kw_column, int64(7), kw_end_line, int64(456), kw_end_column, int64(27), kw_private, true, kw_doc, "Build a routes value (a 1-route vector) from (method path [opts] [mw]\n  handler). Last arg is the handler; an optional {:name ..} opts map and\n  an optional middleware (fn | vector | {:wrap} map) may precede it in\n  any order. ANY drops the method prefix (ServeMux matches all methods)."))
+	// (def make-route (clojure.core/fn ([method path args] (let [handler (last args) lead (vec (…
+	v_bri_DOT_web_DOT_http_make_route.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(456), kw_column, int64(7), kw_end_line, int64(456), kw_end_column, int64(27), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_method, sym_path, sym_args)), kw_doc, "Build a routes value (a 1-route vector) from (method path [opts] [mw]\n  handler). Last arg is the handler; an optional {:name ..} opts map and\n  an optional middleware (fn | vector | {:wrap} map) may precede it in\n  any order. ANY drops the method prefix (ServeMux matches all methods)."))
 	tmp994 := lang.FnFunc3(func(method995, path996, args997 any) any {
 		var tmp998 any
 		_ = tmp998
@@ -2780,8 +2826,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_make_route = tmp1036.F
 	v_bri_DOT_web_DOT_http_make_route.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_make_route
-	// (def GET (clojure.core/fn [path & args] (make-route "GET" path args)))
-	v_bri_DOT_web_DOT_http_GET.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(472), kw_column, int64(7), kw_end_line, int64(472), kw_end_column, int64(10)))
+	// (def GET (clojure.core/fn ([path & args] (make-route "GET" path args))))
+	v_bri_DOT_web_DOT_http_GET.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(472), kw_column, int64(7), kw_end_line, int64(472), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_path, sym_X_AMP_, sym_args))))
 	tmp1037 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -2811,8 +2857,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_GET.BindRoot(tmp1037)
 	_ = v_bri_DOT_web_DOT_http_GET
-	// (def POST (clojure.core/fn [path & args] (make-route "POST" path args)))
-	v_bri_DOT_web_DOT_http_POST.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(473), kw_column, int64(7), kw_end_line, int64(473), kw_end_column, int64(11)))
+	// (def POST (clojure.core/fn ([path & args] (make-route "POST" path args))))
+	v_bri_DOT_web_DOT_http_POST.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(473), kw_column, int64(7), kw_end_line, int64(473), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_path, sym_X_AMP_, sym_args))))
 	tmp1043 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -2842,8 +2888,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_POST.BindRoot(tmp1043)
 	_ = v_bri_DOT_web_DOT_http_POST
-	// (def PUT (clojure.core/fn [path & args] (make-route "PUT" path args)))
-	v_bri_DOT_web_DOT_http_PUT.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(474), kw_column, int64(7), kw_end_line, int64(474), kw_end_column, int64(10)))
+	// (def PUT (clojure.core/fn ([path & args] (make-route "PUT" path args))))
+	v_bri_DOT_web_DOT_http_PUT.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(474), kw_column, int64(7), kw_end_line, int64(474), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_path, sym_X_AMP_, sym_args))))
 	tmp1049 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -2873,8 +2919,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_PUT.BindRoot(tmp1049)
 	_ = v_bri_DOT_web_DOT_http_PUT
-	// (def PATCH (clojure.core/fn [path & args] (make-route "PATCH" path args)))
-	v_bri_DOT_web_DOT_http_PATCH.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(475), kw_column, int64(7), kw_end_line, int64(475), kw_end_column, int64(12)))
+	// (def PATCH (clojure.core/fn ([path & args] (make-route "PATCH" path args))))
+	v_bri_DOT_web_DOT_http_PATCH.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(475), kw_column, int64(7), kw_end_line, int64(475), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_path, sym_X_AMP_, sym_args))))
 	tmp1055 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -2904,8 +2950,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_PATCH.BindRoot(tmp1055)
 	_ = v_bri_DOT_web_DOT_http_PATCH
-	// (def DELETE (clojure.core/fn [path & args] (make-route "DELETE" path args)))
-	v_bri_DOT_web_DOT_http_DELETE.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(476), kw_column, int64(7), kw_end_line, int64(476), kw_end_column, int64(13)))
+	// (def DELETE (clojure.core/fn ([path & args] (make-route "DELETE" path args))))
+	v_bri_DOT_web_DOT_http_DELETE.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(476), kw_column, int64(7), kw_end_line, int64(476), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_path, sym_X_AMP_, sym_args))))
 	tmp1061 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -2935,8 +2981,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_DELETE.BindRoot(tmp1061)
 	_ = v_bri_DOT_web_DOT_http_DELETE
-	// (def HEAD (clojure.core/fn [path & args] (make-route "HEAD" path args)))
-	v_bri_DOT_web_DOT_http_HEAD.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(477), kw_column, int64(7), kw_end_line, int64(477), kw_end_column, int64(11)))
+	// (def HEAD (clojure.core/fn ([path & args] (make-route "HEAD" path args))))
+	v_bri_DOT_web_DOT_http_HEAD.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(477), kw_column, int64(7), kw_end_line, int64(477), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_path, sym_X_AMP_, sym_args))))
 	tmp1067 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -2966,8 +3012,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_HEAD.BindRoot(tmp1067)
 	_ = v_bri_DOT_web_DOT_http_HEAD
-	// (def OPTIONS (clojure.core/fn [path & args] (make-route "OPTIONS" path args)))
-	v_bri_DOT_web_DOT_http_OPTIONS.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(478), kw_column, int64(7), kw_end_line, int64(478), kw_end_column, int64(14)))
+	// (def OPTIONS (clojure.core/fn ([path & args] (make-route "OPTIONS" path args))))
+	v_bri_DOT_web_DOT_http_OPTIONS.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(478), kw_column, int64(7), kw_end_line, int64(478), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_path, sym_X_AMP_, sym_args))))
 	tmp1073 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -2997,8 +3043,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_OPTIONS.BindRoot(tmp1073)
 	_ = v_bri_DOT_web_DOT_http_OPTIONS
-	// (def ANY (clojure.core/fn [path & args] (make-route "ANY" path args)))
-	v_bri_DOT_web_DOT_http_ANY.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(479), kw_column, int64(7), kw_end_line, int64(479), kw_end_column, int64(10)))
+	// (def ANY (clojure.core/fn ([path & args] (make-route "ANY" path args))))
+	v_bri_DOT_web_DOT_http_ANY.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(479), kw_column, int64(7), kw_end_line, int64(479), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_path, sym_X_AMP_, sym_args))))
 	tmp1079 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -3035,8 +3081,8 @@ func Load() {
 	tmp1087 := lang.Apply1(tmp1085, tmp1086)
 	v_bri_DOT_web_DOT_http_route_registry.BindRoot(tmp1087)
 	_ = v_bri_DOT_web_DOT_http_route_registry
-	// (def register-routes! (clojure.core/fn [rts] (reset! route-registry rts) rts))
-	v_bri_DOT_web_DOT_http_register_routes_BANG_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(483), kw_column, int64(7), kw_end_line, int64(483), kw_end_column, int64(33), kw_private, true))
+	// (def register-routes! (clojure.core/fn ([rts] (reset! route-registry rts) rts)))
+	v_bri_DOT_web_DOT_http_register_routes_BANG_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(483), kw_column, int64(7), kw_end_line, int64(483), kw_end_column, int64(33), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_rts))))
 	tmp1088 := lang.FnFunc1(func(rts1089 any) any {
 		tmp1090 := v_clojure_DOT_core_reset_BANG_.Get()
 		tmp1091 := v_bri_DOT_web_DOT_http_route_registry.Get()
@@ -3049,8 +3095,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_register_routes_BANG_ = tmp1093.F
 	v_bri_DOT_web_DOT_http_register_routes_BANG_.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_register_routes_BANG_
-	// (def route-entry? "A single route entry: a vector whose head is the \"METHOD /path\"\n  st…
-	v_bri_DOT_web_DOT_http_route_entry_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(485), kw_column, int64(7), kw_end_line, int64(485), kw_end_column, int64(29), kw_private, true, kw_doc, "A single route entry: a vector whose head is the \"METHOD /path\"\n  string. (A routes VALUE is a vector of these.)"))
+	// (def route-entry? (clojure.core/fn ([x] (and (vector? x) (string? (first x))))))
+	v_bri_DOT_web_DOT_http_route_entry_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(485), kw_column, int64(7), kw_end_line, int64(485), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "A single route entry: a vector whose head is the \"METHOD /path\"\n  string. (A routes VALUE is a vector of these.)"))
 	tmp1094 := lang.FnFunc1(func(x1095 any) any {
 		var tmp1096 any
 		_ = tmp1096
@@ -3079,8 +3125,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_route_entry_QMARK_ = tmp1105.F
 	v_bri_DOT_web_DOT_http_route_entry_QMARK_.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_route_entry_QMARK_
-	// (def entries-of "Flatten any mix of route entries, route values, and SEQS of them (a\n  `f…
-	v_bri_DOT_web_DOT_http_entries_of.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(491), kw_column, int64(7), kw_end_line, int64(491), kw_end_column, int64(27), kw_private, true, kw_doc, "Flatten any mix of route entries, route values, and SEQS of them (a\n  `for`/`map` over data) into a flat seq of entries — the functional\n  win: routes are plain values, so you build them with ordinary Clojure."))
+	// (def entries-of (clojure.core/fn ([x] (cond (nil? x) [] (route-entry? x) [x] (sequential? …
+	v_bri_DOT_web_DOT_http_entries_of.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(491), kw_column, int64(7), kw_end_line, int64(491), kw_end_column, int64(27), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Flatten any mix of route entries, route values, and SEQS of them (a\n  `for`/`map` over data) into a flat seq of entries — the functional\n  win: routes are plain values, so you build them with ordinary Clojure."))
 	tmp1106 := lang.FnFunc1(func(x1107 any) any {
 		tmp1108 := v_clojure_DOT_core_nil_QMARK_.Get()
 		tmp1109 := lang.Apply1(tmp1108, x1107)
@@ -3156,8 +3202,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_entries_of = tmp1137.F
 	v_bri_DOT_web_DOT_http_entries_of.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_entries_of
-	// (def normalize (clojure.core/fn [x] (vec (entries-of x))))
-	v_bri_DOT_web_DOT_http_normalize.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(504), kw_column, int64(7), kw_end_line, int64(504), kw_end_column, int64(26), kw_private, true))
+	// (def normalize (clojure.core/fn ([x] (vec (entries-of x)))))
+	v_bri_DOT_web_DOT_http_normalize.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(504), kw_column, int64(7), kw_end_line, int64(504), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x))))
 	tmp1138 := lang.FnFunc1(func(x1139 any) any {
 		tmp1140 := v_clojure_DOT_core_vec.Get()
 		tmp1141 := v_bri_DOT_web_DOT_http_entries_of.Direct()
@@ -3179,8 +3225,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_normalize = tmp1145.F
 	v_bri_DOT_web_DOT_http_normalize.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_normalize
-	// (def routes "Concatenate route values into one routes value. Each verb form yields\n  a ro…
-	v_bri_DOT_web_DOT_http_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(506), kw_column, int64(7), kw_end_line, int64(506), kw_end_column, int64(13), kw_doc, "Concatenate route values into one routes value. Each verb form yields\n  a routes value, and arguments may be SEQS of route values (built by\n  `for`/`map` over data), so (routes (for [...] (GET ...)) (GET ...))\n  combines data-generated and literal routes uniformly. This is the value\n  http/serve takes."))
+	// (def routes (clojure.core/fn ([& values] (vec (mapcat entries-of values)))))
+	v_bri_DOT_web_DOT_http_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(506), kw_column, int64(7), kw_end_line, int64(506), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_values)), kw_doc, "Concatenate route values into one routes value. Each verb form yields\n  a routes value, and arguments may be SEQS of route values (built by\n  `for`/`map` over data), so (routes (for [...] (GET ...)) (GET ...))\n  combines data-generated and literal routes uniformly. This is the value\n  http/serve takes."))
 	tmp1146 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -3202,8 +3248,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_routes.BindRoot(tmp1146)
 	_ = v_bri_DOT_web_DOT_http_routes
-	// (def resolve-routes "Deref a routes var/fn so a re-def of the routes var hot-swaps the tab…
-	v_bri_DOT_web_DOT_http_resolve_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(515), kw_column, int64(7), kw_end_line, int64(515), kw_end_column, int64(31), kw_private, true, kw_doc, "Deref a routes var/fn so a re-def of the routes var hot-swaps the table\n  (the REPL-liveness edge), mirroring live handler vars."))
+	// (def resolve-routes (clojure.core/fn ([rts] (cond (var? rts) (recur (deref rts)) (fn? rts)…
+	v_bri_DOT_web_DOT_http_resolve_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(515), kw_column, int64(7), kw_end_line, int64(515), kw_end_column, int64(31), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_rts)), kw_doc, "Deref a routes var/fn so a re-def of the routes var hot-swaps the table\n  (the REPL-liveness edge), mirroring live handler vars."))
 	tmp1153 := lang.FnFunc1(func(rts1154 any) any {
 	fnloop1155:
 		for {
@@ -3258,8 +3304,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_resolve_routes = tmp1171.F
 	v_bri_DOT_web_DOT_http_resolve_routes.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_resolve_routes
-	// (do (def defroutes "Name a routes value (Compojure). (defroutes api (GET ...) (POST ...)).…
-	v_bri_DOT_web_DOT_http_defroutes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(523), kw_column, int64(11), kw_end_line, int64(523), kw_end_column, int64(20), kw_doc, "Name a routes value (Compojure). (defroutes api (GET ...) (POST ...))."))
+	// (do (def defroutes (fn* defroutes ([&form &env nm & forms] (clojure.core/seq (clojure.core…
+	v_bri_DOT_web_DOT_http_defroutes.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_nm, sym_X_AMP_, sym_forms)), kw_doc, "Name a routes value (Compojure). (defroutes api (GET ...) (POST ...)).", kw_file, "bri/http.cljg", kw_line, int64(523), kw_column, int64(11), kw_end_line, int64(523), kw_end_column, int64(20)))
 	var defroutes1172 any
 	_ = defroutes1172
 	tmp1173 := lang.FnFunc(func(args ...any) any {
@@ -3305,8 +3351,8 @@ func Load() {
 	tmp1195 := lang.Apply1(tmp1194, v_bri_DOT_web_DOT_http_defroutes)
 	_ = tmp1195
 	_ = v_bri_DOT_web_DOT_http_defroutes
-	// (do (def defroute "Name a SINGLE route value so it can be reused/tested in isolation and\n…
-	v_bri_DOT_web_DOT_http_defroute.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(528), kw_column, int64(11), kw_end_line, int64(528), kw_end_column, int64(19), kw_doc, "Name a SINGLE route value so it can be reused/tested in isolation and\n  spliced anywhere a route goes. (defroute item (GET \"/items/{id}\" #'show))."))
+	// (do (def defroute (fn* defroute ([&form &env nm form] (clojure.core/seq (clojure.core/conc…
+	v_bri_DOT_web_DOT_http_defroute.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_nm, sym_form)), kw_doc, "Name a SINGLE route value so it can be reused/tested in isolation and\n  spliced anywhere a route goes. (defroute item (GET \"/items/{id}\" #'show)).", kw_file, "bri/http.cljg", kw_line, int64(528), kw_column, int64(11), kw_end_line, int64(528), kw_end_column, int64(19)))
 	var defroute1196 any
 	_ = defroute1196
 	var defroute1196d lang.FnFunc4
@@ -3335,8 +3381,8 @@ func Load() {
 	tmp1214 := lang.Apply1(tmp1213, v_bri_DOT_web_DOT_http_defroute)
 	_ = tmp1214
 	_ = v_bri_DOT_web_DOT_http_defroute
-	// (def split-pattern (clojure.core/fn [pat] (let [i (str/index-of pat " ")] (if i [(subs pat…
-	v_bri_DOT_web_DOT_http_split_pattern.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(534), kw_column, int64(7), kw_end_line, int64(534), kw_end_column, int64(30), kw_private, true))
+	// (def split-pattern (clojure.core/fn ([pat] (let [i (str/index-of pat " ")] (if i [(subs pa…
+	v_bri_DOT_web_DOT_http_split_pattern.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(534), kw_column, int64(7), kw_end_line, int64(534), kw_end_column, int64(30), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_pat))))
 	tmp1215 := lang.FnFunc1(func(pat1216 any) any {
 		var tmp1217 any
 		_ = tmp1217
@@ -3369,8 +3415,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_split_pattern = tmp1230.F
 	v_bri_DOT_web_DOT_http_split_pattern.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_split_pattern
-	// (def wrap "Apply middleware onto EVERY route in a value (group scope). Same\n  ordered han…
-	v_bri_DOT_web_DOT_http_wrap.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(538), kw_column, int64(7), kw_end_line, int64(538), kw_end_column, int64(11), kw_doc, "Apply middleware onto EVERY route in a value (group scope). Same\n  ordered handler->handler mechanism as route-level and global; outermost\n  first. (wrap admin (auth/admin-only) (rate-limit 20))."))
+	// (def wrap (clojure.core/fn ([rts & mws] (let [stk (mapv ->mw mws)] (mapv (fn [route] (let …
+	v_bri_DOT_web_DOT_http_wrap.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(538), kw_column, int64(7), kw_end_line, int64(538), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_X_AMP_, sym_mws)), kw_doc, "Apply middleware onto EVERY route in a value (group scope). Same\n  ordered handler->handler mechanism as route-level and global; outermost\n  first. (wrap admin (auth/admin-only) (rate-limit 20))."))
 	tmp1231 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -3477,8 +3523,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_wrap.BindRoot(tmp1231)
 	_ = v_bri_DOT_web_DOT_http_wrap
-	// (def context "Mount route values under a path prefix with shared middleware\n  (Compojure …
-	v_bri_DOT_web_DOT_http_context.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(550), kw_column, int64(7), kw_end_line, int64(550), kw_end_column, int64(14), kw_doc, "Mount route values under a path prefix with shared middleware\n  (Compojure `context`). (context \"/api/v1\" [(auth/logged-in-only)] api\n  (GET \"/me\" #'me))."))
+	// (def context (clojure.core/fn ([prefix mws & values] (let [rts (apply routes values) stk (…
+	v_bri_DOT_web_DOT_http_context.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(550), kw_column, int64(7), kw_end_line, int64(550), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_prefix, sym_mws, sym_X_AMP_, sym_values)), kw_doc, "Mount route values under a path prefix with shared middleware\n  (Compojure `context`). (context \"/api/v1\" [(auth/logged-in-only)] api\n  (GET \"/me\" #'me))."))
 	tmp1270 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -3624,8 +3670,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_context.BindRoot(tmp1270)
 	_ = v_bri_DOT_web_DOT_http_context
-	// (def add-route "Append one route value to an app value, returning a NEW value.\n  (add-rou…
-	v_bri_DOT_web_DOT_http_add_route.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(569), kw_column, int64(7), kw_end_line, int64(569), kw_end_column, int64(16), kw_doc, "Append one route value to an app value, returning a NEW value.\n  (add-route app (GET \"/new\" #'new))."))
+	// (def add-route (clojure.core/fn ([app route] (vec (concat (normalize app) (normalize route…
+	v_bri_DOT_web_DOT_http_add_route.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(569), kw_column, int64(7), kw_end_line, int64(569), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_app, sym_route)), kw_doc, "Append one route value to an app value, returning a NEW value.\n  (add-route app (GET \"/new\" #'new))."))
 	tmp1330 := lang.FnFunc2(func(app1331, route1332 any) any {
 		tmp1333 := v_clojure_DOT_core_vec.Get()
 		tmp1334 := v_clojure_DOT_core_concat.Get()
@@ -3660,8 +3706,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_add_route = tmp1343.F
 	v_bri_DOT_web_DOT_http_add_route.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_add_route
-	// (def add-routes "Splice more route values (or seqs of them) into an app value." (clojure.c…
-	v_bri_DOT_web_DOT_http_add_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(575), kw_column, int64(7), kw_end_line, int64(575), kw_end_column, int64(17), kw_doc, "Splice more route values (or seqs of them) into an app value."))
+	// (def add-routes (clojure.core/fn ([app & more] (apply routes (normalize app) more))))
+	v_bri_DOT_web_DOT_http_add_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(575), kw_column, int64(7), kw_end_line, int64(575), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_app, sym_X_AMP_, sym_more)), kw_doc, "Splice more route values (or seqs of them) into an app value."))
 	tmp1344 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -3694,8 +3740,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_add_routes.BindRoot(tmp1344)
 	_ = v_bri_DOT_web_DOT_http_add_routes
-	// (def matches-target? (clojure.core/fn [entry target] (let [pat (nth entry 0) m (get entry …
-	v_bri_DOT_web_DOT_http_matches_target_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(580), kw_column, int64(7), kw_end_line, int64(580), kw_end_column, int64(32), kw_private, true))
+	// (def matches-target? (clojure.core/fn ([entry target] (let [pat (nth entry 0) m (get entry…
+	v_bri_DOT_web_DOT_http_matches_target_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(580), kw_column, int64(7), kw_end_line, int64(580), kw_end_column, int64(32), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_entry, sym_target))))
 	tmp1353 := lang.FnFunc2(func(entry1354, target1355 any) any {
 		var tmp1356 any
 		_ = tmp1356
@@ -3773,8 +3819,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_matches_target_QMARK_ = tmp1382.F
 	v_bri_DOT_web_DOT_http_matches_target_QMARK_.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_matches_target_QMARK_
-	// (def remove-route "Drop a route from an app value by :name (keyword) or by method+path\n  …
-	v_bri_DOT_web_DOT_http_remove_route.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(588), kw_column, int64(7), kw_end_line, int64(588), kw_end_column, int64(19), kw_doc, "Drop a route from an app value by :name (keyword) or by method+path\n  (\"GET /items/{id}\") or path (\"/items/{id}\"). Returns a new value."))
+	// (def remove-route (clojure.core/fn ([app target] (vec (remove (fn [e] (matches-target? e t…
+	v_bri_DOT_web_DOT_http_remove_route.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(588), kw_column, int64(7), kw_end_line, int64(588), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_app, sym_target)), kw_doc, "Drop a route from an app value by :name (keyword) or by method+path\n  (\"GET /items/{id}\") or path (\"/items/{id}\"). Returns a new value."))
 	tmp1383 := lang.FnFunc2(func(app1384, target1385 any) any {
 		tmp1386 := v_clojure_DOT_core_vec.Get()
 		tmp1387 := v_clojure_DOT_core_remove.Get()
@@ -3813,8 +3859,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_remove_route = tmp1399.F
 	v_bri_DOT_web_DOT_http_remove_route.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_remove_route
-	// (def remove-routes "Drop several routes by name/path in one call. (remove-routes app :item…
-	v_bri_DOT_web_DOT_http_remove_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(594), kw_column, int64(7), kw_end_line, int64(594), kw_end_column, int64(20), kw_doc, "Drop several routes by name/path in one call. (remove-routes app :item \"/admin\")."))
+	// (def remove-routes (clojure.core/fn ([app & targets] (reduce remove-route (normalize app) …
+	v_bri_DOT_web_DOT_http_remove_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(594), kw_column, int64(7), kw_end_line, int64(594), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_app, sym_X_AMP_, sym_targets)), kw_doc, "Drop several routes by name/path in one call. (remove-routes app :item \"/admin\")."))
 	tmp1400 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -3847,8 +3893,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_remove_routes.BindRoot(tmp1400)
 	_ = v_bri_DOT_web_DOT_http_remove_routes
-	// (def path-of-named (clojure.core/fn [rts nm] (some (fn [route] (when (= nm (:name (get rou…
-	v_bri_DOT_web_DOT_http_path_of_named.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(600), kw_column, int64(7), kw_end_line, int64(600), kw_end_column, int64(30), kw_private, true))
+	// (def path-of-named (clojure.core/fn ([rts nm] (some (fn [route] (when (= nm (:name (get ro…
+	v_bri_DOT_web_DOT_http_path_of_named.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(600), kw_column, int64(7), kw_end_line, int64(600), kw_end_column, int64(30), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_nm))))
 	tmp1409 := lang.FnFunc2(func(rts1410, nm1411 any) any {
 		tmp1412 := v_clojure_DOT_core_some.Get()
 		tmp1413 := lang.FnFunc1(func(route1414 any) any {
@@ -3889,8 +3935,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_path_of_named = tmp1429.F
 	v_bri_DOT_web_DOT_http_path_of_named.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_path_of_named
-	// (def fill-path (clojure.core/fn [pat params] (str/join "/" (map (fn [seg] (if (and (str/st…
-	v_bri_DOT_web_DOT_http_fill_path.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(606), kw_column, int64(7), kw_end_line, int64(606), kw_end_column, int64(26), kw_private, true))
+	// (def fill-path (clojure.core/fn ([pat params] (str/join "/" (map (fn [seg] (if (and (str/s…
+	v_bri_DOT_web_DOT_http_fill_path.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(606), kw_column, int64(7), kw_end_line, int64(606), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_pat, sym_params))))
 	tmp1430 := lang.FnFunc2(func(pat1431, params1432 any) any {
 		tmp1433 := v_clojure_DOT_string_join.Get()
 		tmp1434 := v_clojure_DOT_core_map_.Get()
@@ -3978,8 +4024,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_fill_path = tmp1482.F
 	v_bri_DOT_web_DOT_http_fill_path.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_fill_path
-	// (def path-for "Reverse routing: the URL path for a NAMED route, params filled +\n  encoded…
-	v_bri_DOT_web_DOT_http_path_for.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(622), kw_column, int64(7), kw_end_line, int64(622), kw_end_column, int64(15), kw_doc, "Reverse routing: the URL path for a NAMED route, params filled +\n  encoded — no hardcoded path strings. (path-for :item {:id 5}) =>\n  \"/items/5\". Resolves against the served route table by default; pass\n  a routes value first to resolve elsewhere. Throws (diagnostic) on an\n  unknown name or missing param."))
+	// (def path-for (clojure.core/fn ([nm params] (path-for (clojure.core/deref route-registry) …
+	v_bri_DOT_web_DOT_http_path_for.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(622), kw_column, int64(7), kw_end_line, int64(622), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_nm, sym_params), lang.NewVector(sym_rts, sym_nm, sym_params)), kw_doc, "Reverse routing: the URL path for a NAMED route, params filled +\n  encoded — no hardcoded path strings. (path-for :item {:id 5}) =>\n  \"/items/5\". Resolves against the served route table by default; pass\n  a routes value first to resolve elsewhere. Throws (diagnostic) on an\n  unknown name or missing param."))
 	tmp1483 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -4053,8 +4099,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_path_for.BindRoot(tmp1483)
 	_ = v_bri_DOT_web_DOT_http_path_for
-	// (def url-for "path-for plus a query string. (url-for :item {:id 5} {:q \"x\"}) =>\n  \"/it…
-	v_bri_DOT_web_DOT_http_url_for.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(636), kw_column, int64(7), kw_end_line, int64(636), kw_end_column, int64(14), kw_doc, "path-for plus a query string. (url-for :item {:id 5} {:q \"x\"}) =>\n  \"/items/5?q=x\"."))
+	// (def url-for (clojure.core/fn ([nm params] (path-for nm params)) ([nm params query] (let […
+	v_bri_DOT_web_DOT_http_url_for.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(636), kw_column, int64(7), kw_end_line, int64(636), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_nm, sym_params), lang.NewVector(sym_nm, sym_params, sym_query)), kw_doc, "path-for plus a query string. (url-for :item {:id 5} {:q \"x\"}) =>\n  \"/items/5?q=x\"."))
 	tmp1512 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -4121,8 +4167,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_url_for.BindRoot(tmp1512)
 	_ = v_bri_DOT_web_DOT_http_url_for
-	// (def trusted-proxies (clojure.core/fn [] (let [v (-getenv "APP_HTTP__TRUSTED_PROXIES")] (i…
-	v_bri_DOT_web_DOT_http_trusted_proxies.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(649), kw_column, int64(7), kw_end_line, int64(649), kw_end_column, int64(32), kw_private, true))
+	// (def trusted-proxies (clojure.core/fn ([] (let [v (-getenv "APP_HTTP__TRUSTED_PROXIES")] (…
+	v_bri_DOT_web_DOT_http_trusted_proxies.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(649), kw_column, int64(7), kw_end_line, int64(649), kw_end_column, int64(32), kw_private, true, kw_arglists, lang.NewList(lang.NewVector())))
 	tmp1550 := lang.FnFunc0(func() any {
 		var tmp1551 any
 		_ = tmp1551
@@ -4155,8 +4201,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_trusted_proxies = tmp1565.F
 	v_bri_DOT_web_DOT_http_trusted_proxies.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_trusted_proxies
-	// (def client-ip "The ONE blessed client-IP resolver (ADR 0069 abuse-protection). The\n  soc…
-	v_bri_DOT_web_DOT_http_client_ip.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(653), kw_column, int64(7), kw_end_line, int64(653), kw_end_column, int64(16), kw_doc, "The ONE blessed client-IP resolver (ADR 0069 abuse-protection). The\n  socket peer (:remote-addr) by default — unspoofable; X-Forwarded-For /\n  X-Real-IP are honored ONLY when the peer is a configured trusted proxy\n  (APP_HTTP__TRUSTED_PROXIES CIDRs), taking the right-most untrusted hop.\n  Trusting XFF from an untrusted peer is the classic ban-evasion bypass."))
+	// (def client-ip (clojure.core/fn ([req] (-client-ip (or (:remote-addr req) "") (or (get (:h…
+	v_bri_DOT_web_DOT_http_client_ip.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(653), kw_column, int64(7), kw_end_line, int64(653), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_req)), kw_doc, "The ONE blessed client-IP resolver (ADR 0069 abuse-protection). The\n  socket peer (:remote-addr) by default — unspoofable; X-Forwarded-For /\n  X-Real-IP are honored ONLY when the peer is a configured trusted proxy\n  (APP_HTTP__TRUSTED_PROXIES CIDRs), taking the right-most untrusted hop.\n  Trusting XFF from an untrusted peer is the classic ban-evasion bypass."))
 	tmp1566 := lang.FnFunc1(func(req1567 any) any {
 		tmp1568 := v_bri_DOT_web_DOT_http_X_client_ip.Get()
 		var tmp1569 any
@@ -4227,8 +4273,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_client_ip = tmp1589.F
 	v_bri_DOT_web_DOT_http_client_ip.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_client_ip
-	// (def client-key "The shared identity for rate-limit / auto-ban / logging / audit so all\n …
-	v_bri_DOT_web_DOT_http_client_key.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(665), kw_column, int64(7), kw_end_line, int64(665), kw_end_column, int64(17), kw_doc, "The shared identity for rate-limit / auto-ban / logging / audit so all\n  agree on WHO. :key is :ip (default → client-ip), :subject (the\n  authenticated :sub, IP fallback), or a custom (fn [req] key)."))
+	// (def client-key (clojure.core/fn ([req] (client-key req {})) ([req opts] (let [k (or (:key…
+	v_bri_DOT_web_DOT_http_client_key.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(665), kw_column, int64(7), kw_end_line, int64(665), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_req), lang.NewVector(sym_req, sym_opts)), kw_doc, "The shared identity for rate-limit / auto-ban / logging / audit so all\n  agree on WHO. :key is :ip (default → client-ip), :subject (the\n  authenticated :sub, IP fallback), or a custom (fn [req] key)."))
 	tmp1590 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -4336,8 +4382,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_client_key.BindRoot(tmp1590)
 	_ = v_bri_DOT_web_DOT_http_client_key
-	// (def mark-subject! "Record the authenticated subject on the request's log context so the\n…
-	v_bri_DOT_web_DOT_http_mark_subject_BANG_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(677), kw_column, int64(7), kw_end_line, int64(677), kw_end_column, int64(20), kw_doc, "Record the authenticated subject on the request's log context so the\n  access log and audit trail show WHO — even on a 403. No-op before\n  request-id middleware ran."))
+	// (def mark-subject! (clojure.core/fn ([req sub] (when-let [c (:bri/ctx req)] (swap! c assoc…
+	v_bri_DOT_web_DOT_http_mark_subject_BANG_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(677), kw_column, int64(7), kw_end_line, int64(677), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_req, sym_sub)), kw_doc, "Record the authenticated subject on the request's log context so the\n  access log and audit trail show WHO — even on a 403. No-op before\n  request-id middleware ran."))
 	tmp1622 := lang.FnFunc2(func(req1623, sub1624 any) any {
 		var tmp1625 any
 		_ = tmp1625
@@ -4460,8 +4506,8 @@ func Load() {
 	tmp1676 := lang.Apply1(tmp1675, nil)
 	v_bri_DOT_web_DOT_http_log_sink_fn.BindRoot(tmp1676)
 	_ = v_bri_DOT_web_DOT_http_log_sink_fn
-	// (def set-log-sink! (clojure.core/fn [f] (reset! log-sink-fn f)))
-	v_bri_DOT_web_DOT_http_set_log_sink_BANG_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(705), kw_column, int64(7), kw_end_line, int64(705), kw_end_column, int64(20)))
+	// (def set-log-sink! (clojure.core/fn ([f] (reset! log-sink-fn f))))
+	v_bri_DOT_web_DOT_http_set_log_sink_BANG_.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(705), kw_column, int64(7), kw_end_line, int64(705), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_f))))
 	tmp1677 := lang.FnFunc1(func(f1678 any) any {
 		tmp1679 := v_clojure_DOT_core_reset_BANG_.Get()
 		tmp1680 := v_bri_DOT_web_DOT_http_log_sink_fn.Get()
@@ -4473,8 +4519,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_set_log_sink_BANG_ = tmp1682.F
 	v_bri_DOT_web_DOT_http_set_log_sink_BANG_.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_set_log_sink_BANG_
-	// (def default-log-sink (clojure.core/fn [ev] (if (dev?) (println (pr-str ev)) (println (-js…
-	v_bri_DOT_web_DOT_http_default_log_sink.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(706), kw_column, int64(7), kw_end_line, int64(706), kw_end_column, int64(33), kw_private, true))
+	// (def default-log-sink (clojure.core/fn ([ev] (if (dev?) (println (pr-str ev)) (println (-j…
+	v_bri_DOT_web_DOT_http_default_log_sink.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(706), kw_column, int64(7), kw_end_line, int64(706), kw_end_column, int64(33), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_ev))))
 	tmp1683 := lang.FnFunc1(func(ev1684 any) any {
 		tmp1685 := v_bri_DOT_web_DOT_http_dev_QMARK_.Direct()
 		var tmp1686 any
@@ -4509,8 +4555,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_default_log_sink = tmp1697.F
 	v_bri_DOT_web_DOT_http_default_log_sink.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_default_log_sink
-	// (def emit-log (clojure.core/fn [ev] ((or *log-sink* (clojure.core/deref log-sink-fn) defau…
-	v_bri_DOT_web_DOT_http_emit_log.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(708), kw_column, int64(7), kw_end_line, int64(708), kw_end_column, int64(25), kw_private, true))
+	// (def emit-log (clojure.core/fn ([ev] ((or *log-sink* (clojure.core/deref log-sink-fn) defa…
+	v_bri_DOT_web_DOT_http_emit_log.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(708), kw_column, int64(7), kw_end_line, int64(708), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_ev))))
 	tmp1698 := lang.FnFunc1(func(ev1699 any) any {
 		var tmp1700 any
 		_ = tmp1700
@@ -4704,8 +4750,8 @@ func Load() {
 	tmp1789 := lang.NewMap(kw_name, kw_metrics, kw_wrap, tmp1788)
 	v_bri_DOT_web_DOT_http_metrics.BindRoot(tmp1789)
 	_ = v_bri_DOT_web_DOT_http_metrics
-	// (def cors "CORS middleware. THE DEV DEFAULT IS PERMISSIVE (origin *) — convenient\n  and…
-	v_bri_DOT_web_DOT_http_cors.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(746), kw_column, int64(7), kw_end_line, int64(746), kw_end_column, int64(11), kw_doc, "CORS middleware. THE DEV DEFAULT IS PERMISSIVE (origin *) — convenient\n  and LOUD; in prod set :origins (or APP_HTTP__CORS_ORIGINS) to an\n  allowlist. Adds ACAO/ACAM/ACAH + Vary:Origin; an OPTIONS preflight\n  short-circuits 204."))
+	// (def cors (clojure.core/fn ([] (cors {})) ([opts] (let [origins (or (:origins opts) (let […
+	v_bri_DOT_web_DOT_http_cors.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(746), kw_column, int64(7), kw_end_line, int64(746), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "CORS middleware. THE DEV DEFAULT IS PERMISSIVE (origin *) — convenient\n  and LOUD; in prod set :origins (or APP_HTTP__CORS_ORIGINS) to an\n  allowlist. Adds ACAO/ACAM/ACAH + Vary:Origin; an OPTIONS preflight\n  short-circuits 204."))
 	tmp1790 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -4956,8 +5002,8 @@ func Load() {
 	tmp1883 := lang.Apply1(tmp1881, tmp1882)
 	v_bri_DOT_web_DOT_http_rl_store.BindRoot(tmp1883)
 	_ = v_bri_DOT_web_DOT_http_rl_store
-	// (def rate-limit "Plain throughput limiter: at most n requests per :window-ms (default\n  6…
-	v_bri_DOT_web_DOT_http_rate_limit.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(779), kw_column, int64(7), kw_end_line, int64(779), kw_end_column, int64(17), kw_doc, "Plain throughput limiter: at most n requests per :window-ms (default\n  60000) per client key; over → 429 + Retry-After. :key via client-key\n  (:ip default | :subject | fn). In-process store (single-instance; swap\n  :store for a shared backing). auth/auto-ban is the escalating\n  DENIAL-abuse guard — this is raw throughput."))
+	// (def rate-limit (clojure.core/fn ([n] (rate-limit n {})) ([n opts] (let [window (or (:wind…
+	v_bri_DOT_web_DOT_http_rate_limit.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(779), kw_column, int64(7), kw_end_line, int64(779), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_n), lang.NewVector(sym_n, sym_opts)), kw_doc, "Plain throughput limiter: at most n requests per :window-ms (default\n  60000) per client key; over → 429 + Retry-After. :key via client-key\n  (:ip default | :subject | fn). In-process store (single-instance; swap\n  :store for a shared backing). auth/auto-ban is the escalating\n  DENIAL-abuse guard — this is raw throughput."))
 	tmp1884 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -5125,8 +5171,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_rate_limit.BindRoot(tmp1884)
 	_ = v_bri_DOT_web_DOT_http_rate_limit
-	// (def ops-routes "Default ops endpoints as route values (default-on via serve/listen):\n  G…
-	v_bri_DOT_web_DOT_http_ops_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(805), kw_column, int64(7), kw_end_line, int64(805), kw_end_column, int64(17), kw_doc, "Default ops endpoints as route values (default-on via serve/listen):\n  GET /healthz (liveness), GET /readyz (runs :ready-checks fns → 200/503),\n  GET /metrics (Prometheus text). Options: :metrics-path, :metrics-guard\n  (e.g. (auth/admin-only) — DEFAULT IS OPEN; GUARD IT IN PROD),\n  :ready-checks (vector of zero-arg fns)."))
+	// (def ops-routes (clojure.core/fn ([] (ops-routes {})) ([opts] (let [mpath (or (:metrics-pa…
+	v_bri_DOT_web_DOT_http_ops_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(805), kw_column, int64(7), kw_end_line, int64(805), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "Default ops endpoints as route values (default-on via serve/listen):\n  GET /healthz (liveness), GET /readyz (runs :ready-checks fns → 200/503),\n  GET /metrics (Prometheus text). Options: :metrics-path, :metrics-guard\n  (e.g. (auth/admin-only) — DEFAULT IS OPEN; GUARD IT IN PROD),\n  :ready-checks (vector of zero-arg fns)."))
 	tmp1966 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -5320,8 +5366,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_ops_routes.BindRoot(tmp1966)
 	_ = v_bri_DOT_web_DOT_http_ops_routes
-	// (def api-defaults "The API-first default middleware stack (outermost first, a plain\n  vec…
-	v_bri_DOT_web_DOT_http_api_defaults.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(832), kw_column, int64(7), kw_end_line, int64(832), kw_end_column, int64(19), kw_doc, "The API-first default middleware stack (outermost first, a plain\n  vector you can conj/without): request-id, structured logging, recover\n  (the funnel), CORS, metrics, auto-ban (default-on abuse guard), JSON\n  negotiation. Zero-config gives logs + request-ids + metrics + abuse\n  protection out of the box. Options thread down: :cors, :auto-ban (map\n  of opts, or false to drop it)."))
+	// (def api-defaults (clojure.core/fn ([] (api-defaults {})) ([opts] (require (quote cljg.sec…
+	v_bri_DOT_web_DOT_http_api_defaults.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(832), kw_column, int64(7), kw_end_line, int64(832), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "The API-first default middleware stack (outermost first, a plain\n  vector you can conj/without): request-id, structured logging, recover\n  (the funnel), CORS, metrics, auto-ban (default-on abuse guard), JSON\n  negotiation. Zero-config gives logs + request-ids + metrics + abuse\n  protection out of the box. Options thread down: :cors, :auto-ban (map\n  of opts, or false to drop it)."))
 	tmp2043 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -5409,8 +5455,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_api_defaults.BindRoot(tmp2043)
 	_ = v_bri_DOT_web_DOT_http_api_defaults
-	// (def serve "Start the server and (by default) BLOCK until SIGTERM/SIGINT, then\n  drain: i…
-	v_bri_DOT_web_DOT_http_serve.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(850), kw_column, int64(7), kw_end_line, int64(850), kw_end_column, int64(12), kw_doc, "Start the server and (by default) BLOCK until SIGTERM/SIGINT, then\n  drain: in-flight requests finish (deadline), then each handle in\n  :drain is invoked. Omitting :middleware applies (defaults). Options:\n  :port (required), :middleware, :drain, :ping (zero-arg fns called\n  before accepting traffic), :block? (false → returns {:port :stop}\n  for tests; :stop is a zero-arg fn). Production timeouts are DEFAULT\n  ON in the Go adapter; the raw mux/server stay reachable there as the\n  escape hatch."))
+	// (def serve (clojure.core/fn ([rts opts] (let [stack (or (:middleware opts) (defaults)) rts…
+	v_bri_DOT_web_DOT_http_serve.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(850), kw_column, int64(7), kw_end_line, int64(850), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_opts)), kw_doc, "Start the server and (by default) BLOCK until SIGTERM/SIGINT, then\n  drain: in-flight requests finish (deadline), then each handle in\n  :drain is invoked. Omitting :middleware applies (defaults). Options:\n  :port (required), :middleware, :drain, :ping (zero-arg fns called\n  before accepting traffic), :block? (false → returns {:port :stop}\n  for tests; :stop is a zero-arg fn). Production timeouts are DEFAULT\n  ON in the Go adapter; the raw mux/server stay reachable there as the\n  escape hatch."))
 	tmp2087 := lang.FnFunc2(func(rts2088, opts2089 any) any {
 		var tmp2090 any
 		_ = tmp2090
@@ -5606,8 +5652,8 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_serve = tmp2151.F
 	v_bri_DOT_web_DOT_http_serve.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_serve
-	// (def listen "The API-first entry point: sugar over serve that defaults the\n  middleware t…
-	v_bri_DOT_web_DOT_http_listen.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(872), kw_column, int64(7), kw_end_line, int64(872), kw_end_column, int64(13), kw_doc, "The API-first entry point: sugar over serve that defaults the\n  middleware to (api-defaults) — logs, request-ids, metrics, CORS, abuse\n  protection, JSON — and the ops endpoints. (listen app 3000). Override\n  or extend via the same opts serve takes."))
+	// (def listen (clojure.core/fn ([rts port] (listen rts port {})) ([rts port opts] (serve rts…
+	v_bri_DOT_web_DOT_http_listen.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(872), kw_column, int64(7), kw_end_line, int64(872), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_port), lang.NewVector(sym_rts, sym_port, sym_opts)), kw_doc, "The API-first entry point: sugar over serve that defaults the\n  middleware to (api-defaults) — logs, request-ids, metrics, CORS, abuse\n  protection, JSON — and the ops endpoints. (listen app 3000). Override\n  or extend via the same opts serve takes."))
 	tmp2152 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -5650,8 +5696,8 @@ func Load() {
 	})
 	v_bri_DOT_web_DOT_http_listen.BindRoot(tmp2152)
 	_ = v_bri_DOT_web_DOT_http_listen
-	// (def request "The in-process http test client (no socket): runs one request map\n  {:metho…
-	v_bri_DOT_web_DOT_http_request.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(882), kw_column, int64(7), kw_end_line, int64(882), kw_end_column, int64(14), kw_doc, "The in-process http test client (no socket): runs one request map\n  {:method \"GET\" :path \"/\" :headers {} :body \"...\"} through the\n  same mount + middleware path as serve and returns the response map.\n  Ops endpoints are appended unless :ops false (so /healthz etc. are\n  testable in-process too)."))
+	// (def request (clojure.core/fn ([rts req] (request rts req {})) ([rts req opts] (let [stack…
+	v_bri_DOT_web_DOT_http_request.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(882), kw_column, int64(7), kw_end_line, int64(882), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_req), lang.NewVector(sym_rts, sym_req, sym_opts)), kw_doc, "The in-process http test client (no socket): runs one request map\n  {:method \"GET\" :path \"/\" :headers {} :body \"...\"} through the\n  same mount + middleware path as serve and returns the response map.\n  Ops endpoints are appended unless :ops false (so /healthz etc. are\n  testable in-process too)."))
 	tmp2170 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:

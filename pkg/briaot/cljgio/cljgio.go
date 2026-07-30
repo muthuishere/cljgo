@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                                     = lang.InternKeywordString("arglists")
 	kw_as                                           = lang.InternKeywordString("as")
 	kw_column                                       = lang.InternKeywordString("column")
 	kw_command                                      = lang.InternKeywordString("command")
@@ -23,10 +24,23 @@ var (
 	kw_modified                                     = lang.InternKeywordString("modified")
 	kw_size                                         = lang.InternKeywordString("size")
 	kw_timed_out_QMARK_                             = lang.InternKeywordString("timed-out?")
+	sym_X_AMP_                                      = lang.NewSymbol("&")
 	sym_cljg_DOT_io                                 = lang.NewSymbol("cljg.io")
 	sym_clojure_DOT_core                            = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                          = lang.NewSymbol("clojure.string")
+	sym_command                                     = lang.NewSymbol("command")
+	sym_data                                        = lang.NewSymbol("data")
+	sym_dst                                         = lang.NewSymbol("dst")
+	sym_opts                                        = lang.NewSymbol("opts")
+	sym_path                                        = lang.NewSymbol("path")
+	sym_pattern                                     = lang.NewSymbol("pattern")
+	sym_prefix                                      = lang.NewSymbol("prefix")
+	sym_root                                        = lang.NewSymbol("root")
+	sym_segments                                    = lang.NewSymbol("segments")
+	sym_src                                         = lang.NewSymbol("src")
 	sym_str                                         = lang.NewSymbol("str")
+	sym_suffix                                      = lang.NewSymbol("suffix")
+	sym_w                                           = lang.NewSymbol("w")
 	v_cljg_DOT_io_X_fs_copy                         = lang.InternVarName(lang.NewSymbol("cljg.io"), lang.NewSymbol("-fs-copy")).SetPrivate()
 	v_cljg_DOT_io_X_fs_cwd                          = lang.InternVarName(lang.NewSymbol("cljg.io"), lang.NewSymbol("-fs-cwd")).SetPrivate()
 	v_cljg_DOT_io_X_fs_delete                       = lang.InternVarName(lang.NewSymbol("cljg.io"), lang.NewSymbol("-fs-delete")).SetPrivate()
@@ -144,8 +158,8 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (def stat "The file's metadata as {:dir? :file? :size :modified(epoch ms)}, or nil when\n …
-	v_cljg_DOT_io_stat.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(11), kw_doc, "The file's metadata as {:dir? :file? :size :modified(epoch ms)}, or nil when\n  the path does not exist (or is unreadable)."))
+	// (def stat (clojure.core/fn ([path] (-fs-stat path))))
+	v_cljg_DOT_io_stat.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "The file's metadata as {:dir? :file? :size :modified(epoch ms)}, or nil when\n  the path does not exist (or is unreadable)."))
 	tmp7 := lang.FnFunc1(func(path8 any) any {
 		tmp9 := v_cljg_DOT_io_X_fs_stat.Get()
 		tmp10 := lang.Apply1(tmp9, path8)
@@ -156,8 +170,8 @@ func Load() {
 	fnD_cljg_DOT_io_stat = tmp11.F
 	v_cljg_DOT_io_stat.SealDirect()
 	_ = v_cljg_DOT_io_stat
-	// (def exists? "True if `path` exists." (clojure.core/fn [path] (some? (stat path))))
-	v_cljg_DOT_io_exists_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(14), kw_doc, "True if `path` exists."))
+	// (def exists? (clojure.core/fn ([path] (some? (stat path)))))
+	v_cljg_DOT_io_exists_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "True if `path` exists."))
 	tmp12 := lang.FnFunc1(func(path13 any) any {
 		tmp14 := v_clojure_DOT_core_some_QMARK_.Get()
 		tmp15 := v_cljg_DOT_io_stat.Direct()
@@ -179,8 +193,8 @@ func Load() {
 	fnD_cljg_DOT_io_exists_QMARK_ = tmp19.F
 	v_cljg_DOT_io_exists_QMARK_.SealDirect()
 	_ = v_cljg_DOT_io_exists_QMARK_
-	// (def file? "True if `path` exists and is a regular file." (clojure.core/fn [path] (boolean…
-	v_cljg_DOT_io_file_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(41), kw_column, int64(7), kw_end_line, int64(41), kw_end_column, int64(12), kw_doc, "True if `path` exists and is a regular file."))
+	// (def file? (clojure.core/fn ([path] (boolean (:file? (stat path))))))
+	v_cljg_DOT_io_file_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(41), kw_column, int64(7), kw_end_line, int64(41), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "True if `path` exists and is a regular file."))
 	tmp20 := lang.FnFunc1(func(path21 any) any {
 		tmp22 := v_clojure_DOT_core_boolean.Get()
 		tmp23 := v_cljg_DOT_io_stat.Direct()
@@ -203,8 +217,8 @@ func Load() {
 	fnD_cljg_DOT_io_file_QMARK_ = tmp28.F
 	v_cljg_DOT_io_file_QMARK_.SealDirect()
 	_ = v_cljg_DOT_io_file_QMARK_
-	// (def directory? "True if `path` exists and is a directory." (clojure.core/fn [path] (boole…
-	v_cljg_DOT_io_directory_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(17), kw_doc, "True if `path` exists and is a directory."))
+	// (def directory? (clojure.core/fn ([path] (boolean (:dir? (stat path))))))
+	v_cljg_DOT_io_directory_QMARK_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "True if `path` exists and is a directory."))
 	tmp29 := lang.FnFunc1(func(path30 any) any {
 		tmp31 := v_clojure_DOT_core_boolean.Get()
 		tmp32 := v_cljg_DOT_io_stat.Direct()
@@ -227,8 +241,8 @@ func Load() {
 	fnD_cljg_DOT_io_directory_QMARK_ = tmp37.F
 	v_cljg_DOT_io_directory_QMARK_.SealDirect()
 	_ = v_cljg_DOT_io_directory_QMARK_
-	// (def size "The file's size in bytes, or nil if `path` does not exist." (clojure.core/fn [p…
-	v_cljg_DOT_io_size.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(11), kw_doc, "The file's size in bytes, or nil if `path` does not exist."))
+	// (def size (clojure.core/fn ([path] (:size (stat path)))))
+	v_cljg_DOT_io_size.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "The file's size in bytes, or nil if `path` does not exist."))
 	tmp38 := lang.FnFunc1(func(path39 any) any {
 		tmp40 := v_cljg_DOT_io_stat.Direct()
 		var tmp41 any
@@ -249,8 +263,8 @@ func Load() {
 	fnD_cljg_DOT_io_size = tmp44.F
 	v_cljg_DOT_io_size.SealDirect()
 	_ = v_cljg_DOT_io_size
-	// (def modified "The file's last-modified time (epoch ms), or nil if `path` does not exist."…
-	v_cljg_DOT_io_modified.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(15), kw_doc, "The file's last-modified time (epoch ms), or nil if `path` does not exist."))
+	// (def modified (clojure.core/fn ([path] (:modified (stat path)))))
+	v_cljg_DOT_io_modified.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "The file's last-modified time (epoch ms), or nil if `path` does not exist."))
 	tmp45 := lang.FnFunc1(func(path46 any) any {
 		tmp47 := v_cljg_DOT_io_stat.Direct()
 		var tmp48 any
@@ -271,8 +285,8 @@ func Load() {
 	fnD_cljg_DOT_io_modified = tmp51.F
 	v_cljg_DOT_io_modified.SealDirect()
 	_ = v_cljg_DOT_io_modified
-	// (def list-files "A vector of the entry NAMES (not full paths) directly under directory `pa…
-	v_cljg_DOT_io_list_files.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(17), kw_doc, "A vector of the entry NAMES (not full paths) directly under directory `path`,\n  sorted. Throws if `path` is not a readable directory."))
+	// (def list-files (clojure.core/fn ([path] (-fs-list path))))
+	v_cljg_DOT_io_list_files.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "A vector of the entry NAMES (not full paths) directly under directory `path`,\n  sorted. Throws if `path` is not a readable directory."))
 	tmp52 := lang.FnFunc1(func(path53 any) any {
 		tmp54 := v_cljg_DOT_io_X_fs_list.Get()
 		tmp55 := lang.Apply1(tmp54, path53)
@@ -283,8 +297,8 @@ func Load() {
 	fnD_cljg_DOT_io_list_files = tmp56.F
 	v_cljg_DOT_io_list_files.SealDirect()
 	_ = v_cljg_DOT_io_list_files
-	// (def mkdirs "Create directory `path` and any missing parents (mkdir -p). Returns `path`.\n…
-	v_cljg_DOT_io_mkdirs.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(62), kw_column, int64(7), kw_end_line, int64(62), kw_end_column, int64(13), kw_doc, "Create directory `path` and any missing parents (mkdir -p). Returns `path`.\n  Not an error if it already exists."))
+	// (def mkdirs (clojure.core/fn ([path] (-fs-mkdir path) path)))
+	v_cljg_DOT_io_mkdirs.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(62), kw_column, int64(7), kw_end_line, int64(62), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "Create directory `path` and any missing parents (mkdir -p). Returns `path`.\n  Not an error if it already exists."))
 	tmp57 := lang.FnFunc1(func(path58 any) any {
 		tmp59 := v_cljg_DOT_io_X_fs_mkdir.Get()
 		tmp60 := lang.Apply1(tmp59, path58)
@@ -296,8 +310,8 @@ func Load() {
 	fnD_cljg_DOT_io_mkdirs = tmp61.F
 	v_cljg_DOT_io_mkdirs.SealDirect()
 	_ = v_cljg_DOT_io_mkdirs
-	// (def walk "A vector of every path under `root` (root included), depth-first. Throws if\n  …
-	v_cljg_DOT_io_walk.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(69), kw_column, int64(7), kw_end_line, int64(69), kw_end_column, int64(11), kw_doc, "A vector of every path under `root` (root included), depth-first. Throws if\n  `root` is unreadable."))
+	// (def walk (clojure.core/fn ([root] (-fs-walk root))))
+	v_cljg_DOT_io_walk.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(69), kw_column, int64(7), kw_end_line, int64(69), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_root)), kw_doc, "A vector of every path under `root` (root included), depth-first. Throws if\n  `root` is unreadable."))
 	tmp62 := lang.FnFunc1(func(root63 any) any {
 		tmp64 := v_cljg_DOT_io_X_fs_walk.Get()
 		tmp65 := lang.Apply1(tmp64, root63)
@@ -308,8 +322,8 @@ func Load() {
 	fnD_cljg_DOT_io_walk = tmp66.F
 	v_cljg_DOT_io_walk.SealDirect()
 	_ = v_cljg_DOT_io_walk
-	// (def glob "A vector of paths matching the shell `pattern` (filepath.Glob semantics:\n  `*`…
-	v_cljg_DOT_io_glob.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(11), kw_doc, "A vector of paths matching the shell `pattern` (filepath.Glob semantics:\n  `*`, `?`, `[…]`), sorted. Empty when nothing matches."))
+	// (def glob (clojure.core/fn ([pattern] (-fs-glob pattern))))
+	v_cljg_DOT_io_glob.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_pattern)), kw_doc, "A vector of paths matching the shell `pattern` (filepath.Glob semantics:\n  `*`, `?`, `[…]`), sorted. Empty when nothing matches."))
 	tmp67 := lang.FnFunc1(func(pattern68 any) any {
 		tmp69 := v_cljg_DOT_io_X_fs_glob.Get()
 		tmp70 := lang.Apply1(tmp69, pattern68)
@@ -320,8 +334,8 @@ func Load() {
 	fnD_cljg_DOT_io_glob = tmp71.F
 	v_cljg_DOT_io_glob.SealDirect()
 	_ = v_cljg_DOT_io_glob
-	// (def delete! "Delete a single file or empty directory `path`. Not an error if it is\n  alr…
-	v_cljg_DOT_io_delete_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(14), kw_doc, "Delete a single file or empty directory `path`. Not an error if it is\n  already absent. For a non-empty directory use `delete-tree!`."))
+	// (def delete! (clojure.core/fn ([path] (-fs-delete path false) nil)))
+	v_cljg_DOT_io_delete_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "Delete a single file or empty directory `path`. Not an error if it is\n  already absent. For a non-empty directory use `delete-tree!`."))
 	tmp72 := lang.FnFunc1(func(path73 any) any {
 		tmp74 := v_cljg_DOT_io_X_fs_delete.Get()
 		tmp75 := lang.Apply2(tmp74, path73, false)
@@ -333,8 +347,8 @@ func Load() {
 	fnD_cljg_DOT_io_delete_BANG_ = tmp76.F
 	v_cljg_DOT_io_delete_BANG_.SealDirect()
 	_ = v_cljg_DOT_io_delete_BANG_
-	// (def delete-tree! "Recursively delete `path` and everything under it (rm -rf). Not an erro…
-	v_cljg_DOT_io_delete_tree_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(19), kw_doc, "Recursively delete `path` and everything under it (rm -rf). Not an error if\n  it is already absent."))
+	// (def delete-tree! (clojure.core/fn ([path] (-fs-delete path true) nil)))
+	v_cljg_DOT_io_delete_tree_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "Recursively delete `path` and everything under it (rm -rf). Not an error if\n  it is already absent."))
 	tmp77 := lang.FnFunc1(func(path78 any) any {
 		tmp79 := v_cljg_DOT_io_X_fs_delete.Get()
 		tmp80 := lang.Apply2(tmp79, path78, true)
@@ -346,8 +360,8 @@ func Load() {
 	fnD_cljg_DOT_io_delete_tree_BANG_ = tmp81.F
 	v_cljg_DOT_io_delete_tree_BANG_.SealDirect()
 	_ = v_cljg_DOT_io_delete_tree_BANG_
-	// (def copy! "Copy file `src` to `dst` (contents + mode). `dst` is overwritten. Returns\n  `…
-	v_cljg_DOT_io_copy_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(12), kw_doc, "Copy file `src` to `dst` (contents + mode). `dst` is overwritten. Returns\n  `dst`. Single file — not a directory tree."))
+	// (def copy! (clojure.core/fn ([src dst] (-fs-copy src dst) dst)))
+	v_cljg_DOT_io_copy_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_src, sym_dst)), kw_doc, "Copy file `src` to `dst` (contents + mode). `dst` is overwritten. Returns\n  `dst`. Single file — not a directory tree."))
 	tmp82 := lang.FnFunc2(func(src83, dst84 any) any {
 		tmp85 := v_cljg_DOT_io_X_fs_copy.Get()
 		tmp86 := lang.Apply2(tmp85, src83, dst84)
@@ -359,8 +373,8 @@ func Load() {
 	fnD_cljg_DOT_io_copy_BANG_ = tmp87.F
 	v_cljg_DOT_io_copy_BANG_.SealDirect()
 	_ = v_cljg_DOT_io_copy_BANG_
-	// (def move! "Move/rename `src` to `dst` (falling back to copy+delete across filesystems).\n…
-	v_cljg_DOT_io_move_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(104), kw_column, int64(7), kw_end_line, int64(104), kw_end_column, int64(12), kw_doc, "Move/rename `src` to `dst` (falling back to copy+delete across filesystems).\n  Returns `dst`."))
+	// (def move! (clojure.core/fn ([src dst] (-fs-move src dst) dst)))
+	v_cljg_DOT_io_move_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(104), kw_column, int64(7), kw_end_line, int64(104), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_src, sym_dst)), kw_doc, "Move/rename `src` to `dst` (falling back to copy+delete across filesystems).\n  Returns `dst`."))
 	tmp88 := lang.FnFunc2(func(src89, dst90 any) any {
 		tmp91 := v_cljg_DOT_io_X_fs_move.Get()
 		tmp92 := lang.Apply2(tmp91, src89, dst90)
@@ -372,8 +386,8 @@ func Load() {
 	fnD_cljg_DOT_io_move_BANG_ = tmp93.F
 	v_cljg_DOT_io_move_BANG_.SealDirect()
 	_ = v_cljg_DOT_io_move_BANG_
-	// (def path "Join `segments` into one path with the host separator, cleaned\n  (e.g. (path \…
-	v_cljg_DOT_io_path.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(11), kw_doc, "Join `segments` into one path with the host separator, cleaned\n  (e.g. (path \"a\" \"b\" \"c\") => \"a/b/c\")."))
+	// (def path (clojure.core/fn ([& segments] (-path-join (vec segments)))))
+	v_cljg_DOT_io_path.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_segments)), kw_doc, "Join `segments` into one path with the host separator, cleaned\n  (e.g. (path \"a\" \"b\" \"c\") => \"a/b/c\")."))
 	tmp94 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -394,8 +408,8 @@ func Load() {
 	})
 	v_cljg_DOT_io_path.BindRoot(tmp94)
 	_ = v_cljg_DOT_io_path
-	// (def absolute "`path` resolved against the current directory into an absolute, cleaned pat…
-	v_cljg_DOT_io_absolute.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(15), kw_doc, "`path` resolved against the current directory into an absolute, cleaned path."))
+	// (def absolute (clojure.core/fn ([path] (-path-abs path))))
+	v_cljg_DOT_io_absolute.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "`path` resolved against the current directory into an absolute, cleaned path."))
 	tmp100 := lang.FnFunc1(func(path101 any) any {
 		tmp102 := v_cljg_DOT_io_X_path_abs.Get()
 		tmp103 := lang.Apply1(tmp102, path101)
@@ -406,8 +420,8 @@ func Load() {
 	fnD_cljg_DOT_io_absolute = tmp104.F
 	v_cljg_DOT_io_absolute.SealDirect()
 	_ = v_cljg_DOT_io_absolute
-	// (def parent "The parent directory of `path` (everything but the final element)." (clojure.…
-	v_cljg_DOT_io_parent.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(124), kw_column, int64(7), kw_end_line, int64(124), kw_end_column, int64(13), kw_doc, "The parent directory of `path` (everything but the final element)."))
+	// (def parent (clojure.core/fn ([path] (-path-dir path))))
+	v_cljg_DOT_io_parent.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(124), kw_column, int64(7), kw_end_line, int64(124), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "The parent directory of `path` (everything but the final element)."))
 	tmp105 := lang.FnFunc1(func(path106 any) any {
 		tmp107 := v_cljg_DOT_io_X_path_dir.Get()
 		tmp108 := lang.Apply1(tmp107, path106)
@@ -418,8 +432,8 @@ func Load() {
 	fnD_cljg_DOT_io_parent = tmp109.F
 	v_cljg_DOT_io_parent.SealDirect()
 	_ = v_cljg_DOT_io_parent
-	// (def filename "The final element of `path` (the file or directory name)." (clojure.core/fn…
-	v_cljg_DOT_io_filename.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(129), kw_column, int64(7), kw_end_line, int64(129), kw_end_column, int64(15), kw_doc, "The final element of `path` (the file or directory name)."))
+	// (def filename (clojure.core/fn ([path] (-path-base path))))
+	v_cljg_DOT_io_filename.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(129), kw_column, int64(7), kw_end_line, int64(129), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "The final element of `path` (the file or directory name)."))
 	tmp110 := lang.FnFunc1(func(path111 any) any {
 		tmp112 := v_cljg_DOT_io_X_path_base.Get()
 		tmp113 := lang.Apply1(tmp112, path111)
@@ -430,8 +444,8 @@ func Load() {
 	fnD_cljg_DOT_io_filename = tmp114.F
 	v_cljg_DOT_io_filename.SealDirect()
 	_ = v_cljg_DOT_io_filename
-	// (def extension "The file extension of `path` including the leading dot (\"\" if none)." (c…
-	v_cljg_DOT_io_extension.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(134), kw_column, int64(7), kw_end_line, int64(134), kw_end_column, int64(16), kw_doc, "The file extension of `path` including the leading dot (\"\" if none)."))
+	// (def extension (clojure.core/fn ([path] (-path-ext path))))
+	v_cljg_DOT_io_extension.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(134), kw_column, int64(7), kw_end_line, int64(134), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "The file extension of `path` including the leading dot (\"\" if none)."))
 	tmp115 := lang.FnFunc1(func(path116 any) any {
 		tmp117 := v_cljg_DOT_io_X_path_ext.Get()
 		tmp118 := lang.Apply1(tmp117, path116)
@@ -442,8 +456,8 @@ func Load() {
 	fnD_cljg_DOT_io_extension = tmp119.F
 	v_cljg_DOT_io_extension.SealDirect()
 	_ = v_cljg_DOT_io_extension
-	// (def read-bytes "Read the whole file at `path` and return its contents as a byte-array. Us…
-	v_cljg_DOT_io_read_bytes.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(147), kw_column, int64(7), kw_end_line, int64(147), kw_end_column, int64(17), kw_doc, "Read the whole file at `path` and return its contents as a byte-array. Use\n  this, not `slurp`, for anything that is not text: a string round-trip\n  replaces every invalid UTF-8 sequence with U+FFFD and changes the length.\n  Throws if the file cannot be read.\n\n  The elements are SIGNED, exactly as the JVM's byte[] is and as\n  clojure.core/byte-array already builds: a 0xFF byte reads back as -1, not\n  255, so (vec (read-bytes p)) agrees with the JVM (oracle 1.12.5).\n\n  The JVM analog is (java.nio.file.Files/readAllBytes (java.nio.file.Path/of\n  path (into-array String []))); cljgo has no java.nio, so this is the route."))
+	// (def read-bytes (clojure.core/fn ([path] (-fs-read-bytes path))))
+	v_cljg_DOT_io_read_bytes.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(147), kw_column, int64(7), kw_end_line, int64(147), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "Read the whole file at `path` and return its contents as a byte-array. Use\n  this, not `slurp`, for anything that is not text: a string round-trip\n  replaces every invalid UTF-8 sequence with U+FFFD and changes the length.\n  Throws if the file cannot be read.\n\n  The elements are SIGNED, exactly as the JVM's byte[] is and as\n  clojure.core/byte-array already builds: a 0xFF byte reads back as -1, not\n  255, so (vec (read-bytes p)) agrees with the JVM (oracle 1.12.5).\n\n  The JVM analog is (java.nio.file.Files/readAllBytes (java.nio.file.Path/of\n  path (into-array String []))); cljgo has no java.nio, so this is the route."))
 	tmp120 := lang.FnFunc1(func(path121 any) any {
 		tmp122 := v_cljg_DOT_io_X_fs_read_bytes.Get()
 		tmp123 := lang.Apply1(tmp122, path121)
@@ -454,8 +468,8 @@ func Load() {
 	fnD_cljg_DOT_io_read_bytes = tmp124.F
 	v_cljg_DOT_io_read_bytes.SealDirect()
 	_ = v_cljg_DOT_io_read_bytes
-	// (def write-bytes "Write `data` — a byte-array or a string — to the file at `path`, cre…
-	v_cljg_DOT_io_write_bytes.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(162), kw_column, int64(7), kw_end_line, int64(162), kw_end_column, int64(18), kw_doc, "Write `data` — a byte-array or a string — to the file at `path`, creating it\n  if needed, and return the number of bytes written. Truncates by default;\n  with {:append true} appends instead. `opts` must be a map (or nil) — a\n  non-map is rejected rather than quietly truncating. Throws if the file\n  cannot be written."))
+	// (def write-bytes (clojure.core/fn ([path data] (write-bytes path data nil)) ([path data op…
+	v_cljg_DOT_io_write_bytes.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(162), kw_column, int64(7), kw_end_line, int64(162), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_path, sym_data), lang.NewVector(sym_path, sym_data, sym_opts)), kw_doc, "Write `data` — a byte-array or a string — to the file at `path`, creating it\n  if needed, and return the number of bytes written. Truncates by default;\n  with {:append true} appends instead. `opts` must be a map (or nil) — a\n  non-map is rejected rather than quietly truncating. Throws if the file\n  cannot be written."))
 	tmp125 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -482,8 +496,8 @@ func Load() {
 	})
 	v_cljg_DOT_io_write_bytes.BindRoot(tmp125)
 	_ = v_cljg_DOT_io_write_bytes
-	// (def home "The current user's home directory." (clojure.core/fn [] (-fs-home)))
-	v_cljg_DOT_io_home.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(173), kw_column, int64(7), kw_end_line, int64(173), kw_end_column, int64(11), kw_doc, "The current user's home directory."))
+	// (def home (clojure.core/fn ([] (-fs-home))))
+	v_cljg_DOT_io_home.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(173), kw_column, int64(7), kw_end_line, int64(173), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The current user's home directory."))
 	tmp135 := lang.FnFunc0(func() any {
 		tmp136 := v_cljg_DOT_io_X_fs_home.Get()
 		tmp137 := lang.Apply0(tmp136)
@@ -494,8 +508,8 @@ func Load() {
 	fnD_cljg_DOT_io_home = tmp138.F
 	v_cljg_DOT_io_home.SealDirect()
 	_ = v_cljg_DOT_io_home
-	// (def cwd "The current working directory." (clojure.core/fn [] (-fs-cwd)))
-	v_cljg_DOT_io_cwd.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(174), kw_column, int64(7), kw_end_line, int64(174), kw_end_column, int64(10), kw_doc, "The current working directory."))
+	// (def cwd (clojure.core/fn ([] (-fs-cwd))))
+	v_cljg_DOT_io_cwd.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(174), kw_column, int64(7), kw_end_line, int64(174), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The current working directory."))
 	tmp139 := lang.FnFunc0(func() any {
 		tmp140 := v_cljg_DOT_io_X_fs_cwd.Get()
 		tmp141 := lang.Apply0(tmp140)
@@ -506,8 +520,8 @@ func Load() {
 	fnD_cljg_DOT_io_cwd = tmp142.F
 	v_cljg_DOT_io_cwd.SealDirect()
 	_ = v_cljg_DOT_io_cwd
-	// (def temp-file "Create a fresh temporary file and return its path. Optional `prefix`/`suff…
-	v_cljg_DOT_io_temp_file.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(176), kw_column, int64(7), kw_end_line, int64(176), kw_end_column, int64(16), kw_doc, "Create a fresh temporary file and return its path. Optional `prefix`/`suffix`\n  shape the name (e.g. (temp-file \"build-\" \".log\"))."))
+	// (def temp-file (clojure.core/fn ([] (temp-file "cljg" "")) ([prefix] (temp-file prefix "")…
+	v_cljg_DOT_io_temp_file.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(176), kw_column, int64(7), kw_end_line, int64(176), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_prefix), lang.NewVector(sym_prefix, sym_suffix)), kw_doc, "Create a fresh temporary file and return its path. Optional `prefix`/`suffix`\n  shape the name (e.g. (temp-file \"build-\" \".log\"))."))
 	tmp143 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -534,8 +548,8 @@ func Load() {
 	})
 	v_cljg_DOT_io_temp_file.BindRoot(tmp143)
 	_ = v_cljg_DOT_io_temp_file
-	// (def temp-dir "Create a fresh temporary directory and return its path. Optional `prefix`\n…
-	v_cljg_DOT_io_temp_dir.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(15), kw_doc, "Create a fresh temporary directory and return its path. Optional `prefix`\n  shapes the name."))
+	// (def temp-dir (clojure.core/fn ([] (temp-dir "cljg")) ([prefix] (-fs-temp-dir prefix))))
+	v_cljg_DOT_io_temp_dir.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_prefix)), kw_doc, "Create a fresh temporary directory and return its path. Optional `prefix`\n  shapes the name."))
 	tmp153 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -554,8 +568,8 @@ func Load() {
 	})
 	v_cljg_DOT_io_temp_dir.BindRoot(tmp153)
 	_ = v_cljg_DOT_io_temp_dir
-	// (def exec "Run a subprocess and return {:out :err :exit :timed-out?} — never throwing on…
-	v_cljg_DOT_io_exec.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(192), kw_column, int64(7), kw_end_line, int64(192), kw_end_column, int64(11), kw_doc, "Run a subprocess and return {:out :err :exit :timed-out?} — never throwing on\n  a non-zero exit (that's a normal result; use `sh!` to throw). `command` is a\n  vector [cmd arg…]. opts (optional):\n    :in         a string fed to the process's stdin\n    :env        {name value} merged onto the current environment\n    :dir        the working directory\n    :timeout-ms kill the process after n ms (:timed-out? true, :exit -1)\n  A missing/unrunnable binary throws (it never ran)."))
+	// (def exec (clojure.core/fn ([command] (exec command {})) ([command opts] (-proc-exec (vec …
+	v_cljg_DOT_io_exec.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(192), kw_column, int64(7), kw_end_line, int64(192), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_command), lang.NewVector(sym_command, sym_opts)), kw_doc, "Run a subprocess and return {:out :err :exit :timed-out?} — never throwing on\n  a non-zero exit (that's a normal result; use `sh!` to throw). `command` is a\n  vector [cmd arg…]. opts (optional):\n    :in         a string fed to the process's stdin\n    :env        {name value} merged onto the current environment\n    :dir        the working directory\n    :timeout-ms kill the process after n ms (:timed-out? true, :exit -1)\n  A missing/unrunnable binary throws (it never ran)."))
 	tmp159 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -581,8 +595,8 @@ func Load() {
 	})
 	v_cljg_DOT_io_exec.BindRoot(tmp159)
 	_ = v_cljg_DOT_io_exec
-	// (def sh "Convenience over `exec` for the common shape: pass the command + args as\n  varar…
-	v_cljg_DOT_io_sh.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(204), kw_column, int64(7), kw_end_line, int64(204), kw_end_column, int64(9), kw_doc, "Convenience over `exec` for the common shape: pass the command + args as\n  varargs, get the same {:out :err :exit :timed-out?} map back.\n    (sh \"git\" \"rev-parse\" \"HEAD\")\n  For stdin/env/dir/timeout use `exec` with an opts map."))
+	// (def sh (clojure.core/fn ([& command] (exec (vec command)))))
+	v_cljg_DOT_io_sh.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(204), kw_column, int64(7), kw_end_line, int64(204), kw_end_column, int64(9), kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_command)), kw_doc, "Convenience over `exec` for the common shape: pass the command + args as\n  varargs, get the same {:out :err :exit :timed-out?} map back.\n    (sh \"git\" \"rev-parse\" \"HEAD\")\n  For stdin/env/dir/timeout use `exec` with an opts map."))
 	tmp170 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -603,8 +617,8 @@ func Load() {
 	})
 	v_cljg_DOT_io_sh.BindRoot(tmp170)
 	_ = v_cljg_DOT_io_sh
-	// (def sh! "Like `sh`, but THROWS (ex-info) if the command exits non-zero or times out —\n…
-	v_cljg_DOT_io_sh_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(212), kw_column, int64(7), kw_end_line, int64(212), kw_end_column, int64(10), kw_doc, "Like `sh`, but THROWS (ex-info) if the command exits non-zero or times out —\n  for the script style where a failed step should abort. Returns the same result\n  map on success. Takes a command vector + optional opts (like `exec`)."))
+	// (def sh! (clojure.core/fn ([command] (sh! command {})) ([command opts] (let [{:keys [exit …
+	v_cljg_DOT_io_sh_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(212), kw_column, int64(7), kw_end_line, int64(212), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_command), lang.NewVector(sym_command, sym_opts)), kw_doc, "Like `sh`, but THROWS (ex-info) if the command exits non-zero or times out —\n  for the script style where a failed step should abort. Returns the same result\n  map on success. Takes a command vector + optional opts (like `exec`)."))
 	tmp176 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -700,8 +714,8 @@ func Load() {
 	})
 	v_cljg_DOT_io_sh_BANG_.BindRoot(tmp176)
 	_ = v_cljg_DOT_io_sh_BANG_
-	// (def string-writer "A fresh in-memory writer *out* can be bound to — the java.io.StringW…
-	v_cljg_DOT_io_string_writer.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(247), kw_column, int64(7), kw_end_line, int64(247), kw_end_column, int64(20), kw_doc, "A fresh in-memory writer *out* can be bound to — the java.io.StringWriter\n  analog. Read what has been written to it with `writer-str`."))
+	// (def string-writer (clojure.core/fn ([] (clojure.core/-string-writer))))
+	v_cljg_DOT_io_string_writer.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(247), kw_column, int64(7), kw_end_line, int64(247), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "A fresh in-memory writer *out* can be bound to — the java.io.StringWriter\n  analog. Read what has been written to it with `writer-str`."))
 	tmp222 := lang.FnFunc0(func() any {
 		tmp223 := v_clojure_DOT_core_X_string_writer.Get()
 		tmp224 := lang.Apply0(tmp223)
@@ -712,8 +726,8 @@ func Load() {
 	fnD_cljg_DOT_io_string_writer = tmp225.F
 	v_cljg_DOT_io_string_writer.SealDirect()
 	_ = v_cljg_DOT_io_string_writer
-	// (def writer-str "Everything written to `w` (a `string-writer`) so far, as a String — the…
-	v_cljg_DOT_io_writer_str.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(253), kw_column, int64(7), kw_end_line, int64(253), kw_end_column, int64(17), kw_doc, "Everything written to `w` (a `string-writer`) so far, as a String — the\n  (str a-StringWriter) analog. Non-destructive: the writer keeps accumulating."))
+	// (def writer-str (clojure.core/fn ([w] (clojure.core/-string-writer-str w))))
+	v_cljg_DOT_io_writer_str.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(253), kw_column, int64(7), kw_end_line, int64(253), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_w)), kw_doc, "Everything written to `w` (a `string-writer`) so far, as a String — the\n  (str a-StringWriter) analog. Non-destructive: the writer keeps accumulating."))
 	tmp226 := lang.FnFunc1(func(w227 any) any {
 		tmp228 := v_clojure_DOT_core_X_string_writer_str.Get()
 		tmp229 := lang.Apply1(tmp228, w227)

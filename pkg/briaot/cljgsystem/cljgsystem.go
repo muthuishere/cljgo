@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	kw_arglists                   = lang.InternKeywordString("arglists")
 	kw_column                     = lang.InternKeywordString("column")
 	kw_doc                        = lang.InternKeywordString("doc")
 	kw_end_column                 = lang.InternKeywordString("end-column")
@@ -15,6 +16,10 @@ var (
 	kw_line                       = lang.InternKeywordString("line")
 	sym_cljg_DOT_system           = lang.NewSymbol("cljg.system")
 	sym_clojure_DOT_core          = lang.NewSymbol("clojure.core")
+	sym_default_                  = lang.NewSymbol("default")
+	sym_ms                        = lang.NewSymbol("ms")
+	sym_name                      = lang.NewSymbol("name")
+	sym_status                    = lang.NewSymbol("status")
 	v_cljg_DOT_system_X_args      = lang.InternVarName(lang.NewSymbol("cljg.system"), lang.NewSymbol("-args")).SetPrivate()
 	v_cljg_DOT_system_X_environ   = lang.InternVarName(lang.NewSymbol("cljg.system"), lang.NewSymbol("-environ")).SetPrivate()
 	v_cljg_DOT_system_X_exit      = lang.InternVarName(lang.NewSymbol("cljg.system"), lang.NewSymbol("-exit")).SetPrivate()
@@ -54,8 +59,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def getenv "The value of environment variable `name` (a string), or nil when it is not\n …
-	v_cljg_DOT_system_getenv.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(27), kw_column, int64(7), kw_end_line, int64(27), kw_end_column, int64(13), kw_doc, "The value of environment variable `name` (a string), or nil when it is not\n  set. With `default`, returns `default` instead of nil when unset. Same\n  contract as System/getenv (the 2-arity default is a cljgo convenience)."))
+	// (def getenv (clojure.core/fn ([name] (-getenv name)) ([name default] (let [v (-getenv name…
+	v_cljg_DOT_system_getenv.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(27), kw_column, int64(7), kw_end_line, int64(27), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_name), lang.NewVector(sym_name, sym_default_)), kw_doc, "The value of environment variable `name` (a string), or nil when it is not\n  set. With `default`, returns `default` instead of nil when unset. Same\n  contract as System/getenv (the 2-arity default is a cljgo convenience)."))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -94,8 +99,8 @@ func Load() {
 	})
 	v_cljg_DOT_system_getenv.BindRoot(tmp5)
 	_ = v_cljg_DOT_system_getenv
-	// (def environ "The whole process environment as an immutable {name value} map (both\n  stri…
-	v_cljg_DOT_system_environ.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(36), kw_column, int64(7), kw_end_line, int64(36), kw_end_column, int64(14), kw_doc, "The whole process environment as an immutable {name value} map (both\n  strings). A snapshot — later setenv by other code is not reflected."))
+	// (def environ (clojure.core/fn ([] (-environ))))
+	v_cljg_DOT_system_environ.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(36), kw_column, int64(7), kw_end_line, int64(36), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The whole process environment as an immutable {name value} map (both\n  strings). A snapshot — later setenv by other code is not reflected."))
 	tmp18 := lang.FnFunc0(func() any {
 		tmp19 := v_cljg_DOT_system_X_environ.Get()
 		tmp20 := lang.Apply0(tmp19)
@@ -106,8 +111,8 @@ func Load() {
 	fnD_cljg_DOT_system_environ = tmp21.F
 	v_cljg_DOT_system_environ.SealDirect()
 	_ = v_cljg_DOT_system_environ
-	// (def args "The raw process argument vector as a vector of strings; element 0 is the\n  pro…
-	v_cljg_DOT_system_args.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(11), kw_doc, "The raw process argument vector as a vector of strings; element 0 is the\n  program path (os.Args). For just the user args after the program, clojure.core\n  keeps *command-line-args*."))
+	// (def args (clojure.core/fn ([] (-args))))
+	v_cljg_DOT_system_args.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The raw process argument vector as a vector of strings; element 0 is the\n  program path (os.Args). For just the user args after the program, clojure.core\n  keeps *command-line-args*."))
 	tmp22 := lang.FnFunc0(func() any {
 		tmp23 := v_cljg_DOT_system_X_args.Get()
 		tmp24 := lang.Apply0(tmp23)
@@ -118,8 +123,8 @@ func Load() {
 	fnD_cljg_DOT_system_args = tmp25.F
 	v_cljg_DOT_system_args.SealDirect()
 	_ = v_cljg_DOT_system_args
-	// (def sleep "Block the current thread for `ms` milliseconds, then return nil — the\n  Thr…
-	v_cljg_DOT_system_sleep.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(12), kw_doc, "Block the current thread for `ms` milliseconds, then return nil — the\n  Thread/sleep analog (cljgo runs on Go, so there is no Thread class; this is\n  Go's time.Sleep). `ms` is an integer count of milliseconds; 0 or negative\n  returns immediately. The sleep is not interruptible.\n\n  Oracle (clojure 1.12.5, 2026-07-28): (Thread/sleep 5) => nil, and a 50 ms\n  sleep advances System/nanoTime by at least 40 ms — the same contract this\n  fn freezes in conformance/tests/cljg-system-sleep.clj."))
+	// (def sleep (clojure.core/fn ([ms] (clojure.core/-sleep-ms ms))))
+	v_cljg_DOT_system_sleep.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_ms)), kw_doc, "Block the current thread for `ms` milliseconds, then return nil — the\n  Thread/sleep analog (cljgo runs on Go, so there is no Thread class; this is\n  Go's time.Sleep). `ms` is an integer count of milliseconds; 0 or negative\n  returns immediately. The sleep is not interruptible.\n\n  Oracle (clojure 1.12.5, 2026-07-28): (Thread/sleep 5) => nil, and a 50 ms\n  sleep advances System/nanoTime by at least 40 ms — the same contract this\n  fn freezes in conformance/tests/cljg-system-sleep.clj."))
 	tmp26 := lang.FnFunc1(func(ms27 any) any {
 		tmp28 := v_clojure_DOT_core_X_sleep_ms.Get()
 		tmp29 := lang.Apply1(tmp28, ms27)
@@ -130,8 +135,8 @@ func Load() {
 	fnD_cljg_DOT_system_sleep = tmp30.F
 	v_cljg_DOT_system_sleep.SealDirect()
 	_ = v_cljg_DOT_system_sleep
-	// (def exit "Terminate the process immediately with integer exit `status` (default 0).\n  Do…
-	v_cljg_DOT_system_exit.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(11), kw_doc, "Terminate the process immediately with integer exit `status` (default 0).\n  Does not return, and does NOT run pending finally / with-open cleanup — treat\n  it as the very last thing you call, after your own teardown."))
+	// (def exit (clojure.core/fn ([] (exit 0)) ([status] (-exit status))))
+	v_cljg_DOT_system_exit.SetMeta(lang.NewMap(kw_file, "cljg/system.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_status)), kw_doc, "Terminate the process immediately with integer exit `status` (default 0).\n  Does not return, and does NOT run pending finally / with-open cleanup — treat\n  it as the very last thing you call, after your own teardown."))
 	tmp31 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:

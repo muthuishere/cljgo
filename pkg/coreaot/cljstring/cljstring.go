@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	kw_arglists                                 = lang.InternKeywordString("arglists")
 	kw_column                                   = lang.InternKeywordString("column")
 	kw_doc                                      = lang.InternKeywordString("doc")
 	kw_end_column                               = lang.InternKeywordString("end-column")
@@ -18,6 +19,17 @@ var (
 	re_61                                       = &reader.Regex{Pattern: "\\r?\\n"}
 	sym_clojure_DOT_core                        = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                      = lang.NewSymbol("clojure.string")
+	sym_cmap                                    = lang.NewSymbol("cmap")
+	sym_coll                                    = lang.NewSymbol("coll")
+	sym_from_index                              = lang.NewSymbol("from-index")
+	sym_limit                                   = lang.NewSymbol("limit")
+	sym_match                                   = lang.NewSymbol("match")
+	sym_re                                      = lang.NewSymbol("re")
+	sym_replacement                             = lang.NewSymbol("replacement")
+	sym_s                                       = lang.NewSymbol("s")
+	sym_separator                               = lang.NewSymbol("separator")
+	sym_substr                                  = lang.NewSymbol("substr")
+	sym_value                                   = lang.NewSymbol("value")
 	v_clojure_DOT_core_X_str_blank_QMARK_       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-str-blank?")).SetPrivate()
 	v_clojure_DOT_core_X_str_capitalize         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-str-capitalize")).SetPrivate()
 	v_clojure_DOT_core_X_str_ends_with_QMARK_   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-str-ends-with?")).SetPrivate()
@@ -104,8 +116,8 @@ func Load() {
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
 	tmp2 := lang.Apply1(tmp1, sym_clojure_DOT_string)
 	_ = tmp2
-	// (def reverse "Returns s with its characters reversed." (clojure.core/fn [s] (clojure.core/…
-	v_clojure_DOT_string_reverse.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(25), kw_column, int64(20), kw_end_line, int64(25), kw_end_column, int64(27), kw_doc, "Returns s with its characters reversed."))
+	// (def reverse (clojure.core/fn ([s] (clojure.core/-str-reverse s))))
+	v_clojure_DOT_string_reverse.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(25), kw_column, int64(20), kw_end_line, int64(25), kw_end_column, int64(27), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Returns s with its characters reversed."))
 	tmp3 := lang.FnFunc1(func(s4 any) any {
 		tmp5 := v_clojure_DOT_core_X_str_reverse.Get()
 		tmp6 := lang.Apply1(tmp5, s4)
@@ -116,8 +128,8 @@ func Load() {
 	fnD_clojure_DOT_string_reverse = tmp7.F
 	v_clojure_DOT_string_reverse.SealDirect()
 	_ = v_clojure_DOT_string_reverse
-	// (def replace "Replaces all instance of match with replacement in s. match/replacement\n  c…
-	v_clojure_DOT_string_replace.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(30), kw_column, int64(20), kw_end_line, int64(30), kw_end_column, int64(27), kw_doc, "Replaces all instance of match with replacement in s. match/replacement\n  can be:  string / string,  char / char,  pattern / string (with $1 group\n  refs)."))
+	// (def replace (clojure.core/fn ([s match replacement] (clojure.core/-str-replace s match re…
+	v_clojure_DOT_string_replace.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(30), kw_column, int64(20), kw_end_line, int64(30), kw_end_column, int64(27), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_match, sym_replacement)), kw_doc, "Replaces all instance of match with replacement in s. match/replacement\n  can be:  string / string,  char / char,  pattern / string (with $1 group\n  refs)."))
 	tmp8 := lang.FnFunc3(func(s9, match10, replacement11 any) any {
 		tmp12 := v_clojure_DOT_core_X_str_replace.Get()
 		tmp13 := lang.Apply3(tmp12, s9, match10, replacement11)
@@ -128,8 +140,8 @@ func Load() {
 	fnD_clojure_DOT_string_replace = tmp14.F
 	v_clojure_DOT_string_replace.SealDirect()
 	_ = v_clojure_DOT_string_replace
-	// (def replace-first "Replaces the first instance of match with replacement in s. Same match…
-	v_clojure_DOT_string_replace_first.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(37), kw_column, int64(20), kw_end_line, int64(37), kw_end_column, int64(33), kw_doc, "Replaces the first instance of match with replacement in s. Same match/\n  replacement combinations as replace."))
+	// (def replace-first (clojure.core/fn ([s match replacement] (clojure.core/-str-replace-firs…
+	v_clojure_DOT_string_replace_first.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(37), kw_column, int64(20), kw_end_line, int64(37), kw_end_column, int64(33), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_match, sym_replacement)), kw_doc, "Replaces the first instance of match with replacement in s. Same match/\n  replacement combinations as replace."))
 	tmp15 := lang.FnFunc3(func(s16, match17, replacement18 any) any {
 		tmp19 := v_clojure_DOT_core_X_str_replace_first.Get()
 		tmp20 := lang.Apply3(tmp19, s16, match17, replacement18)
@@ -144,8 +156,8 @@ func Load() {
 	tmp22 := v_clojure_DOT_core_refer.Get()
 	tmp23 := lang.Apply1(tmp22, sym_clojure_DOT_core)
 	_ = tmp23
-	// (def join "Returns a string of all elements in coll, as returned by (seq coll),\n  separat…
-	v_clojure_DOT_string_join.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(11), kw_doc, "Returns a string of all elements in coll, as returned by (seq coll),\n  separated by an optional separator."))
+	// (def join (clojure.core/fn ([coll] (apply str coll)) ([separator coll] (if (seq coll) (red…
+	v_clojure_DOT_string_join.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_coll), lang.NewVector(sym_separator, sym_coll)), kw_doc, "Returns a string of all elements in coll, as returned by (seq coll),\n  separated by an optional separator."))
 	tmp24 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -190,8 +202,8 @@ func Load() {
 	})
 	v_clojure_DOT_string_join.BindRoot(tmp24)
 	_ = v_clojure_DOT_string_join
-	// (def split "Splits string on a regular expression. Optional argument limit is the\n  maxim…
-	v_clojure_DOT_string_split.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(58), kw_column, int64(7), kw_end_line, int64(58), kw_end_column, int64(12), kw_doc, "Splits string on a regular expression. Optional argument limit is the\n  maximum number of parts. Not lazy. Returns a vector of the parts."))
+	// (def split (clojure.core/fn ([s re] (clojure.core/-str-split re s 0)) ([s re limit] (cloju…
+	v_clojure_DOT_string_split.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(58), kw_column, int64(7), kw_end_line, int64(58), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_re), lang.NewVector(sym_s, sym_re, sym_limit)), kw_doc, "Splits string on a regular expression. Optional argument limit is the\n  maximum number of parts. Not lazy. Returns a vector of the parts."))
 	tmp48 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -218,8 +230,8 @@ func Load() {
 	})
 	v_clojure_DOT_string_split.BindRoot(tmp48)
 	_ = v_clojure_DOT_string_split
-	// (def split-lines "Splits s on \\n or \\r\\n. Trailing empty lines are not returned." (cloj…
-	v_clojure_DOT_string_split_lines.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(18), kw_doc, "Splits s on \\n or \\r\\n. Trailing empty lines are not returned."))
+	// (def split-lines (clojure.core/fn ([s] (split s #"\r?\n"))))
+	v_clojure_DOT_string_split_lines.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Splits s on \\n or \\r\\n. Trailing empty lines are not returned."))
 	tmp58 := lang.FnFunc1(func(s59 any) any {
 		tmp60 := v_clojure_DOT_string_split.Get()
 		tmp62 := lang.Apply2(tmp60, s59, re_61)
@@ -230,8 +242,8 @@ func Load() {
 	fnD_clojure_DOT_string_split_lines = tmp63.F
 	v_clojure_DOT_string_split_lines.SealDirect()
 	_ = v_clojure_DOT_string_split_lines
-	// (def trim "Removes whitespace from both ends of string." (clojure.core/fn [s] (clojure.cor…
-	v_clojure_DOT_string_trim.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(74), kw_column, int64(7), kw_end_line, int64(74), kw_end_column, int64(11), kw_doc, "Removes whitespace from both ends of string."))
+	// (def trim (clojure.core/fn ([s] (clojure.core/-str-trim s))))
+	v_clojure_DOT_string_trim.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(74), kw_column, int64(7), kw_end_line, int64(74), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Removes whitespace from both ends of string."))
 	tmp64 := lang.FnFunc1(func(s65 any) any {
 		tmp66 := v_clojure_DOT_core_X_str_trim.Get()
 		tmp67 := lang.Apply1(tmp66, s65)
@@ -242,8 +254,8 @@ func Load() {
 	fnD_clojure_DOT_string_trim = tmp68.F
 	v_clojure_DOT_string_trim.SealDirect()
 	_ = v_clojure_DOT_string_trim
-	// (def triml "Removes whitespace from the left side of string." (clojure.core/fn [s] (clojur…
-	v_clojure_DOT_string_triml.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(12), kw_doc, "Removes whitespace from the left side of string."))
+	// (def triml (clojure.core/fn ([s] (clojure.core/-str-triml s))))
+	v_clojure_DOT_string_triml.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Removes whitespace from the left side of string."))
 	tmp69 := lang.FnFunc1(func(s70 any) any {
 		tmp71 := v_clojure_DOT_core_X_str_triml.Get()
 		tmp72 := lang.Apply1(tmp71, s70)
@@ -254,8 +266,8 @@ func Load() {
 	fnD_clojure_DOT_string_triml = tmp73.F
 	v_clojure_DOT_string_triml.SealDirect()
 	_ = v_clojure_DOT_string_triml
-	// (def trimr "Removes whitespace from the right side of string." (clojure.core/fn [s] (cloju…
-	v_clojure_DOT_string_trimr.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(12), kw_doc, "Removes whitespace from the right side of string."))
+	// (def trimr (clojure.core/fn ([s] (clojure.core/-str-trimr s))))
+	v_clojure_DOT_string_trimr.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Removes whitespace from the right side of string."))
 	tmp74 := lang.FnFunc1(func(s75 any) any {
 		tmp76 := v_clojure_DOT_core_X_str_trimr.Get()
 		tmp77 := lang.Apply1(tmp76, s75)
@@ -266,8 +278,8 @@ func Load() {
 	fnD_clojure_DOT_string_trimr = tmp78.F
 	v_clojure_DOT_string_trimr.SealDirect()
 	_ = v_clojure_DOT_string_trimr
-	// (def trim-newline "Removes all trailing newline \\n or return \\r characters from string."…
-	v_clojure_DOT_string_trim_newline.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(89), kw_column, int64(7), kw_end_line, int64(89), kw_end_column, int64(19), kw_doc, "Removes all trailing newline \\n or return \\r characters from string."))
+	// (def trim-newline (clojure.core/fn ([s] (clojure.core/-str-trim-newline s))))
+	v_clojure_DOT_string_trim_newline.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(89), kw_column, int64(7), kw_end_line, int64(89), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Removes all trailing newline \\n or return \\r characters from string."))
 	tmp79 := lang.FnFunc1(func(s80 any) any {
 		tmp81 := v_clojure_DOT_core_X_str_trim_newline.Get()
 		tmp82 := lang.Apply1(tmp81, s80)
@@ -278,8 +290,8 @@ func Load() {
 	fnD_clojure_DOT_string_trim_newline = tmp83.F
 	v_clojure_DOT_string_trim_newline.SealDirect()
 	_ = v_clojure_DOT_string_trim_newline
-	// (def upper-case "Converts string to all upper-case." (clojure.core/fn [s] (clojure.core/-s…
-	v_clojure_DOT_string_upper_case.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(17), kw_doc, "Converts string to all upper-case."))
+	// (def upper-case (clojure.core/fn ([s] (clojure.core/-str-upper-case s))))
+	v_clojure_DOT_string_upper_case.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(96), kw_column, int64(7), kw_end_line, int64(96), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Converts string to all upper-case."))
 	tmp84 := lang.FnFunc1(func(s85 any) any {
 		tmp86 := v_clojure_DOT_core_X_str_upper_case.Get()
 		tmp87 := lang.Apply1(tmp86, s85)
@@ -290,8 +302,8 @@ func Load() {
 	fnD_clojure_DOT_string_upper_case = tmp88.F
 	v_clojure_DOT_string_upper_case.SealDirect()
 	_ = v_clojure_DOT_string_upper_case
-	// (def lower-case "Converts string to all lower-case." (clojure.core/fn [s] (clojure.core/-s…
-	v_clojure_DOT_string_lower_case.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(101), kw_column, int64(7), kw_end_line, int64(101), kw_end_column, int64(17), kw_doc, "Converts string to all lower-case."))
+	// (def lower-case (clojure.core/fn ([s] (clojure.core/-str-lower-case s))))
+	v_clojure_DOT_string_lower_case.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(101), kw_column, int64(7), kw_end_line, int64(101), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Converts string to all lower-case."))
 	tmp89 := lang.FnFunc1(func(s90 any) any {
 		tmp91 := v_clojure_DOT_core_X_str_lower_case.Get()
 		tmp92 := lang.Apply1(tmp91, s90)
@@ -302,8 +314,8 @@ func Load() {
 	fnD_clojure_DOT_string_lower_case = tmp93.F
 	v_clojure_DOT_string_lower_case.SealDirect()
 	_ = v_clojure_DOT_string_lower_case
-	// (def capitalize "Converts first character of the string to upper-case, all other\n  charac…
-	v_clojure_DOT_string_capitalize.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(106), kw_column, int64(7), kw_end_line, int64(106), kw_end_column, int64(17), kw_doc, "Converts first character of the string to upper-case, all other\n  characters to lower-case."))
+	// (def capitalize (clojure.core/fn ([s] (clojure.core/-str-capitalize s))))
+	v_clojure_DOT_string_capitalize.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(106), kw_column, int64(7), kw_end_line, int64(106), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Converts first character of the string to upper-case, all other\n  characters to lower-case."))
 	tmp94 := lang.FnFunc1(func(s95 any) any {
 		tmp96 := v_clojure_DOT_core_X_str_capitalize.Get()
 		tmp97 := lang.Apply1(tmp96, s95)
@@ -314,8 +326,8 @@ func Load() {
 	fnD_clojure_DOT_string_capitalize = tmp98.F
 	v_clojure_DOT_string_capitalize.SealDirect()
 	_ = v_clojure_DOT_string_capitalize
-	// (def blank? "True if s is nil, empty, or contains only whitespace." (clojure.core/fn [s] (…
-	v_clojure_DOT_string_blank_QMARK_.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(114), kw_column, int64(7), kw_end_line, int64(114), kw_end_column, int64(13), kw_doc, "True if s is nil, empty, or contains only whitespace."))
+	// (def blank? (clojure.core/fn ([s] (clojure.core/-str-blank? s))))
+	v_clojure_DOT_string_blank_QMARK_.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(114), kw_column, int64(7), kw_end_line, int64(114), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "True if s is nil, empty, or contains only whitespace."))
 	tmp99 := lang.FnFunc1(func(s100 any) any {
 		tmp101 := v_clojure_DOT_core_X_str_blank_QMARK_.Get()
 		tmp102 := lang.Apply1(tmp101, s100)
@@ -326,8 +338,8 @@ func Load() {
 	fnD_clojure_DOT_string_blank_QMARK_ = tmp103.F
 	v_clojure_DOT_string_blank_QMARK_.SealDirect()
 	_ = v_clojure_DOT_string_blank_QMARK_
-	// (def starts-with? "True if s starts with substr." (clojure.core/fn [s substr] (clojure.cor…
-	v_clojure_DOT_string_starts_with_QMARK_.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(19), kw_doc, "True if s starts with substr."))
+	// (def starts-with? (clojure.core/fn ([s substr] (clojure.core/-str-starts-with? s substr)))…
+	v_clojure_DOT_string_starts_with_QMARK_.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_substr)), kw_doc, "True if s starts with substr."))
 	tmp104 := lang.FnFunc2(func(s105, substr106 any) any {
 		tmp107 := v_clojure_DOT_core_X_str_starts_with_QMARK_.Get()
 		tmp108 := lang.Apply2(tmp107, s105, substr106)
@@ -338,8 +350,8 @@ func Load() {
 	fnD_clojure_DOT_string_starts_with_QMARK_ = tmp109.F
 	v_clojure_DOT_string_starts_with_QMARK_.SealDirect()
 	_ = v_clojure_DOT_string_starts_with_QMARK_
-	// (def ends-with? "True if s ends with substr." (clojure.core/fn [s substr] (clojure.core/-s…
-	v_clojure_DOT_string_ends_with_QMARK_.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(124), kw_column, int64(7), kw_end_line, int64(124), kw_end_column, int64(17), kw_doc, "True if s ends with substr."))
+	// (def ends-with? (clojure.core/fn ([s substr] (clojure.core/-str-ends-with? s substr))))
+	v_clojure_DOT_string_ends_with_QMARK_.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(124), kw_column, int64(7), kw_end_line, int64(124), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_substr)), kw_doc, "True if s ends with substr."))
 	tmp110 := lang.FnFunc2(func(s111, substr112 any) any {
 		tmp113 := v_clojure_DOT_core_X_str_ends_with_QMARK_.Get()
 		tmp114 := lang.Apply2(tmp113, s111, substr112)
@@ -350,8 +362,8 @@ func Load() {
 	fnD_clojure_DOT_string_ends_with_QMARK_ = tmp115.F
 	v_clojure_DOT_string_ends_with_QMARK_.SealDirect()
 	_ = v_clojure_DOT_string_ends_with_QMARK_
-	// (def includes? "True if s includes substr." (clojure.core/fn [s substr] (clojure.core/-str…
-	v_clojure_DOT_string_includes_QMARK_.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(129), kw_column, int64(7), kw_end_line, int64(129), kw_end_column, int64(16), kw_doc, "True if s includes substr."))
+	// (def includes? (clojure.core/fn ([s substr] (clojure.core/-str-includes? s substr))))
+	v_clojure_DOT_string_includes_QMARK_.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(129), kw_column, int64(7), kw_end_line, int64(129), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_substr)), kw_doc, "True if s includes substr."))
 	tmp116 := lang.FnFunc2(func(s117, substr118 any) any {
 		tmp119 := v_clojure_DOT_core_X_str_includes_QMARK_.Get()
 		tmp120 := lang.Apply2(tmp119, s117, substr118)
@@ -362,8 +374,8 @@ func Load() {
 	fnD_clojure_DOT_string_includes_QMARK_ = tmp121.F
 	v_clojure_DOT_string_includes_QMARK_.SealDirect()
 	_ = v_clojure_DOT_string_includes_QMARK_
-	// (def index-of "Return the index of the first occurrence of value (string or char) in s,\n …
-	v_clojure_DOT_string_index_of.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(134), kw_column, int64(7), kw_end_line, int64(134), kw_end_column, int64(15), kw_doc, "Return the index of the first occurrence of value (string or char) in s,\n  optionally searching forward from from-index. Return nil if value not\n  found."))
+	// (def index-of (clojure.core/fn ([s value] (clojure.core/-str-index-of s value)) ([s value …
+	v_clojure_DOT_string_index_of.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(134), kw_column, int64(7), kw_end_line, int64(134), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_value), lang.NewVector(sym_s, sym_value, sym_from_index)), kw_doc, "Return the index of the first occurrence of value (string or char) in s,\n  optionally searching forward from from-index. Return nil if value not\n  found."))
 	tmp122 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -390,8 +402,8 @@ func Load() {
 	})
 	v_clojure_DOT_string_index_of.BindRoot(tmp122)
 	_ = v_clojure_DOT_string_index_of
-	// (def last-index-of "Return the index of the last occurrence of value (string or char) in s…
-	v_clojure_DOT_string_last_index_of.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(141), kw_column, int64(7), kw_end_line, int64(141), kw_end_column, int64(20), kw_doc, "Return the index of the last occurrence of value (string or char) in s,\n  optionally searching backward from from-index. Return nil if value not\n  found."))
+	// (def last-index-of (clojure.core/fn ([s value] (clojure.core/-str-last-index-of s value)) …
+	v_clojure_DOT_string_last_index_of.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(141), kw_column, int64(7), kw_end_line, int64(141), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_value), lang.NewVector(sym_s, sym_value, sym_from_index)), kw_doc, "Return the index of the last occurrence of value (string or char) in s,\n  optionally searching backward from from-index. Return nil if value not\n  found."))
 	tmp132 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -418,8 +430,8 @@ func Load() {
 	})
 	v_clojure_DOT_string_last_index_of.BindRoot(tmp132)
 	_ = v_clojure_DOT_string_last_index_of
-	// (def re-quote-replacement "Given a replacement string that you wish to be a literal\n  rep…
-	v_clojure_DOT_string_re_quote_replacement.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(158), kw_column, int64(7), kw_end_line, int64(158), kw_end_column, int64(27), kw_doc, "Given a replacement string that you wish to be a literal\n  replacement for a pattern match in replace or replace-first, do the\n  necessary escaping of special characters in the replacement."))
+	// (def re-quote-replacement (clojure.core/fn ([replacement] (clojure.core/-str-replace repla…
+	v_clojure_DOT_string_re_quote_replacement.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(158), kw_column, int64(7), kw_end_line, int64(158), kw_end_column, int64(27), kw_arglists, lang.NewList(lang.NewVector(sym_replacement)), kw_doc, "Given a replacement string that you wish to be a literal\n  replacement for a pattern match in replace or replace-first, do the\n  necessary escaping of special characters in the replacement."))
 	tmp142 := lang.FnFunc1(func(replacement143 any) any {
 		tmp144 := v_clojure_DOT_core_X_str_replace.Get()
 		tmp145 := lang.Apply3(tmp144, replacement143, "$", "$$")
@@ -430,8 +442,8 @@ func Load() {
 	fnD_clojure_DOT_string_re_quote_replacement = tmp146.F
 	v_clojure_DOT_string_re_quote_replacement.SealDirect()
 	_ = v_clojure_DOT_string_re_quote_replacement
-	// (def escape "Return a new string, using cmap to escape each character ch\n  from s as foll…
-	v_clojure_DOT_string_escape.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(167), kw_column, int64(7), kw_end_line, int64(167), kw_end_column, int64(13), kw_doc, "Return a new string, using cmap to escape each character ch\n  from s as follows:\n\n  If (cmap ch) is nil, append ch to the new string.\n  If (cmap ch) is non-nil, append (str (cmap ch)) instead."))
+	// (def escape (clojure.core/fn ([s cmap] (if (string? s) (apply str (map (fn [ch] (if-let [r…
+	v_clojure_DOT_string_escape.SetMeta(lang.NewMap(kw_file, "string.cljg", kw_line, int64(167), kw_column, int64(7), kw_end_line, int64(167), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_cmap)), kw_doc, "Return a new string, using cmap to escape each character ch\n  from s as follows:\n\n  If (cmap ch) is nil, append ch to the new string.\n  If (cmap ch) is non-nil, append (str (cmap ch)) instead."))
 	tmp147 := lang.FnFunc2(func(s148, cmap149 any) any {
 		tmp150 := v_clojure_DOT_core_string_QMARK_.Get()
 		tmp151 := lang.Apply1(tmp150, s148)

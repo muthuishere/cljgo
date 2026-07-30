@@ -7,14 +7,21 @@ import (
 )
 
 var (
+	kw_arglists                                             = lang.InternKeywordString("arglists")
 	kw_column                                               = lang.InternKeywordString("column")
 	kw_end_column                                           = lang.InternKeywordString("end-column")
 	kw_end_line                                             = lang.InternKeywordString("end-line")
 	kw_file                                                 = lang.InternKeywordString("file")
 	kw_line                                                 = lang.InternKeywordString("line")
+	sym_X_AMP_                                              = lang.NewSymbol("&")
+	sym_body                                                = lang.NewSymbol("body")
 	sym_clojure_DOT_core                                    = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_core_test_DOT_portability               = lang.NewSymbol("clojure.core-test.portability")
 	sym_do                                                  = lang.NewSymbol("do")
+	sym_ms                                                  = lang.NewSymbol("ms")
+	sym_n                                                   = lang.NewSymbol("n")
+	sym_var_sym                                             = lang.NewSymbol("var-sym")
+	sym_x                                                   = lang.NewSymbol("x")
 	v_clojure_DOT_core_X_set_macro_BANG_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-set-macro!")).SetPrivate()
 	v_clojure_DOT_core_X_sleep_ms                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-sleep-ms")).SetPrivate()
 	v_clojure_DOT_core_cons                                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("cons"))
@@ -56,7 +63,7 @@ func Load() {
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
 	// (do (def when-var-exists (fn* when-var-exists ([&form &env var-sym & body] (if (clojure.co…
-	v_clojure_DOT_core_test_DOT_portability_when_var_exists.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(26), kw_column, int64(11), kw_end_line, int64(26), kw_end_column, int64(26)))
+	v_clojure_DOT_core_test_DOT_portability_when_var_exists.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_var_sym, sym_X_AMP_, sym_body)), kw_file, "clojure_test_portability.cljg", kw_line, int64(26), kw_column, int64(11), kw_end_line, int64(26), kw_end_column, int64(26)))
 	var when_var_exists5 any
 	_ = when_var_exists5
 	tmp6 := lang.FnFunc(func(args ...any) any {
@@ -97,8 +104,8 @@ func Load() {
 	tmp17 := lang.Apply1(tmp16, v_clojure_DOT_core_test_DOT_portability_when_var_exists)
 	_ = tmp17
 	_ = v_clojure_DOT_core_test_DOT_portability_when_var_exists
-	// (def big-int? (clojure.core/fn [n] (clojure.core/and (clojure.core/integer? n) (clojure.co…
-	v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(37), kw_column, int64(7), kw_end_line, int64(37), kw_end_column, int64(15)))
+	// (def big-int? (clojure.core/fn ([n] (clojure.core/and (clojure.core/integer? n) (clojure.c…
+	v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(37), kw_column, int64(7), kw_end_line, int64(37), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_n))))
 	tmp18 := lang.FnFunc1(func(n19 any) any {
 		var tmp20 any
 		_ = tmp20
@@ -127,8 +134,8 @@ func Load() {
 	fnD_clojure_DOT_core_test_DOT_portability_big_int_QMARK_ = tmp29.F
 	v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_test_DOT_portability_big_int_QMARK_
-	// (def lazy-seq? (clojure.core/fn [x] (clojure.core/seq? x)))
-	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(16)))
+	// (def lazy-seq? (clojure.core/fn ([x] (clojure.core/seq? x))))
+	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_x))))
 	tmp30 := lang.FnFunc1(func(x31 any) any {
 		tmp32 := v_clojure_DOT_core_seq_QMARK_.Get()
 		tmp33 := lang.Apply1(tmp32, x31)
@@ -139,8 +146,8 @@ func Load() {
 	fnD_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_ = tmp34.F
 	v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_test_DOT_portability_lazy_seq_QMARK_
-	// (def sleep (clojure.core/fn [ms] (clojure.core/-sleep-ms ms)))
-	v_clojure_DOT_core_test_DOT_portability_sleep.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(50), kw_column, int64(7), kw_end_line, int64(50), kw_end_column, int64(12)))
+	// (def sleep (clojure.core/fn ([ms] (clojure.core/-sleep-ms ms))))
+	v_clojure_DOT_core_test_DOT_portability_sleep.SetMeta(lang.NewMap(kw_file, "clojure_test_portability.cljg", kw_line, int64(50), kw_column, int64(7), kw_end_line, int64(50), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_ms))))
 	tmp35 := lang.FnFunc1(func(ms36 any) any {
 		tmp37 := v_clojure_DOT_core_X_sleep_ms.Get()
 		tmp38 := lang.Apply1(tmp37, ms36)

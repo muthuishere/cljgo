@@ -10,6 +10,7 @@ import (
 var (
 	kw_action                                 = lang.InternKeywordString("action")
 	kw_actor                                  = lang.InternKeywordString("actor")
+	kw_arglists                               = lang.InternKeywordString("arglists")
 	kw_as                                     = lang.InternKeywordString("as")
 	kw_auth_SLASH_auto_banned                 = lang.InternKeywordString("auth/auto-banned")
 	kw_auth_SLASH_banned_request              = lang.InternKeywordString("auth/banned-request")
@@ -64,14 +65,33 @@ var (
 	kw_warning                                = lang.InternKeywordString("warning")
 	kw_window_ms                              = lang.InternKeywordString("window-ms")
 	kw_wrap                                   = lang.InternKeywordString("wrap")
+	sym_account                               = lang.NewSymbol("account")
 	sym_audit                                 = lang.NewSymbol("audit")
 	sym_bri_DOT_core_DOT_audit                = lang.NewSymbol("bri.core.audit")
 	sym_bri_DOT_web_DOT_http                  = lang.NewSymbol("bri.web.http")
+	sym_claims                                = lang.NewSymbol("claims")
+	sym_claims_pred                           = lang.NewSymbol("claims-pred")
 	sym_cljg_DOT_security                     = lang.NewSymbol("cljg.security")
 	sym_clojure_DOT_core                      = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                    = lang.NewSymbol("clojure.string")
+	sym_data                                  = lang.NewSymbol("data")
+	sym_handler                               = lang.NewSymbol("handler")
+	sym_hash                                  = lang.NewSymbol("hash")
 	sym_http                                  = lang.NewSymbol("http")
+	sym_key                                   = lang.NewSymbol("key")
+	sym_message                               = lang.NewSymbol("message")
+	sym_n                                     = lang.NewSymbol("n")
+	sym_opts                                  = lang.NewSymbol("opts")
+	sym_pw                                    = lang.NewSymbol("pw")
+	sym_req                                   = lang.NewSymbol("req")
+	sym_req_pred                              = lang.NewSymbol("req-pred")
+	sym_role                                  = lang.NewSymbol("role")
+	sym_s                                     = lang.NewSymbol("s")
+	sym_service                               = lang.NewSymbol("service")
 	sym_str                                   = lang.NewSymbol("str")
+	sym_sub                                   = lang.NewSymbol("sub")
+	sym_token                                 = lang.NewSymbol("token")
+	sym_value                                 = lang.NewSymbol("value")
 	v_bri_DOT_core_DOT_audit_record           = lang.InternVarName(lang.NewSymbol("bri.core.audit"), lang.NewSymbol("record"))
 	v_bri_DOT_web_DOT_http_client_key         = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("client-key"))
 	v_bri_DOT_web_DOT_http_mark_subject_BANG_ = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("mark-subject!"))
@@ -250,8 +270,8 @@ func Load() {
 	tmp21 := lang.Apply1(tmp11, tmp20)
 	v_cljg_DOT_security_process_secret.BindRoot(tmp21)
 	_ = v_cljg_DOT_security_process_secret
-	// (def resolve-secret (clojure.core/fn [opts] (or (:secret opts) (clojure.core/deref process…
-	v_cljg_DOT_security_resolve_secret.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(31), kw_private, true))
+	// (def resolve-secret (clojure.core/fn ([opts] (or (:secret opts) (clojure.core/deref proces…
+	v_cljg_DOT_security_resolve_secret.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(40), kw_column, int64(7), kw_end_line, int64(40), kw_end_column, int64(31), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_opts))))
 	tmp22 := lang.FnFunc1(func(opts23 any) any {
 		var tmp24 any
 		_ = tmp24
@@ -278,8 +298,8 @@ func Load() {
 	fnD_cljg_DOT_security_resolve_secret = tmp31.F
 	v_cljg_DOT_security_resolve_secret.SealDirect()
 	_ = v_cljg_DOT_security_resolve_secret
-	// (def now-seconds (clojure.core/fn [opts] (or (:now opts) (quot (-now-millis) 1000))))
-	v_cljg_DOT_security_now_seconds.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(43), kw_column, int64(7), kw_end_line, int64(43), kw_end_column, int64(28), kw_private, true))
+	// (def now-seconds (clojure.core/fn ([opts] (or (:now opts) (quot (-now-millis) 1000)))))
+	v_cljg_DOT_security_now_seconds.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(43), kw_column, int64(7), kw_end_line, int64(43), kw_end_column, int64(28), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_opts))))
 	tmp32 := lang.FnFunc1(func(opts33 any) any {
 		var tmp34 any
 		_ = tmp34
@@ -307,8 +327,8 @@ func Load() {
 	fnD_cljg_DOT_security_now_seconds = tmp42.F
 	v_cljg_DOT_security_now_seconds.SealDirect()
 	_ = v_cljg_DOT_security_now_seconds
-	// (def sign "Sign claims into an HS256 token. iat and exp are injected (exp =\n  iat + :exp-…
-	v_cljg_DOT_security_sign.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(11), kw_doc, "Sign claims into an HS256 token. iat and exp are injected (exp =\n  iat + :exp-seconds, default 3600). Options: :exp-seconds, :secret\n  (defaults from APP_AUTH__SECRET), :now (epoch seconds, for tests).\n  One call is the common case: (sign {:sub \"u\" :role \"admin\"})."))
+	// (def sign (clojure.core/fn ([claims] (sign claims {})) ([claims opts] (let [now (now-secon…
+	v_cljg_DOT_security_sign.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_claims), lang.NewVector(sym_claims, sym_opts)), kw_doc, "Sign claims into an HS256 token. iat and exp are injected (exp =\n  iat + :exp-seconds, default 3600). Options: :exp-seconds, :secret\n  (defaults from APP_AUTH__SECRET), :now (epoch seconds, for tests).\n  One call is the common case: (sign {:sub \"u\" :role \"admin\"})."))
 	tmp43 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -381,8 +401,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_sign.BindRoot(tmp43)
 	_ = v_cljg_DOT_security_sign
-	// (def verify "Verify an HS256 token: returns the claims map, or nil on a bad\n  signature, …
-	v_cljg_DOT_security_verify.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(58), kw_column, int64(7), kw_end_line, int64(58), kw_end_column, int64(13), kw_doc, "Verify an HS256 token: returns the claims map, or nil on a bad\n  signature, wrong algorithm, malformed token, or expiry. The algorithm\n  is pinned in the Go verifier; exp is checked here against :now (epoch\n  seconds, default wall-clock) so tests freeze the clock."))
+	// (def verify (clojure.core/fn ([token] (verify token {})) ([token opts] (let [claims (and (…
+	v_cljg_DOT_security_verify.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(58), kw_column, int64(7), kw_end_line, int64(58), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_token), lang.NewVector(sym_token, sym_opts)), kw_doc, "Verify an HS256 token: returns the claims map, or nil on a bad\n  signature, wrong algorithm, malformed token, or expiry. The algorithm\n  is pinned in the Go verifier; exp is checked here against :now (epoch\n  seconds, default wall-clock) so tests freeze the clock."))
 	tmp68 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -492,8 +512,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_verify.BindRoot(tmp68)
 	_ = v_cljg_DOT_security_verify
-	// (def verify! "Like verify, but throws :auth/unauthorized (funnels to 401) instead of\n  re…
-	v_cljg_DOT_security_verify_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(14), kw_doc, "Like verify, but throws :auth/unauthorized (funnels to 401) instead of\n  returning nil (the ADR 0014 ! convention)."))
+	// (def verify! (clojure.core/fn ([token] (verify! token {})) ([token opts] (or (verify token…
+	v_cljg_DOT_security_verify_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_token), lang.NewVector(sym_token, sym_opts)), kw_doc, "Like verify, but throws :auth/unauthorized (funnels to 401) instead of\n  returning nil (the ADR 0014 ! convention)."))
 	tmp103 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -534,8 +554,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_verify_BANG_.BindRoot(tmp103)
 	_ = v_cljg_DOT_security_verify_BANG_
-	// (def subject "The token subject (:sub) — the audit actor." (clojure.core/fn [claims] (:s…
-	v_cljg_DOT_security_subject.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(14), kw_doc, "The token subject (:sub) — the audit actor."))
+	// (def subject (clojure.core/fn ([claims] (:sub claims))))
+	v_cljg_DOT_security_subject.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_claims)), kw_doc, "The token subject (:sub) — the audit actor."))
 	tmp118 := lang.FnFunc1(func(claims119 any) any {
 		tmp120 := lang.Apply1(kw_sub, claims119)
 		return tmp120
@@ -545,8 +565,8 @@ func Load() {
 	fnD_cljg_DOT_security_subject = tmp121.F
 	v_cljg_DOT_security_subject.SealDirect()
 	_ = v_cljg_DOT_security_subject
-	// (def issue "Sign a token for a subject and AUDIT the issuance (login success).\n  (issue \…
-	v_cljg_DOT_security_issue.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(12), kw_doc, "Sign a token for a subject and AUDIT the issuance (login success).\n  (issue \"user-42\" {:role \"admin\"} {:exp-seconds 900})."))
+	// (def issue (clojure.core/fn ([sub] (issue sub {} {})) ([sub claims] (issue sub claims {}))…
+	v_cljg_DOT_security_issue.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(84), kw_column, int64(7), kw_end_line, int64(84), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_sub), lang.NewVector(sym_sub, sym_claims), lang.NewVector(sym_sub, sym_claims, sym_opts)), kw_doc, "Sign a token for a subject and AUDIT the issuance (login success).\n  (issue \"user-42\" {:role \"admin\"} {:exp-seconds 900})."))
 	tmp122 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -595,8 +615,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_issue.BindRoot(tmp122)
 	_ = v_cljg_DOT_security_issue
-	// (def hash-password "argon2id hash (OWASP params) as a self-describing PHC string.\n  DELIB…
-	v_cljg_DOT_security_hash_password.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(95), kw_column, int64(7), kw_end_line, int64(95), kw_end_column, int64(20), kw_doc, "argon2id hash (OWASP params) as a self-describing PHC string.\n  DELIBERATELY slow (~16 ms) — that is the anti-brute-force feature."))
+	// (def hash-password (clojure.core/fn ([pw] (-argon2-hash pw))))
+	v_cljg_DOT_security_hash_password.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(95), kw_column, int64(7), kw_end_line, int64(95), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_pw)), kw_doc, "argon2id hash (OWASP params) as a self-describing PHC string.\n  DELIBERATELY slow (~16 ms) — that is the anti-brute-force feature."))
 	tmp145 := lang.FnFunc1(func(pw146 any) any {
 		tmp147 := v_cljg_DOT_security_X_argon2_hash.Get()
 		tmp148 := lang.Apply1(tmp147, pw146)
@@ -607,8 +627,8 @@ func Load() {
 	fnD_cljg_DOT_security_hash_password = tmp149.F
 	v_cljg_DOT_security_hash_password.SealDirect()
 	_ = v_cljg_DOT_security_hash_password
-	// (def check-password "Verify a password against an argon2id ($argon2id$…) or legacy bcryp…
-	v_cljg_DOT_security_check_password.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(101), kw_column, int64(7), kw_end_line, int64(101), kw_end_column, int64(21), kw_doc, "Verify a password against an argon2id ($argon2id$…) or legacy bcrypt\n  ($2a$/$2b$…) hash. Constant-time; false on any mismatch or unknown\n  format."))
+	// (def check-password (clojure.core/fn ([pw hash] (cond (not (string? hash)) false (str/star…
+	v_cljg_DOT_security_check_password.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(101), kw_column, int64(7), kw_end_line, int64(101), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(sym_pw, sym_hash)), kw_doc, "Verify a password against an argon2id ($argon2id$…) or legacy bcrypt\n  ($2a$/$2b$…) hash. Constant-time; false on any mismatch or unknown\n  format."))
 	tmp150 := lang.FnFunc2(func(pw151, hash152 any) any {
 		tmp153 := v_clojure_DOT_core_not.Get()
 		tmp154 := v_clojure_DOT_core_string_QMARK_.Get()
@@ -657,8 +677,8 @@ func Load() {
 	fnD_cljg_DOT_security_check_password = tmp169.F
 	v_cljg_DOT_security_check_password.SealDirect()
 	_ = v_cljg_DOT_security_check_password
-	// (def sha256 "SHA-256 digest of a string OR a byte-array, as lowercase hex — so a blob\n …
-	v_cljg_DOT_security_sha256.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(13), kw_doc, "SHA-256 digest of a string OR a byte-array, as lowercase hex — so a blob\n  read with cljg.io/read-bytes or decoded with `base64-decode-bytes` hashes\n  directly, with no lossy detour through a string."))
+	// (def sha256 (clojure.core/fn ([s] (-sha256 s))))
+	v_cljg_DOT_security_sha256.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "SHA-256 digest of a string OR a byte-array, as lowercase hex — so a blob\n  read with cljg.io/read-bytes or decoded with `base64-decode-bytes` hashes\n  directly, with no lossy detour through a string."))
 	tmp170 := lang.FnFunc1(func(s171 any) any {
 		tmp172 := v_cljg_DOT_security_X_sha256.Get()
 		tmp173 := lang.Apply1(tmp172, s171)
@@ -669,8 +689,8 @@ func Load() {
 	fnD_cljg_DOT_security_sha256 = tmp174.F
 	v_cljg_DOT_security_sha256.SealDirect()
 	_ = v_cljg_DOT_security_sha256
-	// (def hmac "HMAC-SHA256 of message with key, as lowercase hex. Both may be a string or\n  a…
-	v_cljg_DOT_security_hmac.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(120), kw_column, int64(7), kw_end_line, int64(120), kw_end_column, int64(11), kw_doc, "HMAC-SHA256 of message with key, as lowercase hex. Both may be a string or\n  a byte-array."))
+	// (def hmac (clojure.core/fn ([key message] (-hmac-sha256 key message))))
+	v_cljg_DOT_security_hmac.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(120), kw_column, int64(7), kw_end_line, int64(120), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_key, sym_message)), kw_doc, "HMAC-SHA256 of message with key, as lowercase hex. Both may be a string or\n  a byte-array."))
 	tmp175 := lang.FnFunc2(func(key176, message177 any) any {
 		tmp178 := v_cljg_DOT_security_X_hmac_sha256.Get()
 		tmp179 := lang.Apply2(tmp178, key176, message177)
@@ -681,8 +701,8 @@ func Load() {
 	fnD_cljg_DOT_security_hmac = tmp180.F
 	v_cljg_DOT_security_hmac.SealDirect()
 	_ = v_cljg_DOT_security_hmac
-	// (def random "n cryptographically secure random bytes (crypto/rand), as lowercase\n  hex (a…
-	v_cljg_DOT_security_random.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(126), kw_column, int64(7), kw_end_line, int64(126), kw_end_column, int64(13), kw_doc, "n cryptographically secure random bytes (crypto/rand), as lowercase\n  hex (a 2n-char string)."))
+	// (def random (clojure.core/fn ([n] (-secure-random n))))
+	v_cljg_DOT_security_random.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(126), kw_column, int64(7), kw_end_line, int64(126), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_n)), kw_doc, "n cryptographically secure random bytes (crypto/rand), as lowercase\n  hex (a 2n-char string)."))
 	tmp181 := lang.FnFunc1(func(n182 any) any {
 		tmp183 := v_cljg_DOT_security_X_secure_random.Get()
 		tmp184 := lang.Apply1(tmp183, n182)
@@ -693,8 +713,8 @@ func Load() {
 	fnD_cljg_DOT_security_random = tmp185.F
 	v_cljg_DOT_security_random.SealDirect()
 	_ = v_cljg_DOT_security_random
-	// (def token "A 256-bit URL-safe random token (crypto/rand, base64url) — session\n  ids, A…
-	v_cljg_DOT_security_token.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(132), kw_column, int64(7), kw_end_line, int64(132), kw_end_column, int64(12), kw_doc, "A 256-bit URL-safe random token (crypto/rand, base64url) — session\n  ids, API keys, CSRF tokens."))
+	// (def token (clojure.core/fn ([] (-rand-token))))
+	v_cljg_DOT_security_token.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(132), kw_column, int64(7), kw_end_line, int64(132), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "A 256-bit URL-safe random token (crypto/rand, base64url) — session\n  ids, API keys, CSRF tokens."))
 	tmp186 := lang.FnFunc0(func() any {
 		tmp187 := v_cljg_DOT_security_X_rand_token.Get()
 		tmp188 := lang.Apply0(tmp187)
@@ -705,8 +725,8 @@ func Load() {
 	fnD_cljg_DOT_security_token = tmp189.F
 	v_cljg_DOT_security_token.SealDirect()
 	_ = v_cljg_DOT_security_token
-	// (def uuid "A random (v4) UUID string from crypto/rand." (clojure.core/fn [] (-uuid)))
-	v_cljg_DOT_security_uuid.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(138), kw_column, int64(7), kw_end_line, int64(138), kw_end_column, int64(11), kw_doc, "A random (v4) UUID string from crypto/rand."))
+	// (def uuid (clojure.core/fn ([] (-uuid))))
+	v_cljg_DOT_security_uuid.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(138), kw_column, int64(7), kw_end_line, int64(138), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "A random (v4) UUID string from crypto/rand."))
 	tmp190 := lang.FnFunc0(func() any {
 		tmp191 := v_cljg_DOT_security_X_uuid.Get()
 		tmp192 := lang.Apply0(tmp191)
@@ -717,8 +737,8 @@ func Load() {
 	fnD_cljg_DOT_security_uuid = tmp193.F
 	v_cljg_DOT_security_uuid.SealDirect()
 	_ = v_cljg_DOT_security_uuid
-	// (def base64 "Standard base64 of a string or byte-array. `base64-encode` is the same fn\n  …
-	v_cljg_DOT_security_base64.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(143), kw_column, int64(7), kw_end_line, int64(143), kw_end_column, int64(13), kw_doc, "Standard base64 of a string or byte-array. `base64-encode` is the same fn\n  under the name the rest of the base64 family uses."))
+	// (def base64 (clojure.core/fn ([data] (-b64-encode data))))
+	v_cljg_DOT_security_base64.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(143), kw_column, int64(7), kw_end_line, int64(143), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_data)), kw_doc, "Standard base64 of a string or byte-array. `base64-encode` is the same fn\n  under the name the rest of the base64 family uses."))
 	tmp194 := lang.FnFunc1(func(data195 any) any {
 		tmp196 := v_cljg_DOT_security_X_b64_encode.Get()
 		tmp197 := lang.Apply1(tmp196, data195)
@@ -729,8 +749,8 @@ func Load() {
 	fnD_cljg_DOT_security_base64 = tmp198.F
 	v_cljg_DOT_security_base64.SealDirect()
 	_ = v_cljg_DOT_security_base64
-	// (def base64-encode "Standard (RFC 4648, padded) base64 of `data` — a string, whose UTF-8…
-	v_cljg_DOT_security_base64_encode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(149), kw_column, int64(7), kw_end_line, int64(149), kw_end_column, int64(20), kw_doc, "Standard (RFC 4648, padded) base64 of `data` — a string, whose UTF-8 bytes\n  are encoded, or a byte-array (e.g. from cljg.io/read-bytes or\n  cljg.compress/gzip). Matches java.util.Base64/getEncoder: (base64-encode\n  \"hello\") => \"aGVsbG8=\", (base64-encode \"\") => \"\" (oracle 1.12.5)."))
+	// (def base64-encode (clojure.core/fn ([data] (-b64-encode data))))
+	v_cljg_DOT_security_base64_encode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(149), kw_column, int64(7), kw_end_line, int64(149), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_data)), kw_doc, "Standard (RFC 4648, padded) base64 of `data` — a string, whose UTF-8 bytes\n  are encoded, or a byte-array (e.g. from cljg.io/read-bytes or\n  cljg.compress/gzip). Matches java.util.Base64/getEncoder: (base64-encode\n  \"hello\") => \"aGVsbG8=\", (base64-encode \"\") => \"\" (oracle 1.12.5)."))
 	tmp199 := lang.FnFunc1(func(data200 any) any {
 		tmp201 := v_cljg_DOT_security_X_b64_encode.Get()
 		tmp202 := lang.Apply1(tmp201, data200)
@@ -741,8 +761,8 @@ func Load() {
 	fnD_cljg_DOT_security_base64_encode = tmp203.F
 	v_cljg_DOT_security_base64_encode.SealDirect()
 	_ = v_cljg_DOT_security_base64_encode
-	// (def base64-decode "Decode standard base64 back to a STRING, or nil on invalid input. Loss…
-	v_cljg_DOT_security_base64_decode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(157), kw_column, int64(7), kw_end_line, int64(157), kw_end_column, int64(20), kw_doc, "Decode standard base64 back to a STRING, or nil on invalid input. Lossy for\n  a payload that is not valid UTF-8 — use `base64-decode-bytes` for binary."))
+	// (def base64-decode (clojure.core/fn ([s] (-b64-decode s))))
+	v_cljg_DOT_security_base64_decode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(157), kw_column, int64(7), kw_end_line, int64(157), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Decode standard base64 back to a STRING, or nil on invalid input. Lossy for\n  a payload that is not valid UTF-8 — use `base64-decode-bytes` for binary."))
 	tmp204 := lang.FnFunc1(func(s205 any) any {
 		tmp206 := v_cljg_DOT_security_X_b64_decode.Get()
 		tmp207 := lang.Apply1(tmp206, s205)
@@ -753,8 +773,8 @@ func Load() {
 	fnD_cljg_DOT_security_base64_decode = tmp208.F
 	v_cljg_DOT_security_base64_decode.SealDirect()
 	_ = v_cljg_DOT_security_base64_decode
-	// (def base64-decode-bytes "Decode standard base64 to a BYTE-ARRAY, or nil on invalid input.…
-	v_cljg_DOT_security_base64_decode_bytes.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(163), kw_column, int64(7), kw_end_line, int64(163), kw_end_column, int64(26), kw_doc, "Decode standard base64 to a BYTE-ARRAY, or nil on invalid input. This is the\n  half a string cannot carry: an image, a gzip blob, any non-UTF-8 payload.\n  Pairs with cljg.io/write-bytes. Elements are SIGNED like the JVM's byte[]:\n  (vec (base64-decode-bytes \"AAECgA==\")) => [0 1 2 -128] (oracle 1.12.5,\n  java.util.Base64/getDecoder)."))
+	// (def base64-decode-bytes (clojure.core/fn ([s] (-b64-decode-bytes s))))
+	v_cljg_DOT_security_base64_decode_bytes.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(163), kw_column, int64(7), kw_end_line, int64(163), kw_end_column, int64(26), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Decode standard base64 to a BYTE-ARRAY, or nil on invalid input. This is the\n  half a string cannot carry: an image, a gzip blob, any non-UTF-8 payload.\n  Pairs with cljg.io/write-bytes. Elements are SIGNED like the JVM's byte[]:\n  (vec (base64-decode-bytes \"AAECgA==\")) => [0 1 2 -128] (oracle 1.12.5,\n  java.util.Base64/getDecoder)."))
 	tmp209 := lang.FnFunc1(func(s210 any) any {
 		tmp211 := v_cljg_DOT_security_X_b64_decode_bytes.Get()
 		tmp212 := lang.Apply1(tmp211, s210)
@@ -765,8 +785,8 @@ func Load() {
 	fnD_cljg_DOT_security_base64_decode_bytes = tmp213.F
 	v_cljg_DOT_security_base64_decode_bytes.SealDirect()
 	_ = v_cljg_DOT_security_base64_decode_bytes
-	// (def hex "Lowercase hex of a string's bytes, or of a byte-array." (clojure.core/fn [s] (-h…
-	v_cljg_DOT_security_hex.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(172), kw_column, int64(7), kw_end_line, int64(172), kw_end_column, int64(10), kw_doc, "Lowercase hex of a string's bytes, or of a byte-array."))
+	// (def hex (clojure.core/fn ([s] (-hex-encode s))))
+	v_cljg_DOT_security_hex.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(172), kw_column, int64(7), kw_end_line, int64(172), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Lowercase hex of a string's bytes, or of a byte-array."))
 	tmp214 := lang.FnFunc1(func(s215 any) any {
 		tmp216 := v_cljg_DOT_security_X_hex_encode.Get()
 		tmp217 := lang.Apply1(tmp216, s215)
@@ -777,8 +797,8 @@ func Load() {
 	fnD_cljg_DOT_security_hex = tmp218.F
 	v_cljg_DOT_security_hex.SealDirect()
 	_ = v_cljg_DOT_security_hex
-	// (def hex-decode "Decode hex back to the string, or nil on invalid input." (clojure.core/fn…
-	v_cljg_DOT_security_hex_decode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(177), kw_column, int64(7), kw_end_line, int64(177), kw_end_column, int64(17), kw_doc, "Decode hex back to the string, or nil on invalid input."))
+	// (def hex-decode (clojure.core/fn ([s] (-hex-decode s))))
+	v_cljg_DOT_security_hex_decode.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(177), kw_column, int64(7), kw_end_line, int64(177), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Decode hex back to the string, or nil on invalid input."))
 	tmp219 := lang.FnFunc1(func(s220 any) any {
 		tmp221 := v_cljg_DOT_security_X_hex_decode.Get()
 		tmp222 := lang.Apply1(tmp221, s220)
@@ -789,8 +809,8 @@ func Load() {
 	fnD_cljg_DOT_security_hex_decode = tmp223.F
 	v_cljg_DOT_security_hex_decode.SealDirect()
 	_ = v_cljg_DOT_security_hex_decode
-	// (def backend-name (clojure.core/fn [opts] (name (or (:backend opts) :auto))))
-	v_cljg_DOT_security_backend_name.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(188), kw_column, int64(7), kw_end_line, int64(188), kw_end_column, int64(29), kw_private, true))
+	// (def backend-name (clojure.core/fn ([opts] (name (or (:backend opts) :auto)))))
+	v_cljg_DOT_security_backend_name.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(188), kw_column, int64(7), kw_end_line, int64(188), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_opts))))
 	tmp224 := lang.FnFunc1(func(opts225 any) any {
 		tmp226 := v_clojure_DOT_core_name.Get()
 		var tmp227 any
@@ -816,8 +836,8 @@ func Load() {
 	fnD_cljg_DOT_security_backend_name = tmp232.F
 	v_cljg_DOT_security_backend_name.SealDirect()
 	_ = v_cljg_DOT_security_backend_name
-	// (def save-to-keychain "Store secret value under (service, account). Returns the backend\n …
-	v_cljg_DOT_security_save_to_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(191), kw_column, int64(7), kw_end_line, int64(191), kw_end_column, int64(23), kw_doc, "Store secret value under (service, account). Returns the backend\n  keyword that stored it (:native or :file). The value is never printed\n  or logged."))
+	// (def save-to-keychain (clojure.core/fn ([service account value] (save-to-keychain service …
+	v_cljg_DOT_security_save_to_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(191), kw_column, int64(7), kw_end_line, int64(191), kw_end_column, int64(23), kw_arglists, lang.NewList(lang.NewVector(sym_service, sym_account, sym_value), lang.NewVector(sym_service, sym_account, sym_value, sym_opts)), kw_doc, "Store secret value under (service, account). Returns the backend\n  keyword that stored it (:native or :file). The value is never printed\n  or logged."))
 	tmp233 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 3:
@@ -868,8 +888,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_save_to_keychain.BindRoot(tmp233)
 	_ = v_cljg_DOT_security_save_to_keychain
-	// (def get-from-keychain "The secret for (service, account), or nil when absent." (clojure.c…
-	v_cljg_DOT_security_get_from_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(199), kw_column, int64(7), kw_end_line, int64(199), kw_end_column, int64(24), kw_doc, "The secret for (service, account), or nil when absent."))
+	// (def get-from-keychain (clojure.core/fn ([service account] (get-from-keychain service acco…
+	v_cljg_DOT_security_get_from_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(199), kw_column, int64(7), kw_end_line, int64(199), kw_end_column, int64(24), kw_arglists, lang.NewList(lang.NewVector(sym_service, sym_account), lang.NewVector(sym_service, sym_account, sym_opts)), kw_doc, "The secret for (service, account), or nil when absent."))
 	tmp257 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -912,8 +932,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_get_from_keychain.BindRoot(tmp257)
 	_ = v_cljg_DOT_security_get_from_keychain
-	// (def delete-from-keychain "Delete (service, account); absent is a no-op. Returns the backe…
-	v_cljg_DOT_security_delete_from_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(205), kw_column, int64(7), kw_end_line, int64(205), kw_end_column, int64(27), kw_doc, "Delete (service, account); absent is a no-op. Returns the backend\n  keyword that handled it (:native or :file)."))
+	// (def delete-from-keychain (clojure.core/fn ([service account] (delete-from-keychain servic…
+	v_cljg_DOT_security_delete_from_keychain.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(205), kw_column, int64(7), kw_end_line, int64(205), kw_end_column, int64(27), kw_arglists, lang.NewList(lang.NewVector(sym_service, sym_account), lang.NewVector(sym_service, sym_account, sym_opts)), kw_doc, "Delete (service, account); absent is a no-op. Returns the backend\n  keyword that handled it (:native or :file)."))
 	tmp275 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -958,8 +978,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_delete_from_keychain.BindRoot(tmp275)
 	_ = v_cljg_DOT_security_delete_from_keychain
-	// (def bearer (clojure.core/fn [req] (let [h (get (:headers req) "authorization")] (when (an…
-	v_cljg_DOT_security_bearer.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(213), kw_column, int64(7), kw_end_line, int64(213), kw_end_column, int64(23), kw_private, true))
+	// (def bearer (clojure.core/fn ([req] (let [h (get (:headers req) "authorization")] (when (a…
+	v_cljg_DOT_security_bearer.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(213), kw_column, int64(7), kw_end_line, int64(213), kw_end_column, int64(23), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req))))
 	tmp295 := lang.FnFunc1(func(req296 any) any {
 		var tmp297 any
 		_ = tmp297
@@ -1005,8 +1025,8 @@ func Load() {
 	fnD_cljg_DOT_security_bearer = tmp312.F
 	v_cljg_DOT_security_bearer.SealDirect()
 	_ = v_cljg_DOT_security_bearer
-	// (def authenticate "Claims from the request: an already-populated :auth/claims, else the\n …
-	v_cljg_DOT_security_authenticate.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(218), kw_column, int64(7), kw_end_line, int64(218), kw_end_column, int64(29), kw_private, true, kw_doc, "Claims from the request: an already-populated :auth/claims, else the\n  Bearer token verified."))
+	// (def authenticate (clojure.core/fn ([req] (or (:auth/claims req) (some-> (bearer req) veri…
+	v_cljg_DOT_security_authenticate.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(218), kw_column, int64(7), kw_end_line, int64(218), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req)), kw_doc, "Claims from the request: an already-populated :auth/claims, else the\n  Bearer token verified."))
 	tmp313 := lang.FnFunc1(func(req314 any) any {
 		var tmp315 any
 		_ = tmp315
@@ -1066,8 +1086,8 @@ func Load() {
 	fnD_cljg_DOT_security_authenticate = tmp331.F
 	v_cljg_DOT_security_authenticate.SealDirect()
 	_ = v_cljg_DOT_security_authenticate
-	// (def deny-401 (clojure.core/fn [req] (audit/record {:action :auth/denied, :severity :warni…
-	v_cljg_DOT_security_deny_401.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(224), kw_column, int64(7), kw_end_line, int64(224), kw_end_column, int64(25), kw_private, true))
+	// (def deny-401 (clojure.core/fn ([req] (audit/record {:action :auth/denied, :severity :warn…
+	v_cljg_DOT_security_deny_401.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(224), kw_column, int64(7), kw_end_line, int64(224), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req))))
 	tmp332 := lang.FnFunc1(func(req333 any) any {
 		tmp334 := v_bri_DOT_core_DOT_audit_record.Get()
 		tmp335 := lang.Apply1(kw_uri, req333)
@@ -1084,8 +1104,8 @@ func Load() {
 	fnD_cljg_DOT_security_deny_401 = tmp341.F
 	v_cljg_DOT_security_deny_401.SealDirect()
 	_ = v_cljg_DOT_security_deny_401
-	// (def deny-403 (clojure.core/fn [req claims] (audit/record {:action :auth/forbidden, :sever…
-	v_cljg_DOT_security_deny_403.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(229), kw_column, int64(7), kw_end_line, int64(229), kw_end_column, int64(25), kw_private, true))
+	// (def deny-403 (clojure.core/fn ([req claims] (audit/record {:action :auth/forbidden, :seve…
+	v_cljg_DOT_security_deny_403.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(229), kw_column, int64(7), kw_end_line, int64(229), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req, sym_claims))))
 	tmp342 := lang.FnFunc2(func(req343, claims344 any) any {
 		tmp345 := v_bri_DOT_core_DOT_audit_record.Get()
 		tmp346 := v_cljg_DOT_security_subject.Direct()
@@ -1113,8 +1133,8 @@ func Load() {
 	fnD_cljg_DOT_security_deny_403 = tmp355.F
 	v_cljg_DOT_security_deny_403.SealDirect()
 	_ = v_cljg_DOT_security_deny_403
-	// (def wrap-guard (clojure.core/fn [req-pred handler] (fn [req] (let [claims (authenticate r…
-	v_cljg_DOT_security_wrap_guard.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(234), kw_column, int64(7), kw_end_line, int64(234), kw_end_column, int64(27), kw_private, true))
+	// (def wrap-guard (clojure.core/fn ([req-pred handler] (fn [req] (let [claims (authenticate …
+	v_cljg_DOT_security_wrap_guard.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(234), kw_column, int64(7), kw_end_line, int64(234), kw_end_column, int64(27), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req_pred, sym_handler))))
 	tmp356 := lang.FnFunc2(func(req_pred357, handler358 any) any {
 		tmp359 := lang.FnFunc1(func(req360 any) any {
 			var tmp361 any
@@ -1227,8 +1247,8 @@ func Load() {
 	fnD_cljg_DOT_security_wrap_guard = tmp392.F
 	v_cljg_DOT_security_wrap_guard.SealDirect()
 	_ = v_cljg_DOT_security_wrap_guard
-	// (def guard "The GENERAL authorization guard and the framework's authz seam:\n  (guard req-…
-	v_cljg_DOT_security_guard.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(245), kw_column, int64(7), kw_end_line, int64(245), kw_end_column, int64(12), kw_doc, "The GENERAL authorization guard and the framework's authz seam:\n  (guard req-pred) → middleware; (guard req-pred handler) → wrapped\n  handler. req-pred is (req -> boolean) with :auth/claims populated. No/\n  invalid token → 401; authenticated but pred false → 403 (RFC 6750).\n  logged-in-only / role-only / user-only / admin-only are all thin\n  specializations of this. Tenant check in one line:\n  (guard #(= (get-in % [:auth/claims :org]) (get-in % [:path-params :org])))."))
+	// (def guard (clojure.core/fn ([req-pred] {:name :guard, :wrap (fn [h] (wrap-guard req-pred …
+	v_cljg_DOT_security_guard.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(245), kw_column, int64(7), kw_end_line, int64(245), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_req_pred), lang.NewVector(sym_req_pred, sym_handler)), kw_doc, "The GENERAL authorization guard and the framework's authz seam:\n  (guard req-pred) → middleware; (guard req-pred handler) → wrapped\n  handler. req-pred is (req -> boolean) with :auth/claims populated. No/\n  invalid token → 401; authenticated but pred false → 403 (RFC 6750).\n  logged-in-only / role-only / user-only / admin-only are all thin\n  specializations of this. Tenant check in one line:\n  (guard #(= (get-in % [:auth/claims :org]) (get-in % [:path-params :org])))."))
 	tmp393 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -1274,8 +1294,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_guard.BindRoot(tmp393)
 	_ = v_cljg_DOT_security_guard
-	// (def guard-claims "guard whose predicate sees the CLAIMS map directly (the common case)." …
-	v_cljg_DOT_security_guard_claims.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(256), kw_column, int64(7), kw_end_line, int64(256), kw_end_column, int64(19), kw_doc, "guard whose predicate sees the CLAIMS map directly (the common case)."))
+	// (def guard-claims (clojure.core/fn ([claims-pred] (guard (fn [req] (claims-pred (:auth/cla…
+	v_cljg_DOT_security_guard_claims.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(256), kw_column, int64(7), kw_end_line, int64(256), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_claims_pred), lang.NewVector(sym_claims_pred, sym_handler)), kw_doc, "guard whose predicate sees the CLAIMS map directly (the common case)."))
 	tmp407 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -1310,8 +1330,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_guard_claims.BindRoot(tmp407)
 	_ = v_cljg_DOT_security_guard_claims
-	// (def logged-in-only "Require a valid token (any claims). 401 otherwise." (clojure.core/fn …
-	v_cljg_DOT_security_logged_in_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(261), kw_column, int64(7), kw_end_line, int64(261), kw_end_column, int64(21), kw_doc, "Require a valid token (any claims). 401 otherwise."))
+	// (def logged-in-only (clojure.core/fn ([] (guard (fn [_] true))) ([handler] (guard (fn [_] …
+	v_cljg_DOT_security_logged_in_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(261), kw_column, int64(7), kw_end_line, int64(261), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_handler)), kw_doc, "Require a valid token (any claims). 401 otherwise."))
 	tmp425 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -1338,8 +1358,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_logged_in_only.BindRoot(tmp425)
 	_ = v_cljg_DOT_security_logged_in_only
-	// (def role-only "Require the token's :role to equal role. 401 (no token) or 403 (wrong\n  r…
-	v_cljg_DOT_security_role_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(266), kw_column, int64(7), kw_end_line, int64(266), kw_end_column, int64(16), kw_doc, "Require the token's :role to equal role. 401 (no token) or 403 (wrong\n  role)."))
+	// (def role-only (clojure.core/fn ([role] (guard-claims (fn [c] (= (name role) (str (:role c…
+	v_cljg_DOT_security_role_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(266), kw_column, int64(7), kw_end_line, int64(266), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_role), lang.NewVector(sym_role, sym_handler)), kw_doc, "Require the token's :role to equal role. 401 (no token) or 403 (wrong\n  role)."))
 	tmp437 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -1382,8 +1402,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_role_only.BindRoot(tmp437)
 	_ = v_cljg_DOT_security_role_only
-	// (def user-only "Sugar: (role-only :user)." (clojure.core/fn ([] (role-only "user")) ([hand…
-	v_cljg_DOT_security_user_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(272), kw_column, int64(7), kw_end_line, int64(272), kw_end_column, int64(16), kw_doc, "Sugar: (role-only :user)."))
+	// (def user-only (clojure.core/fn ([] (role-only "user")) ([handler] (role-only "user" handl…
+	v_cljg_DOT_security_user_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(272), kw_column, int64(7), kw_end_line, int64(272), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_handler)), kw_doc, "Sugar: (role-only :user)."))
 	tmp463 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -1402,8 +1422,8 @@ func Load() {
 	})
 	v_cljg_DOT_security_user_only.BindRoot(tmp463)
 	_ = v_cljg_DOT_security_user_only
-	// (def admin-only "Sugar: (role-only :admin)." (clojure.core/fn ([] (role-only "admin")) ([h…
-	v_cljg_DOT_security_admin_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(277), kw_column, int64(7), kw_end_line, int64(277), kw_end_column, int64(17), kw_doc, "Sugar: (role-only :admin)."))
+	// (def admin-only (clojure.core/fn ([] (role-only "admin")) ([handler] (role-only "admin" ha…
+	v_cljg_DOT_security_admin_only.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(277), kw_column, int64(7), kw_end_line, int64(277), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_handler)), kw_doc, "Sugar: (role-only :admin)."))
 	tmp469 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -1429,8 +1449,8 @@ func Load() {
 	tmp477 := lang.Apply1(tmp475, tmp476)
 	v_cljg_DOT_security_ban_store.BindRoot(tmp477)
 	_ = v_cljg_DOT_security_ban_store
-	// (def auto-ban "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),\n  :co…
-	v_cljg_DOT_security_auto_ban.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(293), kw_column, int64(7), kw_end_line, int64(293), kw_end_column, int64(15), kw_doc, "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),\n  :cooldown-ms (300000), :key (:ip | :subject | (fn [req] key)),\n  :should-ban? ((fn [denial-count req] boolean) — custom ban policy),\n  :clock ((fn [] millis), for tests), :store (atom, for test isolation)."))
+	// (def auto-ban (clojure.core/fn ([] (auto-ban {})) ([opts] (let [threshold (or (:threshold …
+	v_cljg_DOT_security_auto_ban.SetMeta(lang.NewMap(kw_file, "cljg/security.cljg", kw_line, int64(293), kw_column, int64(7), kw_end_line, int64(293), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "Default-on abuse guard. Options: :threshold (5), :window-ms (60000),\n  :cooldown-ms (300000), :key (:ip | :subject | (fn [req] key)),\n  :should-ban? ((fn [denial-count req] boolean) — custom ban policy),\n  :clock ((fn [] millis), for tests), :store (atom, for test isolation)."))
 	tmp478 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:

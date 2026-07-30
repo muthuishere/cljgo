@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                               = lang.InternKeywordString("arglists")
 	kw_as                                     = lang.InternKeywordString("as")
 	kw_body                                   = lang.InternKeywordString("body")
 	kw_column                                 = lang.InternKeywordString("column")
@@ -39,11 +40,21 @@ var (
 	kw_timeout                                = lang.InternKeywordString("timeout")
 	kw_url                                    = lang.InternKeywordString("url")
 	kw_v                                      = lang.InternKeywordString("v")
+	sym_as                                    = lang.NewSymbol("as")
+	sym_body                                  = lang.NewSymbol("body")
 	sym_cljg_DOT_net_DOT_http                 = lang.NewSymbol("cljg.net.http")
 	sym_clojure_DOT_core                      = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                    = lang.NewSymbol("clojure.string")
+	sym_ctype                                 = lang.NewSymbol("ctype")
 	sym_get                                   = lang.NewSymbol("get")
+	sym_headers                               = lang.NewSymbol("headers")
+	sym_m                                     = lang.NewSymbol("m")
+	sym_method                                = lang.NewSymbol("method")
+	sym_opts                                  = lang.NewSymbol("opts")
+	sym_resp                                  = lang.NewSymbol("resp")
 	sym_str                                   = lang.NewSymbol("str")
+	sym_timeout                               = lang.NewSymbol("timeout")
+	sym_url                                   = lang.NewSymbol("url")
 	v_cljg_DOT_net_DOT_http_X_http_do         = lang.InternVarName(lang.NewSymbol("cljg.net.http"), lang.NewSymbol("-http-do")).SetPrivate()
 	v_cljg_DOT_net_DOT_http_X_http_stream     = lang.InternVarName(lang.NewSymbol("cljg.net.http"), lang.NewSymbol("-http-stream")).SetPrivate()
 	v_cljg_DOT_net_DOT_http_X_json_decode     = lang.InternVarName(lang.NewSymbol("cljg.net.http"), lang.NewSymbol("-json-decode")).SetPrivate()
@@ -126,8 +137,8 @@ func Load() {
 	v_cljg_DOT_net_DOT_http_default_timeout.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(28), kw_column, int64(6), kw_end_line, int64(28), kw_end_column, int64(31), kw_private, true))
 	v_cljg_DOT_net_DOT_http_default_timeout.BindRoot(int64(30000))
 	_ = v_cljg_DOT_net_DOT_http_default_timeout
-	// (def encode-query "Build a `?a=b&c=d` string from a map (values url-encoded), or \"\" if e…
-	v_cljg_DOT_net_DOT_http_encode_query.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(32), kw_column, int64(8), kw_end_line, int64(32), kw_end_column, int64(20), kw_private, true, kw_doc, "Build a `?a=b&c=d` string from a map (values url-encoded), or \"\" if empty."))
+	// (def encode-query (clojure.core/fn ([m] (if (seq m) (str "?" (str/join "&" (map (fn [[k v]…
+	v_cljg_DOT_net_DOT_http_encode_query.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(32), kw_column, int64(8), kw_end_line, int64(32), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_m)), kw_doc, "Build a `?a=b&c=d` string from a map (values url-encoded), or \"\" if empty."))
 	tmp7 := lang.FnFunc1(func(m8 any) any {
 		tmp9 := v_clojure_DOT_core_seq.Get()
 		tmp10 := lang.Apply1(tmp9, m8)
@@ -180,8 +191,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_http_encode_query = tmp39.F
 	v_cljg_DOT_net_DOT_http_encode_query.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_encode_query
-	// (def body+type "From the request opts, return [body-string content-type-or-nil]. Exactly o…
-	v_cljg_DOT_net_DOT_http_body_PLUS_type.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(41), kw_column, int64(8), kw_end_line, int64(41), kw_end_column, int64(17), kw_private, true, kw_doc, "From the request opts, return [body-string content-type-or-nil]. Exactly one\n  of :body/:json/:edn/:form is honored (in that precedence)."))
+	// (def body+type (clojure.core/fn ([opts] (cond (contains? opts :body) [(str (:body opts)) n…
+	v_cljg_DOT_net_DOT_http_body_PLUS_type.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(41), kw_column, int64(8), kw_end_line, int64(41), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_opts)), kw_doc, "From the request opts, return [body-string content-type-or-nil]. Exactly one\n  of :body/:json/:edn/:form is honored (in that precedence)."))
 	tmp40 := lang.FnFunc1(func(opts41 any) any {
 		tmp42 := v_clojure_DOT_core_contains_QMARK_.Get()
 		tmp43 := lang.Apply2(tmp42, opts41, kw_body)
@@ -281,8 +292,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_http_body_PLUS_type = tmp95.F
 	v_cljg_DOT_net_DOT_http_body_PLUS_type.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_body_PLUS_type
-	// (def with-content-type (clojure.core/fn [headers ctype] (if (and ctype (not (some (fn [[k …
-	v_cljg_DOT_net_DOT_http_with_content_type.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(55), kw_column, int64(8), kw_end_line, int64(55), kw_end_column, int64(25), kw_private, true))
+	// (def with-content-type (clojure.core/fn ([headers ctype] (if (and ctype (not (some (fn [[k…
+	v_cljg_DOT_net_DOT_http_with_content_type.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(55), kw_column, int64(8), kw_end_line, int64(55), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_headers, sym_ctype))))
 	tmp96 := lang.FnFunc2(func(headers97, ctype98 any) any {
 		var tmp99 any
 		_ = tmp99
@@ -342,8 +353,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_http_with_content_type = tmp125.F
 	v_cljg_DOT_net_DOT_http_with_content_type.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_with_content_type
-	// (def do-once "One request → a response map with :ok? added. With `as` = :stream the :bod…
-	v_cljg_DOT_net_DOT_http_do_once.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(62), kw_column, int64(8), kw_end_line, int64(62), kw_end_column, int64(15), kw_private, true, kw_doc, "One request → a response map with :ok? added. With `as` = :stream the :body is\n  a cljg.stream READABLE handle over the LIVE response body (constant-memory\n  streaming; the caller closes it) instead of a fully-buffered string; any other\n  `as` keeps the default buffered-string body."))
+	// (def do-once (clojure.core/fn ([method url headers body timeout as] (let [shim (if (= as :…
+	v_cljg_DOT_net_DOT_http_do_once.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(62), kw_column, int64(8), kw_end_line, int64(62), kw_end_column, int64(15), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_method, sym_url, sym_headers, sym_body, sym_timeout, sym_as)), kw_doc, "One request → a response map with :ok? added. With `as` = :stream the :body is\n  a cljg.stream READABLE handle over the LIVE response body (constant-memory\n  streaming; the caller closes it) instead of a fully-buffered string; any other\n  `as` keeps the default buffered-string body."))
 	tmp126 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 6:
@@ -410,8 +421,8 @@ func Load() {
 	})
 	v_cljg_DOT_net_DOT_http_do_once.BindRoot(tmp126)
 	_ = v_cljg_DOT_net_DOT_http_do_once
-	// (def request "Perform an HTTP request. opts:\n    :method  keyword/string (default :get)  …
-	v_cljg_DOT_net_DOT_http_request.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(72), kw_column, int64(7), kw_end_line, int64(72), kw_end_column, int64(14), kw_doc, "Perform an HTTP request. opts:\n    :method  keyword/string (default :get)   :url  the URL (or pass as 1st arg via the verbs)\n    :headers map {name value}                :query map → query string\n    :body    raw string | :json data | :edn data | :form map   (one; that precedence)\n    :timeout ms (default 30000)              :retry n (default 0), backoff on transport error + 5xx\n    :as      :stream → :body is a cljg.stream readable handle over the live body\n             (opt-in; buffered string is the default)\n  Returns {:status :headers :body :ok?} — :body a string, or a cljg.stream\n  readable handle when :as :stream (the caller closes it). Retries re-raise the\n  last error / return the last 5xx after n attempts; a streaming response is not\n  retried on 5xx (its body handle is live), only on a transport error."))
+	// (def request (clojure.core/fn ([opts] (let [method (:method opts :get) url (str (:url opts…
+	v_cljg_DOT_net_DOT_http_request.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(72), kw_column, int64(7), kw_end_line, int64(72), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_opts)), kw_doc, "Perform an HTTP request. opts:\n    :method  keyword/string (default :get)   :url  the URL (or pass as 1st arg via the verbs)\n    :headers map {name value}                :query map → query string\n    :body    raw string | :json data | :edn data | :form map   (one; that precedence)\n    :timeout ms (default 30000)              :retry n (default 0), backoff on transport error + 5xx\n    :as      :stream → :body is a cljg.stream readable handle over the live body\n             (opt-in; buffered string is the default)\n  Returns {:status :headers :body :ok?} — :body a string, or a cljg.stream\n  readable handle when :as :stream (the caller closes it). Retries re-raise the\n  last error / return the last 5xx after n attempts; a streaming response is not\n  retried on 5xx (its body handle is live), only on a transport error."))
 	tmp154 := lang.FnFunc1(func(opts155 any) any {
 		var tmp156 any
 		_ = tmp156
@@ -619,8 +630,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_http_request = tmp232.F
 	v_cljg_DOT_net_DOT_http_request.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_request
-	// (def verb (clojure.core/fn [method url opts] (request (assoc opts :method method :url url)…
-	v_cljg_DOT_net_DOT_http_verb.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(104), kw_column, int64(8), kw_end_line, int64(104), kw_end_column, int64(12), kw_private, true))
+	// (def verb (clojure.core/fn ([method url opts] (request (assoc opts :method method :url url…
+	v_cljg_DOT_net_DOT_http_verb.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(104), kw_column, int64(8), kw_end_line, int64(104), kw_end_column, int64(12), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_method, sym_url, sym_opts))))
 	tmp233 := lang.FnFunc3(func(method234, url235, opts236 any) any {
 		tmp237 := v_cljg_DOT_net_DOT_http_request.Direct()
 		var tmp238 any
@@ -643,7 +654,7 @@ func Load() {
 	v_cljg_DOT_net_DOT_http_verb.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_verb
 	// (def get (clojure.core/fn ([url] (get url {})) ([url opts] (verb :get url opts))))
-	v_cljg_DOT_net_DOT_http_get.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(106), kw_column, int64(7), kw_end_line, int64(106), kw_end_column, int64(10)))
+	v_cljg_DOT_net_DOT_http_get.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(106), kw_column, int64(7), kw_end_line, int64(106), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
 	tmp243 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -677,7 +688,7 @@ func Load() {
 	v_cljg_DOT_net_DOT_http_get.BindRoot(tmp243)
 	_ = v_cljg_DOT_net_DOT_http_get
 	// (def post (clojure.core/fn ([url] (post url {})) ([url opts] (verb :post url opts))))
-	v_cljg_DOT_net_DOT_http_post.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(107), kw_column, int64(7), kw_end_line, int64(107), kw_end_column, int64(11)))
+	v_cljg_DOT_net_DOT_http_post.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(107), kw_column, int64(7), kw_end_line, int64(107), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
 	tmp253 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -711,7 +722,7 @@ func Load() {
 	v_cljg_DOT_net_DOT_http_post.BindRoot(tmp253)
 	_ = v_cljg_DOT_net_DOT_http_post
 	// (def put (clojure.core/fn ([url] (put url {})) ([url opts] (verb :put url opts))))
-	v_cljg_DOT_net_DOT_http_put.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(108), kw_column, int64(7), kw_end_line, int64(108), kw_end_column, int64(10)))
+	v_cljg_DOT_net_DOT_http_put.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(108), kw_column, int64(7), kw_end_line, int64(108), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
 	tmp263 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -745,7 +756,7 @@ func Load() {
 	v_cljg_DOT_net_DOT_http_put.BindRoot(tmp263)
 	_ = v_cljg_DOT_net_DOT_http_put
 	// (def delete (clojure.core/fn ([url] (delete url {})) ([url opts] (verb :delete url opts)))…
-	v_cljg_DOT_net_DOT_http_delete_.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(13)))
+	v_cljg_DOT_net_DOT_http_delete_.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
 	tmp273 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -779,7 +790,7 @@ func Load() {
 	v_cljg_DOT_net_DOT_http_delete_.BindRoot(tmp273)
 	_ = v_cljg_DOT_net_DOT_http_delete_
 	// (def patch (clojure.core/fn ([url] (patch url {})) ([url opts] (verb :patch url opts))))
-	v_cljg_DOT_net_DOT_http_patch.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(110), kw_column, int64(7), kw_end_line, int64(110), kw_end_column, int64(12)))
+	v_cljg_DOT_net_DOT_http_patch.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(110), kw_column, int64(7), kw_end_line, int64(110), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
 	tmp283 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -813,7 +824,7 @@ func Load() {
 	v_cljg_DOT_net_DOT_http_patch.BindRoot(tmp283)
 	_ = v_cljg_DOT_net_DOT_http_patch
 	// (def head (clojure.core/fn ([url] (head url {})) ([url opts] (verb :head url opts))))
-	v_cljg_DOT_net_DOT_http_head.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(111), kw_column, int64(7), kw_end_line, int64(111), kw_end_column, int64(11)))
+	v_cljg_DOT_net_DOT_http_head.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(111), kw_column, int64(7), kw_end_line, int64(111), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
 	tmp293 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -846,8 +857,8 @@ func Load() {
 	})
 	v_cljg_DOT_net_DOT_http_head.BindRoot(tmp293)
 	_ = v_cljg_DOT_net_DOT_http_head
-	// (def json-body "Parse a response's :body as JSON (object keys → keywords, ints → longs…
-	v_cljg_DOT_net_DOT_http_json_body.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(117), kw_column, int64(7), kw_end_line, int64(117), kw_end_column, int64(16), kw_doc, "Parse a response's :body as JSON (object keys → keywords, ints → longs)."))
+	// (def json-body (clojure.core/fn ([resp] (-json-decode (:body resp)))))
+	v_cljg_DOT_net_DOT_http_json_body.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(117), kw_column, int64(7), kw_end_line, int64(117), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_resp)), kw_doc, "Parse a response's :body as JSON (object keys → keywords, ints → longs)."))
 	tmp303 := lang.FnFunc1(func(resp304 any) any {
 		tmp305 := v_cljg_DOT_net_DOT_http_X_json_decode.Get()
 		tmp306 := lang.Apply1(kw_body, resp304)
@@ -859,8 +870,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_http_json_body = tmp308.F
 	v_cljg_DOT_net_DOT_http_json_body.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_json_body
-	// (def edn-body "Parse a response's :body as EDN." (clojure.core/fn [resp] (clojure.edn/read…
-	v_cljg_DOT_net_DOT_http_edn_body.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(122), kw_column, int64(7), kw_end_line, int64(122), kw_end_column, int64(15), kw_doc, "Parse a response's :body as EDN."))
+	// (def edn-body (clojure.core/fn ([resp] (clojure.edn/read-string (:body resp)))))
+	v_cljg_DOT_net_DOT_http_edn_body.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(122), kw_column, int64(7), kw_end_line, int64(122), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_resp)), kw_doc, "Parse a response's :body as EDN."))
 	tmp309 := lang.FnFunc1(func(resp310 any) any {
 		tmp311 := v_clojure_DOT_edn_read_string.Get()
 		tmp312 := lang.Apply1(kw_body, resp310)

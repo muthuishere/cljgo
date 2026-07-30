@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	kw_arglists                           = lang.InternKeywordString("arglists")
 	kw_column                             = lang.InternKeywordString("column")
 	kw_doc                                = lang.InternKeywordString("doc")
 	kw_end_column                         = lang.InternKeywordString("end-column")
@@ -17,7 +18,15 @@ var (
 	kw_private                            = lang.InternKeywordString("private")
 	sym_cljg_DOT_stream                   = lang.NewSymbol("cljg.stream")
 	sym_clojure_DOT_core                  = lang.NewSymbol("clojure.core")
+	sym_data                              = lang.NewSymbol("data")
+	sym_n                                 = lang.NewSymbol("n")
+	sym_opts                              = lang.NewSymbol("opts")
+	sym_path                              = lang.NewSymbol("path")
 	sym_read_line                         = lang.NewSymbol("read-line")
+	sym_readable                          = lang.NewSymbol("readable")
+	sym_s                                 = lang.NewSymbol("s")
+	sym_stream                            = lang.NewSymbol("stream")
+	sym_writable                          = lang.NewSymbol("writable")
 	v_cljg_DOT_stream_X_stream_chunk_seq  = lang.InternVarName(lang.NewSymbol("cljg.stream"), lang.NewSymbol("-stream-chunk-seq")).SetPrivate()
 	v_cljg_DOT_stream_X_stream_close      = lang.InternVarName(lang.NewSymbol("cljg.stream"), lang.NewSymbol("-stream-close")).SetPrivate()
 	v_cljg_DOT_stream_X_stream_line_seq   = lang.InternVarName(lang.NewSymbol("cljg.stream"), lang.NewSymbol("-stream-line-seq")).SetPrivate()
@@ -75,8 +84,8 @@ func Load() {
 	v_cljg_DOT_stream_default_chunk.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(38), kw_column, int64(6), kw_end_line, int64(38), kw_end_column, int64(29), kw_private, true))
 	v_cljg_DOT_stream_default_chunk.BindRoot(int64(65536))
 	_ = v_cljg_DOT_stream_default_chunk
-	// (def of-file "Open the file at `path` as a READABLE stream — the same handle\n  cljg.pro…
-	v_cljg_DOT_stream_of_file.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(14), kw_doc, "Open the file at `path` as a READABLE stream — the same handle\n  cljg.process/spawn and cljg.net.http (:as :stream) hand back, so `lines`,\n  `chunks`, `read-line`, `read-all`, `reduce` and transducers all apply. The\n  caller closes it (`close`), ideally with `with-open` — the handle IS\n  closeable, so (with-open [s (of-file p)] …) releases the file on every exit\n  path. Throws if the file cannot be opened.\n\n  This is the cljgo analog of (clojure.java.io/reader path) — cljgo has no\n  java.io, and a cljg.stream handle is a reducible Go reader, not a\n  java.io.Reader, so the name and the surface are this host's, not the JVM's."))
+	// (def of-file (clojure.core/fn ([path] (-stream-of-file path))))
+	v_cljg_DOT_stream_of_file.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "Open the file at `path` as a READABLE stream — the same handle\n  cljg.process/spawn and cljg.net.http (:as :stream) hand back, so `lines`,\n  `chunks`, `read-line`, `read-all`, `reduce` and transducers all apply. The\n  caller closes it (`close`), ideally with `with-open` — the handle IS\n  closeable, so (with-open [s (of-file p)] …) releases the file on every exit\n  path. Throws if the file cannot be opened.\n\n  This is the cljgo analog of (clojure.java.io/reader path) — cljgo has no\n  java.io, and a cljg.stream handle is a reducible Go reader, not a\n  java.io.Reader, so the name and the surface are this host's, not the JVM's."))
 	tmp5 := lang.FnFunc1(func(path6 any) any {
 		tmp7 := v_cljg_DOT_stream_X_stream_of_file.Get()
 		tmp8 := lang.Apply1(tmp7, path6)
@@ -87,8 +96,8 @@ func Load() {
 	fnD_cljg_DOT_stream_of_file = tmp9.F
 	v_cljg_DOT_stream_of_file.SealDirect()
 	_ = v_cljg_DOT_stream_of_file
-	// (def to-file "Open the file at `path` as a WRITABLE stream, creating it if needed and\n  t…
-	v_cljg_DOT_stream_to_file.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(14), kw_doc, "Open the file at `path` as a WRITABLE stream, creating it if needed and\n  truncating it unless {:append true} is given — `opts` must be a map (or nil);\n  a non-map is rejected rather than quietly truncating. `write` / `write-line`\n  append and flush; `close` flushes and closes (and the handle works with\n  `with-open`). Throws if the file cannot be opened."))
+	// (def to-file (clojure.core/fn ([path] (to-file path nil)) ([path opts] (-stream-to-file pa…
+	v_cljg_DOT_stream_to_file.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_path), lang.NewVector(sym_path, sym_opts)), kw_doc, "Open the file at `path` as a WRITABLE stream, creating it if needed and\n  truncating it unless {:append true} is given — `opts` must be a map (or nil);\n  a non-map is rejected rather than quietly truncating. `write` / `write-line`\n  append and flush; `close` flushes and closes (and the handle works with\n  `with-open`). Throws if the file cannot be opened."))
 	tmp10 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -111,8 +120,8 @@ func Load() {
 	})
 	v_cljg_DOT_stream_to_file.BindRoot(tmp10)
 	_ = v_cljg_DOT_stream_to_file
-	// (def read-bytes "Read one chunk of up to `n` bytes (default 64 KiB) from the readable stre…
-	v_cljg_DOT_stream_read_bytes.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(72), kw_column, int64(7), kw_end_line, int64(72), kw_end_column, int64(17), kw_doc, "Read one chunk of up to `n` bytes (default 64 KiB) from the readable stream,\n  as a byte-array (SIGNED elements, like every other cljg byte route), or nil\n  at end-of-stream. Fewer than `n` bytes is normal — whatever is available now."))
+	// (def read-bytes (clojure.core/fn ([readable] (read-bytes readable default-chunk)) ([readab…
+	v_cljg_DOT_stream_read_bytes.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(72), kw_column, int64(7), kw_end_line, int64(72), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_readable), lang.NewVector(sym_readable, sym_n)), kw_doc, "Read one chunk of up to `n` bytes (default 64 KiB) from the readable stream,\n  as a byte-array (SIGNED elements, like every other cljg byte route), or nil\n  at end-of-stream. Fewer than `n` bytes is normal — whatever is available now."))
 	tmp18 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -136,8 +145,8 @@ func Load() {
 	})
 	v_cljg_DOT_stream_read_bytes.BindRoot(tmp18)
 	_ = v_cljg_DOT_stream_read_bytes
-	// (def read-line "Read one line from the readable stream (up to a newline), WITHOUT the trai…
-	v_cljg_DOT_stream_read_line.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(16), kw_doc, "Read one line from the readable stream (up to a newline), WITHOUT the trailing\n  newline, or nil at end-of-stream. A final unterminated line is returned as-is."))
+	// (def read-line (clojure.core/fn ([readable] (-stream-read-line readable))))
+	v_cljg_DOT_stream_read_line.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_readable)), kw_doc, "Read one line from the readable stream (up to a newline), WITHOUT the trailing\n  newline, or nil at end-of-stream. A final unterminated line is returned as-is."))
 	tmp27 := lang.FnFunc1(func(readable28 any) any {
 		tmp29 := v_cljg_DOT_stream_X_stream_read_line.Get()
 		tmp30 := lang.Apply1(tmp29, readable28)
@@ -148,8 +157,8 @@ func Load() {
 	fnD_cljg_DOT_stream_read_line = tmp31.F
 	v_cljg_DOT_stream_read_line.SealDirect()
 	_ = v_cljg_DOT_stream_read_line
-	// (def read-all "Drain the rest of the readable stream into one string." (clojure.core/fn [r…
-	v_cljg_DOT_stream_read_all.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(15), kw_doc, "Drain the rest of the readable stream into one string."))
+	// (def read-all (clojure.core/fn ([readable] (-stream-read-all readable))))
+	v_cljg_DOT_stream_read_all.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_readable)), kw_doc, "Drain the rest of the readable stream into one string."))
 	tmp32 := lang.FnFunc1(func(readable33 any) any {
 		tmp34 := v_cljg_DOT_stream_X_stream_read_all.Get()
 		tmp35 := lang.Apply1(tmp34, readable33)
@@ -160,8 +169,8 @@ func Load() {
 	fnD_cljg_DOT_stream_read_all = tmp36.F
 	v_cljg_DOT_stream_read_all.SealDirect()
 	_ = v_cljg_DOT_stream_read_all
-	// (def chunks "A lazy seq of byte-array chunks (SIGNED elements; default 64 KiB each)\n  dra…
-	v_cljg_DOT_stream_chunks.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(13), kw_doc, "A lazy seq of byte-array chunks (SIGNED elements; default 64 KiB each)\n  drawn from the readable stream on demand — constant memory, `take`/`reduced` stop the read. This is\n  what the handle's own reducibility bottoms out on."))
+	// (def chunks (clojure.core/fn ([readable] (chunks readable default-chunk)) ([readable n] (-…
+	v_cljg_DOT_stream_chunks.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_readable), lang.NewVector(sym_readable, sym_n)), kw_doc, "A lazy seq of byte-array chunks (SIGNED elements; default 64 KiB each)\n  drawn from the readable stream on demand — constant memory, `take`/`reduced` stop the read. This is\n  what the handle's own reducibility bottoms out on."))
 	tmp37 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -185,8 +194,8 @@ func Load() {
 	})
 	v_cljg_DOT_stream_chunks.BindRoot(tmp37)
 	_ = v_cljg_DOT_stream_chunks
-	// (def lines "A lazy seq of line strings drawn from the readable stream on demand." (clojure…
-	v_cljg_DOT_stream_lines.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(12), kw_doc, "A lazy seq of line strings drawn from the readable stream on demand."))
+	// (def lines (clojure.core/fn ([readable] (-stream-line-seq readable))))
+	v_cljg_DOT_stream_lines.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_readable)), kw_doc, "A lazy seq of line strings drawn from the readable stream on demand."))
 	tmp46 := lang.FnFunc1(func(readable47 any) any {
 		tmp48 := v_cljg_DOT_stream_X_stream_line_seq.Get()
 		tmp49 := lang.Apply1(tmp48, readable47)
@@ -197,8 +206,8 @@ func Load() {
 	fnD_cljg_DOT_stream_lines = tmp50.F
 	v_cljg_DOT_stream_lines.SealDirect()
 	_ = v_cljg_DOT_stream_lines
-	// (def write "Write `data` (a string or byte-array) to the writable stream and flush, so the…
-	v_cljg_DOT_stream_write.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(104), kw_column, int64(7), kw_end_line, int64(104), kw_end_column, int64(12), kw_doc, "Write `data` (a string or byte-array) to the writable stream and flush, so the\n  peer sees it immediately. Returns nil."))
+	// (def write (clojure.core/fn ([writable data] (-stream-write writable data))))
+	v_cljg_DOT_stream_write.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(104), kw_column, int64(7), kw_end_line, int64(104), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_writable, sym_data)), kw_doc, "Write `data` (a string or byte-array) to the writable stream and flush, so the\n  peer sees it immediately. Returns nil."))
 	tmp51 := lang.FnFunc2(func(writable52, data53 any) any {
 		tmp54 := v_cljg_DOT_stream_X_stream_write.Get()
 		tmp55 := lang.Apply2(tmp54, writable52, data53)
@@ -209,8 +218,8 @@ func Load() {
 	fnD_cljg_DOT_stream_write = tmp56.F
 	v_cljg_DOT_stream_write.SealDirect()
 	_ = v_cljg_DOT_stream_write
-	// (def write-line "Write `s` followed by a newline to the writable stream, flushed. Returns …
-	v_cljg_DOT_stream_write_line.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(110), kw_column, int64(7), kw_end_line, int64(110), kw_end_column, int64(17), kw_doc, "Write `s` followed by a newline to the writable stream, flushed. Returns nil."))
+	// (def write-line (clojure.core/fn ([writable s] (-stream-write writable (str s "\n")))))
+	v_cljg_DOT_stream_write_line.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(110), kw_column, int64(7), kw_end_line, int64(110), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_writable, sym_s)), kw_doc, "Write `s` followed by a newline to the writable stream, flushed. Returns nil."))
 	tmp57 := lang.FnFunc2(func(writable58, s59 any) any {
 		tmp60 := v_cljg_DOT_stream_X_stream_write.Get()
 		tmp61 := v_clojure_DOT_core_str.Get()
@@ -223,8 +232,8 @@ func Load() {
 	fnD_cljg_DOT_stream_write_line = tmp64.F
 	v_cljg_DOT_stream_write_line.SealDirect()
 	_ = v_cljg_DOT_stream_write_line
-	// (def close "Close a stream handle (readable or writable); `with-open` does this for you.\n…
-	v_cljg_DOT_stream_close_.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(117), kw_column, int64(7), kw_end_line, int64(117), kw_end_column, int64(12), kw_doc, "Close a stream handle (readable or writable); `with-open` does this for you.\n  Closing a writable flushes it and sends EOF to the reader on the other end\n  of the pipe; closing a readable releases the underlying reader. Idempotent. Returns nil."))
+	// (def close (clojure.core/fn ([stream] (-stream-close stream))))
+	v_cljg_DOT_stream_close_.SetMeta(lang.NewMap(kw_file, "cljg/stream.cljg", kw_line, int64(117), kw_column, int64(7), kw_end_line, int64(117), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_stream)), kw_doc, "Close a stream handle (readable or writable); `with-open` does this for you.\n  Closing a writable flushes it and sends EOF to the reader on the other end\n  of the pipe; closing a readable releases the underlying reader. Idempotent. Returns nil."))
 	tmp65 := lang.FnFunc1(func(stream66 any) any {
 		tmp67 := v_cljg_DOT_stream_X_stream_close.Get()
 		tmp68 := lang.Apply1(tmp67, stream66)

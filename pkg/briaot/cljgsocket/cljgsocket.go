@@ -10,6 +10,7 @@ var (
 	kw_X_conn                         = lang.InternKeywordString("-conn")
 	kw_X_listener                     = lang.InternKeywordString("-listener")
 	kw_X_socket                       = lang.InternKeywordString("-socket")
+	kw_arglists                       = lang.InternKeywordString("arglists")
 	kw_column                         = lang.InternKeywordString("column")
 	kw_doc                            = lang.InternKeywordString("doc")
 	kw_end_column                     = lang.InternKeywordString("end-column")
@@ -18,6 +19,13 @@ var (
 	kw_line                           = lang.InternKeywordString("line")
 	sym_cljg_DOT_socket               = lang.NewSymbol("cljg.socket")
 	sym_clojure_DOT_core              = lang.NewSymbol("clojure.core")
+	sym_data                          = lang.NewSymbol("data")
+	sym_handle                        = lang.NewSymbol("handle")
+	sym_host                          = lang.NewSymbol("host")
+	sym_listener                      = lang.NewSymbol("listener")
+	sym_opts                          = lang.NewSymbol("opts")
+	sym_port                          = lang.NewSymbol("port")
+	sym_sock                          = lang.NewSymbol("sock")
 	v_cljg_DOT_socket_X_socket_accept = lang.InternVarName(lang.NewSymbol("cljg.socket"), lang.NewSymbol("-socket-accept")).SetPrivate()
 	v_cljg_DOT_socket_X_socket_close  = lang.InternVarName(lang.NewSymbol("cljg.socket"), lang.NewSymbol("-socket-close")).SetPrivate()
 	v_cljg_DOT_socket_X_socket_dial   = lang.InternVarName(lang.NewSymbol("cljg.socket"), lang.NewSymbol("-socket-dial")).SetPrivate()
@@ -61,8 +69,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def listen "Open a listening socket and return a listener handle.\n  opts:\n    :port n  …
-	v_cljg_DOT_socket_listen.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(13), kw_doc, "Open a listening socket and return a listener handle.\n  opts:\n    :port n     TCP port (0 = OS-assigned ephemeral; read it back from :port)\n    :host s     bind address (default \"127.0.0.1\"; \"0.0.0.0\" = all interfaces)\n    :unix path  listen on a unix-domain socket at `path` instead of TCP\n    :tls {:cert path :key path}  serve TLS with the given PEM pair\n  Returns {:port <bound-port> :addr <s> :-listener} for TCP (the bound port is\n  the real one, so :port 0 composes with dial), or {:path <s> :addr <s>\n  :-listener} for unix. Call `accept` to take connections, `close` to stop."))
+	// (def listen (clojure.core/fn ([] (listen {})) ([opts] (-socket-listen opts))))
+	v_cljg_DOT_socket_listen.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "Open a listening socket and return a listener handle.\n  opts:\n    :port n     TCP port (0 = OS-assigned ephemeral; read it back from :port)\n    :host s     bind address (default \"127.0.0.1\"; \"0.0.0.0\" = all interfaces)\n    :unix path  listen on a unix-domain socket at `path` instead of TCP\n    :tls {:cert path :key path}  serve TLS with the given PEM pair\n  Returns {:port <bound-port> :addr <s> :-listener} for TCP (the bound port is\n  the real one, so :port 0 composes with dial), or {:path <s> :addr <s>\n  :-listener} for unix. Call `accept` to take connections, `close` to stop."))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -82,8 +90,8 @@ func Load() {
 	})
 	v_cljg_DOT_socket_listen.BindRoot(tmp5)
 	_ = v_cljg_DOT_socket_listen
-	// (def accept "Block until a client connects to `listener`, then return the connection:\n  {…
-	v_cljg_DOT_socket_accept.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(55), kw_column, int64(7), kw_end_line, int64(55), kw_end_column, int64(13), kw_doc, "Block until a client connects to `listener`, then return the connection:\n  {:in <readable> :out <writable> :local-addr <s> :remote-addr <s> :-conn}.\n  :in / :out are cljg.stream handles — read with st/read-line / st/lines /\n  reduce, write with st/write / st/write-line. Accepting on a closed listener\n  throws."))
+	// (def accept (clojure.core/fn ([listener] (-socket-accept (:-listener listener)))))
+	v_cljg_DOT_socket_accept.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(55), kw_column, int64(7), kw_end_line, int64(55), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_listener)), kw_doc, "Block until a client connects to `listener`, then return the connection:\n  {:in <readable> :out <writable> :local-addr <s> :remote-addr <s> :-conn}.\n  :in / :out are cljg.stream handles — read with st/read-line / st/lines /\n  reduce, write with st/write / st/write-line. Accepting on a closed listener\n  throws."))
 	tmp12 := lang.FnFunc1(func(listener13 any) any {
 		tmp14 := v_cljg_DOT_socket_X_socket_accept.Get()
 		tmp15 := lang.Apply1(kw_X_listener, listener13)
@@ -95,8 +103,8 @@ func Load() {
 	fnD_cljg_DOT_socket_accept = tmp17.F
 	v_cljg_DOT_socket_accept.SealDirect()
 	_ = v_cljg_DOT_socket_accept
-	// (def dial "Connect out and return a connection map (same duplex shape as `accept`).\n  opt…
-	v_cljg_DOT_socket_dial.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(11), kw_doc, "Connect out and return a connection map (same duplex shape as `accept`).\n  opts:\n    :host s        remote host (default \"127.0.0.1\")\n    :port n        remote TCP port (required unless :unix)\n    :unix path     connect to a unix-domain socket at `path` instead\n    :tls true      wrap the connection in TLS (crypto/tls); or a map\n                   {:server-name s} to override the verified server name\n                   (defaults to :host)\n    :timeout-ms n  connect timeout (default: none)"))
+	// (def dial (clojure.core/fn ([opts] (-socket-dial opts))))
+	v_cljg_DOT_socket_dial.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_opts)), kw_doc, "Connect out and return a connection map (same duplex shape as `accept`).\n  opts:\n    :host s        remote host (default \"127.0.0.1\")\n    :port n        remote TCP port (required unless :unix)\n    :unix path     connect to a unix-domain socket at `path` instead\n    :tls true      wrap the connection in TLS (crypto/tls); or a map\n                   {:server-name s} to override the verified server name\n                   (defaults to :host)\n    :timeout-ms n  connect timeout (default: none)"))
 	tmp18 := lang.FnFunc1(func(opts19 any) any {
 		tmp20 := v_cljg_DOT_socket_X_socket_dial.Get()
 		tmp21 := lang.Apply1(tmp20, opts19)
@@ -107,8 +115,8 @@ func Load() {
 	fnD_cljg_DOT_socket_dial = tmp22.F
 	v_cljg_DOT_socket_dial.SealDirect()
 	_ = v_cljg_DOT_socket_dial
-	// (def close "Close any cljg.socket handle — a listener, a connection, or a UDP socket.\n …
-	v_cljg_DOT_socket_close_.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(77), kw_column, int64(7), kw_end_line, int64(77), kw_end_column, int64(12), kw_doc, "Close any cljg.socket handle — a listener, a connection, or a UDP socket.\n  Closing a connection closes the underlying socket (both directions);\n  closing a listener stops `accept`. Idempotent. Returns nil."))
+	// (def close (clojure.core/fn ([handle] (-socket-close (or (:-listener handle) (:-conn handl…
+	v_cljg_DOT_socket_close_.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(77), kw_column, int64(7), kw_end_line, int64(77), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_handle)), kw_doc, "Close any cljg.socket handle — a listener, a connection, or a UDP socket.\n  Closing a connection closes the underlying socket (both directions);\n  closing a listener stops `accept`. Idempotent. Returns nil."))
 	tmp23 := lang.FnFunc1(func(handle24 any) any {
 		tmp25 := v_cljg_DOT_socket_X_socket_close.Get()
 		var tmp26 any
@@ -164,8 +172,8 @@ func Load() {
 	fnD_cljg_DOT_socket_close_ = tmp39.F
 	v_cljg_DOT_socket_close_.SealDirect()
 	_ = v_cljg_DOT_socket_close_
-	// (def udp-listen "Open a UDP socket bound to {:port n :host s} (defaults: ephemeral port on…
-	v_cljg_DOT_socket_udp_listen.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(86), kw_column, int64(7), kw_end_line, int64(86), kw_end_column, int64(17), kw_doc, "Open a UDP socket bound to {:port n :host s} (defaults: ephemeral port on\n  127.0.0.1) and return {:port <bound-port> :addr <s> :-socket}. The one\n  socket both sends (udp-send) and receives (udp-recv) — bind two for a\n  client/server pair. Close with `close`."))
+	// (def udp-listen (clojure.core/fn ([] (udp-listen {})) ([opts] (-udp-listen opts))))
+	v_cljg_DOT_socket_udp_listen.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(86), kw_column, int64(7), kw_end_line, int64(86), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "Open a UDP socket bound to {:port n :host s} (defaults: ephemeral port on\n  127.0.0.1) and return {:port <bound-port> :addr <s> :-socket}. The one\n  socket both sends (udp-send) and receives (udp-recv) — bind two for a\n  client/server pair. Close with `close`."))
 	tmp40 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -185,8 +193,8 @@ func Load() {
 	})
 	v_cljg_DOT_socket_udp_listen.BindRoot(tmp40)
 	_ = v_cljg_DOT_socket_udp_listen
-	// (def udp-send "Send one datagram from `sock` (a udp-listen handle) to the destination\n  `…
-	v_cljg_DOT_socket_udp_send.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(94), kw_column, int64(7), kw_end_line, int64(94), kw_end_column, int64(15), kw_doc, "Send one datagram from `sock` (a udp-listen handle) to the destination\n  `host` and `port`; `data` is a string or byte-array. Returns nil."))
+	// (def udp-send (clojure.core/fn ([sock host port data] (-udp-send (:-socket sock) host port…
+	v_cljg_DOT_socket_udp_send.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(94), kw_column, int64(7), kw_end_line, int64(94), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_sock, sym_host, sym_port, sym_data)), kw_doc, "Send one datagram from `sock` (a udp-listen handle) to the destination\n  `host` and `port`; `data` is a string or byte-array. Returns nil."))
 	tmp47 := lang.FnFunc4(func(sock48, host49, port50, data51 any) any {
 		tmp52 := v_cljg_DOT_socket_X_udp_send.Get()
 		tmp53 := lang.Apply1(kw_X_socket, sock48)
@@ -198,8 +206,8 @@ func Load() {
 	fnD_cljg_DOT_socket_udp_send = tmp55.F
 	v_cljg_DOT_socket_udp_send.SealDirect()
 	_ = v_cljg_DOT_socket_udp_send
-	// (def udp-recv "Block until one datagram arrives on `sock`, then return\n  {:data <string> …
-	v_cljg_DOT_socket_udp_recv.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(15), kw_doc, "Block until one datagram arrives on `sock`, then return\n  {:data <string> :host <sender-host> :port <sender-port>}.\n  opts: {:timeout-ms n} — throw if nothing arrives in time (default: block)."))
+	// (def udp-recv (clojure.core/fn ([sock] (udp-recv sock {})) ([sock opts] (-udp-recv (:-sock…
+	v_cljg_DOT_socket_udp_recv.SetMeta(lang.NewMap(kw_file, "cljg/socket.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_sock), lang.NewVector(sym_sock, sym_opts)), kw_doc, "Block until one datagram arrives on `sock`, then return\n  {:data <string> :host <sender-host> :port <sender-port>}.\n  opts: {:timeout-ms n} — throw if nothing arrives in time (default: block)."))
 	tmp56 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:

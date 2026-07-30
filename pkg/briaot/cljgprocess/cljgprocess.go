@@ -8,6 +8,7 @@ import (
 
 var (
 	kw_X_handle                                     = lang.InternKeywordString("-handle")
+	kw_arglists                                     = lang.InternKeywordString("arglists")
 	kw_column                                       = lang.InternKeywordString("column")
 	kw_doc                                          = lang.InternKeywordString("doc")
 	kw_end_column                                   = lang.InternKeywordString("end-column")
@@ -21,6 +22,8 @@ var (
 	kw_wait                                         = lang.InternKeywordString("wait")
 	sym_cljg_DOT_process                            = lang.NewSymbol("cljg.process")
 	sym_clojure_DOT_core                            = lang.NewSymbol("clojure.core")
+	sym_command                                     = lang.NewSymbol("command")
+	sym_opts                                        = lang.NewSymbol("opts")
 	v_cljg_DOT_process_X_proc_kill                  = lang.InternVarName(lang.NewSymbol("cljg.process"), lang.NewSymbol("-proc-kill")).SetPrivate()
 	v_cljg_DOT_process_X_proc_spawn                 = lang.InternVarName(lang.NewSymbol("cljg.process"), lang.NewSymbol("-proc-spawn")).SetPrivate()
 	v_cljg_DOT_process_X_proc_wait                  = lang.InternVarName(lang.NewSymbol("cljg.process"), lang.NewSymbol("-proc-wait")).SetPrivate()
@@ -51,8 +54,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def spawn "Start a subprocess and return a live handle:\n    {:in <writable> :out <readab…
-	v_cljg_DOT_process_spawn.SetMeta(lang.NewMap(kw_file, "cljg/process.cljg", kw_line, int64(36), kw_column, int64(7), kw_end_line, int64(36), kw_end_column, int64(12), kw_doc, "Start a subprocess and return a live handle:\n    {:in <writable> :out <readable> :err <readable>\n     :wait (fn [] -> exit-code) :kill (fn [] -> nil)}\n  `command` is a vector [cmd arg…]. opts (optional):\n    :env {name value}  merged onto the current environment\n    :dir path          the working directory\n  The child runs concurrently; stream into :in and out of :out/:err with\n  cljg.stream, then call :wait (blocks for exit, returns the exit code) or :kill.\n  A missing/unrunnable binary throws (it never started)."))
+	// (def spawn (clojure.core/fn ([command] (spawn command {})) ([command opts] (let [{:keys [i…
+	v_cljg_DOT_process_spawn.SetMeta(lang.NewMap(kw_file, "cljg/process.cljg", kw_line, int64(36), kw_column, int64(7), kw_end_line, int64(36), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_command), lang.NewVector(sym_command, sym_opts)), kw_doc, "Start a subprocess and return a live handle:\n    {:in <writable> :out <readable> :err <readable>\n     :wait (fn [] -> exit-code) :kill (fn [] -> nil)}\n  `command` is a vector [cmd arg…]. opts (optional):\n    :env {name value}  merged onto the current environment\n    :dir path          the working directory\n  The child runs concurrently; stream into :in and out of :out/:err with\n  cljg.stream, then call :wait (blocks for exit, returns the exit code) or :kill.\n  A missing/unrunnable binary throws (it never started)."))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:

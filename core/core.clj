@@ -406,11 +406,70 @@
           (cons 'fn* (cons nm (seq methods)))
           (cons 'fn* (seq methods)))))))
 
-;; oracle: (defn f [x] x) => (def f (fn ([x] x))) — fn now destructures.
+;; -defn-last / -defn-butlast: local last/butlast for the defn macro.
+;; clojure.core's own last/butlast are defined far later (predicates.cljg),
+;; so defn cannot call them at this point in the bootstrap.
+(defn -defn-last [coll]
+  (loop [s (seq coll) r nil]
+    (if s
+      (recur (next s) (first s))
+      r)))
+
+(defn -defn-butlast [coll]
+  (loop [s (seq coll) acc []]
+    (if (next s)
+      (recur (next s) (conj acc (first s)))
+      (seq acc))))
+
+;; -defn-sigs: the param vectors of an already-normalized fdecl — the value
+;; clojure.core's `sigs` computes for :arglists.
+(defn -defn-sigs [fdecl]
+  (loop [s (seq fdecl) acc []]
+    (if s
+      (recur (next s) (conj acc (first (first s))))
+      (seq acc))))
+
+;; -defn-unquote-vals: DEVIATION (mechanism, not semantics). The JVM compiler
+;; EVALUATES a var's metadata map, so clojure.core writes :arglists as the
+;; form (quote (...)). cljgo's analyzer applies def metadata as a CONSTANT
+;; (parseDef, ADR 0002/0007 dual-mode meta), so a quoted attr-map value would
+;; read back as the literal (quote ...) form. Unwrap one level of quote at
+;; macroexpansion time so the dominant case — {:arglists '([x])}, which is
+;; what clojure.core and real libraries write — reads identically to the JVM.
+;; Non-quote attr-map values are still constants, not evaluated expressions.
+(defn -defn-unquote-vals [m]
+  (loop [s (seq m) acc m]
+    (if s
+      (let [e (first s)
+            k (nth e 0)
+            v (nth e 1)]
+        (recur (next s)
+               (if (if (seq? v) (= (first v) 'quote) false)
+                 (assoc acc k (first (next v)))
+                 acc)))
+      acc)))
+
+;; defn : (defn name doc-string? attr-map? [params] body) or the multi-arity
+;; ([params] body)+ shape, with an optional TRAILING attr-map. This follows
+;; clojure.core/defn's own algorithm step for step — in particular the
+;; single-arity vector is normalized into the multi-arity shape BEFORE the
+;; trailing attr-map is taken, which is what keeps (defn f [x] {:a 1}) — a
+;; body that IS a map — from being mistaken for a trailing attr-map. A
+;; trailing map wins over a leading one on key conflicts (conj order), and
+;; metadata already on the name symbol wins over both.
+;; oracle (clojure 1.12.5): see conformance/tests/defn-attr-map.clj.
 (defmacro defn [name & fdecl]
-  (if (string? (first fdecl))
-    (list 'def name (first fdecl) (cons 'clojure.core/fn (next fdecl)))
-    (list 'def name (cons 'clojure.core/fn fdecl))))
+  (let [m (if (string? (first fdecl)) {:doc (first fdecl)} {})
+        fdecl (if (string? (first fdecl)) (next fdecl) fdecl)
+        m (if (map? (first fdecl)) (conj m (-defn-unquote-vals (first fdecl))) m)
+        fdecl (if (map? (first fdecl)) (next fdecl) fdecl)
+        fdecl (if (vector? (first fdecl)) (list fdecl) fdecl)
+        tail (-defn-last fdecl)
+        m (if (map? tail) (conj m (-defn-unquote-vals tail)) m)
+        fdecl (if (map? tail) (-defn-butlast fdecl) fdecl)
+        m (conj {:arglists (-defn-sigs fdecl)} m)
+        m (conj (if (meta name) (meta name) {}) m)]
+    (list 'def (with-meta name m) (cons 'clojure.core/fn fdecl))))
 
 ;; ===========================================================================
 ;; Sequence & collection library (clojure.core). Standard Clojure — every fn

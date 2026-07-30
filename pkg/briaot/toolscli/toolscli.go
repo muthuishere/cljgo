@@ -10,6 +10,7 @@ import (
 
 var (
 	kw_aliases                                         = lang.InternKeywordString("aliases")
+	kw_arglists                                        = lang.InternKeywordString("arglists")
 	kw_arguments                                       = lang.InternKeywordString("arguments")
 	kw_as                                              = lang.InternKeywordString("as")
 	kw_assoc_fn                                        = lang.InternKeywordString("assoc-fn")
@@ -30,6 +31,7 @@ var (
 	kw_flag                                            = lang.InternKeywordString("flag")
 	kw_id                                              = lang.InternKeywordString("id")
 	kw_in_order                                        = lang.InternKeywordString("in-order")
+	kw_keys                                            = lang.InternKeywordString("keys")
 	kw_line                                            = lang.InternKeywordString("line")
 	kw_long_opt                                        = lang.InternKeywordString("long-opt")
 	kw_missing                                         = lang.InternKeywordString("missing")
@@ -64,22 +66,53 @@ var (
 	re_777                                             = &reader.Regex{Pattern: "^--no-"}
 	re_85                                              = &reader.Regex{Pattern: "^--$"}
 	re_94                                              = &reader.Regex{Pattern: "^--\\S+="}
+	sym_X_AMP_                                         = lang.NewSymbol("&")
+	sym_arg                                            = lang.NewSymbol("arg")
+	sym_args                                           = lang.NewSymbol("args")
 	sym_clojure_DOT_core                               = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                             = lang.NewSymbol("clojure.string")
 	sym_clojure_DOT_tools_DOT_cli                      = lang.NewSymbol("clojure.tools.cli")
+	sym_coll                                           = lang.NewSymbol("coll")
 	sym_comp                                           = lang.NewSymbol("comp")
+	sym_default_                                       = lang.NewSymbol("default")
+	sym_default_key                                    = lang.NewSymbol("default-key")
+	sym_desc                                           = lang.NewSymbol("desc")
 	sym_distinct_QMARK__STAR_                          = lang.NewSymbol("distinct?*")
+	sym_docs                                           = lang.NewSymbol("docs")
 	sym_every_QMARK_                                   = lang.NewSymbol("every?")
+	sym_example_required                               = lang.NewSymbol("example-required")
 	sym_filter                                         = lang.NewSymbol("filter")
+	sym_flag                                           = lang.NewSymbol("flag")
 	sym_identity                                       = lang.NewSymbol("identity")
 	sym_juxt                                           = lang.NewSymbol("juxt")
+	sym_k                                              = lang.NewSymbol("k")
+	sym_key                                            = lang.NewSymbol("key")
+	sym_lens                                           = lang.NewSymbol("lens")
 	sym_map_                                           = lang.NewSymbol("map")
+	sym_msg                                            = lang.NewSymbol("msg")
 	sym_nil_QMARK_                                     = lang.NewSymbol("nil?")
 	sym_not                                            = lang.NewSymbol("not")
+	sym_opt                                            = lang.NewSymbol("opt")
+	sym_opt_type                                       = lang.NewSymbol("opt-type")
+	sym_optarg                                         = lang.NewSymbol("optarg")
+	sym_option_specs                                   = lang.NewSymbol("option-specs")
+	sym_options                                        = lang.NewSymbol("options")
 	sym_partial                                        = lang.NewSymbol("partial")
+	sym_parts                                          = lang.NewSymbol("parts")
+	sym_raw_spec                                       = lang.NewSymbol("raw-spec")
 	sym_remove                                         = lang.NewSymbol("remove")
+	sym_required_set                                   = lang.NewSymbol("required-set")
 	sym_result                                         = lang.NewSymbol("result")
 	sym_s                                              = lang.NewSymbol("s")
+	sym_show_defaults_QMARK_                           = lang.NewSymbol("show-defaults?")
+	sym_spec                                           = lang.NewSymbol("spec")
+	sym_specs                                          = lang.NewSymbol("specs")
+	sym_switches                                       = lang.NewSymbol("switches")
+	sym_tokens                                         = lang.NewSymbol("tokens")
+	sym_v                                              = lang.NewSymbol("v")
+	sym_value                                          = lang.NewSymbol("value")
+	sym_x                                              = lang.NewSymbol("x")
+	sym_xs                                             = lang.NewSymbol("xs")
 	v_clojure_DOT_core_X_EQ_                           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
 	v_clojure_DOT_core_X_STAR_assert_STAR_             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*assert*")).SetDynamic()
 	v_clojure_DOT_core_X_STAR_err_STAR_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*err*"))
@@ -266,8 +299,8 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_s))
 	_ = tmp6
-	// (def make-format "Given a sequence of column widths, return a string suitable for use in\n…
-	v_clojure_DOT_tools_DOT_cli_make_format.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(37), kw_column, int64(8), kw_end_line, int64(37), kw_end_column, int64(19), kw_private, true, kw_doc, "Given a sequence of column widths, return a string suitable for use in\n  format to print a sequences of strings in those columns."))
+	// (def make-format (clojure.core/fn ([lens] (s/join (map (fn* [p1__57#] (str "  %" (when-not…
+	v_clojure_DOT_tools_DOT_cli_make_format.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(37), kw_column, int64(8), kw_end_line, int64(37), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_lens)), kw_doc, "Given a sequence of column widths, return a string suitable for use in\n  format to print a sequences of strings in those columns."))
 	tmp7 := lang.FnFunc1(func(lens8 any) any {
 		tmp9 := v_clojure_DOT_string_join.Get()
 		tmp10 := v_clojure_DOT_core_map_.Get()
@@ -297,8 +330,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_make_format = tmp23.F
 	v_clojure_DOT_tools_DOT_cli_make_format.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_make_format
-	// (def tokenize-args "Reduce arguments sequence into [opt-type opt ?optarg?] vectors and a v…
-	v_clojure_DOT_tools_DOT_cli_tokenize_args.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(43), kw_column, int64(8), kw_end_line, int64(43), kw_end_column, int64(21), kw_private, true, kw_doc, "Reduce arguments sequence into [opt-type opt ?optarg?] vectors and a vector\n  of remaining arguments. Returns as [option-tokens remaining-args].\n\n  Expands clumped short options like \"-abc\" into:\n  [[:short-opt \"-a\"] [:short-opt \"-b\"] [:short-opt \"-c\"]]\n\n  If \"-b\" were in the set of options that require arguments, \"-abc\" would\n  then be interpreted as: [[:short-opt \"-a\"] [:short-opt \"-b\" \"c\"]]\n\n  Long options with `=` are always parsed as option + optarg, even if nothing\n  follows the `=` sign.\n\n  If the :in-order flag is true, the first non-option, non-optarg argument\n  stops options processing. This is useful for handling subcommand options."))
+	// (def tokenize-args (clojure.core/fn ([required-set args & options] (let [{:keys [in-order]…
+	v_clojure_DOT_tools_DOT_cli_tokenize_args.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(43), kw_column, int64(8), kw_end_line, int64(43), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_required_set, sym_args, sym_X_AMP_, sym_options)), kw_doc, "Reduce arguments sequence into [opt-type opt ?optarg?] vectors and a vector\n  of remaining arguments. Returns as [option-tokens remaining-args].\n\n  Expands clumped short options like \"-abc\" into:\n  [[:short-opt \"-a\"] [:short-opt \"-b\"] [:short-opt \"-c\"]]\n\n  If \"-b\" were in the set of options that require arguments, \"-abc\" would\n  then be interpreted as: [[:short-opt \"-a\"] [:short-opt \"-b\" \"c\"]]\n\n  Long options with `=` are always parsed as option + optarg, even if nothing\n  follows the `=` sign.\n\n  If the :in-order flag is true, the first non-option, non-optarg argument\n  stops options processing. This is useful for handling subcommand options."))
 	tmp24 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -716,8 +749,8 @@ func Load() {
 	tmp242 := lang.NewVector(kw_id, kw_short_opt, kw_long_opt, kw_required, kw_desc, kw_default_, kw_default_desc, kw_default_fn, kw_parse_fn, kw_assoc_fn, kw_update_fn, kw_multi, kw_post_validation, kw_validate_fn, kw_validate_msg, kw_missing)
 	v_clojure_DOT_tools_DOT_cli_spec_keys.BindRoot(tmp242)
 	_ = v_clojure_DOT_tools_DOT_cli_spec_keys
-	// (def select-spec-keys "Select only known spec entries from map and warn the user about unk…
-	v_clojure_DOT_tools_DOT_cli_select_spec_keys.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(98), kw_column, int64(8), kw_end_line, int64(98), kw_end_column, int64(24), kw_private, true, kw_doc, "Select only known spec entries from map and warn the user about unknown\n   entries at development time."))
+	// (def select-spec-keys (clojure.core/fn ([map] (when *assert* (let [unknown-keys (keys (app…
+	v_clojure_DOT_tools_DOT_cli_select_spec_keys.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(98), kw_column, int64(8), kw_end_line, int64(98), kw_end_column, int64(24), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_map_)), kw_doc, "Select only known spec entries from map and warn the user about unknown\n   entries at development time."))
 	tmp243 := lang.FnFunc1(func(map_244 any) any {
 		tmp245 := v_clojure_DOT_core_X_STAR_assert_STAR_.Get()
 		var tmp246 any
@@ -777,8 +810,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_select_spec_keys = tmp271.F
 	v_clojure_DOT_tools_DOT_cli_select_spec_keys.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_select_spec_keys
-	// (def compile-spec (clojure.core/fn [spec] (let [sopt-lopt-desc (take-while (fn* [p1__58#] …
-	v_clojure_DOT_tools_DOT_cli_compile_spec.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(110), kw_column, int64(8), kw_end_line, int64(110), kw_end_column, int64(20), kw_private, true))
+	// (def compile-spec (clojure.core/fn ([spec] (let [sopt-lopt-desc (take-while (fn* [p1__58#]…
+	v_clojure_DOT_tools_DOT_cli_compile_spec.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(110), kw_column, int64(8), kw_end_line, int64(110), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_spec))))
 	tmp272 := lang.FnFunc1(func(spec273 any) any {
 		var tmp274 any
 		_ = tmp274
@@ -940,8 +973,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_compile_spec = tmp361.F
 	v_clojure_DOT_tools_DOT_cli_compile_spec.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_compile_spec
-	// (def distinct?* (clojure.core/fn [coll] (if (seq coll) (apply distinct? coll) true)))
-	v_clojure_DOT_tools_DOT_cli_distinct_QMARK__STAR_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(132), kw_column, int64(8), kw_end_line, int64(132), kw_end_column, int64(18), kw_private, true))
+	// (def distinct?* (clojure.core/fn ([coll] (if (seq coll) (apply distinct? coll) true))))
+	v_clojure_DOT_tools_DOT_cli_distinct_QMARK__STAR_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(132), kw_column, int64(8), kw_end_line, int64(132), kw_end_column, int64(18), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_coll))))
 	tmp362 := lang.FnFunc1(func(coll363 any) any {
 		tmp364 := v_clojure_DOT_core_seq.Get()
 		tmp365 := lang.Apply1(tmp364, coll363)
@@ -962,8 +995,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_distinct_QMARK__STAR_ = tmp370.F
 	v_clojure_DOT_tools_DOT_cli_distinct_QMARK__STAR_.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_distinct_QMARK__STAR_
-	// (def wrap-val (clojure.core/fn [map key] (if (contains? map key) (update-in map [key] (fn*…
-	v_clojure_DOT_tools_DOT_cli_wrap_val.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(137), kw_column, int64(8), kw_end_line, int64(137), kw_end_column, int64(16), kw_private, true))
+	// (def wrap-val (clojure.core/fn ([map key] (if (contains? map key) (update-in map [key] (fn…
+	v_clojure_DOT_tools_DOT_cli_wrap_val.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(137), kw_column, int64(8), kw_end_line, int64(137), kw_end_column, int64(16), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_map_, sym_key))))
 	tmp371 := lang.FnFunc2(func(map_372, key373 any) any {
 		tmp374 := v_clojure_DOT_core_contains_QMARK_.Get()
 		tmp375 := lang.Apply2(tmp374, map_372, key373)
@@ -1014,8 +1047,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_wrap_val = tmp391.F
 	v_clojure_DOT_tools_DOT_cli_wrap_val.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_wrap_val
-	// (def compile-option-specs "Map a sequence of option specification vectors to a sequence of…
-	v_clojure_DOT_tools_DOT_cli_compile_option_specs.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(144), kw_column, int64(8), kw_end_line, int64(144), kw_end_column, int64(28), kw_private, true, kw_doc, "Map a sequence of option specification vectors to a sequence of:\n\n  {:id           Keyword  ; :server\n   :short-opt    String   ; \"-s\"\n   :long-opt     String   ; \"--server\"\n   :required     String   ; \"HOSTNAME\"\n   :desc         String   ; \"Remote server\"\n   :default      Object   ; #<Inet4Address example.com/93.184.216.119>\n   :default-desc String   ; \"example.com\"\n   :default-fn   IFn      ; (constantly 0)\n   :parse-fn     IFn      ; #(InetAddress/getByName %)\n   :assoc-fn     IFn      ; assoc\n   :update-fn    IFn      ; identity\n   :validate-fn  [IFn]    ; [#(instance? Inet4Address %)\n                          ;  #(not (.isMulticastAddress %)]\n   :validate-msg [String] ; [\"Must be an IPv4 host\"\n                          ;  \"Must not be a multicast address\"]\n                          ; can also be a function (of the invalid argument)\n   :post-validation Boolean ; default false\n   :missing      String   ; \"server must be specified\"\n   }\n\n  :id defaults to the keywordized name of long-opt without leading dashes, but\n  may be overridden in the option spec.\n\n  The option spec entry `:validate [fn msg ...]` desugars into the two vector\n  entries :validate-fn and :validate-msg. Multiple pairs of validation\n  functions and error messages may be provided.\n\n  A :default(-fn) entry will not be included in the compiled spec unless\n  specified. The :default is applied before options are parsed, the :default-fn\n  is applied after options are parsed (only where an option was not specified,\n  and is passed the whole options map as its single argument, so defaults can\n  be computed from other options if needed).\n\n  An option spec may also be passed as a map containing the entries above,\n  in which case that subset of the map is transferred directly to the result\n  vector.\n\n  An assertion error is thrown if any :id values are unset, or if there exist\n  any duplicate :id, :short-opt, or :long-opt values, or if both :assoc-fn and\n  :update-fn are provided for any single option."))
+	// (def compile-option-specs (clojure.core/fn ([option-specs] (let [result (map (fn [spec] (-…
+	v_clojure_DOT_tools_DOT_cli_compile_option_specs.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(144), kw_column, int64(8), kw_end_line, int64(144), kw_end_column, int64(28), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_option_specs)), kw_doc, "Map a sequence of option specification vectors to a sequence of:\n\n  {:id           Keyword  ; :server\n   :short-opt    String   ; \"-s\"\n   :long-opt     String   ; \"--server\"\n   :required     String   ; \"HOSTNAME\"\n   :desc         String   ; \"Remote server\"\n   :default      Object   ; #<Inet4Address example.com/93.184.216.119>\n   :default-desc String   ; \"example.com\"\n   :default-fn   IFn      ; (constantly 0)\n   :parse-fn     IFn      ; #(InetAddress/getByName %)\n   :assoc-fn     IFn      ; assoc\n   :update-fn    IFn      ; identity\n   :validate-fn  [IFn]    ; [#(instance? Inet4Address %)\n                          ;  #(not (.isMulticastAddress %)]\n   :validate-msg [String] ; [\"Must be an IPv4 host\"\n                          ;  \"Must not be a multicast address\"]\n                          ; can also be a function (of the invalid argument)\n   :post-validation Boolean ; default false\n   :missing      String   ; \"server must be specified\"\n   }\n\n  :id defaults to the keywordized name of long-opt without leading dashes, but\n  may be overridden in the option spec.\n\n  The option spec entry `:validate [fn msg ...]` desugars into the two vector\n  entries :validate-fn and :validate-msg. Multiple pairs of validation\n  functions and error messages may be provided.\n\n  A :default(-fn) entry will not be included in the compiled spec unless\n  specified. The :default is applied before options are parsed, the :default-fn\n  is applied after options are parsed (only where an option was not specified,\n  and is passed the whole options map as its single argument, so defaults can\n  be computed from other options if needed).\n\n  An option spec may also be passed as a map containing the entries above,\n  in which case that subset of the map is transferred directly to the result\n  vector.\n\n  An assertion error is thrown if any :id values are unset, or if there exist\n  any duplicate :id, :short-opt, or :long-opt values, or if both :assoc-fn and\n  :update-fn are provided for any single option."))
 	tmp392 := lang.FnFunc1(func(option_specs393 any) any {
 		var tmp394 any
 		_ = tmp394
@@ -1257,8 +1290,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_compile_option_specs = tmp509.F
 	v_clojure_DOT_tools_DOT_cli_compile_option_specs.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_compile_option_specs
-	// (def default-option-map (clojure.core/fn [specs default-key] (reduce (fn [m s] (if (contai…
-	v_clojure_DOT_tools_DOT_cli_default_option_map.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(207), kw_column, int64(8), kw_end_line, int64(207), kw_end_column, int64(26), kw_private, true))
+	// (def default-option-map (clojure.core/fn ([specs default-key] (reduce (fn [m s] (if (conta…
+	v_clojure_DOT_tools_DOT_cli_default_option_map.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(207), kw_column, int64(8), kw_end_line, int64(207), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_specs, sym_default_key))))
 	tmp510 := lang.FnFunc2(func(specs511, default_key512 any) any {
 		tmp513 := v_clojure_DOT_core_reduce.Get()
 		tmp514 := lang.FnFunc2(func(m515, s516 any) any {
@@ -1287,8 +1320,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_default_option_map = tmp527.F
 	v_clojure_DOT_tools_DOT_cli_default_option_map.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_default_option_map
-	// (def missing-errors "Given specs, returns a map of spec id to error message if missing." (…
-	v_clojure_DOT_tools_DOT_cli_missing_errors.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(214), kw_column, int64(8), kw_end_line, int64(214), kw_end_column, int64(22), kw_private, true, kw_doc, "Given specs, returns a map of spec id to error message if missing."))
+	// (def missing-errors (clojure.core/fn ([specs] (reduce (fn [m s] (if (:missing s) (assoc m …
+	v_clojure_DOT_tools_DOT_cli_missing_errors.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(214), kw_column, int64(8), kw_end_line, int64(214), kw_end_column, int64(22), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_specs)), kw_doc, "Given specs, returns a map of spec id to error message if missing."))
 	tmp528 := lang.FnFunc1(func(specs529 any) any {
 		tmp530 := v_clojure_DOT_core_reduce.Get()
 		tmp531 := lang.FnFunc2(func(m532, s533 any) any {
@@ -1316,8 +1349,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_missing_errors = tmp543.F
 	v_clojure_DOT_tools_DOT_cli_missing_errors.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_missing_errors
-	// (def find-spec (clojure.core/fn [specs opt-type opt] (first (filter (fn [spec] (when-let […
-	v_clojure_DOT_tools_DOT_cli_find_spec.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(223), kw_column, int64(8), kw_end_line, int64(223), kw_end_column, int64(17), kw_private, true))
+	// (def find-spec (clojure.core/fn ([specs opt-type opt] (first (filter (fn [spec] (when-let …
+	v_clojure_DOT_tools_DOT_cli_find_spec.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(223), kw_column, int64(8), kw_end_line, int64(223), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_specs, sym_opt_type, sym_opt))))
 	tmp544 := lang.FnFunc3(func(specs545, opt_type546, opt547 any) any {
 		tmp548 := v_clojure_DOT_core_first.Get()
 		tmp549 := v_clojure_DOT_core_filter.Get()
@@ -1385,8 +1418,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_find_spec = tmp579.F
 	v_clojure_DOT_tools_DOT_cli_find_spec.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_find_spec
-	// (def pr-join (clojure.core/fn [& xs] (pr-str (s/join \space xs))))
-	v_clojure_DOT_tools_DOT_cli_pr_join.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(235), kw_column, int64(8), kw_end_line, int64(235), kw_end_column, int64(15), kw_private, true))
+	// (def pr-join (clojure.core/fn ([& xs] (pr-str (s/join \space xs)))))
+	v_clojure_DOT_tools_DOT_cli_pr_join.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(235), kw_column, int64(8), kw_end_line, int64(235), kw_end_column, int64(15), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_xs))))
 	tmp580 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -1407,8 +1440,8 @@ func Load() {
 	})
 	v_clojure_DOT_tools_DOT_cli_pr_join.BindRoot(tmp580)
 	_ = v_clojure_DOT_tools_DOT_cli_pr_join
-	// (def missing-required-error (clojure.core/fn [opt example-required] (str "Missing required…
-	v_clojure_DOT_tools_DOT_cli_missing_required_error.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(238), kw_column, int64(8), kw_end_line, int64(238), kw_end_column, int64(30), kw_private, true))
+	// (def missing-required-error (clojure.core/fn ([opt example-required] (str "Missing require…
+	v_clojure_DOT_tools_DOT_cli_missing_required_error.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(238), kw_column, int64(8), kw_end_line, int64(238), kw_end_column, int64(30), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_opt, sym_example_required))))
 	tmp586 := lang.FnFunc2(func(opt587, example_required588 any) any {
 		tmp589 := v_clojure_DOT_core_str.Get()
 		tmp590 := v_clojure_DOT_tools_DOT_cli_pr_join.Get()
@@ -1421,8 +1454,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_missing_required_error = tmp593.F
 	v_clojure_DOT_tools_DOT_cli_missing_required_error.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_missing_required_error
-	// (def parse-error (clojure.core/fn [opt optarg msg] (str "Error while parsing option " (pr-…
-	v_clojure_DOT_tools_DOT_cli_parse_error.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(241), kw_column, int64(8), kw_end_line, int64(241), kw_end_column, int64(19), kw_private, true))
+	// (def parse-error (clojure.core/fn ([opt optarg msg] (str "Error while parsing option " (pr…
+	v_clojure_DOT_tools_DOT_cli_parse_error.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(241), kw_column, int64(8), kw_end_line, int64(241), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_opt, sym_optarg, sym_msg))))
 	tmp594 := lang.FnFunc3(func(opt595, optarg596, msg597 any) any {
 		tmp598 := v_clojure_DOT_core_str.Get()
 		tmp599 := v_clojure_DOT_tools_DOT_cli_pr_join.Get()
@@ -1435,8 +1468,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_parse_error = tmp602.F
 	v_clojure_DOT_tools_DOT_cli_parse_error.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_parse_error
-	// (def validation-error (clojure.core/fn [value opt optarg msg] (str "Failed to validate " (…
-	v_clojure_DOT_tools_DOT_cli_validation_error.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(244), kw_column, int64(8), kw_end_line, int64(244), kw_end_column, int64(24), kw_private, true))
+	// (def validation-error (clojure.core/fn ([value opt optarg msg] (str "Failed to validate " …
+	v_clojure_DOT_tools_DOT_cli_validation_error.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(244), kw_column, int64(8), kw_end_line, int64(244), kw_end_column, int64(24), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_value, sym_opt, sym_optarg, sym_msg))))
 	tmp603 := lang.FnFunc4(func(value604, opt605, optarg606, msg607 any) any {
 		tmp608 := v_clojure_DOT_core_str.Get()
 		tmp609 := v_clojure_DOT_tools_DOT_cli_pr_join.Get()
@@ -1468,8 +1501,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_validation_error = tmp619.F
 	v_clojure_DOT_tools_DOT_cli_validation_error.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_validation_error
-	// (def validate (clojure.core/fn [value spec opt optarg] (let [{:keys [validate-fn validate-…
-	v_clojure_DOT_tools_DOT_cli_validate.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(248), kw_column, int64(8), kw_end_line, int64(248), kw_end_column, int64(16), kw_private, true))
+	// (def validate (clojure.core/fn ([value spec opt optarg] (let [{:keys [validate-fn validate…
+	v_clojure_DOT_tools_DOT_cli_validate.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(248), kw_column, int64(8), kw_end_line, int64(248), kw_end_column, int64(16), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_value, sym_spec, sym_opt, sym_optarg))))
 	tmp620 := lang.FnFunc4(func(value621, spec622, opt623, optarg624 any) any {
 		var tmp625 any
 		_ = tmp625
@@ -1668,8 +1701,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_validate = tmp710.F
 	v_clojure_DOT_tools_DOT_cli_validate.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_validate
-	// (def parse-value (clojure.core/fn [value spec opt optarg] (let [{:keys [parse-fn]} spec [v…
-	v_clojure_DOT_tools_DOT_cli_parse_value.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(257), kw_column, int64(8), kw_end_line, int64(257), kw_end_column, int64(19), kw_private, true))
+	// (def parse-value (clojure.core/fn ([value spec opt optarg] (let [{:keys [parse-fn]} spec […
+	v_clojure_DOT_tools_DOT_cli_parse_value.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(257), kw_column, int64(8), kw_end_line, int64(257), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_value, sym_spec, sym_opt, sym_optarg))))
 	tmp711 := lang.FnFunc4(func(value712, spec713, opt714, optarg715 any) any {
 		var tmp716 any
 		_ = tmp716
@@ -1788,8 +1821,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_parse_value = tmp755.F
 	v_clojure_DOT_tools_DOT_cli_parse_value.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_parse_value
-	// (def allow-no? (clojure.core/fn [spec] (and (:long-opt spec) (re-find #"^--\[no-\]" (:long…
-	v_clojure_DOT_tools_DOT_cli_allow_no_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(272), kw_column, int64(8), kw_end_line, int64(272), kw_end_column, int64(17), kw_private, true))
+	// (def allow-no? (clojure.core/fn ([spec] (and (:long-opt spec) (re-find #"^--\[no-\]" (:lon…
+	v_clojure_DOT_tools_DOT_cli_allow_no_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(272), kw_column, int64(8), kw_end_line, int64(272), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_spec))))
 	tmp756 := lang.FnFunc1(func(spec757 any) any {
 		var tmp758 any
 		_ = tmp758
@@ -1816,8 +1849,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_allow_no_QMARK_ = tmp766.F
 	v_clojure_DOT_tools_DOT_cli_allow_no_QMARK_.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_allow_no_QMARK_
-	// (def neg-flag? (clojure.core/fn [spec opt] (and (allow-no? spec) (re-find #"^--no-" opt)))…
-	v_clojure_DOT_tools_DOT_cli_neg_flag_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(276), kw_column, int64(8), kw_end_line, int64(276), kw_end_column, int64(17), kw_private, true))
+	// (def neg-flag? (clojure.core/fn ([spec opt] (and (allow-no? spec) (re-find #"^--no-" opt))…
+	v_clojure_DOT_tools_DOT_cli_neg_flag_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(276), kw_column, int64(8), kw_end_line, int64(276), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_spec, sym_opt))))
 	tmp767 := lang.FnFunc2(func(spec768, opt769 any) any {
 		var tmp770 any
 		_ = tmp770
@@ -1853,8 +1886,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_neg_flag_QMARK_ = tmp779.F
 	v_clojure_DOT_tools_DOT_cli_neg_flag_QMARK_.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_neg_flag_QMARK_
-	// (def parse-optarg (clojure.core/fn [spec opt optarg] (let [{:keys [required]} spec] (if (a…
-	v_clojure_DOT_tools_DOT_cli_parse_optarg.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(280), kw_column, int64(8), kw_end_line, int64(280), kw_end_column, int64(20), kw_private, true))
+	// (def parse-optarg (clojure.core/fn ([spec opt optarg] (let [{:keys [required]} spec] (if (…
+	v_clojure_DOT_tools_DOT_cli_parse_optarg.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(280), kw_column, int64(8), kw_end_line, int64(280), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_spec, sym_opt, sym_optarg))))
 	tmp780 := lang.FnFunc3(func(spec781, opt782, optarg783 any) any {
 		var tmp784 any
 		_ = tmp784
@@ -1960,8 +1993,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_parse_optarg = tmp816.F
 	v_clojure_DOT_tools_DOT_cli_parse_optarg.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_parse_optarg
-	// (def parse-option-tokens "Reduce sequence of [opt-type opt ?optarg?] tokens into a map of\…
-	v_clojure_DOT_tools_DOT_cli_parse_option_tokens.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(289), kw_column, int64(8), kw_end_line, int64(289), kw_end_column, int64(27), kw_private, true, kw_doc, "Reduce sequence of [opt-type opt ?optarg?] tokens into a map of\n  {option-id value} merged over the default values in the option\n  specifications.\n\n  If the :no-defaults flag is true, only options specified in the tokens are\n  included in the option-map.\n\n  Unknown options, missing options, missing required arguments, option\n  argument parsing exceptions, and validation failures are collected into\n  a vector of error message strings.\n\n  If the :strict flag is true, required arguments that match other options\n  are treated as missing, instead of a literal value beginning with - or --.\n\n  Returns [option-map error-messages-vector]."))
+	// (def parse-option-tokens (clojure.core/fn ([specs tokens & options] (let [{:keys [no-defau…
+	v_clojure_DOT_tools_DOT_cli_parse_option_tokens.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(289), kw_column, int64(8), kw_end_line, int64(289), kw_end_column, int64(27), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_specs, sym_tokens, sym_X_AMP_, sym_options)), kw_doc, "Reduce sequence of [opt-type opt ?optarg?] tokens into a map of\n  {option-id value} merged over the default values in the option\n  specifications.\n\n  If the :no-defaults flag is true, only options specified in the tokens are\n  included in the option-map.\n\n  Unknown options, missing options, missing required arguments, option\n  argument parsing exceptions, and validation failures are collected into\n  a vector of error message strings.\n\n  If the :strict flag is true, required arguments that match other options\n  are treated as missing, instead of a literal value beginning with - or --.\n\n  Returns [option-map error-messages-vector]."))
 	tmp817 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -2490,8 +2523,8 @@ func Load() {
 	})
 	v_clojure_DOT_tools_DOT_cli_parse_option_tokens.BindRoot(tmp817)
 	_ = v_clojure_DOT_tools_DOT_cli_parse_option_tokens
-	// (def make-summary-part "Given a single compiled option spec, turn it into a formatted stri…
-	v_clojure_DOT_tools_DOT_cli_make_summary_part.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(351), kw_column, int64(7), kw_end_line, int64(351), kw_end_column, int64(24), kw_doc, "Given a single compiled option spec, turn it into a formatted string,\n  optionally with its default values if requested."))
+	// (def make-summary-part (clojure.core/fn ([show-defaults? spec] (let [{:keys [short-opt lon…
+	v_clojure_DOT_tools_DOT_cli_make_summary_part.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(351), kw_column, int64(7), kw_end_line, int64(351), kw_end_column, int64(24), kw_arglists, lang.NewList(lang.NewVector(sym_show_defaults_QMARK_, sym_spec)), kw_doc, "Given a single compiled option spec, turn it into a formatted string,\n  optionally with its default values if requested."))
 	tmp1073 := lang.FnFunc2(func(show_defaults_QMARK_1074, spec1075 any) any {
 		var tmp1076 any
 		_ = tmp1076
@@ -2715,8 +2748,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_make_summary_part = tmp1154.F
 	v_clojure_DOT_tools_DOT_cli_make_summary_part.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_make_summary_part
-	// (def format-lines "Format a sequence of summary parts into columns. lens is a sequence of\…
-	v_clojure_DOT_tools_DOT_cli_format_lines.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(375), kw_column, int64(7), kw_end_line, int64(375), kw_end_column, int64(19), kw_doc, "Format a sequence of summary parts into columns. lens is a sequence of\n  lengths to use for parts. There are two sequences of lengths if we are\n  not displaying defaults. There are three sequences of lengths if we\n  are showing defaults."))
+	// (def format-lines (clojure.core/fn ([lens parts] (let [fmt (make-format lens)] (map (fn* […
+	v_clojure_DOT_tools_DOT_cli_format_lines.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(375), kw_column, int64(7), kw_end_line, int64(375), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_lens, sym_parts)), kw_doc, "Format a sequence of summary parts into columns. lens is a sequence of\n  lengths to use for parts. There are two sequences of lengths if we are\n  not displaying defaults. There are three sequences of lengths if we\n  are showing defaults."))
 	tmp1155 := lang.FnFunc2(func(lens1156, parts1157 any) any {
 		var tmp1158 any
 		_ = tmp1158
@@ -2754,8 +2787,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_format_lines = tmp1173.F
 	v_clojure_DOT_tools_DOT_cli_format_lines.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_format_lines
-	// (def required-arguments (clojure.core/fn [specs] (reduce (fn [s {:keys [required short-opt…
-	v_clojure_DOT_tools_DOT_cli_required_arguments.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(384), kw_column, int64(8), kw_end_line, int64(384), kw_end_column, int64(26), kw_private, true))
+	// (def required-arguments (clojure.core/fn ([specs] (reduce (fn [s {:keys [required short-op…
+	v_clojure_DOT_tools_DOT_cli_required_arguments.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(384), kw_column, int64(8), kw_end_line, int64(384), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_specs))))
 	tmp1174 := lang.FnFunc1(func(specs1175 any) any {
 		tmp1176 := v_clojure_DOT_core_reduce.Get()
 		tmp1177 := lang.FnFunc2(func(s1178, p__2961179 any) any {
@@ -2816,8 +2849,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_required_arguments = tmp1207.F
 	v_clojure_DOT_tools_DOT_cli_required_arguments.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_required_arguments
-	// (def summarize "Reduce options specs into a options summary for printing at a terminal.\n …
-	v_clojure_DOT_tools_DOT_cli_summarize.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(392), kw_column, int64(7), kw_end_line, int64(392), kw_end_column, int64(16), kw_doc, "Reduce options specs into a options summary for printing at a terminal.\n  Note that the specs argument should be the compiled version. That effectively\n  means that you shouldn't call summarize directly. When you call parse-opts\n  you get back a :summary key which is the result of calling summarize (or\n  your user-supplied :summary-fn option) on the compiled option specs."))
+	// (def summarize (clojure.core/fn ([specs] (if (seq specs) (let [show-defaults? (some (fn* […
+	v_clojure_DOT_tools_DOT_cli_summarize.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(392), kw_column, int64(7), kw_end_line, int64(392), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_specs)), kw_doc, "Reduce options specs into a options summary for printing at a terminal.\n  Note that the specs argument should be the compiled version. That effectively\n  means that you shouldn't call summarize directly. When you call parse-opts\n  you get back a :summary key which is the result of calling summarize (or\n  your user-supplied :summary-fn option) on the compiled option specs."))
 	tmp1208 := lang.FnFunc1(func(specs1209 any) any {
 		tmp1210 := v_clojure_DOT_core_seq.Get()
 		tmp1211 := lang.Apply1(tmp1210, specs1209)
@@ -2913,8 +2946,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_summarize = tmp1251.F
 	v_clojure_DOT_tools_DOT_cli_summarize.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_summarize
-	// (def get-default-options "Extract the map of default options from a sequence of option vec…
-	v_clojure_DOT_tools_DOT_cli_get_default_options.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(408), kw_column, int64(7), kw_end_line, int64(408), kw_end_column, int64(26), kw_doc, "Extract the map of default options from a sequence of option vectors.\n\n  As of 0.4.1, this also applies any :default-fn present."))
+	// (def get-default-options (clojure.core/fn ([option-specs] (let [specs (compile-option-spec…
+	v_clojure_DOT_tools_DOT_cli_get_default_options.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(408), kw_column, int64(7), kw_end_line, int64(408), kw_end_column, int64(26), kw_arglists, lang.NewList(lang.NewVector(sym_option_specs)), kw_doc, "Extract the map of default options from a sequence of option vectors.\n\n  As of 0.4.1, this also applies any :default-fn present."))
 	tmp1252 := lang.FnFunc1(func(option_specs1253 any) any {
 		var tmp1254 any
 		_ = tmp1254
@@ -2999,8 +3032,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_get_default_options = tmp1287.F
 	v_clojure_DOT_tools_DOT_cli_get_default_options.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_get_default_options
-	// (def parse-opts "Parse arguments sequence according to given option specifications and the…
-	v_clojure_DOT_tools_DOT_cli_parse_opts.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(422), kw_column, int64(7), kw_end_line, int64(422), kw_end_column, int64(17), kw_doc, "Parse arguments sequence according to given option specifications and the\n  GNU Program Argument Syntax Conventions:\n\n    https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html\n\n  Option specifications are a sequence of vectors with the following format:\n\n    [short-opt long-opt-with-required-description description\n     :property value]\n\n  The first three string parameters in an option spec are positional and\n  optional, and may be nil in order to specify a later parameter.\n\n  By default, options are toggles that default to nil, but the second string\n  parameter may be used to specify that an option requires an argument.\n\n    e.g. [\"-p\" \"--port PORT\"] specifies that --port requires an argument,\n         of which PORT is a short description.\n\n  The :property value pairs are optional and take precedence over the\n  positional string arguments. The valid properties are:\n\n    :id           The key for this option in the resulting option map. This\n                  is normally set to the keywordized name of the long option\n                  without the leading dashes.\n\n                  Multiple option entries can share the same :id in order to\n                  transform a value in different ways, but only one of these\n                  option entries may contain a :default(-fn) entry.\n\n                  This option is mandatory.\n\n    :short-opt    The short format for this option, normally set by the first\n                  positional string parameter: e.g. \"-p\". Must be unique.\n\n    :long-opt     The long format for this option, normally set by the second\n                  positional string parameter; e.g. \"--port\". Must be unique.\n\n    :required     A description of the required argument for this option if\n                  one is required; normally set in the second positional\n                  string parameter after the long option: \"--port PORT\".\n\n                  The absence of this entry indicates that the option is a\n                  boolean toggle that is set to true when specified on the\n                  command line.\n\n    :missing      Indicates that this option is required (not just an argument),\n                  and provides the string to use as an error message if omitted.\n\n    :desc         A optional short description of this option.\n\n    :default      The default value of this option. If none is specified, the\n                  resulting option map will not contain an entry for this\n                  option unless set on the command line. Also see :default-fn\n                  (below).\n\n                  This default is applied before any arguments are parsed so\n                  this is a good way to seed values for :assoc-fn or :update-fn\n                  as well as the simplest way to provide defaults.\n\n                  If you need to compute a default based on other command line\n                  arguments, or you need to provide a default separate from the\n                  seed for :assoc-fn or :update-fn, see :default-fn below.\n\n    :default-desc An optional description of the default value. This should be\n                  used when the string representation of the default value is\n                  too ugly to be printed on the command line, or :default-fn\n                  is used to compute the default.\n\n    :default-fn   A function to compute the default value of this option, given\n                  the whole, parsed option map as its one argument. If no\n                  function is specified, the resulting option map will not\n                  contain an entry for this option unless set on the command\n                  line. Also see :default (above).\n\n                  If both :default and :default-fn are provided, if the\n                  argument is not provided on the command-line, :default-fn will\n                  still be called (and can override :default).\n\n    :parse-fn     A function that receives the required option argument and\n                  returns the option value.\n\n                  If this is a boolean option, parse-fn will receive the value\n                  true. This may be used to invert the logic of this option:\n\n                  [\"-q\" \"--quiet\"\n                   :id :verbose\n                   :default true\n                   :parse-fn not]\n\n    :assoc-fn     A function that receives the current option map, the current\n                  option :id, and the current parsed option value, and returns\n                  a new option map. The default is 'assoc'.\n\n                  For non-idempotent options, where you need to compute a option\n                  value based on the current value and a new value from the\n                  command line. If you only need the the current value, consider\n                  :update-fn (below).\n\n                  You cannot specify both :assoc-fn and :update-fn for an\n                  option.\n\n    :update-fn    Without :multi true:\n\n                  A function that receives just the existing parsed option value,\n                  and returns a new option value, for each option :id present.\n                  The default is 'identity'.\n\n                  This may be used to create non-idempotent options where you\n                  only need the current value, like setting a verbosity level by\n                  specifying an option multiple times. (\"-vvv\" -> 3)\n\n                  [\"-v\" \"--verbose\"\n                   :default 0\n                   :update-fn inc]\n\n                  :default is applied first. If you wish to omit the :default\n                  option value, use fnil in your :update-fn as follows:\n\n                  [\"-v\" \"--verbose\"\n                   :update-fn (fnil inc 0)]\n\n                  With :multi true:\n\n                  A function that receives both the existing parsed option value,\n                  and the parsed option value from each instance of the option,\n                  and returns a new option value, for each option :id present.\n                  The :multi option is ignored if you do not specify :update-fn.\n\n                  For non-idempotent options, where you need to compute a option\n                  value based on the current value and a new value from the\n                  command line. This can sometimes be easier than use :assoc-fn.\n\n                  [\"-f\" \"--file NAME\"\n                   :default []\n                   :update-fn conj\n                   :multi true]\n\n                  :default is applied first. If you wish to omit the :default\n                  option value, use fnil in your :update-fn as follows:\n\n                  [\"-f\" \"--file NAME\"\n                   :update-fn (fnil conj [])\n                   :multi true]\n\n                  Regardless of :multi, you cannot specify both :assoc-fn\n                  and :update-fn for an option.\n\n    :multi        true/false, applies only to options that use :update-fn.\n\n    :validate     A vector of [validate-fn validate-msg ...]. Multiple pairs\n                  of validation functions and error messages may be provided.\n\n    :validate-fn  A vector of functions that receives the parsed option value\n                  and returns a falsy value or throws an exception when the\n                  value is invalid. The validations are tried in the given\n                  order.\n\n    :validate-msg A vector of error messages corresponding to :validate-fn\n                  that will be added to the :errors vector on validation\n                  failure. Can be plain strings, or functions to be applied\n                  to the (invalid) option argument to produce a string.\n\n    :post-validation true/false. By default, validation is performed after\n                  parsing an option, prior to assoc/default/update processing.\n                  Specifying true here will cause the validation to be\n                  performed after assoc/default/update processing, instead.\n\n  parse-opts returns a map with four entries:\n\n    {:options     The options map, keyed by :id, mapped to the parsed value\n     :arguments   A vector of unprocessed arguments\n     :summary     A string containing a minimal options summary\n     :errors      A possible vector of error message strings generated during\n                  parsing; nil when no errors exist}\n\n  A few function options may be specified to influence the behavior of\n  parse-opts:\n\n    :in-order     Stop option processing at the first unknown argument. Useful\n                  for building programs with subcommands that have their own\n                  option specs.\n\n    :no-defaults  Only include option values specified in arguments and do not\n                  include any default values in the resulting options map.\n                  Useful for parsing options from multiple sources; i.e. from a\n                  config file and from the command line.\n\n    :strict       Parse required arguments strictly: if a required argument value\n                  matches any other option, it is considered to be missing (and\n                  you have a parse error).\n\n    :summary-fn   A function that receives the sequence of compiled option specs\n                  (documented at #'clojure.tools.cli/compile-option-specs), and\n                  returns a custom option summary string.\n  "))
+	// (def parse-opts (clojure.core/fn ([args option-specs & options] (let [{:keys [in-order no-…
+	v_clojure_DOT_tools_DOT_cli_parse_opts.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(422), kw_column, int64(7), kw_end_line, int64(422), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_args, sym_option_specs, sym_X_AMP_, sym_options)), kw_doc, "Parse arguments sequence according to given option specifications and the\n  GNU Program Argument Syntax Conventions:\n\n    https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html\n\n  Option specifications are a sequence of vectors with the following format:\n\n    [short-opt long-opt-with-required-description description\n     :property value]\n\n  The first three string parameters in an option spec are positional and\n  optional, and may be nil in order to specify a later parameter.\n\n  By default, options are toggles that default to nil, but the second string\n  parameter may be used to specify that an option requires an argument.\n\n    e.g. [\"-p\" \"--port PORT\"] specifies that --port requires an argument,\n         of which PORT is a short description.\n\n  The :property value pairs are optional and take precedence over the\n  positional string arguments. The valid properties are:\n\n    :id           The key for this option in the resulting option map. This\n                  is normally set to the keywordized name of the long option\n                  without the leading dashes.\n\n                  Multiple option entries can share the same :id in order to\n                  transform a value in different ways, but only one of these\n                  option entries may contain a :default(-fn) entry.\n\n                  This option is mandatory.\n\n    :short-opt    The short format for this option, normally set by the first\n                  positional string parameter: e.g. \"-p\". Must be unique.\n\n    :long-opt     The long format for this option, normally set by the second\n                  positional string parameter; e.g. \"--port\". Must be unique.\n\n    :required     A description of the required argument for this option if\n                  one is required; normally set in the second positional\n                  string parameter after the long option: \"--port PORT\".\n\n                  The absence of this entry indicates that the option is a\n                  boolean toggle that is set to true when specified on the\n                  command line.\n\n    :missing      Indicates that this option is required (not just an argument),\n                  and provides the string to use as an error message if omitted.\n\n    :desc         A optional short description of this option.\n\n    :default      The default value of this option. If none is specified, the\n                  resulting option map will not contain an entry for this\n                  option unless set on the command line. Also see :default-fn\n                  (below).\n\n                  This default is applied before any arguments are parsed so\n                  this is a good way to seed values for :assoc-fn or :update-fn\n                  as well as the simplest way to provide defaults.\n\n                  If you need to compute a default based on other command line\n                  arguments, or you need to provide a default separate from the\n                  seed for :assoc-fn or :update-fn, see :default-fn below.\n\n    :default-desc An optional description of the default value. This should be\n                  used when the string representation of the default value is\n                  too ugly to be printed on the command line, or :default-fn\n                  is used to compute the default.\n\n    :default-fn   A function to compute the default value of this option, given\n                  the whole, parsed option map as its one argument. If no\n                  function is specified, the resulting option map will not\n                  contain an entry for this option unless set on the command\n                  line. Also see :default (above).\n\n                  If both :default and :default-fn are provided, if the\n                  argument is not provided on the command-line, :default-fn will\n                  still be called (and can override :default).\n\n    :parse-fn     A function that receives the required option argument and\n                  returns the option value.\n\n                  If this is a boolean option, parse-fn will receive the value\n                  true. This may be used to invert the logic of this option:\n\n                  [\"-q\" \"--quiet\"\n                   :id :verbose\n                   :default true\n                   :parse-fn not]\n\n    :assoc-fn     A function that receives the current option map, the current\n                  option :id, and the current parsed option value, and returns\n                  a new option map. The default is 'assoc'.\n\n                  For non-idempotent options, where you need to compute a option\n                  value based on the current value and a new value from the\n                  command line. If you only need the the current value, consider\n                  :update-fn (below).\n\n                  You cannot specify both :assoc-fn and :update-fn for an\n                  option.\n\n    :update-fn    Without :multi true:\n\n                  A function that receives just the existing parsed option value,\n                  and returns a new option value, for each option :id present.\n                  The default is 'identity'.\n\n                  This may be used to create non-idempotent options where you\n                  only need the current value, like setting a verbosity level by\n                  specifying an option multiple times. (\"-vvv\" -> 3)\n\n                  [\"-v\" \"--verbose\"\n                   :default 0\n                   :update-fn inc]\n\n                  :default is applied first. If you wish to omit the :default\n                  option value, use fnil in your :update-fn as follows:\n\n                  [\"-v\" \"--verbose\"\n                   :update-fn (fnil inc 0)]\n\n                  With :multi true:\n\n                  A function that receives both the existing parsed option value,\n                  and the parsed option value from each instance of the option,\n                  and returns a new option value, for each option :id present.\n                  The :multi option is ignored if you do not specify :update-fn.\n\n                  For non-idempotent options, where you need to compute a option\n                  value based on the current value and a new value from the\n                  command line. This can sometimes be easier than use :assoc-fn.\n\n                  [\"-f\" \"--file NAME\"\n                   :default []\n                   :update-fn conj\n                   :multi true]\n\n                  :default is applied first. If you wish to omit the :default\n                  option value, use fnil in your :update-fn as follows:\n\n                  [\"-f\" \"--file NAME\"\n                   :update-fn (fnil conj [])\n                   :multi true]\n\n                  Regardless of :multi, you cannot specify both :assoc-fn\n                  and :update-fn for an option.\n\n    :multi        true/false, applies only to options that use :update-fn.\n\n    :validate     A vector of [validate-fn validate-msg ...]. Multiple pairs\n                  of validation functions and error messages may be provided.\n\n    :validate-fn  A vector of functions that receives the parsed option value\n                  and returns a falsy value or throws an exception when the\n                  value is invalid. The validations are tried in the given\n                  order.\n\n    :validate-msg A vector of error messages corresponding to :validate-fn\n                  that will be added to the :errors vector on validation\n                  failure. Can be plain strings, or functions to be applied\n                  to the (invalid) option argument to produce a string.\n\n    :post-validation true/false. By default, validation is performed after\n                  parsing an option, prior to assoc/default/update processing.\n                  Specifying true here will cause the validation to be\n                  performed after assoc/default/update processing, instead.\n\n  parse-opts returns a map with four entries:\n\n    {:options     The options map, keyed by :id, mapped to the parsed value\n     :arguments   A vector of unprocessed arguments\n     :summary     A string containing a minimal options summary\n     :errors      A possible vector of error message strings generated during\n                  parsing; nil when no errors exist}\n\n  A few function options may be specified to influence the behavior of\n  parse-opts:\n\n    :in-order     Stop option processing at the first unknown argument. Useful\n                  for building programs with subcommands that have their own\n                  option specs.\n\n    :no-defaults  Only include option values specified in arguments and do not\n                  include any default values in the resulting options map.\n                  Useful for parsing options from multiple sources; i.e. from a\n                  config file and from the command line.\n\n    :strict       Parse required arguments strictly: if a required argument value\n                  matches any other option, it is considered to be missing (and\n                  you have a parse error).\n\n    :summary-fn   A function that receives the sequence of compiled option specs\n                  (documented at #'clojure.tools.cli/compile-option-specs), and\n                  returns a custom option summary string.\n  "))
 	tmp1288 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -3136,8 +3169,8 @@ func Load() {
 	})
 	v_clojure_DOT_tools_DOT_cli_parse_opts.BindRoot(tmp1288)
 	_ = v_clojure_DOT_tools_DOT_cli_parse_opts
-	// (def build-doc (clojure.core/fn [{:keys [switches docs default]}] [(apply str (interpose "…
-	v_clojure_DOT_tools_DOT_cli_build_doc.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(635), kw_column, int64(8), kw_end_line, int64(635), kw_end_column, int64(17), kw_private, true))
+	// (def build-doc (clojure.core/fn ([{:keys [switches docs default]}] [(apply str (interpose …
+	v_clojure_DOT_tools_DOT_cli_build_doc.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(635), kw_column, int64(8), kw_end_line, int64(635), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(lang.NewMap(kw_keys, lang.NewVector(sym_switches, sym_docs, sym_default_))))))
 	tmp1350 := lang.FnFunc1(func(p__3091351 any) any {
 		var tmp1352 any
 		_ = tmp1352
@@ -3214,8 +3247,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_build_doc = tmp1383.F
 	v_clojure_DOT_tools_DOT_cli_build_doc.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_build_doc
-	// (def banner-for (clojure.core/fn [desc specs] (when desc (println desc) (println)) (let [d…
-	v_clojure_DOT_tools_DOT_cli_banner_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(640), kw_column, int64(8), kw_end_line, int64(640), kw_end_column, int64(18), kw_private, true))
+	// (def banner-for (clojure.core/fn ([desc specs] (when desc (println desc) (println)) (let […
+	v_clojure_DOT_tools_DOT_cli_banner_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(640), kw_column, int64(8), kw_end_line, int64(640), kw_end_column, int64(18), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_desc, sym_specs))))
 	tmp1384 := lang.FnFunc2(func(desc1385, specs1386 any) any {
 		var tmp1387 any
 		_ = tmp1387
@@ -3480,8 +3513,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_banner_for = tmp1510.F
 	v_clojure_DOT_tools_DOT_cli_banner_for.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_banner_for
-	// (def name-for (clojure.core/fn [k] (s/replace k #"^--no-|^--\[no-\]|^--|^-" "")))
-	v_clojure_DOT_tools_DOT_cli_name_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(657), kw_column, int64(8), kw_end_line, int64(657), kw_end_column, int64(16), kw_private, true))
+	// (def name-for (clojure.core/fn ([k] (s/replace k #"^--no-|^--\[no-\]|^--|^-" ""))))
+	v_clojure_DOT_tools_DOT_cli_name_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(657), kw_column, int64(8), kw_end_line, int64(657), kw_end_column, int64(16), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_k))))
 	tmp1511 := lang.FnFunc1(func(k1512 any) any {
 		tmp1513 := v_clojure_DOT_string_replace.Get()
 		tmp1515 := lang.Apply3(tmp1513, k1512, re_1514, "")
@@ -3492,8 +3525,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_name_for = tmp1516.F
 	v_clojure_DOT_tools_DOT_cli_name_for.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_name_for
-	// (def flag-for (clojure.core/fn [v] (not (s/starts-with? v "--no-"))))
-	v_clojure_DOT_tools_DOT_cli_flag_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(660), kw_column, int64(8), kw_end_line, int64(660), kw_end_column, int64(16), kw_private, true))
+	// (def flag-for (clojure.core/fn ([v] (not (s/starts-with? v "--no-")))))
+	v_clojure_DOT_tools_DOT_cli_flag_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(660), kw_column, int64(8), kw_end_line, int64(660), kw_end_column, int64(16), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_v))))
 	tmp1517 := lang.FnFunc1(func(v1518 any) any {
 		tmp1519 := v_clojure_DOT_core_not.Get()
 		tmp1520 := v_clojure_DOT_string_starts_with_QMARK_.Get()
@@ -3506,8 +3539,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_flag_for = tmp1523.F
 	v_clojure_DOT_tools_DOT_cli_flag_for.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_flag_for
-	// (def opt? (clojure.core/fn [x] (s/starts-with? x "-")))
-	v_clojure_DOT_tools_DOT_cli_opt_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(663), kw_column, int64(8), kw_end_line, int64(663), kw_end_column, int64(12), kw_private, true))
+	// (def opt? (clojure.core/fn ([x] (s/starts-with? x "-"))))
+	v_clojure_DOT_tools_DOT_cli_opt_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(663), kw_column, int64(8), kw_end_line, int64(663), kw_end_column, int64(12), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x))))
 	tmp1524 := lang.FnFunc1(func(x1525 any) any {
 		tmp1526 := v_clojure_DOT_string_starts_with_QMARK_.Get()
 		tmp1527 := lang.Apply2(tmp1526, x1525, "-")
@@ -3518,8 +3551,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_opt_QMARK_ = tmp1528.F
 	v_clojure_DOT_tools_DOT_cli_opt_QMARK_.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_opt_QMARK_
-	// (def flag? (clojure.core/fn [x] (s/starts-with? x "--[no-]")))
-	v_clojure_DOT_tools_DOT_cli_flag_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(666), kw_column, int64(8), kw_end_line, int64(666), kw_end_column, int64(13), kw_private, true))
+	// (def flag? (clojure.core/fn ([x] (s/starts-with? x "--[no-]"))))
+	v_clojure_DOT_tools_DOT_cli_flag_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(666), kw_column, int64(8), kw_end_line, int64(666), kw_end_column, int64(13), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x))))
 	tmp1529 := lang.FnFunc1(func(x1530 any) any {
 		tmp1531 := v_clojure_DOT_string_starts_with_QMARK_.Get()
 		tmp1532 := lang.Apply2(tmp1531, x1530, "--[no-]")
@@ -3530,8 +3563,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_flag_QMARK_ = tmp1533.F
 	v_clojure_DOT_tools_DOT_cli_flag_QMARK_.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_flag_QMARK_
-	// (def end-of-args? (clojure.core/fn [x] (= "--" x)))
-	v_clojure_DOT_tools_DOT_cli_end_of_args_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(669), kw_column, int64(8), kw_end_line, int64(669), kw_end_column, int64(20), kw_private, true))
+	// (def end-of-args? (clojure.core/fn ([x] (= "--" x))))
+	v_clojure_DOT_tools_DOT_cli_end_of_args_QMARK_.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(669), kw_column, int64(8), kw_end_line, int64(669), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x))))
 	tmp1534 := lang.FnFunc1(func(x1535 any) any {
 		tmp1536 := rt.EQ2(v_clojure_DOT_core_X_EQ_, "--", x1535)
 		return tmp1536
@@ -3541,8 +3574,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_end_of_args_QMARK_ = tmp1537.F
 	v_clojure_DOT_tools_DOT_cli_end_of_args_QMARK_.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_end_of_args_QMARK_
-	// (def spec-for (clojure.core/fn [arg specs] (->> specs (filter (fn [s] (let [switches (set …
-	v_clojure_DOT_tools_DOT_cli_spec_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(672), kw_column, int64(8), kw_end_line, int64(672), kw_end_column, int64(16), kw_private, true))
+	// (def spec-for (clojure.core/fn ([arg specs] (->> specs (filter (fn [s] (let [switches (set…
+	v_clojure_DOT_tools_DOT_cli_spec_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(672), kw_column, int64(8), kw_end_line, int64(672), kw_end_column, int64(16), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_arg, sym_specs))))
 	tmp1538 := lang.FnFunc2(func(arg1539, specs1540 any) any {
 		tmp1541 := v_clojure_DOT_core_first.Get()
 		tmp1542 := v_clojure_DOT_core_filter.Get()
@@ -3571,8 +3604,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_spec_for = tmp1555.F
 	v_clojure_DOT_tools_DOT_cli_spec_for.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_spec_for
-	// (def default-values-for (clojure.core/fn [specs] (reduce (fn [m s] (if (contains? s :defau…
-	v_clojure_DOT_tools_DOT_cli_default_values_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(680), kw_column, int64(8), kw_end_line, int64(680), kw_end_column, int64(26), kw_private, true))
+	// (def default-values-for (clojure.core/fn ([specs] (reduce (fn [m s] (if (contains? s :defa…
+	v_clojure_DOT_tools_DOT_cli_default_values_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(680), kw_column, int64(8), kw_end_line, int64(680), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_specs))))
 	tmp1556 := lang.FnFunc1(func(specs1557 any) any {
 		tmp1558 := v_clojure_DOT_core_reduce.Get()
 		tmp1559 := lang.FnFunc2(func(m1560, s1561 any) any {
@@ -3601,8 +3634,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_default_values_for = tmp1572.F
 	v_clojure_DOT_tools_DOT_cli_default_values_for.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_default_values_for
-	// (def apply-specs (clojure.core/fn [specs args] (loop [options (default-values-for specs) e…
-	v_clojure_DOT_tools_DOT_cli_apply_specs.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(688), kw_column, int64(8), kw_end_line, int64(688), kw_end_column, int64(19), kw_private, true))
+	// (def apply-specs (clojure.core/fn ([specs args] (loop [options (default-values-for specs) …
+	v_clojure_DOT_tools_DOT_cli_apply_specs.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(688), kw_column, int64(8), kw_end_line, int64(688), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_specs, sym_args))))
 	tmp1573 := lang.FnFunc2(func(specs1574, args1575 any) any {
 		var tmp1576 any
 		_ = tmp1576
@@ -3848,8 +3881,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_apply_specs = tmp1671.F
 	v_clojure_DOT_tools_DOT_cli_apply_specs.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_apply_specs
-	// (def switches-for (clojure.core/fn [switches flag] (-> (for [s switches] (cond (and flag (…
-	v_clojure_DOT_tools_DOT_cli_switches_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(719), kw_column, int64(8), kw_end_line, int64(719), kw_end_column, int64(20), kw_private, true))
+	// (def switches-for (clojure.core/fn ([switches flag] (-> (for [s switches] (cond (and flag …
+	v_clojure_DOT_tools_DOT_cli_switches_for.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(719), kw_column, int64(8), kw_end_line, int64(719), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_switches, sym_flag))))
 	tmp1672 := lang.FnFunc2(func(switches1673, flag1674 any) any {
 		tmp1675 := v_clojure_DOT_core_flatten.Get()
 		var iter__3171676 any
@@ -3981,8 +4014,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_switches_for = tmp1727.F
 	v_clojure_DOT_tools_DOT_cli_switches_for.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_switches_for
-	// (def generate-spec (clojure.core/fn [raw-spec] (let [[switches raw-spec] (split-with (fn* …
-	v_clojure_DOT_tools_DOT_cli_generate_spec.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(732), kw_column, int64(8), kw_end_line, int64(732), kw_end_column, int64(21), kw_private, true))
+	// (def generate-spec (clojure.core/fn ([raw-spec] (let [[switches raw-spec] (split-with (fn*…
+	v_clojure_DOT_tools_DOT_cli_generate_spec.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(732), kw_column, int64(8), kw_end_line, int64(732), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_raw_spec))))
 	tmp1728 := lang.FnFunc1(func(raw_spec1729 any) any {
 		var tmp1730 any
 		_ = tmp1730
@@ -4124,8 +4157,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_generate_spec = tmp1797.F
 	v_clojure_DOT_tools_DOT_cli_generate_spec.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_generate_spec
-	// (def normalize-args "Rewrite arguments sequence into a normalized form that is parsable by…
-	v_clojure_DOT_tools_DOT_cli_normalize_args.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(749), kw_column, int64(8), kw_end_line, int64(749), kw_end_column, int64(22), kw_private, true, kw_doc, "Rewrite arguments sequence into a normalized form that is parsable by cli."))
+	// (def normalize-args (clojure.core/fn ([specs args] (let [required-opts (->> specs (filter …
+	v_clojure_DOT_tools_DOT_cli_normalize_args.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(749), kw_column, int64(8), kw_end_line, int64(749), kw_end_column, int64(22), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_specs, sym_args)), kw_doc, "Rewrite arguments sequence into a normalized form that is parsable by cli."))
 	tmp1798 := lang.FnFunc2(func(specs1799, args1800 any) any {
 		var tmp1801 any
 		_ = tmp1801
@@ -4180,8 +4213,8 @@ func Load() {
 	fnD_clojure_DOT_tools_DOT_cli_normalize_args = tmp1837.F
 	v_clojure_DOT_tools_DOT_cli_normalize_args.SealDirect()
 	_ = v_clojure_DOT_tools_DOT_cli_normalize_args
-	// (def cli "THIS IS A LEGACY FUNCTION and is deprecated. Please use\n  clojure.tools.cli/par…
-	v_clojure_DOT_tools_DOT_cli_cli.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(762), kw_column, int64(7), kw_end_line, int64(762), kw_end_column, int64(39), kw_deprecated, "since 0.4.x", kw_doc, "THIS IS A LEGACY FUNCTION and is deprecated. Please use\n  clojure.tools.cli/parse-opts in new applications.\n\n  Parse the provided args using the given specs. Specs are vectors\n  describing a command line argument. For example:\n\n  [\"-p\" \"--port\" \"Port to listen on\" :default 3000 :parse-fn #(Integer/parseInt %)]\n\n  First provide the switches (from least to most specific), then a doc\n  string, and pairs of options.\n\n  Valid options are :default, :parse-fn, and :flag. See\n  https://github.com/clojure/tools.cli/wiki/Documentation-for-0.2.4 for more\n  detailed examples.\n\n  Returns a vector containing a map of the parsed arguments, a vector\n  of extra arguments that did not match known switches, and a\n  documentation banner to provide usage instructions."))
+	// (def cli (clojure.core/fn ([args & specs] (let [[desc specs] (if (string? (first specs)) […
+	v_clojure_DOT_tools_DOT_cli_cli.SetMeta(lang.NewMap(kw_file, "tools_cli.cljg", kw_line, int64(762), kw_column, int64(7), kw_end_line, int64(762), kw_end_column, int64(39), kw_deprecated, "since 0.4.x", kw_arglists, lang.NewList(lang.NewVector(sym_args, sym_X_AMP_, sym_specs)), kw_doc, "THIS IS A LEGACY FUNCTION and is deprecated. Please use\n  clojure.tools.cli/parse-opts in new applications.\n\n  Parse the provided args using the given specs. Specs are vectors\n  describing a command line argument. For example:\n\n  [\"-p\" \"--port\" \"Port to listen on\" :default 3000 :parse-fn #(Integer/parseInt %)]\n\n  First provide the switches (from least to most specific), then a doc\n  string, and pairs of options.\n\n  Valid options are :default, :parse-fn, and :flag. See\n  https://github.com/clojure/tools.cli/wiki/Documentation-for-0.2.4 for more\n  detailed examples.\n\n  Returns a vector containing a map of the parsed arguments, a vector\n  of extra arguments that did not match known switches, and a\n  documentation banner to provide usage instructions."))
 	tmp1838 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:

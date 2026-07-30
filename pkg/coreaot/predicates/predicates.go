@@ -8,13 +8,21 @@ import (
 )
 
 var (
+	kw_arglists                                 = lang.InternKeywordString("arglists")
 	kw_column                                   = lang.InternKeywordString("column")
 	kw_doc                                      = lang.InternKeywordString("doc")
 	kw_end_column                               = lang.InternKeywordString("end-column")
 	kw_end_line                                 = lang.InternKeywordString("end-line")
 	kw_file                                     = lang.InternKeywordString("file")
 	kw_line                                     = lang.InternKeywordString("line")
+	sym_X_AMP_                                  = lang.NewSymbol("&")
 	sym_clojure_DOT_core                        = lang.NewSymbol("clojure.core")
+	sym_coll                                    = lang.NewSymbol("coll")
+	sym_more                                    = lang.NewSymbol("more")
+	sym_n                                       = lang.NewSymbol("n")
+	sym_x                                       = lang.NewSymbol("x")
+	sym_y                                       = lang.NewSymbol("y")
+	sym_zs                                      = lang.NewSymbol("zs")
 	v_clojure_DOT_core_X_EQ_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
 	v_clojure_DOT_core_apply                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
 	v_clojure_DOT_core_boolean                  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("boolean"))
@@ -89,8 +97,8 @@ func Load() {
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
 	tmp2 := lang.Apply1(tmp1, sym_clojure_DOT_core)
 	_ = tmp2
-	// (def simple-ident? "Return true if x is an ident with no namespace." (clojure.core/fn [x] …
-	v_clojure_DOT_core_simple_ident_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(18), kw_column, int64(7), kw_end_line, int64(18), kw_end_column, int64(20), kw_doc, "Return true if x is an ident with no namespace."))
+	// (def simple-ident? (clojure.core/fn ([x] (and (ident? x) (nil? (namespace x))))))
+	v_clojure_DOT_core_simple_ident_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(18), kw_column, int64(7), kw_end_line, int64(18), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Return true if x is an ident with no namespace."))
 	tmp3 := lang.FnFunc1(func(x4 any) any {
 		var tmp5 any
 		_ = tmp5
@@ -119,8 +127,8 @@ func Load() {
 	fnD_clojure_DOT_core_simple_ident_QMARK_ = tmp14.F
 	v_clojure_DOT_core_simple_ident_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_simple_ident_QMARK_
-	// (def qualified-ident? "Return true if x is an ident with a namespace." (clojure.core/fn [x…
-	v_clojure_DOT_core_qualified_ident_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(22), kw_column, int64(7), kw_end_line, int64(22), kw_end_column, int64(23), kw_doc, "Return true if x is an ident with a namespace."))
+	// (def qualified-ident? (clojure.core/fn ([x] (boolean (and (ident? x) (namespace x) true)))…
+	v_clojure_DOT_core_qualified_ident_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(22), kw_column, int64(7), kw_end_line, int64(22), kw_end_column, int64(23), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Return true if x is an ident with a namespace."))
 	tmp15 := lang.FnFunc1(func(x16 any) any {
 		tmp17 := v_clojure_DOT_core_boolean.Get()
 		var tmp18 any
@@ -163,8 +171,8 @@ func Load() {
 	fnD_clojure_DOT_core_qualified_ident_QMARK_ = tmp29.F
 	v_clojure_DOT_core_qualified_ident_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_qualified_ident_QMARK_
-	// (def simple-symbol? "Return true if x is a symbol without a namespace." (clojure.core/fn […
-	v_clojure_DOT_core_simple_symbol_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(21), kw_doc, "Return true if x is a symbol without a namespace."))
+	// (def simple-symbol? (clojure.core/fn ([x] (and (symbol? x) (nil? (namespace x))))))
+	v_clojure_DOT_core_simple_symbol_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Return true if x is a symbol without a namespace."))
 	tmp30 := lang.FnFunc1(func(x31 any) any {
 		var tmp32 any
 		_ = tmp32
@@ -193,8 +201,8 @@ func Load() {
 	fnD_clojure_DOT_core_simple_symbol_QMARK_ = tmp41.F
 	v_clojure_DOT_core_simple_symbol_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_simple_symbol_QMARK_
-	// (def qualified-symbol? "Return true if x is a symbol with a namespace." (clojure.core/fn […
-	v_clojure_DOT_core_qualified_symbol_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(30), kw_column, int64(7), kw_end_line, int64(30), kw_end_column, int64(24), kw_doc, "Return true if x is a symbol with a namespace."))
+	// (def qualified-symbol? (clojure.core/fn ([x] (boolean (and (symbol? x) (namespace x) true)…
+	v_clojure_DOT_core_qualified_symbol_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(30), kw_column, int64(7), kw_end_line, int64(30), kw_end_column, int64(24), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Return true if x is a symbol with a namespace."))
 	tmp42 := lang.FnFunc1(func(x43 any) any {
 		tmp44 := v_clojure_DOT_core_boolean.Get()
 		var tmp45 any
@@ -237,8 +245,8 @@ func Load() {
 	fnD_clojure_DOT_core_qualified_symbol_QMARK_ = tmp56.F
 	v_clojure_DOT_core_qualified_symbol_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_qualified_symbol_QMARK_
-	// (def simple-keyword? "Return true if x is a keyword without a namespace." (clojure.core/fn…
-	v_clojure_DOT_core_simple_keyword_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(22), kw_doc, "Return true if x is a keyword without a namespace."))
+	// (def simple-keyword? (clojure.core/fn ([x] (and (keyword? x) (nil? (namespace x))))))
+	v_clojure_DOT_core_simple_keyword_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(22), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Return true if x is a keyword without a namespace."))
 	tmp57 := lang.FnFunc1(func(x58 any) any {
 		var tmp59 any
 		_ = tmp59
@@ -267,8 +275,8 @@ func Load() {
 	fnD_clojure_DOT_core_simple_keyword_QMARK_ = tmp68.F
 	v_clojure_DOT_core_simple_keyword_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_simple_keyword_QMARK_
-	// (def qualified-keyword? "Return true if x is a keyword with a namespace." (clojure.core/fn…
-	v_clojure_DOT_core_qualified_keyword_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(25), kw_doc, "Return true if x is a keyword with a namespace."))
+	// (def qualified-keyword? (clojure.core/fn ([x] (boolean (and (keyword? x) (namespace x) tru…
+	v_clojure_DOT_core_qualified_keyword_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(25), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Return true if x is a keyword with a namespace."))
 	tmp69 := lang.FnFunc1(func(x70 any) any {
 		tmp71 := v_clojure_DOT_core_boolean.Get()
 		var tmp72 any
@@ -311,8 +319,8 @@ func Load() {
 	fnD_clojure_DOT_core_qualified_keyword_QMARK_ = tmp83.F
 	v_clojure_DOT_core_qualified_keyword_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_qualified_keyword_QMARK_
-	// (def pos-int? "Return true if x is a positive fixed-precision integer." (clojure.core/fn […
-	v_clojure_DOT_core_pos_int_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(15), kw_doc, "Return true if x is a positive fixed-precision integer."))
+	// (def pos-int? (clojure.core/fn ([x] (and (int? x) (pos? x)))))
+	v_clojure_DOT_core_pos_int_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Return true if x is a positive fixed-precision integer."))
 	tmp84 := lang.FnFunc1(func(x85 any) any {
 		var tmp86 any
 		_ = tmp86
@@ -339,8 +347,8 @@ func Load() {
 	fnD_clojure_DOT_core_pos_int_QMARK_ = tmp93.F
 	v_clojure_DOT_core_pos_int_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_pos_int_QMARK_
-	// (def neg-int? "Return true if x is a negative fixed-precision integer." (clojure.core/fn […
-	v_clojure_DOT_core_neg_int_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(15), kw_doc, "Return true if x is a negative fixed-precision integer."))
+	// (def neg-int? (clojure.core/fn ([x] (and (int? x) (neg? x)))))
+	v_clojure_DOT_core_neg_int_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Return true if x is a negative fixed-precision integer."))
 	tmp94 := lang.FnFunc1(func(x95 any) any {
 		var tmp96 any
 		_ = tmp96
@@ -367,8 +375,8 @@ func Load() {
 	fnD_clojure_DOT_core_neg_int_QMARK_ = tmp103.F
 	v_clojure_DOT_core_neg_int_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_neg_int_QMARK_
-	// (def nat-int? "Return true if x is a non-negative fixed-precision integer." (clojure.core/…
-	v_clojure_DOT_core_nat_int_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(15), kw_doc, "Return true if x is a non-negative fixed-precision integer."))
+	// (def nat-int? (clojure.core/fn ([x] (and (int? x) (not (neg? x))))))
+	v_clojure_DOT_core_nat_int_QMARK_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Return true if x is a non-negative fixed-precision integer."))
 	tmp104 := lang.FnFunc1(func(x105 any) any {
 		var tmp106 any
 		_ = tmp106
@@ -397,8 +405,8 @@ func Load() {
 	fnD_clojure_DOT_core_nat_int_QMARK_ = tmp115.F
 	v_clojure_DOT_core_nat_int_QMARK_.SealDirect()
 	_ = v_clojure_DOT_core_nat_int_QMARK_
-	// (def ffirst "Same as (first (first x))." (clojure.core/fn [x] (first (first x))))
-	v_clojure_DOT_core_ffirst.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(58), kw_column, int64(7), kw_end_line, int64(58), kw_end_column, int64(13), kw_doc, "Same as (first (first x))."))
+	// (def ffirst (clojure.core/fn ([x] (first (first x)))))
+	v_clojure_DOT_core_ffirst.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(58), kw_column, int64(7), kw_end_line, int64(58), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Same as (first (first x))."))
 	tmp116 := lang.FnFunc1(func(x117 any) any {
 		tmp118 := v_clojure_DOT_core_first.Get()
 		tmp119 := v_clojure_DOT_core_first.Get()
@@ -411,8 +419,8 @@ func Load() {
 	fnD_clojure_DOT_core_ffirst = tmp122.F
 	v_clojure_DOT_core_ffirst.SealDirect()
 	_ = v_clojure_DOT_core_ffirst
-	// (def nfirst "Same as (next (first x))." (clojure.core/fn [x] (next (first x))))
-	v_clojure_DOT_core_nfirst.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(62), kw_column, int64(7), kw_end_line, int64(62), kw_end_column, int64(13), kw_doc, "Same as (next (first x))."))
+	// (def nfirst (clojure.core/fn ([x] (next (first x)))))
+	v_clojure_DOT_core_nfirst.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(62), kw_column, int64(7), kw_end_line, int64(62), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Same as (next (first x))."))
 	tmp123 := lang.FnFunc1(func(x124 any) any {
 		tmp125 := v_clojure_DOT_core_next.Get()
 		tmp126 := v_clojure_DOT_core_first.Get()
@@ -425,8 +433,8 @@ func Load() {
 	fnD_clojure_DOT_core_nfirst = tmp129.F
 	v_clojure_DOT_core_nfirst.SealDirect()
 	_ = v_clojure_DOT_core_nfirst
-	// (def fnext "Same as (first (next x))." (clojure.core/fn [x] (first (next x))))
-	v_clojure_DOT_core_fnext.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(66), kw_column, int64(7), kw_end_line, int64(66), kw_end_column, int64(12), kw_doc, "Same as (first (next x))."))
+	// (def fnext (clojure.core/fn ([x] (first (next x)))))
+	v_clojure_DOT_core_fnext.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(66), kw_column, int64(7), kw_end_line, int64(66), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_x)), kw_doc, "Same as (first (next x))."))
 	tmp130 := lang.FnFunc1(func(x131 any) any {
 		tmp132 := v_clojure_DOT_core_first.Get()
 		tmp133 := v_clojure_DOT_core_next.Get()
@@ -439,8 +447,8 @@ func Load() {
 	fnD_clojure_DOT_core_fnext = tmp136.F
 	v_clojure_DOT_core_fnext.SealDirect()
 	_ = v_clojure_DOT_core_fnext
-	// (def last "Return the last item in coll, in linear time." (clojure.core/fn [coll] (if-let …
-	v_clojure_DOT_core_last.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(70), kw_column, int64(7), kw_end_line, int64(70), kw_end_column, int64(11), kw_doc, "Return the last item in coll, in linear time."))
+	// (def last (clojure.core/fn ([coll] (if-let [n (next coll)] (recur n) (first coll)))))
+	v_clojure_DOT_core_last.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(70), kw_column, int64(7), kw_end_line, int64(70), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_coll)), kw_doc, "Return the last item in coll, in linear time."))
 	tmp137 := lang.FnFunc1(func(coll138 any) any {
 	fnloop139:
 		for {
@@ -478,8 +486,8 @@ func Load() {
 	fnD_clojure_DOT_core_last = tmp150.F
 	v_clojure_DOT_core_last.SealDirect()
 	_ = v_clojure_DOT_core_last
-	// (def butlast "Return a seq of all but the last item in coll, in linear time." (clojure.cor…
-	v_clojure_DOT_core_butlast.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(77), kw_column, int64(7), kw_end_line, int64(77), kw_end_column, int64(14), kw_doc, "Return a seq of all but the last item in coll, in linear time."))
+	// (def butlast (clojure.core/fn ([coll] (loop [ret [] s (seq coll)] (if (next s) (recur (con…
+	v_clojure_DOT_core_butlast.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(77), kw_column, int64(7), kw_end_line, int64(77), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_coll)), kw_doc, "Return a seq of all but the last item in coll, in linear time."))
 	tmp151 := lang.FnFunc1(func(coll152 any) any {
 		var tmp153 any
 		_ = tmp153
@@ -525,8 +533,8 @@ func Load() {
 	fnD_clojure_DOT_core_butlast = tmp173.F
 	v_clojure_DOT_core_butlast.SealDirect()
 	_ = v_clojure_DOT_core_butlast
-	// (def drop-last "Return a lazy sequence of all but the last n (default 1) items in coll." (…
-	v_clojure_DOT_core_drop_last.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(16), kw_doc, "Return a lazy sequence of all but the last n (default 1) items in coll."))
+	// (def drop-last (clojure.core/fn ([coll] (drop-last 1 coll)) ([n coll] (map (fn [x _] x) co…
+	v_clojure_DOT_core_drop_last.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_coll), lang.NewVector(sym_n, sym_coll)), kw_doc, "Return a lazy sequence of all but the last n (default 1) items in coll."))
 	tmp174 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -555,8 +563,8 @@ func Load() {
 	})
 	v_clojure_DOT_core_drop_last.BindRoot(tmp174)
 	_ = v_clojure_DOT_core_drop_last
-	// (def take-last "Return a seq of the last n items in coll. Depending on the type of coll\n …
-	v_clojure_DOT_core_take_last.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(16), kw_doc, "Return a seq of the last n items in coll. Depending on the type of coll\n  may be no better than linear time."))
+	// (def take-last (clojure.core/fn ([n coll] (loop [s (seq coll) lead (seq (drop n coll))] (i…
+	v_clojure_DOT_core_take_last.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_n, sym_coll)), kw_doc, "Return a seq of the last n items in coll. Depending on the type of coll\n  may be no better than linear time."))
 	tmp188 := lang.FnFunc2(func(n189, coll190 any) any {
 		var tmp191 any
 		_ = tmp191
@@ -599,8 +607,8 @@ func Load() {
 	fnD_clojure_DOT_core_take_last = tmp208.F
 	v_clojure_DOT_core_take_last.SealDirect()
 	_ = v_clojure_DOT_core_take_last
-	// (def concat "Return a lazy seq of the concatenation of the elements in the supplied colls.…
-	v_clojure_DOT_core_concat.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(108), kw_column, int64(7), kw_end_line, int64(108), kw_end_column, int64(13), kw_doc, "Return a lazy seq of the concatenation of the elements in the supplied colls."))
+	// (def concat (clojure.core/fn ([] (lazy-seq nil)) ([x] (lazy-seq x)) ([x y] (lazy-seq (let …
+	v_clojure_DOT_core_concat.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(108), kw_column, int64(7), kw_end_line, int64(108), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_x), lang.NewVector(sym_x, sym_y), lang.NewVector(sym_x, sym_y, sym_X_AMP_, sym_zs)), kw_doc, "Return a lazy seq of the concatenation of the elements in the supplied colls."))
 	tmp209 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -736,8 +744,8 @@ func Load() {
 	})
 	v_clojure_DOT_core_concat.BindRoot(tmp209)
 	_ = v_clojure_DOT_core_concat
-	// (def not= "Same as (not (= obj1 obj2))." (clojure.core/fn ([x] false) ([x y] (not (= x y))…
-	v_clojure_DOT_core_not_EQ_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(130), kw_column, int64(7), kw_end_line, int64(130), kw_end_column, int64(11), kw_doc, "Same as (not (= obj1 obj2))."))
+	// (def not= (clojure.core/fn ([x] false) ([x y] (not (= x y))) ([x y & more] (not (apply = x…
+	v_clojure_DOT_core_not_EQ_.SetMeta(lang.NewMap(kw_file, "predicates.cljg", kw_line, int64(130), kw_column, int64(7), kw_end_line, int64(130), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_x), lang.NewVector(sym_x, sym_y), lang.NewVector(sym_x, sym_y, sym_X_AMP_, sym_more)), kw_doc, "Same as (not (= obj1 obj2))."))
 	tmp273 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:

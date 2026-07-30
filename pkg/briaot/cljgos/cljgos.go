@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                         = lang.InternKeywordString("arglists")
 	kw_cljg_DOT_os_SLASH_job            = lang.InternKeywordString("cljg.os/job")
 	kw_cljg_DOT_os_SLASH_service        = lang.InternKeywordString("cljg.os/service")
 	kw_column                           = lang.InternKeywordString("column")
@@ -25,6 +26,16 @@ var (
 	kw_user                             = lang.InternKeywordString("user")
 	sym_cljg_DOT_os                     = lang.NewSymbol("cljg.os")
 	sym_clojure_DOT_core                = lang.NewSymbol("clojure.core")
+	sym_expr                            = lang.NewSymbol("expr")
+	sym_f                               = lang.NewSymbol("f")
+	sym_from                            = lang.NewSymbol("from")
+	sym_j                               = lang.NewSymbol("j")
+	sym_jobs                            = lang.NewSymbol("jobs")
+	sym_m                               = lang.NewSymbol("m")
+	sym_name                            = lang.NewSymbol("name")
+	sym_opts                            = lang.NewSymbol("opts")
+	sym_os                              = lang.NewSymbol("os")
+	sym_spec                            = lang.NewSymbol("spec")
 	v_cljg_DOT_os_X_cron_next           = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("-cron-next")).SetPrivate()
 	v_cljg_DOT_os_X_now_millis          = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("-now-millis")).SetPrivate()
 	v_cljg_DOT_os_X_service_install     = lang.InternVarName(lang.NewSymbol("cljg.os"), lang.NewSymbol("-service-install")).SetPrivate()
@@ -97,8 +108,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def now "Current time as epoch milliseconds." (clojure.core/fn [] (-now-millis)))
-	v_cljg_DOT_os_now.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(22), kw_column, int64(7), kw_end_line, int64(22), kw_end_column, int64(10), kw_doc, "Current time as epoch milliseconds."))
+	// (def now (clojure.core/fn ([] (-now-millis))))
+	v_cljg_DOT_os_now.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(22), kw_column, int64(7), kw_end_line, int64(22), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "Current time as epoch milliseconds."))
 	tmp5 := lang.FnFunc0(func() any {
 		tmp6 := v_cljg_DOT_os_X_now_millis.Get()
 		tmp7 := lang.Apply0(tmp6)
@@ -109,8 +120,8 @@ func Load() {
 	fnD_cljg_DOT_os_now = tmp8.F
 	v_cljg_DOT_os_now.SealDirect()
 	_ = v_cljg_DOT_os_now
-	// (def cron-next "The next fire time (epoch ms) STRICTLY after `from` (epoch ms) for a 5-fie…
-	v_cljg_DOT_os_cron_next.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(27), kw_column, int64(7), kw_end_line, int64(27), kw_end_column, int64(16), kw_doc, "The next fire time (epoch ms) STRICTLY after `from` (epoch ms) for a 5-field\n  cron `expr`. Pure/deterministic — throws on a malformed expression."))
+	// (def cron-next (clojure.core/fn ([expr from] (-cron-next expr from))))
+	v_cljg_DOT_os_cron_next.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(27), kw_column, int64(7), kw_end_line, int64(27), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_expr, sym_from)), kw_doc, "The next fire time (epoch ms) STRICTLY after `from` (epoch ms) for a 5-field\n  cron `expr`. Pure/deterministic — throws on a malformed expression."))
 	tmp9 := lang.FnFunc2(func(expr10, from11 any) any {
 		tmp12 := v_cljg_DOT_os_X_cron_next.Get()
 		tmp13 := lang.Apply2(tmp12, expr10, from11)
@@ -121,8 +132,8 @@ func Load() {
 	fnD_cljg_DOT_os_cron_next = tmp14.F
 	v_cljg_DOT_os_cron_next.SealDirect()
 	_ = v_cljg_DOT_os_cron_next
-	// (def job "A scheduled job: a cron expression + a 0-arg fn to run each fire. opts may\n  ca…
-	v_cljg_DOT_os_job.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(10), kw_doc, "A scheduled job: a cron expression + a 0-arg fn to run each fire. opts may\n  carry :name (for errors). Usually passed to `run`."))
+	// (def job (clojure.core/fn ([expr f] (job expr f {})) ([expr f opts] (merge {:cljg.os/job t…
+	v_cljg_DOT_os_job.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_expr, sym_f), lang.NewVector(sym_expr, sym_f, sym_opts)), kw_doc, "A scheduled job: a cron expression + a 0-arg fn to run each fire. opts may\n  carry :name (for errors). Usually passed to `run`."))
 	tmp15 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -151,8 +162,8 @@ func Load() {
 	})
 	v_cljg_DOT_os_job.BindRoot(tmp15)
 	_ = v_cljg_DOT_os_job
-	// (def soonest "The [job next-ms] pair due first, given `from`." (clojure.core/fn [jobs from…
-	v_cljg_DOT_os_soonest.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(40), kw_column, int64(8), kw_end_line, int64(40), kw_end_column, int64(15), kw_private, true, kw_doc, "The [job next-ms] pair due first, given `from`."))
+	// (def soonest (clojure.core/fn ([jobs from] (->> jobs (map (fn [j] [j (cron-next (:cron j) …
+	v_cljg_DOT_os_soonest.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(40), kw_column, int64(8), kw_end_line, int64(40), kw_end_column, int64(15), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_jobs, sym_from)), kw_doc, "The [job next-ms] pair due first, given `from`."))
 	tmp27 := lang.FnFunc2(func(jobs28, from29 any) any {
 		tmp30 := v_clojure_DOT_core_first.Get()
 		tmp31 := v_clojure_DOT_core_sort_by.Get()
@@ -185,8 +196,8 @@ func Load() {
 	fnD_cljg_DOT_os_soonest = tmp45.F
 	v_cljg_DOT_os_soonest.SealDirect()
 	_ = v_cljg_DOT_os_soonest
-	// (def run-job "Run one job's fn, converting a thrown error into a printed warning so one\n …
-	v_cljg_DOT_os_run_job.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(48), kw_column, int64(8), kw_end_line, int64(48), kw_end_column, int64(15), kw_private, true, kw_doc, "Run one job's fn, converting a thrown error into a printed warning so one\n  bad tick never kills the scheduler."))
+	// (def run-job (clojure.core/fn ([j] (try ((:fn j)) (catch Throwable e (binding [*out* *err*…
+	v_cljg_DOT_os_run_job.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(48), kw_column, int64(8), kw_end_line, int64(48), kw_end_column, int64(15), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_j)), kw_doc, "Run one job's fn, converting a thrown error into a printed warning so one\n  bad tick never kills the scheduler."))
 	tmp46 := lang.FnFunc1(func(j47 any) any {
 		var tmp48 any
 		_ = tmp48
@@ -240,8 +251,8 @@ func Load() {
 	fnD_cljg_DOT_os_run_job = tmp65.F
 	v_cljg_DOT_os_run_job.SealDirect()
 	_ = v_cljg_DOT_os_run_job
-	// (def run "Run the scheduler over `jobs` (job values), sleeping until the soonest due\n  fi…
-	v_cljg_DOT_os_run.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(10), kw_doc, "Run the scheduler over `jobs` (job values), sleeping until the soonest due\n  fire, running every job due at that minute, and repeating. Blocking — a\n  daemon's main loop. opts:\n    :max-ticks n  stop after n fires (default: run forever; use for tests/one-shots)\n  Returns the number of ticks run."))
+	// (def run (clojure.core/fn ([jobs] (run jobs {})) ([jobs opts] (let [maxt (:max-ticks opts)…
+	v_cljg_DOT_os_run.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_jobs), lang.NewVector(sym_jobs, sym_opts)), kw_doc, "Run the scheduler over `jobs` (job values), sleeping until the soonest due\n  fire, running every job due at that minute, and repeating. Blocking — a\n  daemon's main loop. opts:\n    :max-ticks n  stop after n fires (default: run forever; use for tests/one-shots)\n  Returns the number of ticks run."))
 	tmp66 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -589,8 +600,8 @@ func Load() {
 	})
 	v_cljg_DOT_os_run.BindRoot(tmp66)
 	_ = v_cljg_DOT_os_run
-	// (def service "A service spec. Keys: :name (required), :exec (binary path, required),\n  :a…
-	v_cljg_DOT_os_service.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(14), kw_doc, "A service spec. Keys: :name (required), :exec (binary path, required),\n  :args [..], :description, :env {..}, :working-dir, :scope (:user default |\n  :system — :system needs root on Linux)."))
+	// (def service (clojure.core/fn ([m] (merge {:cljg.os/service true, :scope :user} m))))
+	v_cljg_DOT_os_service.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_m)), kw_doc, "A service spec. Keys: :name (required), :exec (binary path, required),\n  :args [..], :description, :env {..}, :working-dir, :scope (:user default |\n  :system — :system needs root on Linux)."))
 	tmp186 := lang.FnFunc1(func(m187 any) any {
 		tmp188 := v_clojure_DOT_core_merge.Get()
 		tmp189 := lang.NewMap(kw_cljg_DOT_os_SLASH_service, true, kw_scope, kw_user)
@@ -602,8 +613,8 @@ func Load() {
 	fnD_cljg_DOT_os_service = tmp191.F
 	v_cljg_DOT_os_service.SealDirect()
 	_ = v_cljg_DOT_os_service
-	// (def service-unit "Render the exact platform service definition text (systemd unit / launc…
-	v_cljg_DOT_os_service_unit.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(92), kw_column, int64(7), kw_end_line, int64(92), kw_end_column, int64(19), kw_doc, "Render the exact platform service definition text (systemd unit / launchd\n  plist) install would write for `spec`. Pure — good for review and tests.\n  Optional `os` (\"linux\"/\"darwin\"/\"windows\") cross-renders for a target\n  other than the host; Windows returns \"\" (its SCM is not file-based)."))
+	// (def service-unit (clojure.core/fn ([spec] (-service-render spec "")) ([spec os] (-service…
+	v_cljg_DOT_os_service_unit.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(92), kw_column, int64(7), kw_end_line, int64(92), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_spec), lang.NewVector(sym_spec, sym_os)), kw_doc, "Render the exact platform service definition text (systemd unit / launchd\n  plist) install would write for `spec`. Pure — good for review and tests.\n  Optional `os` (\"linux\"/\"darwin\"/\"windows\") cross-renders for a target\n  other than the host; Windows returns \"\" (its SCM is not file-based)."))
 	tmp192 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -626,8 +637,8 @@ func Load() {
 	})
 	v_cljg_DOT_os_service_unit.BindRoot(tmp192)
 	_ = v_cljg_DOT_os_service_unit
-	// (def service-install "Install `spec` as an OS service on the current platform (write the u…
-	v_cljg_DOT_os_service_install.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(22), kw_doc, "Install `spec` as an OS service on the current platform (write the unit/\n  plist + enable via systemctl/launchctl, or sc.exe on Windows) and start it.\n  Returns nil. Needs the platform's privileges (:user scope avoids root on\n  Linux)."))
+	// (def service-install (clojure.core/fn ([spec] (-service-install spec) nil)))
+	v_cljg_DOT_os_service_install.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(22), kw_arglists, lang.NewList(lang.NewVector(sym_spec)), kw_doc, "Install `spec` as an OS service on the current platform (write the unit/\n  plist + enable via systemctl/launchctl, or sc.exe on Windows) and start it.\n  Returns nil. Needs the platform's privileges (:user scope avoids root on\n  Linux)."))
 	tmp200 := lang.FnFunc1(func(spec201 any) any {
 		tmp202 := v_cljg_DOT_os_X_service_install.Get()
 		tmp203 := lang.Apply1(tmp202, spec201)
@@ -639,8 +650,8 @@ func Load() {
 	fnD_cljg_DOT_os_service_install = tmp204.F
 	v_cljg_DOT_os_service_install.SealDirect()
 	_ = v_cljg_DOT_os_service_install
-	// (def service-start "Start an installed service by name." (clojure.core/fn [name] (-service…
-	v_cljg_DOT_os_service_start.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(20), kw_doc, "Start an installed service by name."))
+	// (def service-start (clojure.core/fn ([name] (-service-op "start" name) nil)))
+	v_cljg_DOT_os_service_start.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_name)), kw_doc, "Start an installed service by name."))
 	tmp205 := lang.FnFunc1(func(name206 any) any {
 		tmp207 := v_cljg_DOT_os_X_service_op.Get()
 		tmp208 := lang.Apply2(tmp207, "start", name206)
@@ -652,8 +663,8 @@ func Load() {
 	fnD_cljg_DOT_os_service_start = tmp209.F
 	v_cljg_DOT_os_service_start.SealDirect()
 	_ = v_cljg_DOT_os_service_start
-	// (def service-stop "Stop a running service by name." (clojure.core/fn [name] (-service-op "…
-	v_cljg_DOT_os_service_stop.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(110), kw_column, int64(7), kw_end_line, int64(110), kw_end_column, int64(19), kw_doc, "Stop a running service by name."))
+	// (def service-stop (clojure.core/fn ([name] (-service-op "stop" name) nil)))
+	v_cljg_DOT_os_service_stop.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(110), kw_column, int64(7), kw_end_line, int64(110), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_name)), kw_doc, "Stop a running service by name."))
 	tmp210 := lang.FnFunc1(func(name211 any) any {
 		tmp212 := v_cljg_DOT_os_X_service_op.Get()
 		tmp213 := lang.Apply2(tmp212, "stop", name211)
@@ -665,8 +676,8 @@ func Load() {
 	fnD_cljg_DOT_os_service_stop = tmp214.F
 	v_cljg_DOT_os_service_stop.SealDirect()
 	_ = v_cljg_DOT_os_service_stop
-	// (def service-uninstall "Stop + remove a service by name." (clojure.core/fn [name] (-servic…
-	v_cljg_DOT_os_service_uninstall.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(111), kw_column, int64(7), kw_end_line, int64(111), kw_end_column, int64(24), kw_doc, "Stop + remove a service by name."))
+	// (def service-uninstall (clojure.core/fn ([name] (-service-op "uninstall" name) nil)))
+	v_cljg_DOT_os_service_uninstall.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(111), kw_column, int64(7), kw_end_line, int64(111), kw_end_column, int64(24), kw_arglists, lang.NewList(lang.NewVector(sym_name)), kw_doc, "Stop + remove a service by name."))
 	tmp215 := lang.FnFunc1(func(name216 any) any {
 		tmp217 := v_cljg_DOT_os_X_service_op.Get()
 		tmp218 := lang.Apply2(tmp217, "uninstall", name216)
@@ -678,8 +689,8 @@ func Load() {
 	fnD_cljg_DOT_os_service_uninstall = tmp219.F
 	v_cljg_DOT_os_service_uninstall.SealDirect()
 	_ = v_cljg_DOT_os_service_uninstall
-	// (def service-status "The platform status string for a service (e.g. \"active\"), or nil if…
-	v_cljg_DOT_os_service_status.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(21), kw_doc, "The platform status string for a service (e.g. \"active\"), or nil if it is\n  not installed / not running."))
+	// (def service-status (clojure.core/fn ([name] (-service-op "status" name))))
+	v_cljg_DOT_os_service_status.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(sym_name)), kw_doc, "The platform status string for a service (e.g. \"active\"), or nil if it is\n  not installed / not running."))
 	tmp220 := lang.FnFunc1(func(name221 any) any {
 		tmp222 := v_cljg_DOT_os_X_service_op.Get()
 		tmp223 := lang.Apply2(tmp222, "status", name221)

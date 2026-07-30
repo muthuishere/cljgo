@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                                 = lang.InternKeywordString("arglists")
 	kw_as                                       = lang.InternKeywordString("as")
 	kw_char                                     = lang.InternKeywordString("char")
 	kw_column                                   = lang.InternKeywordString("column")
@@ -32,9 +33,21 @@ var (
 	kw_separator                                = lang.InternKeywordString("separator")
 	kw_unexpected_char                          = lang.InternKeywordString("unexpected-char")
 	kw_unterminated_quote                       = lang.InternKeywordString("unterminated-quote")
+	sym_X_AMP_                                  = lang.NewSymbol("&")
 	sym_clojure_DOT_core                        = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_data_DOT_csv                = lang.NewSymbol("clojure.data.csv")
 	sym_clojure_DOT_string                      = lang.NewSymbol("clojure.string")
+	sym_data                                    = lang.NewSymbol("data")
+	sym_i                                       = lang.NewSymbol("i")
+	sym_input                                   = lang.NewSymbol("input")
+	sym_n                                       = lang.NewSymbol("n")
+	sym_obj                                     = lang.NewSymbol("obj")
+	sym_options                                 = lang.NewSymbol("options")
+	sym_quote                                   = lang.NewSymbol("quote")
+	sym_quote_QMARK_                            = lang.NewSymbol("quote?")
+	sym_record                                  = lang.NewSymbol("record")
+	sym_s                                       = lang.NewSymbol("s")
+	sym_sep                                     = lang.NewSymbol("sep")
 	sym_str                                     = lang.NewSymbol("str")
 	v_clojure_DOT_core_X_EQ_                    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
 	v_clojure_DOT_core_X_GT__EQ_                = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol(">="))
@@ -99,8 +112,8 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (def read-quoted-cell "Read a quoted cell; `i` points just past the opening quote. A doubl…
-	v_clojure_DOT_data_DOT_csv_read_quoted_cell.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(45), kw_column, int64(8), kw_end_line, int64(45), kw_end_column, int64(24), kw_private, true, kw_doc, "Read a quoted cell; `i` points just past the opening quote. A doubled quote\n  is a literal quote; the closing quote must be followed by a separator, a line\n  ending, or end of input (else it is malformed input)."))
+	// (def read-quoted-cell (clojure.core/fn ([s n i sep quote] (loop [i i acc []] (if (>= i n) …
+	v_clojure_DOT_data_DOT_csv_read_quoted_cell.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(45), kw_column, int64(8), kw_end_line, int64(45), kw_end_column, int64(24), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_n, sym_i, sym_sep, sym_quote)), kw_doc, "Read a quoted cell; `i` points just past the opening quote. A doubled quote\n  is a literal quote; the closing quote must be followed by a separator, a line\n  ending, or end of input (else it is malformed input)."))
 	tmp7 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 5:
@@ -311,8 +324,8 @@ func Load() {
 	})
 	v_clojure_DOT_data_DOT_csv_read_quoted_cell.BindRoot(tmp7)
 	_ = v_clojure_DOT_data_DOT_csv_read_quoted_cell
-	// (def read-cell "Read one cell starting at `i`. A cell beginning with the quote char is a\n…
-	v_clojure_DOT_data_DOT_csv_read_cell.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(73), kw_column, int64(8), kw_end_line, int64(73), kw_end_column, int64(17), kw_private, true, kw_doc, "Read one cell starting at `i`. A cell beginning with the quote char is a\n  quoted cell; otherwise it runs until a separator, a line ending, or EOF."))
+	// (def read-cell (clojure.core/fn ([s n i sep quote] (if (and (< i n) (= (nth s i) quote)) (…
+	v_clojure_DOT_data_DOT_csv_read_cell.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(73), kw_column, int64(8), kw_end_line, int64(73), kw_end_column, int64(17), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_n, sym_i, sym_sep, sym_quote)), kw_doc, "Read one cell starting at `i`. A cell beginning with the quote char is a\n  quoted cell; otherwise it runs until a separator, a line ending, or EOF."))
 	tmp105 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 5:
@@ -480,8 +493,8 @@ func Load() {
 	})
 	v_clojure_DOT_data_DOT_csv_read_cell.BindRoot(tmp105)
 	_ = v_clojure_DOT_data_DOT_csv_read_cell
-	// (def read-record "Read one record (a vector of cell strings) starting at `i`, consuming ce…
-	v_clojure_DOT_data_DOT_csv_read_record.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(92), kw_column, int64(8), kw_end_line, int64(92), kw_end_column, int64(19), kw_private, true, kw_doc, "Read one record (a vector of cell strings) starting at `i`, consuming cells\n  until one ends in a line ending or EOF. Returns [record sentinel next-index]."))
+	// (def read-record (clojure.core/fn ([s n i sep quote] (loop [i i record []] (let [[cell sen…
+	v_clojure_DOT_data_DOT_csv_read_record.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(92), kw_column, int64(8), kw_end_line, int64(92), kw_end_column, int64(19), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_n, sym_i, sym_sep, sym_quote)), kw_doc, "Read one record (a vector of cell strings) starting at `i`, consuming cells\n  until one ends in a line ending or EOF. Returns [record sentinel next-index]."))
 	tmp175 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 5:
@@ -554,8 +567,8 @@ func Load() {
 	})
 	v_clojure_DOT_data_DOT_csv_read_record.BindRoot(tmp175)
 	_ = v_clojure_DOT_data_DOT_csv_read_record
-	// (def read-csv-from "The lazy record producer over source string `s` from index `i`." (cloj…
-	v_clojure_DOT_data_DOT_csv_read_csv_from.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(102), kw_column, int64(8), kw_end_line, int64(102), kw_end_column, int64(21), kw_private, true, kw_doc, "The lazy record producer over source string `s` from index `i`."))
+	// (def read-csv-from (clojure.core/fn ([s n i sep quote] (lazy-seq (let [[record sentinel ne…
+	v_clojure_DOT_data_DOT_csv_read_csv_from.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(102), kw_column, int64(8), kw_end_line, int64(102), kw_end_column, int64(21), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_n, sym_i, sym_sep, sym_quote)), kw_doc, "The lazy record producer over source string `s` from index `i`."))
 	tmp208 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 5:
@@ -645,8 +658,8 @@ func Load() {
 	})
 	v_clojure_DOT_data_DOT_csv_read_csv_from.BindRoot(tmp208)
 	_ = v_clojure_DOT_data_DOT_csv_read_csv_from
-	// (def read-csv "Reads CSV-data from `input` (a String) into a lazy sequence of vectors of\n…
-	v_clojure_DOT_data_DOT_csv_read_csv.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(15), kw_doc, "Reads CSV-data from `input` (a String) into a lazy sequence of vectors of\n  strings, one vector per record.\n\n  Valid options are\n    :separator (default \\,)\n    :quote     (default \\\")"))
+	// (def read-csv (clojure.core/fn ([input & options] (when-not (string? input) (throw (ex-inf…
+	v_clojure_DOT_data_DOT_csv_read_csv.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_input, sym_X_AMP_, sym_options)), kw_doc, "Reads CSV-data from `input` (a String) into a lazy sequence of vectors of\n  strings, one vector per record.\n\n  Valid options are\n    :separator (default \\,)\n    :quote     (default \\\")"))
 	tmp250 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -704,8 +717,8 @@ func Load() {
 	})
 	v_clojure_DOT_data_DOT_csv_read_csv.BindRoot(tmp250)
 	_ = v_clojure_DOT_data_DOT_csv_read_csv
-	// (def write-cell "Render one cell to its CSV field string, quoting (and doubling embedded\n…
-	v_clojure_DOT_data_DOT_csv_write_cell.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(131), kw_column, int64(8), kw_end_line, int64(131), kw_end_column, int64(18), kw_private, true, kw_doc, "Render one cell to its CSV field string, quoting (and doubling embedded\n  quotes) when `quote?` says the rendered string needs it."))
+	// (def write-cell (clojure.core/fn ([obj sep quote quote?] (let [string (str obj) must-quote…
+	v_clojure_DOT_data_DOT_csv_write_cell.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(131), kw_column, int64(8), kw_end_line, int64(131), kw_end_column, int64(18), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_obj, sym_sep, sym_quote, sym_quote_QMARK_)), kw_doc, "Render one cell to its CSV field string, quoting (and doubling embedded\n  quotes) when `quote?` says the rendered string needs it."))
 	tmp278 := lang.FnFunc4(func(obj279, sep280, quote281, quote_QMARK_282 any) any {
 		var tmp283 any
 		_ = tmp283
@@ -740,8 +753,8 @@ func Load() {
 	fnD_clojure_DOT_data_DOT_csv_write_cell = tmp297.F
 	v_clojure_DOT_data_DOT_csv_write_cell.SealDirect()
 	_ = v_clojure_DOT_data_DOT_csv_write_cell
-	// (def write-record "Render one record (a seq of cells) to a CSV line (no trailing newline).…
-	v_clojure_DOT_data_DOT_csv_write_record.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(141), kw_column, int64(8), kw_end_line, int64(141), kw_end_column, int64(20), kw_private, true, kw_doc, "Render one record (a seq of cells) to a CSV line (no trailing newline)."))
+	// (def write-record (clojure.core/fn ([record sep quote quote?] (str/join (str sep) (map (fn…
+	v_clojure_DOT_data_DOT_csv_write_record.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(141), kw_column, int64(8), kw_end_line, int64(141), kw_end_column, int64(20), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_record, sym_sep, sym_quote, sym_quote_QMARK_)), kw_doc, "Render one record (a seq of cells) to a CSV line (no trailing newline)."))
 	tmp298 := lang.FnFunc4(func(record299, sep300, quote301, quote_QMARK_302 any) any {
 		tmp303 := v_clojure_DOT_string_join.Get()
 		tmp304 := v_clojure_DOT_core_str.Get()
@@ -771,8 +784,8 @@ func Load() {
 	fnD_clojure_DOT_data_DOT_csv_write_record = tmp315.F
 	v_clojure_DOT_data_DOT_csv_write_record.SealDirect()
 	_ = v_clojure_DOT_data_DOT_csv_write_record
-	// (def write-csv "Writes `data` (a seq of seqs of cells) to CSV format and returns the resul…
-	v_clojure_DOT_data_DOT_csv_write_csv.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(146), kw_column, int64(7), kw_end_line, int64(146), kw_end_column, int64(16), kw_doc, "Writes `data` (a seq of seqs of cells) to CSV format and returns the result\n  as a String (cljgo has no java.io.Writer — the pure-String surface, Mandate\n  A). The returned string is byte-identical to what the JVM data.csv writes to\n  a java.io.StringWriter.\n\n  Valid options are\n    :separator (default \\,)\n    :quote     (default \\\")\n    :quote?    (a predicate on the rendered field string deciding whether it\n                must be quoted; defaults to quoting only when the field\n                contains the separator, the quote, CR, or LF)\n    :newline   (:lf (default) or :cr+lf)"))
+	// (def write-csv (clojure.core/fn ([data & options] (let [opts (apply hash-map options) sepa…
+	v_clojure_DOT_data_DOT_csv_write_csv.SetMeta(lang.NewMap(kw_file, "data_csv.cljg", kw_line, int64(146), kw_column, int64(7), kw_end_line, int64(146), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_data, sym_X_AMP_, sym_options)), kw_doc, "Writes `data` (a seq of seqs of cells) to CSV format and returns the result\n  as a String (cljgo has no java.io.Writer — the pure-String surface, Mandate\n  A). The returned string is byte-identical to what the JVM data.csv writes to\n  a java.io.StringWriter.\n\n  Valid options are\n    :separator (default \\,)\n    :quote     (default \\\")\n    :quote?    (a predicate on the rendered field string deciding whether it\n                must be quoted; defaults to quoting only when the field\n                contains the separator, the quote, CR, or LF)\n    :newline   (:lf (default) or :cr+lf)"))
 	tmp316 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:

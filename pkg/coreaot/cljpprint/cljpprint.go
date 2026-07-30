@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                                                    = lang.InternKeywordString("arglists")
 	kw_base                                                        = lang.InternKeywordString("base")
 	kw_circle                                                      = lang.InternKeywordString("circle")
 	kw_clojure_DOT_pprint_SLASH_ellipsis                           = lang.InternKeywordString("clojure.pprint/ellipsis")
@@ -34,13 +35,43 @@ var (
 	kw_stream                                                      = lang.InternKeywordString("stream")
 	kw_suppress_namespaces                                         = lang.InternKeywordString("suppress-namespaces")
 	kw_unimplemented                                               = lang.InternKeywordString("unimplemented")
+	sym_X_AMP_                                                     = lang.NewSymbol("&")
+	sym_args                                                       = lang.NewSymbol("args")
+	sym_base                                                       = lang.NewSymbol("base")
 	sym_binding                                                    = lang.NewSymbol("binding")
+	sym_bindings                                                   = lang.NewSymbol("bindings")
+	sym_body                                                       = lang.NewSymbol("body")
 	sym_clojure_DOT_core                                           = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_core_SLASH__STAR_1                             = lang.NewSymbol("clojure.core/*1")
 	sym_clojure_DOT_pprint                                         = lang.NewSymbol("clojure.pprint")
 	sym_clojure_DOT_pprint_SLASH__STAR_print_pprint_dispatch_STAR_ = lang.NewSymbol("clojure.pprint/*print-pprint-dispatch*")
 	sym_clojure_DOT_pprint_SLASH__unimplemented                    = lang.NewSymbol("clojure.pprint/-unimplemented")
 	sym_clojure_DOT_pprint_SLASH_pprint                            = lang.NewSymbol("clojure.pprint/pprint")
+	sym_col                                                        = lang.NewSymbol("col")
+	sym_colinc                                                     = lang.NewSymbol("colinc")
+	sym_coll                                                       = lang.NewSymbol("coll")
+	sym_colnum                                                     = lang.NewSymbol("colnum")
+	sym_e                                                          = lang.NewSymbol("e")
+	sym_format_in                                                  = lang.NewSymbol("format-in")
+	sym_function                                                   = lang.NewSymbol("function")
+	sym_i                                                          = lang.NewSymbol("i")
+	sym_kind                                                       = lang.NewSymbol("kind")
+	sym_ks                                                         = lang.NewSymbol("ks")
+	sym_kw_args                                                    = lang.NewSymbol("kw-args")
+	sym_m                                                          = lang.NewSymbol("m")
+	sym_n                                                          = lang.NewSymbol("n")
+	sym_name                                                       = lang.NewSymbol("name")
+	sym_object                                                     = lang.NewSymbol("object")
+	sym_prefix                                                     = lang.NewSymbol("prefix")
+	sym_relative_to                                                = lang.NewSymbol("relative-to")
+	sym_render                                                     = lang.NewSymbol("render")
+	sym_rows                                                       = lang.NewSymbol("rows")
+	sym_sep                                                        = lang.NewSymbol("sep")
+	sym_suffix                                                     = lang.NewSymbol("suffix")
+	sym_trail                                                      = lang.NewSymbol("trail")
+	sym_writer                                                     = lang.NewSymbol("writer")
+	sym_x                                                          = lang.NewSymbol("x")
+	sym_xs                                                         = lang.NewSymbol("xs")
 	v_clojure_DOT_core_X_                                          = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
 	v_clojure_DOT_core_X_EQ_                                       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("="))
 	v_clojure_DOT_core_X_LT__EQ_                                   = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("<="))
@@ -228,8 +259,8 @@ func Load() {
 	v_clojure_DOT_pprint_X_digit_chars.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(77), kw_column, int64(6), kw_end_line, int64(77), kw_end_column, int64(28), kw_private, true))
 	v_clojure_DOT_pprint_X_digit_chars.BindRoot("0123456789abcdefghijklmnopqrstuvwxyz")
 	_ = v_clojure_DOT_pprint_X_digit_chars
-	// (def -digit (clojure.core/fn [i] (subs -digit-chars i (inc i))))
-	v_clojure_DOT_pprint_X_digit.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(23), kw_private, true))
+	// (def -digit (clojure.core/fn ([i] (subs -digit-chars i (inc i)))))
+	v_clojure_DOT_pprint_X_digit.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(79), kw_column, int64(7), kw_end_line, int64(79), kw_end_column, int64(23), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_i))))
 	tmp5 := lang.FnFunc1(func(i6 any) any {
 		tmp7 := v_clojure_DOT_core_subs.Get()
 		tmp8 := v_clojure_DOT_pprint_X_digit_chars.Get()
@@ -243,8 +274,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_digit = tmp12.F
 	v_clojure_DOT_pprint_X_digit.SealDirect()
 	_ = v_clojure_DOT_pprint_X_digit
-	// (def -digits "Digit string of non-negative n in base (plain positional notation)." (clojur…
-	v_clojure_DOT_pprint_X_digits.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(82), kw_column, int64(7), kw_end_line, int64(82), kw_end_column, int64(24), kw_private, true, kw_doc, "Digit string of non-negative n in base (plain positional notation)."))
+	// (def -digits (clojure.core/fn ([n base] (if (zero? n) "0" (loop [v n acc ""] (if (zero? v)…
+	v_clojure_DOT_pprint_X_digits.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(82), kw_column, int64(7), kw_end_line, int64(82), kw_end_column, int64(24), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_n, sym_base)), kw_doc, "Digit string of non-negative n in base (plain positional notation)."))
 	tmp13 := lang.FnFunc2(func(n14, base15 any) any {
 		tmp16 := v_clojure_DOT_core_zero_QMARK_.Get()
 		tmp17 := lang.Apply1(tmp16, n14)
@@ -305,8 +336,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_digits = tmp37.F
 	v_clojure_DOT_pprint_X_digits.SealDirect()
 	_ = v_clojure_DOT_pprint_X_digits
-	// (def -base-digits (clojure.core/fn [n base] (if (neg? n) (if (or (= base 2) (= base 8) (= …
-	v_clojure_DOT_pprint_X_base_digits.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(29), kw_private, true))
+	// (def -base-digits (clojure.core/fn ([n base] (if (neg? n) (if (or (= base 2) (= base 8) (=…
+	v_clojure_DOT_pprint_X_base_digits.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_n, sym_base))))
 	tmp38 := lang.FnFunc2(func(n39, base40 any) any {
 		tmp41 := v_clojure_DOT_core_neg_QMARK_.Get()
 		tmp42 := lang.Apply1(tmp41, n39)
@@ -463,8 +494,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_base_digits = tmp91.F
 	v_clojure_DOT_pprint_X_base_digits.SealDirect()
 	_ = v_clojure_DOT_pprint_X_base_digits
-	// (def -radix-prefix (clojure.core/fn [base] (if *print-radix* (cond (= base 2) "#b" (= base…
-	v_clojure_DOT_pprint_X_radix_prefix.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(30), kw_private, true))
+	// (def -radix-prefix (clojure.core/fn ([base] (if *print-radix* (cond (= base 2) "#b" (= bas…
+	v_clojure_DOT_pprint_X_radix_prefix.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(30), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_base))))
 	tmp92 := lang.FnFunc1(func(base93 any) any {
 		tmp94 := v_clojure_DOT_pprint_X_STAR_print_radix_STAR_.Get()
 		var tmp95 any
@@ -522,8 +553,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_radix_prefix = tmp107.F
 	v_clojure_DOT_pprint_X_radix_prefix.SealDirect()
 	_ = v_clojure_DOT_pprint_X_radix_prefix
-	// (def -int-str (clojure.core/fn [n] (let [base *print-base*] (if (= base 10) (str (pr-str n…
-	v_clojure_DOT_pprint_X_int_str.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(25), kw_private, true))
+	// (def -int-str (clojure.core/fn ([n] (let [base *print-base*] (if (= base 10) (str (pr-str …
+	v_clojure_DOT_pprint_X_int_str.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_n))))
 	tmp108 := lang.FnFunc1(func(n109 any) any {
 		var tmp110 any
 		_ = tmp110
@@ -590,8 +621,8 @@ func Load() {
 	tmp131 := lang.Apply1(tmp130, kw_clojure_DOT_pprint_SLASH_ellipsis)
 	v_clojure_DOT_pprint_X_ellipsis.BindRoot(tmp131)
 	_ = v_clojure_DOT_pprint_X_ellipsis
-	// (def -limited (clojure.core/fn [coll] (let [pl *print-length* xs (seq coll)] (if pl (let […
-	v_clojure_DOT_pprint_X_limited.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(136), kw_column, int64(7), kw_end_line, int64(136), kw_end_column, int64(25), kw_private, true))
+	// (def -limited (clojure.core/fn ([coll] (let [pl *print-length* xs (seq coll)] (if pl (let …
+	v_clojure_DOT_pprint_X_limited.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(136), kw_column, int64(7), kw_end_line, int64(136), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_coll))))
 	tmp132 := lang.FnFunc1(func(coll133 any) any {
 		var tmp134 any
 		_ = tmp134
@@ -646,8 +677,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_limited = tmp157.F
 	v_clojure_DOT_pprint_X_limited.SealDirect()
 	_ = v_clojure_DOT_pprint_X_limited
-	// (def -join (clojure.core/fn [sep xs] (loop [xs (seq xs) acc "" first? true] (if xs (recur …
-	v_clojure_DOT_pprint_X_join.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(146), kw_column, int64(7), kw_end_line, int64(146), kw_end_column, int64(22), kw_private, true))
+	// (def -join (clojure.core/fn ([sep xs] (loop [xs (seq xs) acc "" first? true] (if xs (recur…
+	v_clojure_DOT_pprint_X_join.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(146), kw_column, int64(7), kw_end_line, int64(146), kw_end_column, int64(22), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_sep, sym_xs))))
 	tmp158 := lang.FnFunc2(func(sep159, xs160 any) any {
 		var tmp161 any
 		_ = tmp161
@@ -699,8 +730,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_join = tmp179.F
 	v_clojure_DOT_pprint_X_join.SealDirect()
 	_ = v_clojure_DOT_pprint_X_join
-	// (def -spaces (clojure.core/fn [n] (apply str (repeat n " "))))
-	v_clojure_DOT_pprint_X_spaces.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(152), kw_column, int64(7), kw_end_line, int64(152), kw_end_column, int64(24), kw_private, true))
+	// (def -spaces (clojure.core/fn ([n] (apply str (repeat n " ")))))
+	v_clojure_DOT_pprint_X_spaces.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(152), kw_column, int64(7), kw_end_line, int64(152), kw_end_column, int64(24), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_n))))
 	tmp180 := lang.FnFunc1(func(n181 any) any {
 		tmp182 := v_clojure_DOT_core_apply.Get()
 		tmp183 := v_clojure_DOT_core_str.Get()
@@ -714,8 +745,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_spaces = tmp187.F
 	v_clojure_DOT_pprint_X_spaces.SealDirect()
 	_ = v_clojure_DOT_pprint_X_spaces
-	// (def -leaf-str (clojure.core/fn [x] (cond (and *print-suppress-namespaces* (symbol? x) (na…
-	v_clojure_DOT_pprint_X_leaf_str.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(157), kw_column, int64(7), kw_end_line, int64(157), kw_end_column, int64(26), kw_private, true))
+	// (def -leaf-str (clojure.core/fn ([x] (cond (and *print-suppress-namespaces* (symbol? x) (n…
+	v_clojure_DOT_pprint_X_leaf_str.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(157), kw_column, int64(7), kw_end_line, int64(157), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x))))
 	tmp188 := lang.FnFunc1(func(x189 any) any {
 		var tmp190 any
 		_ = tmp190
@@ -827,8 +858,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_leaf_str = tmp223.F
 	v_clojure_DOT_pprint_X_leaf_str.SealDirect()
 	_ = v_clojure_DOT_pprint_X_leaf_str
-	// (def -flat (clojure.core/fn [x] (cond (identical? x -ellipsis) "..." (map? x) (str "{" (-j…
-	v_clojure_DOT_pprint_X_flat.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(167), kw_column, int64(7), kw_end_line, int64(167), kw_end_column, int64(22), kw_private, true))
+	// (def -flat (clojure.core/fn ([x] (cond (identical? x -ellipsis) "..." (map? x) (str "{" (-…
+	v_clojure_DOT_pprint_X_flat.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(167), kw_column, int64(7), kw_end_line, int64(167), kw_end_column, int64(22), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x))))
 	tmp224 := lang.FnFunc1(func(x225 any) any {
 		tmp226 := v_clojure_DOT_core_identical_QMARK_.Get()
 		tmp227 := v_clojure_DOT_pprint_X_ellipsis.Get()
@@ -1068,8 +1099,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_flat = tmp315.F
 	v_clojure_DOT_pprint_X_flat.SealDirect()
 	_ = v_clojure_DOT_pprint_X_flat
-	// (def -render-coll "Broken rendering of a sequential block: prefix, every element on its\n …
-	v_clojure_DOT_pprint_X_render_coll.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(189), kw_column, int64(7), kw_end_line, int64(189), kw_end_column, int64(29), kw_private, true, kw_doc, "Broken rendering of a sequential block: prefix, every element on its\n  own line at the content column, suffix."))
+	// (def -render-coll (clojure.core/fn ([render coll prefix suffix col trail] (let [c (+ col (…
+	v_clojure_DOT_pprint_X_render_coll.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(189), kw_column, int64(7), kw_end_line, int64(189), kw_end_column, int64(29), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_render, sym_coll, sym_prefix, sym_suffix, sym_col, sym_trail)), kw_doc, "Broken rendering of a sequential block: prefix, every element on its\n  own line at the content column, suffix."))
 	tmp316 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 6:
@@ -1184,8 +1215,8 @@ func Load() {
 	})
 	v_clojure_DOT_pprint_X_render_coll.BindRoot(tmp316)
 	_ = v_clojure_DOT_pprint_X_render_coll
-	// (def -render-entry "One map entry at col: `k v` inline when the value (plus what trails\n …
-	v_clojure_DOT_pprint_X_render_entry.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(205), kw_column, int64(7), kw_end_line, int64(205), kw_end_column, int64(30), kw_private, true, kw_doc, "One map entry at col: `k v` inline when the value (plus what trails\n  the entry) fits, else the value on its own line at the entry column."))
+	// (def -render-entry (clojure.core/fn ([render e col trail] (if (identical? e -ellipsis) "..…
+	v_clojure_DOT_pprint_X_render_entry.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(205), kw_column, int64(7), kw_end_line, int64(205), kw_end_column, int64(30), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_render, sym_e, sym_col, sym_trail)), kw_doc, "One map entry at col: `k v` inline when the value (plus what trails\n  the entry) fits, else the value on its own line at the entry column."))
 	tmp366 := lang.FnFunc4(func(render367, e368, col369, trail370 any) any {
 		tmp371 := v_clojure_DOT_core_identical_QMARK_.Get()
 		tmp372 := v_clojure_DOT_pprint_X_ellipsis.Get()
@@ -1276,8 +1307,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_render_entry = tmp410.F
 	v_clojure_DOT_pprint_X_render_entry.SealDirect()
 	_ = v_clojure_DOT_pprint_X_render_entry
-	// (def -render-map (clojure.core/fn [render m col trail] (let [c (+ col 1) items (-limited (…
-	v_clojure_DOT_pprint_X_render_map.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(218), kw_column, int64(7), kw_end_line, int64(218), kw_end_column, int64(28), kw_private, true))
+	// (def -render-map (clojure.core/fn ([render m col trail] (let [c (+ col 1) items (-limited …
+	v_clojure_DOT_pprint_X_render_map.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(218), kw_column, int64(7), kw_end_line, int64(218), kw_end_column, int64(28), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_render, sym_m, sym_col, sym_trail))))
 	tmp411 := lang.FnFunc4(func(render412, m413, col414, trail415 any) any {
 		var tmp416 any
 		_ = tmp416
@@ -1369,8 +1400,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_render_map = tmp453.F
 	v_clojure_DOT_pprint_X_render_map.SealDirect()
 	_ = v_clojure_DOT_pprint_X_render_map
-	// (def -render "Pretty text of x starting at column col, with trail pending\n  characters be…
-	v_clojure_DOT_pprint_X_render.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(228), kw_column, int64(7), kw_end_line, int64(228), kw_end_column, int64(24), kw_private, true, kw_doc, "Pretty text of x starting at column col, with trail pending\n  characters between x's end and the nearest enclosing break."))
+	// (def -render (clojure.core/fn ([x col trail] (let [flat (-flat x)] (if (<= (+ col (count f…
+	v_clojure_DOT_pprint_X_render.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(228), kw_column, int64(7), kw_end_line, int64(228), kw_end_column, int64(24), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_x, sym_col, sym_trail)), kw_doc, "Pretty text of x starting at column col, with trail pending\n  characters between x's end and the nearest enclosing break."))
 	tmp454 := lang.FnFunc3(func(x455, col456, trail457 any) any {
 		var tmp458 any
 		_ = tmp458
@@ -1490,8 +1521,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_render = tmp501.F
 	v_clojure_DOT_pprint_X_render.SealDirect()
 	_ = v_clojure_DOT_pprint_X_render
-	// (def simple-dispatch (clojure.core/fn [object] (print (-render object 0 0)) nil))
-	v_clojure_DOT_pprint_simple_dispatch.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(246), kw_column, int64(7), kw_end_line, int64(246), kw_end_column, int64(22)))
+	// (def simple-dispatch (clojure.core/fn ([object] (print (-render object 0 0)) nil)))
+	v_clojure_DOT_pprint_simple_dispatch.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(246), kw_column, int64(7), kw_end_line, int64(246), kw_end_column, int64(22), kw_arglists, lang.NewList(lang.NewVector(sym_object))))
 	tmp502 := lang.FnFunc1(func(object503 any) any {
 		tmp504 := v_clojure_DOT_core_print_.Get()
 		tmp505 := v_clojure_DOT_pprint_X_render.Direct()
@@ -1514,8 +1545,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_simple_dispatch = tmp509.F
 	v_clojure_DOT_pprint_simple_dispatch.SealDirect()
 	_ = v_clojure_DOT_pprint_simple_dispatch
-	// (def code-dispatch (clojure.core/fn [object] (simple-dispatch object)))
-	v_clojure_DOT_pprint_code_dispatch.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(252), kw_column, int64(7), kw_end_line, int64(252), kw_end_column, int64(20)))
+	// (def code-dispatch (clojure.core/fn ([object] (simple-dispatch object))))
+	v_clojure_DOT_pprint_code_dispatch.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(252), kw_column, int64(7), kw_end_line, int64(252), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_object))))
 	tmp510 := lang.FnFunc1(func(object511 any) any {
 		tmp512 := v_clojure_DOT_pprint_simple_dispatch.Direct()
 		var tmp513 any
@@ -1540,8 +1571,8 @@ func Load() {
 	tmp516 := v_clojure_DOT_pprint_simple_dispatch.Get()
 	v_clojure_DOT_pprint_X_STAR_print_pprint_dispatch_STAR_.BindRoot(tmp516)
 	_ = v_clojure_DOT_pprint_X_STAR_print_pprint_dispatch_STAR_
-	// (def write-out (clojure.core/fn [object] (*print-pprint-dispatch* object) nil))
-	v_clojure_DOT_pprint_write_out.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(259), kw_column, int64(7), kw_end_line, int64(259), kw_end_column, int64(16)))
+	// (def write-out (clojure.core/fn ([object] (*print-pprint-dispatch* object) nil)))
+	v_clojure_DOT_pprint_write_out.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(259), kw_column, int64(7), kw_end_line, int64(259), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_object))))
 	tmp517 := lang.FnFunc1(func(object518 any) any {
 		tmp519 := v_clojure_DOT_pprint_X_STAR_print_pprint_dispatch_STAR_.Get()
 		tmp520 := lang.Apply1(tmp519, object518)
@@ -1553,8 +1584,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_write_out = tmp521.F
 	v_clojure_DOT_pprint_write_out.SealDirect()
 	_ = v_clojure_DOT_pprint_write_out
-	// (def set-pprint-dispatch (clojure.core/fn [function] (alter-var-root (var *print-pprint-di…
-	v_clojure_DOT_pprint_set_pprint_dispatch.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(263), kw_column, int64(7), kw_end_line, int64(263), kw_end_column, int64(26)))
+	// (def set-pprint-dispatch (clojure.core/fn ([function] (alter-var-root (var *print-pprint-d…
+	v_clojure_DOT_pprint_set_pprint_dispatch.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(263), kw_column, int64(7), kw_end_line, int64(263), kw_end_column, int64(26), kw_arglists, lang.NewList(lang.NewVector(sym_function))))
 	tmp522 := lang.FnFunc1(func(function523 any) any {
 		tmp524 := v_clojure_DOT_core_alter_var_root.Get()
 		tmp525 := lang.FnFunc1(func(X_526 any) any {
@@ -1571,7 +1602,7 @@ func Load() {
 	v_clojure_DOT_pprint_set_pprint_dispatch.SealDirect()
 	_ = v_clojure_DOT_pprint_set_pprint_dispatch
 	// (do (def with-pprint-dispatch (fn* with-pprint-dispatch ([&form &env function & body] (clo…
-	v_clojure_DOT_pprint_with_pprint_dispatch.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(267), kw_column, int64(11), kw_end_line, int64(267), kw_end_column, int64(31)))
+	v_clojure_DOT_pprint_with_pprint_dispatch.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_function, sym_X_AMP_, sym_body)), kw_file, "pprint.cljg", kw_line, int64(267), kw_column, int64(11), kw_end_line, int64(267), kw_end_column, int64(31)))
 	var with_pprint_dispatch530 any
 	_ = with_pprint_dispatch530
 	tmp531 := lang.FnFunc(func(args ...any) any {
@@ -1620,8 +1651,8 @@ func Load() {
 	tmp556 := lang.Apply1(tmp555, v_clojure_DOT_pprint_with_pprint_dispatch)
 	_ = tmp556
 	_ = v_clojure_DOT_pprint_with_pprint_dispatch
-	// (def -write-root (clojure.core/fn [object] (if *print-pretty* (write-out object) (pr objec…
-	v_clojure_DOT_pprint_X_write_root.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(273), kw_column, int64(7), kw_end_line, int64(273), kw_end_column, int64(28), kw_private, true))
+	// (def -write-root (clojure.core/fn ([object] (if *print-pretty* (write-out object) (pr obje…
+	v_clojure_DOT_pprint_X_write_root.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(273), kw_column, int64(7), kw_end_line, int64(273), kw_end_column, int64(28), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_object))))
 	tmp557 := lang.FnFunc1(func(object558 any) any {
 		tmp559 := v_clojure_DOT_pprint_X_STAR_print_pretty_STAR_.Get()
 		var tmp560 any
@@ -1651,8 +1682,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_write_root = tmp566.F
 	v_clojure_DOT_pprint_X_write_root.SealDirect()
 	_ = v_clojure_DOT_pprint_X_write_root
-	// (def write (clojure.core/fn [object & kw-args] (let [opts (apply hash-map kw-args)] (doseq…
-	v_clojure_DOT_pprint_write.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(282), kw_column, int64(7), kw_end_line, int64(282), kw_end_column, int64(12)))
+	// (def write (clojure.core/fn ([object & kw-args] (let [opts (apply hash-map kw-args)] (dose…
+	v_clojure_DOT_pprint_write.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(282), kw_column, int64(7), kw_end_line, int64(282), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_object, sym_X_AMP_, sym_kw_args))))
 	tmp567 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -1925,7 +1956,7 @@ func Load() {
 	v_clojure_DOT_pprint_write.BindRoot(tmp567)
 	_ = v_clojure_DOT_pprint_write
 	// (def pprint (clojure.core/fn ([object] (pprint object *out*)) ([object writer] (binding [*…
-	v_clojure_DOT_pprint_pprint.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(305), kw_column, int64(7), kw_end_line, int64(305), kw_end_column, int64(13)))
+	v_clojure_DOT_pprint_pprint.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(305), kw_column, int64(7), kw_end_line, int64(305), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_object), lang.NewVector(sym_object, sym_writer))))
 	tmp669 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -1966,7 +1997,7 @@ func Load() {
 	v_clojure_DOT_pprint_pprint.BindRoot(tmp669)
 	_ = v_clojure_DOT_pprint_pprint
 	// (do (def pp (fn* pp ([&form &env] (clojure.core/seq (clojure.core/concat (clojure.core/lis…
-	v_clojure_DOT_pprint_pp.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(314), kw_column, int64(11), kw_end_line, int64(314), kw_end_column, int64(13)))
+	v_clojure_DOT_pprint_pp.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector()), kw_file, "pprint.cljg", kw_line, int64(314), kw_column, int64(11), kw_end_line, int64(314), kw_end_column, int64(13)))
 	var pp682 any
 	_ = pp682
 	var pp682d lang.FnFunc2
@@ -1994,7 +2025,7 @@ func Load() {
 	_ = tmp696
 	_ = v_clojure_DOT_pprint_pp
 	// (def print-table (clojure.core/fn ([ks rows] (when (seq rows) (let [widths (map (fn [k] (a…
-	v_clojure_DOT_pprint_print_table.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(322), kw_column, int64(7), kw_end_line, int64(322), kw_end_column, int64(18)))
+	v_clojure_DOT_pprint_print_table.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(322), kw_column, int64(7), kw_end_line, int64(322), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_ks, sym_rows), lang.NewVector(sym_rows))))
 	tmp697 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -2173,8 +2204,8 @@ func Load() {
 	})
 	v_clojure_DOT_pprint_print_table.BindRoot(tmp697)
 	_ = v_clojure_DOT_pprint_print_table
-	// (def -unimplemented (clojure.core/fn [name] (if true (throw (ex-info (str "Unimplemented: …
-	v_clojure_DOT_pprint_X_unimplemented.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(350), kw_column, int64(7), kw_end_line, int64(350), kw_end_column, int64(31), kw_private, true))
+	// (def -unimplemented (clojure.core/fn ([name] (if true (throw (ex-info (str "Unimplemented:…
+	v_clojure_DOT_pprint_X_unimplemented.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(350), kw_column, int64(7), kw_end_line, int64(350), kw_end_column, int64(31), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_name))))
 	tmp807 := lang.FnFunc1(func(name808 any) any {
 		var tmp809 any
 		_ = tmp809
@@ -2195,8 +2226,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_X_unimplemented = tmp815.F
 	v_clojure_DOT_pprint_X_unimplemented.SealDirect()
 	_ = v_clojure_DOT_pprint_X_unimplemented
-	// (def cl-format (clojure.core/fn [writer format-in & args] (-unimplemented "cl-format")))
-	v_clojure_DOT_pprint_cl_format.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(360), kw_column, int64(7), kw_end_line, int64(360), kw_end_column, int64(16)))
+	// (def cl-format (clojure.core/fn ([writer format-in & args] (-unimplemented "cl-format"))))
+	v_clojure_DOT_pprint_cl_format.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(360), kw_column, int64(7), kw_end_line, int64(360), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_writer, sym_format_in, sym_X_AMP_, sym_args))))
 	tmp816 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -2229,7 +2260,7 @@ func Load() {
 	v_clojure_DOT_pprint_cl_format.BindRoot(tmp816)
 	_ = v_clojure_DOT_pprint_cl_format
 	// (do (def formatter (fn* formatter ([&form &env format-in] (clojure.core/seq (clojure.core/…
-	v_clojure_DOT_pprint_formatter.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(363), kw_column, int64(11), kw_end_line, int64(363), kw_end_column, int64(20)))
+	v_clojure_DOT_pprint_formatter.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_format_in)), kw_file, "pprint.cljg", kw_line, int64(363), kw_column, int64(11), kw_end_line, int64(363), kw_end_column, int64(20)))
 	var formatter823 any
 	_ = formatter823
 	var formatter823d lang.FnFunc3
@@ -2257,7 +2288,7 @@ func Load() {
 	_ = tmp838
 	_ = v_clojure_DOT_pprint_formatter
 	// (do (def formatter-out (fn* formatter-out ([&form &env format-in] (clojure.core/seq (cloju…
-	v_clojure_DOT_pprint_formatter_out.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(366), kw_column, int64(11), kw_end_line, int64(366), kw_end_column, int64(24)))
+	v_clojure_DOT_pprint_formatter_out.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_format_in)), kw_file, "pprint.cljg", kw_line, int64(366), kw_column, int64(11), kw_end_line, int64(366), kw_end_column, int64(24)))
 	var formatter_out839 any
 	_ = formatter_out839
 	var formatter_out839d lang.FnFunc3
@@ -2284,8 +2315,8 @@ func Load() {
 	tmp854 := lang.Apply1(tmp853, v_clojure_DOT_pprint_formatter_out)
 	_ = tmp854
 	_ = v_clojure_DOT_pprint_formatter_out
-	// (def get-pretty-writer (clojure.core/fn [writer] (-unimplemented "get-pretty-writer")))
-	v_clojure_DOT_pprint_get_pretty_writer.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(369), kw_column, int64(7), kw_end_line, int64(369), kw_end_column, int64(24)))
+	// (def get-pretty-writer (clojure.core/fn ([writer] (-unimplemented "get-pretty-writer"))))
+	v_clojure_DOT_pprint_get_pretty_writer.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(369), kw_column, int64(7), kw_end_line, int64(369), kw_end_column, int64(24), kw_arglists, lang.NewList(lang.NewVector(sym_writer))))
 	tmp855 := lang.FnFunc1(func(writer856 any) any {
 		tmp857 := v_clojure_DOT_pprint_X_unimplemented.Direct()
 		var tmp858 any
@@ -2305,8 +2336,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_get_pretty_writer = tmp860.F
 	v_clojure_DOT_pprint_get_pretty_writer.SealDirect()
 	_ = v_clojure_DOT_pprint_get_pretty_writer
-	// (def fresh-line (clojure.core/fn [] (-unimplemented "fresh-line")))
-	v_clojure_DOT_pprint_fresh_line.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(372), kw_column, int64(7), kw_end_line, int64(372), kw_end_column, int64(17)))
+	// (def fresh-line (clojure.core/fn ([] (-unimplemented "fresh-line"))))
+	v_clojure_DOT_pprint_fresh_line.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(372), kw_column, int64(7), kw_end_line, int64(372), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector())))
 	tmp861 := lang.FnFunc0(func() any {
 		tmp862 := v_clojure_DOT_pprint_X_unimplemented.Direct()
 		var tmp863 any
@@ -2327,7 +2358,7 @@ func Load() {
 	v_clojure_DOT_pprint_fresh_line.SealDirect()
 	_ = v_clojure_DOT_pprint_fresh_line
 	// (do (def pprint-logical-block (fn* pprint-logical-block ([&form &env & args] (clojure.core…
-	v_clojure_DOT_pprint_pprint_logical_block.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(375), kw_column, int64(11), kw_end_line, int64(375), kw_end_column, int64(31)))
+	v_clojure_DOT_pprint_pprint_logical_block.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_args)), kw_file, "pprint.cljg", kw_line, int64(375), kw_column, int64(11), kw_end_line, int64(375), kw_end_column, int64(31)))
 	var pprint_logical_block866 any
 	_ = pprint_logical_block866
 	tmp867 := lang.FnFunc(func(args ...any) any {
@@ -2363,8 +2394,8 @@ func Load() {
 	tmp880 := lang.Apply1(tmp879, v_clojure_DOT_pprint_pprint_logical_block)
 	_ = tmp880
 	_ = v_clojure_DOT_pprint_pprint_logical_block
-	// (def pprint-newline (clojure.core/fn [kind] (-unimplemented "pprint-newline")))
-	v_clojure_DOT_pprint_pprint_newline.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(378), kw_column, int64(7), kw_end_line, int64(378), kw_end_column, int64(21)))
+	// (def pprint-newline (clojure.core/fn ([kind] (-unimplemented "pprint-newline"))))
+	v_clojure_DOT_pprint_pprint_newline.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(378), kw_column, int64(7), kw_end_line, int64(378), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(sym_kind))))
 	tmp881 := lang.FnFunc1(func(kind882 any) any {
 		tmp883 := v_clojure_DOT_pprint_X_unimplemented.Direct()
 		var tmp884 any
@@ -2384,8 +2415,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_pprint_newline = tmp886.F
 	v_clojure_DOT_pprint_pprint_newline.SealDirect()
 	_ = v_clojure_DOT_pprint_pprint_newline
-	// (def pprint-indent (clojure.core/fn [relative-to n] (-unimplemented "pprint-indent")))
-	v_clojure_DOT_pprint_pprint_indent.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(381), kw_column, int64(7), kw_end_line, int64(381), kw_end_column, int64(20)))
+	// (def pprint-indent (clojure.core/fn ([relative-to n] (-unimplemented "pprint-indent"))))
+	v_clojure_DOT_pprint_pprint_indent.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(381), kw_column, int64(7), kw_end_line, int64(381), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_relative_to, sym_n))))
 	tmp887 := lang.FnFunc2(func(relative_to888, n889 any) any {
 		tmp890 := v_clojure_DOT_pprint_X_unimplemented.Direct()
 		var tmp891 any
@@ -2405,8 +2436,8 @@ func Load() {
 	fnD_clojure_DOT_pprint_pprint_indent = tmp893.F
 	v_clojure_DOT_pprint_pprint_indent.SealDirect()
 	_ = v_clojure_DOT_pprint_pprint_indent
-	// (def pprint-tab (clojure.core/fn [kind colnum colinc] (-unimplemented "pprint-tab")))
-	v_clojure_DOT_pprint_pprint_tab.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(384), kw_column, int64(7), kw_end_line, int64(384), kw_end_column, int64(17)))
+	// (def pprint-tab (clojure.core/fn ([kind colnum colinc] (-unimplemented "pprint-tab"))))
+	v_clojure_DOT_pprint_pprint_tab.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(384), kw_column, int64(7), kw_end_line, int64(384), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_kind, sym_colnum, sym_colinc))))
 	tmp894 := lang.FnFunc3(func(kind895, colnum896, colinc897 any) any {
 		tmp898 := v_clojure_DOT_pprint_X_unimplemented.Direct()
 		var tmp899 any
@@ -2427,7 +2458,7 @@ func Load() {
 	v_clojure_DOT_pprint_pprint_tab.SealDirect()
 	_ = v_clojure_DOT_pprint_pprint_tab
 	// (do (def print-length-loop (fn* print-length-loop ([&form &env bindings & body] (clojure.c…
-	v_clojure_DOT_pprint_print_length_loop.SetMeta(lang.NewMap(kw_file, "pprint.cljg", kw_line, int64(387), kw_column, int64(11), kw_end_line, int64(387), kw_end_column, int64(28)))
+	v_clojure_DOT_pprint_print_length_loop.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_bindings, sym_X_AMP_, sym_body)), kw_file, "pprint.cljg", kw_line, int64(387), kw_column, int64(11), kw_end_line, int64(387), kw_end_column, int64(28)))
 	var print_length_loop902 any
 	_ = print_length_loop902
 	tmp903 := lang.FnFunc(func(args ...any) any {

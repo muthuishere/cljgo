@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	kw_arglists                          = lang.InternKeywordString("arglists")
 	kw_column                            = lang.InternKeywordString("column")
 	kw_doc                               = lang.InternKeywordString("doc")
 	kw_end_column                        = lang.InternKeywordString("end-column")
@@ -16,7 +17,12 @@ var (
 	kw_line                              = lang.InternKeywordString("line")
 	sym_cljg_DOT_net_DOT_dns             = lang.NewSymbol("cljg.net.dns")
 	sym_clojure_DOT_core                 = lang.NewSymbol("clojure.core")
+	sym_domain                           = lang.NewSymbol("domain")
+	sym_host                             = lang.NewSymbol("host")
+	sym_ip                               = lang.NewSymbol("ip")
+	sym_proto                            = lang.NewSymbol("proto")
 	sym_reverse                          = lang.NewSymbol("reverse")
+	sym_service                          = lang.NewSymbol("service")
 	v_cljg_DOT_net_DOT_dns_X_dns_cname   = lang.InternVarName(lang.NewSymbol("cljg.net.dns"), lang.NewSymbol("-dns-cname")).SetPrivate()
 	v_cljg_DOT_net_DOT_dns_X_dns_lookup  = lang.InternVarName(lang.NewSymbol("cljg.net.dns"), lang.NewSymbol("-dns-lookup")).SetPrivate()
 	v_cljg_DOT_net_DOT_dns_X_dns_mx      = lang.InternVarName(lang.NewSymbol("cljg.net.dns"), lang.NewSymbol("-dns-mx")).SetPrivate()
@@ -63,8 +69,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply3(tmp3, sym_clojure_DOT_core, kw_exclude, lang.NewVector(sym_reverse))
 	_ = tmp4
-	// (def lookup "Resolve `host`'s A/AAAA records: a sorted vector of IP strings (IPv4\n  dotte…
-	v_cljg_DOT_net_DOT_dns_lookup.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(13), kw_doc, "Resolve `host`'s A/AAAA records: a sorted vector of IP strings (IPv4\n  dotted-quad and/or IPv6). Throws ex-info naming the host on failure."))
+	// (def lookup (clojure.core/fn ([host] (-dns-lookup host))))
+	v_cljg_DOT_net_DOT_dns_lookup.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_host)), kw_doc, "Resolve `host`'s A/AAAA records: a sorted vector of IP strings (IPv4\n  dotted-quad and/or IPv6). Throws ex-info naming the host on failure."))
 	tmp5 := lang.FnFunc1(func(host6 any) any {
 		tmp7 := v_cljg_DOT_net_DOT_dns_X_dns_lookup.Get()
 		tmp8 := lang.Apply1(tmp7, host6)
@@ -75,8 +81,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_dns_lookup = tmp9.F
 	v_cljg_DOT_net_DOT_dns_lookup.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_lookup
-	// (def reverse "Reverse (PTR) lookup of the IP string `ip`: a sorted vector of hostnames\n  …
-	v_cljg_DOT_net_DOT_dns_reverse.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(39), kw_column, int64(7), kw_end_line, int64(39), kw_end_column, int64(14), kw_doc, "Reverse (PTR) lookup of the IP string `ip`: a sorted vector of hostnames\n  (no trailing dot)."))
+	// (def reverse (clojure.core/fn ([ip] (-dns-reverse ip))))
+	v_cljg_DOT_net_DOT_dns_reverse.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(39), kw_column, int64(7), kw_end_line, int64(39), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_ip)), kw_doc, "Reverse (PTR) lookup of the IP string `ip`: a sorted vector of hostnames\n  (no trailing dot)."))
 	tmp10 := lang.FnFunc1(func(ip11 any) any {
 		tmp12 := v_cljg_DOT_net_DOT_dns_X_dns_reverse.Get()
 		tmp13 := lang.Apply1(tmp12, ip11)
@@ -87,8 +93,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_dns_reverse = tmp14.F
 	v_cljg_DOT_net_DOT_dns_reverse.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_reverse
-	// (def mx "MX records for `domain`: a vector of {:host string :preference int} maps,\n  sort…
-	v_cljg_DOT_net_DOT_dns_mx.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(45), kw_column, int64(7), kw_end_line, int64(45), kw_end_column, int64(9), kw_doc, "MX records for `domain`: a vector of {:host string :preference int} maps,\n  sorted by preference (lowest first)."))
+	// (def mx (clojure.core/fn ([domain] (-dns-mx domain))))
+	v_cljg_DOT_net_DOT_dns_mx.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(45), kw_column, int64(7), kw_end_line, int64(45), kw_end_column, int64(9), kw_arglists, lang.NewList(lang.NewVector(sym_domain)), kw_doc, "MX records for `domain`: a vector of {:host string :preference int} maps,\n  sorted by preference (lowest first)."))
 	tmp15 := lang.FnFunc1(func(domain16 any) any {
 		tmp17 := v_cljg_DOT_net_DOT_dns_X_dns_mx.Get()
 		tmp18 := lang.Apply1(tmp17, domain16)
@@ -99,8 +105,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_dns_mx = tmp19.F
 	v_cljg_DOT_net_DOT_dns_mx.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_mx
-	// (def txt "TXT records for `domain`: a vector of strings." (clojure.core/fn [domain] (-dns-…
-	v_cljg_DOT_net_DOT_dns_txt.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(51), kw_column, int64(7), kw_end_line, int64(51), kw_end_column, int64(10), kw_doc, "TXT records for `domain`: a vector of strings."))
+	// (def txt (clojure.core/fn ([domain] (-dns-txt domain))))
+	v_cljg_DOT_net_DOT_dns_txt.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(51), kw_column, int64(7), kw_end_line, int64(51), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_domain)), kw_doc, "TXT records for `domain`: a vector of strings."))
 	tmp20 := lang.FnFunc1(func(domain21 any) any {
 		tmp22 := v_cljg_DOT_net_DOT_dns_X_dns_txt.Get()
 		tmp23 := lang.Apply1(tmp22, domain21)
@@ -111,8 +117,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_dns_txt = tmp24.F
 	v_cljg_DOT_net_DOT_dns_txt.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_txt
-	// (def srv "SRV records for `service`/`proto` under `domain` (e.g. \"imaps\" \"tcp\"\n  \"gm…
-	v_cljg_DOT_net_DOT_dns_srv.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(10), kw_doc, "SRV records for `service`/`proto` under `domain` (e.g. \"imaps\" \"tcp\"\n  \"gmail.com\" ⇒ _imaps._tcp.gmail.com): a vector of {:target string :port\n  int :priority int :weight int} maps in RFC 2782 order."))
+	// (def srv (clojure.core/fn ([service proto domain] (-dns-srv service proto domain))))
+	v_cljg_DOT_net_DOT_dns_srv.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_service, sym_proto, sym_domain)), kw_doc, "SRV records for `service`/`proto` under `domain` (e.g. \"imaps\" \"tcp\"\n  \"gmail.com\" ⇒ _imaps._tcp.gmail.com): a vector of {:target string :port\n  int :priority int :weight int} maps in RFC 2782 order."))
 	tmp25 := lang.FnFunc3(func(service26, proto27, domain28 any) any {
 		tmp29 := v_cljg_DOT_net_DOT_dns_X_dns_srv.Get()
 		tmp30 := lang.Apply3(tmp29, service26, proto27, domain28)
@@ -123,8 +129,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_dns_srv = tmp31.F
 	v_cljg_DOT_net_DOT_dns_srv.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_srv
-	// (def cname "The canonical name for `domain` (no trailing dot). A host with no CNAME\n  rec…
-	v_cljg_DOT_net_DOT_dns_cname.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(63), kw_column, int64(7), kw_end_line, int64(63), kw_end_column, int64(12), kw_doc, "The canonical name for `domain` (no trailing dot). A host with no CNAME\n  record returns its own name."))
+	// (def cname (clojure.core/fn ([domain] (-dns-cname domain))))
+	v_cljg_DOT_net_DOT_dns_cname.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(63), kw_column, int64(7), kw_end_line, int64(63), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_domain)), kw_doc, "The canonical name for `domain` (no trailing dot). A host with no CNAME\n  record returns its own name."))
 	tmp32 := lang.FnFunc1(func(domain33 any) any {
 		tmp34 := v_cljg_DOT_net_DOT_dns_X_dns_cname.Get()
 		tmp35 := lang.Apply1(tmp34, domain33)
@@ -135,8 +141,8 @@ func Load() {
 	fnD_cljg_DOT_net_DOT_dns_cname = tmp36.F
 	v_cljg_DOT_net_DOT_dns_cname.SealDirect()
 	_ = v_cljg_DOT_net_DOT_dns_cname
-	// (def ns-records "NS records for `domain`: a sorted vector of nameserver hostnames. Named\n…
-	v_cljg_DOT_net_DOT_dns_ns_records.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(69), kw_column, int64(7), kw_end_line, int64(69), kw_end_column, int64(17), kw_doc, "NS records for `domain`: a sorted vector of nameserver hostnames. Named\n  ns-records, not ns — clojure.core/ns is first-class (precedence principle)."))
+	// (def ns-records (clojure.core/fn ([domain] (-dns-ns domain))))
+	v_cljg_DOT_net_DOT_dns_ns_records.SetMeta(lang.NewMap(kw_file, "cljg/net_dns.cljg", kw_line, int64(69), kw_column, int64(7), kw_end_line, int64(69), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_domain)), kw_doc, "NS records for `domain`: a sorted vector of nameserver hostnames. Named\n  ns-records, not ns — clojure.core/ns is first-class (precedence principle)."))
 	tmp37 := lang.FnFunc1(func(domain38 any) any {
 		tmp39 := v_cljg_DOT_net_DOT_dns_X_dns_ns.Get()
 		tmp40 := lang.Apply1(tmp39, domain38)

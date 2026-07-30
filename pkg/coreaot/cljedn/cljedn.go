@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	kw_arglists                               = lang.InternKeywordString("arglists")
 	kw_column                                 = lang.InternKeywordString("column")
 	kw_doc                                    = lang.InternKeywordString("doc")
 	kw_end_column                             = lang.InternKeywordString("end-column")
@@ -16,8 +17,11 @@ var (
 	kw_line                                   = lang.InternKeywordString("line")
 	sym_clojure_DOT_core                      = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_edn                       = lang.NewSymbol("clojure.edn")
+	sym_opts                                  = lang.NewSymbol("opts")
 	sym_read                                  = lang.NewSymbol("read")
 	sym_read_string                           = lang.NewSymbol("read-string")
+	sym_s                                     = lang.NewSymbol("s")
+	sym_stream                                = lang.NewSymbol("stream")
 	v_clojure_DOT_core_X_STAR_in_STAR_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("*in*"))
 	v_clojure_DOT_core_X_edn_read             = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read")).SetPrivate()
 	v_clojure_DOT_core_X_edn_read_string      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-edn-read-string")).SetPrivate()
@@ -46,8 +50,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply3(tmp3, sym_clojure_DOT_core, kw_exclude, lang.NewVector(sym_read, sym_read_string))
 	_ = tmp4
-	// (def read "Reads the next object from stream (an io.Reader; defaults to *in*).\n  Reads da…
-	v_clojure_DOT_edn_read.SetMeta(lang.NewMap(kw_file, "edn.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(11), kw_doc, "Reads the next object from stream (an io.Reader; defaults to *in*).\n  Reads data in the edn format (subset of Clojure data): no reader macros,\n  no eval. Optionally takes a map of options, the same as read-string:\n\n  :eof - value to return on end-of-stream, default is to throw an exception\n  :readers - a map of tag symbols to data-reader functions\n  :default - a function of two args, called with tag and value when no\n    reader is found for a tag."))
+	// (def read (clojure.core/fn ([] (read *in*)) ([stream] (clojure.core/-edn-read nil stream))…
+	v_clojure_DOT_edn_read.SetMeta(lang.NewMap(kw_file, "edn.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_stream), lang.NewVector(sym_opts, sym_stream)), kw_doc, "Reads the next object from stream (an io.Reader; defaults to *in*).\n  Reads data in the edn format (subset of Clojure data): no reader macros,\n  no eval. Optionally takes a map of options, the same as read-string:\n\n  :eof - value to return on end-of-stream, default is to throw an exception\n  :readers - a map of tag symbols to data-reader functions\n  :default - a function of two args, called with tag and value when no\n    reader is found for a tag."))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -75,8 +79,8 @@ func Load() {
 	})
 	v_clojure_DOT_edn_read.BindRoot(tmp5)
 	_ = v_clojure_DOT_edn_read
-	// (def read-string "Reads one object from the string s. Returns nil when s has nothing but\n…
-	v_clojure_DOT_edn_read_string.SetMeta(lang.NewMap(kw_file, "edn.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(18), kw_doc, "Reads one object from the string s. Returns nil when s has nothing but\n  whitespace/comments. Optionally takes a map of options:\n\n  :eof - value to return on end-of-stream, default is to throw an exception\n  :readers - a map of tag symbols to data-reader functions to be\n    considered before default-data-readers, and *data-readers*\n  :default - a function of two args, that will, if present and no reader\n    is found for a tag, be called with the tag and the value."))
+	// (def read-string (clojure.core/fn ([s] (clojure.core/-edn-read-string s)) ([opts s] (cloju…
+	v_clojure_DOT_edn_read_string.SetMeta(lang.NewMap(kw_file, "edn.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(18), kw_arglists, lang.NewList(lang.NewVector(sym_s), lang.NewVector(sym_opts, sym_s)), kw_doc, "Reads one object from the string s. Returns nil when s has nothing but\n  whitespace/comments. Optionally takes a map of options:\n\n  :eof - value to return on end-of-stream, default is to throw an exception\n  :readers - a map of tag symbols to data-reader functions to be\n    considered before default-data-readers, and *data-readers*\n  :default - a function of two args, that will, if present and no reader\n    is found for a tag, be called with the tag and the value."))
 	tmp16 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:

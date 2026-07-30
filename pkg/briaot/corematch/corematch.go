@@ -7,16 +7,23 @@ import (
 )
 
 var (
+	kw_arglists                                  = lang.InternKeywordString("arglists")
 	kw_column                                    = lang.InternKeywordString("column")
 	kw_doc                                       = lang.InternKeywordString("doc")
 	kw_end_column                                = lang.InternKeywordString("end-column")
 	kw_end_line                                  = lang.InternKeywordString("end-line")
 	kw_file                                      = lang.InternKeywordString("file")
 	kw_line                                      = lang.InternKeywordString("line")
+	sym_X_AMP_                                   = lang.NewSymbol("&")
+	sym_X_encoding                               = lang.NewSymbol("_encoding")
+	sym_bindings                                 = lang.NewSymbol("bindings")
+	sym_body                                     = lang.NewSymbol("body")
+	sym_clauses                                  = lang.NewSymbol("clauses")
 	sym_clojure_DOT_core                         = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_core_DOT_match               = lang.NewSymbol("clojure.core.match")
 	sym_clojure_DOT_core_DOT_match_SLASH_match   = lang.NewSymbol("clojure.core.match/match")
 	sym_clojure_DOT_core_SLASH_let               = lang.NewSymbol("clojure.core/let")
+	sym_vars                                     = lang.NewSymbol("vars")
 	v_clojure_DOT_core_DOT_match_X_match_compile = lang.InternVarName(lang.NewSymbol("clojure.core.match"), lang.NewSymbol("-match-compile")).SetPrivate()
 	v_clojure_DOT_core_DOT_match_match           = lang.InternVarName(lang.NewSymbol("clojure.core.match"), lang.NewSymbol("match"))
 	v_clojure_DOT_core_DOT_match_match_let       = lang.InternVarName(lang.NewSymbol("clojure.core.match"), lang.NewSymbol("match-let"))
@@ -50,8 +57,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (do (def match "Pattern match `vars` (a vector of match expressions) against the clauses:\…
-	v_clojure_DOT_core_DOT_match_match.SetMeta(lang.NewMap(kw_file, "match.cljg", kw_line, int64(35), kw_column, int64(11), kw_end_line, int64(35), kw_end_column, int64(16), kw_doc, "Pattern match `vars` (a vector of match expressions) against the clauses:\n  alternating [pattern ...] rows and result expressions, with an optional final\n  `:else` catch-all. Compiles to a Maranget decision tree."))
+	// (do (def match (fn* match ([&form &env vars & clauses] (-match-compile vars (vec clauses))…
+	v_clojure_DOT_core_DOT_match_match.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_vars, sym_X_AMP_, sym_clauses)), kw_doc, "Pattern match `vars` (a vector of match expressions) against the clauses:\n  alternating [pattern ...] rows and result expressions, with an optional final\n  `:else` catch-all. Compiles to a Maranget decision tree.", kw_file, "match.cljg", kw_line, int64(35), kw_column, int64(11), kw_end_line, int64(35), kw_end_column, int64(16)))
 	var match5 any
 	_ = match5
 	tmp6 := lang.FnFunc(func(args ...any) any {
@@ -85,8 +92,8 @@ func Load() {
 	tmp16 := lang.Apply1(tmp15, v_clojure_DOT_core_DOT_match_match)
 	_ = tmp16
 	_ = v_clojure_DOT_core_DOT_match_match
-	// (do (def matchv "Like `match`, with an explicit vector encoding hint as the first argument…
-	v_clojure_DOT_core_DOT_match_matchv.SetMeta(lang.NewMap(kw_file, "match.cljg", kw_line, int64(42), kw_column, int64(11), kw_end_line, int64(42), kw_end_column, int64(17), kw_doc, "Like `match`, with an explicit vector encoding hint as the first argument\n  (accepted for source compatibility with org.clojure/core.match; cljgo uses\n  one generic vector encoding, so the hint is ignored)."))
+	// (do (def matchv (fn* matchv ([&form &env _encoding vars & clauses] (-match-compile vars (v…
+	v_clojure_DOT_core_DOT_match_matchv.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_X_encoding, sym_vars, sym_X_AMP_, sym_clauses)), kw_doc, "Like `match`, with an explicit vector encoding hint as the first argument\n  (accepted for source compatibility with org.clojure/core.match; cljgo uses\n  one generic vector encoding, so the hint is ignored).", kw_file, "match.cljg", kw_line, int64(42), kw_column, int64(11), kw_end_line, int64(42), kw_end_column, int64(17)))
 	var matchv17 any
 	_ = matchv17
 	tmp18 := lang.FnFunc(func(args ...any) any {
@@ -122,8 +129,8 @@ func Load() {
 	tmp29 := lang.Apply1(tmp28, v_clojure_DOT_core_DOT_match_matchv)
 	_ = tmp29
 	_ = v_clojure_DOT_core_DOT_match_matchv
-	// (do (def matchm "Like `matchv`, for map-encoded scrutinees (the encoding hint is accepted\…
-	v_clojure_DOT_core_DOT_match_matchm.SetMeta(lang.NewMap(kw_file, "match.cljg", kw_line, int64(49), kw_column, int64(11), kw_end_line, int64(49), kw_end_column, int64(17), kw_doc, "Like `matchv`, for map-encoded scrutinees (the encoding hint is accepted\n  and ignored; cljgo dispatches maps generically)."))
+	// (do (def matchm (fn* matchm ([&form &env _encoding vars & clauses] (-match-compile vars (v…
+	v_clojure_DOT_core_DOT_match_matchm.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_X_encoding, sym_vars, sym_X_AMP_, sym_clauses)), kw_doc, "Like `matchv`, for map-encoded scrutinees (the encoding hint is accepted\n  and ignored; cljgo dispatches maps generically).", kw_file, "match.cljg", kw_line, int64(49), kw_column, int64(11), kw_end_line, int64(49), kw_end_column, int64(17)))
 	var matchm30 any
 	_ = matchm30
 	tmp31 := lang.FnFunc(func(args ...any) any {
@@ -159,8 +166,8 @@ func Load() {
 	tmp42 := lang.Apply1(tmp41, v_clojure_DOT_core_DOT_match_matchm)
 	_ = tmp42
 	_ = v_clojure_DOT_core_DOT_match_matchm
-	// (do (def match-let "Like `let`, but the body is a `match` over the bound locals: bind\n  e…
-	v_clojure_DOT_core_DOT_match_match_let.SetMeta(lang.NewMap(kw_file, "match.cljg", kw_line, int64(55), kw_column, int64(11), kw_end_line, int64(55), kw_end_column, int64(20), kw_doc, "Like `let`, but the body is a `match` over the bound locals: bind\n  expressions to names, then match those names against the clause rows."))
+	// (do (def match-let (fn* match-let ([&form &env bindings & body] (let [bindvars (vec (take-…
+	v_clojure_DOT_core_DOT_match_match_let.SetMeta(lang.NewMap(kw_arglists, lang.NewList(lang.NewVector(sym_bindings, sym_X_AMP_, sym_body)), kw_doc, "Like `let`, but the body is a `match` over the bound locals: bind\n  expressions to names, then match those names against the clause rows.", kw_file, "match.cljg", kw_line, int64(55), kw_column, int64(11), kw_end_line, int64(55), kw_end_column, int64(20)))
 	var match_let43 any
 	_ = match_let43
 	tmp44 := lang.FnFunc(func(args ...any) any {

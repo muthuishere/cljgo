@@ -9,6 +9,7 @@ import (
 
 var (
 	kw_addr                       = lang.InternKeywordString("addr")
+	kw_arglists                   = lang.InternKeywordString("arglists")
 	kw_column                     = lang.InternKeywordString("column")
 	kw_doc                        = lang.InternKeywordString("doc")
 	kw_end_column                 = lang.InternKeywordString("end-column")
@@ -20,6 +21,8 @@ var (
 	kw_stop                       = lang.InternKeywordString("stop")
 	sym_cljg_DOT_http             = lang.NewSymbol("cljg.http")
 	sym_clojure_DOT_core          = lang.NewSymbol("clojure.core")
+	sym_opts                      = lang.NewSymbol("opts")
+	sym_server                    = lang.NewSymbol("server")
 	v_cljg_DOT_http_X_http_serve  = lang.InternVarName(lang.NewSymbol("cljg.http"), lang.NewSymbol("-http-serve")).SetPrivate()
 	v_cljg_DOT_http_addr          = lang.InternVarName(lang.NewSymbol("cljg.http"), lang.NewSymbol("addr"))
 	v_cljg_DOT_http_serve         = lang.InternVarName(lang.NewSymbol("cljg.http"), lang.NewSymbol("serve"))
@@ -57,8 +60,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def serve "Start the raw HTTP server: {:port p :host h :handler f :tls {…}} → a\n  se…
-	v_cljg_DOT_http_serve.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(12), kw_doc, "Start the raw HTTP server: {:port p :host h :handler f :tls {…}} → a\n  server handle {:port :addr :stop}. `f` is (fn [request-map] response-map)\n  — the Ring-shaped contract above. Never blocks; :port 0 binds a free\n  port (read it back with `addr`). Stop gracefully with `stop`."))
+	// (def serve (clojure.core/fn ([opts] (let [handler (:handler opts)] (when-not (ifn? handler…
+	v_cljg_DOT_http_serve.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_opts)), kw_doc, "Start the raw HTTP server: {:port p :host h :handler f :tls {…}} → a\n  server handle {:port :addr :stop}. `f` is (fn [request-map] response-map)\n  — the Ring-shaped contract above. Never blocks; :port 0 binds a free\n  port (read it back with `addr`). Stop gracefully with `stop`."))
 	tmp5 := lang.FnFunc1(func(opts6 any) any {
 		var tmp7 any
 		_ = tmp7
@@ -98,8 +101,8 @@ func Load() {
 	fnD_cljg_DOT_http_serve = tmp26.F
 	v_cljg_DOT_http_serve.SealDirect()
 	_ = v_cljg_DOT_http_serve
-	// (def addr "The bound \"host:port\" of a server handle — with {:port 0} this is how\n  yo…
-	v_cljg_DOT_http_addr.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(11), kw_doc, "The bound \"host:port\" of a server handle — with {:port 0} this is how\n  you learn the actual port."))
+	// (def addr (clojure.core/fn ([server] (:addr server))))
+	v_cljg_DOT_http_addr.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_server)), kw_doc, "The bound \"host:port\" of a server handle — with {:port 0} this is how\n  you learn the actual port."))
 	tmp27 := lang.FnFunc1(func(server28 any) any {
 		tmp29 := lang.Apply1(kw_addr, server28)
 		return tmp29
@@ -109,8 +112,8 @@ func Load() {
 	fnD_cljg_DOT_http_addr = tmp30.F
 	v_cljg_DOT_http_addr.SealDirect()
 	_ = v_cljg_DOT_http_addr
-	// (def stop "Gracefully stop a server handle: the listener closes, in-flight requests\n  fin…
-	v_cljg_DOT_http_stop.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(11), kw_doc, "Gracefully stop a server handle: the listener closes, in-flight requests\n  finish (deadline), then the server is down. Returns nil."))
+	// (def stop (clojure.core/fn ([server] ((:stop server)) nil)))
+	v_cljg_DOT_http_stop.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_server)), kw_doc, "Gracefully stop a server handle: the listener closes, in-flight requests\n  finish (deadline), then the server is down. Returns nil."))
 	tmp31 := lang.FnFunc1(func(server32 any) any {
 		tmp33 := lang.Apply1(kw_stop, server32)
 		tmp34 := lang.Apply0(tmp33)

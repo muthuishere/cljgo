@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	kw_arglists                              = lang.InternKeywordString("arglists")
 	kw_as                                    = lang.InternKeywordString("as")
 	kw_boolean                               = lang.InternKeywordString("boolean")
 	kw_bri_SLASH_error                       = lang.InternKeywordString("bri/error")
@@ -35,12 +36,23 @@ var (
 	kw_type_                                 = lang.InternKeywordString("type")
 	re_58                                    = &reader.Regex{Pattern: "__"}
 	re_69                                    = &reader.Regex{Pattern: "-?\\d+"}
+	sym_a                                    = lang.NewSymbol("a")
+	sym_b                                    = lang.NewSymbol("b")
 	sym_bri_DOT_core_DOT_config              = lang.NewSymbol("bri.core.config")
+	sym_cfg                                  = lang.NewSymbol("cfg")
 	sym_clojure_DOT_core                     = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_edn                      = lang.NewSymbol("clojure.edn")
 	sym_clojure_DOT_string                   = lang.NewSymbol("clojure.string")
 	sym_edn                                  = lang.NewSymbol("edn")
+	sym_k                                    = lang.NewSymbol("k")
+	sym_layers                               = lang.NewSymbol("layers")
+	sym_m                                    = lang.NewSymbol("m")
+	sym_path                                 = lang.NewSymbol("path")
+	sym_prefix                               = lang.NewSymbol("prefix")
+	sym_schema                               = lang.NewSymbol("schema")
 	sym_str                                  = lang.NewSymbol("str")
+	sym_t                                    = lang.NewSymbol("t")
+	sym_v                                    = lang.NewSymbol("v")
 	v_bri_DOT_core_DOT_config_X_env_pairs    = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("-env-pairs")).SetPrivate()
 	v_bri_DOT_core_DOT_config_X_getenv       = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("-getenv")).SetPrivate()
 	v_bri_DOT_core_DOT_config_X_read_file    = lang.InternVarName(lang.NewSymbol("bri.core.config"), lang.NewSymbol("-read-file")).SetPrivate()
@@ -144,8 +156,8 @@ func Load() {
 	tmp7 := v_clojure_DOT_core_require.Get()
 	tmp8 := lang.Apply1(tmp7, lang.NewVector(sym_clojure_DOT_edn, kw_as, sym_edn))
 	_ = tmp8
-	// (def deep-merge (clojure.core/fn [a b] (if (and (map? a) (map? b)) (reduce (fn [m kv] (ass…
-	v_bri_DOT_core_DOT_config_deep_merge.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(19), kw_column, int64(7), kw_end_line, int64(19), kw_end_column, int64(27), kw_private, true))
+	// (def deep-merge (clojure.core/fn ([a b] (if (and (map? a) (map? b)) (reduce (fn [m kv] (as…
+	v_bri_DOT_core_DOT_config_deep_merge.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(19), kw_column, int64(7), kw_end_line, int64(19), kw_end_column, int64(27), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_a, sym_b))))
 	tmp9 := lang.FnFunc2(func(a10, b11 any) any {
 		var tmp12 any
 		_ = tmp12
@@ -217,8 +229,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_config_deep_merge = tmp44.F
 	v_bri_DOT_core_DOT_config_deep_merge.SealDirect()
 	_ = v_bri_DOT_core_DOT_config_deep_merge
-	// (def env-path "APP_DB__POOL_SIZE → [:db :pool-size]: __ separates path segments,\n  _ jo…
-	v_bri_DOT_core_DOT_config_env_path.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(25), kw_private, true, kw_doc, "APP_DB__POOL_SIZE → [:db :pool-size]: __ separates path segments,\n  _ joins words inside a segment."))
+	// (def env-path (clojure.core/fn ([k] (mapv (fn [seg] (keyword (str/replace (str/lower-case …
+	v_bri_DOT_core_DOT_config_env_path.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_k)), kw_doc, "APP_DB__POOL_SIZE → [:db :pool-size]: __ separates path segments,\n  _ joins words inside a segment."))
 	tmp45 := lang.FnFunc1(func(k46 any) any {
 		tmp47 := v_clojure_DOT_core_mapv.Get()
 		tmp48 := lang.FnFunc1(func(seg49 any) any {
@@ -241,8 +253,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_config_env_path = tmp61.F
 	v_bri_DOT_core_DOT_config_env_path.SealDirect()
 	_ = v_bri_DOT_core_DOT_config_env_path
-	// (def coerce-env "Env values arrive as strings; numbers and booleans coerce (durations\n  a…
-	v_bri_DOT_core_DOT_config_coerce_env.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(27), kw_private, true, kw_doc, "Env values arrive as strings; numbers and booleans coerce (durations\n  and sizes are NUMBERS — no stringly-typed \"5m\")."))
+	// (def coerce-env (clojure.core/fn ([v] (cond (= v "true") true (= v "false") false (re-matc…
+	v_bri_DOT_core_DOT_config_coerce_env.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(27), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_v)), kw_doc, "Env values arrive as strings; numbers and booleans coerce (durations\n  and sizes are NUMBERS — no stringly-typed \"5m\")."))
 	tmp62 := lang.FnFunc1(func(v63 any) any {
 		tmp64 := rt.EQBool(v_clojure_DOT_core_X_EQ_, v63, "true")
 		var tmp65 any
@@ -285,8 +297,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_config_coerce_env = tmp75.F
 	v_bri_DOT_core_DOT_config_coerce_env.SealDirect()
 	_ = v_bri_DOT_core_DOT_config_coerce_env
-	// (def env-overlay "All APP_* variables as [path value] pairs (APP_PROFILE is the\n  profile…
-	v_bri_DOT_core_DOT_config_env_overlay.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(28), kw_private, true, kw_doc, "All APP_* variables as [path value] pairs (APP_PROFILE is the\n  profile selector, not config data)."))
+	// (def env-overlay (clojure.core/fn ([] (reduce (fn [acc pair] (let [k (nth pair 0) v (nth p…
+	v_bri_DOT_core_DOT_config_env_overlay.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(42), kw_column, int64(7), kw_end_line, int64(42), kw_end_column, int64(28), kw_private, true, kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "All APP_* variables as [path value] pairs (APP_PROFILE is the\n  profile selector, not config data)."))
 	tmp76 := lang.FnFunc0(func() any {
 		tmp77 := v_clojure_DOT_core_reduce.Get()
 		tmp78 := lang.FnFunc2(func(acc79, pair80 any) any {
@@ -385,8 +397,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_config_env_overlay = tmp117.F
 	v_bri_DOT_core_DOT_config_env_overlay.SealDirect()
 	_ = v_bri_DOT_core_DOT_config_env_overlay
-	// (def profile "The active profile keyword: APP_PROFILE, default :dev." (clojure.core/fn [] …
-	v_bri_DOT_core_DOT_config_profile.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(14), kw_doc, "The active profile keyword: APP_PROFILE, default :dev."))
+	// (def profile (clojure.core/fn ([] (keyword (or (-getenv "APP_PROFILE") "dev")))))
+	v_bri_DOT_core_DOT_config_profile.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(56), kw_column, int64(7), kw_end_line, int64(56), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The active profile keyword: APP_PROFILE, default :dev."))
 	tmp118 := lang.FnFunc0(func() any {
 		tmp119 := v_clojure_DOT_core_keyword.Get()
 		var tmp120 any
@@ -413,8 +425,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_config_profile = tmp126.F
 	v_bri_DOT_core_DOT_config_profile.SealDirect()
 	_ = v_bri_DOT_core_DOT_config_profile
-	// (def read-edn-file (clojure.core/fn [path] (let [s (-read-file path)] (when s (edn/read-st…
-	v_bri_DOT_core_DOT_config_read_edn_file.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(30), kw_private, true))
+	// (def read-edn-file (clojure.core/fn ([path] (let [s (-read-file path)] (when s (edn/read-s…
+	v_bri_DOT_core_DOT_config_read_edn_file.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(30), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_path))))
 	tmp127 := lang.FnFunc1(func(path128 any) any {
 		var tmp129 any
 		_ = tmp129
@@ -441,8 +453,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_config_read_edn_file = tmp136.F
 	v_bri_DOT_core_DOT_config_read_edn_file.SealDirect()
 	_ = v_bri_DOT_core_DOT_config_read_edn_file
-	// (def type-ok? (clojure.core/fn [t v] (cond (= t :int) (int? v) (= t :number) (number? v) (…
-	v_bri_DOT_core_DOT_config_type_ok_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(67), kw_column, int64(7), kw_end_line, int64(67), kw_end_column, int64(25), kw_private, true))
+	// (def type-ok? (clojure.core/fn ([t v] (cond (= t :int) (int? v) (= t :number) (number? v) …
+	v_bri_DOT_core_DOT_config_type_ok_QMARK_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(67), kw_column, int64(7), kw_end_line, int64(67), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_t, sym_v))))
 	tmp137 := lang.FnFunc2(func(t138, v139 any) any {
 		tmp140 := rt.EQBool(v_clojure_DOT_core_X_EQ_, t138, kw_int_)
 		var tmp141 any
@@ -508,8 +520,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_config_type_ok_QMARK_ = tmp161.F
 	v_bri_DOT_core_DOT_config_type_ok_QMARK_.SealDirect()
 	_ = v_bri_DOT_core_DOT_config_type_ok_QMARK_
-	// (def validate! "Enforce the schema against the resolved map; violations abort boot\n  NAMI…
-	v_bri_DOT_core_DOT_config_validate_BANG_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(26), kw_private, true, kw_doc, "Enforce the schema against the resolved map; violations abort boot\n  NAMING THE KEY AND THE LAYER (misconfigured deploys must not boot)."))
+	// (def validate! (clojure.core/fn ([cfg schema layers] (doseq [entry (seq (or schema {}))] (…
+	v_bri_DOT_core_DOT_config_validate_BANG_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(26), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_cfg, sym_schema, sym_layers)), kw_doc, "Enforce the schema against the resolved map; violations abort boot\n  NAMING THE KEY AND THE LAYER (misconfigured deploys must not boot)."))
 	tmp162 := lang.FnFunc3(func(cfg163, schema164, layers165 any) any {
 		var tmp166 any
 		_ = tmp166
@@ -697,7 +709,7 @@ func Load() {
 	v_bri_DOT_core_DOT_config_validate_BANG_.SealDirect()
 	_ = v_bri_DOT_core_DOT_config_validate_BANG_
 	// (def leaf-paths (clojure.core/fn ([m] (leaf-paths [] m)) ([prefix m] (reduce (fn [acc kv] …
-	v_bri_DOT_core_DOT_config_leaf_paths.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(27), kw_private, true))
+	v_bri_DOT_core_DOT_config_leaf_paths.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(27), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_m), lang.NewVector(sym_prefix, sym_m))))
 	tmp244 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -758,8 +770,8 @@ func Load() {
 	})
 	v_bri_DOT_core_DOT_config_leaf_paths.BindRoot(tmp244)
 	_ = v_bri_DOT_core_DOT_config_leaf_paths
-	// (def resolve-layers "Returns [cfg layers]: the merged map and, per leaf path, the winning\…
-	v_bri_DOT_core_DOT_config_resolve_layers.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(107), kw_column, int64(7), kw_end_line, int64(107), kw_end_column, int64(31), kw_private, true, kw_doc, "Returns [cfg layers]: the merged map and, per leaf path, the winning\n  layer (:default :file :profile :env)."))
+	// (def resolve-layers (clojure.core/fn ([path] (let [raw (read-edn-file path) base (dissoc (…
+	v_bri_DOT_core_DOT_config_resolve_layers.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(107), kw_column, int64(7), kw_end_line, int64(107), kw_end_column, int64(31), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "Returns [cfg layers]: the merged map and, per leaf path, the winning\n  layer (:default :file :profile :env)."))
 	tmp278 := lang.FnFunc1(func(path279 any) any {
 		var tmp280 any
 		_ = tmp280
@@ -1008,8 +1020,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_config_resolve_layers = tmp395.F
 	v_bri_DOT_core_DOT_config_resolve_layers.SealDirect()
 	_ = v_bri_DOT_core_DOT_config_resolve_layers
-	// (def load! "conf.edn (+ :profiles by APP_PROFILE) → APP_* env → ONE PLAIN MAP.\n  Read…
-	v_bri_DOT_core_DOT_config_load_BANG_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(12), kw_doc, "conf.edn (+ :profiles by APP_PROFILE) → APP_* env → ONE PLAIN MAP.\n  Reads a file (and the env), no more — no sockets, no pools; a schema\n  violation throws before anything else boots."))
+	// (def load! (clojure.core/fn ([] (load! "conf.edn")) ([path] (nth (resolve-layers path) 0))…
+	v_bri_DOT_core_DOT_config_load_BANG_.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_path)), kw_doc, "conf.edn (+ :profiles by APP_PROFILE) → APP_* env → ONE PLAIN MAP.\n  Reads a file (and the env), no more — no sockets, no pools; a schema\n  violation throws before anything else boots."))
 	tmp396 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -1039,8 +1051,8 @@ func Load() {
 	})
 	v_bri_DOT_core_DOT_config_load_BANG_.BindRoot(tmp396)
 	_ = v_bri_DOT_core_DOT_config_load_BANG_
-	// (def explain "The `cljgo config` body: every key's effective value and the layer\n  that w…
-	v_bri_DOT_core_DOT_config_explain.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(142), kw_column, int64(7), kw_end_line, int64(142), kw_end_column, int64(14), kw_doc, "The `cljgo config` body: every key's effective value and the layer\n  that won (default < file < profile < env)."))
+	// (def explain (clojure.core/fn ([] (explain "conf.edn")) ([path] (let [pair (resolve-layers…
+	v_bri_DOT_core_DOT_config_explain.SetMeta(lang.NewMap(kw_file, "bri/config.cljg", kw_line, int64(142), kw_column, int64(7), kw_end_line, int64(142), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_path)), kw_doc, "The `cljgo config` body: every key's effective value and the layer\n  that won (default < file < profile < env)."))
 	tmp405 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:

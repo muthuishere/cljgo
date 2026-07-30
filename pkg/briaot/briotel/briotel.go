@@ -9,6 +9,7 @@ import (
 
 var (
 	kw_app_SLASH_name                                = lang.InternKeywordString("app/name")
+	kw_arglists                                      = lang.InternKeywordString("arglists")
 	kw_as                                            = lang.InternKeywordString("as")
 	kw_bri_DOT_core_DOT_telemetry_SLASH_span         = lang.InternKeywordString("bri.core.telemetry/span")
 	kw_bri_DOT_web_DOT_http_SLASH_route              = lang.InternKeywordString("bri.web.http/route")
@@ -36,6 +37,9 @@ var (
 	sym_bri_DOT_core_DOT_telemetry                   = lang.NewSymbol("bri.core.telemetry")
 	sym_clojure_DOT_core                             = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string                           = lang.NewSymbol("clojure.string")
+	sym_opts                                         = lang.NewSymbol("opts")
+	sym_req                                          = lang.NewSymbol("req")
+	sym_stack                                        = lang.NewSymbol("stack")
 	sym_str                                          = lang.NewSymbol("str")
 	v_bri_DOT_core_DOT_telemetry_X_otel_end          = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("-otel-end")).SetPrivate()
 	v_bri_DOT_core_DOT_telemetry_X_otel_init         = lang.InternVarName(lang.NewSymbol("bri.core.telemetry"), lang.NewSymbol("-otel-init")).SetPrivate()
@@ -97,8 +101,8 @@ func Load() {
 	tmp5 := v_clojure_DOT_core_require.Get()
 	tmp6 := lang.Apply1(tmp5, lang.NewVector(sym_clojure_DOT_string, kw_as, sym_str))
 	_ = tmp6
-	// (def config-service-name "Best-effort service.name from bri.core.config's app name — nev…
-	v_bri_DOT_core_DOT_telemetry_config_service_name.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(36), kw_private, true, kw_doc, "Best-effort service.name from bri.core.config's app name — never throws (a\n  missing/!invalid conf.edn just yields nil, and the Go side defaults)."))
+	// (def config-service-name (clojure.core/fn ([] (try (require (quote bri.core.config)) (let …
+	v_bri_DOT_core_DOT_telemetry_config_service_name.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(36), kw_private, true, kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "Best-effort service.name from bri.core.config's app name — never throws (a\n  missing/!invalid conf.edn just yields nil, and the Go side defaults)."))
 	tmp7 := lang.FnFunc0(func() any {
 		var tmp8 any
 		_ = tmp8
@@ -194,8 +198,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_telemetry_config_service_name = tmp34.F
 	v_bri_DOT_core_DOT_telemetry_config_service_name.SealDirect()
 	_ = v_bri_DOT_core_DOT_telemetry_config_service_name
-	// (def init! "Initialize the tracer provider + OTLP exporter (idempotent — safe to call\n …
-	v_bri_DOT_core_DOT_telemetry_init_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(12), kw_doc, "Initialize the tracer provider + OTLP exporter (idempotent — safe to call\n  from every (otel/trace)). :service-name overrides the resolved name."))
+	// (def init! (clojure.core/fn ([] (init! {})) ([opts] (-otel-init (str (or (:service-name op…
+	v_bri_DOT_core_DOT_telemetry_init_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "Initialize the tracer provider + OTLP exporter (idempotent — safe to call\n  from every (otel/trace)). :service-name overrides the resolved name."))
 	tmp35 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -258,8 +262,8 @@ func Load() {
 	})
 	v_bri_DOT_core_DOT_telemetry_init_BANG_.BindRoot(tmp35)
 	_ = v_bri_DOT_core_DOT_telemetry_init_BANG_
-	// (def shutdown! "Flush and stop the batch span processor. Add to serve's :drain so\n  buffe…
-	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(16), kw_doc, "Flush and stop the batch span processor. Add to serve's :drain so\n  buffered spans reach the collector on SIGTERM: {:drain [otel/shutdown!]}."))
+	// (def shutdown! (clojure.core/fn ([] (-otel-shutdown))))
+	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "Flush and stop the batch span processor. Add to serve's :drain so\n  buffered spans reach the collector on SIGTERM: {:drain [otel/shutdown!]}."))
 	tmp54 := lang.FnFunc0(func() any {
 		tmp55 := v_bri_DOT_core_DOT_telemetry_X_otel_shutdown.Get()
 		tmp56 := lang.Apply0(tmp55)
@@ -270,8 +274,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_telemetry_shutdown_BANG_ = tmp57.F
 	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_.SealDirect()
 	_ = v_bri_DOT_core_DOT_telemetry_shutdown_BANG_
-	// (def req-subject "The authenticated subject a guard recorded on the request's :bri/ctx\n  …
-	v_bri_DOT_core_DOT_telemetry_req_subject.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(28), kw_private, true, kw_doc, "The authenticated subject a guard recorded on the request's :bri/ctx\n  (mark-subject!), read AFTER handling — nil when no guard resolved one."))
+	// (def req-subject (clojure.core/fn ([req] (:subject (some-> (:bri/ctx req) deref)))))
+	v_bri_DOT_core_DOT_telemetry_req_subject.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(28), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_req)), kw_doc, "The authenticated subject a guard recorded on the request's :bri/ctx\n  (mark-subject!), read AFTER handling — nil when no guard resolved one."))
 	tmp58 := lang.FnFunc1(func(req59 any) any {
 		var tmp60 any
 		_ = tmp60
@@ -307,8 +311,8 @@ func Load() {
 	fnD_bri_DOT_core_DOT_telemetry_req_subject = tmp71.F
 	v_bri_DOT_core_DOT_telemetry_req_subject.SealDirect()
 	_ = v_bri_DOT_core_DOT_telemetry_req_subject
-	// (def trace "Tracing middleware: opens a SERVER span per request named after the\n  matched…
-	v_bri_DOT_core_DOT_telemetry_trace.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(12), kw_doc, "Tracing middleware: opens a SERVER span per request named after the\n  matched route PATTERN (low cardinality, not the raw path), adopts an\n  inbound W3C traceparent/tracestate so bri joins the caller's trace,\n  records method/route/status + the request-id and authenticated subject as\n  span attributes, sets span status from the HTTP status, and ends the span\n  on response. The span's trace-id is threaded into :trace/id and the shared\n  :bri/ctx so logs/metrics/traces correlate. Echoes the span's traceparent\n  on the response for downstream correlation.\n\n  Returns a {:name :otel :wrap fn} middleware value — compose it like any\n  other (conj a stack, or (otel/with-tracing stack))."))
+	// (def trace (clojure.core/fn ([] (trace {})) ([opts] (init! opts) {:name :otel, :wrap (fn […
+	v_bri_DOT_core_DOT_telemetry_trace.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "Tracing middleware: opens a SERVER span per request named after the\n  matched route PATTERN (low cardinality, not the raw path), adopts an\n  inbound W3C traceparent/tracestate so bri joins the caller's trace,\n  records method/route/status + the request-id and authenticated subject as\n  span attributes, sets span status from the HTTP status, and ends the span\n  on response. The span's trace-id is threaded into :trace/id and the shared\n  :bri/ctx so logs/metrics/traces correlate. Echoes the span's traceparent\n  on the response for downstream correlation.\n\n  Returns a {:name :otel :wrap fn} middleware value — compose it like any\n  other (conj a stack, or (otel/with-tracing stack))."))
 	tmp72 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -629,8 +633,8 @@ func Load() {
 	})
 	v_bri_DOT_core_DOT_telemetry_trace.BindRoot(tmp72)
 	_ = v_bri_DOT_core_DOT_telemetry_trace
-	// (def with-tracing "Add the tracing middleware as the OUTERMOST entry of an existing stack\…
-	v_bri_DOT_core_DOT_telemetry_with_tracing.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(19), kw_doc, "Add the tracing middleware as the OUTERMOST entry of an existing stack\n  (so the span wraps request-id, logging, and the handler):\n  (http/serve routes {:middleware (otel/with-tracing (http/api-defaults))})."))
+	// (def with-tracing (clojure.core/fn ([stack] (with-tracing stack {})) ([stack opts] (into […
+	v_bri_DOT_core_DOT_telemetry_with_tracing.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(sym_stack), lang.NewVector(sym_stack, sym_opts)), kw_doc, "Add the tracing middleware as the OUTERMOST entry of an existing stack\n  (so the span wraps request-id, logging, and the handler):\n  (http/serve routes {:middleware (otel/with-tracing (http/api-defaults))})."))
 	tmp194 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -657,8 +661,8 @@ func Load() {
 	})
 	v_bri_DOT_core_DOT_telemetry_with_tracing.BindRoot(tmp194)
 	_ = v_bri_DOT_core_DOT_telemetry_with_tracing
-	// (def current-traceparent "The W3C traceparent for the request's active span — inject it …
-	v_bri_DOT_core_DOT_telemetry_current_traceparent.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(26), kw_doc, "The W3C traceparent for the request's active span — inject it into\n  OUTBOUND calls so downstream services join this trace. nil outside a\n  traced request."))
+	// (def current-traceparent (clojure.core/fn ([req] (when-let [span (:bri.core.telemetry/span…
+	v_bri_DOT_core_DOT_telemetry_current_traceparent.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(26), kw_arglists, lang.NewList(lang.NewVector(sym_req)), kw_doc, "The W3C traceparent for the request's active span — inject it into\n  OUTBOUND calls so downstream services join this trace. nil outside a\n  traced request."))
 	tmp206 := lang.FnFunc1(func(req207 any) any {
 		var tmp208 any
 		_ = tmp208

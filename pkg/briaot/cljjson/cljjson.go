@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	kw_arglists                              = lang.InternKeywordString("arglists")
 	kw_column                                = lang.InternKeywordString("column")
 	kw_doc                                   = lang.InternKeywordString("doc")
 	kw_end_column                            = lang.InternKeywordString("end-column")
@@ -14,9 +15,15 @@ var (
 	kw_exclude                               = lang.InternKeywordString("exclude")
 	kw_file                                  = lang.InternKeywordString("file")
 	kw_line                                  = lang.InternKeywordString("line")
+	sym_X_AMP_                               = lang.NewSymbol("&")
 	sym_clojure_DOT_core                     = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_data_DOT_json            = lang.NewSymbol("clojure.data.json")
+	sym_opts                                 = lang.NewSymbol("opts")
 	sym_read                                 = lang.NewSymbol("read")
+	sym_reader                               = lang.NewSymbol("reader")
+	sym_s                                    = lang.NewSymbol("s")
+	sym_writer                               = lang.NewSymbol("writer")
+	sym_x                                    = lang.NewSymbol("x")
 	v_clojure_DOT_core_apply                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("apply"))
 	v_clojure_DOT_core_hash_map              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("hash-map"))
 	v_clojure_DOT_core_in_ns                 = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
@@ -47,8 +54,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply3(tmp3, sym_clojure_DOT_core, kw_exclude, lang.NewVector(sym_read))
 	_ = tmp4
-	// (def read-str "Reads one JSON value from the String `s`. Returns the parsed value:\n  JSON…
-	v_clojure_DOT_data_DOT_json_read_str.SetMeta(lang.NewMap(kw_file, "clojure/data_json.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(15), kw_doc, "Reads one JSON value from the String `s`. Returns the parsed value:\n  JSON objects become maps (string keys by default), arrays become vectors,\n  strings/numbers/true/false/null become the natural cljgo values (integers are\n  longs, promoting to bigint on overflow; fractionals are doubles).\n\n  Options (keyword args):\n    :key-fn      fn applied to each object key string\n    :value-fn    fn applied as (value-fn key value) to each object value\n    :bigdec      when true, parse decimal literals as bigdec (default false)\n    :eof-error?  when false, return :eof-value at end-of-input instead of\n                 throwing (default true)\n    :eof-value   the value returned at EOF when :eof-error? is false"))
+	// (def read-str (clojure.core/fn ([s & opts] (-json-read s (apply hash-map opts)))))
+	v_clojure_DOT_data_DOT_json_read_str.SetMeta(lang.NewMap(kw_file, "clojure/data_json.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_X_AMP_, sym_opts)), kw_doc, "Reads one JSON value from the String `s`. Returns the parsed value:\n  JSON objects become maps (string keys by default), arrays become vectors,\n  strings/numbers/true/false/null become the natural cljgo values (integers are\n  longs, promoting to bigint on overflow; fractionals are doubles).\n\n  Options (keyword args):\n    :key-fn      fn applied to each object key string\n    :value-fn    fn applied as (value-fn key value) to each object value\n    :bigdec      when true, parse decimal literals as bigdec (default false)\n    :eof-error?  when false, return :eof-value at end-of-input instead of\n                 throwing (default true)\n    :eof-value   the value returned at EOF when :eof-error? is false"))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -72,8 +79,8 @@ func Load() {
 	})
 	v_clojure_DOT_data_DOT_json_read_str.BindRoot(tmp5)
 	_ = v_clojure_DOT_data_DOT_json_read_str
-	// (def read "Reads one JSON value from `reader` (a stream, e.g. *in*). Same options as\n  re…
-	v_clojure_DOT_data_DOT_json_read.SetMeta(lang.NewMap(kw_file, "clojure/data_json.cljg", kw_line, int64(50), kw_column, int64(7), kw_end_line, int64(50), kw_end_column, int64(11), kw_doc, "Reads one JSON value from `reader` (a stream, e.g. *in*). Same options as\n  read-str. Exactly one value is consumed; the rest of the stream is left\n  intact."))
+	// (def read (clojure.core/fn ([reader & opts] (-json-read reader (apply hash-map opts)))))
+	v_clojure_DOT_data_DOT_json_read.SetMeta(lang.NewMap(kw_file, "clojure/data_json.cljg", kw_line, int64(50), kw_column, int64(7), kw_end_line, int64(50), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_reader, sym_X_AMP_, sym_opts)), kw_doc, "Reads one JSON value from `reader` (a stream, e.g. *in*). Same options as\n  read-str. Exactly one value is consumed; the rest of the stream is left\n  intact."))
 	tmp13 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -97,8 +104,8 @@ func Load() {
 	})
 	v_clojure_DOT_data_DOT_json_read.BindRoot(tmp13)
 	_ = v_clojure_DOT_data_DOT_json_read
-	// (def write-str "Converts `x` to a JSON-formatted String. Maps become objects, sequential\n…
-	v_clojure_DOT_data_DOT_json_write_str.SetMeta(lang.NewMap(kw_file, "clojure/data_json.cljg", kw_line, int64(59), kw_column, int64(7), kw_end_line, int64(59), kw_end_column, int64(16), kw_doc, "Converts `x` to a JSON-formatted String. Maps become objects, sequential\n  collections become arrays, keywords/symbols become their name, longs/bigints/\n  doubles/bigdecs become numbers, nil becomes null.\n\n  Options (keyword args):\n    :escape-unicode        \\uXXXX-escape non-ASCII characters (default true)\n    :escape-js-separators  escape U+2028/U+2029 (default true)\n    :escape-slash          escape '/' as '\\/' (default true)\n    :indent                pretty-print with 2-space indentation (default false)\n    :key-fn                fn applied to each map key before writing\n    :value-fn              fn applied as (value-fn key value) to each value\n    :default-write-fn      fn applied to a value of an unknown type"))
+	// (def write-str (clojure.core/fn ([x & opts] (-json-write x (apply hash-map opts) nil))))
+	v_clojure_DOT_data_DOT_json_write_str.SetMeta(lang.NewMap(kw_file, "clojure/data_json.cljg", kw_line, int64(59), kw_column, int64(7), kw_end_line, int64(59), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_x, sym_X_AMP_, sym_opts)), kw_doc, "Converts `x` to a JSON-formatted String. Maps become objects, sequential\n  collections become arrays, keywords/symbols become their name, longs/bigints/\n  doubles/bigdecs become numbers, nil becomes null.\n\n  Options (keyword args):\n    :escape-unicode        \\uXXXX-escape non-ASCII characters (default true)\n    :escape-js-separators  escape U+2028/U+2029 (default true)\n    :escape-slash          escape '/' as '\\/' (default true)\n    :indent                pretty-print with 2-space indentation (default false)\n    :key-fn                fn applied to each map key before writing\n    :value-fn              fn applied as (value-fn key value) to each value\n    :default-write-fn      fn applied to a value of an unknown type"))
 	tmp21 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
@@ -122,8 +129,8 @@ func Load() {
 	})
 	v_clojure_DOT_data_DOT_json_write_str.BindRoot(tmp21)
 	_ = v_clojure_DOT_data_DOT_json_write_str
-	// (def write "Writes `x` as JSON to `writer` (a stream). Same options as write-str.\n  Retur…
-	v_clojure_DOT_data_DOT_json_write.SetMeta(lang.NewMap(kw_file, "clojure/data_json.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(12), kw_doc, "Writes `x` as JSON to `writer` (a stream). Same options as write-str.\n  Returns nil."))
+	// (def write (clojure.core/fn ([x writer & opts] (-json-write x (apply hash-map opts) writer…
+	v_clojure_DOT_data_DOT_json_write.SetMeta(lang.NewMap(kw_file, "clojure/data_json.cljg", kw_line, int64(75), kw_column, int64(7), kw_end_line, int64(75), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_x, sym_writer, sym_X_AMP_, sym_opts)), kw_doc, "Writes `x` as JSON to `writer` (a stream). Same options as write-str.\n  Returns nil."))
 	tmp29 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:

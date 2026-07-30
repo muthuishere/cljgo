@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	kw_arglists                     = lang.InternKeywordString("arglists")
 	kw_column                       = lang.InternKeywordString("column")
 	kw_doc                          = lang.InternKeywordString("doc")
 	kw_end_column                   = lang.InternKeywordString("end-column")
@@ -18,6 +19,11 @@ var (
 	sym_cljg_DOT_date               = lang.NewSymbol("cljg.date")
 	sym_clojure_DOT_core            = lang.NewSymbol("clojure.core")
 	sym_format                      = lang.NewSymbol("format")
+	sym_layout                      = lang.NewSymbol("layout")
+	sym_millis                      = lang.NewSymbol("millis")
+	sym_s                           = lang.NewSymbol("s")
+	sym_t0                          = lang.NewSymbol("t0")
+	sym_t1                          = lang.NewSymbol("t1")
 	v_cljg_DOT_date_X_format_iso    = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-format-iso")).SetPrivate()
 	v_cljg_DOT_date_X_format_layout = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-format-layout")).SetPrivate()
 	v_cljg_DOT_date_X_nano_time     = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-nano-time")).SetPrivate()
@@ -65,8 +71,8 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply3(tmp3, sym_clojure_DOT_core, kw_exclude, lang.NewVector(sym_format))
 	_ = tmp4
-	// (def nano-time "Monotonic nanoseconds since process start (the System/nanoTime analog).\n …
-	v_cljg_DOT_date_nano_time.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(16), kw_doc, "Monotonic nanoseconds since process start (the System/nanoTime analog).\n  Only the difference of two readings is meaningful — pair with `since`."))
+	// (def nano-time (clojure.core/fn ([] (-nano-time))))
+	v_cljg_DOT_date_nano_time.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "Monotonic nanoseconds since process start (the System/nanoTime analog).\n  Only the difference of two readings is meaningful — pair with `since`."))
 	tmp5 := lang.FnFunc0(func() any {
 		tmp6 := v_cljg_DOT_date_X_nano_time.Get()
 		tmp7 := lang.Apply0(tmp6)
@@ -77,8 +83,8 @@ func Load() {
 	fnD_cljg_DOT_date_nano_time = tmp8.F
 	v_cljg_DOT_date_nano_time.SealDirect()
 	_ = v_cljg_DOT_date_nano_time
-	// (def now "The current wall-clock time as epoch milliseconds (the System/currentTimeMillis\…
-	v_cljg_DOT_date_now.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(41), kw_column, int64(7), kw_end_line, int64(41), kw_end_column, int64(10), kw_doc, "The current wall-clock time as epoch milliseconds (the System/currentTimeMillis\n  analog)."))
+	// (def now (clojure.core/fn ([] (-now-millis))))
+	v_cljg_DOT_date_now.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(41), kw_column, int64(7), kw_end_line, int64(41), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The current wall-clock time as epoch milliseconds (the System/currentTimeMillis\n  analog)."))
 	tmp9 := lang.FnFunc0(func() any {
 		tmp10 := v_cljg_DOT_date_X_now_millis.Get()
 		tmp11 := lang.Apply0(tmp10)
@@ -89,8 +95,8 @@ func Load() {
 	fnD_cljg_DOT_date_now = tmp12.F
 	v_cljg_DOT_date_now.SealDirect()
 	_ = v_cljg_DOT_date_now
-	// (def since "Elapsed nanoseconds. With one reading `t0` (from `nano-time`), the elapsed\n  …
-	v_cljg_DOT_date_since.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(12), kw_doc, "Elapsed nanoseconds. With one reading `t0` (from `nano-time`), the elapsed\n  nanos from `t0` until now. With two readings, `t1` - `t0`."))
+	// (def since (clojure.core/fn ([t0] (- (nano-time) t0)) ([t0 t1] (- t1 t0))))
+	v_cljg_DOT_date_since.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_t0), lang.NewVector(sym_t0, sym_t1)), kw_doc, "Elapsed nanoseconds. With one reading `t0` (from `nano-time`), the elapsed\n  nanos from `t0` until now. With two readings, `t1` - `t0`."))
 	tmp13 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -122,8 +128,8 @@ func Load() {
 	})
 	v_cljg_DOT_date_since.BindRoot(tmp13)
 	_ = v_cljg_DOT_date_since
-	// (def since-ms "Elapsed milliseconds (a double) — `since` divided by 1e6. One reading\n  …
-	v_cljg_DOT_date_since_ms.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(15), kw_doc, "Elapsed milliseconds (a double) — `since` divided by 1e6. One reading\n  measures until now; two measure the interval between them."))
+	// (def since-ms (clojure.core/fn ([t0] (/ (double (since t0)) 1000000.0)) ([t0 t1] (/ (doubl…
+	v_cljg_DOT_date_since_ms.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_t0), lang.NewVector(sym_t0, sym_t1)), kw_doc, "Elapsed milliseconds (a double) — `since` divided by 1e6. One reading\n  measures until now; two measure the interval between them."))
 	tmp22 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -152,8 +158,8 @@ func Load() {
 	})
 	v_cljg_DOT_date_since_ms.BindRoot(tmp22)
 	_ = v_cljg_DOT_date_since_ms
-	// (def format-iso "Render an instant (epoch milliseconds; defaults to `now`) as an ISO-8601 …
-	v_cljg_DOT_date_format_iso.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(17), kw_doc, "Render an instant (epoch milliseconds; defaults to `now`) as an ISO-8601 /\n  RFC 3339 UTC string. Matches java.time.Instant.toString() at millisecond\n  precision: no fractional part on a whole second, exactly three digits\n  otherwise — (format-iso 0) => \"1970-01-01T00:00:00Z\",\n  (format-iso 1500) => \"1970-01-01T00:00:01.500Z\"."))
+	// (def format-iso (clojure.core/fn ([] (format-iso (now))) ([millis] (-format-iso millis))))
+	v_cljg_DOT_date_format_iso.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_millis)), kw_doc, "Render an instant (epoch milliseconds; defaults to `now`) as an ISO-8601 /\n  RFC 3339 UTC string. Matches java.time.Instant.toString() at millisecond\n  precision: no fractional part on a whole second, exactly three digits\n  otherwise — (format-iso 0) => \"1970-01-01T00:00:00Z\",\n  (format-iso 1500) => \"1970-01-01T00:00:01.500Z\"."))
 	tmp36 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -183,8 +189,8 @@ func Load() {
 	})
 	v_cljg_DOT_date_format_iso.BindRoot(tmp36)
 	_ = v_cljg_DOT_date_format_iso
-	// (def parse-iso "Parse an ISO-8601 / RFC 3339 timestamp into epoch milliseconds. A fraction…
-	v_cljg_DOT_date_parse_iso.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(74), kw_column, int64(7), kw_end_line, int64(74), kw_end_column, int64(16), kw_doc, "Parse an ISO-8601 / RFC 3339 timestamp into epoch milliseconds. A fractional\n  part is optional and any offset is honoured, not dropped —\n  (parse-iso \"2026-07-30T12:00:00+05:30\") equals\n  (parse-iso \"2026-07-30T06:30:00Z\"). Throws, naming the input, if the string\n  is not an instant."))
+	// (def parse-iso (clojure.core/fn ([s] (-parse-iso s))))
+	v_cljg_DOT_date_parse_iso.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(74), kw_column, int64(7), kw_end_line, int64(74), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_s)), kw_doc, "Parse an ISO-8601 / RFC 3339 timestamp into epoch milliseconds. A fractional\n  part is optional and any offset is honoured, not dropped —\n  (parse-iso \"2026-07-30T12:00:00+05:30\") equals\n  (parse-iso \"2026-07-30T06:30:00Z\"). Throws, naming the input, if the string\n  is not an instant."))
 	tmp45 := lang.FnFunc1(func(s46 any) any {
 		tmp47 := v_cljg_DOT_date_X_parse_iso.Get()
 		tmp48 := lang.Apply1(tmp47, s46)
@@ -195,8 +201,8 @@ func Load() {
 	fnD_cljg_DOT_date_parse_iso = tmp49.F
 	v_cljg_DOT_date_parse_iso.SealDirect()
 	_ = v_cljg_DOT_date_parse_iso
-	// (def format "Render an instant (epoch milliseconds) in UTC with `layout`.\n\n  NOTE — no…
-	v_cljg_DOT_date_format.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(13), kw_doc, "Render an instant (epoch milliseconds) in UTC with `layout`.\n\n  NOTE — no JVM equivalent: `layout` is a GO reference-time layout, spelled by\n  writing the reference instant Mon Jan 2 15:04:05 MST 2006 the way you want\n  the output (\"2006-01-02\", \"15:04:05\", \"Jan 2 2006\"). It is NOT a\n  java.time DateTimeFormatter pattern (\"yyyy-MM-dd\"), and cljgo does not\n  translate one into the other — this is a Go host, and pretending otherwise\n  would silently mis-format. For the portable case use `format-iso`.\n\n  Does NOT shadow clojure.core/format, which is untouched (see the ns header)."))
+	// (def format (clojure.core/fn ([millis layout] (-format-layout millis layout))))
+	v_cljg_DOT_date_format.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_millis, sym_layout)), kw_doc, "Render an instant (epoch milliseconds) in UTC with `layout`.\n\n  NOTE — no JVM equivalent: `layout` is a GO reference-time layout, spelled by\n  writing the reference instant Mon Jan 2 15:04:05 MST 2006 the way you want\n  the output (\"2006-01-02\", \"15:04:05\", \"Jan 2 2006\"). It is NOT a\n  java.time DateTimeFormatter pattern (\"yyyy-MM-dd\"), and cljgo does not\n  translate one into the other — this is a Go host, and pretending otherwise\n  would silently mis-format. For the portable case use `format-iso`.\n\n  Does NOT shadow clojure.core/format, which is untouched (see the ns header)."))
 	tmp50 := lang.FnFunc2(func(millis51, layout52 any) any {
 		tmp53 := v_cljg_DOT_date_X_format_layout.Get()
 		tmp54 := lang.Apply2(tmp53, millis51, layout52)
@@ -207,8 +213,8 @@ func Load() {
 	fnD_cljg_DOT_date_format = tmp55.F
 	v_cljg_DOT_date_format.SealDirect()
 	_ = v_cljg_DOT_date_format
-	// (def parse "Parse `s` with `layout` into epoch milliseconds — the inverse of `format`,\n…
-	v_cljg_DOT_date_parse.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(12), kw_doc, "Parse `s` with `layout` into epoch milliseconds — the inverse of `format`,\n  and likewise a GO reference-time layout, not a java.time pattern. A layout\n  carrying no zone is read as UTC. Throws, naming input and layout, on a\n  mismatch."))
+	// (def parse (clojure.core/fn ([s layout] (-parse-layout s layout))))
+	v_cljg_DOT_date_parse.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_layout)), kw_doc, "Parse `s` with `layout` into epoch milliseconds — the inverse of `format`,\n  and likewise a GO reference-time layout, not a java.time pattern. A layout\n  carrying no zone is read as UTC. Throws, naming input and layout, on a\n  mismatch."))
 	tmp56 := lang.FnFunc2(func(s57, layout58 any) any {
 		tmp59 := v_cljg_DOT_date_X_parse_layout.Get()
 		tmp60 := lang.Apply2(tmp59, s57, layout58)
