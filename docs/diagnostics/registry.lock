@@ -27,6 +27,7 @@ G5016 replacement fn did not return a string
 G5017 options argument is not a map
 G5018 unsupported dependency version syntax
 G5019 maven dependency source file cannot be read
+G5020 maven dependency namespace failed to compile
 I4001 Java class used as a namespace
 I4002 namespace requires Java interop and cannot load on cljgo
 R1001 unterminated form
