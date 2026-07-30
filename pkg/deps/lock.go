@@ -69,7 +69,26 @@ type LockedDep struct {
 	// LocalUnlocked marks a :path (local) dep: a NAMED HOLE recorded with
 	// :local/unlocked? true, never hashed (decision 3).
 	LocalUnlocked bool
+
+	// --- Maven/Clojars coordinate deps (ADR 0095) -------------------------
+	// MvnVersion is non-empty exactly when this is a coordinate dep.
+	MvnGroup    string
+	MvnArtifact string
+	MvnVersion  string
+	MvnRepo     string // the repository that served it — no re-shopping later
+	MvnSHA256   string // the jar bytes
+	MvnPomSHA   string // the pom bytes
+	// The PER-NAMESPACE purity map (ADR 0054 dec 4). Recorded so the purity
+	// report is readable fully OFFLINE, and so the require-time gate is a
+	// cheap lookup. Note this is a DIFFERENT notion
+	// from Pure/Impure above: that is ADR 0052 capability purity
+	// (ffi/cgo/go-require), this is Java taint. Both are kept, unmerged.
+	MvnPureNS []string
+	MvnJavaNS map[string]string // ns -> why it cannot load
 }
+
+// IsMvn reports whether this locked dep is a Maven coordinate.
+func (d *LockedDep) IsMvn() bool { return d != nil && d.MvnVersion != "" }
 
 // Lock is the whole build.lock.edn.
 type Lock struct {
@@ -117,6 +136,24 @@ func LoadLock(path string) (*Lock, error) {
 			TreeHash: ednStr(ednGet(e, "tree/hash")),
 			Paths:    ednStrs(ednGet(e, "paths")),
 			Requires: ednStrs(ednGet(e, "requires")),
+
+			MvnGroup:    ednStr(ednGet(e, "mvn/group")),
+			MvnArtifact: ednStr(ednGet(e, "mvn/artifact")),
+			MvnVersion:  ednStr(ednGet(e, "mvn/version")),
+			MvnRepo:     ednStr(ednGet(e, "mvn/repo")),
+			MvnSHA256:   ednStr(ednGet(e, "mvn/sha256")),
+			MvnPomSHA:   ednStr(ednGet(e, "mvn/pom-sha256")),
+		}
+		if nsm := ednGet(e, "mvn/namespaces"); nsm != nil {
+			d.MvnPureNS = ednStrs(ednGet(nsm, "pure"))
+			for _, j := range ednSlice(ednGet(nsm, "java")) {
+				if n := ednStr(ednGet(j, "ns")); n != "" {
+					if d.MvnJavaNS == nil {
+						d.MvnJavaNS = map[string]string{}
+					}
+					d.MvnJavaNS[n] = ednStr(ednGet(j, "why"))
+				}
+			}
 		}
 		if v := ednGet(e, "local/unlocked?"); v == true {
 			d.LocalUnlocked = true
@@ -158,12 +195,35 @@ func WriteLock(path string, l *Lock) error {
 	out := make([]ednVal, 0, len(deps))
 	for _, d := range deps {
 		m := map[kw]ednVal{"name": d.Name}
-		if d.LocalUnlocked {
+		switch {
+		case d.LocalUnlocked:
 			// A :path dep is a NAMED HOLE — its name and contributed roots,
 			// never a hash (decision 3). It is not reproducible across machines
 			// and must not pretend to be.
 			m["local/unlocked?"] = true
-		} else {
+		case d.IsMvn():
+			m["mvn/group"] = d.MvnGroup
+			m["mvn/artifact"] = d.MvnArtifact
+			m["mvn/version"] = d.MvnVersion
+			m["mvn/repo"] = d.MvnRepo
+			m["mvn/sha256"] = d.MvnSHA256
+			m["mvn/pom-sha256"] = d.MvnPomSHA
+			m["tree/hash"] = d.TreeHash
+			ns := map[kw]ednVal{"pure": strVals(d.MvnPureNS)}
+			if len(d.MvnJavaNS) > 0 {
+				names := make([]string, 0, len(d.MvnJavaNS))
+				for n := range d.MvnJavaNS {
+					names = append(names, n)
+				}
+				sort.Strings(names)
+				jv := make([]ednVal, 0, len(names))
+				for _, n := range names {
+					jv = append(jv, map[kw]ednVal{"ns": n, "why": d.MvnJavaNS[n]})
+				}
+				ns["java"] = jv
+			}
+			m["mvn/namespaces"] = ns
+		default:
 			m["git/url"] = d.GitURL
 			m["git/ref"] = d.GitRef
 			m["git/sha"] = d.GitSHA

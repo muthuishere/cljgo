@@ -103,6 +103,22 @@ type Reader struct {
 	// arity (or when :default wasn't supplied), in which case an unhandled
 	// tag is a reader error as usual.
 	defaultReader lang.IFn
+
+	// starvedCondError makes a STARVED reader conditional — one with at
+	// least one branch, none of which cljgo can select — a hard read error
+	// (R1012) instead of the JVM's legal "reads as nothing" elision. It is
+	// OPT-IN and enabled ONLY for files under a Maven-origin dependency root
+	// (ADR 0095 / spike s50 finding 4): project code keeps the JVM's
+	// semantics exactly, so no conformance file moves. For a .cljc pulled
+	// out of a Clojars jar the elision is a trap — a :clj-only body would
+	// install a namespace with no vars and blame the caller later — so the
+	// consume path fails loud at the conditional instead.
+	starvedCondError bool
+
+	// nestDepth is how many enclosing collection/body reads are in flight.
+	// The starved-conditional check consults it: only a TOP-LEVEL starved
+	// conditional is a hard error (see readConditional).
+	nestDepth int
 }
 
 // Option configures a Reader.
@@ -167,6 +183,13 @@ func WithTagReaders(readers map[string]lang.IFn) Option {
 // clojure.edn/read-string's `:default` option.
 func WithDefaultReader(fn lang.IFn) Option {
 	return func(r *Reader) { r.defaultReader = fn }
+}
+
+// WithStarvedCondError makes a reader conditional that supplies no branch
+// for this platform a read error (R1012) rather than reading as nothing.
+// Opt-in; used only for Maven-origin (Clojars) source (ADR 0095).
+func WithStarvedCondError() Option {
+	return func(r *Reader) { r.starvedCondError = true }
 }
 
 // New creates a Reader over rs.
@@ -644,6 +667,8 @@ func (r *Reader) readDelimited(what string, end rune, start Position) ([]any, er
 			Err:   fmt.Errorf("%w %s, expected %q to close it", ErrIncomplete, what, string(end)),
 		}
 	}
+	r.nestDepth++
+	defer func() { r.nestDepth-- }()
 	var forms []any
 	for {
 		f, err := r.readWithDelim(end, true, true)

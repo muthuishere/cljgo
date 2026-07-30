@@ -24,7 +24,7 @@
 (defn make-builder
   "Returns a fresh builder: an atom over an empty build plan."
   []
-  (atom {:artifacts [] :go-requires [] :deps []
+  (atom {:artifacts [] :go-requires [] :deps [] :mvn-repos []
          :accept-versions {} :allow-caps [] :steps [] :default nil}))
 
 (defn exe
@@ -64,13 +64,29 @@
 (defn dep
   "Declares a dependency (ADR 0052). `name` is the dependency name; `opts` is
   a map of fetch coordinates — {:git url :ref \"v1.2.0\" :subdir \"…\"} for a
-  git dep, or {:path \"../local\"} for a local one. Accumulated project-wide
+  git dep, {:path \"../local\"} for a local one, or {:mvn/version \"1.1.230\"}
+  for a Clojars/Maven coordinate (ADR 0095), in which case `name` IS the
+  coordinate \"group/artifact\" (a single segment means group == artifact).
+  The three kinds are mutually exclusive — declaring two is an error (G5015),
+  never a precedence rule. Accumulated project-wide
   onto :deps (the emitted binary bakes one dependency graph). Returns b."
   [b name opts]
   (swap! b (fn [m]
              (assoc m :deps
                     (conj (get m :deps)
                           (assoc opts :name name)))))
+  b)
+
+(defn mvn-repo
+  "Adds a Maven repository to shop for {:mvn/version …} dependencies (ADR
+  0095). PREPENDS to the default list, which is https://repo.clojars.org then
+  https://repo1.maven.org/maven2. The first repository that answers 200 for a
+  coordinate's .pom wins, and the winner is recorded in build.lock.edn so a
+  later resolve does not re-shop the list. Returns b."
+  [b url]
+  (swap! b (fn [m]
+             (assoc m :mvn-repos
+                    (conj (get m :mvn-repos []) url))))
   b)
 
 (defn accept-version

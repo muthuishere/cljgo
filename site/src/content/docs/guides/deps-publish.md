@@ -35,6 +35,87 @@ library:
 A git dependency looks the same, pinned by ref:
 `(dep b "greetlib" {:git "https://…" :ref "v1.2.0"})`.
 
+A **Clojars/Maven coordinate** is the third form (ADR 0095):
+
+```clojure
+(dep b "org.clojure/tools.cli" {:mvn/version "1.1.230"})
+(dep b "medley"                {:mvn/version "1.4.0"})   ; group == artifact
+(mvn-repo b "https://nexus.internal/repository/maven-public") ; optional
+```
+
+The dependency **name is the coordinate** (`group/artifact`; a single
+segment means group == artifact), so a Maven dep and a git dep can never
+collide by identity. The three coordinate kinds are mutually exclusive —
+declaring two is an error, never a precedence rule.
+
+## Consuming Clojars libraries
+
+Resolution is **pure Go**: `net/http` + `archive/zip` + `encoding/xml`.
+No JVM, no `mvn`, no Aether. cljgo walks the `.pom` graph itself
+(breadth-first, first-wins, honouring `<scope>`, `<optional>` and
+`<exclusions>`), downloads the jar, and extracts only the Clojure source
+out of it — `.class` files and `META-INF/` never land on your load path.
+
+### The honest scope
+
+**cljgo consumes pure-Clojure libraries. Everything else fails loud, per
+namespace.** That is the whole claim, and it is deliberately narrower
+than "consume the Clojure ecosystem".
+
+Spike s50 sampled **seven** real Clojars libraries and resolved them for
+real: **2 fully consumable, 4 partially, 1 not at all**. The pattern is
+that the reachable set is *utility and algorithm* libraries — argument
+parsing, data helpers, templating — and not the Java-wrapping mainstream
+(HTTP clients, Jackson-backed JSON). Seven is a small sample and is
+quoted as one.
+
+### The gate is the NAMESPACE, not the library
+
+One jar routinely mixes both: hiccup ships eight pure namespaces beside
+two that `(:import …)` Java. A whole-library gate would be wrong in both
+directions, so cljgo classifies **per namespace**:
+
+- classification happens at **resolve**, and is recorded in
+  `build.lock.edn` under `:mvn/namespaces {:pure … :java …}` — so the
+  report is available offline, before a byte is fetched;
+- the failure happens at **require**, as
+  [`I4002`](/cljgo/diagnostics/), naming the namespace, the coordinate,
+  the offending form, and how many other namespaces in the same library
+  *are* usable.
+
+The library still resolves and locks. Only the *use* of a Java namespace
+fails.
+
+### Reader conditionals
+
+A `.cljc` is read with cljgo's platform feature `:cljgo` (plus
+`:default`). cljgo does **not** claim `:clj` — that is the JVM's
+feature, and claiming it would pull in the very branch a portable
+library fenced *away* from non-JVM hosts. This is what makes a library
+like medley honestly consumable: its `java.util` calls live in
+`#?(:clj …)` branches cljgo never reads, so they are not in the forms at
+all.
+
+The flip side: a `.cljc` whose real top-level body is `:clj`-only gives
+cljgo nothing loadable, and fails loud with
+[`R1012`](/cljgo/diagnostics/) rather than installing a namespace with
+no vars.
+
+### What name-errors instead of guessing
+
+The POM subset is small on purpose. When a POM needs something outside
+it, cljgo **names the feature and stops** (`G5011`) rather than guess —
+an uninterpolated or absent version is a *wrong* version:
+`${property}` interpolation, `<dependencyManagement>` version supply,
+`<parent>` inheritance, version ranges, `-SNAPSHOT`, `<profiles>`,
+`<classifier>`, and non-jar packaging. A disagreeing version between two
+requirers is `G5013`, naming both, resolved with `accept-version` — no
+MVS, no silent newest-wins.
+
+`org.clojure/clojure`, `spec.alpha` and `core.specs.alpha` are pruned
+from every graph (cljgo *is* the Clojure implementation; its
+`clojure.core` is embedded), and the prune is reported, not silent.
+
 Third-party **Go modules** are one line, not a binding:
 `(go-require app "github.com/gorilla/websocket" "v1.5.3")` — cljgo
 synthesizes the generated `go.mod` and the emitter links the real module
@@ -110,9 +191,11 @@ developers consume the source via a git coordinate in their `deps.edn`.
   library's own third-party `go-require` into the published module.
 - `publish clojars` is **git-coordinate distribution today** — the
   actual Clojars coordinate/source-jar upload step is deferred.
-- Consuming existing JVM-Clojure libraries from cljgo is deferred: most
-  carry Java interop, which cljgo does not support and fails on loudly,
-  per-namespace, never silently.
+- Consuming from Clojars means: **cljgo consumes pure-Clojure libraries;
+  everything else fails loud, per namespace.** It is not "consume the
+  Clojure ecosystem". See
+  [Consuming Clojars libraries](#consuming-clojars-libraries) below for
+  what that reaches, measured rather than claimed.
 - `c-shared` / `c-archive` library targets (ADR 0013) are not built yet.
 
 To ship an executable instead, see
