@@ -77,6 +77,19 @@ func (rs *ReadableStream) readBytes(n int) []byte {
 	for {
 		m, err := rs.br.Read(buf)
 		if m > 0 {
+			// The read may have consumed the LAST byte without reporting EOF —
+			// that only arrives on the next call, and a consumer like
+			// (first (chunks s)) never makes one. Peek to settle it now, so a
+			// stream positioned at end-of-file releases its handle even when
+			// nobody asks for the next chunk. Peek does not consume.
+			//
+			// Without this, `(first (st/chunks (st/of-file p)))` on a file
+			// small enough to arrive in one chunk left the handle open, and
+			// the following (io/delete! p) failed on Windows — POSIX unlinks
+			// an open file happily, which is why only one platform saw it.
+			if _, perr := rs.br.Peek(1); perr == io.EOF {
+				rs.closeRead()
+			}
 			return buf[:m]
 		}
 		if err == io.EOF {
@@ -102,6 +115,9 @@ func (rs *ReadableStream) readLine() any {
 	}
 	line, err := rs.br.ReadString('\n')
 	if err == io.EOF {
+		// Same terminal-EOF release as readBytes: there is nothing left to
+		// read, so the handle goes back. Idempotent.
+		rs.closeRead()
 		if line == "" {
 			return nil
 		}
