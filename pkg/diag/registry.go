@@ -98,6 +98,7 @@ var registry = []Entry{
 	{Code: "G5017", Title: "options argument is not a map", Since: "M5"},
 	{Code: "G5018", Title: "unsupported dependency version syntax", Since: "M5"},
 	{Code: "G5019", Title: "maven dependency source file cannot be read", Since: "M5"},
+	{Code: "G5020", Title: "maven dependency namespace failed to compile on cljgo", Since: "M5"},
 }
 
 // Lookup returns the registry entry for code.

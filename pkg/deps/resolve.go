@@ -81,7 +81,8 @@ type Resolved struct {
 	// publishes it with SetMavenIndex; the require-time gate looks it up.
 	MavenVerdicts []NSVerdict
 	// MavenReport is the honest, offline-printable resolve report: one line
-	// per Maven dep saying how many namespaces are usable and which are not.
+	// per Maven dep saying how many namespaces are interop-free (the measured
+	// claim — not "usable") and which are not, with the reason per band.
 	MavenReport []string
 }
 
@@ -194,13 +195,19 @@ func Resolve(deps []Dep, opts ResolveOptions) (*Resolved, error) {
 	}, nil
 }
 
-// mvnReportLine is the honest per-dependency resolve line. A dependency that
-// contributes ZERO usable namespaces still resolves and locks — it may be an
-// unrequired transitive edge — but it is named loudly here; the require-time
-// I4002 is the real failure.
+// mvnReportLine is the honest per-dependency resolve line. It reports the
+// measurement that was actually taken — "N namespace(s) with no Java interop"
+// — and never the stronger claim "N usable". Classification reads; it does not
+// compile (see the block comment in mvnclassify.go), and the line used to say
+// "usable" and then be followed by a compile failure with nothing connecting
+// the two. G5020 is the other half of the fix, at require time.
+//
+// A dependency that contributes ZERO interop-free namespaces still resolves
+// and locks — it may be an unrequired transitive edge — but it is named
+// loudly here; the require-time I4002 is the real failure.
 func mvnReportLine(rd *rdep) string {
 	pure, java := len(rd.mvnNS.Pure), len(rd.mvnNS.Java)
-	line := fmt.Sprintf("%s/%s %s — %d namespace(s) usable", rd.mvnGroup, rd.mvnArtifact, rd.MvnVersion, pure)
+	line := fmt.Sprintf("%s/%s %s — %d namespace(s) with no Java interop", rd.mvnGroup, rd.mvnArtifact, rd.MvnVersion, pure)
 	if java > 0 {
 		// Split by CODE, not lumped together. "requires Java interop" and
 		// "cljgo could not read it" are different claims about someone else's
@@ -208,7 +215,7 @@ func mvnReportLine(rd *rdep) string {
 		// positive this whole pass exists to remove.
 		byCode := map[string][]string{}
 		for _, v := range rd.mvnVerdicts {
-			if !v.Loadable() {
+			if !v.InteropFree() {
 				byCode[v.Code] = append(byCode[v.Code], v.NS)
 			}
 		}
@@ -226,14 +233,14 @@ func mvnReportLine(rd *rdep) string {
 		}
 	}
 	if pure == 0 {
-		line += " — WARNING: this dependency contributes no usable namespaces on cljgo"
+		line += " — WARNING: no namespace in this dependency is interop-free on cljgo"
 	}
 	// A namespace that loads but is NOT byte-identical to the JVM's (a
 	// `#?(:cljs …)` helper cljgo gets nothing from) is named here. "It loads"
 	// and "it is the same namespace you get on the JVM" are different claims.
 	var elided []string
 	for _, v := range rd.mvnVerdicts {
-		if v.Elided && v.Loadable() {
+		if v.Elided && v.InteropFree() {
 			elided = append(elided, v.NS)
 		}
 	}

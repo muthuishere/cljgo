@@ -9,6 +9,13 @@ package deps
 // Everything else fails loud, per namespace. It does not "consume the Clojure
 // ecosystem" — spike s50 sampled seven real libraries and found the reachable
 // set is utility/algorithm shaped (2 fully consumable, 4 partial, 1 unusable).
+//
+// And the second half of that honesty, added after the report was caught
+// over-claiming against real Clojars: resolve-time classification measures
+// "reads on cljgo, no Java interop" — nothing more. It does not compile the
+// namespace, so it cannot promise the namespace compiles. The report says
+// exactly what it measured, and a namespace that passes and still fails
+// raises G5020 naming that gap as cljgo's, not the library's.
 
 import (
 	"os"

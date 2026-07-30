@@ -478,9 +478,12 @@ func (p *Plan) resolveDeps() ([]GoRequire, error) {
 	// compiled into a binary.
 	deps.SetMavenIndex(resolved.MavenVerdicts)
 	// The honest per-dependency purity report. It is printed at resolve, not
-	// buried: a Maven dependency that contributes zero usable namespaces on
-	// cljgo says so out loud here, and the same information is recorded in
-	// build.lock.edn's :mvn/namespaces so it can be read back offline.
+	// buried: a Maven dependency with zero interop-free namespaces on cljgo
+	// says so out loud here, and the same information is recorded in
+	// build.lock.edn's :mvn/namespaces so it can be read back offline. The
+	// line reports the measurement (no Java interop), not "usable" — a
+	// namespace that passes and still fails to compile raises G5020 at
+	// require, which names the difference.
 	for _, line := range resolved.MavenReport {
 		fmt.Fprintln(os.Stderr, "cljgo deps:", line)
 	}
