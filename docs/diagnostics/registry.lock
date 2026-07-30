@@ -17,7 +17,16 @@ G5006 divide by zero
 G5007 no value supplied for key
 G5008 sql params passed as a collection
 G5009 collection value in a row map
+G5010 maven coordinate not found
+G5011 unsupported Maven POM feature
+G5012 maven artifact checksum mismatch
+G5013 maven version conflict
+G5014 offline: maven coordinate unavailable
+G5015 conflicting dependency coordinates
+G5016 unsupported dependency version syntax
+G5017 maven dependency source file cannot be read
 I4001 Java class used as a namespace
+I4002 namespace requires Java interop and cannot load on cljgo
 R1001 unterminated form
 R1002 unmatched delimiter
 R1003 map literal with odd number of forms
@@ -29,3 +38,4 @@ R1008 invalid character literal
 R1009 invalid metadata
 R1010 reader conditional splicing at top level
 R1011 conditional read not allowed
+R1012 reader conditional supplies no branch for this platform

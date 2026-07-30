@@ -28,6 +28,7 @@ package reader
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -152,8 +153,71 @@ func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again
 		}
 		return spliceForms{items: items}, false, nil
 	}
-	// No branch matched: the conditional reads as nothing.
+	// No branch matched. On the JVM (and for cljgo project code) that is
+	// legal: the conditional reads as nothing. Under WithStarvedCondError —
+	// set only for Maven-origin source, ADR 0095 §4.1 — a STARVED
+	// conditional (branches present, none selectable) is a hard error
+	// instead, because a silently-empty namespace out of a jar blames the
+	// wrong code later. A conditional with NO branches at all, #?(), is
+	// vacuous rather than starved and stays legal.
+	//
+	// The check is deliberately restricted to a TOP-LEVEL conditional
+	// (nestDepth is back to 0 once our own body read has returned). That is
+	// the shape s50 warns about: whole top-level forms vanishing, leaving a
+	// namespace with no vars. A conditional NESTED inside a form is the
+	// portable-library fencing idiom — medley's
+	// `#?(:clj (java.util.Date.) :default (now))`, an `(:import #?(:clj …))`
+	// clause — and erroring on it would reject exactly the libraries this
+	// change exists to consume. Two consequences, stated rather than hidden:
+	// a starved conditional nested inside a SELECTED branch is elided
+	// silently, and so is one fenced inside a LIST. Both are false NEGATIVES;
+	// a false positive here would break correct code. (Nesting inside a
+	// vector/map/set is NO LONGER in that set — see WithStarvedCollError
+	// immediately below, which was added after a live run proved that case
+	// produces a false "usable" verdict rather than a harmless miss.)
+	//
+	// SHAPE-BREAKING elision comes first, at any depth. A starved conditional
+	// directly inside a vector, map or set silently changes that collection's
+	// element count — `[a 1 b #?(:clj x)]` becomes a 3-element binding vector.
+	// Real camel-snake-kebab 0.4.3 has exactly that, and eliding it made the
+	// namespace classify as usable and then fail to compile with an error
+	// naming a library the user never wrote. That is a false "usable" claim,
+	// so it is a hard error rather than a documented false negative.
+	//
+	// SPLICING conditionals are exempt: `#?@(…)` contributes a SEQUENCE, so a
+	// starved one contributes zero elements — it removes nothing and the
+	// enclosing collection keeps its shape. Real tools.cli 1.1.230 has
+	// `#?@(:cljr (req …))` inside a `let` binding vector at cli.cljc:108, and
+	// JVM Clojure elides it to nothing on every non-cljr platform too.
+	if r.starvedCollError && !splicing && len(forms) >= 2 {
+		switch r.enclosingColl() {
+		case "vector", "map", "set":
+			return nil, false, r.errAt(start,
+				"reader conditional supplies no branch for this platform, and eliding it would change the shape of the enclosing %s; expected one of :cljgo, :default; found %s",
+				r.enclosingColl(), featureList(forms))
+		}
+	}
+	if r.starvedCondError && r.nestDepth == 0 && len(forms) >= 2 {
+		return nil, false, r.errAt(start,
+			"reader conditional supplies no branch for this platform; expected one of :cljgo, :default; found %s",
+			featureList(forms))
+	}
 	return nil, true, nil
+}
+
+// featureList renders the feature keywords actually present in a starved
+// conditional's branch list, for the R1012 "found:" detail.
+func featureList(forms []any) string {
+	var feats []string
+	for i := 0; i+1 < len(forms); i += 2 {
+		if k, ok := forms[i].(lang.Keyword); ok {
+			feats = append(feats, ":"+k.Name())
+		}
+	}
+	if len(feats) == 0 {
+		return "no feature keywords"
+	}
+	return strings.Join(feats, ", ")
 }
 
 // spliceItems returns the elements of a matched splicing branch's value.

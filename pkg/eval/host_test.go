@@ -241,3 +241,38 @@ func TestHostPrecedenceClojureWins(t *testing.T) {
 		t.Errorf("(clojure.core/+ 2 3) = %v, want 5 (Clojure wins)", got)
 	}
 }
+
+// TestStdlibResolvesWhenDeclared is ADR 0104 decision 1: the gate for the
+// unlinked/AOT route is *declaration via require-go*, not the accident of
+// whether the import path's first segment contains a dot. Before 0104, `os`
+// and `net/http` fell through to "unable to resolve Go member" and no AOT
+// binary could ever call them; a domain-dotted path was admitted. Now a
+// declared stdlib path takes the same route third-party already did.
+func TestStdlibResolvesWhenDeclared(t *testing.T) {
+	for _, pkg := range []string{"os", "net/http", "os/exec"} {
+		e := eval.New() // strict: unlinked must be a LOUD error, never nil
+		requireGo(t, e, vec(sym(pkg)))
+		alias := pkg
+		if i := strings.LastIndexByte(pkg, '/'); i >= 0 {
+			alias = pkg[i+1:]
+		}
+		err := mustErr(t, e, list(sym(alias+"/Getenv")))
+		// The point: it reaches the unlinked-module error (ADR 0053 dec 2),
+		// which the AOT emitter turns into a real linked call — NOT the
+		// pre-0104 "unable to resolve Go member" dead end, and never nil.
+		if !strings.Contains(err.Error(), "not linked into the interpreter") {
+			t.Errorf("%s: err = %v, want the unlinked-module error", pkg, err)
+		}
+	}
+}
+
+// TestUndeclaredGoPkgStillRejected is the other half of decision 1: dropping
+// isThirdPartyGoPath must NOT make every namespaced symbol a host reference.
+// Without a require-go declaration there is no host resolution at all.
+func TestUndeclaredGoPkgStillRejected(t *testing.T) {
+	e := eval.New()
+	err := mustErr(t, e, list(sym("os/Getenv"), "PATH"))
+	if strings.Contains(err.Error(), "not linked into the interpreter") {
+		t.Errorf("undeclared os/Getenv took the host route: %v", err)
+	}
+}

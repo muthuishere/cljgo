@@ -54,6 +54,15 @@ func loadLibFile(e *Evaluator, libSym *lang.Symbol) {
 		panic(fmt.Errorf("could not locate namespace %s (no registered provider, and no %s.clj/.cljg/.cljc relative to the requiring file)",
 			name, filepath.ToSlash(libPathStem(libSym))))
 	}
+	// The per-NAMESPACE Java gate (ADR 0054 decision 4 / ADR 0095). It fires
+	// only for a file that came out of a Maven (Clojars) dependency, and only
+	// for the namespaces of that dependency that cannot load on cljgo — the
+	// library's pure namespaces load normally right beside them. Project code
+	// and git deps never enter this lookup.
+	if err := deps.CheckMavenLoadable(path); err != nil {
+		panic(err)
+	}
+
 	corelib.PushLibLoading(name)
 	defer corelib.PopLibLoading()
 	loader := e.LibLoader

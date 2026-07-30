@@ -23,7 +23,7 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 		r := n.Sub.(*ast.HostRefNode)
 		rv, ok := corelib.LookupHostMember(r.Pkg, r.Member)
 		if !ok {
-			if isThirdPartyGoPath(r.Pkg) {
+			if e.isDeclaredGoPkg(r.Pkg) {
 				if e.HostUnlinkedTolerant {
 					return nil, nil // AOT discovery pass: the binary links it for real
 				}
@@ -58,7 +58,7 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 			argVals[i] = v
 		}
 		if !ok {
-			if isThirdPartyGoPath(c.Pkg) {
+			if e.isDeclaredGoPkg(c.Pkg) {
 				if e.HostUnlinkedTolerant {
 					// AOT discovery pass: args ran for their side effects, but
 					// the unlinked call is a compile-time no-op — the emitted
@@ -91,6 +91,13 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 			}
 			argVals[i] = v
 		}
+		// AOT discovery pass: the receiver of an unlinked host call is nil,
+		// so the method is a compile-time no-op — the emitted binary makes
+		// the real call. Without this, ANY method on a host-returned value
+		// (exec.Cmd.StdinPipe, resp.Body.Read) breaks `cljgo build`.
+		if recv == nil && e.HostUnlinkedTolerant {
+			return nil, nil
+		}
 		// The receiver's type is only known at runtime (v0), so BOTH modes
 		// reflect through CallGoMethod — the AOT emitter reaches the very
 		// same function via rt.CallMethod, guaranteeing byte-identity.
@@ -101,6 +108,9 @@ func (e *Evaluator) evalHost(n *ast.Node, s *Scope) (any, error) {
 		recv, err := e.Eval(f.Recv, s)
 		if err != nil {
 			return nil, err
+		}
+		if recv == nil && e.HostUnlinkedTolerant {
+			return nil, nil // AOT discovery pass, as above
 		}
 		// Reflective in both modes (v0); the AOT emitter reaches the same
 		// GoFieldGet via rt.FieldGet.
@@ -165,10 +175,25 @@ func (e *Evaluator) resolveHost(sym *lang.Symbol) (pkg, member string, ok bool) 
 	// and links it from go/packages type facts (zero hand-written bindings),
 	// and the interpreter's compile-time pass no-ops the unlinked call
 	// (evalHost). A trailing `!` yields to the analyzer's bang-retry.
-	if isThirdPartyGoPath(path) && !strings.HasSuffix(sym.Name(), "!") {
+	if !strings.HasSuffix(sym.Name(), "!") {
 		return path, sym.Name(), true
 	}
 	return "", "", false
+}
+
+// isDeclaredGoPkg reports whether an import path was declared via a
+// `require-go` in ANY namespace of this evaluator. Decision 1 of ADR 0096
+// (go-stdlib-interop): the gate for the unlinked/AOT route is declaration,
+// not the accident of whether the first path segment contains a dot.
+func (e *Evaluator) isDeclaredGoPkg(path string) bool {
+	for _, aliases := range e.hostAliases {
+		for _, p := range aliases {
+			if p == path {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // isThirdPartyGoPath reports whether an import path is a third-party module

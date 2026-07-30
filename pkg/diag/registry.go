@@ -60,6 +60,7 @@ var registry = []Entry{
 	{Code: "R1009", Title: "invalid metadata", Since: "M2"},
 	{Code: "R1010", Title: "reader conditional splicing at top level", Since: "M5"},
 	{Code: "R1011", Title: "conditional read not allowed", Since: "M5"},
+	{Code: "R1012", Title: "reader conditional supplies no branch for this platform", Since: "M5"},
 
 	// A2xxx — analyzer
 	{Code: "A2001", Title: "unable to resolve symbol", Since: "M2"},
@@ -74,6 +75,7 @@ var registry = []Entry{
 
 	// I4xxx — interop
 	{Code: "I4001", Title: "Java class used as a namespace", Since: "M5"},
+	{Code: "I4002", Title: "namespace requires Java interop and cannot load on cljgo", Since: "M5"},
 
 	// G5xxx — general (runtime errors carry raise-site codes here, ADR 0048)
 	{Code: "G5000", Title: "uncategorized compiler error", Since: "M2"},
@@ -86,6 +88,14 @@ var registry = []Entry{
 	{Code: "G5007", Title: "no value supplied for key", Since: "M5"},
 	{Code: "G5008", Title: "sql params passed as a collection", Since: "M5"},
 	{Code: "G5009", Title: "collection value in a row map", Since: "M5"},
+	{Code: "G5010", Title: "maven coordinate not found", Since: "M5"},
+	{Code: "G5011", Title: "unsupported Maven POM feature", Since: "M5"},
+	{Code: "G5012", Title: "maven artifact checksum mismatch", Since: "M5"},
+	{Code: "G5013", Title: "maven version conflict", Since: "M5"},
+	{Code: "G5014", Title: "offline: maven coordinate unavailable", Since: "M5"},
+	{Code: "G5015", Title: "conflicting dependency coordinates", Since: "M5"},
+	{Code: "G5016", Title: "unsupported dependency version syntax", Since: "M5"},
+	{Code: "G5017", Title: "maven dependency source file cannot be read", Since: "M5"},
 }
 
 // Lookup returns the registry entry for code.

@@ -9,22 +9,45 @@ package deps
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
-// Dep is a DECLARED dependency from build.cljgo, before resolution. Git* and
-// Path are mutually exclusive.
+// Dep is a DECLARED dependency from build.cljgo, before resolution. Git*,
+// Path and MvnVersion are mutually exclusive (G5015).
 type Dep struct {
 	Name   string
 	GitURL string
 	GitRef string
 	Subdir string
 	Path   string // local path dep
+
+	// MvnVersion is the {:mvn/version "…"} coordinate version (ADR 0095).
+	// The dep NAME is the coordinate "group/artifact", so a Maven dep and a
+	// git dep can never collide by identity.
+	MvnVersion string
+
+	// MvnDeclared records that the project WROTE :mvn/version, even if the
+	// value is unusable (empty, or not a string). Without it an empty version
+	// makes isMvn() false, the dep falls through to the git path, and the user
+	// gets a raw `git ls-remote  HEAD: fatal: bad repository ''` — an
+	// uncoded subprocess error naming a tool they never invoked.
+	MvnDeclared bool
+
+	// mvnExcl / mvnFrom are resolver-internal provenance for a TRANSITIVE
+	// Maven edge: the inherited <exclusions> patterns, and which coordinate
+	// pulled it in (so G5013 can name both requirers).
+	mvnExcl []string
+	mvnFrom string
 }
 
 func (d Dep) isPath() bool { return d.Path != "" }
+
+// isMvn reports whether this is a Maven/Clojars coordinate dependency.
+func (d Dep) isMvn() bool { return d.MvnVersion != "" }
 
 // ResolveOptions configures a resolution pass.
 type ResolveOptions struct {
@@ -36,6 +59,15 @@ type ResolveOptions struct {
 	AcceptVersions map[string]string // module path -> accepted version
 	CrossTargets   []string          // declared cross targets (cgo refusal)
 	VendorDir      string            // project vendor/ base ("" = none)
+
+	// MvnRepos is the Maven repository list, in order. Empty means the
+	// defaults (Clojars, then Maven Central); (mvn-repo …) PREPENDS.
+	MvnRepos []string
+	// MvnHTTPClient overrides the HTTP client. Tests point MvnRepos at an
+	// httptest.Server and inject its client, so the code path under test is
+	// the production one; nothing in the committed test suite touches the
+	// network.
+	MvnHTTPClient *http.Client
 }
 
 // Resolved is the output of a resolution pass.
@@ -43,6 +75,14 @@ type Resolved struct {
 	Roots      []string // dependency source roots, lock order (load-path slot 3)
 	GoRequires []GoReq  // merged + conflict-checked, for the consumer go.mod
 	Lock       *Lock    // possibly updated (when Update)
+
+	// MavenVerdicts is the per-namespace purity verdict for every
+	// Maven-origin source file (ADR 0054 dec 4 / ADR 0095). The bootstrap
+	// publishes it with SetMavenIndex; the require-time gate looks it up.
+	MavenVerdicts []NSVerdict
+	// MavenReport is the honest, offline-printable resolve report: one line
+	// per Maven dep saying how many namespaces are usable and which are not.
+	MavenReport []string
 }
 
 // rdep is a dependency in flight during resolution.
@@ -55,6 +95,17 @@ type rdep struct {
 	imp   *Impurity
 	local bool
 	base  string // where its tree actually lives (cache/vendor/path)
+
+	// Maven-only state (ADR 0095).
+	mvnGroup    string
+	mvnArtifact string
+	mvnRepo     string
+	mvnJarSHA   string
+	mvnPomSHA   string
+	mvnPruned   []Coord
+	mvnParents  []Coord // the <parent> chain merged in, nearest first
+	mvnNS       *nsPurity
+	mvnVerdicts []NSVerdict
 }
 
 // Resolve resolves the declared dependency graph.
@@ -73,6 +124,17 @@ func Resolve(deps []Dep, opts ResolveOptions) (*Resolved, error) {
 		queue = queue[1:]
 
 		if prev, ok := seen[decl.Name]; ok {
+			// A Maven coordinate is BFS/first-wins for an IDENTICAL version;
+			// a genuine disagreement is the same hard error as ADR 0052
+			// decision 4, naming both versions and both requirers, unless
+			// (accept-version "group/artifact" v) pinned it.
+			if prev.isMvn() && decl.isMvn() && prev.MvnVersion != decl.MvnVersion {
+				if opts.AcceptVersions[decl.Name] == "" {
+					return nil, codedf("G5013", "maven version conflict for %s: %s (required by %s) and %s (required by %s)",
+						decl.Name, prev.MvnVersion, requirerName(prev.mvnFrom), decl.MvnVersion, requirerName(decl.mvnFrom)).
+						withFix(fmt.Sprintf("(accept-version b %q %q)", decl.Name, prev.MvnVersion))
+				}
+			}
 			if !prev.isPath() && !decl.isPath() && decl.GitRef != "" && prev.GitRef != "" && prev.GitRef != decl.GitRef {
 				return nil, fmt.Errorf("dependency %q required at two refs: %q and %q", decl.Name, prev.GitRef, decl.GitRef)
 			}
@@ -113,20 +175,144 @@ func Resolve(deps []Dep, opts ResolveOptions) (*Resolved, error) {
 		return nil, err
 	}
 
+	var verdicts []NSVerdict
+	var report []string
+	for _, rd := range order {
+		if rd.mvnNS == nil {
+			continue
+		}
+		verdicts = append(verdicts, rd.mvnVerdicts...)
+		report = append(report, mvnReportLine(rd))
+	}
+
 	return &Resolved{
-		Roots:      roots,
-		GoRequires: goReqs,
-		Lock:       buildLock(order, opts.Lock),
+		Roots:         roots,
+		GoRequires:    goReqs,
+		Lock:          buildLock(order, opts.Lock),
+		MavenVerdicts: verdicts,
+		MavenReport:   report,
 	}, nil
+}
+
+// mvnReportLine is the honest per-dependency resolve line. A dependency that
+// contributes ZERO usable namespaces still resolves and locks — it may be an
+// unrequired transitive edge — but it is named loudly here; the require-time
+// I4002 is the real failure.
+func mvnReportLine(rd *rdep) string {
+	pure, java := len(rd.mvnNS.Pure), len(rd.mvnNS.Java)
+	line := fmt.Sprintf("%s/%s %s — %d namespace(s) usable", rd.mvnGroup, rd.mvnArtifact, rd.MvnVersion, pure)
+	if java > 0 {
+		// Split by CODE, not lumped together. "requires Java interop" and
+		// "cljgo could not read it" are different claims about someone else's
+		// library, and reporting the second as the first is the false
+		// positive this whole pass exists to remove.
+		byCode := map[string][]string{}
+		for _, v := range rd.mvnVerdicts {
+			if !v.Loadable() {
+				byCode[v.Code] = append(byCode[v.Code], v.NS)
+			}
+		}
+		for _, band := range []struct{ code, label string }{
+			{"I4002", "require Java interop"},
+			{"R1012", "have no cljgo branch in a reader conditional"},
+			{"G5017", "cljgo's reader could not parse"},
+		} {
+			names := byCode[band.code]
+			if len(names) == 0 {
+				continue
+			}
+			sort.Strings(names)
+			line += fmt.Sprintf(", %d %s (%s)", len(names), band.label, strings.Join(names, ", "))
+		}
+	}
+	if pure == 0 {
+		line += " — WARNING: this dependency contributes no usable namespaces on cljgo"
+	}
+	// A namespace that loads but is NOT byte-identical to the JVM's (a
+	// `#?(:cljs …)` helper cljgo gets nothing from) is named here. "It loads"
+	// and "it is the same namespace you get on the JVM" are different claims.
+	var elided []string
+	for _, v := range rd.mvnVerdicts {
+		if v.Elided && v.Loadable() {
+			elided = append(elided, v.NS)
+		}
+	}
+	if len(elided) > 0 {
+		sort.Strings(elided)
+		line += "\n  reader conditionals elided a top-level form in " + strings.Join(elided, ", ") +
+			" (as JVM Clojure would on a platform those branches do not name)"
+	}
+	for _, p := range rd.mvnParents {
+		line += "\n  inherited from the <parent> POM " + p.String()
+	}
+	for _, p := range rd.mvnPruned {
+		line += "\n  pruned " + p.Key() + " " + p.Version + " (cljgo IS the Clojure implementation; its clojure.core is embedded)"
+	}
+	return line
 }
 
 // resolveOne resolves a single dependency in place and returns its transitive
 // children (declared deps to enqueue).
 func resolveOne(rd *rdep, root string, opts ResolveOptions) ([]Dep, error) {
-	if rd.isPath() {
-		return resolvePath(rd, opts)
+	// Conflicting coordinate keys are a DECLARATION error, never a precedence
+	// rule: a precedence rule would silently pick one and ignore the other.
+	if kinds := coordKinds(rd.Dep); len(kinds) > 1 {
+		return nil, codedf("G5015", "dependency %q declares conflicting coordinates: %s",
+			rd.Name, strings.Join(kinds, " and ")).
+			withFix("keep one — :mvn/version (Clojars/Maven), :git, or :path")
 	}
-	return resolveGit(rd, root, opts)
+	// A written-but-unusable :mvn/version is judged by the SAME rule, before
+	// the dispatch below can mistake it for a git dep and surface a raw
+	// subprocess error.
+	if rd.MvnDeclared && !rd.isMvn() {
+		return nil, validateDeclaredVersion(rd.Name, rd.MvnVersion)
+	}
+	switch {
+	case rd.isPath():
+		return resolvePath(rd, opts)
+	case rd.isMvn():
+		// The DECLARED version is validated here, by the same rule a
+		// transitive POM edge is judged by. Without this a -SNAPSHOT, a
+		// range, LATEST or RELEASE produced G5010 "not found in any
+		// repository" — an error that blamed the repository for syntax cljgo
+		// never supported.
+		if err := validateDeclaredVersion(rd.Name, rd.MvnVersion); err != nil {
+			return nil, err
+		}
+		g, a, ok := splitCoordName(rd.Name)
+		if !ok {
+			return nil, codedf("G5010", "dependency %q is not a maven coordinate", rd.Name).
+				withExpectedFound("group/artifact (or a single segment meaning group == artifact)", rd.Name).
+				withFix("name the dep after its coordinate, e.g. \"org.clojure/tools.cli\"")
+		}
+		rd.mvnGroup, rd.mvnArtifact = g, a
+		return resolveMvn(rd, root, opts)
+	default:
+		return resolveGit(rd, root, opts)
+	}
+}
+
+// coordKinds lists the fetch-coordinate kinds a declaration carries.
+func coordKinds(d Dep) []string {
+	var out []string
+	if d.MvnVersion != "" {
+		out = append(out, ":mvn/version")
+	}
+	if d.GitURL != "" {
+		out = append(out, ":git")
+	}
+	if d.Path != "" {
+		out = append(out, ":path")
+	}
+	return out
+}
+
+// requirerName renders who pulled an edge in; "" means the project itself.
+func requirerName(from string) string {
+	if from == "" {
+		return "<project>"
+	}
+	return from
 }
 
 // resolvePath handles a local :path dependency — a named hole (decision 3):
@@ -372,9 +558,20 @@ func buildLock(order []*rdep, prev *Lock) *Lock {
 			Impure:   rd.imp,
 			Pure:     rd.imp == nil,
 		}
-		if rd.local {
+		switch {
+		case rd.local:
 			d.LocalUnlocked = true
-		} else {
+		case rd.mvnNS != nil:
+			d.MvnGroup = rd.mvnGroup
+			d.MvnArtifact = rd.mvnArtifact
+			d.MvnVersion = rd.MvnVersion
+			d.MvnRepo = rd.mvnRepo
+			d.MvnSHA256 = rd.mvnJarSHA
+			d.MvnPomSHA = rd.mvnPomSHA
+			d.TreeHash = rd.tree
+			d.MvnPureNS = rd.mvnNS.Pure
+			d.MvnJavaNS = rd.mvnNS.Java
+		default:
 			d.GitURL = rd.GitURL
 			d.GitRef = rd.GitRef
 			d.GitSHA = rd.sha

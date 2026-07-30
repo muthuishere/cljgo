@@ -103,6 +103,39 @@ type Reader struct {
 	// arity (or when :default wasn't supplied), in which case an unhandled
 	// tag is a reader error as usual.
 	defaultReader lang.IFn
+
+	// starvedCondError makes a STARVED reader conditional — one with at
+	// least one branch, none of which cljgo can select — a hard read error
+	// (R1012) instead of the JVM's legal "reads as nothing" elision. It is
+	// OPT-IN and enabled ONLY for files under a Maven-origin dependency root
+	// (ADR 0095 / spike s50 finding 4): project code keeps the JVM's
+	// semantics exactly, so no conformance file moves. For a .cljc pulled
+	// out of a Clojars jar the elision is a trap — a :clj-only body would
+	// install a namespace with no vars and blame the caller later — so the
+	// consume path fails loud at the conditional instead.
+	starvedCondError bool
+
+	// starvedCollError makes a STARVED reader conditional a hard error when
+	// eliding it would change the SHAPE of the vector, map or set it sits
+	// in — `[a 1 b #?(:clj x)]` silently becomes a 3-element binding vector,
+	// and `{:k #?(:clj v)}` silently becomes an odd map. Like
+	// starvedCondError this is opt-in and set only for Maven-origin source:
+	// real camel-snake-kebab 0.4.3 has exactly this shape at
+	// internals/string_separator.cljc, and eliding it produced a namespace
+	// that classified as usable and then failed to compile with "let*
+	// requires an even number of forms in binding vector" — a diagnostic
+	// pointing at a library the user never wrote.
+	starvedCollError bool
+
+	// nestDepth is how many enclosing collection/body reads are in flight.
+	// The starved-conditional check consults it: only a TOP-LEVEL starved
+	// conditional is a hard error (see readConditional).
+	nestDepth int
+
+	// nestKinds is the stack of enclosing collection kinds ("list",
+	// "vector", "map", "set"), innermost last. starvedCollError reads its
+	// top.
+	nestKinds []string
 }
 
 // Option configures a Reader.
@@ -167,6 +200,30 @@ func WithTagReaders(readers map[string]lang.IFn) Option {
 // clojure.edn/read-string's `:default` option.
 func WithDefaultReader(fn lang.IFn) Option {
 	return func(r *Reader) { r.defaultReader = fn }
+}
+
+// WithStarvedCondError makes a reader conditional that supplies no branch
+// for this platform a read error (R1012) rather than reading as nothing.
+// Opt-in; used only for Maven-origin (Clojars) source (ADR 0095).
+func WithStarvedCondError() Option {
+	return func(r *Reader) { r.starvedCondError = true }
+}
+
+// WithStarvedCollError makes a starved reader conditional a read error
+// (R1012) when it sits directly inside a vector, map or set, where eliding it
+// SILENTLY CHANGES THE COLLECTION'S SHAPE. Opt-in, Maven-origin source only
+// (ADR 0095). Unlike WithStarvedCondError this fires at any nesting depth,
+// because the damage is structural rather than "a whole form vanished".
+func WithStarvedCollError() Option {
+	return func(r *Reader) { r.starvedCollError = true }
+}
+
+// enclosingColl returns the innermost enclosing collection kind, or "".
+func (r *Reader) enclosingColl() string {
+	if len(r.nestKinds) == 0 {
+		return ""
+	}
+	return r.nestKinds[len(r.nestKinds)-1]
 }
 
 // New creates a Reader over rs.
@@ -644,6 +701,12 @@ func (r *Reader) readDelimited(what string, end rune, start Position) ([]any, er
 			Err:   fmt.Errorf("%w %s, expected %q to close it", ErrIncomplete, what, string(end)),
 		}
 	}
+	r.nestDepth++
+	r.nestKinds = append(r.nestKinds, what)
+	defer func() {
+		r.nestDepth--
+		r.nestKinds = r.nestKinds[:len(r.nestKinds)-1]
+	}()
 	var forms []any
 	for {
 		f, err := r.readWithDelim(end, true, true)

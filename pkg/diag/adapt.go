@@ -312,6 +312,8 @@ func classify(band Band, msg string) string {
 			return "R1010"
 		case has("conditional read not allowed"):
 			return "R1011"
+		case has("supplies no branch for this platform"):
+			return "R1012"
 		}
 	case BandAnalyzer:
 		switch {

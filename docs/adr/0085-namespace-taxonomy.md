@@ -3,7 +3,10 @@
 Date: 2026-07-24 · Status: accepted (owner-directed: *"bri should have umbrellas —
 bri.core.security, bri.core.ui — some is common, some is CLI"*; *"fs should go to
 cljg.fs, no need bri there"*). Organizes ADRs 0069–0084 and every future primitive;
-supersedes ADR 0083's flat primitive list.
+supersedes ADR 0083's flat primitive list. **Refined by ADR 0101** (adds the
+`cljg.system`/`cljg.process`/`cljg.date` leaves + four capability gaps) and
+**ADR 0102** (relocates the `bri.core.{cache,jobs,secrets,data}` fundamentals to
+`cljg.*`); the three-umbrella `clojure.*`/`cljg.*`/`bri.*` doctrine is unchanged.
 
 ## Context
 

@@ -84,6 +84,7 @@ type Plan struct {
 	// and their Go-requires merge into the consumer go.mod.
 	Deps           []deps.Dep
 	AcceptVersions map[string]string // (accept-version …): module -> version
+	MvnRepos       []string          // (mvn-repo …): prepended Maven repositories
 	AllowCaps      map[string]bool   // (allow-capability …): acknowledged capabilities
 	Steps          []Step
 	Default        string // default step type when `cljgo build` gets no step arg
@@ -159,7 +160,17 @@ func planFromValue(v any) (*Plan, error) {
 			GitRef: str(lang.Get(d, kw("ref"))),
 			Subdir: str(lang.Get(d, kw("subdir"))),
 			Path:   str(lang.Get(d, kw("path"))),
+			// {:mvn/version "…"} — a Clojars/Maven coordinate (ADR 0095).
+			// The dep NAME is the coordinate "group/artifact".
+			MvnVersion:  str(lang.Get(d, kw("mvn/version"))),
+			MvnDeclared: lang.Get(d, kw("mvn/version")) != nil,
 		})
+	}
+	// (mvn-repo b url) — prepends to the default repository list.
+	for _, r := range lang.ToSlice(lang.Get(m, kw("mvn-repos"))) {
+		if u := str(r); u != "" {
+			p.MvnRepos = append(p.MvnRepos, u)
+		}
 	}
 	// (accept-version module version) — a cljgo map, iterated as MapEntries.
 	for _, e := range lang.ToSlice(lang.Get(m, kw("accept-versions"))) {
@@ -452,6 +463,7 @@ func (p *Plan) resolveDeps() ([]GoRequire, error) {
 		AllowCaps:      p.AllowCaps,
 		AcceptVersions: p.AcceptVersions,
 		VendorDir:      filepath.Join(p.ProjectDir, "vendor"),
+		MvnRepos:       append(append([]string(nil), p.MvnRepos...), deps.DefaultMvnRepos...),
 	}
 	resolved, err := deps.Resolve(p.Deps, opts)
 	if err != nil {
@@ -459,6 +471,19 @@ func (p *Plan) resolveDeps() ([]GoRequire, error) {
 	}
 	// Slot 3: publish resolved roots so both legs' interpreter loads see them.
 	deps.SetResolvedRoots(resolved.Roots)
+	// The per-namespace Java gate (ADR 0054 dec 4 / ADR 0095): classified at
+	// resolve, enforced at require. Publishing it here means BOTH legs — the
+	// interpreter and the emitter, which discovers namespaces by evaluating
+	// requires — hit the same gate, so a Java namespace can never be silently
+	// compiled into a binary.
+	deps.SetMavenIndex(resolved.MavenVerdicts)
+	// The honest per-dependency purity report. It is printed at resolve, not
+	// buried: a Maven dependency that contributes zero usable namespaces on
+	// cljgo says so out loud here, and the same information is recorded in
+	// build.lock.edn's :mvn/namespaces so it can be read back offline.
+	for _, line := range resolved.MavenReport {
+		fmt.Fprintln(os.Stderr, "cljgo deps:", line)
+	}
 
 	// Merge the consumer's own go-requires with the resolved dependency set,
 	// hard-erroring on a duplicate module at two versions (naming both) unless
