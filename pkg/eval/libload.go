@@ -62,6 +62,27 @@ func loadLibFile(e *Evaluator, libSym *lang.Symbol) {
 	if err := deps.CheckMavenLoadable(path); err != nil {
 		panic(err)
 	}
+	// The OTHER half of that gate. Classification is a read-time check: it
+	// proves the namespace reads on cljgo and uses no Java interop, and the
+	// resolve report says exactly that. It does NOT prove the namespace
+	// compiles — so when a classified-interop-free Maven namespace blows up
+	// here, the failure is re-raised as G5020, which names the measurement
+	// that passed, what actually failed, and that the gap is cljgo's. A user
+	// must never see "N namespace(s) with no Java interop" and then a bare
+	// compile error with nothing joining them.
+	if v, ok := deps.MavenVerdictFor(path); ok && v.InteropFree() {
+		defer func() {
+			r := recover()
+			if r == nil {
+				return
+			}
+			cause, isErr := r.(error)
+			if !isErr {
+				cause = fmt.Errorf("%v", r)
+			}
+			panic(deps.MavenLoadFailure(v, cause))
+		}()
+	}
 
 	corelib.PushLibLoading(name)
 	defer corelib.PopLibLoading()

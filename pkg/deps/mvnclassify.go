@@ -33,12 +33,34 @@ import (
 	"github.com/muthuishere/cljgo/pkg/reader"
 )
 
-// NSVerdict is one Maven-origin namespace's load verdict.
+// WHAT THE VERDICT ACTUALLY MEASURES (and what it does NOT).
+//
+// Classification is a READ-TIME check. For each namespace it establishes two
+// facts and no others:
+//  1. cljgo's reader can read the file (with :cljgo reader conditionals
+//     resolved, and something left after elision), and
+//  2. the surviving forms contain no Java interop.
+//
+// It does NOT establish that the namespace ANALYZES, macroexpands or compiles
+// on cljgo. It cannot: analysis needs core plus every one of the namespace's
+// own requires already loaded, in dependency order, and any gap in cljgo's
+// analyzer would then be reported as a fact about someone else's library —
+// the exact false statement G5019 exists to prevent, in the other direction.
+//
+// So the honest word for a passing verdict is "no Java interop", never
+// "usable". A namespace can pass this check and still fail to compile because
+// of a gap in CLJGO (a `defn` attr-map cljgo could not parse once did exactly
+// that to medley.core). When that happens the load raises G5020, which names
+// the gap between what was measured and what failed. The resolve report, the
+// I4002/R1012 fix line and :mvn/namespaces :pure in the lock all quote this
+// SAME measurement and must keep saying so in the same words.
+
+// NSVerdict is one Maven-origin namespace's classification verdict.
 type NSVerdict struct {
 	NS     string // "hiccup.compiler"
 	File   string // absolute path in the extracted tree
 	Coord  Coord
-	Reason string // "" when loadable; otherwise the human detail
+	Reason string // "" when the namespace passed; otherwise the human detail
 	Code   string // "" | "I4002" (real Java interop) | "R1012" (starved .cljc) | "G5019" (cljgo could not read it)
 	Line   int
 	Column int
@@ -52,12 +74,18 @@ type NSVerdict struct {
 	Elided bool
 }
 
-// Loadable reports whether the namespace can be required on cljgo.
-func (v NSVerdict) Loadable() bool { return v.Code == "" }
+// InteropFree reports whether the namespace READ on cljgo and contains no
+// Java interop. That — and only that — is what was measured. It is NOT a
+// claim that the namespace compiles; see the block comment above. The method
+// was called Loadable, which said more than the code knew.
+func (v NSVerdict) InteropFree() bool { return v.Code == "" }
 
 // nsPurity is the per-coordinate classification result recorded in the lock.
 type nsPurity struct {
-	Pure []string          // usable namespace names, sorted
+	// Pure is the lock's :mvn/namespaces :pure list: namespaces that read on
+	// cljgo with no Java interop. Same measurement as InteropFree, same words
+	// in the report — "pure" here means interop-free, never "compiles".
+	Pure []string          // interop-free namespace names, sorted
 	Java map[string]string // ns -> "file:line detail"
 }
 
@@ -103,7 +131,7 @@ func classifyTree(dir string, c Coord) (*nsPurity, []NSVerdict, error) {
 		ns := nsNameFor(rel)
 		v := classifyFile(p, ns, c)
 		verdicts = append(verdicts, v)
-		if v.Loadable() {
+		if v.InteropFree() {
 			sum.Pure = append(sum.Pure, ns)
 		} else {
 			sum.Java[ns] = v.Reason
@@ -399,7 +427,7 @@ func SetMavenIndex(verdicts []NSVerdict) {
 		}
 		v.File = abs
 		mvnIndex[abs] = v
-		if v.Loadable() {
+		if v.InteropFree() {
 			mvnUsable[v.Coord.Key()] = append(mvnUsable[v.Coord.Key()], v.NS)
 		}
 	}
@@ -422,7 +450,7 @@ func CheckMavenLoadable(path string) error {
 		abs = a
 	}
 	v, ok := idx[abs]
-	if !ok || v.Loadable() {
+	if !ok || v.InteropFree() {
 		return nil
 	}
 
@@ -454,28 +482,36 @@ func CheckMavenLoadable(path string) error {
 }
 
 // otherUsableHint is the per-namespace granularity made visible: the library
-// is installed and its pure namespaces are usable; only THIS one failed.
+// is installed and its interop-free namespaces are there; only THIS one was
+// rejected at classification.
+//
+// It quotes the SAME measurement as the resolve report and the lock — "no
+// Java interop", not "usable". Saying "8 other namespaces are usable" here
+// asserted they compile, which classification never checked (see the block
+// comment at the top of this file); when one of them then failed to compile,
+// nothing connected the two statements. G5020 is now the other half of that.
 func otherUsableHint(usable map[string][]string, v NSVerdict) string {
 	n := len(usable[v.Coord.Key()])
 	if n == 0 {
-		// Deliberately NOT "it is a JVM-only library". Zero usable namespaces
-		// is a fact about what cljgo could load; "JVM-only" is a claim about
-		// the library, and cljgo has been wrong about that before (a single
-		// missing reader option once made pure-Clojure libraries read as
-		// JVM-only). State the measurement, not the verdict.
-		return "no namespace in " + v.Coord.String() + " loaded on cljgo — see the resolve report for why, per namespace"
+		// Deliberately NOT "it is a JVM-only library". Zero namespaces past
+		// the check is a fact about what cljgo measured; "JVM-only" is a claim
+		// about the library, and cljgo has been wrong about that before (a
+		// single missing reader option once made pure-Clojure libraries read
+		// as JVM-only). State the measurement, not the verdict.
+		return "no namespace in " + v.Coord.String() + " is interop-free on cljgo — see the resolve report for why, per namespace"
 	}
-	return plural(n) + " in " + v.Coord.String() + " — see the resolve report, or :mvn/namespaces in build.lock.edn"
+	return "in " + v.Coord.String() + ", " + plural(n) +
+		" (that is what was measured — it is not a promise they compile) — see the resolve report, or :mvn/namespaces in build.lock.edn"
 }
 
-// plural carries its own verb: "1 other namespace IS usable" but "3 other
-// namespaces ARE usable". The verb used to sit in the caller, which read
-// "1 other namespace … are usable".
+// plural carries its own verb: "1 other namespace HAS no Java interop" but
+// "3 other namespaces HAVE none". The verb used to sit in the caller, which
+// read "1 other namespace … are usable".
 func plural(n int) string {
 	if n == 1 {
-		return "1 other namespace is usable"
+		return "1 other namespace has no Java interop"
 	}
-	return itoa(n) + " other namespaces are usable"
+	return itoa(n) + " other namespaces have no Java interop"
 }
 
 func itoa(n int) string {
@@ -492,8 +528,54 @@ func itoa(n int) string {
 	return string(b[i:])
 }
 
-// MavenUsableNamespaces returns the usable namespaces per coordinate key, for
-// the resolve report.
+// MavenVerdictFor returns the classification verdict for a source path, and
+// whether that path came out of a Maven dependency at all. The loader uses it
+// to tell "this file is mine to explain" from "this is project code".
+func MavenVerdictFor(path string) (NSVerdict, bool) {
+	mvnIndexMu.RLock()
+	idx := mvnIndex
+	mvnIndexMu.RUnlock()
+	if idx == nil {
+		return NSVerdict{}, false
+	}
+	abs := path
+	if a, err := filepath.Abs(path); err == nil {
+		abs = a
+	}
+	v, ok := idx[abs]
+	return v, ok
+}
+
+// MavenLoadFailure closes the gap this whole file's block comment names: the
+// namespace passed the read-time check (no Java interop), the resolve report
+// counted it, and then it FAILED anyway — because of a gap in cljgo, not in
+// the library. Before G5020 the user got "1 namespace(s) usable" followed by a
+// bare compile error with nothing joining the two statements.
+//
+// It is raised only for a namespace classification PASSED. A namespace that
+// was already rejected never gets here (CheckMavenLoadable fired first), and
+// project code is never touched.
+func MavenLoadFailure(v NSVerdict, cause error) error {
+	if cause == nil {
+		return nil
+	}
+	// Already explained by an inner require of another Maven namespace: the
+	// innermost frame is the accurate one, so do not wrap it again.
+	if ErrCode(cause) == "G5020" {
+		return cause
+	}
+	return codedf("G5020", "namespace %s came from a maven dependency and failed to compile on cljgo — %s", v.NS, cause.Error()).
+		withExpectedFound(
+			"interop-free at resolve: reads on cljgo, no Java interop",
+			"it does not compile on cljgo").
+		note("it came from the maven dependency " + v.Coord.String()).
+		note("the resolve report's interop-free count is a READ-time measurement; it does not compile the namespace").
+		note("this is a gap in cljgo, not evidence that the library is JVM-only").
+		withFix("report it with the namespace and the error above — the library may be perfectly consumable once the gap is closed")
+}
+
+// MavenUsableNamespaces returns the interop-free namespaces per coordinate
+// key, for the resolve report.
 func MavenUsableNamespaces() map[string][]string {
 	mvnIndexMu.RLock()
 	defer mvnIndexMu.RUnlock()

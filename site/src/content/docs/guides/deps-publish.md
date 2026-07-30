@@ -81,10 +81,32 @@ directions, so cljgo classifies **per namespace**:
 - the failure happens at **require**, as
   [`I4002`](/cljgo/diagnostics/), naming the namespace, the coordinate,
   the offending form, and how many other namespaces in the same library
-  *are* usable.
+  have no Java interop.
 
 The library still resolves and locks. Only the *use* of a Java namespace
 fails.
+
+### What "no Java interop" measures — and what it does not
+
+The resolve line reads
+
+```
+cljgo deps: medley/medley 1.4.0 — 1 namespace(s) with no Java interop
+```
+
+and that sentence is the whole claim. Classification is a **read-time**
+check: cljgo's reader read the file (with `:cljgo` reader conditionals
+resolved) and found no Java interop in what survived. It does **not**
+compile the namespace, so it cannot promise the namespace compiles — that
+would need core plus every one of the library's own requires already
+loaded, and any gap in cljgo's analyzer would then be printed as a fact
+about somebody else's library.
+
+The line used to say "N namespace(s) usable", which claimed more than was
+measured — and a library could then fail to build right after being called
+usable. If a namespace that passed the check fails anyway, the require
+raises [`G5020`](/cljgo/diagnostics/), which names the measurement that
+passed, what failed, and that the gap is **cljgo's**, not the library's.
 
 ### Reader conditionals
 

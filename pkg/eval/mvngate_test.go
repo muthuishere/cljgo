@@ -196,3 +196,68 @@ func TestNonMavenSourceIsNeverGated(t *testing.T) {
 		t.Fatalf("want 1, got %#v", got)
 	}
 }
+
+// demoLibGapped is the case real Clojars exposed and httptest fixtures never
+// could: a namespace with NO Java interop, which reads cleanly, and which
+// cljgo still cannot compile. (Live it was medley.core's ordinary
+// `(defn name "doc" {:attr-map} ...)`; here it is an unresolvable symbol, so
+// the test does not depend on which cljgo gap is currently open.)
+const demoLibGapped = `(ns demo.gapped)
+
+(defn f [x] (a-symbol-cljgo-cannot-resolve x))
+`
+
+// TestMavenInteropFreeButUncompilableRaisesG5020 — the report says "N
+// namespace(s) with no Java interop"; when one of those N fails anyway, the
+// user must not get a bare compile error with nothing joining the two
+// statements. The require raises G5020, which names the measurement that
+// passed, what actually failed, and that the gap is cljgo's.
+func TestMavenInteropFreeButUncompilableRaisesG5020(t *testing.T) {
+	files := mavenDemoLib()
+	files["demo/gapped.clj"] = demoLibGapped
+	dir := mountMavenLib(t, files)
+
+	// It really did pass classification — that is the whole point.
+	v, ok := deps.MavenVerdictFor(filepath.Join(dir, "demo", "gapped.clj"))
+	if !ok || !v.InteropFree() {
+		t.Fatalf("the fixture was supposed to be classified interop-free: %+v (found=%v)", v, ok)
+	}
+
+	e := eval.New()
+	err := mustErr(t, e, list(sym("require"), list(sym("quote"), sym("demo.gapped"))))
+	rendered := diag.RenderError(err)
+	for _, want := range []string{
+		"G5020",
+		"demo.gapped",
+		"demo/demo 1.0.0",
+		"interop-free",
+		"does not compile on cljgo",
+		"READ-time measurement",
+		"gap in cljgo",
+	} {
+		if !strings.Contains(rendered, want) {
+			t.Errorf("the failure does not connect back to the resolve report, missing %q:\n%s", want, rendered)
+		}
+	}
+	// It must NOT be reported as a Java-interop verdict: that is a claim about
+	// the library, and this is a claim about cljgo.
+	for _, forbidden := range []string{"I4002", "requires Java interop"} {
+		if strings.Contains(rendered, forbidden) {
+			t.Errorf("a cljgo gap was reported as %q — a false statement about the library:\n%s", forbidden, rendered)
+		}
+	}
+}
+
+// TestPureMavenNamespaceIsNotWrappedByG5020 — the wrapper must not fire for a
+// namespace that loads fine, and must not change the healthy path's behaviour.
+func TestPureMavenNamespaceIsNotWrappedByG5020(t *testing.T) {
+	files := mavenDemoLib()
+	files["demo/gapped.clj"] = demoLibGapped
+	mountMavenLib(t, files)
+	e := eval.New()
+
+	evalAll(t, e, list(sym("require"), list(sym("quote"), sym("demo.pure"))))
+	if got := evalAll(t, e, list(sym("demo.pure/greet"), "world")); got != "hello, world" {
+		t.Fatalf("the G5020 wrapper broke a healthy maven namespace: %#v", got)
+	}
+}

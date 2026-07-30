@@ -441,3 +441,22 @@ func jvmOnlyCljc() map[string]string {
 `,
 	}
 }
+
+// interopFreeButUncompilable is the shape the real-Clojars run exposed: a
+// namespace with NO Java interop that cljgo nonetheless cannot compile. In the
+// live case it was medley.core's perfectly ordinary
+// `(defn name "doc" {:attr-map} ...)`, which cljgo's `defn` could not parse;
+// the fixture stands in for any such cljgo gap with a form that fails at load
+// regardless of which gap is currently open (an unresolvable symbol).
+//
+// Resolve-time classification PASSES it — correctly, because what it measures
+// is "reads on cljgo, no Java interop" — so the report must say exactly that
+// and no more. The require-time failure is G5020, which names the difference.
+func interopFreeButUncompilable() map[string]string {
+	return map[string]string{
+		"gapped/core.clj": `(ns gapped.core)
+
+(defn f [x] (a-symbol-cljgo-cannot-resolve x))
+`,
+	}
+}

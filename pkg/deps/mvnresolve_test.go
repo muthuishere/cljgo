@@ -1,6 +1,7 @@
 package deps
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -161,7 +162,7 @@ func TestPerNamespaceGate(t *testing.T) {
 		t.Fatal("hiccup.compiler was NOT gated")
 	}
 	wantCode(t, err, "I4002")
-	for _, want := range []string{"hiccup.compiler", "hiccup/hiccup 1.0.5", ":import", "8 other namespaces"} {
+	for _, want := range []string{"hiccup.compiler", "hiccup/hiccup 1.0.5", ":import", "8 other namespaces have no Java interop"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("I4002 message is missing %q:\n%s", want, err)
 		}
@@ -177,8 +178,8 @@ func TestAllJavaLibraryWarnsButResolves(t *testing.T) {
 	r.publish(c, "", allJavaDataJSON())
 
 	res := mustResolve(t, r, []Dep{{Name: "org.clojure/data.json", MvnVersion: "2.5.0"}}, nil)
-	if len(res.MavenReport) != 1 || !strings.Contains(res.MavenReport[0], "no usable namespaces") {
-		t.Fatalf("want a loud zero-usable warning, got %v", res.MavenReport)
+	if len(res.MavenReport) != 1 || !strings.Contains(res.MavenReport[0], "no namespace in this dependency is interop-free") {
+		t.Fatalf("want a loud zero-interop-free warning, got %v", res.MavenReport)
 	}
 	if lk := res.Lock.find("org.clojure/data.json"); lk == nil || len(lk.MvnPureNS) != 0 {
 		t.Fatalf("expected it to resolve and lock with zero pure namespaces: %+v", lk)
@@ -542,5 +543,80 @@ func TestJarBuildFilesAreNotNamespaces(t *testing.T) {
 	}
 	if len(lk.MvnJavaNS) != 0 {
 		t.Errorf("nothing here is Java, got %v", lk.MvnJavaNS)
+	}
+}
+
+// TestReportClaimsOnlyWhatItMeasured is the anti-over-claim test. The resolve
+// report used to say "N namespace(s) usable" — a claim classification never
+// checked — and the build could then fail on the very namespace it counted.
+// The fixture is exactly that case: interop-free, reads fine, does not
+// compile.
+//
+// The report must state the measurement ("no Java interop") and must never
+// use the word "usable", in the report line, in the I4002 fix line, or in the
+// lock, so that the require-time G5020 can name the difference.
+func TestReportClaimsOnlyWhatItMeasured(t *testing.T) {
+	r := newMvnRepo(t)
+	c := Coord{Group: "gapped", Artifact: "gapped", Version: "0.1.0"}
+	r.publish(c, "", interopFreeButUncompilable())
+
+	res := mustResolve(t, r, []Dep{{Name: "gapped/gapped", MvnVersion: "0.1.0"}}, nil)
+
+	if len(res.MavenReport) != 1 {
+		t.Fatalf("want one report line, got %v", res.MavenReport)
+	}
+	line := res.MavenReport[0]
+	if !strings.Contains(line, "1 namespace(s) with no Java interop") {
+		t.Errorf("the report does not state the measurement:\n%s", line)
+	}
+	if strings.Contains(line, "usable") {
+		t.Errorf("the report still claims usability it never measured:\n%s", line)
+	}
+
+	// The classification itself is CORRECT and unchanged: the namespace really
+	// is interop-free, and the lock records it under :pure.
+	lk := res.Lock.find("gapped/gapped")
+	if len(lk.MvnPureNS) != 1 || lk.MvnPureNS[0] != "gapped.core" {
+		t.Fatalf("want gapped.core classified interop-free, got %v", lk.MvnPureNS)
+	}
+}
+
+// TestG5020ConnectsTheReportToTheFailure — the report says "no Java interop",
+// and when such a namespace fails anyway the error must SAY that is what was
+// measured, so the two statements are never left unconnected in front of a
+// user.
+func TestG5020ConnectsTheReportToTheFailure(t *testing.T) {
+	r := newMvnRepo(t)
+	c := Coord{Group: "gapped", Artifact: "gapped", Version: "0.1.0"}
+	r.publish(c, "", interopFreeButUncompilable())
+	res := mustResolve(t, r, []Dep{{Name: "gapped/gapped", MvnVersion: "0.1.0"}}, nil)
+
+	var v NSVerdict
+	for _, x := range res.MavenVerdicts {
+		if x.NS == "gapped.core" {
+			v = x
+		}
+	}
+	if !v.InteropFree() {
+		t.Fatalf("fixture is not interop-free: %+v", v)
+	}
+	err := MavenLoadFailure(v, errors.New("unable to resolve symbol: a-symbol-cljgo-cannot-resolve"))
+	wantCode(t, err, "G5020")
+	for _, want := range []string{
+		"gapped.core",
+		"gapped/gapped 0.1.0",
+		"interop-free",
+		"does not compile on cljgo",
+		"READ-time measurement",
+		"gap in cljgo",
+	} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("G5020 does not connect the report to the failure, missing %q:\n%s", want, err)
+		}
+	}
+	// An inner G5020 is not wrapped twice: the innermost frame is the accurate
+	// one when a maven namespace requires another maven namespace.
+	if again := MavenLoadFailure(v, err); again.Error() != err.Error() {
+		t.Errorf("G5020 was wrapped twice:\n%s", again)
 	}
 }
