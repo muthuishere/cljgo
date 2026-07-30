@@ -1,6 +1,10 @@
 # ADR 0095 — Clojars, both directions: consume pure Clojure by coordinate, deploy for real
 
-Date: 2026-07-27 · Status: **proposed** — evidence in: spikes **S50** (consume)
+Date: 2026-07-27 · Status: **partially accepted** — decisions **1, 2 and 4
+(consume)** are IMPLEMENTED (openspec change `adr-0095-clojars-consume`:
+`pkg/deps` Maven arm, `pkg/javadetect` per-namespace gate, reader `R1012`).
+Decision **3 (deploy)** remains **proposed** and rides a separate change.
+Evidence in: spikes **S50** (consume)
 and **S51** (deploy) both **closed MET** (2026-07-27), so the falsifiable claims
 below survived; the scope language is now tightened by S50's finding (the pure
 subset is real but *utility-shaped*, not the Java-wrapping mainstream). Awaits

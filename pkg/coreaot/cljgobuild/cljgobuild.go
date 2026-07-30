@@ -22,6 +22,7 @@ var (
 	kw_go_requires                     = lang.InternKeywordString("go-requires")
 	kw_kind                            = lang.InternKeywordString("kind")
 	kw_line                            = lang.InternKeywordString("line")
+	kw_mvn_repos                       = lang.InternKeywordString("mvn-repos")
 	kw_name                            = lang.InternKeywordString("name")
 	kw_os                              = lang.InternKeywordString("os")
 	kw_path                            = lang.InternKeywordString("path")
@@ -39,6 +40,7 @@ var (
 	v_cljgo_DOT_build_install          = lang.InternVarName(lang.NewSymbol("cljgo.build"), lang.NewSymbol("install"))
 	v_cljgo_DOT_build_lib              = lang.InternVarName(lang.NewSymbol("cljgo.build"), lang.NewSymbol("lib"))
 	v_cljgo_DOT_build_make_builder     = lang.InternVarName(lang.NewSymbol("cljgo.build"), lang.NewSymbol("make-builder"))
+	v_cljgo_DOT_build_mvn_repo         = lang.InternVarName(lang.NewSymbol("cljgo.build"), lang.NewSymbol("mvn-repo"))
 	v_cljgo_DOT_build_option           = lang.InternVarName(lang.NewSymbol("cljgo.build"), lang.NewSymbol("option"))
 	v_cljgo_DOT_build_run              = lang.InternVarName(lang.NewSymbol("cljgo.build"), lang.NewSymbol("run"))
 	v_clojure_DOT_core_assoc           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("assoc"))
@@ -56,6 +58,7 @@ var (
 	fnD_cljgo_DOT_build_lib              lang.FnFunc2
 	fnD_cljgo_DOT_build_go_require       lang.FnFunc3
 	fnD_cljgo_DOT_build_dep              lang.FnFunc3
+	fnD_cljgo_DOT_build_mvn_repo         lang.FnFunc2
 	fnD_cljgo_DOT_build_accept_version   lang.FnFunc3
 	fnD_cljgo_DOT_build_allow_capability lang.FnFunc2
 	fnD_cljgo_DOT_build_install          lang.FnFunc2
@@ -89,283 +92,308 @@ func Load() {
 		tmp7 := lang.NewVector()
 		tmp8 := lang.NewVector()
 		tmp9 := lang.NewVector()
-		tmp10 := lang.NewMap()
-		tmp11 := lang.NewVector()
+		tmp10 := lang.NewVector()
+		tmp11 := lang.NewMap()
 		tmp12 := lang.NewVector()
-		tmp13 := lang.NewMap(kw_artifacts, tmp7, kw_go_requires, tmp8, kw_deps, tmp9, kw_accept_versions, tmp10, kw_allow_caps, tmp11, kw_steps, tmp12, kw_default_, nil)
-		tmp14 := lang.Apply1(tmp6, tmp13)
-		return tmp14
+		tmp13 := lang.NewVector()
+		tmp14 := lang.NewMap(kw_mvn_repos, tmp7, kw_default_, nil, kw_go_requires, tmp8, kw_steps, tmp9, kw_allow_caps, tmp10, kw_accept_versions, tmp11, kw_deps, tmp12, kw_artifacts, tmp13)
+		tmp15 := lang.Apply1(tmp6, tmp14)
+		return tmp15
 	})
-	tmp15 := &lang.NamedFn0{Name: "cljgo.build/make-builder", Expects: "0: []", F: tmp5}
-	v_cljgo_DOT_build_make_builder.BindRoot(tmp15)
-	fnD_cljgo_DOT_build_make_builder = tmp15.F
+	tmp16 := &lang.NamedFn0{Name: "cljgo.build/make-builder", Expects: "0: []", F: tmp5}
+	v_cljgo_DOT_build_make_builder.BindRoot(tmp16)
+	fnD_cljgo_DOT_build_make_builder = tmp16.F
 	v_cljgo_DOT_build_make_builder.SealDirect()
 	_ = v_cljgo_DOT_build_make_builder
 	// (def exe "Declares an executable artifact from spec {:name … :main \"path.cljg\" …}\n …
 	v_cljgo_DOT_build_exe.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(30), kw_column, int64(7), kw_end_line, int64(30), kw_end_column, int64(10), kw_doc, "Declares an executable artifact from spec {:name … :main \"path.cljg\" …}\n  and returns an artifact handle {:builder b :name …} the step/require fns\n  take. :target/:optimize are carried through untouched (minimal for B1)."))
-	tmp16 := lang.FnFunc2(func(b17, spec18 any) any {
-		var tmp19 any
-		_ = tmp19
+	tmp17 := lang.FnFunc2(func(b18, spec19 any) any {
+		var tmp20 any
+		_ = tmp20
 		{
-			tmp20 := v_clojure_DOT_core_assoc.Get()
-			tmp21 := lang.Apply3(tmp20, spec18, kw_kind, "exe")
-			var art22 any = tmp21
-			_ = art22
-			tmp23 := v_clojure_DOT_core_swap_BANG_.Get()
-			tmp24 := lang.FnFunc1(func(m25 any) any {
-				tmp26 := v_clojure_DOT_core_assoc.Get()
-				tmp27 := v_clojure_DOT_core_conj.Get()
-				tmp28 := v_clojure_DOT_core_get.Get()
-				tmp29 := lang.Apply2(tmp28, m25, kw_artifacts)
-				tmp30 := lang.Apply2(tmp27, tmp29, art22)
-				tmp31 := lang.Apply3(tmp26, m25, kw_artifacts, tmp30)
-				return tmp31
+			tmp21 := v_clojure_DOT_core_assoc.Get()
+			tmp22 := lang.Apply3(tmp21, spec19, kw_kind, "exe")
+			var art23 any = tmp22
+			_ = art23
+			tmp24 := v_clojure_DOT_core_swap_BANG_.Get()
+			tmp25 := lang.FnFunc1(func(m26 any) any {
+				tmp27 := v_clojure_DOT_core_assoc.Get()
+				tmp28 := v_clojure_DOT_core_conj.Get()
+				tmp29 := v_clojure_DOT_core_get.Get()
+				tmp30 := lang.Apply2(tmp29, m26, kw_artifacts)
+				tmp31 := lang.Apply2(tmp28, tmp30, art23)
+				tmp32 := lang.Apply3(tmp27, m26, kw_artifacts, tmp31)
+				return tmp32
 			})
-			tmp32 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp24}
-			tmp33 := lang.Apply2(tmp23, b17, tmp32)
-			_ = tmp33
-			tmp34 := v_clojure_DOT_core_get.Get()
-			tmp35 := lang.Apply2(tmp34, spec18, kw_name)
-			tmp36 := lang.NewMap(kw_builder, b17, kw_name, tmp35)
-			tmp19 = tmp36
+			tmp33 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp25}
+			tmp34 := lang.Apply2(tmp24, b18, tmp33)
+			_ = tmp34
+			tmp35 := v_clojure_DOT_core_get.Get()
+			tmp36 := lang.Apply2(tmp35, spec19, kw_name)
+			tmp37 := lang.NewMap(kw_builder, b18, kw_name, tmp36)
+			tmp20 = tmp37
 		}
-		return tmp19
+		return tmp20
 	})
-	tmp37 := &lang.NamedFn2{Name: "cljgo.build/exe", Expects: "2: [b spec]", F: tmp16}
-	v_cljgo_DOT_build_exe.BindRoot(tmp37)
-	fnD_cljgo_DOT_build_exe = tmp37.F
+	tmp38 := &lang.NamedFn2{Name: "cljgo.build/exe", Expects: "2: [b spec]", F: tmp17}
+	v_cljgo_DOT_build_exe.BindRoot(tmp38)
+	fnD_cljgo_DOT_build_exe = tmp38.F
 	v_cljgo_DOT_build_exe.SealDirect()
 	_ = v_cljgo_DOT_build_exe
 	// (def lib "Declares a publishable library artifact from spec\n  {:name … :main \"path.clj…
 	v_cljgo_DOT_build_lib.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(39), kw_column, int64(7), kw_end_line, int64(39), kw_end_column, int64(10), kw_doc, "Declares a publishable library artifact from spec\n  {:name … :main \"path.cljg\" :module \"github.com/you/lib\"} — the producer\n  side of ADR 0013 / ADR 0054. ONE library, both ecosystems: `cljgo publish go`\n  emits a go-gettable module and `cljgo publish clojars` emits pure Clojure\n  source, from this one declaration. :kind is stamped \"lib\"; the target\n  (go|clojars) is chosen at publish time. :module is the library's module path /\n  coordinate. Returns an artifact handle {:builder b :name …}."))
-	tmp38 := lang.FnFunc2(func(b39, spec40 any) any {
-		var tmp41 any
-		_ = tmp41
+	tmp39 := lang.FnFunc2(func(b40, spec41 any) any {
+		var tmp42 any
+		_ = tmp42
 		{
-			tmp42 := v_clojure_DOT_core_assoc.Get()
-			tmp43 := lang.Apply3(tmp42, spec40, kw_kind, "lib")
-			var art44 any = tmp43
-			_ = art44
-			tmp45 := v_clojure_DOT_core_swap_BANG_.Get()
-			tmp46 := lang.FnFunc1(func(m47 any) any {
-				tmp48 := v_clojure_DOT_core_assoc.Get()
-				tmp49 := v_clojure_DOT_core_conj.Get()
-				tmp50 := v_clojure_DOT_core_get.Get()
-				tmp51 := lang.Apply2(tmp50, m47, kw_artifacts)
-				tmp52 := lang.Apply2(tmp49, tmp51, art44)
-				tmp53 := lang.Apply3(tmp48, m47, kw_artifacts, tmp52)
-				return tmp53
+			tmp43 := v_clojure_DOT_core_assoc.Get()
+			tmp44 := lang.Apply3(tmp43, spec41, kw_kind, "lib")
+			var art45 any = tmp44
+			_ = art45
+			tmp46 := v_clojure_DOT_core_swap_BANG_.Get()
+			tmp47 := lang.FnFunc1(func(m48 any) any {
+				tmp49 := v_clojure_DOT_core_assoc.Get()
+				tmp50 := v_clojure_DOT_core_conj.Get()
+				tmp51 := v_clojure_DOT_core_get.Get()
+				tmp52 := lang.Apply2(tmp51, m48, kw_artifacts)
+				tmp53 := lang.Apply2(tmp50, tmp52, art45)
+				tmp54 := lang.Apply3(tmp49, m48, kw_artifacts, tmp53)
+				return tmp54
 			})
-			tmp54 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp46}
-			tmp55 := lang.Apply2(tmp45, b39, tmp54)
-			_ = tmp55
-			tmp56 := v_clojure_DOT_core_get.Get()
-			tmp57 := lang.Apply2(tmp56, spec40, kw_name)
-			tmp58 := lang.NewMap(kw_builder, b39, kw_name, tmp57)
-			tmp41 = tmp58
+			tmp55 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp47}
+			tmp56 := lang.Apply2(tmp46, b40, tmp55)
+			_ = tmp56
+			tmp57 := v_clojure_DOT_core_get.Get()
+			tmp58 := lang.Apply2(tmp57, spec41, kw_name)
+			tmp59 := lang.NewMap(kw_builder, b40, kw_name, tmp58)
+			tmp42 = tmp59
 		}
-		return tmp41
+		return tmp42
 	})
-	tmp59 := &lang.NamedFn2{Name: "cljgo.build/lib", Expects: "2: [b spec]", F: tmp38}
-	v_cljgo_DOT_build_lib.BindRoot(tmp59)
-	fnD_cljgo_DOT_build_lib = tmp59.F
+	tmp60 := &lang.NamedFn2{Name: "cljgo.build/lib", Expects: "2: [b spec]", F: tmp39}
+	v_cljgo_DOT_build_lib.BindRoot(tmp60)
+	fnD_cljgo_DOT_build_lib = tmp60.F
 	v_cljgo_DOT_build_lib.SealDirect()
 	_ = v_cljgo_DOT_build_lib
 	// (def go-require "Records a pinned third-party Go module requirement (ADR 0021 — this\n  …
 	v_cljgo_DOT_build_go_require.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(52), kw_column, int64(7), kw_end_line, int64(52), kw_end_column, int64(17), kw_doc, "Records a pinned third-party Go module requirement (ADR 0021 — this\n  REPLACES deps.edn). art is an artifact handle from exe; the pin is\n  accumulated module-wide (the emitted go.mod is one module)."))
-	tmp60 := lang.FnFunc3(func(art61, path62, version63 any) any {
-		var tmp64 any
-		_ = tmp64
+	tmp61 := lang.FnFunc3(func(art62, path63, version64 any) any {
+		var tmp65 any
+		_ = tmp65
 		{
-			tmp65 := v_clojure_DOT_core_get.Get()
-			tmp66 := lang.Apply2(tmp65, art61, kw_builder)
-			var b67 any = tmp66
-			_ = b67
-			tmp68 := v_clojure_DOT_core_swap_BANG_.Get()
-			tmp69 := lang.FnFunc1(func(m70 any) any {
-				tmp71 := v_clojure_DOT_core_assoc.Get()
-				tmp72 := v_clojure_DOT_core_conj.Get()
-				tmp73 := v_clojure_DOT_core_get.Get()
-				tmp74 := lang.Apply2(tmp73, m70, kw_go_requires)
-				tmp75 := lang.NewMap(kw_path, path62, kw_version, version63)
-				tmp76 := lang.Apply2(tmp72, tmp74, tmp75)
-				tmp77 := lang.Apply3(tmp71, m70, kw_go_requires, tmp76)
-				return tmp77
+			tmp66 := v_clojure_DOT_core_get.Get()
+			tmp67 := lang.Apply2(tmp66, art62, kw_builder)
+			var b68 any = tmp67
+			_ = b68
+			tmp69 := v_clojure_DOT_core_swap_BANG_.Get()
+			tmp70 := lang.FnFunc1(func(m71 any) any {
+				tmp72 := v_clojure_DOT_core_assoc.Get()
+				tmp73 := v_clojure_DOT_core_conj.Get()
+				tmp74 := v_clojure_DOT_core_get.Get()
+				tmp75 := lang.Apply2(tmp74, m71, kw_go_requires)
+				tmp76 := lang.NewMap(kw_path, path63, kw_version, version64)
+				tmp77 := lang.Apply2(tmp73, tmp75, tmp76)
+				tmp78 := lang.Apply3(tmp72, m71, kw_go_requires, tmp77)
+				return tmp78
 			})
-			tmp78 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp69}
-			tmp79 := lang.Apply2(tmp68, b67, tmp78)
-			_ = tmp79
-			tmp64 = art61
+			tmp79 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp70}
+			tmp80 := lang.Apply2(tmp69, b68, tmp79)
+			_ = tmp80
+			tmp65 = art62
 		}
-		return tmp64
+		return tmp65
 	})
-	tmp80 := &lang.NamedFn3{Name: "cljgo.build/go-require", Expects: "3: [art path version]", F: tmp60}
-	v_cljgo_DOT_build_go_require.BindRoot(tmp80)
-	fnD_cljgo_DOT_build_go_require = tmp80.F
+	tmp81 := &lang.NamedFn3{Name: "cljgo.build/go-require", Expects: "3: [art path version]", F: tmp61}
+	v_cljgo_DOT_build_go_require.BindRoot(tmp81)
+	fnD_cljgo_DOT_build_go_require = tmp81.F
 	v_cljgo_DOT_build_go_require.SealDirect()
 	_ = v_cljgo_DOT_build_go_require
 	// (def dep "Declares a dependency (ADR 0052). `name` is the dependency name; `opts` is\n  a …
-	v_cljgo_DOT_build_dep.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(10), kw_doc, "Declares a dependency (ADR 0052). `name` is the dependency name; `opts` is\n  a map of fetch coordinates — {:git url :ref \"v1.2.0\" :subdir \"…\"} for a\n  git dep, or {:path \"../local\"} for a local one. Accumulated project-wide\n  onto :deps (the emitted binary bakes one dependency graph). Returns b."))
-	tmp81 := lang.FnFunc3(func(b82, name83, opts84 any) any {
-		tmp85 := v_clojure_DOT_core_swap_BANG_.Get()
-		tmp86 := lang.FnFunc1(func(m87 any) any {
-			tmp88 := v_clojure_DOT_core_assoc.Get()
-			tmp89 := v_clojure_DOT_core_conj.Get()
-			tmp90 := v_clojure_DOT_core_get.Get()
-			tmp91 := lang.Apply2(tmp90, m87, kw_deps)
-			tmp92 := v_clojure_DOT_core_assoc.Get()
-			tmp93 := lang.Apply3(tmp92, opts84, kw_name, name83)
-			tmp94 := lang.Apply2(tmp89, tmp91, tmp93)
-			tmp95 := lang.Apply3(tmp88, m87, kw_deps, tmp94)
-			return tmp95
+	v_cljgo_DOT_build_dep.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(10), kw_doc, "Declares a dependency (ADR 0052). `name` is the dependency name; `opts` is\n  a map of fetch coordinates — {:git url :ref \"v1.2.0\" :subdir \"…\"} for a\n  git dep, {:path \"../local\"} for a local one, or {:mvn/version \"1.1.230\"}\n  for a Clojars/Maven coordinate (ADR 0095), in which case `name` IS the\n  coordinate \"group/artifact\" (a single segment means group == artifact).\n  The three kinds are mutually exclusive — declaring two is an error (G5015),\n  never a precedence rule. Accumulated project-wide\n  onto :deps (the emitted binary bakes one dependency graph). Returns b."))
+	tmp82 := lang.FnFunc3(func(b83, name84, opts85 any) any {
+		tmp86 := v_clojure_DOT_core_swap_BANG_.Get()
+		tmp87 := lang.FnFunc1(func(m88 any) any {
+			tmp89 := v_clojure_DOT_core_assoc.Get()
+			tmp90 := v_clojure_DOT_core_conj.Get()
+			tmp91 := v_clojure_DOT_core_get.Get()
+			tmp92 := lang.Apply2(tmp91, m88, kw_deps)
+			tmp93 := v_clojure_DOT_core_assoc.Get()
+			tmp94 := lang.Apply3(tmp93, opts85, kw_name, name84)
+			tmp95 := lang.Apply2(tmp90, tmp92, tmp94)
+			tmp96 := lang.Apply3(tmp89, m88, kw_deps, tmp95)
+			return tmp96
 		})
-		tmp96 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp86}
-		tmp97 := lang.Apply2(tmp85, b82, tmp96)
-		_ = tmp97
-		return b82
+		tmp97 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp87}
+		tmp98 := lang.Apply2(tmp86, b83, tmp97)
+		_ = tmp98
+		return b83
 	})
-	tmp98 := &lang.NamedFn3{Name: "cljgo.build/dep", Expects: "3: [b name opts]", F: tmp81}
-	v_cljgo_DOT_build_dep.BindRoot(tmp98)
-	fnD_cljgo_DOT_build_dep = tmp98.F
+	tmp99 := &lang.NamedFn3{Name: "cljgo.build/dep", Expects: "3: [b name opts]", F: tmp82}
+	v_cljgo_DOT_build_dep.BindRoot(tmp99)
+	fnD_cljgo_DOT_build_dep = tmp99.F
 	v_cljgo_DOT_build_dep.SealDirect()
 	_ = v_cljgo_DOT_build_dep
-	// (def accept-version "Consumer-side version override (ADR 0052 decision 4): accept `version…
-	v_cljgo_DOT_build_accept_version.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(76), kw_column, int64(7), kw_end_line, int64(76), kw_end_column, int64(21), kw_doc, "Consumer-side version override (ADR 0052 decision 4): accept `version` for\n  Go module `module` when two dependencies pin it at different versions,\n  instead of the hard conflict error. Accumulated onto the :accept-versions\n  map. Returns b."))
-	tmp99 := lang.FnFunc3(func(b100, module101, version102 any) any {
+	// (def mvn-repo "Adds a Maven repository to shop for {:mvn/version …} dependencies (ADR\n …
+	v_cljgo_DOT_build_mvn_repo.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(80), kw_column, int64(7), kw_end_line, int64(80), kw_end_column, int64(15), kw_doc, "Adds a Maven repository to shop for {:mvn/version …} dependencies (ADR\n  0095). PREPENDS to the default list, which is https://repo.clojars.org then\n  https://repo1.maven.org/maven2. The first repository that answers 200 for a\n  coordinate's .pom wins, and the winner is recorded in build.lock.edn so a\n  later resolve does not re-shop the list. Returns b."))
+	tmp100 := lang.FnFunc2(func(b101, url102 any) any {
 		tmp103 := v_clojure_DOT_core_swap_BANG_.Get()
 		tmp104 := lang.FnFunc1(func(m105 any) any {
 			tmp106 := v_clojure_DOT_core_assoc.Get()
-			tmp107 := v_clojure_DOT_core_assoc.Get()
+			tmp107 := v_clojure_DOT_core_conj.Get()
 			tmp108 := v_clojure_DOT_core_get.Get()
-			tmp109 := lang.Apply2(tmp108, m105, kw_accept_versions)
-			tmp110 := lang.Apply3(tmp107, tmp109, module101, version102)
-			tmp111 := lang.Apply3(tmp106, m105, kw_accept_versions, tmp110)
-			return tmp111
+			tmp109 := lang.NewVector()
+			tmp110 := lang.Apply3(tmp108, m105, kw_mvn_repos, tmp109)
+			tmp111 := lang.Apply2(tmp107, tmp110, url102)
+			tmp112 := lang.Apply3(tmp106, m105, kw_mvn_repos, tmp111)
+			return tmp112
 		})
-		tmp112 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp104}
-		tmp113 := lang.Apply2(tmp103, b100, tmp112)
-		_ = tmp113
-		return b100
+		tmp113 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp104}
+		tmp114 := lang.Apply2(tmp103, b101, tmp113)
+		_ = tmp114
+		return b101
 	})
-	tmp114 := &lang.NamedFn3{Name: "cljgo.build/accept-version", Expects: "3: [b module version]", F: tmp99}
-	v_cljgo_DOT_build_accept_version.BindRoot(tmp114)
-	fnD_cljgo_DOT_build_accept_version = tmp114.F
+	tmp115 := &lang.NamedFn2{Name: "cljgo.build/mvn-repo", Expects: "2: [b url]", F: tmp100}
+	v_cljgo_DOT_build_mvn_repo.BindRoot(tmp115)
+	fnD_cljgo_DOT_build_mvn_repo = tmp115.F
+	v_cljgo_DOT_build_mvn_repo.SealDirect()
+	_ = v_cljgo_DOT_build_mvn_repo
+	// (def accept-version "Consumer-side version override (ADR 0052 decision 4): accept `version…
+	v_cljgo_DOT_build_accept_version.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(92), kw_column, int64(7), kw_end_line, int64(92), kw_end_column, int64(21), kw_doc, "Consumer-side version override (ADR 0052 decision 4): accept `version` for\n  Go module `module` when two dependencies pin it at different versions,\n  instead of the hard conflict error. Accumulated onto the :accept-versions\n  map. Returns b."))
+	tmp116 := lang.FnFunc3(func(b117, module118, version119 any) any {
+		tmp120 := v_clojure_DOT_core_swap_BANG_.Get()
+		tmp121 := lang.FnFunc1(func(m122 any) any {
+			tmp123 := v_clojure_DOT_core_assoc.Get()
+			tmp124 := v_clojure_DOT_core_assoc.Get()
+			tmp125 := v_clojure_DOT_core_get.Get()
+			tmp126 := lang.Apply2(tmp125, m122, kw_accept_versions)
+			tmp127 := lang.Apply3(tmp124, tmp126, module118, version119)
+			tmp128 := lang.Apply3(tmp123, m122, kw_accept_versions, tmp127)
+			return tmp128
+		})
+		tmp129 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp121}
+		tmp130 := lang.Apply2(tmp120, b117, tmp129)
+		_ = tmp130
+		return b117
+	})
+	tmp131 := &lang.NamedFn3{Name: "cljgo.build/accept-version", Expects: "3: [b module version]", F: tmp116}
+	v_cljgo_DOT_build_accept_version.BindRoot(tmp131)
+	fnD_cljgo_DOT_build_accept_version = tmp131.F
 	v_cljgo_DOT_build_accept_version.SealDirect()
 	_ = v_cljgo_DOT_build_accept_version
 	// (def allow-capability "Acknowledges a dependency's impure capability (ADR 0052 decision 6,…
-	v_cljgo_DOT_build_allow_capability.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(87), kw_column, int64(7), kw_end_line, int64(87), kw_end_column, int64(23), kw_doc, "Acknowledges a dependency's impure capability (ADR 0052 decision 6,\n  default-deny): `cap` is a capability keyword — :ffi, :cgo, or :go-require.\n  Unacknowledged impurity is refused at resolve time. Accumulated onto\n  :allow-caps. Returns b."))
-	tmp115 := lang.FnFunc2(func(b116, cap_117 any) any {
-		tmp118 := v_clojure_DOT_core_swap_BANG_.Get()
-		tmp119 := lang.FnFunc1(func(m120 any) any {
-			tmp121 := v_clojure_DOT_core_assoc.Get()
-			tmp122 := v_clojure_DOT_core_conj.Get()
-			tmp123 := v_clojure_DOT_core_get.Get()
-			tmp124 := lang.Apply2(tmp123, m120, kw_allow_caps)
-			tmp125 := lang.Apply2(tmp122, tmp124, cap_117)
-			tmp126 := lang.Apply3(tmp121, m120, kw_allow_caps, tmp125)
-			return tmp126
+	v_cljgo_DOT_build_allow_capability.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(103), kw_column, int64(7), kw_end_line, int64(103), kw_end_column, int64(23), kw_doc, "Acknowledges a dependency's impure capability (ADR 0052 decision 6,\n  default-deny): `cap` is a capability keyword — :ffi, :cgo, or :go-require.\n  Unacknowledged impurity is refused at resolve time. Accumulated onto\n  :allow-caps. Returns b."))
+	tmp132 := lang.FnFunc2(func(b133, cap_134 any) any {
+		tmp135 := v_clojure_DOT_core_swap_BANG_.Get()
+		tmp136 := lang.FnFunc1(func(m137 any) any {
+			tmp138 := v_clojure_DOT_core_assoc.Get()
+			tmp139 := v_clojure_DOT_core_conj.Get()
+			tmp140 := v_clojure_DOT_core_get.Get()
+			tmp141 := lang.Apply2(tmp140, m137, kw_allow_caps)
+			tmp142 := lang.Apply2(tmp139, tmp141, cap_134)
+			tmp143 := lang.Apply3(tmp138, m137, kw_allow_caps, tmp142)
+			return tmp143
 		})
-		tmp127 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp119}
-		tmp128 := lang.Apply2(tmp118, b116, tmp127)
-		_ = tmp128
-		return b116
+		tmp144 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp136}
+		tmp145 := lang.Apply2(tmp135, b133, tmp144)
+		_ = tmp145
+		return b133
 	})
-	tmp129 := &lang.NamedFn2{Name: "cljgo.build/allow-capability", Expects: "2: [b cap]", F: tmp115}
-	v_cljgo_DOT_build_allow_capability.BindRoot(tmp129)
-	fnD_cljgo_DOT_build_allow_capability = tmp129.F
+	tmp146 := &lang.NamedFn2{Name: "cljgo.build/allow-capability", Expects: "2: [b cap]", F: tmp132}
+	v_cljgo_DOT_build_allow_capability.BindRoot(tmp146)
+	fnD_cljgo_DOT_build_allow_capability = tmp146.F
 	v_cljgo_DOT_build_allow_capability.SealDirect()
 	_ = v_cljgo_DOT_build_allow_capability
 	// (def install "Adds an install step for an artifact and makes it the default step\n  (the t…
-	v_cljgo_DOT_build_install.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(98), kw_column, int64(7), kw_end_line, int64(98), kw_end_column, int64(14), kw_doc, "Adds an install step for an artifact and makes it the default step\n  (the target of a bare `cljgo build`). Mirrors zig's b.installArtifact."))
-	tmp130 := lang.FnFunc2(func(b131, art132 any) any {
-		tmp133 := v_clojure_DOT_core_swap_BANG_.Get()
-		tmp134 := lang.FnFunc1(func(m135 any) any {
-			var tmp136 any
-			_ = tmp136
+	v_cljgo_DOT_build_install.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(114), kw_column, int64(7), kw_end_line, int64(114), kw_end_column, int64(14), kw_doc, "Adds an install step for an artifact and makes it the default step\n  (the target of a bare `cljgo build`). Mirrors zig's b.installArtifact."))
+	tmp147 := lang.FnFunc2(func(b148, art149 any) any {
+		tmp150 := v_clojure_DOT_core_swap_BANG_.Get()
+		tmp151 := lang.FnFunc1(func(m152 any) any {
+			var tmp153 any
+			_ = tmp153
 			{
-				tmp137 := v_clojure_DOT_core_assoc.Get()
-				tmp138 := v_clojure_DOT_core_conj.Get()
-				tmp139 := v_clojure_DOT_core_get.Get()
-				tmp140 := lang.Apply2(tmp139, m135, kw_steps)
-				tmp141 := v_clojure_DOT_core_get.Get()
-				tmp142 := lang.Apply2(tmp141, art132, kw_name)
-				tmp143 := lang.NewMap(kw_type_, "install", kw_name, tmp142)
-				tmp144 := lang.Apply2(tmp138, tmp140, tmp143)
-				tmp145 := lang.Apply3(tmp137, m135, kw_steps, tmp144)
-				var m146 any = tmp145
-				_ = m146
-				tmp147 := v_clojure_DOT_core_get.Get()
-				tmp148 := lang.Apply2(tmp147, m146, kw_default_)
-				var tmp149 any
-				_ = tmp149
-				if lang.IsTruthy(tmp148) {
-					tmp149 = m146
+				tmp154 := v_clojure_DOT_core_assoc.Get()
+				tmp155 := v_clojure_DOT_core_conj.Get()
+				tmp156 := v_clojure_DOT_core_get.Get()
+				tmp157 := lang.Apply2(tmp156, m152, kw_steps)
+				tmp158 := v_clojure_DOT_core_get.Get()
+				tmp159 := lang.Apply2(tmp158, art149, kw_name)
+				tmp160 := lang.NewMap(kw_type_, "install", kw_name, tmp159)
+				tmp161 := lang.Apply2(tmp155, tmp157, tmp160)
+				tmp162 := lang.Apply3(tmp154, m152, kw_steps, tmp161)
+				var m163 any = tmp162
+				_ = m163
+				tmp164 := v_clojure_DOT_core_get.Get()
+				tmp165 := lang.Apply2(tmp164, m163, kw_default_)
+				var tmp166 any
+				_ = tmp166
+				if lang.IsTruthy(tmp165) {
+					tmp166 = m163
 				} else {
-					tmp150 := v_clojure_DOT_core_assoc.Get()
-					tmp151 := lang.Apply3(tmp150, m146, kw_default_, "install")
-					tmp149 = tmp151
+					tmp167 := v_clojure_DOT_core_assoc.Get()
+					tmp168 := lang.Apply3(tmp167, m163, kw_default_, "install")
+					tmp166 = tmp168
 				}
-				tmp136 = tmp149
+				tmp153 = tmp166
 			}
-			return tmp136
+			return tmp153
 		})
-		tmp152 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp134}
-		tmp153 := lang.Apply2(tmp133, b131, tmp152)
-		_ = tmp153
-		return art132
+		tmp169 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp151}
+		tmp170 := lang.Apply2(tmp150, b148, tmp169)
+		_ = tmp170
+		return art149
 	})
-	tmp154 := &lang.NamedFn2{Name: "cljgo.build/install", Expects: "2: [b art]", F: tmp130}
-	v_cljgo_DOT_build_install.BindRoot(tmp154)
-	fnD_cljgo_DOT_build_install = tmp154.F
+	tmp171 := &lang.NamedFn2{Name: "cljgo.build/install", Expects: "2: [b art]", F: tmp147}
+	v_cljgo_DOT_build_install.BindRoot(tmp171)
+	fnD_cljgo_DOT_build_install = tmp171.F
 	v_cljgo_DOT_build_install.SealDirect()
 	_ = v_cljgo_DOT_build_install
 	// (def run "Adds a run step for an artifact (the `cljgo build run` target). Mirrors\n  zig's…
-	v_cljgo_DOT_build_run.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(10), kw_doc, "Adds a run step for an artifact (the `cljgo build run` target). Mirrors\n  zig's b.addRunArtifact + a top-level `run` step."))
-	tmp155 := lang.FnFunc2(func(b156, art157 any) any {
-		tmp158 := v_clojure_DOT_core_swap_BANG_.Get()
-		tmp159 := lang.FnFunc1(func(m160 any) any {
-			tmp161 := v_clojure_DOT_core_assoc.Get()
-			tmp162 := v_clojure_DOT_core_conj.Get()
-			tmp163 := v_clojure_DOT_core_get.Get()
-			tmp164 := lang.Apply2(tmp163, m160, kw_steps)
-			tmp165 := v_clojure_DOT_core_get.Get()
-			tmp166 := lang.Apply2(tmp165, art157, kw_name)
-			tmp167 := lang.NewMap(kw_type_, "run", kw_name, tmp166)
-			tmp168 := lang.Apply2(tmp162, tmp164, tmp167)
-			tmp169 := lang.Apply3(tmp161, m160, kw_steps, tmp168)
-			return tmp169
+	v_cljgo_DOT_build_run.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(125), kw_column, int64(7), kw_end_line, int64(125), kw_end_column, int64(10), kw_doc, "Adds a run step for an artifact (the `cljgo build run` target). Mirrors\n  zig's b.addRunArtifact + a top-level `run` step."))
+	tmp172 := lang.FnFunc2(func(b173, art174 any) any {
+		tmp175 := v_clojure_DOT_core_swap_BANG_.Get()
+		tmp176 := lang.FnFunc1(func(m177 any) any {
+			tmp178 := v_clojure_DOT_core_assoc.Get()
+			tmp179 := v_clojure_DOT_core_conj.Get()
+			tmp180 := v_clojure_DOT_core_get.Get()
+			tmp181 := lang.Apply2(tmp180, m177, kw_steps)
+			tmp182 := v_clojure_DOT_core_get.Get()
+			tmp183 := lang.Apply2(tmp182, art174, kw_name)
+			tmp184 := lang.NewMap(kw_type_, "run", kw_name, tmp183)
+			tmp185 := lang.Apply2(tmp179, tmp181, tmp184)
+			tmp186 := lang.Apply3(tmp178, m177, kw_steps, tmp185)
+			return tmp186
 		})
-		tmp170 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp159}
-		tmp171 := lang.Apply2(tmp158, b156, tmp170)
-		_ = tmp171
-		return art157
+		tmp187 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp176}
+		tmp188 := lang.Apply2(tmp175, b173, tmp187)
+		_ = tmp188
+		return art174
 	})
-	tmp172 := &lang.NamedFn2{Name: "cljgo.build/run", Expects: "2: [b art]", F: tmp155}
-	v_cljgo_DOT_build_run.BindRoot(tmp172)
-	fnD_cljgo_DOT_build_run = tmp172.F
+	tmp189 := &lang.NamedFn2{Name: "cljgo.build/run", Expects: "2: [b art]", F: tmp172}
+	v_cljgo_DOT_build_run.BindRoot(tmp189)
+	fnD_cljgo_DOT_build_run = tmp189.F
 	v_cljgo_DOT_build_run.SealDirect()
 	_ = v_cljgo_DOT_build_run
 	// (def option "Build option (Zig -D). B1 stub: returns (get opts :default) — no CLI\n  -D …
-	v_cljgo_DOT_build_option.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(121), kw_column, int64(7), kw_end_line, int64(121), kw_end_column, int64(13), kw_doc, "Build option (Zig -D). B1 stub: returns (get opts :default) — no CLI\n  -D wiring yet (B3)."))
-	tmp173 := lang.FnFunc4(func(b174, name175, typ176, opts177 any) any {
-		tmp178 := v_clojure_DOT_core_get.Get()
-		tmp179 := lang.Apply2(tmp178, opts177, kw_default_)
-		return tmp179
+	v_cljgo_DOT_build_option.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(137), kw_column, int64(7), kw_end_line, int64(137), kw_end_column, int64(13), kw_doc, "Build option (Zig -D). B1 stub: returns (get opts :default) — no CLI\n  -D wiring yet (B3)."))
+	tmp190 := lang.FnFunc4(func(b191, name192, typ193, opts194 any) any {
+		tmp195 := v_clojure_DOT_core_get.Get()
+		tmp196 := lang.Apply2(tmp195, opts194, kw_default_)
+		return tmp196
 	})
-	tmp180 := &lang.NamedFn4{Name: "cljgo.build/option", Expects: "4: [b name typ opts]", F: tmp173}
-	v_cljgo_DOT_build_option.BindRoot(tmp180)
-	fnD_cljgo_DOT_build_option = tmp180.F
+	tmp197 := &lang.NamedFn4{Name: "cljgo.build/option", Expects: "4: [b name typ opts]", F: tmp190}
+	v_cljgo_DOT_build_option.BindRoot(tmp197)
+	fnD_cljgo_DOT_build_option = tmp197.F
 	v_cljgo_DOT_build_option.SealDirect()
 	_ = v_cljgo_DOT_build_option
 	// (def host-target "The host os/arch. B1 stub: an empty tuple means \"host default\" to the\…
-	v_cljgo_DOT_build_host_target.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(127), kw_column, int64(7), kw_end_line, int64(127), kw_end_column, int64(18), kw_doc, "The host os/arch. B1 stub: an empty tuple means \"host default\" to the\n  emitter (cross-compile matrix is B5)."))
-	tmp181 := lang.FnFunc1(func(b182 any) any {
-		tmp183 := lang.NewMap(kw_os, "", kw_arch, "")
-		return tmp183
+	v_cljgo_DOT_build_host_target.SetMeta(lang.NewMap(kw_file, "build.cljg", kw_line, int64(143), kw_column, int64(7), kw_end_line, int64(143), kw_end_column, int64(18), kw_doc, "The host os/arch. B1 stub: an empty tuple means \"host default\" to the\n  emitter (cross-compile matrix is B5)."))
+	tmp198 := lang.FnFunc1(func(b199 any) any {
+		tmp200 := lang.NewMap(kw_os, "", kw_arch, "")
+		return tmp200
 	})
-	tmp184 := &lang.NamedFn1{Name: "cljgo.build/host-target", Expects: "1: [b]", F: tmp181}
-	v_cljgo_DOT_build_host_target.BindRoot(tmp184)
-	fnD_cljgo_DOT_build_host_target = tmp184.F
+	tmp201 := &lang.NamedFn1{Name: "cljgo.build/host-target", Expects: "1: [b]", F: tmp198}
+	v_cljgo_DOT_build_host_target.BindRoot(tmp201)
+	fnD_cljgo_DOT_build_host_target = tmp201.F
 	v_cljgo_DOT_build_host_target.SealDirect()
 	_ = v_cljgo_DOT_build_host_target
 }

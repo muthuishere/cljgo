@@ -28,6 +28,7 @@ package reader
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -152,8 +153,46 @@ func (r *Reader) readConditional(start Position, spliceOK bool) (form any, again
 		}
 		return spliceForms{items: items}, false, nil
 	}
-	// No branch matched: the conditional reads as nothing.
+	// No branch matched. On the JVM (and for cljgo project code) that is
+	// legal: the conditional reads as nothing. Under WithStarvedCondError —
+	// set only for Maven-origin source, ADR 0095 §4.1 — a STARVED
+	// conditional (branches present, none selectable) is a hard error
+	// instead, because a silently-empty namespace out of a jar blames the
+	// wrong code later. A conditional with NO branches at all, #?(), is
+	// vacuous rather than starved and stays legal.
+	//
+	// The check is deliberately restricted to a TOP-LEVEL conditional
+	// (nestDepth is back to 0 once our own body read has returned). That is
+	// the shape s50 warns about: whole top-level forms vanishing, leaving a
+	// namespace with no vars. A conditional NESTED inside a form is the
+	// portable-library fencing idiom — medley's
+	// `#?(:clj (java.util.Date.) :default (now))`, an `(:import #?(:clj …))`
+	// clause — and erroring on it would reject exactly the libraries this
+	// change exists to consume. Two consequences, stated rather than hidden:
+	// a starved conditional nested inside a SELECTED branch is elided
+	// silently, and so is one fenced inside a form. Both are false NEGATIVES;
+	// a false positive here would break correct code.
+	if r.starvedCondError && r.nestDepth == 0 && len(forms) >= 2 {
+		return nil, false, r.errAt(start,
+			"reader conditional supplies no branch for this platform; expected one of :cljgo, :default; found %s",
+			featureList(forms))
+	}
 	return nil, true, nil
+}
+
+// featureList renders the feature keywords actually present in a starved
+// conditional's branch list, for the R1012 "found:" detail.
+func featureList(forms []any) string {
+	var feats []string
+	for i := 0; i+1 < len(forms); i += 2 {
+		if k, ok := forms[i].(lang.Keyword); ok {
+			feats = append(feats, ":"+k.Name())
+		}
+	}
+	if len(feats) == 0 {
+		return "no feature keywords"
+	}
+	return strings.Join(feats, ", ")
 }
 
 // spliceItems returns the elements of a matched splicing branch's value.
