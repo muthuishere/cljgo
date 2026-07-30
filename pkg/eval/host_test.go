@@ -242,9 +242,9 @@ func TestHostPrecedenceClojureWins(t *testing.T) {
 	}
 }
 
-// TestStdlibResolvesWhenDeclared is ADR 0104 decision 1: the gate for the
+// TestStdlibResolvesWhenDeclared is ADR 0109 decision 1: the gate for the
 // unlinked/AOT route is *declaration via require-go*, not the accident of
-// whether the import path's first segment contains a dot. Before 0104, `os`
+// whether the import path's first segment contains a dot. Before 0109, `os`
 // and `net/http` fell through to "unable to resolve Go member" and no AOT
 // binary could ever call them; a domain-dotted path was admitted. Now a
 // declared stdlib path takes the same route third-party already did.
@@ -259,7 +259,7 @@ func TestStdlibResolvesWhenDeclared(t *testing.T) {
 		err := mustErr(t, e, list(sym(alias+"/Getenv")))
 		// The point: it reaches the unlinked-module error (ADR 0053 dec 2),
 		// which the AOT emitter turns into a real linked call — NOT the
-		// pre-0104 "unable to resolve Go member" dead end, and never nil.
+		// pre-0109 "unable to resolve Go member" dead end, and never nil.
 		if !strings.Contains(err.Error(), "not linked into the interpreter") {
 			t.Errorf("%s: err = %v, want the unlinked-module error", pkg, err)
 		}
