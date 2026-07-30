@@ -1,4 +1,4 @@
-;; dbparity.cljg — the DUAL-MODE parity fixture for bri.core.data (ADR 0072 dec 8;
+;; dbparity.cljg — the DUAL-MODE parity fixture for cljg.data.cast (ADR 0072 dec 8;
 ;; the ADR 0057/0058 constraint-filter #4 commitment). Exercises the whole
 ;; blessed surface — connect, insert!, tx, update!, delete!, query, one —
 ;; over an in-memory SQLite database, printing a DETERMINISTIC transcript
@@ -6,7 +6,7 @@
 ;; both interpreted (`cljgo run`) and AOT-compiled (`cljgo build`) and
 ;; asserts byte-identical output — a REPL↔binary divergence is a release
 ;; blocker (CLAUDE.md).
-(require '[bri.core.data :as db])
+(require '[cljg.data.cast :as db])
 
 (def conn (db/connect {:driver :sqlite :database ":memory:"}))
 (db/exec! conn "create table item (id integer primary key autoincrement, label text not null, qty integer)")
@@ -35,3 +35,38 @@
   (println "cast" (:label clean) (:qty clean) "admin?" (contains? clean :admin)))
 (println "cast-err" (:qty (:errors (try (db/cast! {:qty "nope"} {:qty :int})
                                         (catch Throwable e (ex-data e))))))
+
+;; The params guard (docs/known-issues-2026-07-28.md §9, diagnostic G5008):
+;; params are VARARGS, so a collection passed as one param is rejected at the
+;; API boundary — naming the verb and the shape it wanted — instead of dying
+;; inside database/sql with "unsupported type lang.Vector, a struct". The
+;; `apply` spelling that DOES work is exercised right after, so both legs
+;; prove the guard and the escape hatch.
+(println "params-err" (try (db/query conn "select label from item where qty = ?" [9])
+                           (catch Throwable e (ex-message e))))
+(println "params-apply" (:label (first (apply db/query conn "select label from item where qty = ?" [9]))))
+
+;; The OTHER shape (diagnostic G5009): insert!/update!/delete! take MAPS, so a
+;; collection inside one of those maps is not a varargs mistake at all — the
+;; call shape is right, there is no param to spread, and `apply` fixes nothing.
+;; Each of the three verbs names ITSELF and the offending column, and offers no
+;; fix it cannot make good on (an absent Fix beats a wrong one). Fixed
+;; 2026-07-28 after these three paths were all mislabelled
+;; "cljg.data.cast/exec!: param 1 is a vector … (apply exec! db sql params)".
+;; cljg.data.cast has no JVM analogue, so this dual-mode fixture IS the freeze
+;; (there is nothing for conformance/tests to oracle). The Clojure primitives
+;; the labels are built from WERE checked against Clojure 1.12.5:
+;;   $ clojure -M -e '(println (pr-str :a) (mapv (partial str "column ") [:a :b]) (keys {:a 1 :qty 2 :label 3}))'
+;;   :a [column :a column :b] (:a :qty :label)
+(println "row-insert-err" (try (db/insert! conn :item {:label ["a" "b"]})
+                               (catch Throwable e (ex-message e))))
+(println "row-update-err" (try (db/update! conn :item {:label {:k 1}} {:qty 9})
+                               (catch Throwable e (ex-message e))))
+(println "row-delete-err" (try (db/delete! conn :item {:label #{1}})
+                               (catch Throwable e (ex-message e))))
+;; …and a scalar column value still round-trips through all three.
+(db/insert! conn :item {:label "omega" :qty 5})
+(db/update! conn :item {:qty 6} {:label "omega"})
+(println "row-ok" (:qty (db/one conn "select qty from item where label = ?" "omega")))
+(db/delete! conn :item {:label "omega"})
+(println "row-gone" (:n (db/one conn "select count(*) as n from item where label = ?" "omega")))

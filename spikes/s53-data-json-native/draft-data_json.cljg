@@ -1,5 +1,5 @@
 ;; draft-data_json.cljg — cljgo-native port of clojure.data.json (spike s53,
-;; ADR 0096). Satellite shape per ADR 0017/house style (cf. core/string.cljg,
+;; ADR 0097). Satellite shape per ADR 0017/house style (cf. core/string.cljg,
 ;; core/async.cljg): opens with (clojure.core/in-ns 'clojure.data.json),
 ;; interns the ONE name that collides with clojure.core (`read`) BEFORE the
 ;; wholesale (refer 'clojure.core) so no "being replaced" warning fires, then

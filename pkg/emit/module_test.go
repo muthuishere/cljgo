@@ -335,7 +335,7 @@ func TestCompileFileRefusesMultiNS(t *testing.T) {
 }
 
 // TestBriCliAuthLinksSecretsTransitively is ADR 0080/0086's proof that an app
-// requiring bri.cli.auth — which itself requires the OPT-IN bri.core.secrets —
+// requiring bri.cli.auth — which itself requires the OPT-IN cljg.secrets —
 // links the keychain sub-package via the TRANSITIVE opt-in fire (module.go).
 // A CLI that uses auth gets the keychain client; one that never touches auth
 // does not. This is the load-bearing check the auth namespace depends on.
@@ -353,17 +353,17 @@ func TestBriCliAuthLinksSecretsTransitively(t *testing.T) {
 	}
 	found := false
 	for _, p := range prog.OptInBriPkgs {
-		if p == "brisecrets" {
+		if p == "cljgsecrets" {
 			found = true
 		}
 	}
 	if !found {
-		t.Fatalf("requiring bri.cli.auth must transitively link brisecrets (the opt-in keychain); OptInBriPkgs=%v", prog.OptInBriPkgs)
+		t.Fatalf("requiring bri.cli.auth must transitively link cljgsecrets (the opt-in keychain); OptInBriPkgs=%v", prog.OptInBriPkgs)
 	}
 }
 
 // TestBriCliApiLinksSecretsTransitively is ADR 0091's proof that an app requiring
-// bri.cli.api — which requires bri.cli.auth → the OPT-IN bri.core.secrets — links
+// bri.cli.api — which requires bri.cli.auth → the OPT-IN cljg.secrets — links
 // the keychain sub-package via the transitive opt-in fire (module.go). This is why
 // bri.cli.api is its OWN namespace: a plain bri.cli app must NOT link the keychain,
 // but one that opts into auto-login auth does.
@@ -381,11 +381,11 @@ func TestBriCliApiLinksSecretsTransitively(t *testing.T) {
 	}
 	found := false
 	for _, p := range prog.OptInBriPkgs {
-		if p == "brisecrets" {
+		if p == "cljgsecrets" {
 			found = true
 		}
 	}
 	if !found {
-		t.Fatalf("requiring bri.cli.api must transitively link brisecrets (the opt-in keychain); OptInBriPkgs=%v", prog.OptInBriPkgs)
+		t.Fatalf("requiring bri.cli.api must transitively link cljgsecrets (the opt-in keychain); OptInBriPkgs=%v", prog.OptInBriPkgs)
 	}
 }

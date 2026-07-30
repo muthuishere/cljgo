@@ -12,6 +12,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -21,7 +22,9 @@ import (
 
 	"github.com/muthuishere/cljgo/pkg/build"
 	"github.com/muthuishere/cljgo/pkg/deps"
+	"github.com/muthuishere/cljgo/pkg/diag"
 	"github.com/muthuishere/cljgo/pkg/emit"
+	"github.com/muthuishere/cljgo/pkg/emit/rt"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/repl"
 	"github.com/muthuishere/cljgo/pkg/version"
@@ -192,6 +195,13 @@ func runFile(path string, cliArgs []string) int {
 		fmt.Fprintf(os.Stderr, "error: %s\n", d.RenderError(err))
 		return 1
 	}
+	// A file that ran clojure.test assertions and had failures exits non-zero,
+	// exactly as the binary compiled from that same file now does (ADR 0105
+	// task 2.1). Without this the interpreted and compiled legs would disagree
+	// on the exit code — the divergence bar applies to exit status too.
+	if rt.TestsFailed() {
+		return 1
+	}
 	return 0
 }
 
@@ -256,8 +266,9 @@ func runBuild(args []string) int {
 	out := fs.String("o", "", "output binary path (default: derived from the source file)")
 	gen := fs.String("gen", "", "directory for the generated Go module (single-file: keep it here; project: any value keeps the temp dirs)")
 	runtimeDir := fs.String("runtime", "", "cljgo source tree for the generated go.mod replace (default: $CLJGO_SRC; release binaries pin the published module, dev binaries auto-detect the repo)")
+	sealCore := fs.Bool("seal-core", false, "hard-inline core arithmetic: a with-redefs/def/alter-var-root of + - * / < > = <= >= is then NOT seen at those call sites (JVM :inline semantics). Measured gain over the default guard: ~0-2% — opt in only if you want the JVM's inlining semantics (ADR 0108)")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: cljgo build [-o out] [-gen dir] [-runtime dir] [<file.clj> | <step>]")
+		fmt.Fprintln(os.Stderr, "usage: cljgo build [-o out] [-gen dir] [-runtime dir] [--seal-core] [<file.clj> | <step>]")
 		fs.PrintDefaults()
 	}
 	if err := fs.Parse(args); err != nil {
@@ -279,7 +290,7 @@ func runBuild(args []string) int {
 		if len(rest) == 1 {
 			step = rest[0]
 		}
-		return runProjectBuild(step, *runtimeDir, *gen != "")
+		return runProjectBuild(step, *runtimeDir, *gen != "", *sealCore)
 	}
 
 	if len(rest) != 1 {
@@ -292,9 +303,9 @@ func runBuild(args []string) int {
 	if outPath == "" {
 		outPath = defaultBinaryName(src)
 	}
-	genDir, err := emit.Build(src, outPath, *gen, emit.Options{RuntimeDir: *runtimeDir})
+	genDir, err := emit.Build(src, outPath, *gen, emit.Options{RuntimeDir: *runtimeDir, SealCore: *sealCore})
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Fprintln(os.Stderr, "error:", buildErrText(err))
 		return 1
 	}
 	if *gen == "" && genDir != "" {
@@ -306,7 +317,7 @@ func runBuild(args []string) int {
 // runProjectBuild loads the project build file (build.cljgo/.cljg/.clj — ADR
 // 0051, most-specific-first), evaluates its build fn, and runs the requested
 // step (empty → default). keepGen preserves the generated modules.
-func runProjectBuild(step, runtimeDir string, keepGen bool) int {
+func runProjectBuild(step, runtimeDir string, keepGen, sealCore bool) int {
 	buildFile := build.FindBuildFile(".")
 	if buildFile == "" {
 		fmt.Fprintf(os.Stderr, "cljgo build: no %s in the current directory\n", build.BuildFileName)
@@ -317,11 +328,27 @@ func runProjectBuild(step, runtimeDir string, keepGen bool) int {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return 1
 	}
-	if err := plan.Run(step, emit.Options{RuntimeDir: runtimeDir}, keepGen); err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+	if err := plan.Run(step, emit.Options{RuntimeDir: runtimeDir, SealCore: sealCore}, keepGen); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", buildErrText(err))
 		return 1
 	}
 	return 0
+}
+
+// buildErrText renders a build failure the way `cljgo run` renders the same
+// failure. A build error that came from the user's Clojure source
+// (emit.CompileError) goes through the ONE shared renderer — so the named
+// fn, the expected-vs-found arity, the source locus and the `help:` explain
+// pointer all survive the build phase instead of being flattened to the bare
+// message (docs/known-issues-2026-07-28.md §8). Infrastructure failures (a
+// missing file, a `go build` link error) keep their plain text, exactly as
+// `cljgo run` prints its os.Open failure plainly.
+func buildErrText(err error) string {
+	var ce *emit.CompileError
+	if errors.As(err, &ce) {
+		return diag.RenderError(err)
+	}
+	return err.Error()
 }
 
 // isSourceFile reports whether arg names a cljgo source file (the
@@ -373,7 +400,7 @@ usage:
   cljgo generate resource <Name> <field:type>...  scaffold a CRUD resource into a bri app (ADR 0073)
   cljgo migrate [up|status|new <name>]  apply/inspect/create DB migrations (ADR 0072)
   cljgo dev                        run a bri app: server + nREPL + dev warnings
-  cljgo test                       run the app's tests (test/ via clojure.test)
+  cljgo test [--compiled|--both]   run the app's tests (test/ via clojure.test); --both diffs interpreted vs AOT
   cljgo config                     print resolved config, winning layer per key
   cljgo routes                     print routes + the effective middleware stack
   cljgo suite [--dir <path>]       run the jank clojure-test-suite, print a scoreboard (ADR 0022)

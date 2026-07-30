@@ -18,8 +18,6 @@ package briaot
 import (
 	bri "github.com/muthuishere/cljgo/pkg/bri"
 	briaudit "github.com/muthuishere/cljgo/pkg/briaot/briaudit"
-	briauth "github.com/muthuishere/cljgo/pkg/briaot/briauth"
-	bricache "github.com/muthuishere/cljgo/pkg/briaot/bricache"
 	bricli "github.com/muthuishere/cljgo/pkg/briaot/bricli"
 	bricliapi "github.com/muthuishere/cljgo/pkg/briaot/bricliapi"
 	bricliauth "github.com/muthuishere/cljgo/pkg/briaot/bricliauth"
@@ -27,11 +25,25 @@ import (
 	briconfig "github.com/muthuishere/cljgo/pkg/briaot/briconfig"
 	brihtml "github.com/muthuishere/cljgo/pkg/briaot/brihtml"
 	brihttp "github.com/muthuishere/cljgo/pkg/briaot/brihttp"
-	brijobs "github.com/muthuishere/cljgo/pkg/briaot/brijobs"
 	briopenapi "github.com/muthuishere/cljgo/pkg/briaot/briopenapi"
+	cljgcache "github.com/muthuishere/cljgo/pkg/briaot/cljgcache"
+	cljgcompress "github.com/muthuishere/cljgo/pkg/briaot/cljgcompress"
+	cljgdatacsv "github.com/muthuishere/cljgo/pkg/briaot/cljgdatacsv"
+	cljgdate "github.com/muthuishere/cljgo/pkg/briaot/cljgdate"
+	cljghttp "github.com/muthuishere/cljgo/pkg/briaot/cljghttp"
 	cljgio "github.com/muthuishere/cljgo/pkg/briaot/cljgio"
+	cljgjobs "github.com/muthuishere/cljgo/pkg/briaot/cljgjobs"
+	cljgnetdns "github.com/muthuishere/cljgo/pkg/briaot/cljgnetdns"
 	cljgnethttp "github.com/muthuishere/cljgo/pkg/briaot/cljgnethttp"
 	cljgos "github.com/muthuishere/cljgo/pkg/briaot/cljgos"
+	cljgprocess "github.com/muthuishere/cljgo/pkg/briaot/cljgprocess"
+	cljgsocket "github.com/muthuishere/cljgo/pkg/briaot/cljgsocket"
+	cljgstream "github.com/muthuishere/cljgo/pkg/briaot/cljgstream"
+	cljgsystem "github.com/muthuishere/cljgo/pkg/briaot/cljgsystem"
+	cljxcore "github.com/muthuishere/cljgo/pkg/briaot/cljxcore"
+	cljxtest "github.com/muthuishere/cljgo/pkg/briaot/cljxtest"
+	corematch "github.com/muthuishere/cljgo/pkg/briaot/corematch"
+	toolscli "github.com/muthuishere/cljgo/pkg/briaot/toolscli"
 	rt "github.com/muthuishere/cljgo/pkg/emit/rt"
 )
 
@@ -40,11 +52,11 @@ import (
 // its source position (the providers are guarded — each sub-package's Load
 // is load-once, and InstallShimsInto is idempotent re-interning).
 func init() {
+	rt.RegisterLib("cljg.http", loadCljghttp)
 	rt.RegisterLib("bri.web.http", loadBrihttp)
 	rt.RegisterLib("bri.core.config", loadBriconfig)
 	rt.RegisterLib("bri.core.audit", loadBriaudit)
 	rt.RegisterLib("bri.web.html", loadBrihtml)
-	rt.RegisterLib("bri.core.security", loadBriauth)
 	rt.RegisterLib("bri.cli.validate", loadBriclivalidate)
 	rt.RegisterLib("bri.cli", loadBricli)
 	rt.RegisterLib("bri.cli.auth", loadBricliauth)
@@ -53,8 +65,20 @@ func init() {
 	rt.RegisterLib("cljg.io", loadCljgio)
 	rt.RegisterLib("bri.web.openapi", loadBriopenapi)
 	rt.RegisterLib("bri.cli.api", loadBricliapi)
-	rt.RegisterLib("bri.core.cache", loadBricache)
-	rt.RegisterLib("bri.core.jobs", loadBrijobs)
+	rt.RegisterLib("cljg.cache", loadCljgcache)
+	rt.RegisterLib("cljg.jobs", loadCljgjobs)
+	rt.RegisterLib("clojure.tools.cli", loadToolscli)
+	rt.RegisterLib("clojure.data.csv", loadCljgdatacsv)
+	rt.RegisterLib("clojure.core.match", loadCorematch)
+	rt.RegisterLib("cljg.system", loadCljgsystem)
+	rt.RegisterLib("cljg.date", loadCljgdate)
+	rt.RegisterLib("cljg.stream", loadCljgstream)
+	rt.RegisterLib("cljg.process", loadCljgprocess)
+	rt.RegisterLib("cljg.socket", loadCljgsocket)
+	rt.RegisterLib("cljg.net.dns", loadCljgnetdns)
+	rt.RegisterLib("cljg.compress", loadCljgcompress)
+	rt.RegisterLib("cljx.core", loadCljxcore)
+	rt.RegisterLib("cljx.test", loadCljxtest)
 }
 
 // installShims interns the named bri namespace's Go shims as :private vars
@@ -69,11 +93,11 @@ func installShims(name string) {
 	}
 }
 
+func loadCljghttp()       { installShims("cljg.http"); cljghttp.Load() }
 func loadBrihttp()        { installShims("bri.web.http"); brihttp.Load() }
 func loadBriconfig()      { installShims("bri.core.config"); briconfig.Load() }
 func loadBriaudit()       { installShims("bri.core.audit"); briaudit.Load() }
 func loadBrihtml()        { installShims("bri.web.html"); brihtml.Load() }
-func loadBriauth()        { installShims("bri.core.security"); briauth.Load() }
 func loadBriclivalidate() { installShims("bri.cli.validate"); briclivalidate.Load() }
 func loadBricli()         { installShims("bri.cli"); bricli.Load() }
 func loadBricliauth()     { installShims("bri.cli.auth"); bricliauth.Load() }
@@ -82,5 +106,17 @@ func loadCljgos()         { installShims("cljg.os"); cljgos.Load() }
 func loadCljgio()         { installShims("cljg.io"); cljgio.Load() }
 func loadBriopenapi()     { installShims("bri.web.openapi"); briopenapi.Load() }
 func loadBricliapi()      { installShims("bri.cli.api"); bricliapi.Load() }
-func loadBricache()       { installShims("bri.core.cache"); bricache.Load() }
-func loadBrijobs()        { installShims("bri.core.jobs"); brijobs.Load() }
+func loadCljgcache()      { installShims("cljg.cache"); cljgcache.Load() }
+func loadCljgjobs()       { installShims("cljg.jobs"); cljgjobs.Load() }
+func loadToolscli()       { installShims("clojure.tools.cli"); toolscli.Load() }
+func loadCljgdatacsv()    { installShims("clojure.data.csv"); cljgdatacsv.Load() }
+func loadCorematch()      { installShims("clojure.core.match"); corematch.Load() }
+func loadCljgsystem()     { installShims("cljg.system"); cljgsystem.Load() }
+func loadCljgdate()       { installShims("cljg.date"); cljgdate.Load() }
+func loadCljgstream()     { installShims("cljg.stream"); cljgstream.Load() }
+func loadCljgprocess()    { installShims("cljg.process"); cljgprocess.Load() }
+func loadCljgsocket()     { installShims("cljg.socket"); cljgsocket.Load() }
+func loadCljgnetdns()     { installShims("cljg.net.dns"); cljgnetdns.Load() }
+func loadCljgcompress()   { installShims("cljg.compress"); cljgcompress.Load() }
+func loadCljxcore()       { installShims("cljx.core"); cljxcore.Load() }
+func loadCljxtest()       { installShims("cljx.test"); cljxtest.Load() }

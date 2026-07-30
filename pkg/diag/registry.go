@@ -70,6 +70,10 @@ var registry = []Entry{
 	{Code: "A2006", Title: "malformed binding vector", Since: "M2"},
 	{Code: "A2007", Title: "invalid binding form", Since: "M2"},
 	{Code: "A2008", Title: "conflicting fn overloads", Since: "M2"},
+	{Code: "A2009", Title: "no such namespace", Since: "M5"},
+
+	// I4xxx — interop
+	{Code: "I4001", Title: "Java class used as a namespace", Since: "M5"},
 
 	// G5xxx — general (runtime errors carry raise-site codes here, ADR 0048)
 	{Code: "G5000", Title: "uncategorized compiler error", Since: "M2"},
@@ -80,6 +84,8 @@ var registry = []Entry{
 	{Code: "G5005", Title: "value is not a collection", Since: "M5"},
 	{Code: "G5006", Title: "divide by zero", Since: "M5"},
 	{Code: "G5007", Title: "no value supplied for key", Since: "M5"},
+	{Code: "G5008", Title: "sql params passed as a collection", Since: "M5"},
+	{Code: "G5009", Title: "collection value in a row map", Since: "M5"},
 }
 
 // Lookup returns the registry entry for code.

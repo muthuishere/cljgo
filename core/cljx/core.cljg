@@ -1,0 +1,128 @@
+;; cljx.core — opt-in ergonomics (ADR 0106). `cljx` = **clj extensions**: the
+;; tier of things that make WRITING cljgo nicer, none of them required.
+;;
+;; Every fn here is a TRANSPARENT ALIAS: it expands to exactly the swap!/reset!
+;; form named in its docstring, adds no new semantics, and exists only so the
+;; verb you meant (`add`, `bump`, `del`) is the word on the page. The sugar
+;; TEACHES the idiom — read any docstring and you have learned the underlying
+;; Clojure. Pure Clojure, NO Go shim, NO dependency.
+;;
+;;   (require '[cljx.core :refer [add! bump! dbg]])
+;;   (def todo (atom []))
+;;   (add! todo "buy milk")          ; (swap! todo conj "buy milk")
+;;   (bump! votes "harsh")           ; (swap! votes update "harsh" (fnil inc 0))
+;;   (->> prices (dbg "prices") (filter big?) (reduce +))  ; prints, returns
+;;
+;; THE PRECEDENCE PRINCIPLE IS ABSOLUTE HERE: nothing in this namespace may
+;; shadow or re-mean anything in clojure.core. The transient family
+;; (assoc! conj! dissoc! disj! pop!) belongs to clojure.core and is untouched;
+;; `put!`/`take!` are avoided because clojure.core.async owns them — which is
+;; why `add!` is polymorphic instead.
+;;
+;; PORTABILITY, honestly: code using cljx.core does not run on JVM Clojure
+;; as-is. It is pure Clojure with no host dependency, so it can be vendored or
+;; published as an ordinary library — and it is opt-in, so a codebase that
+;; values portability simply never requires it.
+;;
+;; Loaded as a bri namespace (ADR 0041): NO (ns …) form — the fully-qualified
+;; in-ns + refer open the file.
+(clojure.core/in-ns 'cljx.core)
+(clojure.core/refer 'clojure.core)
+
+;; --- atom verbs --------------------------------------------------------
+
+(defn add!
+  "Add to a collection atom, returning the new value.
+
+  On a vector/list/set:  (add! a x)      =>  (swap! a conj x)
+  On a map:              (add! a k v)    =>  (swap! a assoc k v)
+
+  Extra args work like the form they replace: (add! a x y z) conjes all
+  three; (add! a k1 v1 k2 v2) assocs both pairs."
+  ([a x] (swap! a conj x))
+  ([a k v] (swap! a assoc k v))
+  ([a k v & kvs]
+   (if (even? (count kvs))
+     (apply swap! a assoc k v kvs)
+     (apply swap! a conj k v kvs))))
+
+(defn del!
+  "Remove a key (map) or member (set) from an atom, returning the new value.
+
+  (del! a k)  =>  (swap! a dissoc k)   for a map
+              =>  (swap! a disj k)     for a set"
+  [a k]
+  (swap! a (fn [c] (if (set? c) (disj c k) (dissoc c k)))))
+
+(defn bump!
+  "Increment — a counter in one word, returning the new value.
+
+  (bump! a)        =>  (swap! a inc)
+  (bump! a k)      =>  (swap! a update k (fnil inc 0))   ; absent key starts at 0
+  (bump! a k n)    =>  (swap! a update k (fnil + 0) n)   ; by n"
+  ([a] (swap! a inc))
+  ([a k] (swap! a update k (fnil inc 0)))
+  ([a k n] (swap! a update k (fnil + 0) n)))
+
+(defn upd!
+  "Apply a function to one key of a map atom, returning the new value.
+
+  (upd! a k f & args)  =>  (swap! a update k f & args)"
+  [a k f & args]
+  (apply swap! a update k f args))
+
+(defn put-in!
+  "Set a nested value in a map atom, returning the new value.
+
+  (put-in! a path v)  =>  (swap! a assoc-in path v)"
+  [a path v]
+  (swap! a assoc-in path v))
+
+(defn upd-in!
+  "Apply a function to a nested value in a map atom, returning the new value.
+
+  (upd-in! a path f & args)  =>  (swap! a update-in path f & args)"
+  [a path f & args]
+  (apply swap! a update-in path f args))
+
+(defn clear!
+  "Empty an atom's collection, keeping its type (a vector stays a vector),
+  returning the new value.
+
+  (clear! a)  =>  (reset! a (empty @a))"
+  [a]
+  (reset! a (empty @a)))
+
+(defn toggle!
+  "Flip a boolean atom, returning the new value.
+
+  (toggle! a)  =>  (swap! a not)"
+  [a]
+  (swap! a not))
+
+;; --- debugging ---------------------------------------------------------
+
+(defn dbg
+  "Print a value and RETURN it unchanged — so it drops into any pipeline
+  without altering the result.
+
+  (dbg x)        prints  dbg: <x>
+  (dbg label x)  prints  <label>: <x>
+
+  (->> prices (dbg \"prices\") (filter big?) (reduce +))"
+  ([x] (println "dbg:" (pr-str x)) x)
+  ([label x] (println (str label ":") (pr-str x)) x))
+
+(defmacro dbg->
+  "Like ->, but prints the value after every step. Returns the same result
+  the equivalent -> would."
+  [x & forms]
+  (let [steps (map (fn [f] `(dbg ~(pr-str f))) forms)]
+    `(-> ~x ~@(interleave forms steps))))
+
+(defmacro dbg->>
+  "Like ->>, but prints the value after every step. Returns the same result
+  the equivalent ->> would."
+  [x & forms]
+  (let [steps (map (fn [f] `(dbg ~(pr-str f))) forms)]
+    `(->> ~x ~@(interleave forms steps))))

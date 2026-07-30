@@ -1,0 +1,69 @@
+;; cljg.system — process + environment primitives (ADR 0101). The OS-process
+;; surface clojure.core lacks: read the environment, exit the process, see the
+;; argument vector. clojure.core keeps *command-line-args* (the clojure.main
+;; contract) — cljg.system never shadows it; this namespace adds the raw
+;; process view AROUND it.
+;;
+;;   (require '[cljg.system :as sys])
+;;   (sys/getenv "HOME")              ; value, or nil when unset
+;;   (sys/getenv "PORT" "8080")       ; value, or the default when unset
+;;   (sys/environ)                    ; {name value} — the whole environment
+;;   (sys/args)                       ; ["/path/to/prog" "arg1" ...]
+;;   (sys/exit)   (sys/exit 1)        ; terminate the process (status 0 default)
+;;   (sys/sleep 100)                  ; block this thread for 100 ms (Thread/sleep)
+;;
+;; SECURITY: getenv/environ RETURN values as data — they never print or log a
+;; value (owner doctrine: a secret's value must not leak into output). Read a
+;; var at the call site; don't spill it.
+;;
+;; Private Go shims interned before this loads (pkg/bri/cljg_system.go):
+;; -getenv -environ -exit -args.
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file.
+(clojure.core/in-ns 'cljg.system)
+(clojure.core/refer 'clojure.core)
+
+(defn getenv
+  "The value of environment variable `name` (a string), or nil when it is not
+  set. With `default`, returns `default` instead of nil when unset. Same
+  contract as System/getenv (the 2-arity default is a cljgo convenience)."
+  ([name] (-getenv name))
+  ([name default]
+   (let [v (-getenv name)]
+     (if (nil? v) default v))))
+
+(defn environ
+  "The whole process environment as an immutable {name value} map (both
+  strings). A snapshot — later setenv by other code is not reflected."
+  []
+  (-environ))
+
+(defn args
+  "The raw process argument vector as a vector of strings; element 0 is the
+  program path (os.Args). For just the user args after the program, clojure.core
+  keeps *command-line-args*."
+  []
+  (-args))
+
+(defn sleep
+  "Block the current thread for `ms` milliseconds, then return nil — the
+  Thread/sleep analog (cljgo runs on Go, so there is no Thread class; this is
+  Go's time.Sleep). `ms` is an integer count of milliseconds; 0 or negative
+  returns immediately. The sleep is not interruptible.
+
+  Oracle (clojure 1.12.5, 2026-07-28): (Thread/sleep 5) => nil, and a 50 ms
+  sleep advances System/nanoTime by at least 40 ms — the same contract this
+  fn freezes in conformance/tests/cljg-system-sleep.clj."
+  [ms]
+  ;; clojure.core/-sleep-ms is the existing private time.Sleep seam (the
+  ;; portability shim's substrate, corelib/misc_builtins.go) — reused rather
+  ;; than adding a second host shim, so this namespace stays shim-free here.
+  (clojure.core/-sleep-ms ms))
+
+(defn exit
+  "Terminate the process immediately with integer exit `status` (default 0).
+  Does not return, and does NOT run pending finally / with-open cleanup — treat
+  it as the very last thing you call, after your own teardown."
+  ([] (exit 0))
+  ([status] (-exit status)))

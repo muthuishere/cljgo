@@ -1,4 +1,4 @@
-# s54 — clojure.core.match, natively (ADR 0096)
+# s54 — clojure.core.match, natively (ADR 0097)
 
 Prove a faithful native port of `org.clojure/core.match` (1.1.1) into cljgo.
 Everything here is a **draft** under the spike dir — nothing is wired into

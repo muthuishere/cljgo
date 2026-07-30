@@ -1,5 +1,5 @@
-// secrets_test.go — the bri.core.secrets behavior suite through the real
-// interpreter (ADR 0086). No JVM oracle (bri.core.secrets is bri-specific), so
+// secrets_test.go — the cljg.secrets behavior suite through the real
+// interpreter (ADR 0086). No JVM oracle (cljg.secrets is bri-specific), so
 // these drive the Clojure surface: masking hygiene (the plaintext never
 // appears in a printed form), the fallback chain, and the read-only guard. The
 // scalar providers are covered white-box in pkg/bri/secrets. The opt-in
@@ -15,7 +15,7 @@ import (
 // reachable only via reveal, never in pr-str/println (the CLAUDE.md rule).
 func TestSecretsMaskingHygiene(t *testing.T) {
 	d := newDriver(t)
-	eval(t, d, `(require '[bri.core.secrets :as secrets])`)
+	eval(t, d, `(require '[cljg.secrets :as secrets])`)
 
 	// reveal round-trips the plaintext
 	if got := evalString(t, d, `(secrets/reveal (secrets/secret "hunter2"))`); got != "hunter2" {
@@ -47,7 +47,7 @@ func TestSecretsMaskingHygiene(t *testing.T) {
 func TestSecretsGetChain(t *testing.T) {
 	d := newDriver(t)
 	t.Setenv("BRI_SECRET_ONE", "alpha")
-	eval(t, d, `(require '[bri.core.secrets :as secrets])`)
+	eval(t, d, `(require '[cljg.secrets :as secrets])`)
 
 	// single env URI → a secret revealing the value
 	if got := evalString(t, d, `(secrets/reveal (secrets/get "env://BRI_SECRET_ONE"))`); got != "alpha" {
@@ -74,7 +74,7 @@ func TestSecretsGetChain(t *testing.T) {
 // and an unknown scheme is reported with the known ones.
 func TestSecretsReadOnlyGuard(t *testing.T) {
 	d := newDriver(t)
-	eval(t, d, `(require '[bri.core.secrets :as secrets])`)
+	eval(t, d, `(require '[cljg.secrets :as secrets])`)
 	if msg := evalErr(t, d, `(secrets/set "env://X" "v")`); !strings.Contains(msg, "read-only") {
 		t.Errorf("env set error = %q, want read-only", msg)
 	}
@@ -91,14 +91,14 @@ func TestSecretsReadOnlyGuard(t *testing.T) {
 func TestSecretsBunStyleKeychain(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
-	  (require '[bri.core.secrets :as secrets])
-	  (clojure.core/in-ns 'bri.core.secrets)
+	  (require '[cljg.secrets :as secrets])
+	  (clojure.core/in-ns 'cljg.secrets)
 	  (def store (atom {}))
 	  (defn -keychain-set [svc acct v] (swap! store assoc [svc acct] v) nil)
 	  (defn -keychain-get [svc acct] (@store [svc acct]))
 	  (defn -keychain-del [svc acct] (swap! store dissoc [svc acct]) nil)
 	  (clojure.core/in-ns 'user)
-	  (require '[bri.core.secrets :as secrets])`)
+	  (require '[cljg.secrets :as secrets])`)
 
 	// (set service name value) → (get service name) round-trips via keychain
 	if got := evalString(t, d, `(do (secrets/set "my-app" "api-key" "sk-123")

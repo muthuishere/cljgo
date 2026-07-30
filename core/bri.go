@@ -35,22 +35,6 @@ var BriConfigSource string
 //go:embed bri/audit.cljg
 var BriAuditSource string
 
-// BriAuthSource is core/bri/auth.cljg — bri.core.security: HS256 JWT (sign/
-// verify/issue, alg pinned), argon2id passwords, the composable guard
-// family (guard/logged-in-only/role-only/user-only/admin-only) and
-// abuse protection (auto-ban), all Ring middleware (ADR 0069).
-//
-//go:embed bri/auth.cljg
-var BriAuthSource string
-
-// BriDBSource is core/bri/db.cljg — bri.core.data: the one blessed data layer
-// (ADR 0072). connect/query/one/one!/exec!/insert!/update!/delete!/tx/
-// with-rollback/migrate! over two pure-Go drivers (modernc SQLite default,
-// pgx Postgres) behind one API. The Go half lives in pkg/bri (db.go).
-//
-//go:embed bri/db.cljg
-var BriDBSource string
-
 // BriOtelSource is core/bri/otel.cljg — bri.core.telemetry: OPT-IN OpenTelemetry
 // distributed tracing (ADR 0074). A server-span-per-request middleware
 // ((otel/trace)), W3C trace-context propagation, and an OTLP exporter,
@@ -73,17 +57,6 @@ var BriOtelSource string
 //go:embed bri/cli.cljg
 var BriCLISource string
 
-// BriSecretsSource is core/bri/secrets.cljg — bri.core.secrets: the OPT-IN
-// pluggable secret store (ADR 0086, realizing ADR 0060 / spike S39). Fetch a
-// secret by URI scheme (env://KEY, keychain://service/account) with a
-// left→right fallback chain; secrets are MASKED by default (the raw value
-// lives in metadata, never printed) and unwrapped only by an explicit
-// `reveal`. The Go half (the pure-Go OS-keychain client) lives in the
-// ISOLATED pkg/bri/secrets, linked only when an app requires this namespace.
-//
-//go:embed bri/secrets.cljg
-var BriSecretsSource string
-
 // BriCLIValidateSource is core/bri/cli_validate.cljg — bri.cli.validate: the
 // built-in validator constructors for bri.cli parameters (ADR 0078 §3),
 // conventionally aliased `v` (v/min, v/max, v/matches, v/email, v/one-of,
@@ -95,9 +68,9 @@ var BriCLIValidateSource string
 
 // BriCLIAuthSource is core/bri/cli_auth.cljg — bri.cli.auth: built-in
 // credential auth (ADR 0080, credential core). Prompt for an API key with echo
-// off (bri.cli/ask-secret), store it in the OS keychain (bri.core.secrets), and
+// off (bri.cli/ask-secret), store it in the OS keychain (cljg.secrets), and
 // build the Authorization header. Requiring it transitively requires the
-// opt-in bri.core.secrets, so the keychain client links only into a CLI that
+// opt-in cljg.secrets, so the keychain client links only into a CLI that
 // uses auth.
 //
 //go:embed bri/cli_auth.cljg
@@ -112,22 +85,6 @@ var BriCLIAuthSource string
 //
 //go:embed bri/openapi.cljg
 var BriOpenAPISource string
-
-// BriCacheSource is core/bri/cache.cljg — bri.core.cache: the fundamental
-// in-process cache (ADR 0093) — a TTL map with singleflight behind the `Cache`
-// protocol. Pure Clojure over atoms + promise/swap-vals! + cljg.os/now; no Go
-// shim, no dependency. Users bring their own backend by implementing `Cache`.
-//
-//go:embed bri/cache.cljg
-var BriCacheSource string
-
-// BriJobsSource is core/bri/jobs.cljg — bri.core.jobs: the fundamental
-// in-process job queue (ADR 0094) — a core.async worker pool behind the `Queue`
-// protocol. Pure Clojure over clojure.core.async (ADR 0040) + an atom; no Go
-// shim, no dependency. Users bring a durable backend by implementing `Queue`.
-//
-//go:embed bri/jobs.cljg
-var BriJobsSource string
 
 // BriCLIAPISource is core/bri/cli_api.cljg — bri.cli.api: an OpenAPI client that
 // logs in AUTOMATICALLY (ADR 0091, realizing ADR 0080). Pure composition of

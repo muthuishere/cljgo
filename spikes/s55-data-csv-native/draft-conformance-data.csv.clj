@@ -1,5 +1,5 @@
 ;; draft conformance freeze for the cljgo-native clojure.data.csv port
-;; (spike s55, ADR 0096 tier-1). DRAFT: these live in the spike dir; the
+;; (spike s55, ADR 0097 tier-1). DRAFT: these live in the spike dir; the
 ;; integrator splits each behavior into its own conformance/tests/*.clj
 ;; file (one form + one ;; expect: per file, house style) and wires the
 ;; dual (REPL + AOT) harness.

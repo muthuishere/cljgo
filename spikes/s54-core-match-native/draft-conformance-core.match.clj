@@ -1,4 +1,4 @@
-;; clojure.core.match — SCOPED native port (spike s54, ADR 0096).
+;; clojure.core.match — SCOPED native port (spike s54, ADR 0097).
 ;; The `match` macro compiles pattern rows to nested test/bind expressions
 ;; and returns the first matching clause's action; a trailing :else (or a
 ;; row of wildcards) is the catch-all, otherwise a "No matching clause"

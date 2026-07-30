@@ -123,7 +123,7 @@ bri is cljgo's application framework: the batteries of Spring Boot, the manners 
 
 7. ### Scaffold a database-backed resource
 
-   One command generates a whole authenticated CRUD slice over [`bri.core.data`](/cljgo/bri/db/) — a migration, a model, handlers, routes, and a **green** test — and splices it into `app.main`:
+   One command generates a whole authenticated CRUD slice over [`cljg.data.cast`](/cljgo/bri/db/) — a migration, a model, handlers, routes, and a **green** test — and splices it into `app.main`:
 
    ```
    $ cljgo generate resource Note title:string body:text
@@ -138,7 +138,7 @@ bri is cljgo's application framework: the batteries of Spring Boot, the manners 
    $ cljgo routes      # GET/POST/PUT/DELETE /api/notes, with their guards
    ```
 
-   Persistence is the zero-install SQLite default (Postgres via `APP_DB_URL`, no code change). The generated model is the only place that touches `bri.core.data`, every query is parametrized, and `src/app/notes.cljg` is **yours** to edit — see [the resource generator](/cljgo/guides/generate/) for the field grammar and [bri.core.data](/cljgo/bri/db/) for the data layer.
+   Persistence is the zero-install SQLite default (Postgres via `APP_DB_URL`, no code change). The generated model is the only place that touches `cljg.data.cast`, every query is parametrized, and `src/app/notes.cljg` is **yours** to edit — see [the resource generator](/cljgo/guides/generate/) for the field grammar and [cljg.data.cast](/cljgo/bri/db/) for the data layer.
 
 </Steps>
 
@@ -146,7 +146,7 @@ bri is cljgo's application framework: the batteries of Spring Boot, the manners 
 
 - [bri.web.http](/cljgo/bri/http/) — handlers, middleware, the error funnel
 - [bri.core.security](/cljgo/bri/auth/) — JWT, guards, rate-limit, abuse protection
-- [bri.core.data](/cljgo/bri/db/) — connect, query, transact, migrate
+- [cljg.data.cast](/cljgo/bri/db/) — connect, query, transact, migrate
 - [The resource generator](/cljgo/guides/generate/) — scaffold CRUD in one command
 - [bri.web.html](/cljgo/bri/html/) — pages, forms, escaping
 - [bri.core.config](/cljgo/bri/config/) — profiles, env, the schema

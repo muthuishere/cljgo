@@ -10,7 +10,7 @@
 ;;   this license. You must not remove this notice.
 ;;
 ;; ---------------------------------------------------------------------------
-;; PORT STRATEGY (spike s54, ADR 0096)
+;; PORT STRATEGY (spike s54, ADR 0097)
 ;;
 ;; Upstream clojure.core.match compiles pattern rows to a decision-tree DAG
 ;; using Maranget's algorithm. Its internal representation is a tower of

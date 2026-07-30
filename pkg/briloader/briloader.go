@@ -21,14 +21,16 @@ import (
 	"github.com/muthuishere/cljgo/pkg/bri"
 	// Blank-import every OptIn namespace's isolated shim package (ADR 0074,
 	// ADR 0076) so its init() registers the shim installer before an
-	// interpreted (require 'bri.core.telemetry)/(require 'bri.core.data) interns the private
+	// interpreted (require 'bri.core.telemetry)/(require 'cljg.data.cast) interns the private
 	// vars. briloader is the REPL / `cljgo dev` half — it already links the
 	// whole interpreter, so linking the heavy deps (the OpenTelemetry SDK, the
 	// SQLite + pgx drivers) here does not touch the AOT user-binary zero-cost
 	// guarantee (that is enforced on pkg/briaot's sub-packages).
+	_ "github.com/muthuishere/cljgo/pkg/bri/cljson"
 	_ "github.com/muthuishere/cljgo/pkg/bri/db"
 	_ "github.com/muthuishere/cljgo/pkg/bri/otel"
 	_ "github.com/muthuishere/cljgo/pkg/bri/secrets"
+	_ "github.com/muthuishere/cljgo/pkg/bri/security"
 	"github.com/muthuishere/cljgo/pkg/corelib"
 	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -64,11 +66,19 @@ func Register(e *eval.Evaluator) {
 }
 
 // providerLoad evaluates one bri namespace's embedded source once per
-// process (the loaded flag is set BEFORE evaluating so the
-// bri.web.html → bri.web.http require chain re-enters cleanly).
+// process. The loaded flag is set BEFORE evaluating so the
+// bri.web.html → bri.web.http require chain re-enters cleanly, but it is
+// gated on the namespace STILL EXISTING: a harness that removes and recreates
+// namespaces between runs (conformance's removeNewNamespaces) drops the
+// namespace while the flag lingers, so a stale flag alone would make the next
+// (require …) a no-op against a missing namespace. Re-checking existence — the
+// pattern eval's clojure.core.async provider documents — keeps the interpreter
+// coherent across namespace removal while preserving re-entrancy protection
+// (during a load the namespace already exists, so a transitive self-require
+// short-circuits).
 func providerLoad(s bri.Spec) {
 	mu.Lock()
-	if loaded[s.Name] {
+	if loaded[s.Name] && lang.FindNamespace(lang.NewSymbol(s.Name)) != nil {
 		mu.Unlock()
 		return
 	}

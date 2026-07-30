@@ -23,7 +23,7 @@ never links the OTel SDK.
 
 `cljgo new --template web` ships `templates/web/Dockerfile` — a multi-stage
 build that `go install`s the cljgo compiler at a pinned `CLJGO_VERSION`
-(default `v0.6.0`), AOT-compiles, and copies the binary into a `scratch`
+(default `v0.7.0`), AOT-compiles, and copies the binary into a `scratch`
 image with config + static assets:
 
 ```dockerfile
@@ -52,7 +52,7 @@ docker run -p 3000:3000 app
 
 `conf.edn` defaults `:port` 3000; any key is overridden by an `APP_*` env
 var (secrets-are-env) — the same image runs everywhere. `APP_DB_URL` flips
-bri.core.data to Postgres with no code change; `APP_AUTH__SECRET` is the JWT key
+cljg.data.cast to Postgres with no code change; `APP_AUTH__SECRET` is the JWT key
 prod must set.
 
 ```bash

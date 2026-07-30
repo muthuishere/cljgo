@@ -25,7 +25,16 @@ func (e *Evaluator) invokeAt(fnVal any, args []any, callNode, fnNode *ast.Node) 
 	defer func() {
 		if r := recover(); r != nil {
 			if ae, ok := r.(*arityError); ok && ae.diag == nil {
-				ae.diag = arityDiagnostic(ae, fnVal, callNode, fnNode)
+				// Only the frame whose OWN callee mismatched may re-label the
+				// error with that callee's name/params. An arity error that
+				// merely unwinds through this call (a lazy seq realized inside
+				// it, a callback invoked by a Go builtin) keeps the name of the
+				// fn that actually mismatched — the JVM, the build phase and a
+				// compiled binary all report that one. A nil raiser is an error
+				// this package rebuilt (macroexpand1's &form/&env adjustment),
+				// which has no fn value to compare and keeps the old behaviour.
+				own := ae.raiser == nil || any(ae.raiser) == fnVal
+				ae.diag = arityDiagnostic(ae, fnVal, callNode, fnNode, own)
 			}
 			panic(r)
 		}
@@ -34,9 +43,15 @@ func (e *Evaluator) invokeAt(fnVal any, args []any, callNode, fnNode *ast.Node) 
 }
 
 // arityDiagnostic builds the enriched Diagnostic for an arity error, or nil
-// when nothing better than the bare message is knowable.
-func arityDiagnostic(ae *arityError, fnVal any, callNode, fnNode *ast.Node) *diag.Diagnostic {
-	name := callName(fnNode, fnVal, ae.name)
+// when nothing better than the bare message is knowable. own says whether
+// fnVal is the fn that actually mismatched: when it is not, the call site may
+// still contribute the source locus, but the NAME and the expected arities
+// must come from the raiser — naming this frame's callee would be a lie.
+func arityDiagnostic(ae *arityError, fnVal any, callNode, fnNode *ast.Node, own bool) *diag.Diagnostic {
+	name := ae.name
+	if own {
+		name = callName(fnNode, fnVal, ae.name)
+	}
 	msg := fmt.Sprintf("wrong number of args (%d) passed to: %s", ae.actual, name)
 
 	d := diag.Diagnostic{
@@ -49,8 +64,15 @@ func arityDiagnostic(ae *arityError, fnVal any, callNode, fnNode *ast.Node) *dia
 	if file, line, col, ok := formPosOf(callNode); ok {
 		d.Location = diag.Location{File: file, Line: line, Column: col}
 	}
-	if ef, ok := fnVal.(*evalFn); ok {
-		d.Expected = arityExpects(ef.node)
+	// Expected arities come from whichever fn actually mismatched.
+	expectsOf := ae.raiser
+	if own {
+		if ef, ok := fnVal.(*evalFn); ok {
+			expectsOf = ef
+		}
+	}
+	if expectsOf != nil {
+		d.Expected = arityExpects(expectsOf.node)
 	}
 	// The count is already in the message ("(N)"); drop the redundant "got N".
 	d.Found = ""

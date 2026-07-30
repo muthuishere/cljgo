@@ -1,4 +1,4 @@
-;; clojure.data.json (spike s53, ADR 0096) — native port of org.clojure/
+;; clojure.data.json (spike s53, ADR 0097) — native port of org.clojure/
 ;; data.json 2.5.1. Each behavior below is frozen against the REAL JVM library
 ;; (Clojure 1.12.5 + data.json 2.5.1), captured with:
 ;;   clojure -Sdeps '{:deps {org.clojure/data.json {:mvn/version "2.5.1"}}}' \

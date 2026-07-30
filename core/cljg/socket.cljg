@@ -1,0 +1,105 @@
+;; cljg.socket — raw sockets (ADR 0103, spike s59): the Bun.listen analog over
+;; stdlib net + crypto/tls. TCP and unix-domain listeners, blocking accept,
+;; outbound dial (plain or TLS), and UDP datagrams:
+;;
+;;   (require '[cljg.socket :as sock] '[cljg.stream :as st])
+;;   (let [l (sock/listen {:port 0})            ; {:port <bound> :addr <s> :-listener}
+;;         _ (future (let [c (sock/accept l)]   ; blocks -> connection
+;;                     (st/write-line (:out c) (st/read-line (:in c)))
+;;                     (sock/close c)))
+;;         c (sock/dial {:host "127.0.0.1" :port (:port l)})]
+;;     (st/write-line (:out c) "ping")
+;;     (st/read-line (:in c)))                  ; => "ping"
+;;
+;; A CONNECTION is a duplex map {:in <readable> :out <writable> :local-addr
+;; :remote-addr :-conn}. :in / :out are the SAME cljg.stream handles
+;; cljg.process pipes and cljg.net.http :as :stream bodies use (a net.Conn is
+;; an io.ReadWriteCloser — spike s59 proved it wraps with zero adapters), so a
+;; socket's read side is reducible like any stream: (reduce …), (st/lines …),
+;; transducers, `take` short-circuiting the read. Closing a connection closes
+;; the underlying socket.
+;;
+;; UDP is a separate DATAGRAM surface (a packet socket is not a byte stream):
+;; udp-listen / udp-send / udp-recv, payloads as strings.
+;;
+;; TLS: (dial {:host h :port p :tls true}) wraps the TCP conn via crypto/tls
+;; (server-name defaults to :host; override with {:tls {:server-name s}});
+;; (listen {:port p :tls {:cert "cert.pem" :key "key.pem"}}) serves TLS.
+;;
+;; The Go half (pkg/bri/cljg_socket.go) is thin shims over stdlib net +
+;; crypto/tls — pure Go, CGO_ENABLED=0, non-OptIn (no dependency to isolate).
+;; Everything here is portable Clojure, so it runs identically interpreted and
+;; AOT-compiled. Private Go shims interned before this loads: -socket-listen
+;; -socket-accept -socket-dial -socket-close -udp-listen -udp-send -udp-recv.
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file.
+(clojure.core/in-ns 'cljg.socket)
+(clojure.core/refer 'clojure.core)
+
+;; --- tcp / unix (stream sockets) --------------------------------------------
+
+(defn listen
+  "Open a listening socket and return a listener handle.
+  opts:
+    :port n     TCP port (0 = OS-assigned ephemeral; read it back from :port)
+    :host s     bind address (default \"127.0.0.1\"; \"0.0.0.0\" = all interfaces)
+    :unix path  listen on a unix-domain socket at `path` instead of TCP
+    :tls {:cert path :key path}  serve TLS with the given PEM pair
+  Returns {:port <bound-port> :addr <s> :-listener} for TCP (the bound port is
+  the real one, so :port 0 composes with dial), or {:path <s> :addr <s>
+  :-listener} for unix. Call `accept` to take connections, `close` to stop."
+  ([] (listen {}))
+  ([opts] (-socket-listen opts)))
+
+(defn accept
+  "Block until a client connects to `listener`, then return the connection:
+  {:in <readable> :out <writable> :local-addr <s> :remote-addr <s> :-conn}.
+  :in / :out are cljg.stream handles — read with st/read-line / st/lines /
+  reduce, write with st/write / st/write-line. Accepting on a closed listener
+  throws."
+  [listener]
+  (-socket-accept (:-listener listener)))
+
+(defn dial
+  "Connect out and return a connection map (same duplex shape as `accept`).
+  opts:
+    :host s        remote host (default \"127.0.0.1\")
+    :port n        remote TCP port (required unless :unix)
+    :unix path     connect to a unix-domain socket at `path` instead
+    :tls true      wrap the connection in TLS (crypto/tls); or a map
+                   {:server-name s} to override the verified server name
+                   (defaults to :host)
+    :timeout-ms n  connect timeout (default: none)"
+  [opts]
+  (-socket-dial opts))
+
+(defn close
+  "Close any cljg.socket handle — a listener, a connection, or a UDP socket.
+  Closing a connection closes the underlying socket (both directions);
+  closing a listener stops `accept`. Idempotent. Returns nil."
+  [handle]
+  (-socket-close (or (:-listener handle) (:-conn handle) (:-socket handle) handle)))
+
+;; --- udp (datagram sockets) -------------------------------------------------
+
+(defn udp-listen
+  "Open a UDP socket bound to {:port n :host s} (defaults: ephemeral port on
+  127.0.0.1) and return {:port <bound-port> :addr <s> :-socket}. The one
+  socket both sends (udp-send) and receives (udp-recv) — bind two for a
+  client/server pair. Close with `close`."
+  ([] (udp-listen {}))
+  ([opts] (-udp-listen opts)))
+
+(defn udp-send
+  "Send one datagram from `sock` (a udp-listen handle) to the destination
+  `host` and `port`; `data` is a string or byte-array. Returns nil."
+  [sock host port data]
+  (-udp-send (:-socket sock) host port data))
+
+(defn udp-recv
+  "Block until one datagram arrives on `sock`, then return
+  {:data <string> :host <sender-host> :port <sender-port>}.
+  opts: {:timeout-ms n} — throw if nothing arrives in time (default: block)."
+  ([sock] (udp-recv sock {}))
+  ([sock opts] (-udp-recv (:-socket sock) opts)))

@@ -1,4 +1,4 @@
-// cache_compiled_test.go — proves bri.core.cache (ADR 0093) LINKS and works in an
+// cache_compiled_test.go — proves cljg.cache (ADR 0093) LINKS and works in an
 // AOT-compiled binary. The behavior (singleflight, expiry, the Cache interface) is
 // covered interpreted in pkg/bri/cache_test.go; here a compiled app exercises the
 // pure fetch/put path plus a user `Cache` reify, proving the whole namespace —
@@ -15,7 +15,7 @@ import (
 	"github.com/muthuishere/cljgo/pkg/emit"
 )
 
-const cacheApp = `(require '[bri.core.cache :as cache])
+const cacheApp = `(require '[cljg.cache :as cache])
 (defn -main [& _]
   (let [c (cache/local {:ttl 60})]
     (cache/put c :a 1)
@@ -43,13 +43,13 @@ func TestBriCoreCacheCompiled(t *testing.T) {
 	build := exec.Command(bin, "build", "-o", app, src)
 	build.Env = append(os.Environ(), "CLJGO_SRC="+repoRoot(t), "CGO_ENABLED=0")
 	if out, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("cljgo build (bri.core.cache app): %v\n%s", err, out)
+		t.Fatalf("cljgo build (cljg.cache app): %v\n%s", err, out)
 	}
 	out, err := exec.Command(app).CombinedOutput()
 	if err != nil {
-		t.Fatalf("running the compiled bri.core.cache binary: %v\n%s", err, out)
+		t.Fatalf("running the compiled cljg.cache binary: %v\n%s", err, out)
 	}
 	if got := strings.TrimSpace(string(out)); !strings.Contains(got, "cache 1 2 user 42 1") {
-		t.Fatalf("compiled bri.core.cache output =\n%q\nwant it to contain %q", got, "cache 1 2 user 42 1")
+		t.Fatalf("compiled cljg.cache output =\n%q\nwant it to contain %q", got, "cache 1 2 user 42 1")
 	}
 }

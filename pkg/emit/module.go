@@ -158,7 +158,10 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	entry := &CompiledNS{Path: srcPath}
 	mc.stack = []*CompiledNS{entry}
 	if entry.Forms, err = compileStream(ev, f, srcPath); err != nil {
-		return nil, err
+		// Mark it as a SOURCE error so the CLI renders it through diag.Render
+		// (issue 8): everything raised in here came from the user's Clojure,
+		// including the requires the capture loader compiled recursively.
+		return nil, &CompileError{Err: err}
 	}
 	return &Program{Entry: entry, Deps: mc.order, UsesBri: usesBri, OptInBriPkgs: optInBriPkgs}, nil
 }
@@ -243,7 +246,7 @@ func WriteProgram(dir string, p *Program, opts Options) error {
 			depImports: imports(d.Requires),
 			host:       host,
 		}
-		if err := writePkg(d.Forms, spec, filepath.Join(dir, filepath.FromSlash(nd), pkg+".go")); err != nil {
+		if err := writePkg(d.Forms, spec, filepath.Join(dir, filepath.FromSlash(nd), pkgFileName(pkg))); err != nil {
 			return fmt.Errorf("namespace %s: %w", d.Name, err)
 		}
 	}
@@ -293,4 +296,17 @@ func pkgName(ns string) string {
 		name += "_pkg"
 	}
 	return name
+}
+
+// pkgFileName is the generated source file for a namespace's package.
+// Normally <pkg>.go — EXCEPT when that would end in `_test.go`, which the
+// Go toolchain treats as a test file and excludes from the build ("no
+// non-test Go files"). Every Clojure test namespace is called <thing>-test,
+// so without this NO test namespace could ever be compiled (found compiling
+// `cljgo test --compiled`, ADR 0105 task 2.2).
+func pkgFileName(pkg string) string {
+	if strings.HasSuffix(pkg, "_test") {
+		return pkg + "_ns.go"
+	}
+	return pkg + ".go"
 }

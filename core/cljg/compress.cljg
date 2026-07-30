@@ -1,0 +1,106 @@
+;; cljg.compress — stdlib compression codecs (ADR 0103 wave 1, spike s61):
+;; gzip, deflate (raw flate) and zlib compress+decompress over Go's
+;; compress/gzip, compress/flate and compress/zlib — pure stdlib, zero deps,
+;; CGO_ENABLED=0. zstd and brotli are DEFERRED to a later opt-in package
+;; (spike s61 verdict: pure-Go deps exist, but they cost ~4.9 MB of tables —
+;; size-sensitive binaries should not pay for codecs they never call).
+;;
+;;   (require '[cljg.compress :as z])
+;;   (z/gzip "hello")                       ; compressed byte-array
+;;   (z/gzip data {:level 9})               ; data is a string or byte-array;
+;;                                          ; :level -1 (default) or 0-9
+;;   (z/gunzip bytes)                       ; decompressed byte-array
+;;   (z/gunzip bytes {:as :string})         ; decompressed string (the option
+;;                                          ; every decompressor takes — pick it
+;;                                          ; when the original was text)
+;;   (z/deflate data)   (z/inflate bytes)   ; raw flate (RFC 1951)
+;;   (z/zlib-compress data) (z/zlib-decompress bytes)   ; zlib (RFC 1950)
+;;
+;; Streaming (decompress-on-read, composing with cljg.stream): each
+;; *-stream fn wraps a source of COMPRESSED data — a cljg.stream readable
+;; (subprocess pipe, HTTP body) or a byte-array — as a NEW readable that
+;; yields the DECOMPRESSED bytes on demand; closing it closes the source too.
+;;
+;;   (st/read-all (z/gunzip-stream (z/gzip "hi")))   ; => "hi"
+;;   (z/inflate-stream readable)   (z/zlib-decompress-stream readable)
+;;
+;; The compress-on-write (writer-wrapping) direction is a reserved later
+;; increment — decompress whole values with gzip/deflate/zlib-compress today.
+;;
+;; Private Go shims interned before this loads (pkg/bri/cljg_compress.go):
+;; -compress -decompress -decompress-stream.
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file.
+(clojure.core/in-ns 'cljg.compress)
+(clojure.core/refer 'clojure.core)
+
+;; --- gzip (RFC 1952) --------------------------------------------------------
+
+(defn gzip
+  "Compress `data` (a string or byte-array) with gzip, returning the compressed
+  byte-array. `opts` may carry :level — -1 (default balance) or 0 (store)
+  through 9 (best compression). Note: gzip headers embed an OS byte, so the
+  compressed bytes are not identical across platforms — compare round-trips,
+  not raw compressed output."
+  ([data] (gzip data nil))
+  ([data opts] (-compress "gzip" data (get opts :level -1))))
+
+(defn gunzip
+  "Decompress gzip-compressed `data` (a byte-array), returning the original
+  bytes as a byte-array — or as a string with {:as :string} (use it when the
+  original was text)."
+  ([data] (gunzip data nil))
+  ([data opts] (-decompress "gzip" data (= :string (get opts :as)))))
+
+(defn gunzip-stream
+  "Wrap a source of gzip-compressed data — a cljg.stream readable or a
+  byte-array — as a new readable stream that yields the DECOMPRESSED bytes on
+  demand (constant memory; cljg.stream/read-all, lines, reduce all apply).
+  Closing the returned stream closes the wrapped source."
+  [source]
+  (-decompress-stream "gzip" source))
+
+;; --- deflate / raw flate (RFC 1951) -----------------------------------------
+
+(defn deflate
+  "Compress `data` (a string or byte-array) with raw deflate (RFC 1951 — no
+  header, no checksum), returning the compressed byte-array. `opts` may carry
+  :level (-1 default, 0-9)."
+  ([data] (deflate data nil))
+  ([data opts] (-compress "deflate" data (get opts :level -1))))
+
+(defn inflate
+  "Decompress raw-deflate `data` (a byte-array), returning the original bytes
+  as a byte-array — or as a string with {:as :string}."
+  ([data] (inflate data nil))
+  ([data opts] (-decompress "deflate" data (= :string (get opts :as)))))
+
+(defn inflate-stream
+  "Wrap a source of raw-deflate data — a cljg.stream readable or a byte-array —
+  as a new readable stream yielding the decompressed bytes on demand. Closing
+  the returned stream closes the wrapped source."
+  [source]
+  (-decompress-stream "deflate" source))
+
+;; --- zlib (RFC 1950) --------------------------------------------------------
+
+(defn zlib-compress
+  "Compress `data` (a string or byte-array) with zlib (RFC 1950 — deflate with
+  a 2-byte header and Adler-32 checksum), returning the compressed byte-array.
+  `opts` may carry :level (-1 default, 0-9)."
+  ([data] (zlib-compress data nil))
+  ([data opts] (-compress "zlib" data (get opts :level -1))))
+
+(defn zlib-decompress
+  "Decompress zlib-compressed `data` (a byte-array), returning the original
+  bytes as a byte-array — or as a string with {:as :string}."
+  ([data] (zlib-decompress data nil))
+  ([data opts] (-decompress "zlib" data (= :string (get opts :as)))))
+
+(defn zlib-decompress-stream
+  "Wrap a source of zlib-compressed data — a cljg.stream readable or a
+  byte-array — as a new readable stream yielding the decompressed bytes on
+  demand. Closing the returned stream closes the wrapped source."
+  [source]
+  (-decompress-stream "zlib" source))

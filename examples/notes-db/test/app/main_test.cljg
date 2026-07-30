@@ -7,7 +7,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
             [bri.web.http :as http]
-            [bri.core.data :as db]
+            [cljg.data.cast :as db]
             [app.main :as main]))
 
 (def stack (http/api-defaults))

@@ -17,7 +17,7 @@ var (
 	kw_exclude                           = lang.InternKeywordString("exclude")
 	kw_file                              = lang.InternKeywordString("file")
 	kw_line                              = lang.InternKeywordString("line")
-	re_126                               = &reader.Regex{Pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"}
+	re_127                               = &reader.Regex{Pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"}
 	sym_bri_DOT_cli_DOT_validate         = lang.NewSymbol("bri.cli.validate")
 	sym_clojure_DOT_core                 = lang.NewSymbol("clojure.core")
 	sym_clojure_DOT_string               = lang.NewSymbol("clojure.string")
@@ -55,6 +55,20 @@ var (
 	v_clojure_DOT_core_string_QMARK_     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("string?"))
 	v_clojure_DOT_string_blank_QMARK_    = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("blank?"))
 	v_clojure_DOT_string_join            = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("join"))
+)
+
+var (
+	fnD_bri_DOT_cli_DOT_validate_min_      lang.FnFunc1
+	fnD_bri_DOT_cli_DOT_validate_max_      lang.FnFunc1
+	fnD_bri_DOT_cli_DOT_validate_range_    lang.FnFunc2
+	fnD_bri_DOT_cli_DOT_validate_positive  lang.FnFunc0
+	fnD_bri_DOT_cli_DOT_validate_non_empty lang.FnFunc0
+	fnD_bri_DOT_cli_DOT_validate_min_len   lang.FnFunc1
+	fnD_bri_DOT_cli_DOT_validate_max_len   lang.FnFunc1
+	fnD_bri_DOT_cli_DOT_validate_matches   lang.FnFunc1
+	fnD_bri_DOT_cli_DOT_validate_one_of    lang.FnFunc1
+	fnD_bri_DOT_cli_DOT_validate_email     lang.FnFunc0
+	fnD_bri_DOT_cli_DOT_validate_not       lang.FnFunc2
 )
 
 var loaded = false
@@ -100,6 +114,8 @@ func Load() {
 	})
 	tmp16 := &lang.NamedFn1{Name: "bri.cli.validate/min", Expects: "1: [n]", F: tmp7}
 	v_bri_DOT_cli_DOT_validate_min_.BindRoot(tmp16)
+	fnD_bri_DOT_cli_DOT_validate_min_ = tmp16.F
+	v_bri_DOT_cli_DOT_validate_min_.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_min_
 	// (def max "value <= n." (clojure.core/fn [n] (fn [v] (when (clojure.core/> v n) (str "must …
 	v_bri_DOT_cli_DOT_validate_max_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(23), kw_column, int64(7), kw_end_line, int64(23), kw_end_column, int64(10), kw_doc, "value <= n."))
@@ -122,6 +138,8 @@ func Load() {
 	})
 	tmp26 := &lang.NamedFn1{Name: "bri.cli.validate/max", Expects: "1: [n]", F: tmp17}
 	v_bri_DOT_cli_DOT_validate_max_.BindRoot(tmp26)
+	fnD_bri_DOT_cli_DOT_validate_max_ = tmp26.F
+	v_bri_DOT_cli_DOT_validate_max_.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_max_
 	// (def range "lo <= value <= hi." (clojure.core/fn [lo hi] (fn [v] (when-not (clojure.core/<…
 	v_bri_DOT_cli_DOT_validate_range_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(24), kw_column, int64(7), kw_end_line, int64(24), kw_end_column, int64(12), kw_doc, "lo <= value <= hi."))
@@ -145,6 +163,8 @@ func Load() {
 	})
 	tmp38 := &lang.NamedFn2{Name: "bri.cli.validate/range", Expects: "2: [lo hi]", F: tmp27}
 	v_bri_DOT_cli_DOT_validate_range_.BindRoot(tmp38)
+	fnD_bri_DOT_cli_DOT_validate_range_ = tmp38.F
+	v_bri_DOT_cli_DOT_validate_range_.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_range_
 	// (def positive "value > 0." (clojure.core/fn [] (fn [v] (when (clojure.core/<= v 0) "must b…
 	v_bri_DOT_cli_DOT_validate_positive.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(25), kw_column, int64(7), kw_end_line, int64(25), kw_end_column, int64(15), kw_doc, "value > 0."))
@@ -165,6 +185,8 @@ func Load() {
 	})
 	tmp45 := &lang.NamedFn0{Name: "bri.cli.validate/positive", Expects: "0: []", F: tmp39}
 	v_bri_DOT_cli_DOT_validate_positive.BindRoot(tmp45)
+	fnD_bri_DOT_cli_DOT_validate_positive = tmp45.F
+	v_bri_DOT_cli_DOT_validate_positive.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_positive
 	// (def non-empty "not blank." (clojure.core/fn [] (fn [v] (when (or (nil? v) (and (string? v…
 	v_bri_DOT_cli_DOT_validate_non_empty.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(29), kw_column, int64(7), kw_end_line, int64(29), kw_end_column, int64(16), kw_doc, "not blank."))
@@ -218,6 +240,8 @@ func Load() {
 	})
 	tmp63 := &lang.NamedFn0{Name: "bri.cli.validate/non-empty", Expects: "0: []", F: tmp46}
 	v_bri_DOT_cli_DOT_validate_non_empty.BindRoot(tmp63)
+	fnD_bri_DOT_cli_DOT_validate_non_empty = tmp63.F
+	v_bri_DOT_cli_DOT_validate_non_empty.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_non_empty
 	// (def min-len "at least n chars." (clojure.core/fn [n] (fn [v] (when (clojure.core/< (count…
 	v_bri_DOT_cli_DOT_validate_min_len.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(30), kw_column, int64(7), kw_end_line, int64(30), kw_end_column, int64(14), kw_doc, "at least n chars."))
@@ -244,6 +268,8 @@ func Load() {
 	})
 	tmp77 := &lang.NamedFn1{Name: "bri.cli.validate/min-len", Expects: "1: [n]", F: tmp64}
 	v_bri_DOT_cli_DOT_validate_min_len.BindRoot(tmp77)
+	fnD_bri_DOT_cli_DOT_validate_min_len = tmp77.F
+	v_bri_DOT_cli_DOT_validate_min_len.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_min_len
 	// (def max-len "at most n chars." (clojure.core/fn [n] (fn [v] (when (clojure.core/> (count …
 	v_bri_DOT_cli_DOT_validate_max_len.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(31), kw_column, int64(7), kw_end_line, int64(31), kw_end_column, int64(14), kw_doc, "at most n chars."))
@@ -270,6 +296,8 @@ func Load() {
 	})
 	tmp91 := &lang.NamedFn1{Name: "bri.cli.validate/max-len", Expects: "1: [n]", F: tmp78}
 	v_bri_DOT_cli_DOT_validate_max_len.BindRoot(tmp91)
+	fnD_bri_DOT_cli_DOT_validate_max_len = tmp91.F
+	v_bri_DOT_cli_DOT_validate_max_len.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_max_len
 	// (def matches "matches a regex." (clojure.core/fn [re] (fn [v] (when-not (re-find re (str v…
 	v_bri_DOT_cli_DOT_validate_matches.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(14), kw_doc, "matches a regex."))
@@ -297,6 +325,8 @@ func Load() {
 	})
 	tmp106 := &lang.NamedFn1{Name: "bri.cli.validate/matches", Expects: "1: [re]", F: tmp92}
 	v_bri_DOT_cli_DOT_validate_matches.BindRoot(tmp106)
+	fnD_bri_DOT_cli_DOT_validate_matches = tmp106.F
+	v_bri_DOT_cli_DOT_validate_matches.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_matches
 	// (def one-of "member of a set." (clojure.core/fn [choices] (fn [v] (when-not (some #{v} cho…
 	v_bri_DOT_cli_DOT_validate_one_of.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(13), kw_doc, "member of a set."))
@@ -326,104 +356,119 @@ func Load() {
 	})
 	tmp123 := &lang.NamedFn1{Name: "bri.cli.validate/one-of", Expects: "1: [choices]", F: tmp107}
 	v_bri_DOT_cli_DOT_validate_one_of.BindRoot(tmp123)
+	fnD_bri_DOT_cli_DOT_validate_one_of = tmp123.F
+	v_bri_DOT_cli_DOT_validate_one_of.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_one_of
 	// (def email "looks like an email." (clojure.core/fn [] (matches #"^[^@\s]+@[^@\s]+\.[^@\s]+…
 	v_bri_DOT_cli_DOT_validate_email.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(12), kw_doc, "looks like an email."))
 	tmp124 := lang.FnFunc0(func() any {
-		tmp125 := v_bri_DOT_cli_DOT_validate_matches.Get()
-		tmp127 := lang.Apply1(tmp125, re_126)
-		return tmp127
+		tmp125 := v_bri_DOT_cli_DOT_validate_matches.Direct()
+		var tmp126 any
+		if !tmp125 {
+			tmp126 = v_bri_DOT_cli_DOT_validate_matches.Get()
+		}
+		var tmp128 any
+		if tmp125 {
+			tmp128 = fnD_bri_DOT_cli_DOT_validate_matches(re_127)
+		} else {
+			tmp128 = lang.Apply1(tmp126, re_127)
+		}
+		return tmp128
 	})
-	tmp128 := &lang.NamedFn0{Name: "bri.cli.validate/email", Expects: "0: []", F: tmp124}
-	v_bri_DOT_cli_DOT_validate_email.BindRoot(tmp128)
+	tmp129 := &lang.NamedFn0{Name: "bri.cli.validate/email", Expects: "0: []", F: tmp124}
+	v_bri_DOT_cli_DOT_validate_email.BindRoot(tmp129)
+	fnD_bri_DOT_cli_DOT_validate_email = tmp129.F
+	v_bri_DOT_cli_DOT_validate_email.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_email
 	// (def all "AND: passes only if every validator passes; the FIRST failure's message\n  wins.…
 	v_bri_DOT_cli_DOT_validate_all.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(10), kw_doc, "AND: passes only if every validator passes; the FIRST failure's message\n  wins. A :validate vector is sugar for this."))
-	tmp129 := lang.FnFunc(func(args ...any) any {
+	tmp130 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
 				panic(lang.NewArityError(len(args), "bri.cli.validate/all", "0+: [vs & more]"))
 			}
-			var vs130 any
+			var vs131 any
 			if len(args) > 0 {
-				vs130 = lang.NewList(args[0:]...)
+				vs131 = lang.NewList(args[0:]...)
 			}
-			_ = vs130
-			tmp131 := lang.FnFunc1(func(v132 any) any {
-				tmp133 := v_clojure_DOT_core_some.Get()
-				tmp134 := lang.FnFunc1(func(f135 any) any {
-					tmp136 := lang.Apply1(f135, v132)
-					return tmp136
+			_ = vs131
+			tmp132 := lang.FnFunc1(func(v133 any) any {
+				tmp134 := v_clojure_DOT_core_some.Get()
+				tmp135 := lang.FnFunc1(func(f136 any) any {
+					tmp137 := lang.Apply1(f136, v133)
+					return tmp137
 				})
-				tmp137 := &lang.NamedFn1{Name: "fn", Expects: "1: [f]", F: tmp134}
-				tmp138 := lang.Apply2(tmp133, tmp137, vs130)
-				return tmp138
+				tmp138 := &lang.NamedFn1{Name: "fn", Expects: "1: [f]", F: tmp135}
+				tmp139 := lang.Apply2(tmp134, tmp138, vs131)
+				return tmp139
 			})
-			tmp139 := &lang.NamedFn1{Name: "fn", Expects: "1: [v]", F: tmp131}
-			return tmp139
+			tmp140 := &lang.NamedFn1{Name: "fn", Expects: "1: [v]", F: tmp132}
+			return tmp140
 		}
 	})
-	v_bri_DOT_cli_DOT_validate_all.BindRoot(tmp129)
+	v_bri_DOT_cli_DOT_validate_all.BindRoot(tmp130)
 	_ = v_bri_DOT_cli_DOT_validate_all
 	// (def any "OR: passes if ANY validator passes; fails (with msg) only if all fail." (clojure…
 	v_bri_DOT_cli_DOT_validate_any_.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(10), kw_doc, "OR: passes if ANY validator passes; fails (with msg) only if all fail."))
-	tmp140 := lang.FnFunc(func(args ...any) any {
+	tmp141 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
 				panic(lang.NewArityError(len(args), "bri.cli.validate/any", "0+: [vs & more]"))
 			}
-			var vs141 any
+			var vs142 any
 			if len(args) > 0 {
-				vs141 = lang.NewList(args[0:]...)
+				vs142 = lang.NewList(args[0:]...)
 			}
-			_ = vs141
-			tmp142 := lang.FnFunc1(func(v143 any) any {
-				tmp144 := v_clojure_DOT_core_not_any_QMARK_.Get()
-				tmp145 := lang.FnFunc1(func(f146 any) any {
-					tmp147 := v_clojure_DOT_core_nil_QMARK_.Get()
-					tmp148 := lang.Apply1(f146, v143)
-					tmp149 := lang.Apply1(tmp147, tmp148)
-					return tmp149
+			_ = vs142
+			tmp143 := lang.FnFunc1(func(v144 any) any {
+				tmp145 := v_clojure_DOT_core_not_any_QMARK_.Get()
+				tmp146 := lang.FnFunc1(func(f147 any) any {
+					tmp148 := v_clojure_DOT_core_nil_QMARK_.Get()
+					tmp149 := lang.Apply1(f147, v144)
+					tmp150 := lang.Apply1(tmp148, tmp149)
+					return tmp150
 				})
-				tmp150 := &lang.NamedFn1{Name: "fn", Expects: "1: [f]", F: tmp145}
-				tmp151 := lang.Apply2(tmp144, tmp150, vs141)
-				var tmp152 any
-				_ = tmp152
-				if lang.IsTruthy(tmp151) {
-					tmp152 = "did not satisfy any allowed rule"
+				tmp151 := &lang.NamedFn1{Name: "fn", Expects: "1: [f]", F: tmp146}
+				tmp152 := lang.Apply2(tmp145, tmp151, vs142)
+				var tmp153 any
+				_ = tmp153
+				if lang.IsTruthy(tmp152) {
+					tmp153 = "did not satisfy any allowed rule"
 				} else {
-					tmp152 = nil
+					tmp153 = nil
 				}
-				return tmp152
+				return tmp153
 			})
-			tmp153 := &lang.NamedFn1{Name: "fn", Expects: "1: [v]", F: tmp142}
-			return tmp153
+			tmp154 := &lang.NamedFn1{Name: "fn", Expects: "1: [v]", F: tmp143}
+			return tmp154
 		}
 	})
-	v_bri_DOT_cli_DOT_validate_any_.BindRoot(tmp140)
+	v_bri_DOT_cli_DOT_validate_any_.BindRoot(tmp141)
 	_ = v_bri_DOT_cli_DOT_validate_any_
 	// (def not "Invert a validator: passes when `vf` fails, else reports `msg`." (clojure.core/f…
 	v_bri_DOT_cli_DOT_validate_not.SetMeta(lang.NewMap(kw_file, "bri/cli_validate.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(10), kw_doc, "Invert a validator: passes when `vf` fails, else reports `msg`."))
-	tmp154 := lang.FnFunc2(func(vf155, msg156 any) any {
-		tmp157 := lang.FnFunc1(func(v158 any) any {
-			tmp159 := v_clojure_DOT_core_nil_QMARK_.Get()
-			tmp160 := lang.Apply1(vf155, v158)
-			tmp161 := lang.Apply1(tmp159, tmp160)
-			var tmp162 any
-			_ = tmp162
-			if lang.IsTruthy(tmp161) {
-				tmp162 = msg156
+	tmp155 := lang.FnFunc2(func(vf156, msg157 any) any {
+		tmp158 := lang.FnFunc1(func(v159 any) any {
+			tmp160 := v_clojure_DOT_core_nil_QMARK_.Get()
+			tmp161 := lang.Apply1(vf156, v159)
+			tmp162 := lang.Apply1(tmp160, tmp161)
+			var tmp163 any
+			_ = tmp163
+			if lang.IsTruthy(tmp162) {
+				tmp163 = msg157
 			} else {
-				tmp162 = nil
+				tmp163 = nil
 			}
-			return tmp162
+			return tmp163
 		})
-		tmp163 := &lang.NamedFn1{Name: "fn", Expects: "1: [v]", F: tmp157}
-		return tmp163
+		tmp164 := &lang.NamedFn1{Name: "fn", Expects: "1: [v]", F: tmp158}
+		return tmp164
 	})
-	tmp164 := &lang.NamedFn2{Name: "bri.cli.validate/not", Expects: "2: [vf msg]", F: tmp154}
-	v_bri_DOT_cli_DOT_validate_not.BindRoot(tmp164)
+	tmp165 := &lang.NamedFn2{Name: "bri.cli.validate/not", Expects: "2: [vf msg]", F: tmp155}
+	v_bri_DOT_cli_DOT_validate_not.BindRoot(tmp165)
+	fnD_bri_DOT_cli_DOT_validate_not = tmp165.F
+	v_bri_DOT_cli_DOT_validate_not.SealDirect()
 	_ = v_bri_DOT_cli_DOT_validate_not
 }

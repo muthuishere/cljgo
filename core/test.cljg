@@ -47,6 +47,24 @@
 ;; the (testing "...") context strings currently in scope (innermost first).
 (def ^:dynamic *testing-contexts* nil)
 
+;; *assertion-position* — {:file "..." :line n} for the `is` form currently
+;; being asserted, or nil. A cljgo ADDITION (ADR 0105 task 2.3): the JVM
+;; recovers file/line from a fresh exception's stack trace (see
+;; file-position), which cljgo cannot do — but the READER already records
+;; :file/:line on the assertion form, so `is` carries the position forward
+;; and do-report merges it into the report map, giving report methods the
+;; same {:file :line} keys clojure.test carries on the JVM.
+(def ^:dynamic *assertion-position* nil)
+
+;; -process-failures — a PROCESS-level tally of failing/erroring assertions,
+;; independent of *report-counters* (which is per-run and rebound). The
+;; toolchain reads it to decide the process exit code, so a compiled test
+;; binary cannot exit 0 on a red suite (ADR 0105 task 2.1: "CI green on red"
+;; is the bug this closes). Incremented in do-report — THE choke point every
+;; assertion flows through — so a custom `report` method that replaces the
+;; built-in :fail/:error methods still fails the build.
+(def -process-failures (atom 0))
+
 (def initial-report-counters {:test 0 :pass 0 :fail 0 :error 0})
 
 ;; --- counters + reporting -------------------------------------------
@@ -56,10 +74,35 @@
     (swap! *report-counters*
            (fn [m] (assoc m k (inc (get m k 0)))))))
 
-(defn testing-vars-str []
-  (if (seq *testing-vars*)
-    (pr-str (first *testing-vars*))
-    ""))
+;; testing-vars-str — the "who failed, and where" half of the FAIL/ERROR
+;; banner. JVM clojure.test 1.12.5 renders
+;;   (str (reverse (map #(:name (meta %)) *testing-vars*)) " (" file ":" line ")")
+;; i.e. `(failing-on-purpose) (core_test.clj:9)`. cljgo used to pr-str the
+;; VAR itself, which leaked the reader form `#=(var mylib/failing-on-purpose)`
+;; into every failure report (ADR 0105 task 2.3). Now it prints the test
+;; names like the JVM and appends the position when the report map carries
+;; one (see *assertion-position*). The 1-arity is the JVM signature; the
+;; 0-arity is kept because cljgo shipped it and callers may exist.
+;; -test-var-name: the test's own short name. The JVM reads (:name (meta v)),
+;; which `def` puts there; cljgo's var metadata carries :file/:line/:ns but no
+;; :name yet, so fall back to the var's own symbol — (symbol v) is the
+;; JVM-compatible spelling (Clojure 1.10+) and prints as ns/name, of which the
+;; name half is what clojure.test shows.
+(defn ^:private -test-var-name [v]
+  (or (:name (meta v))
+      (symbol (name (symbol v)))))
+
+(defn testing-vars-str
+  ([] (testing-vars-str nil))
+  ([m]
+   (if (seq *testing-vars*)
+     (let [names (pr-str (apply list (reverse (map -test-var-name *testing-vars*))))
+           file (:file m)
+           line (:line m)]
+       (if (and file line)
+         (str names " (" file ":" line ")")
+         names))
+     "")))
 
 (defn testing-contexts-str []
   (loop [cs *testing-contexts* s ""]
@@ -87,22 +130,36 @@
 (defmethod report :fail [m]
   (inc-report-counter :fail)
   (println)
-  (println "FAIL in" (testing-vars-str) (testing-contexts-str))
+  (println "FAIL in" (testing-vars-str m) (testing-contexts-str))
   (println "expected:" (pr-str (:expected m)))
   (println "  actual:" (pr-str (:actual m))))
 
 (defmethod report :error [m]
   (inc-report-counter :error)
   (println)
-  (println "ERROR in" (testing-vars-str) (testing-contexts-str))
+  (println "ERROR in" (testing-vars-str m) (testing-contexts-str))
   (println "expected:" (pr-str (:expected m)))
   (println "  actual:" (pr-str (:actual m))))
 
 ;; do-report routes every assertion through the `report` multimethod, as
-;; upstream clojure.test does (the JVM's file/line enrichment step is a
-;; no-op here — cljgo has no stack-frame introspection, see file-position).
+;; upstream clojure.test does. Where the JVM enriches the map with file/line
+;; from a stack frame, cljgo splices in the position the READER recorded on
+;; the `is` form (*assertion-position*, ADR 0105 task 2.3) — same {:file
+;; :line} keys, better provenance. Keys already on m win, so a report map
+;; that carries its own position is untouched.
+;;
+;; It is also where the process-level failure tally is kept (see
+;; -process-failures): every :fail/:error passes through here exactly once,
+;; whatever the installed reporter does.
 (defn do-report [m]
-  (report m))
+  (let [pos *assertion-position*
+        m (if (and pos (nil? (:line m)))
+            (assoc m :file (:file pos) :line (:line pos))
+            m)
+        t (:type m)]
+    (when (or (= t :fail) (= t :error))
+      (swap! -process-failures inc))
+    (report m)))
 
 ;; --- is / testing / deftest -----------------------------------------
 
@@ -271,9 +328,24 @@
         (catch ~'Throwable t#
           (do-report {:type :error :message ~msg :expected '~form :actual t#}))))
 
+;; -position: the {:file :line} the reader recorded on the assertion form,
+;; or nil when it carries no metadata (a bare literal, or a form synthesized
+;; by another macro such as `are`). Read at MACROEXPANSION time, so nothing
+;; is paid at run time when there is no position.
+(defn ^:private -position [form]
+  (let [m (meta form)]
+    (when (:line m)
+      {:file (:file m) :line (:line m)})))
+
 (defmacro is
   ([form] (list 'clojure.test/is form nil))
-  ([form msg] `(try-expr ~msg ~form)))
+  ([form msg]
+   (let [pos (-position form)]
+     (if pos
+       ;; ~'binding: `binding` is a cljgo special form, so syntax-quote would
+       ;; qualify it to clojure.test/binding — same trick as `testing` below.
+       `(~'binding [*assertion-position* '~pos] (try-expr ~msg ~form))
+       `(try-expr ~msg ~form)))))
 
 ;; `binding` is a cljgo special form (not in the reader's syntax-quote
 ;; special list, which knows only standard-Clojure specials), so force the

@@ -1,6 +1,6 @@
-# Spike s55 — `clojure.data.csv`, natively (ADR 0096 tier-1)
+# Spike s55 — `clojure.data.csv`, natively (ADR 0097 tier-1)
 
-**Question (ADR 0096 §Spikes):** does the `clojure.data.csv` reader/writer port
+**Question (ADR 0097 §Spikes):** does the `clojure.data.csv` reader/writer port
 to cljgo with oracle-matching quoting / separator / quote-char / newline
 behavior?
 

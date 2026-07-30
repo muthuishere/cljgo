@@ -1,7 +1,7 @@
 ;; bri.cli.auth — built-in credential auth for CLIs (ADR 0080, credential core).
 ;; Ties the two halves shipped in increment 2 together: prompt for an API key
 ;; with echo OFF (bri.cli/ask-secret) → store it in the OS keychain
-;; (bri.core.secrets) → read it back → build the Authorization header. So a CLI
+;; (cljg.secrets) → read it back → build the Authorization header. So a CLI
 ;; that talks to an API "just works": log in once, the credential is saved to
 ;; the OS credential store, and every later run attaches it.
 ;;
@@ -13,12 +13,12 @@
 ;;   (auth/auth-header "my-api")           ; => {"Authorization" "Bearer sk-…"} or nil
 ;;   (auth/logout "my-api")                ; forget the credential
 ;;
-;; The credential is masked-by-default everywhere (bri.core.secrets): token
+;; The credential is masked-by-default everywhere (cljg.secrets): token
 ;; returns a masked secret; only `auth-header` (and secrets/reveal) unwrap the
 ;; plaintext, at the point you actually attach it to a request.
 ;;
 ;; OPT-IN linking (ADR 0074/0076): requiring bri.cli.auth transitively requires
-;; bri.core.secrets, so the keychain client links only into a CLI that uses
+;; cljg.secrets, so the keychain client links only into a CLI that uses
 ;; auth (emit/module.go fires the opt-in provider transitively). The full
 ;; OpenAPI auto-login client (ADR 0080) waits on an outbound HTTP client
 ;; (cljg.net.http); this is the credential core it will build on.
@@ -29,7 +29,7 @@
 (clojure.core/refer 'clojure.core)
 (require '[clojure.string :as str])
 (require '[bri.cli :as cli])
-(require '[bri.core.secrets :as secrets])
+(require '[cljg.secrets :as secrets])
 
 (def ^:private default-account "token")
 
@@ -52,7 +52,7 @@
 
 (defn token
   "The stored credential for `service` as a MASKED secret (use
-  bri.core.secrets/reveal for the plaintext), or nil if not logged in."
+  cljg.secrets/reveal for the plaintext), or nil if not logged in."
   ([service] (token service {}))
   ([service opts] (secrets/get service (account opts))))
 

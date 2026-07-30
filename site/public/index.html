@@ -554,7 +554,9 @@ error: cannot publish to the JVM — greet.core
         <span class="eyebrow">Numbers, not adjectives</span>
         <h2>Where we actually stand</h2>
         <p>Every row below is reproducible with the command next to it. Apple M5 Pro, go1.26.3,
-           <code>hello.clj</code> = <code>(println "hi")</code>. We publish the ones we lose on too.</p>
+           <code>hello.clj</code> = <code>(println "hi")</code>. We publish the ones we lose on too.
+           Full tables — let-go, babashka, joker, JVM Clojure, Glojure, and the web-framework
+           shootout — live on the <a href="./reference/benchmarks/">benchmarks page</a>.</p>
       </div>
       <div class="table-scroll">
         <table>
@@ -570,75 +572,34 @@ error: cannot publish to the JVM — greet.core
           </tbody>
         </table>
       </div>
-      <div class="sec-head" style="margin-top:56px">
-        <span class="eyebrow">let-go's own suite, unmodified</span>
-        <h2>The whole field</h2>
-        <p>We ran <a href="https://github.com/nooga/let-go">let-go</a>'s benchmark suite with let-go's published
-           methodology. All 7 files run on cljgo with no edits. Every runtime here was <b>installed and measured
-           on the same machine</b> (Apple M5 Pro) — no normalization, no quoted numbers. Wall-clock mean of 10 runs,
-           startup included. Best per row in bold.</p>
-        <p style="color:var(--fg-soft);font-size:14px;margin-top:-6px">
-           The field is mixed modes, so we show both cljgo legs and compare like-for-like:
-           <b>interpreted</b> — <code>cljgo-run</code> and <b>joker</b> are tree-walkers;
-           <b>compiled</b> — <code>cljgo-aot</code> (native binary), <b>babashka</b> (GraalVM native image),
-           <b>let-go</b> (bytecode VM), <b>Clojure JVM</b> (JIT, post-warmup).</p>
-      </div>
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th>Benchmark</th><th>cljgo-run <span style="font-weight:400;opacity:.6">interp</span></th><th>cljgo-aot <span style="font-weight:400;opacity:.6">compiled</span></th><th>let-go</th><th>babashka</th><th>joker <span style="font-weight:400;opacity:.6">interp</span></th><th>clojure JVM</th></tr></thead>
-          <tbody>
-            <tr><td>startup</td><td>38.5 ms</td><td><b>5.0 ms</b></td><td><b>5.0 ms</b></td><td>9.7 ms</td><td>6.7 ms</td><td>289.2 ms</td></tr>
-            <tr><td><code>tak</code></td><td>11.47 s</td><td><b>34.6 ms</b></td><td>1.33 s</td><td>1.14 s</td><td>—</td><td>457.9 ms</td></tr>
-            <tr><td><code>fib</code></td><td>8.79 s</td><td><b>24.7 ms</b></td><td>1.25 s</td><td>1.14 s</td><td>—</td><td>419.1 ms</td></tr>
-            <tr><td><code>loop-recur</code></td><td>469.3 ms</td><td><b>5.4 ms</b></td><td>36.6 ms</td><td>37.8 ms</td><td>437.8 ms</td><td>397.5 ms</td></tr>
-            <tr><td><code>persistent-map</code></td><td>48.5 ms</td><td><b>9.4 ms</b></td><td>12.9 ms</td><td>13.0 ms</td><td>30.5 ms</td><td>385.2 ms</td></tr>
-            <tr><td><code>map-filter</code></td><td>39.9 ms</td><td>5.1 ms</td><td><b>4.8 ms</b></td><td>10.0 ms</td><td>8.4 ms</td><td>311.5 ms</td></tr>
-            <tr><td><code>transducers</code></td><td>89.0 ms</td><td>16.4 ms</td><td>25.4 ms</td><td><b>13.0 ms</b></td><td>—</td><td>315.9 ms</td></tr>
-            <tr><td><code>reduce</code></td><td>61.4 ms</td><td>26.0 ms</td><td>22.8 ms</td><td><b>20.0 ms</b></td><td>1.46 s</td><td>302.5 ms</td></tr>
-          </tbody>
-        </table>
-      </div>
       <div class="note">
-        <b>The good, and the honest gap.</b> Compiled (<code>cljgo-aot</code>) wins every recursion and
-        data-structure row outright — <code>tak</code>/<code>fib</code> at <b>34.6 / 24.7 ms</b> are the fastest
-        in the field (13× and 17× faster than the JVM), because the ADR 0067 numeric-inference pass lifts pure
-        int64 recursion to raw typed Go. It dead-heats let-go on startup and sits 0.3 ms behind on
-        <code>map-filter</code>. It still <b>loses <code>transducers</code> and <code>reduce</code></b> to
-        babashka's purpose-built core — closer than before, but honestly lost. And <code>cljgo-run</code> is the
-        tree-walk REPL: it loses everywhere except joker — that's the dev path, not what you deploy.
-      </div>
-      <div class="note">
-        Against the other AOT-Clojure-on-Go compilers there's a table we <b>lose</b>:
-        <a href="./reference/benchmarks/">Glojure wins 6 of 8 rows</a> (its codegen ships pipeline fusion and
-        float64 specialization we haven't yet); cljgo takes the tree-recursion rows and the smallest binary.
-        Full methodology, every version, and the losses in detail →
+        <b>Against the field — the short version.</b> We ran
+        <a href="https://github.com/nooga/let-go">let-go</a>'s own benchmark suite unmodified, with every runtime
+        installed and measured on the same machine (no normalization, no quoted numbers), plus an AOT-vs-AOT table
+        against <a href="https://github.com/glojurelang/glojure">Glojure</a> and let-go's lowered binaries.
+        <br><br>
+        <b>Where it wins:</b> the compiled leg takes every recursion and data-structure row —
+        <code>tak</code>/<code>fib</code> at <b>34.6 / 24.7 ms</b>, 13× and 17× faster than JVM Clojure — and ships
+        the smallest binary of the three Clojure-on-Go compilers (<b>6.7 MB</b> vs Glojure's 7.5 and let-go's 12.8).
+        Startup is a dead heat with let-go at <b>5.0 ms</b>. On <code>(reduce + (range 1000))</code> it peaks at
+        <b>13 MB RSS</b> against JVM Clojure's <b>102 MB</b> — <b>~7× less memory, measured</b>, and that's the
+        JVM's best case: a hello that exits.
+        <br><br>
+        <b>Where it loses:</b> <code>transducers</code> and <code>reduce</code> still go to babashka's
+        purpose-built core (16.4 vs 13.0 ms, 26.0 vs 20.0 ms). And in the AOT-vs-AOT table
+        <b>Glojure wins 6 of 8 rows</b> — its codegen ships reduce-pipeline fusion and float64 specialization we
+        haven't built yet. The interpreted leg (<code>cljgo run</code>) is a tree-walker and loses to everything
+        except joker; that's the dev path, not what you deploy.
+        <br><br>
+        Every table, every version, both losses in full →
         <a href="./reference/benchmarks/"><b>benchmarks page</b></a>.
-        Re-measured 2026-07-25 via <code>bash benchmark/run.sh</code>.
-      </div>
-
-      <div class="sec-head" style="margin-top:56px">
-        <span class="eyebrow">Footprint &amp; density</span>
-        <h2>Memory is where it actually wins</h2>
-        <p>Throughput is a fair fight; <b>memory and size are not</b>. Same program
-           (<code>(reduce + (range 1000))</code>), max resident set via <code>/usr/bin/time -l</code> — the number
-           that decides how many services fit on one box.</p>
-      </div>
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th>Runtime</th><th>Static binary / install</th><th>Max RSS</th></tr></thead>
-          <tbody>
-            <tr><td>cljgo</td><td><b>6.7 MB</b> static binary</td><td><b>13 MB</b></td></tr>
-            <tr><td>joker</td><td>27.4 MB</td><td>27 MB</td></tr>
-            <tr><td>babashka</td><td>67.9 MB</td><td>28 MB</td></tr>
-            <tr><td>JVM Clojure</td><td>JVM + classpath</td><td>102 MB</td></tr>
-          </tbody>
-        </table>
       </div>
       <div class="note">
-        <b>~7× less memory than JVM Clojure, measured</b> — and that's the JVM's <em>best</em> case: a hello that
-        exits. On the same program cljgo finished in <b>5.0 ms total wall-clock</b> vs JVM Clojure's <b>298 ms</b>
-        (boot included). The ops one-liner: <b>Go's hosting bill, Clojure's codebase</b> — a cljgo service idles in
-        the tens of MB and restarts in ~5 ms, so many fit where JVM Clojure fits a few.
+        <b>Provenance, 2026-07-28.</b> These figures were measured <b>2026-07-24/25, before v0.7.0</b>, which
+        shipped today with a wider int64 inference pass (ADR 0067's second op table) and cross-var direct calls
+        (ADR 0064). They have <b>not been re-measured</b> — the arithmetic-heavy and call-heavy rows are the ones
+        most likely to move. Nothing here is estimated forward; the benchmarks page carries the same caveat and
+        the full methodology. Reproduce: <code>bash benchmark/run.sh</code>.
       </div>
     </div>
   </section>
@@ -800,11 +761,11 @@ hello from the project
         zero-config — Bun's ergonomics with Go's delivery and no runtime to distribute. Some of this has shipped,
         some is still ahead; the batteries stay native-fast and keep the single static binary:</p>
       <ul class="clean" style="margin:0 0 18px">
-        <li><b>Data</b> — <code>bri.core.data</code>: a pure-Go SQLite as the zero-install default DB, Postgres (pgx)
+        <li><b>Data</b> — <code>cljg.data.cast</code>: a pure-Go SQLite as the zero-install default DB, Postgres (pgx)
           for production, mass-assignment-safe casts, and migrations (<code>cljgo migrate up/status/new</code>, auto-applied
           in dev). <span style="opacity:.6">(bri T2, shipped)</span></li>
         <li><b>Jobs &amp; cache</b> — shipped as pure zero-dependency fundamentals: an in-process core.async job queue
-          (<code>bri.core.jobs</code>) and a TTL/singleflight cache (<code>bri.core.cache</code>), each behind a
+          (<code>cljg.jobs</code>) and a TTL/singleflight cache (<code>cljg.cache</code>), each behind a
           protocol you can <code>reify</code>. A durable Postgres queue or Redis cache stays a <em>you-bring-it</em>
           backend, not a bundled dependency. <span style="opacity:.6">(bri T3, shipped)</span></li>
         <li><b>A curated Go-native stdlib</b> — secrets (OS keychain), streaming file I/O, crypto/hashing, http-client,
@@ -820,7 +781,6 @@ hello from the project
         <li><b>Dependencies as code</b> — <code>(dep …)</code> lives in <code>build.cljgo</code>, not a separate manifest. Resolution is content-addressed and lockfile-pinned, one resolver feeds both legs, and a Java-carrying dependency fails loud rather than at link time. No <code>deps.edn</code> in either direction.</li>
         <li><b>Publish both ways</b> — a pure-Clojure library ships to Go developers (<code>cljgo publish go</code>, a go-gettable module) <em>and</em> JVM-Clojure developers (<code>cljgo publish clojars</code>, source), from one build description, gated on purity at publish time.</li>
         <li><b>comptime</b> — Zig-style compile-time value execution alongside Clojure macros. Macros transform <em>syntax</em>; <code>comptime</code> computes <em>values</em> embedded as literals. In the REPL, compile-time == eval-time.</li>
-        <li><b>clojure.core compliance</b> — the jank clojure-test-suite as the external yardstick with a CI coverage ratchet. Measured <b>238/242 (98.3%)</b> — 242/242 vars resolved, 0 failures — climbing per batch.</li>
         <li><b>Cross-compilation</b> — cljgo emits plain Go, so pure-Go + purego programs build for any OS/arch with no target toolchain. <code>--target os/arch</code>, or a matrix per artifact.</li>
       </ul>
     </div>

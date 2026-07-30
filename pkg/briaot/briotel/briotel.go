@@ -68,6 +68,13 @@ var (
 	v_clojure_DOT_string_upper_case                  = lang.InternVarName(lang.NewSymbol("clojure.string"), lang.NewSymbol("upper-case"))
 )
 
+var (
+	fnD_bri_DOT_core_DOT_telemetry_config_service_name lang.FnFunc0
+	fnD_bri_DOT_core_DOT_telemetry_shutdown_BANG_      lang.FnFunc0
+	fnD_bri_DOT_core_DOT_telemetry_req_subject         lang.FnFunc1
+	fnD_bri_DOT_core_DOT_telemetry_current_traceparent lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -184,6 +191,8 @@ func Load() {
 	})
 	tmp34 := &lang.NamedFn0{Name: "bri.core.telemetry/config-service-name", Expects: "0: []", F: tmp7}
 	v_bri_DOT_core_DOT_telemetry_config_service_name.BindRoot(tmp34)
+	fnD_bri_DOT_core_DOT_telemetry_config_service_name = tmp34.F
+	v_bri_DOT_core_DOT_telemetry_config_service_name.SealDirect()
 	_ = v_bri_DOT_core_DOT_telemetry_config_service_name
 	// (def init! "Initialize the tracer provider + OTLP exporter (idempotent — safe to call\n …
 	v_bri_DOT_core_DOT_telemetry_init_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(49), kw_column, int64(7), kw_end_line, int64(49), kw_end_column, int64(12), kw_doc, "Initialize the tracer provider + OTLP exporter (idempotent — safe to call\n  from every (otel/trace)). :service-name overrides the resolved name."))
@@ -213,26 +222,35 @@ func Load() {
 					var tmp46 any
 					_ = tmp46
 					{
-						tmp47 := v_bri_DOT_core_DOT_telemetry_config_service_name.Get()
-						tmp48 := lang.Apply0(tmp47)
-						var or__2__auto__49 any = tmp48
-						_ = or__2__auto__49
-						var tmp50 any
-						_ = tmp50
-						if lang.IsTruthy(or__2__auto__49) {
-							tmp50 = or__2__auto__49
-						} else {
-							tmp50 = ""
+						tmp47 := v_bri_DOT_core_DOT_telemetry_config_service_name.Direct()
+						var tmp48 any
+						if !tmp47 {
+							tmp48 = v_bri_DOT_core_DOT_telemetry_config_service_name.Get()
 						}
-						tmp46 = tmp50
+						var tmp49 any
+						if tmp47 {
+							tmp49 = fnD_bri_DOT_core_DOT_telemetry_config_service_name()
+						} else {
+							tmp49 = lang.Apply0(tmp48)
+						}
+						var or__2__auto__50 any = tmp49
+						_ = or__2__auto__50
+						var tmp51 any
+						_ = tmp51
+						if lang.IsTruthy(or__2__auto__50) {
+							tmp51 = or__2__auto__50
+						} else {
+							tmp51 = ""
+						}
+						tmp46 = tmp51
 					}
 					tmp45 = tmp46
 				}
 				tmp42 = tmp45
 			}
-			tmp51 := lang.Apply1(tmp41, tmp42)
-			tmp52 := lang.Apply1(tmp40, tmp51)
-			_ = tmp52
+			tmp52 := lang.Apply1(tmp41, tmp42)
+			tmp53 := lang.Apply1(tmp40, tmp52)
+			_ = tmp53
 			return nil
 		default:
 			panic(lang.NewArityError(len(args), "bri.core.telemetry/init!", "0: [] or 1: [opts]"))
@@ -242,411 +260,435 @@ func Load() {
 	_ = v_bri_DOT_core_DOT_telemetry_init_BANG_
 	// (def shutdown! "Flush and stop the batch span processor. Add to serve's :drain so\n  buffe…
 	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(16), kw_doc, "Flush and stop the batch span processor. Add to serve's :drain so\n  buffered spans reach the collector on SIGTERM: {:drain [otel/shutdown!]}."))
-	tmp53 := lang.FnFunc0(func() any {
-		tmp54 := v_bri_DOT_core_DOT_telemetry_X_otel_shutdown.Get()
-		tmp55 := lang.Apply0(tmp54)
-		return tmp55
+	tmp54 := lang.FnFunc0(func() any {
+		tmp55 := v_bri_DOT_core_DOT_telemetry_X_otel_shutdown.Get()
+		tmp56 := lang.Apply0(tmp55)
+		return tmp56
 	})
-	tmp56 := &lang.NamedFn0{Name: "bri.core.telemetry/shutdown!", Expects: "0: []", F: tmp53}
-	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_.BindRoot(tmp56)
+	tmp57 := &lang.NamedFn0{Name: "bri.core.telemetry/shutdown!", Expects: "0: []", F: tmp54}
+	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_.BindRoot(tmp57)
+	fnD_bri_DOT_core_DOT_telemetry_shutdown_BANG_ = tmp57.F
+	v_bri_DOT_core_DOT_telemetry_shutdown_BANG_.SealDirect()
 	_ = v_bri_DOT_core_DOT_telemetry_shutdown_BANG_
 	// (def req-subject "The authenticated subject a guard recorded on the request's :bri/ctx\n  …
 	v_bri_DOT_core_DOT_telemetry_req_subject.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(28), kw_private, true, kw_doc, "The authenticated subject a guard recorded on the request's :bri/ctx\n  (mark-subject!), read AFTER handling — nil when no guard resolved one."))
-	tmp57 := lang.FnFunc1(func(req58 any) any {
-		var tmp59 any
-		_ = tmp59
+	tmp58 := lang.FnFunc1(func(req59 any) any {
+		var tmp60 any
+		_ = tmp60
 		{
-			tmp60 := lang.Apply1(kw_bri_SLASH_ctx, req58)
-			var some__13261 any = tmp60
-			_ = some__13261
-			var tmp62 any
-			_ = tmp62
+			tmp61 := lang.Apply1(kw_bri_SLASH_ctx, req59)
+			var some__13262 any = tmp61
+			_ = some__13262
+			var tmp63 any
+			_ = tmp63
 			{
-				tmp63 := v_clojure_DOT_core_nil_QMARK_.Get()
-				tmp64 := lang.Apply1(tmp63, some__13261)
-				var tmp65 any
-				_ = tmp65
-				if lang.IsTruthy(tmp64) {
-					tmp65 = nil
+				tmp64 := v_clojure_DOT_core_nil_QMARK_.Get()
+				tmp65 := lang.Apply1(tmp64, some__13262)
+				var tmp66 any
+				_ = tmp66
+				if lang.IsTruthy(tmp65) {
+					tmp66 = nil
 				} else {
-					tmp66 := v_clojure_DOT_core_deref.Get()
-					tmp67 := lang.Apply1(tmp66, some__13261)
-					tmp65 = tmp67
+					tmp67 := v_clojure_DOT_core_deref.Get()
+					tmp68 := lang.Apply1(tmp67, some__13262)
+					tmp66 = tmp68
 				}
-				var some__13368 any = tmp65
-				_ = some__13368
-				tmp62 = some__13368
+				var some__13369 any = tmp66
+				_ = some__13369
+				tmp63 = some__13369
 			}
-			tmp59 = tmp62
+			tmp60 = tmp63
 		}
-		tmp69 := lang.Apply1(kw_subject, tmp59)
-		return tmp69
+		tmp70 := lang.Apply1(kw_subject, tmp60)
+		return tmp70
 	})
-	tmp70 := &lang.NamedFn1{Name: "bri.core.telemetry/req-subject", Expects: "1: [req]", F: tmp57}
-	v_bri_DOT_core_DOT_telemetry_req_subject.BindRoot(tmp70)
+	tmp71 := &lang.NamedFn1{Name: "bri.core.telemetry/req-subject", Expects: "1: [req]", F: tmp58}
+	v_bri_DOT_core_DOT_telemetry_req_subject.BindRoot(tmp71)
+	fnD_bri_DOT_core_DOT_telemetry_req_subject = tmp71.F
+	v_bri_DOT_core_DOT_telemetry_req_subject.SealDirect()
 	_ = v_bri_DOT_core_DOT_telemetry_req_subject
 	// (def trace "Tracing middleware: opens a SERVER span per request named after the\n  matched…
 	v_bri_DOT_core_DOT_telemetry_trace.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(71), kw_column, int64(7), kw_end_line, int64(71), kw_end_column, int64(12), kw_doc, "Tracing middleware: opens a SERVER span per request named after the\n  matched route PATTERN (low cardinality, not the raw path), adopts an\n  inbound W3C traceparent/tracestate so bri joins the caller's trace,\n  records method/route/status + the request-id and authenticated subject as\n  span attributes, sets span status from the HTTP status, and ends the span\n  on response. The span's trace-id is threaded into :trace/id and the shared\n  :bri/ctx so logs/metrics/traces correlate. Echoes the span's traceparent\n  on the response for downstream correlation.\n\n  Returns a {:name :otel :wrap fn} middleware value — compose it like any\n  other (conj a stack, or (otel/with-tracing stack))."))
-	tmp71 := lang.FnFunc(func(args ...any) any {
+	tmp72 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp72 := v_bri_DOT_core_DOT_telemetry_trace.Get()
-			tmp73 := lang.NewMap()
-			tmp74 := lang.Apply1(tmp72, tmp73)
-			return tmp74
+			tmp73 := v_bri_DOT_core_DOT_telemetry_trace.Get()
+			tmp74 := lang.NewMap()
+			tmp75 := lang.Apply1(tmp73, tmp74)
+			return tmp75
 		case 1:
-			opts75 := args[0]
-			_ = opts75
-			tmp76 := v_bri_DOT_core_DOT_telemetry_init_BANG_.Get()
-			tmp77 := lang.Apply1(tmp76, opts75)
-			_ = tmp77
-			tmp78 := lang.FnFunc1(func(handler79 any) any {
-				tmp80 := lang.FnFunc1(func(req81 any) any {
-					var tmp82 any
-					_ = tmp82
+			opts76 := args[0]
+			_ = opts76
+			tmp77 := v_bri_DOT_core_DOT_telemetry_init_BANG_.Get()
+			tmp78 := lang.Apply1(tmp77, opts76)
+			_ = tmp78
+			tmp79 := lang.FnFunc1(func(handler80 any) any {
+				tmp81 := lang.FnFunc1(func(req82 any) any {
+					var tmp83 any
+					_ = tmp83
 					{
-						tmp83 := lang.Apply1(kw_headers, req81)
-						var hdrs84 any = tmp83
-						_ = hdrs84
-						var tmp85 any
-						_ = tmp85
+						tmp84 := lang.Apply1(kw_headers, req82)
+						var hdrs85 any = tmp84
+						_ = hdrs85
+						var tmp86 any
+						_ = tmp86
 						{
-							tmp86 := v_clojure_DOT_core_get.Get()
-							tmp87 := lang.Apply2(tmp86, hdrs84, "traceparent")
-							var or__2__auto__88 any = tmp87
-							_ = or__2__auto__88
-							var tmp89 any
-							_ = tmp89
-							if lang.IsTruthy(or__2__auto__88) {
-								tmp89 = or__2__auto__88
+							tmp87 := v_clojure_DOT_core_get.Get()
+							tmp88 := lang.Apply2(tmp87, hdrs85, "traceparent")
+							var or__2__auto__89 any = tmp88
+							_ = or__2__auto__89
+							var tmp90 any
+							_ = tmp90
+							if lang.IsTruthy(or__2__auto__89) {
+								tmp90 = or__2__auto__89
 							} else {
-								tmp89 = ""
+								tmp90 = ""
 							}
-							tmp85 = tmp89
+							tmp86 = tmp90
 						}
-						var tp90 any = tmp85
-						_ = tp90
-						var tmp91 any
-						_ = tmp91
+						var tp91 any = tmp86
+						_ = tp91
+						var tmp92 any
+						_ = tmp92
 						{
-							tmp92 := v_clojure_DOT_core_get.Get()
-							tmp93 := lang.Apply2(tmp92, hdrs84, "tracestate")
-							var or__2__auto__94 any = tmp93
-							_ = or__2__auto__94
-							var tmp95 any
-							_ = tmp95
-							if lang.IsTruthy(or__2__auto__94) {
-								tmp95 = or__2__auto__94
+							tmp93 := v_clojure_DOT_core_get.Get()
+							tmp94 := lang.Apply2(tmp93, hdrs85, "tracestate")
+							var or__2__auto__95 any = tmp94
+							_ = or__2__auto__95
+							var tmp96 any
+							_ = tmp96
+							if lang.IsTruthy(or__2__auto__95) {
+								tmp96 = or__2__auto__95
 							} else {
-								tmp95 = ""
+								tmp96 = ""
 							}
-							tmp91 = tmp95
+							tmp92 = tmp96
 						}
-						var ts96 any = tmp91
-						_ = ts96
-						var tmp97 any
-						_ = tmp97
+						var ts97 any = tmp92
+						_ = ts97
+						var tmp98 any
+						_ = tmp98
 						{
-							tmp98 := lang.Apply1(kw_bri_DOT_web_DOT_http_SLASH_route, req81)
-							var or__2__auto__99 any = tmp98
-							_ = or__2__auto__99
-							var tmp100 any
-							_ = tmp100
-							if lang.IsTruthy(or__2__auto__99) {
-								tmp100 = or__2__auto__99
+							tmp99 := lang.Apply1(kw_bri_DOT_web_DOT_http_SLASH_route, req82)
+							var or__2__auto__100 any = tmp99
+							_ = or__2__auto__100
+							var tmp101 any
+							_ = tmp101
+							if lang.IsTruthy(or__2__auto__100) {
+								tmp101 = or__2__auto__100
 							} else {
-								tmp101 := v_clojure_DOT_core_str.Get()
-								tmp102 := v_clojure_DOT_string_upper_case.Get()
-								tmp103 := v_clojure_DOT_core_name.Get()
-								tmp104 := lang.Apply1(kw_request_method, req81)
-								tmp105 := lang.Apply1(tmp103, tmp104)
-								tmp106 := lang.Apply1(tmp102, tmp105)
-								tmp107 := lang.Apply1(kw_uri, req81)
-								tmp108 := lang.Apply3(tmp101, tmp106, " ", tmp107)
-								tmp100 = tmp108
+								tmp102 := v_clojure_DOT_core_str.Get()
+								tmp103 := v_clojure_DOT_string_upper_case.Get()
+								tmp104 := v_clojure_DOT_core_name.Get()
+								tmp105 := lang.Apply1(kw_request_method, req82)
+								tmp106 := lang.Apply1(tmp104, tmp105)
+								tmp107 := lang.Apply1(tmp103, tmp106)
+								tmp108 := lang.Apply1(kw_uri, req82)
+								tmp109 := lang.Apply3(tmp102, tmp107, " ", tmp108)
+								tmp101 = tmp109
 							}
-							tmp97 = tmp100
+							tmp98 = tmp101
 						}
-						var route109 any = tmp97
-						_ = route109
-						tmp110 := v_clojure_DOT_string_upper_case.Get()
-						tmp111 := v_clojure_DOT_core_name.Get()
-						tmp112 := lang.Apply1(kw_request_method, req81)
-						tmp113 := lang.Apply1(tmp111, tmp112)
-						tmp114 := lang.Apply1(tmp110, tmp113)
-						var method115 any = tmp114
-						_ = method115
-						var tmp116 any
-						_ = tmp116
+						var route110 any = tmp98
+						_ = route110
+						tmp111 := v_clojure_DOT_string_upper_case.Get()
+						tmp112 := v_clojure_DOT_core_name.Get()
+						tmp113 := lang.Apply1(kw_request_method, req82)
+						tmp114 := lang.Apply1(tmp112, tmp113)
+						tmp115 := lang.Apply1(tmp111, tmp114)
+						var method116 any = tmp115
+						_ = method116
+						var tmp117 any
+						_ = tmp117
 						{
-							tmp117 := lang.Apply1(kw_request_SLASH_id, req81)
-							var or__2__auto__118 any = tmp117
-							_ = or__2__auto__118
-							var tmp119 any
-							_ = tmp119
-							if lang.IsTruthy(or__2__auto__118) {
-								tmp119 = or__2__auto__118
+							tmp118 := lang.Apply1(kw_request_SLASH_id, req82)
+							var or__2__auto__119 any = tmp118
+							_ = or__2__auto__119
+							var tmp120 any
+							_ = tmp120
+							if lang.IsTruthy(or__2__auto__119) {
+								tmp120 = or__2__auto__119
 							} else {
-								tmp119 = ""
+								tmp120 = ""
 							}
-							tmp116 = tmp119
+							tmp117 = tmp120
 						}
-						var rid120 any = tmp116
-						_ = rid120
-						tmp121 := v_bri_DOT_core_DOT_telemetry_X_otel_start.Get()
-						var tmp122 any
-						_ = tmp122
+						var rid121 any = tmp117
+						_ = rid121
+						tmp122 := v_bri_DOT_core_DOT_telemetry_X_otel_start.Get()
+						var tmp123 any
+						_ = tmp123
 						{
-							tmp123 := lang.Apply1(kw_bri_DOT_web_DOT_http_SLASH_route, req81)
-							var or__2__auto__124 any = tmp123
-							_ = or__2__auto__124
-							var tmp125 any
-							_ = tmp125
-							if lang.IsTruthy(or__2__auto__124) {
-								tmp125 = or__2__auto__124
+							tmp124 := lang.Apply1(kw_bri_DOT_web_DOT_http_SLASH_route, req82)
+							var or__2__auto__125 any = tmp124
+							_ = or__2__auto__125
+							var tmp126 any
+							_ = tmp126
+							if lang.IsTruthy(or__2__auto__125) {
+								tmp126 = or__2__auto__125
 							} else {
-								tmp125 = ""
+								tmp126 = ""
 							}
-							tmp122 = tmp125
+							tmp123 = tmp126
 						}
-						tmp126 := lang.Apply(tmp121, []any{route109, method115, tmp122, rid120, tp90, ts96})
-						var span127 any = tmp126
-						_ = span127
-						tmp128 := v_bri_DOT_core_DOT_telemetry_X_otel_traceid.Get()
-						tmp129 := lang.Apply1(tmp128, span127)
-						var tid130 any = tmp129
-						_ = tid130
-						var tmp131 any
-						_ = tmp131
+						tmp127 := lang.Apply(tmp122, []any{route110, method116, tmp123, rid121, tp91, ts97})
+						var span128 any = tmp127
+						_ = span128
+						tmp129 := v_bri_DOT_core_DOT_telemetry_X_otel_traceid.Get()
+						tmp130 := lang.Apply1(tmp129, span128)
+						var tid131 any = tmp130
+						_ = tid131
+						var tmp132 any
+						_ = tmp132
 						{
-							tmp132 := lang.Apply1(kw_bri_SLASH_ctx, req81)
-							var temp__5__auto__133 any = tmp132
-							_ = temp__5__auto__133
-							var tmp134 any
-							_ = tmp134
-							if lang.IsTruthy(temp__5__auto__133) {
-								var tmp135 any
-								_ = tmp135
+							tmp133 := lang.Apply1(kw_bri_SLASH_ctx, req82)
+							var temp__5__auto__134 any = tmp133
+							_ = temp__5__auto__134
+							var tmp135 any
+							_ = tmp135
+							if lang.IsTruthy(temp__5__auto__134) {
+								var tmp136 any
+								_ = tmp136
 								{
-									var c136 any = temp__5__auto__133
-									_ = c136
-									tmp137 := v_clojure_DOT_core_swap_BANG_.Get()
-									tmp138 := v_clojure_DOT_core_assoc.Get()
-									tmp139 := lang.Apply4(tmp137, c136, tmp138, kw_trace_SLASH_id, tid130)
-									tmp135 = tmp139
+									var c137 any = temp__5__auto__134
+									_ = c137
+									tmp138 := v_clojure_DOT_core_swap_BANG_.Get()
+									tmp139 := v_clojure_DOT_core_assoc.Get()
+									tmp140 := lang.Apply4(tmp138, c137, tmp139, kw_trace_SLASH_id, tid131)
+									tmp136 = tmp140
 								}
-								tmp134 = tmp135
+								tmp135 = tmp136
 							} else {
-								tmp134 = nil
+								tmp135 = nil
 							}
-							tmp131 = tmp134
+							tmp132 = tmp135
 						}
-						_ = tmp131
-						var tmp140 any
-						_ = tmp140
+						_ = tmp132
+						var tmp141 any
+						_ = tmp141
 						func() {
 							defer func() {
 								if r := recover(); r != nil {
 									thrown := rt.Recover(r)
 									if rt.CatchMatches("Throwable", thrown) {
-										var t141 any = thrown
-										_ = t141
-										tmp142 := v_bri_DOT_core_DOT_telemetry_X_otel_end.Get()
-										tmp143 := v_clojure_DOT_core_str.Get()
-										var tmp144 any
-										_ = tmp144
+										var t142 any = thrown
+										_ = t142
+										tmp143 := v_bri_DOT_core_DOT_telemetry_X_otel_end.Get()
+										tmp144 := v_clojure_DOT_core_str.Get()
+										var tmp145 any
+										_ = tmp145
 										{
-											tmp145 := v_bri_DOT_core_DOT_telemetry_req_subject.Get()
-											tmp146 := lang.Apply1(tmp145, req81)
-											var or__2__auto__147 any = tmp146
-											_ = or__2__auto__147
-											var tmp148 any
-											_ = tmp148
-											if lang.IsTruthy(or__2__auto__147) {
-												tmp148 = or__2__auto__147
-											} else {
-												tmp148 = ""
+											tmp146 := v_bri_DOT_core_DOT_telemetry_req_subject.Direct()
+											var tmp147 any
+											if !tmp146 {
+												tmp147 = v_bri_DOT_core_DOT_telemetry_req_subject.Get()
 											}
-											tmp144 = tmp148
+											var tmp148 any
+											if tmp146 {
+												tmp148 = fnD_bri_DOT_core_DOT_telemetry_req_subject(req82)
+											} else {
+												tmp148 = lang.Apply1(tmp147, req82)
+											}
+											var or__2__auto__149 any = tmp148
+											_ = or__2__auto__149
+											var tmp150 any
+											_ = tmp150
+											if lang.IsTruthy(or__2__auto__149) {
+												tmp150 = or__2__auto__149
+											} else {
+												tmp150 = ""
+											}
+											tmp145 = tmp150
 										}
-										tmp149 := lang.Apply1(tmp143, tmp144)
-										tmp150 := lang.Apply3(tmp142, span127, int64(500), tmp149)
-										_ = tmp150
-										panic(rt.Throw(t141))
+										tmp151 := lang.Apply1(tmp144, tmp145)
+										tmp152 := lang.Apply3(tmp143, span128, int64(500), tmp151)
+										_ = tmp152
+										panic(rt.Throw(t142))
 									}
 									panic(r)
 								}
 							}()
-							var tmp151 any
-							_ = tmp151
+							var tmp153 any
+							_ = tmp153
 							{
-								tmp152 := v_clojure_DOT_core_assoc.Get()
-								tmp153 := lang.Apply(tmp152, []any{req81, kw_trace_SLASH_id, tid130, kw_bri_DOT_core_DOT_telemetry_SLASH_span, span127})
-								tmp154 := lang.Apply1(handler79, tmp153)
-								var res155 any = tmp154
-								_ = res155
-								tmp156 := v_bri_DOT_core_DOT_telemetry_X_otel_end.Get()
-								var tmp157 any
-								_ = tmp157
+								tmp154 := v_clojure_DOT_core_assoc.Get()
+								tmp155 := lang.Apply(tmp154, []any{req82, kw_trace_SLASH_id, tid131, kw_bri_DOT_core_DOT_telemetry_SLASH_span, span128})
+								tmp156 := lang.Apply1(handler80, tmp155)
+								var res157 any = tmp156
+								_ = res157
+								tmp158 := v_bri_DOT_core_DOT_telemetry_X_otel_end.Get()
+								var tmp159 any
+								_ = tmp159
 								{
-									tmp158 := lang.Apply1(kw_status, res155)
-									var or__2__auto__159 any = tmp158
-									_ = or__2__auto__159
-									var tmp160 any
-									_ = tmp160
-									if lang.IsTruthy(or__2__auto__159) {
-										tmp160 = or__2__auto__159
+									tmp160 := lang.Apply1(kw_status, res157)
+									var or__2__auto__161 any = tmp160
+									_ = or__2__auto__161
+									var tmp162 any
+									_ = tmp162
+									if lang.IsTruthy(or__2__auto__161) {
+										tmp162 = or__2__auto__161
 									} else {
-										tmp160 = int64(200)
+										tmp162 = int64(200)
 									}
-									tmp157 = tmp160
+									tmp159 = tmp162
 								}
-								tmp161 := v_clojure_DOT_core_str.Get()
-								var tmp162 any
-								_ = tmp162
+								tmp163 := v_clojure_DOT_core_str.Get()
+								var tmp164 any
+								_ = tmp164
 								{
-									tmp163 := v_bri_DOT_core_DOT_telemetry_req_subject.Get()
-									tmp164 := lang.Apply1(tmp163, req81)
-									var or__2__auto__165 any = tmp164
-									_ = or__2__auto__165
+									tmp165 := v_bri_DOT_core_DOT_telemetry_req_subject.Direct()
 									var tmp166 any
-									_ = tmp166
-									if lang.IsTruthy(or__2__auto__165) {
-										tmp166 = or__2__auto__165
-									} else {
-										tmp166 = ""
+									if !tmp165 {
+										tmp166 = v_bri_DOT_core_DOT_telemetry_req_subject.Get()
 									}
-									tmp162 = tmp166
+									var tmp167 any
+									if tmp165 {
+										tmp167 = fnD_bri_DOT_core_DOT_telemetry_req_subject(req82)
+									} else {
+										tmp167 = lang.Apply1(tmp166, req82)
+									}
+									var or__2__auto__168 any = tmp167
+									_ = or__2__auto__168
+									var tmp169 any
+									_ = tmp169
+									if lang.IsTruthy(or__2__auto__168) {
+										tmp169 = or__2__auto__168
+									} else {
+										tmp169 = ""
+									}
+									tmp164 = tmp169
 								}
-								tmp167 := lang.Apply1(tmp161, tmp162)
-								tmp168 := lang.Apply3(tmp156, span127, tmp157, tmp167)
-								_ = tmp168
-								tmp169 := v_clojure_DOT_core_map_QMARK_.Get()
-								tmp170 := lang.Apply1(tmp169, res155)
-								var tmp171 any
+								tmp170 := lang.Apply1(tmp163, tmp164)
+								tmp171 := lang.Apply3(tmp158, span128, tmp159, tmp170)
 								_ = tmp171
-								if lang.IsTruthy(tmp170) {
-									tmp172 := v_clojure_DOT_core_update.Get()
-									tmp173 := lang.FnFunc1(func(h174 any) any {
-										tmp175 := v_clojure_DOT_core_assoc.Get()
-										var tmp176 any
-										_ = tmp176
+								tmp172 := v_clojure_DOT_core_map_QMARK_.Get()
+								tmp173 := lang.Apply1(tmp172, res157)
+								var tmp174 any
+								_ = tmp174
+								if lang.IsTruthy(tmp173) {
+									tmp175 := v_clojure_DOT_core_update.Get()
+									tmp176 := lang.FnFunc1(func(h177 any) any {
+										tmp178 := v_clojure_DOT_core_assoc.Get()
+										var tmp179 any
+										_ = tmp179
 										{
-											var or__2__auto__177 any = h174
-											_ = or__2__auto__177
-											var tmp178 any
-											_ = tmp178
-											if lang.IsTruthy(or__2__auto__177) {
-												tmp178 = or__2__auto__177
+											var or__2__auto__180 any = h177
+											_ = or__2__auto__180
+											var tmp181 any
+											_ = tmp181
+											if lang.IsTruthy(or__2__auto__180) {
+												tmp181 = or__2__auto__180
 											} else {
-												tmp179 := lang.NewMap()
-												tmp178 = tmp179
+												tmp182 := lang.NewMap()
+												tmp181 = tmp182
 											}
-											tmp176 = tmp178
+											tmp179 = tmp181
 										}
-										var tmp180 any
-										_ = tmp180
+										var tmp183 any
+										_ = tmp183
 										{
-											tmp181 := v_bri_DOT_core_DOT_telemetry_X_otel_traceparent.Get()
-											tmp182 := lang.Apply1(tmp181, span127)
-											var or__2__auto__183 any = tmp182
-											_ = or__2__auto__183
-											var tmp184 any
-											_ = tmp184
-											if lang.IsTruthy(or__2__auto__183) {
-												tmp184 = or__2__auto__183
+											tmp184 := v_bri_DOT_core_DOT_telemetry_X_otel_traceparent.Get()
+											tmp185 := lang.Apply1(tmp184, span128)
+											var or__2__auto__186 any = tmp185
+											_ = or__2__auto__186
+											var tmp187 any
+											_ = tmp187
+											if lang.IsTruthy(or__2__auto__186) {
+												tmp187 = or__2__auto__186
 											} else {
-												tmp184 = tp90
+												tmp187 = tp91
 											}
-											tmp180 = tmp184
+											tmp183 = tmp187
 										}
-										tmp185 := lang.Apply3(tmp175, tmp176, "traceparent", tmp180)
-										return tmp185
+										tmp188 := lang.Apply3(tmp178, tmp179, "traceparent", tmp183)
+										return tmp188
 									})
-									tmp186 := &lang.NamedFn1{Name: "fn", Expects: "1: [h]", F: tmp173}
-									tmp187 := lang.Apply3(tmp172, res155, kw_headers, tmp186)
-									tmp171 = tmp187
+									tmp189 := &lang.NamedFn1{Name: "fn", Expects: "1: [h]", F: tmp176}
+									tmp190 := lang.Apply3(tmp175, res157, kw_headers, tmp189)
+									tmp174 = tmp190
 								} else {
-									tmp171 = res155
+									tmp174 = res157
 								}
-								tmp151 = tmp171
+								tmp153 = tmp174
 							}
-							tmp140 = tmp151
+							tmp141 = tmp153
 						}()
-						tmp82 = tmp140
+						tmp83 = tmp141
 					}
-					return tmp82
+					return tmp83
 				})
-				tmp188 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp80}
-				return tmp188
+				tmp191 := &lang.NamedFn1{Name: "fn", Expects: "1: [req]", F: tmp81}
+				return tmp191
 			})
-			tmp189 := &lang.NamedFn1{Name: "fn", Expects: "1: [handler]", F: tmp78}
-			tmp190 := lang.NewMap(kw_name, kw_otel, kw_wrap, tmp189)
-			return tmp190
+			tmp192 := &lang.NamedFn1{Name: "fn", Expects: "1: [handler]", F: tmp79}
+			tmp193 := lang.NewMap(kw_name, kw_otel, kw_wrap, tmp192)
+			return tmp193
 		default:
 			panic(lang.NewArityError(len(args), "bri.core.telemetry/trace", "0: [] or 1: [opts]"))
 		}
 	})
-	v_bri_DOT_core_DOT_telemetry_trace.BindRoot(tmp71)
+	v_bri_DOT_core_DOT_telemetry_trace.BindRoot(tmp72)
 	_ = v_bri_DOT_core_DOT_telemetry_trace
 	// (def with-tracing "Add the tracing middleware as the OUTERMOST entry of an existing stack\…
 	v_bri_DOT_core_DOT_telemetry_with_tracing.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(19), kw_doc, "Add the tracing middleware as the OUTERMOST entry of an existing stack\n  (so the span wraps request-id, logging, and the handler):\n  (http/serve routes {:middleware (otel/with-tracing (http/api-defaults))})."))
-	tmp191 := lang.FnFunc(func(args ...any) any {
+	tmp194 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			stack192 := args[0]
-			_ = stack192
-			tmp193 := v_bri_DOT_core_DOT_telemetry_with_tracing.Get()
-			tmp194 := lang.NewMap()
-			tmp195 := lang.Apply2(tmp193, stack192, tmp194)
-			return tmp195
+			stack195 := args[0]
+			_ = stack195
+			tmp196 := v_bri_DOT_core_DOT_telemetry_with_tracing.Get()
+			tmp197 := lang.NewMap()
+			tmp198 := lang.Apply2(tmp196, stack195, tmp197)
+			return tmp198
 		case 2:
-			stack196 := args[0]
-			_ = stack196
-			opts197 := args[1]
-			_ = opts197
-			tmp198 := v_clojure_DOT_core_into.Get()
-			tmp199 := v_bri_DOT_core_DOT_telemetry_trace.Get()
-			tmp200 := lang.Apply1(tmp199, opts197)
-			tmp201 := lang.NewVector(tmp200)
-			tmp202 := lang.Apply2(tmp198, tmp201, stack196)
-			return tmp202
+			stack199 := args[0]
+			_ = stack199
+			opts200 := args[1]
+			_ = opts200
+			tmp201 := v_clojure_DOT_core_into.Get()
+			tmp202 := v_bri_DOT_core_DOT_telemetry_trace.Get()
+			tmp203 := lang.Apply1(tmp202, opts200)
+			tmp204 := lang.NewVector(tmp203)
+			tmp205 := lang.Apply2(tmp201, tmp204, stack199)
+			return tmp205
 		default:
 			panic(lang.NewArityError(len(args), "bri.core.telemetry/with-tracing", "1: [stack] or 2: [stack opts]"))
 		}
 	})
-	v_bri_DOT_core_DOT_telemetry_with_tracing.BindRoot(tmp191)
+	v_bri_DOT_core_DOT_telemetry_with_tracing.BindRoot(tmp194)
 	_ = v_bri_DOT_core_DOT_telemetry_with_tracing
 	// (def current-traceparent "The W3C traceparent for the request's active span — inject it …
 	v_bri_DOT_core_DOT_telemetry_current_traceparent.SetMeta(lang.NewMap(kw_file, "bri/otel.cljg", kw_line, int64(119), kw_column, int64(7), kw_end_line, int64(119), kw_end_column, int64(26), kw_doc, "The W3C traceparent for the request's active span — inject it into\n  OUTBOUND calls so downstream services join this trace. nil outside a\n  traced request."))
-	tmp203 := lang.FnFunc1(func(req204 any) any {
-		var tmp205 any
-		_ = tmp205
+	tmp206 := lang.FnFunc1(func(req207 any) any {
+		var tmp208 any
+		_ = tmp208
 		{
-			tmp206 := lang.Apply1(kw_bri_DOT_core_DOT_telemetry_SLASH_span, req204)
-			var temp__5__auto__207 any = tmp206
-			_ = temp__5__auto__207
-			var tmp208 any
-			_ = tmp208
-			if lang.IsTruthy(temp__5__auto__207) {
-				var tmp209 any
-				_ = tmp209
+			tmp209 := lang.Apply1(kw_bri_DOT_core_DOT_telemetry_SLASH_span, req207)
+			var temp__5__auto__210 any = tmp209
+			_ = temp__5__auto__210
+			var tmp211 any
+			_ = tmp211
+			if lang.IsTruthy(temp__5__auto__210) {
+				var tmp212 any
+				_ = tmp212
 				{
-					var span210 any = temp__5__auto__207
-					_ = span210
-					tmp211 := v_bri_DOT_core_DOT_telemetry_X_otel_traceparent.Get()
-					tmp212 := lang.Apply1(tmp211, span210)
-					tmp209 = tmp212
+					var span213 any = temp__5__auto__210
+					_ = span213
+					tmp214 := v_bri_DOT_core_DOT_telemetry_X_otel_traceparent.Get()
+					tmp215 := lang.Apply1(tmp214, span213)
+					tmp212 = tmp215
 				}
-				tmp208 = tmp209
+				tmp211 = tmp212
 			} else {
-				tmp208 = nil
+				tmp211 = nil
 			}
-			tmp205 = tmp208
+			tmp208 = tmp211
 		}
-		return tmp205
+		return tmp208
 	})
-	tmp213 := &lang.NamedFn1{Name: "bri.core.telemetry/current-traceparent", Expects: "1: [req]", F: tmp203}
-	v_bri_DOT_core_DOT_telemetry_current_traceparent.BindRoot(tmp213)
+	tmp216 := &lang.NamedFn1{Name: "bri.core.telemetry/current-traceparent", Expects: "1: [req]", F: tmp206}
+	v_bri_DOT_core_DOT_telemetry_current_traceparent.BindRoot(tmp216)
+	fnD_bri_DOT_core_DOT_telemetry_current_traceparent = tmp216.F
+	v_bri_DOT_core_DOT_telemetry_current_traceparent.SealDirect()
 	_ = v_bri_DOT_core_DOT_telemetry_current_traceparent
 }

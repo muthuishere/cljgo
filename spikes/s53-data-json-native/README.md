@@ -1,4 +1,4 @@
-# s53 — clojure.data.json, natively (ADR 0096)
+# s53 — clojure.data.json, natively (ADR 0097)
 
 Native cljgo port of **org.clojure/data.json 2.5.1** (single upstream file
 `clojure/data/json.clj`, EPL-1.0, Stuart Sierra). Draft only — nothing here is

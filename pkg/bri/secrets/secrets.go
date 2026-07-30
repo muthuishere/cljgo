@@ -1,16 +1,16 @@
-// Package secrets is the ISOLATED Go half of bri.core.secrets — the pluggable
+// Package secrets is the ISOLATED Go half of cljg.secrets — the pluggable
 // secret store (ADR 0086, realizing ADR 0060 / spike S39). It is a SEPARATE
 // package from pkg/bri on purpose: the OS-keychain client (zalando/go-keyring
 // and its D-Bus / wincred / x/sys transports) is a dependency that must NOT
 // link into a bri binary that never touches a secret store. pkg/bri never
-// imports this package; only the generated pkg/briaot/brisecrets sub-package
+// imports this package; only the generated pkg/briaot/cljgsecrets sub-package
 // and the interpreter's briloader (blank import) do, so the linker keeps the
 // keychain client exactly when — and only when — an app requires
-// bri.core.secrets (ADR 0074/0076 opt-in linking).
+// cljg.secrets (ADR 0074/0076 opt-in linking).
 //
 // go-keyring is PURE GO on every platform (macOS execs /usr/bin/security;
 // Linux speaks the D-Bus Secret Service protocol; Windows calls wincred via
-// x/sys), so a bri.core.secrets app still AOT-compiles to a CGO_ENABLED=0
+// x/sys), so a cljg.secrets app still AOT-compiles to a CGO_ENABLED=0
 // static binary and cross-compiles (S39-proven).
 //
 // This package holds ONLY the fetch/store host shims (scalar strings in, raw
@@ -31,12 +31,12 @@ import (
 	"github.com/muthuishere/cljgo/pkg/bri"
 )
 
-// init wires bri.core.secrets's shim installer into pkg/bri's registry. It runs
-// only when this package is linked (the app requires bri.core.secrets), so a
+// init wires cljg.secrets's shim installer into pkg/bri's registry. It runs
+// only when this package is linked (the app requires cljg.secrets), so a
 // non-secrets binary never carries the keychain client (ADR 0074).
-func init() { bri.RegisterInstaller("bri.core.secrets", installShims) }
+func init() { bri.RegisterInstaller("cljg.secrets", installShims) }
 
-// installShims interns bri.core.secrets's private Go primitives. The chain,
+// installShims interns cljg.secrets's private Go primitives. The chain,
 // masking and reveal policy are Clojure (secrets.cljg); these three are the
 // scalar fetch/store boundary.
 func installShims(def func(name string, fn func(args ...any) any)) {
@@ -82,14 +82,14 @@ func installShims(def func(name string, fn func(args ...any) any)) {
 			return nil
 		}
 		if err != nil {
-			panic(fmt.Errorf("bri.core.secrets: keychain %q failed: %w", service, err))
+			panic(fmt.Errorf("cljg.secrets: keychain %q failed: %w", service, err))
 		}
 		return v
 	})
 	def("-keychain-set", func(args ...any) any {
 		service, account, value := threeStr("-keychain-set", args)
 		if err := keyring.Set(service, account, value); err != nil {
-			panic(fmt.Errorf("bri.core.secrets: keychain %q set failed: %w", service, err))
+			panic(fmt.Errorf("cljg.secrets: keychain %q set failed: %w", service, err))
 		}
 		return nil
 	})
@@ -100,7 +100,7 @@ func installShims(def func(name string, fn func(args ...any) any)) {
 			return nil // deleting an absent key is a no-op, like Bun
 		}
 		if err != nil {
-			panic(fmt.Errorf("bri.core.secrets: keychain %q delete failed: %w", service, err))
+			panic(fmt.Errorf("cljg.secrets: keychain %q delete failed: %w", service, err))
 		}
 		return nil
 	})
@@ -123,7 +123,7 @@ func fetch(uri, key string) (string, bool, error) {
 			return "", false, nil // a miss, not a failure → drives the chain
 		}
 		if err != nil {
-			return "", false, fmt.Errorf("bri.core.secrets: keychain %q failed: %w", host, err)
+			return "", false, fmt.Errorf("cljg.secrets: keychain %q failed: %w", host, err)
 		}
 		return v, true, nil
 	default:
@@ -140,7 +140,7 @@ func store(uri, key, val string) error {
 	case "keychain":
 		return keyring.Set(host, firstNonEmpty(key, path), val)
 	case "env":
-		return fmt.Errorf("bri.core.secrets: env:// is read-only; cannot set %q", uri)
+		return fmt.Errorf("cljg.secrets: env:// is read-only; cannot set %q", uri)
 	default:
 		return unknownScheme(scheme, uri)
 	}
@@ -159,7 +159,7 @@ func remove(uri, key string) error {
 		}
 		return err
 	case "env":
-		return fmt.Errorf("bri.core.secrets: env:// is read-only; cannot delete %q", uri)
+		return fmt.Errorf("cljg.secrets: env:// is read-only; cannot delete %q", uri)
 	default:
 		return unknownScheme(scheme, uri)
 	}
@@ -170,16 +170,16 @@ func remove(uri, key string) error {
 func parseURI(uri string) (scheme, host, path string, err error) {
 	u, e := url.Parse(uri)
 	if e != nil {
-		return "", "", "", fmt.Errorf("bri.core.secrets: bad URI %q: %w", uri, e)
+		return "", "", "", fmt.Errorf("cljg.secrets: bad URI %q: %w", uri, e)
 	}
 	if u.Scheme == "" {
-		return "", "", "", fmt.Errorf("bri.core.secrets: URI %q has no scheme (want env://KEY or keychain://service/account)", uri)
+		return "", "", "", fmt.Errorf("cljg.secrets: URI %q has no scheme (want env://KEY or keychain://service/account)", uri)
 	}
 	return u.Scheme, u.Host, trimSlash(u.Path), nil
 }
 
 func unknownScheme(scheme, uri string) error {
-	return fmt.Errorf("bri.core.secrets: unknown scheme %q in %q (have env, keychain)", scheme, uri)
+	return fmt.Errorf("cljg.secrets: unknown scheme %q in %q (have env, keychain)", scheme, uri)
 }
 
 func firstNonEmpty(vs ...string) string {
@@ -205,7 +205,7 @@ func asStr(v any) string {
 	if s, ok := v.(string); ok {
 		return s
 	}
-	panic(fmt.Errorf("bri.core.secrets: expected a string, got %T", v))
+	panic(fmt.Errorf("cljg.secrets: expected a string, got %T", v))
 }
 
 func twoStr(name string, args []any) (string, string) {

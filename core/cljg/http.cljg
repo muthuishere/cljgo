@@ -1,0 +1,58 @@
+;; cljg.http — the raw HTTP server primitive (ADR 0103 wave 1), extracted from
+;; bri.web.http (the framework REBUILDS on top; its observable behavior is
+;; frozen). ONE handler fn for the whole server — no routing, no middleware,
+;; no ops endpoints: that is bri.web.http's job. The request/response map shape
+;; at the Go boundary is the SAME Ring contract bri.web.http already speaks
+;; (one conversion, both directions — design/05 shaping discipline):
+;;
+;;   request:  :request-method (keyword) :uri :query-string
+;;             :headers {lowercase-string string} :body (string)
+;;             :query-params {:name "string"} :remote-addr
+;;   response: :status (int) :headers {string string} :body (string)
+;;
+;;   (require '[cljg.http :as http])
+;;   (def srv (http/serve {:port 8080
+;;                         :handler (fn [req] {:status 200 :body "hi"})}))
+;;   (http/addr srv)   ; the bound "host:port" (:port 0 picks a free port)
+;;   (http/stop srv)   ; graceful shutdown (in-flight requests finish)
+;;
+;; Options: :port (default 0 = a free port), :host (default all interfaces),
+;; :handler (required), :tls {:cert-file "…" :key-file "…"}. serve NEVER
+;; blocks — it returns the handle; block yourself if the server is the whole
+;; program (bri.web.http/serve is the blocking, signal-draining framework
+;; entry point). Production timeouts are default ON in the Go core.
+;;
+;; Private Go shim interned before this loads: -http-serve
+;; (pkg/bri/cljg_http.go — the http.Server core carved out of bri.web.http's
+;; -serve; both speak through the same request/response conversion).
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file.
+(clojure.core/in-ns 'cljg.http)
+(clojure.core/refer 'clojure.core)
+
+(defn serve
+  "Start the raw HTTP server: {:port p :host h :handler f :tls {…}} → a
+  server handle {:port :addr :stop}. `f` is (fn [request-map] response-map)
+  — the Ring-shaped contract above. Never blocks; :port 0 binds a free
+  port (read it back with `addr`). Stop gracefully with `stop`."
+  [opts]
+  (let [handler (:handler opts)]
+    (when-not (ifn? handler)
+      (throw (ex-info (str "cljg.http/serve: :handler must be a function "
+                           "(request-map -> response-map), got: " (pr-str handler))
+                      {:opts (dissoc opts :handler)})))
+    (-http-serve handler (dissoc opts :handler))))
+
+(defn addr
+  "The bound \"host:port\" of a server handle — with {:port 0} this is how
+  you learn the actual port."
+  [server]
+  (:addr server))
+
+(defn stop
+  "Gracefully stop a server handle: the listener closes, in-flight requests
+  finish (deadline), then the server is down. Returns nil."
+  [server]
+  ((:stop server))
+  nil)

@@ -1,5 +1,5 @@
 ;; draft-data_csv.cljg — cljgo-native port of clojure.data.csv (spike s55,
-;; ADR 0096 tier-1). This is a DRAFT living under the spike dir; it is not
+;; ADR 0097 tier-1). This is a DRAFT living under the spike dir; it is not
 ;; wired into the loader / coreaot yet (see VERDICT.md integration steps).
 ;;
 ;; Upstream: org.clojure/data.csv 1.1.0, clojure/data/csv.clj (Jonas Enlund).

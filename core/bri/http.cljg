@@ -22,6 +22,14 @@
 (clojure.core/refer 'clojure.core :exclude '[ok])
 (require '[clojure.string :as str])
 (require '[clojure.edn :as edn])
+;; cljg.http (ADR 0103 wave 1) is the raw HTTP server primitive carved out
+;; of this namespace: pkg/bri/cljg_http.go owns the shared http.Server core
+;; (production timeouts, graceful Shutdown) that this namespace's -serve now
+;; delegates to at the Go layer. Required here so the primitive rides along
+;; wherever the framework loads; the framework REBUILDS on top — routing,
+;; middleware, ops endpoints, var-deref live reload, blocking + SIGTERM
+;; drain all stay HERE, byte-identical.
+(require '[cljg.http])
 
 ;; --- dev mode ---------------------------------------------------------
 ;; `cljgo dev` sets BRI_DEV=1 in its own process; bri's loud-in-dev
@@ -830,8 +838,8 @@
   of opts, or false to drop it)."
   ([] (api-defaults {}))
   ([opts]
-   (require 'bri.core.security)
-   (let [auto-ban (deref (resolve 'bri.core.security/auto-ban))
+   (require 'cljg.security)
+   (let [auto-ban (deref (resolve 'cljg.security/auto-ban))
          base     [request-id logging (recover) (cors (or (:cors opts) {})) metrics]
          base     (if (false? (:auto-ban opts))
                     base

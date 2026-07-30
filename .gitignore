@@ -45,3 +45,4 @@ marketing/
 .ctxoptimize/grammars/*.wasm
 .ctxoptimize/store/
 .ctxoptimize/wiki/
+benchmark/numeric/.build/

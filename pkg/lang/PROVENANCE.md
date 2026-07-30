@@ -471,3 +471,24 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
 - `apply.go`: `Apply0..Apply4` each gained one `*NamedFnN` fast-path
   case (a direct `.F` field call, placed right after the `FnFuncN`
   case) so matching-arity dispatch of emitted fns stays alloc-free.
+
+## Function metadata (ADR 0105 / spike s66, 2026-07-28)
+
+- `metafn.go` (new, cljgo-authored): `MetaFn` — a fn value carrying an
+  `IPersistentMap`, plus `FnWithMeta` and `CanCarryFnMeta`. On the JVM
+  every fn extends `AFunction`, which implements `IObj`, so
+  `(with-meta (fn [] 1) {:tag :mock})` returns the fn WITH its metadata
+  (oracle-verified). A Go closure has nowhere to put a map, so with-meta
+  boxes it: `MetaFn` delegates `Invoke`/`ApplyTo`/`String` to the wrapped
+  fn and holds the map beside it. Only fns that are actually given
+  metadata are boxed — unwrapped closures are untouched, so the ADR 0064
+  direct-call and `Apply0..4` fast paths pay nothing.
+- `ifn.go`: the `FnFunc`, `FnFunc0..4` and `NamedFn0..4` `WithMeta`
+  methods no longer silently drop the map (they returned the receiver);
+  each now returns `FnWithMeta(f, m)`. `Meta()` still returns nil for an
+  unwrapped closure, as before.
+- `interfaces.go`: `WithMeta`'s non-`IObj` fallback now boxes a genuine
+  function value (the interpreter's `*eval.evalFn`) instead of erroring;
+  the "value of type %T can't have metadata" error remains for everything
+  else, including the invokable non-fns (keyword/symbol/var/collection/
+  multimethod) that the JVM also refuses.

@@ -9,9 +9,26 @@ conformance failure. Every number on this page was **measured, not quoted** —
 and the rows cljgo loses are published alongside the ones it wins.
 
 **Measurement context for everything below:** Apple M5 Pro, go1.26.3, cljgo
-@HEAD, re-measured **2026-07-25**. `hello.clj` = `(println "hi")`. Every
+**@2026-07-25, pre-v0.7.0**. `hello.clj` = `(println "hi")`. Every
 competing runtime was installed and measured on the same machine — no
 normalization, no numbers copied from other projects' websites.
+
+:::caution[These tables predate v0.7.0 — not yet re-measured]
+**Dated 2026-07-28.** cljgo **v0.7.0** shipped today with two emitter changes
+that are not reflected in any number on this page:
+
+- **ADR 0067, second numeric op table** — `quot`/`rem`/`bit-*`/`unchecked-*`
+  and the numeric predicates now participate in int64 type inference.
+- **ADR 0064, cross-var direct-call emission** — a direct call to a known
+  var in another namespace instead of a var deref, at a ~1.5% binary-size cost.
+
+Everything below was measured **before** that release, on the commit labelled
+`@2026-07-25, pre-v0.7.0`. The rows most likely to move are the
+**arithmetic/numeric and call-heavy** ones; the rest of the suite is unlikely
+to shift much. We are **not** publishing an estimate: the tables stand as
+measured, and no row here should be read as a v0.7.0 result. They will be
+re-measured and re-dated as a whole.
+:::
 
 ## Core metrics
 
@@ -55,7 +72,8 @@ native image), let-go (bytecode VM), Clojure JVM (JIT).
 | `reduce` | 61.4 ms | 26.0 ms | 22.8 ms | **20.0 ms** | 1.46 s | 302.5 ms |
 | runtime size | — | 27.5 MB | **13 MB** | 67.9 MB | 27.4 MB | 385.0 MB |
 
-Versions: cljgo @HEAD (post-ADR-0067) · let-go v1.11.1 (tag, built from source
+Versions: cljgo @2026-07-25, pre-v0.7.0 (post-ADR-0067 first op table) ·
+let-go v1.11.1 (tag, built from source
 with the same toolchain and flags) · babashka v1.12.218 · joker v1.9.0 ·
 Clojure CLI 1.12.5.1645 on OpenJDK 26.0.1. joker has no `transducers` and is
 skipped on `fib`/`tak` (~13× slower there). Runtime size is the stripped
@@ -93,7 +111,8 @@ no interpreted legs. The programs are
 [let-go's own benchmark suite](https://github.com/nooga/let-go/tree/main/benchmark)
 (vendored unmodified — credit nooga). Glojure and let-go binaries were built with
 [gloat](https://github.com/gloathub/gloat) (`-E glj` and `-E lglvm`), the
-official automation tool for both. Measured **2026-07-24**, hyperfine
+official automation tool for both. Measured **2026-07-24** (cljgo
+**pre-v0.7.0**), hyperfine
 3 warmup / 10 runs, wall-clock mean, startup included, compile time excluded.
 Best per row in bold.
 
@@ -124,7 +143,7 @@ finds the reader; the same probes on a cljgo binary return nothing. let-go's
 lowered binaries keep the VM runtime linked. We don't claim the interpreter
 accounts for the whole size delta — only that it's in theirs and not in ours.
 
-Versions: cljgo @HEAD · gloat v0.1.62 pinning Glojure v0.7.0 and let-go
+Versions: cljgo @2026-07-24, pre-v0.7.0 · gloat v0.1.62 pinning Glojure v0.7.0 and let-go
 v1.12.2 (gloat builds with its own pinned Go toolchain; cljgo with the repo
 toolchain). let-go's `transducers` used gloat's pure-retry fallback (its
 LG-overrides pass failed to build). gloat's pure `lgl` engine (no VM) is not
@@ -136,7 +155,8 @@ implemented yet; `lglvm` is its shipping AOT mode. Reproduce:
 
 [bri](/cljgo/bri/http/) (cljgo's web framework) AOT-compiles to a single static
 `CGO_ENABLED=0` binary and deploys as a minimal Docker image, byte-identical to
-the interpreter path (ADR 0071). Measured **2026-07-24** on Apple M-series
+the interpreter path (ADR 0071). Measured **2026-07-24** (cljgo **pre-v0.7.0**) on
+Apple M-series
 arm64, Docker/OrbStack, [`oha`](https://github.com/hatoo/oha) 15 s @ 50
 connections, **one container at a time** (contention skews numbers). Every
 server answers the same two routes with byte-exact bodies (`GET /` → `hello\n`;

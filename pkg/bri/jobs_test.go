@@ -1,4 +1,4 @@
-// jobs_test.go — the bri.core.jobs behavior suite (ADR 0094). No JVM oracle (a
+// jobs_test.go — the cljg.jobs behavior suite (ADR 0094). No JVM oracle (a
 // cljgo fundamental). Covers the worker pool draining every submitted job, error
 // capture from a throwing handler, and — crucially — that a USER backend
 // implementing the `Queue` protocol works through the same public fns (the
@@ -9,7 +9,7 @@ import "testing"
 
 func TestBriCoreJobs(t *testing.T) {
 	d := newDriver(t)
-	eval(t, d, `(require '[bri.core.jobs :as jq])`)
+	eval(t, d, `(require '[cljg.jobs :as jq])`)
 
 	// a worker pool runs every submitted job; drain blocks until all settle; a
 	// throwing handler is captured (not fatal) and the good jobs still all run

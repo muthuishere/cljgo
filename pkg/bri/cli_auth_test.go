@@ -14,17 +14,17 @@ import (
 
 func TestCliAuth(t *testing.T) {
 	d := newDriver(t)
-	// load bri.cli.auth (pulls bri.cli + bri.core.secrets), then stub the
+	// load bri.cli.auth (pulls bri.cli + cljg.secrets), then stub the
 	// keychain shims so the flow runs deterministically with no real keychain.
 	eval(t, d, `
-	  (require '[bri.cli.auth :as cauth] '[bri.core.secrets :as secrets])
-	  (clojure.core/in-ns 'bri.core.secrets)
+	  (require '[bri.cli.auth :as cauth] '[cljg.secrets :as secrets])
+	  (clojure.core/in-ns 'cljg.secrets)
 	  (def kc (atom {}))
 	  (defn -keychain-set [s a v] (swap! kc assoc [s a] v) nil)
 	  (defn -keychain-get [s a] (@kc [s a]))
 	  (defn -keychain-del [s a] (swap! kc dissoc [s a]) nil)
 	  (clojure.core/in-ns 'user)
-	  (require '[bri.cli :as cli] '[bri.cli.auth :as cauth] '[bri.core.secrets :as secrets])`)
+	  (require '[bri.cli :as cli] '[bri.cli.auth :as cauth] '[cljg.secrets :as secrets])`)
 
 	// login by PROMPTING for the key with echo off (via the *prompt* seam)
 	eval(t, d, `(binding [cli/*prompt* (fn [_ secret?] (if secret? "sk-abc123" (throw (ex-info "expected a secret prompt" {}))))]

@@ -2,6 +2,7 @@ package rt
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
@@ -77,6 +78,36 @@ func IMul(x, y int64) int64 {
 // the tower (JVM inc/dec on longs throw on overflow).
 func IInc(x int64) int64 { return IAdd(x, 1) }
 func IDec(x int64) int64 { return ISub(x, 1) }
+
+// INeg is the unary (- x) on a proven int64: checked, matching
+// lang int64Ops.Negate (MinInt64 has no positive counterpart).
+func INeg(x int64) int64 {
+	if x == math.MinInt64 {
+		panic(lang.NewArithmeticError("integer overflow"))
+	}
+	return -x
+}
+
+// IQuot / IRem are (quot x y) / (rem x y) on proven int64 operands. They
+// reproduce lang int64Ops.Quotient/Remainder exactly, including the
+// ArithmeticException message JVM Clojure raises for integer division by
+// zero ("/ by zero" — distinct from `/`'s "Divide by zero"). The
+// MinInt64 / -1 case needs no guard: Go defines it as MinInt64 with
+// remainder 0 (two's-complement wrap), which is what the tower's own raw
+// Go division already produces and what the JVM does for longs.
+func IQuot(x, y int64) int64 {
+	if y == 0 {
+		panic(lang.NewArithmeticError("/ by zero"))
+	}
+	return x / y
+}
+
+func IRem(x, y int64) int64 {
+	if y == 0 {
+		panic(lang.NewArithmeticError("/ by zero"))
+	}
+	return x % y
+}
 
 // MustInt64 re-types the `any` result of a call whose callee the emitter
 // proved returns int64 (a self-recursive call into an int64-specialized

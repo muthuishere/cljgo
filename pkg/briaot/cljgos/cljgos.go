@@ -66,6 +66,19 @@ var (
 	v_clojure_DOT_core_str              = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("str"))
 )
 
+var (
+	fnD_cljg_DOT_os_now               lang.FnFunc0
+	fnD_cljg_DOT_os_cron_next         lang.FnFunc2
+	fnD_cljg_DOT_os_soonest           lang.FnFunc2
+	fnD_cljg_DOT_os_run_job           lang.FnFunc1
+	fnD_cljg_DOT_os_service           lang.FnFunc1
+	fnD_cljg_DOT_os_service_install   lang.FnFunc1
+	fnD_cljg_DOT_os_service_start     lang.FnFunc1
+	fnD_cljg_DOT_os_service_stop      lang.FnFunc1
+	fnD_cljg_DOT_os_service_uninstall lang.FnFunc1
+	fnD_cljg_DOT_os_service_status    lang.FnFunc1
+)
+
 var loaded = false
 
 // Load evaluates the namespace's top-level forms exactly once, in source order.
@@ -93,6 +106,8 @@ func Load() {
 	})
 	tmp8 := &lang.NamedFn0{Name: "cljg.os/now", Expects: "0: []", F: tmp5}
 	v_cljg_DOT_os_now.BindRoot(tmp8)
+	fnD_cljg_DOT_os_now = tmp8.F
+	v_cljg_DOT_os_now.SealDirect()
 	_ = v_cljg_DOT_os_now
 	// (def cron-next "The next fire time (epoch ms) STRICTLY after `from` (epoch ms) for a 5-fie…
 	v_cljg_DOT_os_cron_next.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(27), kw_column, int64(7), kw_end_line, int64(27), kw_end_column, int64(16), kw_doc, "The next fire time (epoch ms) STRICTLY after `from` (epoch ms) for a 5-field\n  cron `expr`. Pure/deterministic — throws on a malformed expression."))
@@ -103,6 +118,8 @@ func Load() {
 	})
 	tmp14 := &lang.NamedFn2{Name: "cljg.os/cron-next", Expects: "2: [expr from]", F: tmp9}
 	v_cljg_DOT_os_cron_next.BindRoot(tmp14)
+	fnD_cljg_DOT_os_cron_next = tmp14.F
+	v_cljg_DOT_os_cron_next.SealDirect()
 	_ = v_cljg_DOT_os_cron_next
 	// (def job "A scheduled job: a cron expression + a 0-arg fn to run each fire. opts may\n  ca…
 	v_cljg_DOT_os_job.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(33), kw_column, int64(7), kw_end_line, int64(33), kw_end_column, int64(10), kw_doc, "A scheduled job: a cron expression + a 0-arg fn to run each fire. opts may\n  carry :name (for errors). Usually passed to `run`."))
@@ -142,438 +159,535 @@ func Load() {
 		tmp32 := v_clojure_DOT_core_second.Get()
 		tmp33 := v_clojure_DOT_core_map_.Get()
 		tmp34 := lang.FnFunc1(func(j35 any) any {
-			tmp36 := v_cljg_DOT_os_cron_next.Get()
-			tmp37 := lang.Apply1(kw_cron, j35)
-			tmp38 := lang.Apply2(tmp36, tmp37, from29)
-			tmp39 := lang.NewVector(j35, tmp38)
-			return tmp39
+			tmp36 := v_cljg_DOT_os_cron_next.Direct()
+			var tmp37 any
+			if !tmp36 {
+				tmp37 = v_cljg_DOT_os_cron_next.Get()
+			}
+			tmp38 := lang.Apply1(kw_cron, j35)
+			var tmp39 any
+			if tmp36 {
+				tmp39 = fnD_cljg_DOT_os_cron_next(tmp38, from29)
+			} else {
+				tmp39 = lang.Apply2(tmp37, tmp38, from29)
+			}
+			tmp40 := lang.NewVector(j35, tmp39)
+			return tmp40
 		})
-		tmp40 := &lang.NamedFn1{Name: "fn", Expects: "1: [j]", F: tmp34}
-		tmp41 := lang.Apply2(tmp33, tmp40, jobs28)
-		tmp42 := lang.Apply2(tmp31, tmp32, tmp41)
-		tmp43 := lang.Apply1(tmp30, tmp42)
-		return tmp43
+		tmp41 := &lang.NamedFn1{Name: "fn", Expects: "1: [j]", F: tmp34}
+		tmp42 := lang.Apply2(tmp33, tmp41, jobs28)
+		tmp43 := lang.Apply2(tmp31, tmp32, tmp42)
+		tmp44 := lang.Apply1(tmp30, tmp43)
+		return tmp44
 	})
-	tmp44 := &lang.NamedFn2{Name: "cljg.os/soonest", Expects: "2: [jobs from]", F: tmp27}
-	v_cljg_DOT_os_soonest.BindRoot(tmp44)
+	tmp45 := &lang.NamedFn2{Name: "cljg.os/soonest", Expects: "2: [jobs from]", F: tmp27}
+	v_cljg_DOT_os_soonest.BindRoot(tmp45)
+	fnD_cljg_DOT_os_soonest = tmp45.F
+	v_cljg_DOT_os_soonest.SealDirect()
 	_ = v_cljg_DOT_os_soonest
 	// (def run-job "Run one job's fn, converting a thrown error into a printed warning so one\n …
 	v_cljg_DOT_os_run_job.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(48), kw_column, int64(8), kw_end_line, int64(48), kw_end_column, int64(15), kw_private, true, kw_doc, "Run one job's fn, converting a thrown error into a printed warning so one\n  bad tick never kills the scheduler."))
-	tmp45 := lang.FnFunc1(func(j46 any) any {
-		var tmp47 any
-		_ = tmp47
+	tmp46 := lang.FnFunc1(func(j47 any) any {
+		var tmp48 any
+		_ = tmp48
 		func() {
 			defer func() {
 				if r := recover(); r != nil {
 					thrown := rt.Recover(r)
 					if rt.CatchMatches("Throwable", thrown) {
-						var e48 any = thrown
-						_ = e48
-						tmp49 := v_clojure_DOT_core_X_STAR_err_STAR_.Get()
-						lang.PushThreadBindings(lang.NewMap(v_clojure_DOT_core_X_STAR_out_STAR_, tmp49))
-						tmp50 := v_clojure_DOT_core_println_.Get()
-						tmp51 := v_clojure_DOT_core_str.Get()
-						var tmp52 any
-						_ = tmp52
+						var e49 any = thrown
+						_ = e49
+						tmp50 := v_clojure_DOT_core_X_STAR_err_STAR_.Get()
+						lang.PushThreadBindings(lang.NewMap(v_clojure_DOT_core_X_STAR_out_STAR_, tmp50))
+						tmp51 := v_clojure_DOT_core_println_.Get()
+						tmp52 := v_clojure_DOT_core_str.Get()
+						var tmp53 any
+						_ = tmp53
 						{
-							tmp53 := lang.Apply1(kw_name, j46)
-							var or__2__auto__54 any = tmp53
-							_ = or__2__auto__54
-							var tmp55 any
-							_ = tmp55
-							if lang.IsTruthy(or__2__auto__54) {
-								tmp55 = or__2__auto__54
+							tmp54 := lang.Apply1(kw_name, j47)
+							var or__2__auto__55 any = tmp54
+							_ = or__2__auto__55
+							var tmp56 any
+							_ = tmp56
+							if lang.IsTruthy(or__2__auto__55) {
+								tmp56 = or__2__auto__55
 							} else {
-								tmp56 := lang.Apply1(kw_cron, j46)
-								tmp55 = tmp56
+								tmp57 := lang.Apply1(kw_cron, j47)
+								tmp56 = tmp57
 							}
-							tmp52 = tmp55
+							tmp53 = tmp56
 						}
-						tmp57 := v_clojure_DOT_core_ex_message.Get()
-						tmp58 := lang.Apply1(tmp57, e48)
-						tmp59 := lang.Apply4(tmp51, "cljg.os: job ", tmp52, " failed: ", tmp58)
-						tmp60 := lang.Apply1(tmp50, tmp59)
-						var tmp61 any = tmp60
+						tmp58 := v_clojure_DOT_core_ex_message.Get()
+						tmp59 := lang.Apply1(tmp58, e49)
+						tmp60 := lang.Apply4(tmp52, "cljg.os: job ", tmp53, " failed: ", tmp59)
+						tmp61 := lang.Apply1(tmp51, tmp60)
+						var tmp62 any = tmp61
 						lang.PopThreadBindings()
-						tmp47 = tmp61
+						tmp48 = tmp62
 						return
 					}
 					panic(r)
 				}
 			}()
-			tmp62 := lang.Apply1(kw_fn, j46)
-			tmp63 := lang.Apply0(tmp62)
-			tmp47 = tmp63
+			tmp63 := lang.Apply1(kw_fn, j47)
+			tmp64 := lang.Apply0(tmp63)
+			tmp48 = tmp64
 		}()
-		return tmp47
+		return tmp48
 	})
-	tmp64 := &lang.NamedFn1{Name: "cljg.os/run-job", Expects: "1: [j]", F: tmp45}
-	v_cljg_DOT_os_run_job.BindRoot(tmp64)
+	tmp65 := &lang.NamedFn1{Name: "cljg.os/run-job", Expects: "1: [j]", F: tmp46}
+	v_cljg_DOT_os_run_job.BindRoot(tmp65)
+	fnD_cljg_DOT_os_run_job = tmp65.F
+	v_cljg_DOT_os_run_job.SealDirect()
 	_ = v_cljg_DOT_os_run_job
 	// (def run "Run the scheduler over `jobs` (job values), sleeping until the soonest due\n  fi…
 	v_cljg_DOT_os_run.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(57), kw_column, int64(7), kw_end_line, int64(57), kw_end_column, int64(10), kw_doc, "Run the scheduler over `jobs` (job values), sleeping until the soonest due\n  fire, running every job due at that minute, and repeating. Blocking — a\n  daemon's main loop. opts:\n    :max-ticks n  stop after n fires (default: run forever; use for tests/one-shots)\n  Returns the number of ticks run."))
-	tmp65 := lang.FnFunc(func(args ...any) any {
+	tmp66 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			jobs66 := args[0]
-			_ = jobs66
-			tmp67 := v_cljg_DOT_os_run.Get()
-			tmp68 := lang.NewMap()
-			tmp69 := lang.Apply2(tmp67, jobs66, tmp68)
-			return tmp69
+			jobs67 := args[0]
+			_ = jobs67
+			tmp68 := v_cljg_DOT_os_run.Get()
+			tmp69 := lang.NewMap()
+			tmp70 := lang.Apply2(tmp68, jobs67, tmp69)
+			return tmp70
 		case 2:
-			jobs70 := args[0]
-			_ = jobs70
-			opts71 := args[1]
-			_ = opts71
-			var tmp72 any
-			_ = tmp72
+			jobs71 := args[0]
+			_ = jobs71
+			opts72 := args[1]
+			_ = opts72
+			var tmp73 any
+			_ = tmp73
 			{
-				tmp73 := lang.Apply1(kw_max_ticks, opts71)
-				var maxt74 any = tmp73
-				_ = maxt74
-				var tmp75 any
-				_ = tmp75
+				tmp74 := lang.Apply1(kw_max_ticks, opts72)
+				var maxt75 any = tmp74
+				_ = maxt75
+				var tmp76 any
+				_ = tmp76
 				if !rt.CoreDirty() {
-					var tmp76 int64
-					_ = tmp76
+					var tmp77 int64
+					_ = tmp77
 					{
-						var ticks77 int64 = int64(0)
-						_ = ticks77
-					loop78:
+						var ticks78 int64 = int64(0)
+						_ = ticks78
+					loop79:
 						for {
-							var tmp79 any
-							_ = tmp79
+							var tmp80 any
+							_ = tmp80
 							{
-								var and__1__auto__80 any = maxt74
-								_ = and__1__auto__80
-								var tmp81 any
-								_ = tmp81
-								if lang.IsTruthy(and__1__auto__80) {
-									tmp82 := rt.GE2(v_clojure_DOT_core_X_GT__EQ_, ticks77, maxt74)
-									tmp81 = tmp82
+								var and__1__auto__81 any = maxt75
+								_ = and__1__auto__81
+								var tmp82 any
+								_ = tmp82
+								if lang.IsTruthy(and__1__auto__81) {
+									tmp83 := rt.GE2(v_clojure_DOT_core_X_GT__EQ_, ticks78, maxt75)
+									tmp82 = tmp83
 								} else {
-									tmp81 = and__1__auto__80
+									tmp82 = and__1__auto__81
 								}
-								tmp79 = tmp81
+								tmp80 = tmp82
 							}
-							var tmp83 int64
-							_ = tmp83
-							if lang.IsTruthy(tmp79) {
-								tmp83 = ticks77
+							var tmp84 int64
+							_ = tmp84
+							if lang.IsTruthy(tmp80) {
+								tmp84 = ticks78
 							} else {
-								var tmp84 any
-								_ = tmp84
+								var tmp85 any
+								_ = tmp85
 								{
-									tmp85 := v_cljg_DOT_os_now.Get()
-									tmp86 := lang.Apply0(tmp85)
-									var from87 any = tmp86
-									_ = from87
-									tmp88 := v_cljg_DOT_os_soonest.Get()
-									tmp89 := lang.Apply2(tmp88, jobs70, from87)
-									var vec__16290 any = tmp89
-									_ = vec__16290
-									tmp91 := v_clojure_DOT_core_nth.Get()
-									tmp92 := lang.Apply3(tmp91, vec__16290, int64(0), nil)
-									var X_93 any = tmp92
-									_ = X_93
+									tmp86 := v_cljg_DOT_os_now.Direct()
+									var tmp87 any
+									if !tmp86 {
+										tmp87 = v_cljg_DOT_os_now.Get()
+									}
+									var tmp88 any
+									if tmp86 {
+										tmp88 = fnD_cljg_DOT_os_now()
+									} else {
+										tmp88 = lang.Apply0(tmp87)
+									}
+									var from89 any = tmp88
+									_ = from89
+									tmp90 := v_cljg_DOT_os_soonest.Direct()
+									var tmp91 any
+									if !tmp90 {
+										tmp91 = v_cljg_DOT_os_soonest.Get()
+									}
+									var tmp92 any
+									if tmp90 {
+										tmp92 = fnD_cljg_DOT_os_soonest(jobs71, from89)
+									} else {
+										tmp92 = lang.Apply2(tmp91, jobs71, from89)
+									}
+									var vec__16293 any = tmp92
+									_ = vec__16293
 									tmp94 := v_clojure_DOT_core_nth.Get()
-									tmp95 := lang.Apply3(tmp94, vec__16290, int64(1), nil)
-									var due_ms96 any = tmp95
-									_ = due_ms96
-									tmp97 := v_clojure_DOT_core_max_.Get()
-									tmp98 := rt.Sub2(v_clojure_DOT_core_X_, due_ms96, from87)
-									tmp99 := lang.Apply2(tmp97, int64(0), tmp98)
-									var wait100 any = tmp99
-									_ = wait100
-									tmp101 := v_cljg_DOT_os_X_sleep_millis.Get()
-									tmp102 := lang.Apply1(tmp101, wait100)
-									_ = tmp102
-									var tmp103 any
-									_ = tmp103
+									tmp95 := lang.Apply3(tmp94, vec__16293, int64(0), nil)
+									var X_96 any = tmp95
+									_ = X_96
+									tmp97 := v_clojure_DOT_core_nth.Get()
+									tmp98 := lang.Apply3(tmp97, vec__16293, int64(1), nil)
+									var due_ms99 any = tmp98
+									_ = due_ms99
+									tmp100 := v_clojure_DOT_core_max_.Get()
+									tmp101 := rt.Sub2(v_clojure_DOT_core_X_, due_ms99, from89)
+									tmp102 := lang.Apply2(tmp100, int64(0), tmp101)
+									var wait103 any = tmp102
+									_ = wait103
+									tmp104 := v_cljg_DOT_os_X_sleep_millis.Get()
+									tmp105 := lang.Apply1(tmp104, wait103)
+									_ = tmp105
+									var tmp106 any
+									_ = tmp106
 									{
-										tmp104 := v_clojure_DOT_core_seq.Get()
-										tmp105 := lang.Apply1(tmp104, jobs70)
-										var s__9__auto__106 any = tmp105
-										_ = s__9__auto__106
-									loop107:
+										tmp107 := v_clojure_DOT_core_seq.Get()
+										tmp108 := lang.Apply1(tmp107, jobs71)
+										var s__9__auto__109 any = tmp108
+										_ = s__9__auto__109
+									loop110:
 										for {
-											var tmp108 any
-											_ = tmp108
-											if lang.IsTruthy(s__9__auto__106) {
-												var tmp109 any
-												_ = tmp109
+											var tmp111 any
+											_ = tmp111
+											if lang.IsTruthy(s__9__auto__109) {
+												var tmp112 any
+												_ = tmp112
 												{
-													tmp110 := v_clojure_DOT_core_first.Get()
-													tmp111 := lang.Apply1(tmp110, s__9__auto__106)
-													var j112 any = tmp111
-													_ = j112
-													tmp113 := v_cljg_DOT_os_cron_next.Get()
-													tmp114 := lang.Apply1(kw_cron, j112)
-													tmp115 := lang.Apply2(tmp113, tmp114, from87)
-													tmp116 := rt.EQBool(v_clojure_DOT_core_X_EQ_, due_ms96, tmp115)
+													tmp113 := v_clojure_DOT_core_first.Get()
+													tmp114 := lang.Apply1(tmp113, s__9__auto__109)
+													var j115 any = tmp114
+													_ = j115
+													tmp116 := v_cljg_DOT_os_cron_next.Direct()
 													var tmp117 any
-													_ = tmp117
+													if !tmp116 {
+														tmp117 = v_cljg_DOT_os_cron_next.Get()
+													}
+													tmp118 := lang.Apply1(kw_cron, j115)
+													var tmp119 any
 													if tmp116 {
-														tmp118 := v_cljg_DOT_os_run_job.Get()
-														tmp119 := lang.Apply1(tmp118, j112)
-														tmp117 = tmp119
+														tmp119 = fnD_cljg_DOT_os_cron_next(tmp118, from89)
 													} else {
-														tmp117 = nil
+														tmp119 = lang.Apply2(tmp117, tmp118, from89)
 													}
-													_ = tmp117
-													var tmp120 any
-													_ = tmp120
+													tmp120 := rt.EQBool(v_clojure_DOT_core_X_EQ_, due_ms99, tmp119)
+													var tmp121 any
+													_ = tmp121
+													if tmp120 {
+														tmp122 := v_cljg_DOT_os_run_job.Direct()
+														var tmp123 any
+														if !tmp122 {
+															tmp123 = v_cljg_DOT_os_run_job.Get()
+														}
+														var tmp124 any
+														if tmp122 {
+															tmp124 = fnD_cljg_DOT_os_run_job(j115)
+														} else {
+															tmp124 = lang.Apply1(tmp123, j115)
+														}
+														tmp121 = tmp124
+													} else {
+														tmp121 = nil
+													}
+													_ = tmp121
+													var tmp125 any
+													_ = tmp125
 													if lang.IsTruthy(true) {
-														tmp121 := v_clojure_DOT_core_next.Get()
-														tmp122 := lang.Apply1(tmp121, s__9__auto__106)
-														var tmp123 any = tmp122
-														s__9__auto__106 = tmp123
-														continue loop107
+														tmp126 := v_clojure_DOT_core_next.Get()
+														tmp127 := lang.Apply1(tmp126, s__9__auto__109)
+														var tmp128 any = tmp127
+														s__9__auto__109 = tmp128
+														continue loop110
 													} else {
-														tmp120 = nil
+														tmp125 = nil
 													}
-													tmp109 = tmp120
+													tmp112 = tmp125
 												}
-												tmp108 = tmp109
+												tmp111 = tmp112
 											} else {
-												tmp108 = nil
+												tmp111 = nil
 											}
-											tmp103 = tmp108
-											break loop107
+											tmp106 = tmp111
+											break loop110
 										}
 									}
-									_ = tmp103
-									var tmp124 int64 = rt.IInc(ticks77)
-									var tmp125 int64 = tmp124
-									ticks77 = tmp125
-									continue loop78
+									_ = tmp106
+									var tmp129 int64 = rt.IInc(ticks78)
+									var tmp130 int64 = tmp129
+									ticks78 = tmp130
+									continue loop79
 								}
 							}
-							tmp76 = tmp83
-							break loop78
+							tmp77 = tmp84
+							break loop79
 						}
 					}
-					tmp75 = tmp76
+					tmp76 = tmp77
 				} else {
-					var tmp126 any
-					_ = tmp126
+					var tmp131 any
+					_ = tmp131
 					{
-						var ticks127 any = int64(0)
-						_ = ticks127
-					loop128:
+						var ticks132 any = int64(0)
+						_ = ticks132
+					loop133:
 						for {
-							var tmp129 any
-							_ = tmp129
+							var tmp134 any
+							_ = tmp134
 							{
-								var and__1__auto__130 any = maxt74
-								_ = and__1__auto__130
-								var tmp131 any
-								_ = tmp131
-								if lang.IsTruthy(and__1__auto__130) {
-									tmp132 := rt.GE2(v_clojure_DOT_core_X_GT__EQ_, ticks127, maxt74)
-									tmp131 = tmp132
+								var and__1__auto__135 any = maxt75
+								_ = and__1__auto__135
+								var tmp136 any
+								_ = tmp136
+								if lang.IsTruthy(and__1__auto__135) {
+									tmp137 := rt.GE2(v_clojure_DOT_core_X_GT__EQ_, ticks132, maxt75)
+									tmp136 = tmp137
 								} else {
-									tmp131 = and__1__auto__130
+									tmp136 = and__1__auto__135
 								}
-								tmp129 = tmp131
+								tmp134 = tmp136
 							}
-							var tmp133 any
-							_ = tmp133
-							if lang.IsTruthy(tmp129) {
-								tmp133 = ticks127
+							var tmp138 any
+							_ = tmp138
+							if lang.IsTruthy(tmp134) {
+								tmp138 = ticks132
 							} else {
-								var tmp134 any
-								_ = tmp134
+								var tmp139 any
+								_ = tmp139
 								{
-									tmp135 := v_cljg_DOT_os_now.Get()
-									tmp136 := lang.Apply0(tmp135)
-									var from137 any = tmp136
-									_ = from137
-									tmp138 := v_cljg_DOT_os_soonest.Get()
-									tmp139 := lang.Apply2(tmp138, jobs70, from137)
-									var vec__162140 any = tmp139
-									_ = vec__162140
-									tmp141 := v_clojure_DOT_core_nth.Get()
-									tmp142 := lang.Apply3(tmp141, vec__162140, int64(0), nil)
-									var X_143 any = tmp142
-									_ = X_143
-									tmp144 := v_clojure_DOT_core_nth.Get()
-									tmp145 := lang.Apply3(tmp144, vec__162140, int64(1), nil)
-									var due_ms146 any = tmp145
-									_ = due_ms146
-									tmp147 := v_clojure_DOT_core_max_.Get()
-									tmp148 := rt.Sub2(v_clojure_DOT_core_X_, due_ms146, from137)
-									tmp149 := lang.Apply2(tmp147, int64(0), tmp148)
-									var wait150 any = tmp149
-									_ = wait150
-									tmp151 := v_cljg_DOT_os_X_sleep_millis.Get()
-									tmp152 := lang.Apply1(tmp151, wait150)
-									_ = tmp152
-									var tmp153 any
-									_ = tmp153
+									tmp140 := v_cljg_DOT_os_now.Direct()
+									var tmp141 any
+									if !tmp140 {
+										tmp141 = v_cljg_DOT_os_now.Get()
+									}
+									var tmp142 any
+									if tmp140 {
+										tmp142 = fnD_cljg_DOT_os_now()
+									} else {
+										tmp142 = lang.Apply0(tmp141)
+									}
+									var from143 any = tmp142
+									_ = from143
+									tmp144 := v_cljg_DOT_os_soonest.Direct()
+									var tmp145 any
+									if !tmp144 {
+										tmp145 = v_cljg_DOT_os_soonest.Get()
+									}
+									var tmp146 any
+									if tmp144 {
+										tmp146 = fnD_cljg_DOT_os_soonest(jobs71, from143)
+									} else {
+										tmp146 = lang.Apply2(tmp145, jobs71, from143)
+									}
+									var vec__162147 any = tmp146
+									_ = vec__162147
+									tmp148 := v_clojure_DOT_core_nth.Get()
+									tmp149 := lang.Apply3(tmp148, vec__162147, int64(0), nil)
+									var X_150 any = tmp149
+									_ = X_150
+									tmp151 := v_clojure_DOT_core_nth.Get()
+									tmp152 := lang.Apply3(tmp151, vec__162147, int64(1), nil)
+									var due_ms153 any = tmp152
+									_ = due_ms153
+									tmp154 := v_clojure_DOT_core_max_.Get()
+									tmp155 := rt.Sub2(v_clojure_DOT_core_X_, due_ms153, from143)
+									tmp156 := lang.Apply2(tmp154, int64(0), tmp155)
+									var wait157 any = tmp156
+									_ = wait157
+									tmp158 := v_cljg_DOT_os_X_sleep_millis.Get()
+									tmp159 := lang.Apply1(tmp158, wait157)
+									_ = tmp159
+									var tmp160 any
+									_ = tmp160
 									{
-										tmp154 := v_clojure_DOT_core_seq.Get()
-										tmp155 := lang.Apply1(tmp154, jobs70)
-										var s__9__auto__156 any = tmp155
-										_ = s__9__auto__156
-									loop157:
+										tmp161 := v_clojure_DOT_core_seq.Get()
+										tmp162 := lang.Apply1(tmp161, jobs71)
+										var s__9__auto__163 any = tmp162
+										_ = s__9__auto__163
+									loop164:
 										for {
-											var tmp158 any
-											_ = tmp158
-											if lang.IsTruthy(s__9__auto__156) {
-												var tmp159 any
-												_ = tmp159
+											var tmp165 any
+											_ = tmp165
+											if lang.IsTruthy(s__9__auto__163) {
+												var tmp166 any
+												_ = tmp166
 												{
-													tmp160 := v_clojure_DOT_core_first.Get()
-													tmp161 := lang.Apply1(tmp160, s__9__auto__156)
-													var j162 any = tmp161
-													_ = j162
-													tmp163 := v_cljg_DOT_os_cron_next.Get()
-													tmp164 := lang.Apply1(kw_cron, j162)
-													tmp165 := lang.Apply2(tmp163, tmp164, from137)
-													tmp166 := rt.EQBool(v_clojure_DOT_core_X_EQ_, due_ms146, tmp165)
-													var tmp167 any
-													_ = tmp167
-													if tmp166 {
-														tmp168 := v_cljg_DOT_os_run_job.Get()
-														tmp169 := lang.Apply1(tmp168, j162)
-														tmp167 = tmp169
-													} else {
-														tmp167 = nil
+													tmp167 := v_clojure_DOT_core_first.Get()
+													tmp168 := lang.Apply1(tmp167, s__9__auto__163)
+													var j169 any = tmp168
+													_ = j169
+													tmp170 := v_cljg_DOT_os_cron_next.Direct()
+													var tmp171 any
+													if !tmp170 {
+														tmp171 = v_cljg_DOT_os_cron_next.Get()
 													}
-													_ = tmp167
-													var tmp170 any
-													_ = tmp170
+													tmp172 := lang.Apply1(kw_cron, j169)
+													var tmp173 any
+													if tmp170 {
+														tmp173 = fnD_cljg_DOT_os_cron_next(tmp172, from143)
+													} else {
+														tmp173 = lang.Apply2(tmp171, tmp172, from143)
+													}
+													tmp174 := rt.EQBool(v_clojure_DOT_core_X_EQ_, due_ms153, tmp173)
+													var tmp175 any
+													_ = tmp175
+													if tmp174 {
+														tmp176 := v_cljg_DOT_os_run_job.Direct()
+														var tmp177 any
+														if !tmp176 {
+															tmp177 = v_cljg_DOT_os_run_job.Get()
+														}
+														var tmp178 any
+														if tmp176 {
+															tmp178 = fnD_cljg_DOT_os_run_job(j169)
+														} else {
+															tmp178 = lang.Apply1(tmp177, j169)
+														}
+														tmp175 = tmp178
+													} else {
+														tmp175 = nil
+													}
+													_ = tmp175
+													var tmp179 any
+													_ = tmp179
 													if lang.IsTruthy(true) {
-														tmp171 := v_clojure_DOT_core_next.Get()
-														tmp172 := lang.Apply1(tmp171, s__9__auto__156)
-														var tmp173 any = tmp172
-														s__9__auto__156 = tmp173
-														continue loop157
+														tmp180 := v_clojure_DOT_core_next.Get()
+														tmp181 := lang.Apply1(tmp180, s__9__auto__163)
+														var tmp182 any = tmp181
+														s__9__auto__163 = tmp182
+														continue loop164
 													} else {
-														tmp170 = nil
+														tmp179 = nil
 													}
-													tmp159 = tmp170
+													tmp166 = tmp179
 												}
-												tmp158 = tmp159
+												tmp165 = tmp166
 											} else {
-												tmp158 = nil
+												tmp165 = nil
 											}
-											tmp153 = tmp158
-											break loop157
+											tmp160 = tmp165
+											break loop164
 										}
 									}
-									_ = tmp153
-									tmp174 := v_clojure_DOT_core_inc.Get()
-									tmp175 := lang.Apply1(tmp174, ticks127)
-									var tmp176 any = tmp175
-									ticks127 = tmp176
-									continue loop128
+									_ = tmp160
+									tmp183 := v_clojure_DOT_core_inc.Get()
+									tmp184 := lang.Apply1(tmp183, ticks132)
+									var tmp185 any = tmp184
+									ticks132 = tmp185
+									continue loop133
 								}
 							}
-							tmp126 = tmp133
-							break loop128
+							tmp131 = tmp138
+							break loop133
 						}
 					}
-					tmp75 = tmp126
+					tmp76 = tmp131
 				}
-				tmp72 = tmp75
+				tmp73 = tmp76
 			}
-			return tmp72
+			return tmp73
 		default:
 			panic(lang.NewArityError(len(args), "cljg.os/run", "1: [jobs] or 2: [jobs opts]"))
 		}
 	})
-	v_cljg_DOT_os_run.BindRoot(tmp65)
+	v_cljg_DOT_os_run.BindRoot(tmp66)
 	_ = v_cljg_DOT_os_run
 	// (def service "A service spec. Keys: :name (required), :exec (binary path, required),\n  :a…
 	v_cljg_DOT_os_service.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(85), kw_column, int64(7), kw_end_line, int64(85), kw_end_column, int64(14), kw_doc, "A service spec. Keys: :name (required), :exec (binary path, required),\n  :args [..], :description, :env {..}, :working-dir, :scope (:user default |\n  :system — :system needs root on Linux)."))
-	tmp177 := lang.FnFunc1(func(m178 any) any {
-		tmp179 := v_clojure_DOT_core_merge.Get()
-		tmp180 := lang.NewMap(kw_cljg_DOT_os_SLASH_service, true, kw_scope, kw_user)
-		tmp181 := lang.Apply2(tmp179, tmp180, m178)
-		return tmp181
+	tmp186 := lang.FnFunc1(func(m187 any) any {
+		tmp188 := v_clojure_DOT_core_merge.Get()
+		tmp189 := lang.NewMap(kw_cljg_DOT_os_SLASH_service, true, kw_scope, kw_user)
+		tmp190 := lang.Apply2(tmp188, tmp189, m187)
+		return tmp190
 	})
-	tmp182 := &lang.NamedFn1{Name: "cljg.os/service", Expects: "1: [m]", F: tmp177}
-	v_cljg_DOT_os_service.BindRoot(tmp182)
+	tmp191 := &lang.NamedFn1{Name: "cljg.os/service", Expects: "1: [m]", F: tmp186}
+	v_cljg_DOT_os_service.BindRoot(tmp191)
+	fnD_cljg_DOT_os_service = tmp191.F
+	v_cljg_DOT_os_service.SealDirect()
 	_ = v_cljg_DOT_os_service
 	// (def service-unit "Render the exact platform service definition text (systemd unit / launc…
 	v_cljg_DOT_os_service_unit.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(92), kw_column, int64(7), kw_end_line, int64(92), kw_end_column, int64(19), kw_doc, "Render the exact platform service definition text (systemd unit / launchd\n  plist) install would write for `spec`. Pure — good for review and tests.\n  Optional `os` (\"linux\"/\"darwin\"/\"windows\") cross-renders for a target\n  other than the host; Windows returns \"\" (its SCM is not file-based)."))
-	tmp183 := lang.FnFunc(func(args ...any) any {
+	tmp192 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			spec184 := args[0]
-			_ = spec184
-			tmp185 := v_cljg_DOT_os_X_service_render.Get()
-			tmp186 := lang.Apply2(tmp185, spec184, "")
-			return tmp186
+			spec193 := args[0]
+			_ = spec193
+			tmp194 := v_cljg_DOT_os_X_service_render.Get()
+			tmp195 := lang.Apply2(tmp194, spec193, "")
+			return tmp195
 		case 2:
-			spec187 := args[0]
-			_ = spec187
-			os188 := args[1]
-			_ = os188
-			tmp189 := v_cljg_DOT_os_X_service_render.Get()
-			tmp190 := lang.Apply2(tmp189, spec187, os188)
-			return tmp190
+			spec196 := args[0]
+			_ = spec196
+			os197 := args[1]
+			_ = os197
+			tmp198 := v_cljg_DOT_os_X_service_render.Get()
+			tmp199 := lang.Apply2(tmp198, spec196, os197)
+			return tmp199
 		default:
 			panic(lang.NewArityError(len(args), "cljg.os/service-unit", "1: [spec] or 2: [spec os]"))
 		}
 	})
-	v_cljg_DOT_os_service_unit.BindRoot(tmp183)
+	v_cljg_DOT_os_service_unit.BindRoot(tmp192)
 	_ = v_cljg_DOT_os_service_unit
 	// (def service-install "Install `spec` as an OS service on the current platform (write the u…
 	v_cljg_DOT_os_service_install.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(100), kw_column, int64(7), kw_end_line, int64(100), kw_end_column, int64(22), kw_doc, "Install `spec` as an OS service on the current platform (write the unit/\n  plist + enable via systemctl/launchctl, or sc.exe on Windows) and start it.\n  Returns nil. Needs the platform's privileges (:user scope avoids root on\n  Linux)."))
-	tmp191 := lang.FnFunc1(func(spec192 any) any {
-		tmp193 := v_cljg_DOT_os_X_service_install.Get()
-		tmp194 := lang.Apply1(tmp193, spec192)
-		_ = tmp194
+	tmp200 := lang.FnFunc1(func(spec201 any) any {
+		tmp202 := v_cljg_DOT_os_X_service_install.Get()
+		tmp203 := lang.Apply1(tmp202, spec201)
+		_ = tmp203
 		return nil
 	})
-	tmp195 := &lang.NamedFn1{Name: "cljg.os/service-install", Expects: "1: [spec]", F: tmp191}
-	v_cljg_DOT_os_service_install.BindRoot(tmp195)
+	tmp204 := &lang.NamedFn1{Name: "cljg.os/service-install", Expects: "1: [spec]", F: tmp200}
+	v_cljg_DOT_os_service_install.BindRoot(tmp204)
+	fnD_cljg_DOT_os_service_install = tmp204.F
+	v_cljg_DOT_os_service_install.SealDirect()
 	_ = v_cljg_DOT_os_service_install
 	// (def service-start "Start an installed service by name." (clojure.core/fn [name] (-service…
 	v_cljg_DOT_os_service_start.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(20), kw_doc, "Start an installed service by name."))
-	tmp196 := lang.FnFunc1(func(name197 any) any {
-		tmp198 := v_cljg_DOT_os_X_service_op.Get()
-		tmp199 := lang.Apply2(tmp198, "start", name197)
-		_ = tmp199
+	tmp205 := lang.FnFunc1(func(name206 any) any {
+		tmp207 := v_cljg_DOT_os_X_service_op.Get()
+		tmp208 := lang.Apply2(tmp207, "start", name206)
+		_ = tmp208
 		return nil
 	})
-	tmp200 := &lang.NamedFn1{Name: "cljg.os/service-start", Expects: "1: [name]", F: tmp196}
-	v_cljg_DOT_os_service_start.BindRoot(tmp200)
+	tmp209 := &lang.NamedFn1{Name: "cljg.os/service-start", Expects: "1: [name]", F: tmp205}
+	v_cljg_DOT_os_service_start.BindRoot(tmp209)
+	fnD_cljg_DOT_os_service_start = tmp209.F
+	v_cljg_DOT_os_service_start.SealDirect()
 	_ = v_cljg_DOT_os_service_start
 	// (def service-stop "Stop a running service by name." (clojure.core/fn [name] (-service-op "…
 	v_cljg_DOT_os_service_stop.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(110), kw_column, int64(7), kw_end_line, int64(110), kw_end_column, int64(19), kw_doc, "Stop a running service by name."))
-	tmp201 := lang.FnFunc1(func(name202 any) any {
-		tmp203 := v_cljg_DOT_os_X_service_op.Get()
-		tmp204 := lang.Apply2(tmp203, "stop", name202)
-		_ = tmp204
+	tmp210 := lang.FnFunc1(func(name211 any) any {
+		tmp212 := v_cljg_DOT_os_X_service_op.Get()
+		tmp213 := lang.Apply2(tmp212, "stop", name211)
+		_ = tmp213
 		return nil
 	})
-	tmp205 := &lang.NamedFn1{Name: "cljg.os/service-stop", Expects: "1: [name]", F: tmp201}
-	v_cljg_DOT_os_service_stop.BindRoot(tmp205)
+	tmp214 := &lang.NamedFn1{Name: "cljg.os/service-stop", Expects: "1: [name]", F: tmp210}
+	v_cljg_DOT_os_service_stop.BindRoot(tmp214)
+	fnD_cljg_DOT_os_service_stop = tmp214.F
+	v_cljg_DOT_os_service_stop.SealDirect()
 	_ = v_cljg_DOT_os_service_stop
 	// (def service-uninstall "Stop + remove a service by name." (clojure.core/fn [name] (-servic…
 	v_cljg_DOT_os_service_uninstall.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(111), kw_column, int64(7), kw_end_line, int64(111), kw_end_column, int64(24), kw_doc, "Stop + remove a service by name."))
-	tmp206 := lang.FnFunc1(func(name207 any) any {
-		tmp208 := v_cljg_DOT_os_X_service_op.Get()
-		tmp209 := lang.Apply2(tmp208, "uninstall", name207)
-		_ = tmp209
+	tmp215 := lang.FnFunc1(func(name216 any) any {
+		tmp217 := v_cljg_DOT_os_X_service_op.Get()
+		tmp218 := lang.Apply2(tmp217, "uninstall", name216)
+		_ = tmp218
 		return nil
 	})
-	tmp210 := &lang.NamedFn1{Name: "cljg.os/service-uninstall", Expects: "1: [name]", F: tmp206}
-	v_cljg_DOT_os_service_uninstall.BindRoot(tmp210)
+	tmp219 := &lang.NamedFn1{Name: "cljg.os/service-uninstall", Expects: "1: [name]", F: tmp215}
+	v_cljg_DOT_os_service_uninstall.BindRoot(tmp219)
+	fnD_cljg_DOT_os_service_uninstall = tmp219.F
+	v_cljg_DOT_os_service_uninstall.SealDirect()
 	_ = v_cljg_DOT_os_service_uninstall
 	// (def service-status "The platform status string for a service (e.g. \"active\"), or nil if…
 	v_cljg_DOT_os_service_status.SetMeta(lang.NewMap(kw_file, "cljg/os.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(21), kw_doc, "The platform status string for a service (e.g. \"active\"), or nil if it is\n  not installed / not running."))
-	tmp211 := lang.FnFunc1(func(name212 any) any {
-		tmp213 := v_cljg_DOT_os_X_service_op.Get()
-		tmp214 := lang.Apply2(tmp213, "status", name212)
-		return tmp214
+	tmp220 := lang.FnFunc1(func(name221 any) any {
+		tmp222 := v_cljg_DOT_os_X_service_op.Get()
+		tmp223 := lang.Apply2(tmp222, "status", name221)
+		return tmp223
 	})
-	tmp215 := &lang.NamedFn1{Name: "cljg.os/service-status", Expects: "1: [name]", F: tmp211}
-	v_cljg_DOT_os_service_status.BindRoot(tmp215)
+	tmp224 := &lang.NamedFn1{Name: "cljg.os/service-status", Expects: "1: [name]", F: tmp220}
+	v_cljg_DOT_os_service_status.BindRoot(tmp224)
+	fnD_cljg_DOT_os_service_status = tmp224.F
+	v_cljg_DOT_os_service_status.SealDirect()
 	_ = v_cljg_DOT_os_service_status
 }

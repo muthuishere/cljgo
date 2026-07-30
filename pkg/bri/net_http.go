@@ -24,9 +24,55 @@ import (
 // installNetHTTPShims interns cljg.net.http's private Go primitives.
 func installNetHTTPShims(def func(name string, fn func(args ...any) any)) {
 	def("-http-do", httpDoShim)
+	def("-http-stream", httpStreamShim)
 	def("-json-encode", func(args ...any) any { return jsonEncode(one("-json-encode", args)) })
 	def("-json-decode", func(args ...any) any { return jsonDecode(one("-json-decode", args)) })
 	def("-url-encode", func(args ...any) any { return neturl.QueryEscape(asString(one("-url-encode", args))) })
+}
+
+// httpStreamShim performs ONE request like httpDoShim but returns :body as a
+// cljg.stream ReadableStream over the LIVE resp.Body (ADR 0101): the caller
+// streams the response a chunk/line at a time and closes the handle when done
+// (cljg.stream/close closes resp.Body). The body is NOT read here and NOT
+// closed — the stream owns it. No client Timeout is set (a streaming download
+// must not be killed mid-body by the request-level deadline); a transport
+// failure opening the response still panics → a cljgo error.
+func httpStreamShim(args ...any) any {
+	if len(args) != 5 {
+		panic(fmt.Errorf("-http-stream expects 5 args (method url headers body timeout-ms), got %d", len(args)))
+	}
+	method := strings.ToUpper(asString(args[0]))
+	url := asString(args[1])
+
+	var body io.Reader
+	if s, ok := args[3].(string); ok {
+		body = strings.NewReader(s)
+	}
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		panic(fmt.Errorf("cljg.net.http: bad request %s %q: %w", method, url, err))
+	}
+	if hm, ok := args[2].(lang.IPersistentMap); ok {
+		for s := lang.Seq(hm); s != nil; s = lang.Next(s) {
+			e := lang.First(s)
+			req.Header.Set(asString(lang.First(e)), asString(lang.Get(e, int64(1))))
+		}
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(fmt.Errorf("cljg.net.http: %s %q: %w", method, url, err))
+	}
+
+	hkvs := make([]any, 0, len(resp.Header)*2)
+	for k := range resp.Header {
+		hkvs = append(hkvs, k, resp.Header.Get(k))
+	}
+	return lang.NewMap(
+		lang.NewKeyword("status"), int64(resp.StatusCode),
+		lang.NewKeyword("headers"), lang.NewMap(hkvs...),
+		lang.NewKeyword("body"), newReadableStream(resp.Body, resp.Body),
+	)
 }
 
 // httpDoShim performs ONE request: (method url headers body timeout-ms) ->

@@ -35,7 +35,7 @@ host fn, both out of tier-1 scope for this cut:
 **14** in `draft-conformance-data.csv.clj` (9 read + 5 write), each copied from
 the JVM oracle and reproduced by the port. The wider spike driver exercised 20.
 
-## Integration steps (for the openspec change under ADR 0096)
+## Integration steps (for the openspec change under ADR 0097)
 1. **`core/`**: add `core/data_csv.cljg` from `draft-data_csv.cljg` (keep the
    EPL header). Follow the satellite convention (CLAUDE.md / MEMORY): open with
    `(clojure.core/in-ns 'clojure.data.csv)` + `(clojure.core/refer 'clojure.core)`;

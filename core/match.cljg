@@ -1,0 +1,61 @@
+;; clojure.core.match — the org.clojure/core.match public API (ADR 0097),
+;; natively. Pattern matching that compiles to a Maranget decision tree.
+;;
+;;   (require '[clojure.core.match :refer [match matchv match-let]])
+;;   (match [x y]
+;;     [1 2]            :one-two
+;;     [(:or 3 4) _]    :three-or-four
+;;     [(a :guard even?) _] a
+;;     [{:k v}]         v          ;; map pattern
+;;     [[1 & r]]        r          ;; vector + rest
+;;     :else            :fallthrough)
+;;
+;; MANDATE A (performance is never compromised): the compiler proper is the
+;; Go host primitive -match-compile (pkg/bri/match.go) — the algorithm-heavy
+;; column-selection + specialization/default matrix decomposition of Luc
+;; Maranget's "Compiling Pattern Matching to Good Decision Trees". The pure
+;; Clojure here is only the THIN parser/entry (the clojure.string model). The
+;; rejected pure-Clojure linear compiler (spike s54) scanned clauses one by
+;; one; this shares each occurrence's column test across every clause.
+;;
+;; MANDATE B (lazy + opt-in): loaded on first (require 'clojure.core.match),
+;; never at boot; -match-compile runs only at macroexpand time and its OUTPUT
+;; is plain clojure.core, so a compiled binary that uses `match` links zero
+;; match runtime and one that never requires it pays zero bytes.
+;;
+;; Scoped OUT (matches org.clojure/core.match's optional, JVM-only tier): the
+;; regex / java.util.Date / array / binary specialised matcher namespaces.
+;;
+;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
+;; fully-qualified in-ns + refer open the file. -match-compile is interned as
+;; a :private var before this evaluates (pkg/bri.installMatchShims).
+(clojure.core/in-ns 'clojure.core.match)
+(clojure.core/refer 'clojure.core)
+
+(defmacro match
+  "Pattern match `vars` (a vector of match expressions) against the clauses:
+  alternating [pattern ...] rows and result expressions, with an optional final
+  `:else` catch-all. Compiles to a Maranget decision tree."
+  [vars & clauses]
+  (-match-compile vars (vec clauses)))
+
+(defmacro matchv
+  "Like `match`, with an explicit vector encoding hint as the first argument
+  (accepted for source compatibility with org.clojure/core.match; cljgo uses
+  one generic vector encoding, so the hint is ignored)."
+  [_encoding vars & clauses]
+  (-match-compile vars (vec clauses)))
+
+(defmacro matchm
+  "Like `matchv`, for map-encoded scrutinees (the encoding hint is accepted
+  and ignored; cljgo dispatches maps generically)."
+  [_encoding vars & clauses]
+  (-match-compile vars (vec clauses)))
+
+(defmacro match-let
+  "Like `let`, but the body is a `match` over the bound locals: bind
+  expressions to names, then match those names against the clause rows."
+  [bindings & body]
+  (let [bindvars (vec (take-nth 2 bindings))]
+    `(let ~bindings
+       (match ~bindvars ~@body))))
