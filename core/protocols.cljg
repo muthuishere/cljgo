@@ -107,13 +107,19 @@
     (list* (quote do)
            (list (quote def) tname
                  (list (quote -type-marker) qn "type" (-decl-protocols specs)))
+           (list (quote def) qsym qn)
+                 ;; The qualified name is hoisted into its OWN def, not into a
+                 ;; (let …) around the fn. Two things must both hold: the name
+                 ;; must resolve at LOAD time in the DEFINING namespace (a call-
+                 ;; time -qualified-name yields user.T for a library record and
+                 ;; its inline impls never dispatch), AND the ctor must stay
+                 ;; DIRECTLY in the def position, because that is what lets the
+                 ;; def site infer the fn's name. Wrapping it in a let broke
+                 ;; that and arity errors regressed to "passed to: fn" — the
+                 ;; error doctrine's stated #1 win (CLAUDE.md: name the thing).
            (list (quote def) ctor
-                 ;; qn is bound OUTSIDE the fn so the type name resolves at
-                 ;; load time in the DEFINING namespace, not at call time in
-                 ;; whatever namespace happens to be current then.
-                 (list (quote let) (vector qsym qn)
-                       (list* (quote fn) fields
-                              (list (list* (quote -new-type) qsym fstrs fields)))))
+                 (list* (quote fn) fields
+                        (list (list* (quote -new-type) qsym fstrs fields))))
            (concat extends (list tname)))))
 
 ;; ---- defrecord -------------------------------------------------------------
@@ -137,17 +143,22 @@
     (list* (quote do)
            (list (quote def) tname
                  (list (quote -type-marker) qn "record" (-decl-protocols specs)))
+           (list (quote def) qsym qn)
+                 ;; The qualified name is hoisted into its OWN def, not into a
+                 ;; (let …) around the fn. Two things must both hold: the name
+                 ;; must resolve at LOAD time in the DEFINING namespace (a call-
+                 ;; time -qualified-name yields user.T for a library record and
+                 ;; its inline impls never dispatch), AND the ctor must stay
+                 ;; DIRECTLY in the def position, because that is what lets the
+                 ;; def site infer the fn's name. Wrapping it in a let broke
+                 ;; that and arity errors regressed to "passed to: fn" — the
+                 ;; error doctrine's stated #1 win (CLAUDE.md: name the thing).
            (list (quote def) ctor
-                 ;; qn is bound OUTSIDE the fn so the type name resolves at
-                 ;; load time in the DEFINING namespace, not at call time in
-                 ;; whatever namespace happens to be current then.
-                 (list (quote let) (vector qsym qn)
-                       (list* (quote fn) fields
-                              (list (list* (quote -new-record) qsym fstrs fields)))))
+                 (list* (quote fn) fields
+                        (list (list* (quote -new-record) qsym fstrs fields))))
            (list (quote def) mapctor
-                 (list (quote let) (vector qsym qn)
-                       (list (quote fn) (quote [m])
-                             (list (quote -map->record) qsym fstrs (quote m)))))
+                 (list (quote fn) (quote [m])
+                       (list (quote -map->record) qsym fstrs (quote m))))
            (concat extends (list tname)))))
 
 ;; ---- reify -----------------------------------------------------------------
