@@ -484,17 +484,14 @@ func replaceImpl(op string, args []any, first bool) any {
 		// dispatch is ADR 0110 ask 3 — the fn arity is documented
 		// clojure.string and was previously a throw in cljgo.
 		if f, ok := args[2].(lang.IFn); ok {
-			return replaceByFn(op, re, s, f, first)
+			return replaceMatches(re, s, first, func(loc []int) string {
+				return replacementString(op, f.Invoke(reGroupsAt(s, loc, re.NumSubexp())))
+			})
 		}
 		repl := strArg(op, args[2])
-		if !first {
-			return re.ReplaceAllString(s, repl)
-		}
-		loc := re.FindStringSubmatchIndex(s)
-		if loc == nil {
-			return s
-		}
-		return s[:loc[0]] + string(re.ExpandString(nil, repl, s, loc)) + s[loc[1]:]
+		return replaceMatches(re, s, first, func(loc []int) string {
+			return string(re.ExpandString(nil, repl, s, loc))
+		})
 	case string, lang.Char:
 		m := coerceStr(op, match)
 		r := coerceStr(op, args[2])
@@ -507,61 +504,108 @@ func replaceImpl(op string, args []any, first bool) any {
 	}
 }
 
-// replaceByFn is clojure.string's private replace-by: walk the matches, call
-// f on each one, and splice its result in LITERALLY (the JVM wraps it in
-// Matcher/quoteReplacement, so "$1" from f is the two characters "$1", not a
-// group reference — oracle 1.12.5: (str/replace "a1" #"(\d)" (fn [m] "$1"))
-// => "a$1").
+// replaceMatches backs BOTH regex replacement paths — the $-template one and
+// clojure.string's private replace-by (a fn replacement). They share ONE match
+// walker on purpose: the JVM runs both off the same java.util.regex.Matcher,
+// so which matches exist may not depend on the replacement's TYPE.
 //
-// What f RECEIVES is clojure.core/re-groups of the current match: the whole
-// matched string when the pattern has NO capturing groups, else a vector
-// [whole g1 g2 …] with nil for a group that did not participate (oracle
-// 1.12.5: (str/replace "aXb" #"(x)?b" (fn [m] (pr-str m))) => "aX[\"b\" nil]").
-// That is matchResult, the same helper re-groups uses.
-func replaceByFn(op string, re *regexp.Regexp, s string, f lang.IFn, first bool) any {
-	var sb strings.Builder
-	cursor := 0 // everything before this is already in sb
-	search := 0 // where the next Find starts
-	matched := false
-	for search <= len(s) {
-		loc := re.FindStringSubmatchIndex(s[search:])
+// repl renders one match; for the fn path its result is spliced in LITERALLY
+// (the JVM wraps it in Matcher/quoteReplacement, so "$1" from f is the two
+// characters "$1", not a group reference — oracle 1.12.5:
+// (str/replace "a1" #"(\d)" (fn [m] "$1")) => "a$1").
+func replaceMatches(re *regexp.Regexp, s string, first bool, repl func(loc []int) string) any {
+	var locs [][]int
+	if first {
+		loc := re.FindStringSubmatchIndex(s)
 		if loc == nil {
-			break
+			return s
 		}
-		abs := make([]int, len(loc))
-		for i, v := range loc {
-			if v < 0 {
-				abs[i] = -1
-			} else {
-				abs[i] = v + search
-			}
-		}
-		matched = true
-		sb.WriteString(s[cursor:abs[0]])
-		sb.WriteString(replacementString(op, f.Invoke(reGroupsAt(s, abs, re.NumSubexp()))))
-		cursor = abs[1]
-		if first {
-			break
-		}
-		if abs[1] == abs[0] {
-			// Zero-width match: step one character forward, exactly like
-			// java.util.regex.Matcher.find, or we would loop forever
-			// (oracle 1.12.5: (str/replace "aaa" #"" (fn [m] "-"))
-			// => "-a-a-a-" — the skipped character is KEPT).
-			_, w := utf8.DecodeRuneInString(s[abs[1]:])
-			if w == 0 {
-				w = 1
-			}
-			search = abs[1] + w
-		} else {
-			search = abs[1]
+		locs = [][]int{loc}
+	} else {
+		locs = matcherFindAll(re, s)
+		if len(locs) == 0 {
+			return s
 		}
 	}
-	if !matched {
-		return s
+	var sb strings.Builder
+	cursor := 0 // everything before this is already in sb
+	for _, loc := range locs {
+		sb.WriteString(s[cursor:loc[0]])
+		sb.WriteString(repl(loc))
+		cursor = loc[1]
 	}
 	sb.WriteString(s[cursor:])
 	return sb.String()
+}
+
+// matcherFindAll is the sequence of matches java.util.regex.Matcher.find
+// yields over the WHOLE string — the sequence clojure.string/replace walks.
+//
+// It is built on regexp.FindAllStringSubmatchIndex, which matches against the
+// whole string, so `^`, `$`, `\b` and `\B` see their real context (oracle
+// 1.12.5: (str/replace "abc" #"^" (fn [m] "<")) => "<abc", ONE match — an
+// earlier version re-ran the regex on s[search:] and re-anchored `^` at every
+// step, giving "<a<b<c<").
+//
+// Go's own iteration differs from the JVM's in exactly one place: after a
+// NON-empty match ending at e, Go discards an empty match at e and retries
+// from e+1, while Matcher.find reports it (oracle 1.12.5:
+// (str/replace "aa" #"a*" (fn [m] "-")) => "--", and
+// (str/replace "a1b" #"\d*" (fn [m] (str "[" m "]"))) => "[]a[1][]b[]").
+// Those dropped matches are put back by probing position e with the pattern
+// anchored there but with the text to its LEFT still present, so the probe
+// sees the same context the real matcher would.
+func matcherFindAll(re *regexp.Regexp, s string) [][]int {
+	found := re.FindAllStringSubmatchIndex(s, -1)
+	if len(found) == 0 {
+		return nil
+	}
+	out := make([][]int, 0, len(found))
+	var probe *regexp.Regexp
+	probed := false
+	for i, m := range found {
+		out = append(out, m)
+		if m[1] == m[0] {
+			continue // empty match: Go already advanced like Matcher.find
+		}
+		// Go reported a match starting exactly at m[1]? Then it never
+		// skipped anything and the JVM sees the same match next.
+		if i+1 < len(found) && found[i+1][0] == m[1] {
+			continue
+		}
+		if !probed {
+			probed = true
+			// \A(?s:.) consumes exactly the character before the probe
+			// position, so the pattern is tried AT that position with its
+			// left context intact.
+			if p, err := regexp.Compile(`\A(?s:.)(?:` + re.String() + `)`); err == nil {
+				probe = p
+			}
+		}
+		if probe == nil {
+			continue
+		}
+		e := m[1]
+		_, w := utf8.DecodeLastRuneInString(s[:e])
+		if w == 0 {
+			continue
+		}
+		loc := probe.FindStringSubmatchIndex(s[e-w:])
+		if loc == nil || loc[1] != w {
+			continue // no match at e, or a non-empty one Go would have kept
+		}
+		abs := make([]int, len(loc))
+		abs[0], abs[1] = e, e
+		for j := 2; j < len(loc); j++ {
+			if loc[j] < 0 {
+				abs[j] = -1
+			} else {
+				abs[j] = loc[j] + e - w
+			}
+		}
+		out = append(out, abs)
+	}
+	return out
 }
 
 // reGroupsAt is clojure.core/re-groups over a submatch-index slice: the whole
