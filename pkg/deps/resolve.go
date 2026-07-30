@@ -215,7 +215,7 @@ func mvnReportLine(rd *rdep) string {
 		for _, band := range []struct{ code, label string }{
 			{"I4002", "require Java interop"},
 			{"R1012", "have no cljgo branch in a reader conditional"},
-			{"G5017", "cljgo's reader could not parse"},
+			{"G5019", "cljgo's reader could not parse"},
 		} {
 			names := byCode[band.code]
 			if len(names) == 0 {

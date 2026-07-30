@@ -8,30 +8,43 @@ import (
 )
 
 var (
-	kw_column                    = lang.InternKeywordString("column")
-	kw_doc                       = lang.InternKeywordString("doc")
-	kw_end_column                = lang.InternKeywordString("end-column")
-	kw_end_line                  = lang.InternKeywordString("end-line")
-	kw_file                      = lang.InternKeywordString("file")
-	kw_line                      = lang.InternKeywordString("line")
-	sym_cljg_DOT_date            = lang.NewSymbol("cljg.date")
-	sym_clojure_DOT_core         = lang.NewSymbol("clojure.core")
-	v_cljg_DOT_date_X_nano_time  = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-nano-time")).SetPrivate()
-	v_cljg_DOT_date_X_now_millis = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-now-millis")).SetPrivate()
-	v_cljg_DOT_date_nano_time    = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("nano-time"))
-	v_cljg_DOT_date_now          = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("now"))
-	v_cljg_DOT_date_since        = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("since"))
-	v_cljg_DOT_date_since_ms     = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("since-ms"))
-	v_clojure_DOT_core_X_        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
-	v_clojure_DOT_core_X_SLASH_  = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("/"))
-	v_clojure_DOT_core_double    = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("double"))
-	v_clojure_DOT_core_in_ns     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
-	v_clojure_DOT_core_refer     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	kw_column                       = lang.InternKeywordString("column")
+	kw_doc                          = lang.InternKeywordString("doc")
+	kw_end_column                   = lang.InternKeywordString("end-column")
+	kw_end_line                     = lang.InternKeywordString("end-line")
+	kw_exclude                      = lang.InternKeywordString("exclude")
+	kw_file                         = lang.InternKeywordString("file")
+	kw_line                         = lang.InternKeywordString("line")
+	sym_cljg_DOT_date               = lang.NewSymbol("cljg.date")
+	sym_clojure_DOT_core            = lang.NewSymbol("clojure.core")
+	sym_format                      = lang.NewSymbol("format")
+	v_cljg_DOT_date_X_format_iso    = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-format-iso")).SetPrivate()
+	v_cljg_DOT_date_X_format_layout = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-format-layout")).SetPrivate()
+	v_cljg_DOT_date_X_nano_time     = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-nano-time")).SetPrivate()
+	v_cljg_DOT_date_X_now_millis    = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-now-millis")).SetPrivate()
+	v_cljg_DOT_date_X_parse_iso     = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-parse-iso")).SetPrivate()
+	v_cljg_DOT_date_X_parse_layout  = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-parse-layout")).SetPrivate()
+	v_cljg_DOT_date_format          = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("format"))
+	v_cljg_DOT_date_format_iso      = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("format-iso"))
+	v_cljg_DOT_date_nano_time       = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("nano-time"))
+	v_cljg_DOT_date_now             = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("now"))
+	v_cljg_DOT_date_parse           = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("parse"))
+	v_cljg_DOT_date_parse_iso       = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("parse-iso"))
+	v_cljg_DOT_date_since           = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("since"))
+	v_cljg_DOT_date_since_ms        = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("since-ms"))
+	v_clojure_DOT_core_X_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
+	v_clojure_DOT_core_X_SLASH_     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("/"))
+	v_clojure_DOT_core_double       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("double"))
+	v_clojure_DOT_core_in_ns        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_refer        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 )
 
 var (
 	fnD_cljg_DOT_date_nano_time lang.FnFunc0
 	fnD_cljg_DOT_date_now       lang.FnFunc0
+	fnD_cljg_DOT_date_parse_iso lang.FnFunc1
+	fnD_cljg_DOT_date_format    lang.FnFunc2
+	fnD_cljg_DOT_date_parse     lang.FnFunc2
 )
 
 var loaded = false
@@ -48,12 +61,12 @@ func Load() {
 	tmp1 := v_clojure_DOT_core_in_ns.Get()
 	tmp2 := lang.Apply1(tmp1, sym_cljg_DOT_date)
 	_ = tmp2
-	// (clojure.core/refer (quote clojure.core))
+	// (clojure.core/refer (quote clojure.core) :exclude (quote [format]))
 	tmp3 := v_clojure_DOT_core_refer.Get()
-	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
+	tmp4 := lang.Apply3(tmp3, sym_clojure_DOT_core, kw_exclude, lang.NewVector(sym_format))
 	_ = tmp4
 	// (def nano-time "Monotonic nanoseconds since process start (the System/nanoTime analog).\n …
-	v_cljg_DOT_date_nano_time.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(26), kw_column, int64(7), kw_end_line, int64(26), kw_end_column, int64(16), kw_doc, "Monotonic nanoseconds since process start (the System/nanoTime analog).\n  Only the difference of two readings is meaningful — pair with `since`."))
+	v_cljg_DOT_date_nano_time.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(35), kw_column, int64(7), kw_end_line, int64(35), kw_end_column, int64(16), kw_doc, "Monotonic nanoseconds since process start (the System/nanoTime analog).\n  Only the difference of two readings is meaningful — pair with `since`."))
 	tmp5 := lang.FnFunc0(func() any {
 		tmp6 := v_cljg_DOT_date_X_nano_time.Get()
 		tmp7 := lang.Apply0(tmp6)
@@ -65,7 +78,7 @@ func Load() {
 	v_cljg_DOT_date_nano_time.SealDirect()
 	_ = v_cljg_DOT_date_nano_time
 	// (def now "The current wall-clock time as epoch milliseconds (the System/currentTimeMillis\…
-	v_cljg_DOT_date_now.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(32), kw_column, int64(7), kw_end_line, int64(32), kw_end_column, int64(10), kw_doc, "The current wall-clock time as epoch milliseconds (the System/currentTimeMillis\n  analog)."))
+	v_cljg_DOT_date_now.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(41), kw_column, int64(7), kw_end_line, int64(41), kw_end_column, int64(10), kw_doc, "The current wall-clock time as epoch milliseconds (the System/currentTimeMillis\n  analog)."))
 	tmp9 := lang.FnFunc0(func() any {
 		tmp10 := v_cljg_DOT_date_X_now_millis.Get()
 		tmp11 := lang.Apply0(tmp10)
@@ -77,7 +90,7 @@ func Load() {
 	v_cljg_DOT_date_now.SealDirect()
 	_ = v_cljg_DOT_date_now
 	// (def since "Elapsed nanoseconds. With one reading `t0` (from `nano-time`), the elapsed\n  …
-	v_cljg_DOT_date_since.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(38), kw_column, int64(7), kw_end_line, int64(38), kw_end_column, int64(12), kw_doc, "Elapsed nanoseconds. With one reading `t0` (from `nano-time`), the elapsed\n  nanos from `t0` until now. With two readings, `t1` - `t0`."))
+	v_cljg_DOT_date_since.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(12), kw_doc, "Elapsed nanoseconds. With one reading `t0` (from `nano-time`), the elapsed\n  nanos from `t0` until now. With two readings, `t1` - `t0`."))
 	tmp13 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -110,7 +123,7 @@ func Load() {
 	v_cljg_DOT_date_since.BindRoot(tmp13)
 	_ = v_cljg_DOT_date_since
 	// (def since-ms "Elapsed milliseconds (a double) — `since` divided by 1e6. One reading\n  …
-	v_cljg_DOT_date_since_ms.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(44), kw_column, int64(7), kw_end_line, int64(44), kw_end_column, int64(15), kw_doc, "Elapsed milliseconds (a double) — `since` divided by 1e6. One reading\n  measures until now; two measure the interval between them."))
+	v_cljg_DOT_date_since_ms.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(15), kw_doc, "Elapsed milliseconds (a double) — `since` divided by 1e6. One reading\n  measures until now; two measure the interval between them."))
 	tmp22 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -139,4 +152,71 @@ func Load() {
 	})
 	v_cljg_DOT_date_since_ms.BindRoot(tmp22)
 	_ = v_cljg_DOT_date_since_ms
+	// (def format-iso "Render an instant (epoch milliseconds; defaults to `now`) as an ISO-8601 …
+	v_cljg_DOT_date_format_iso.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(65), kw_column, int64(7), kw_end_line, int64(65), kw_end_column, int64(17), kw_doc, "Render an instant (epoch milliseconds; defaults to `now`) as an ISO-8601 /\n  RFC 3339 UTC string. Matches java.time.Instant.toString() at millisecond\n  precision: no fractional part on a whole second, exactly three digits\n  otherwise — (format-iso 0) => \"1970-01-01T00:00:00Z\",\n  (format-iso 1500) => \"1970-01-01T00:00:01.500Z\"."))
+	tmp36 := lang.FnFunc(func(args ...any) any {
+		switch len(args) {
+		case 0:
+			tmp37 := v_cljg_DOT_date_format_iso.Get()
+			tmp38 := v_cljg_DOT_date_now.Direct()
+			var tmp39 any
+			if !tmp38 {
+				tmp39 = v_cljg_DOT_date_now.Get()
+			}
+			var tmp40 any
+			if tmp38 {
+				tmp40 = fnD_cljg_DOT_date_now()
+			} else {
+				tmp40 = lang.Apply0(tmp39)
+			}
+			tmp41 := lang.Apply1(tmp37, tmp40)
+			return tmp41
+		case 1:
+			millis42 := args[0]
+			_ = millis42
+			tmp43 := v_cljg_DOT_date_X_format_iso.Get()
+			tmp44 := lang.Apply1(tmp43, millis42)
+			return tmp44
+		default:
+			panic(lang.NewArityError(len(args), "cljg.date/format-iso", "0: [] or 1: [millis]"))
+		}
+	})
+	v_cljg_DOT_date_format_iso.BindRoot(tmp36)
+	_ = v_cljg_DOT_date_format_iso
+	// (def parse-iso "Parse an ISO-8601 / RFC 3339 timestamp into epoch milliseconds. A fraction…
+	v_cljg_DOT_date_parse_iso.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(74), kw_column, int64(7), kw_end_line, int64(74), kw_end_column, int64(16), kw_doc, "Parse an ISO-8601 / RFC 3339 timestamp into epoch milliseconds. A fractional\n  part is optional and any offset is honoured, not dropped —\n  (parse-iso \"2026-07-30T12:00:00+05:30\") equals\n  (parse-iso \"2026-07-30T06:30:00Z\"). Throws, naming the input, if the string\n  is not an instant."))
+	tmp45 := lang.FnFunc1(func(s46 any) any {
+		tmp47 := v_cljg_DOT_date_X_parse_iso.Get()
+		tmp48 := lang.Apply1(tmp47, s46)
+		return tmp48
+	})
+	tmp49 := &lang.NamedFn1{Name: "cljg.date/parse-iso", Expects: "1: [s]", F: tmp45}
+	v_cljg_DOT_date_parse_iso.BindRoot(tmp49)
+	fnD_cljg_DOT_date_parse_iso = tmp49.F
+	v_cljg_DOT_date_parse_iso.SealDirect()
+	_ = v_cljg_DOT_date_parse_iso
+	// (def format "Render an instant (epoch milliseconds) in UTC with `layout`.\n\n  NOTE — no…
+	v_cljg_DOT_date_format.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(13), kw_doc, "Render an instant (epoch milliseconds) in UTC with `layout`.\n\n  NOTE — no JVM equivalent: `layout` is a GO reference-time layout, spelled by\n  writing the reference instant Mon Jan 2 15:04:05 MST 2006 the way you want\n  the output (\"2006-01-02\", \"15:04:05\", \"Jan 2 2006\"). It is NOT a\n  java.time DateTimeFormatter pattern (\"yyyy-MM-dd\"), and cljgo does not\n  translate one into the other — this is a Go host, and pretending otherwise\n  would silently mis-format. For the portable case use `format-iso`.\n\n  Does NOT shadow clojure.core/format, which is untouched (see the ns header)."))
+	tmp50 := lang.FnFunc2(func(millis51, layout52 any) any {
+		tmp53 := v_cljg_DOT_date_X_format_layout.Get()
+		tmp54 := lang.Apply2(tmp53, millis51, layout52)
+		return tmp54
+	})
+	tmp55 := &lang.NamedFn2{Name: "cljg.date/format", Expects: "2: [millis layout]", F: tmp50}
+	v_cljg_DOT_date_format.BindRoot(tmp55)
+	fnD_cljg_DOT_date_format = tmp55.F
+	v_cljg_DOT_date_format.SealDirect()
+	_ = v_cljg_DOT_date_format
+	// (def parse "Parse `s` with `layout` into epoch milliseconds — the inverse of `format`,\n…
+	v_cljg_DOT_date_parse.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(12), kw_doc, "Parse `s` with `layout` into epoch milliseconds — the inverse of `format`,\n  and likewise a GO reference-time layout, not a java.time pattern. A layout\n  carrying no zone is read as UTC. Throws, naming input and layout, on a\n  mismatch."))
+	tmp56 := lang.FnFunc2(func(s57, layout58 any) any {
+		tmp59 := v_cljg_DOT_date_X_parse_layout.Get()
+		tmp60 := lang.Apply2(tmp59, s57, layout58)
+		return tmp60
+	})
+	tmp61 := &lang.NamedFn2{Name: "cljg.date/parse", Expects: "2: [s layout]", F: tmp56}
+	v_cljg_DOT_date_parse.BindRoot(tmp61)
+	fnD_cljg_DOT_date_parse = tmp61.F
+	v_cljg_DOT_date_parse.SealDirect()
+	_ = v_cljg_DOT_date_parse
 }

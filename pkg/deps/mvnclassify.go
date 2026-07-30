@@ -39,7 +39,7 @@ type NSVerdict struct {
 	File   string // absolute path in the extracted tree
 	Coord  Coord
 	Reason string // "" when loadable; otherwise the human detail
-	Code   string // "" | "I4002" (real Java interop) | "R1012" (starved .cljc) | "G5017" (cljgo could not read it)
+	Code   string // "" | "I4002" (real Java interop) | "R1012" (starved .cljc) | "G5019" (cljgo could not read it)
 	Line   int
 	Column int
 
@@ -78,6 +78,9 @@ func classifyTree(dir string, c Coord) (*nsPurity, []NSVerdict, error) {
 		}
 		switch strings.ToLower(filepath.Ext(p)) {
 		case ".clj", ".cljc":
+			if isJarNoise(dir, p) {
+				return nil
+			}
 			files = append(files, p)
 		}
 		return nil
@@ -120,7 +123,7 @@ func classifyFile(path, ns string, c Coord) NSVerdict {
 
 	f, err := os.Open(path)
 	if err != nil {
-		v.Code, v.Reason = "G5017", "cannot be read: "+err.Error()
+		v.Code, v.Reason = "G5019", "cannot be read: "+err.Error()
 		return v
 	}
 	defer f.Close()
@@ -152,11 +155,11 @@ func classifyFile(path, ns string, c Coord) NSVerdict {
 		}
 		if !strings.Contains(err.Error(), "supplies no branch for this platform") {
 			// Any read error that is NOT a starved conditional is a
-			// read/parse problem and gets its own code (G5017). It is
+			// read/parse problem and gets its own code (G5019). It is
 			// emphatically NOT a Java-interop verdict: cljgo failing to parse
 			// a file says something about cljgo, not about whether the
 			// library uses Java.
-			v.Code, v.Reason = "G5017", err.Error()
+			v.Code, v.Reason = "G5019", err.Error()
 			if re, ok := err.(*reader.Error); ok {
 				v.Line, v.Column = re.Pos.Line, re.Pos.Col
 			}
@@ -177,7 +180,7 @@ func classifyFile(path, ns string, c Coord) NSVerdict {
 		forms, err = readElided(path, ns)
 		v.Elided = true
 		if err != nil {
-			v.Code, v.Reason = "G5017", err.Error()
+			v.Code, v.Reason = "G5019", err.Error()
 			if strings.Contains(err.Error(), "would change the shape of the enclosing") {
 				v.Code = "R1012"
 			}
@@ -303,6 +306,37 @@ func isMvnBuildScript(rel string) bool {
 // nsNameFor maps an extracted-tree relative path to its namespace name,
 // undoing the JVM munging: hiccup/util.clj -> hiccup.util,
 // clojure/tools/cli.cljc -> clojure.tools.cli, my_app/core.clj -> my-app.core.
+// isJarNoise reports whether a root-level .clj is a BUILD/tooling file rather
+// than a namespace. Clojars jars very commonly ship project.clj, build.boot or
+// data_readers.clj at the jar root, and none of them is a requirable namespace
+// — project.clj is Leiningen's build script, data_readers.clj is a reader-tag
+// map the runtime consumes directly.
+//
+// Counting them inflated the usable-namespace figure the resolve report and
+// the I4002 fix line quote: a one-namespace library shipping project.clj and
+// data_readers.clj reported "3 namespace(s) usable". The GATE was always
+// correct (it keys on file path, not on this count) — the honest NUMBER was
+// not, and a number a user cannot reconcile with the library's own docs is
+// worse than no number. Found by the adversarial verifier, 2026-07-30.
+//
+// Root-level only: a real namespace can legitimately be called
+// my.lib.project, and that lives at my/lib/project.clj, not at the root.
+func isJarNoise(dir, p string) bool {
+	rel, err := filepath.Rel(dir, p)
+	if err != nil {
+		return false
+	}
+	rel = filepath.ToSlash(rel)
+	if strings.Contains(rel, "/") {
+		return false // nested: a genuine namespace path
+	}
+	switch strings.ToLower(rel) {
+	case "project.clj", "build.boot", "data_readers.clj", "data_readers.cljc":
+		return true
+	}
+	return false
+}
+
 func nsNameFor(rel string) string {
 	rel = filepath.ToSlash(rel)
 	rel = strings.TrimSuffix(rel, filepath.Ext(rel))
@@ -398,12 +432,12 @@ func CheckMavenLoadable(path string) error {
 			note("it came from the maven dependency " + v.Coord.String()).
 			withFix(otherUsableHint(usable, v))
 	}
-	if v.Code == "G5017" {
+	if v.Code == "G5019" {
 		// A parse failure, NOT a Java verdict. The message says exactly that,
 		// because claiming "requires Java interop" about a file cljgo merely
 		// failed to read is an assertion about someone else's library that
 		// cljgo cannot support.
-		e := codedf("G5017", "namespace %s cannot be read by cljgo's reader — %s", v.NS, v.Reason)
+		e := codedf("G5019", "namespace %s cannot be read by cljgo's reader — %s", v.NS, v.Reason)
 		if v.Line > 0 {
 			e = e.at(v.File, v.Line, v.Column)
 		}
@@ -431,14 +465,17 @@ func otherUsableHint(usable map[string][]string, v NSVerdict) string {
 		// JVM-only). State the measurement, not the verdict.
 		return "no namespace in " + v.Coord.String() + " loaded on cljgo — see the resolve report for why, per namespace"
 	}
-	return plural(n) + " in " + v.Coord.String() + " are usable — see the resolve report, or :mvn/namespaces in build.lock.edn"
+	return plural(n) + " in " + v.Coord.String() + " — see the resolve report, or :mvn/namespaces in build.lock.edn"
 }
 
+// plural carries its own verb: "1 other namespace IS usable" but "3 other
+// namespaces ARE usable". The verb used to sit in the caller, which read
+// "1 other namespace … are usable".
 func plural(n int) string {
 	if n == 1 {
-		return "1 other namespace"
+		return "1 other namespace is usable"
 	}
-	return itoa(n) + " other namespaces"
+	return itoa(n) + " other namespaces are usable"
 }
 
 func itoa(n int) string {

@@ -425,7 +425,7 @@ func validateDeclaredVersion(name, v string) error {
 	if bad == "" {
 		return nil
 	}
-	return codedf("G5016", "dependency %q declares %s, which cljgo does not support", name, bad).
+	return codedf("G5018", "dependency %q declares %s, which cljgo does not support", name, bad).
 		withExpectedFound("a fixed published version, e.g. \"1.1.230\"", v).
 		withFix("pin one published release, e.g. (dep b \"" + name + "\" {:mvn/version \"1.2.3\"})").
 		withFix("or depend on it via :git — a ref is a fixed identity too")

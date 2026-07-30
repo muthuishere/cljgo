@@ -492,3 +492,18 @@ oracle-verified) and flips the suite's `merge.cljc` to pass (217 → 218).
   the "value of type %T can't have metadata" error remains for everything
   else, including the invokable non-fns (keyword/symbol/var/collection/
   multimethod) that the JVM also refuses.
+
+## UUID str-vs-print split (ADR 0110 ask 2, 2026-07-30, `strconv.go`)
+
+- `strconv.go`: new `TaggedPrinter` interface (`PrintTagged() string`) plus
+  a `PrintNative` case for it, placed before the `*regexp.Regexp` case and
+  the `ToString` fallback. It separates a value's Java `toString` from its
+  `print-method` form for the one type where they differ: `java.util.UUID`
+  toStrings BARE (`"550e8400-…"`, 36 chars) but prints TAGGED (`#uuid
+  "550e8400-…"`, 44) — for `print` as well as `pr` (oracle 1.12.5).
+  `pkg/reader`'s `*UUID` implements it; its `String()` is now the bare form,
+  so `(str u)`, `(format "%s" u)` and string concatenation stop emitting the
+  reader tag into ids that go on a wire.
+- Acceptance: `conformance/tests/uuid-str-vs-pr-str.clj` (dual-harness,
+  oracle-verified 2026-07-30), incl. the `pr-str` -> `edn/read-string`
+  round-trip.

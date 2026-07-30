@@ -208,12 +208,12 @@ func TestDeclaredVersionSyntaxIsValidated(t *testing.T) {
 		t.Run(tc.version, func(t *testing.T) {
 			r := newMvnRepo(t)
 			err := resolveErr(t, r, []Dep{{Name: "some/lib", MvnVersion: tc.version}}, nil)
-			wantCode(t, err, "G5016")
+			wantCode(t, err, "G5018")
 			if !strings.Contains(err.Error(), tc.want) {
-				t.Errorf("G5016 does not name the syntax %q:\n%s", tc.want, err)
+				t.Errorf("G5018 does not name the syntax %q:\n%s", tc.want, err)
 			}
 			if !strings.Contains(err.Error(), "some/lib") {
-				t.Errorf("G5016 does not name the dependency:\n%s", err)
+				t.Errorf("G5018 does not name the dependency:\n%s", err)
 			}
 			if strings.Contains(err.Error(), "not found in any repository") {
 				t.Errorf("the repository was blamed for the user's syntax:\n%s", err)
@@ -269,7 +269,7 @@ func TestUnreadableFileIsNotAJavaVerdict(t *testing.T) {
 	if err == nil {
 		t.Fatal("an unreadable file was not gated")
 	}
-	wantCode(t, err, "G5017")
+	wantCode(t, err, "G5019")
 	if !strings.Contains(err.Error(), "not a statement about the library") {
 		t.Errorf("a parse failure did not disclaim a Java verdict:\n%s", err)
 	}
@@ -335,8 +335,8 @@ func TestDeclaredVersionEdgeShapes(t *testing.T) {
 				t.Fatalf("error = %v, want it to name %q", err, tc.want)
 			}
 			// It must be the coded diagnostic, never a raw error.
-			if !strings.Contains(err.Error(), "G5016") && !hasDiagCode(err, "G5016") {
-				t.Fatalf("error = %v, want the registered G5016 code", err)
+			if !strings.Contains(err.Error(), "G5018") && !hasDiagCode(err, "G5018") {
+				t.Fatalf("error = %v, want the registered G5018 code", err)
 			}
 		})
 	}

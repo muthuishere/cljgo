@@ -113,15 +113,7 @@ func installSocketShims(def func(name string, fn func(args ...any) any)) {
 			panic(fmt.Errorf("cljg.socket: udp-send expects a udp socket handle (from udp-listen), got: %s", lang.PrintString(args[0])))
 		}
 		host, port := asString(args[1]), asInt(args[2])
-		var payload []byte
-		switch d := args[3].(type) {
-		case string:
-			payload = []byte(d)
-		case []byte:
-			payload = d
-		default:
-			panic(fmt.Errorf("cljg.socket: udp-send expects a string or byte-array payload, got: %s", lang.PrintString(args[3])))
-		}
+		payload := toGoBytes("cljg.socket/udp-send", args[3])
 		dst, err := net.ResolveUDPAddr("udp", net.JoinHostPort(host, strconv.Itoa(port)))
 		if err != nil {
 			panic(fmt.Errorf("cljg.socket: udp-send to %s:%d: %w", host, port, err))

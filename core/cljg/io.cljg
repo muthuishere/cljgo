@@ -14,9 +14,13 @@
 ;;   (io/sh! ["make" "build"] {:dir "app"})      ; throws on non-zero exit
 ;;   (io/string-writer)    (io/writer-str w)     ; in-memory *out* target
 ;;
+;;   (io/read-bytes "logo.png")                  ; the byte route (ADR 0110)
+;;   (io/write-bytes "out.bin" bs)               ; {:append true} to append
+;;
 ;; Private Go shims interned before this loads: -fs-stat -fs-list -fs-mkdir
 ;; -fs-delete -fs-copy -fs-move -fs-glob -fs-walk -fs-temp-file -fs-temp-dir
-;; -fs-home -fs-cwd -path-abs -path-join -path-base -path-dir -path-ext
+;; -fs-home -fs-cwd -fs-read-bytes -fs-write-bytes
+;; -path-abs -path-join -path-base -path-dir -path-ext
 ;; (pkg/bri/io_fs.go) and -proc-exec (pkg/bri/io_proc.go).
 ;;
 ;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
@@ -131,6 +135,38 @@
   "The file extension of `path` including the leading dot (\"\" if none)."
   [path]
   (-path-ext path))
+
+;; --- bytes (ADR 0110 ask 1) --------------------------------------------------
+;;
+;; The route between a path and BYTES. `slurp`/`spit` are the TEXT route and
+;; stay clojure.core's; they are lossy for content that is not valid UTF-8
+;; (invalid sequences decode to U+FFFD) — identically so on the JVM, which is
+;; why the JVM answer is java.nio Files/readAllBytes rather than slurp. cljgo
+;; has no java.nio, so the byte route lives here.
+
+(defn read-bytes
+  "Read the whole file at `path` and return its contents as a byte-array. Use
+  this, not `slurp`, for anything that is not text: a string round-trip
+  replaces every invalid UTF-8 sequence with U+FFFD and changes the length.
+  Throws if the file cannot be read.
+
+  The elements are SIGNED, exactly as the JVM's byte[] is and as
+  clojure.core/byte-array already builds: a 0xFF byte reads back as -1, not
+  255, so (vec (read-bytes p)) agrees with the JVM (oracle 1.12.5).
+
+  The JVM analog is (java.nio.file.Files/readAllBytes (java.nio.file.Path/of
+  path (into-array String []))); cljgo has no java.nio, so this is the route."
+  [path]
+  (-fs-read-bytes path))
+
+(defn write-bytes
+  "Write `data` — a byte-array or a string — to the file at `path`, creating it
+  if needed, and return the number of bytes written. Truncates by default;
+  with {:append true} appends instead. `opts` must be a map (or nil) — a
+  non-map is rejected rather than quietly truncating. Throws if the file
+  cannot be written."
+  ([path data] (write-bytes path data nil))
+  ([path data opts] (-fs-write-bytes path data opts)))
 
 ;; --- locations / temp --------------------------------------------------------
 
