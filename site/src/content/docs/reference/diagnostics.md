@@ -72,8 +72,8 @@ enforced by a test. Every registered code ships an explain page.
 
 ## Registered codes
 
-All codes below have explain pages (`cljgo explain <code>`). The E3xxx and
-I4xxx bands are reserved but have no registered codes yet.
+All codes below have explain pages (`cljgo explain <code>`). The E3xxx band is
+reserved but has no registered codes yet.
 
 | Code | Title | Since |
 |---|---|---|
@@ -86,6 +86,9 @@ I4xxx bands are reserved but have no registered codes yet.
 | R1007 | invalid escape sequence in string | M2 |
 | R1008 | invalid character literal | M2 |
 | R1009 | invalid metadata | M2 |
+| R1010 | reader conditional splicing at top level | v0.8.0 |
+| R1011 | conditional read not allowed | v0.8.0 |
+| R1012 | reader conditional supplies no branch for this platform | v0.8.0 |
 | A2001 | unable to resolve symbol | M2 |
 | A2002 | recur outside tail position | M2 |
 | A2003 | recur argument count mismatch | M2 |
@@ -94,6 +97,9 @@ I4xxx bands are reserved but have no registered codes yet.
 | A2006 | malformed binding vector | M2 |
 | A2007 | invalid binding form | M2 |
 | A2008 | conflicting fn overloads | M2 |
+| A2009 | no such namespace | v0.8.0 |
+| I4001 | Java class used as a namespace | v0.8.0 |
+| I4002 | namespace requires Java interop and cannot load on cljgo | v0.8.0 |
 | G5000 | uncategorized compiler error | M2 |
 | G5001 | value is not a number | M5 |
 | G5002 | value is not a function | M5 |
@@ -104,6 +110,33 @@ I4xxx bands are reserved but have no registered codes yet.
 | G5007 | no value supplied for key | M5 |
 | G5008 | sql params passed as a collection | M5 |
 | G5009 | collection value in a row map | M5 |
+| G5010 | maven coordinate not found | v0.8.0 |
+| G5011 | unsupported Maven POM feature | v0.8.0 |
+| G5012 | maven artifact checksum mismatch | v0.8.0 |
+| G5013 | maven version conflict | v0.8.0 |
+| G5014 | offline: maven coordinate unavailable | v0.8.0 |
+| G5015 | conflicting dependency coordinates | v0.8.0 |
+| G5016 | replacement fn did not return a string | v0.8.0 |
+| G5017 | options argument is not a map | v0.8.0 |
+| G5018 | unsupported dependency version syntax | v0.8.0 |
+| G5019 | maven dependency source file cannot be read | v0.8.0 |
+| G5020 | maven dependency namespace failed to compile on cljgo | v0.8.0 |
+
+### The dependency-resolution codes
+
+`I4002`, `R1012` and the `G501x` band are what you meet when
+[consuming a Clojars library](/cljgo/guides/deps-publish/). They exist so a
+library that cannot work on cljgo **fails loudly at `require`** rather than
+half-loading:
+
+- **`I4002`** — the namespace genuinely needs Java interop. Gating is per
+  *namespace*, not per library: one jar routinely mixes both, so the pure
+  namespaces in the same jar stay usable.
+- **`R1012`** — a `.cljc` whose real body is `:clj`-only, i.e. the reader
+  conditional leaves cljgo nothing. Without this it would silently load an
+  empty namespace.
+- **`G5011`** — a Maven POM feature the resolver does not implement.
+  Unimplemented means *name-error*, never half-resolve.
 
 One stability guarantee worth knowing: the rendered `.Error()` string stays
 byte-stable — the conformance suite freezes it — and the extra detail (locus,
