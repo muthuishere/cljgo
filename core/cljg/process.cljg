@@ -12,17 +12,23 @@
 ;;     ((:wait p)))                      ; block for exit, => 0
 ;;
 ;; The handle is {:in <writable> :out <readable> :err <readable>
-;;                :wait (fn [] -> exit-code) :kill (fn [] -> nil)}.
+;;                :wait (fn [] -> exit-code) :kill (fn [] -> nil)
+;;                :alive? (fn [] -> boolean)}.
 ;; :in / :out / :err are cljg.stream handles (require cljg.stream to read/write
 ;; them); :wait blocks until the process exits and returns its exit code (a
-;; non-zero exit is a normal result); :kill force-terminates it.
+;; non-zero exit is a normal result); :kill force-terminates it; :alive? is a
+;; NON-BLOCKING liveness check (issue #173) — false once the child has
+;; exited, whether or not anything ever called :wait or :kill.
 ;;
 ;; The Go half (pkg/bri/proc_spawn.go) is a thin shim over os/exec's
 ;; StdinPipe/StdoutPipe/StderrPipe; the pipes are wrapped as the same
 ;; Readable/Writable handles cljg.stream and cljg.net.http use (ONE stream
-;; abstraction — spike s56). Everything here is portable Clojure, so it runs
-;; identically interpreted and AOT-compiled. Private Go shims interned before
-;; this loads: -proc-spawn -proc-wait -proc-kill.
+;; abstraction — spike s56). A single background goroutine owns cmd.Wait()
+;; from the moment the process starts (os/exec forbids calling Wait twice),
+;; so :wait / :alive? both just read its result — no caller-side reaper is
+;; needed, unlike before this fix. Everything here is portable Clojure, so it
+;; runs identically interpreted and AOT-compiled. Private Go shims interned
+;; before this loads: -proc-spawn -proc-wait -proc-kill -proc-alive?.
 ;;
 ;; (cljg.io's run-to-completion exec/sh/sh! stay in cljg.io — ADR 0101 makes
 ;; cljg.process the home for the STREAMING capability; folding exec/sh here is a
@@ -36,18 +42,23 @@
 (defn spawn
   "Start a subprocess and return a live handle:
     {:in <writable> :out <readable> :err <readable>
-     :wait (fn [] -> exit-code) :kill (fn [] -> nil)}
+     :wait (fn [] -> exit-code) :kill (fn [] -> nil)
+     :alive? (fn [] -> boolean)}
   `command` is a vector [cmd arg…]. opts (optional):
     :env {name value}  merged onto the current environment
     :dir path          the working directory
   The child runs concurrently; stream into :in and out of :out/:err with
-  cljg.stream, then call :wait (blocks for exit, returns the exit code) or :kill.
+  cljg.stream, then call :wait (blocks for exit, returns the exit code) or
+  :kill. :alive? never blocks — it answers false once the child has exited,
+  whether or not :wait or :kill was ever called, and is safe to call any
+  number of times alongside :wait.
   A missing/unrunnable binary throws (it never started)."
   ([command] (spawn command {}))
   ([command opts]
    (let [{:keys [in out err -handle]} (-proc-spawn (vec command) opts)]
-     {:in   in
-      :out  out
-      :err  err
-      :wait (fn [] (-proc-wait -handle))
-      :kill (fn [] (-proc-kill -handle))})))
+     {:in     in
+      :out    out
+      :err    err
+      :wait   (fn [] (-proc-wait -handle))
+      :kill   (fn [] (-proc-kill -handle))
+      :alive? (fn [] (-proc-alive? -handle))})))

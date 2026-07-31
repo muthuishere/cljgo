@@ -19,13 +19,54 @@ import (
 )
 
 // spawnHandle is the opaque process handle threaded back to Clojure inside the
-// :wait / :kill closures. It is never inspected by Clojure directly.
+// :wait / :kill / :alive? closures. It is never inspected by Clojure directly.
+//
+// cmd.Wait may only ever be called once (os/exec docs), so it has exactly one
+// caller: the reaper goroutine launched right after Start(). Every other
+// observer (-proc-wait, -proc-alive?) reads doneCh/exitCode/waitErr instead of
+// touching cmd.Wait itself — this is what makes a non-blocking liveness check
+// (issue #173) possible without a caller-side reaper thread, and what lets
+// :wait be called more than once safely.
 type spawnHandle struct {
-	cmd *exec.Cmd
+	cmd      *exec.Cmd
+	doneCh   chan struct{} // closed once the reaper's cmd.Wait() returns
+	exitCode int64         // valid once doneCh is closed
+	waitErr  error         // non-nil only for a genuine wait error (not a non-zero exit)
+}
+
+// startReaper launches the single goroutine that owns cmd.Wait() for the
+// lifetime of the handle.
+func (h *spawnHandle) startReaper() {
+	h.doneCh = make(chan struct{})
+	go func() {
+		err := h.cmd.Wait()
+		switch {
+		case err == nil:
+			h.exitCode = 0
+		default:
+			if ee, ok := err.(*exec.ExitError); ok {
+				h.exitCode = int64(ee.ExitCode()) // ran, exited non-zero — a normal result
+			} else {
+				h.waitErr = err
+			}
+		}
+		close(h.doneCh)
+	}()
+}
+
+// alive reports whether the child has NOT yet been reaped — false once the
+// reaper has observed its exit. Never blocks.
+func (h *spawnHandle) alive() bool {
+	select {
+	case <-h.doneCh:
+		return false
+	default:
+		return true
+	}
 }
 
 // installProcSpawnShims interns cljg.process's private Go primitives: the
-// spawn itself plus wait/kill over the returned handle.
+// spawn itself plus wait/kill/alive? over the returned handle.
 func installProcSpawnShims(def func(name string, fn func(args ...any) any)) {
 	// -proc-spawn (argv opts) -> {:in :out :err :-handle}. argv is a non-empty
 	// vector [cmd arg…]; opts (may be nil) honors :env ({name value}, merged
@@ -34,16 +75,15 @@ func installProcSpawnShims(def func(name string, fn func(args ...any) any)) {
 	def("-proc-spawn", procSpawnShim)
 	// -proc-wait (handle) -> exit code (int). Blocks until the process exits;
 	// returns its exit status (non-zero is a normal result, not an error).
+	// Safe to call any number of times, and safe alongside -proc-alive? —
+	// both just read the reaper's result.
 	def("-proc-wait", func(args ...any) any {
 		h := asSpawnHandle("-proc-wait", args)
-		err := h.cmd.Wait()
-		if err == nil {
-			return int64(0)
+		<-h.doneCh
+		if h.waitErr != nil {
+			panic(fmt.Errorf("cljg.process: wait: %w", h.waitErr))
 		}
-		if ee, ok := err.(*exec.ExitError); ok {
-			return int64(ee.ExitCode()) // ran, exited non-zero — a normal result
-		}
-		panic(fmt.Errorf("cljg.process: wait: %w", err))
+		return h.exitCode
 	})
 	// -proc-kill (handle) -> nil. Force-kills the process (SIGKILL); not an
 	// error if it has already exited.
@@ -53,6 +93,14 @@ func installProcSpawnShims(def func(name string, fn func(args ...any) any)) {
 			_ = h.cmd.Process.Kill()
 		}
 		return nil
+	})
+	// -proc-alive? (handle) -> boolean. Non-blocking: false once the child has
+	// exited (observed by the reaper), true while it is still running. Closes
+	// the gap issue #173 found: koine had to run its own reaper thread to
+	// answer this on cljgo when the JVM offers .isAlive() directly.
+	def("-proc-alive?", func(args ...any) any {
+		h := asSpawnHandle("-proc-alive?", args)
+		return h.alive()
 	})
 }
 
@@ -96,11 +144,14 @@ func procSpawnShim(args ...any) any {
 		panic(fmt.Errorf("cljg.process: spawn %q: %w", argv[0], err))
 	}
 
+	h := &spawnHandle{cmd: cmd}
+	h.startReaper()
+
 	return lang.NewMap(
 		lang.NewKeyword("in"), newWritableStream(stdin, stdin),
 		lang.NewKeyword("out"), newReadableStream(stdout, stdout),
 		lang.NewKeyword("err"), newReadableStream(stderr, stderr),
-		lang.NewKeyword("-handle"), &spawnHandle{cmd: cmd},
+		lang.NewKeyword("-handle"), h,
 	)
 }
 

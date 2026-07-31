@@ -94,6 +94,44 @@ func TestCljgProcessSpawnKill(t *testing.T) {
 	}
 }
 
+// TestCljgProcessAlive is the regression test for issue #173: spawn's handle
+// exposed only a BLOCKING :wait and a :kill, so "is the child alive yet?"
+// was unanswerable without committing to block. :alive? must never block,
+// and — the exact cross-host divergence the issue reported — must go FALSE
+// once the child exits ON ITS OWN, with nobody ever calling :wait or :kill.
+// Before this fix there was no host primitive to observe that at all.
+func TestCljgProcessAlive(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[cljg.process :as proc] '[cljg.system :as sys])`)
+
+	// alive? is true while a long-running child is up, false after it is
+	// killed and reaped.
+	if got := eval(t, d, `
+    (let [p (proc/spawn `+helperCmd("sleep", "60000")+` `+helperEnv+`)]
+      (let [a ((:alive? p))]
+        ((:kill p))
+        ((:wait p))
+        a))`); got != true {
+		t.Errorf("alive? on a running child = %v, want true", got)
+	}
+
+	// The reported divergence: a child that exits BY ITSELF (nobody calls
+	// :wait or :kill) must eventually answer alive? = false, purely from the
+	// host observing the exit — not from a caller-maintained atom. Poll
+	// without ever calling :wait, bounded so a regression fails fast instead
+	// of hanging the suite.
+	got := evalString(t, d, `
+    (let [p (proc/spawn `+helperCmd("echo", "bye")+` `+helperEnv+`)]
+      (loop [n 0]
+        (cond
+          (not ((:alive? p))) "exited"
+          (> n 300)           "still-alive-after-3s"
+          :else (do (sys/sleep 10) (recur (inc n))))))`)
+	if got != "exited" {
+		t.Errorf("alive? after the child exited on its own = %q, want %q", got, "exited")
+	}
+}
+
 func TestCljgStreamReduce(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `(require '[cljg.process :as proc] '[cljg.stream :as st])`)
