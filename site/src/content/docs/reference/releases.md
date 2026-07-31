@@ -21,6 +21,54 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.8.4](https://github.com/muthuishere/cljgo/releases/tag/v0.8.4) — 2026-07-31
+
+*Eight consumer-reported defects, and a `clojure.core` that is now measured
+against the JVM instead of assumed.*
+
+Every item here came from a real project using cljgo, filed with a repro.
+
+- **`clojure.core` no longer carries names JVM Clojure lacks.** The ADR 0014
+  Result/Option family (`ok`, `err`, `just`, `none`, …) was interned straight
+  into `clojure.core` and auto-referred everywhere, so a user who legally wrote
+  `(defn ok [x] …)` got a shadow warning that **cannot happen on the JVM**.
+  It now lives in `cljx.meta`, required deliberately. `try`/`catch` remains the
+  idiom for handling failure, exactly as on the JVM. (ADR 0115)
+- **Core parity is now a measured, enforced property**, not a claim. A ratchet
+  test diffs cljgo's `clojure.core` against the **real** JVM 1.12.5 public var
+  set in both directions and fails on any new divergence — and on any *closed*
+  one, so improvements get locked in. Today: 691 cljgo publics against the
+  JVM's 679, 59 cljgo-only, 47 missing. Most of the 59 are internal helpers
+  that are simply missing `:private`.
+  - It immediately caught `nan?`, a lowercase alias of the JVM's `NaN?` with
+    both spellings live. Removed: teaching a spelling that does not port is
+    exactly what the precedence principle forbids.
+- **`cljg.io` errors read as Clojure**, with the raw Go text preserved in
+  `ex-data` under `:go/error` so nothing is lost. No more doubled
+  `op "path": syscall path: reason` shapes or syscall names the caller never
+  invoked. (ADR 0114)
+- **`cljg.io/exec`'s `:timeout-ms` now bounds the CALL, not just the process.**
+  A command that forked a grandchild held the output pipes open, so a killed
+  `sleep 5` still returned ~16× past its deadline. A timeout that does not
+  bound the call is a broken promise; measured 5.02 s → 0.35 s against a
+  300 ms deadline.
+- **`cljg.process` gains `:alive?`** — a non-blocking liveness check. `:wait`
+  was the only option, so "is the child alive?" was unanswerable without
+  running your own reaper.
+- **`cljg.io/real-path`** resolves symlinks and refuses cycles with `G5024`.
+  `absolute` is purely lexical and could not guard either.
+- **`clojure.core/load-file`** was interned with a `nil` root: it resolved,
+  looked supported, and died on "cannot call nil". Implemented for the
+  interpreter; compiled binaries now say plainly that they have no reader
+  rather than failing obscurely.
+- **A fresh clone tells you what is wrong.** `cljgo run` in a project whose
+  dependencies were never resolved raised a bare "could not locate namespace";
+  it now raises `G5023` naming the build file and telling you to run
+  `cljgo build`.
+- **`cljgo version` identifies the build.** Every unstamped binary reported
+  `0.1.0-dev`, so a bug report could not be tied to a commit. Dev builds now
+  carry their commit and dirty flag; released binaries still show the clean tag.
+
 ## [v0.8.3](https://github.com/muthuishere/cljgo/releases/tag/v0.8.3) — 2026-07-31
 
 *Two build defects that shipped green-looking wrong answers, and a benchmark
