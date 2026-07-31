@@ -29,6 +29,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/muthuishere/cljgo/pkg/build"
 )
 
 // cljgoBin builds the CLI once per test binary and returns its path.
@@ -249,5 +251,47 @@ func TestJVMBuildCljDoesNotBreakTheProject(t *testing.T) {
 	}
 	if !strings.Contains(out, "ok") {
 		t.Fatalf("cljgo run output = %q, want it to contain \"ok\"", out)
+	}
+}
+
+// TestMissingBuildFnNamesTheBuildFile — a build file with no `build` entry
+// point must name the user's file and the missing form, not cljgo's
+// internals. Before G5025 it surfaced from inside the driver string:
+//
+//	error: evaluating build fn: compiler error at <build-driver>:1:38:
+//	unable to resolve symbol: build in this context
+//
+// `<build-driver>` is a string cljgo synthesizes, so that named a file the
+// user never wrote and gave a column INTO that nonexistent file, while never
+// mentioning their build.cljgo or the missing (defn build [b] …).
+//
+// Found by koine while black-box bisecting #176: stripping the require from a
+// root build.clj left this behind, which is how it surfaced as a defect in
+// its own right rather than an artifact of that bug.
+func TestMissingBuildFnNamesTheBuildFile(t *testing.T) {
+	bin := cljgoBin(t)
+	proj := t.TempDir()
+	writeTree(t, proj, map[string]string{
+		// A plausible near-miss: the fn exists but is not called `build`.
+		build.BuildFileName: "(defn jar [_] nil)\n",
+		"src/demo/app.cljc": "(ns demo.app)\n(println \"ok\")\n",
+	})
+
+	out, code := runIn(t, bin, proj, "build")
+	if code == 0 {
+		t.Fatalf("cljgo build with no build fn succeeded:\n%s", out)
+	}
+	// The internals must not leak.
+	if strings.Contains(out, "<build-driver>") {
+		t.Fatalf("error names cljgo's synthesized driver:\n%s", out)
+	}
+	if strings.Contains(out, "unable to resolve symbol") {
+		t.Fatalf("error describes cljgo's internals:\n%s", out)
+	}
+	// It must name the user's file, the missing form, and carry the code.
+	for _, want := range []string{build.BuildFileName, "defn build", "G5025"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("error does not mention %q:\n%s", want, out)
+		}
 	}
 }

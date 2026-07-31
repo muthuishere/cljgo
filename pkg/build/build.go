@@ -134,6 +134,16 @@ func LoadPlan(buildFile string) (*Plan, error) {
 		return nil, err
 	}
 
+	// Check the entry point BEFORE evaluating the driver. Without this, a
+	// build file with no `build` fn failed inside the driver string, and the
+	// error named `<build-driver>` with a column into that synthesized
+	// string — a file the user never wrote — while never naming their
+	// build file or the missing `(defn build [b] …)`. Found by koine while
+	// bisecting #176.
+	if fn, rerr := evalString(ev, "(clojure.core/resolve 'build)"); rerr != nil || fn == nil {
+		return nil, ErrNoBuildFn(buildFile)
+	}
+
 	// Construct a fresh builder, run the user's build fn against it, hand
 	// the atom back. `build` is resolved from the ns build.cljgo defined it in.
 	res, err := evalString(ev, "(let [b (cljgo.build/make-builder)] (build b) b)")

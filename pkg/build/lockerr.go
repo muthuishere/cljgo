@@ -43,3 +43,47 @@ func ErrNoLock(buildFile string, n int) error {
 		}},
 	}}
 }
+
+// noBuildFnError is a coded diagnostic (G5025) for a build file that defines
+// no `build` entry point. Without it, LoadPlan evaluated its internal driver
+// string anyway and surfaced the interpreter's raw failure to resolve the
+// symbol:
+//
+//	error: evaluating build fn: compiler error at <build-driver>:1:38:
+//	unable to resolve symbol: build in this context
+//
+// Every part of that is unusable to the person reading it. `<build-driver>`
+// is a string cljgo synthesizes, so it names a file that does not exist and
+// gives a column INTO that nonexistent file; the real file — the build.cljgo
+// they actually wrote — is never mentioned; and "unable to resolve symbol"
+// describes cljgo's internals rather than the one thing they need to know,
+// which is that a `(defn build [b] …)` is missing.
+//
+// Found by koine while black-box bisecting issue #176: stripping the require
+// from a root build.clj left this error behind, which is how it surfaced as a
+// defect in its own right rather than an artifact of that bug.
+type noBuildFnError struct{ d diag.Diagnostic }
+
+func (e *noBuildFnError) Error() string { return diag.Render(e.d) }
+
+// Diagnostic implements diag.Carrier.
+func (e *noBuildFnError) Diagnostic() (diag.Diagnostic, bool) { return e.d, true }
+
+// Code returns the diagnostic's registered error code.
+func (e *noBuildFnError) Code() string { return e.d.ErrorCode }
+
+// ErrNoBuildFn builds the G5025 diagnostic for a build file with no `build`
+// entry point.
+func ErrNoBuildFn(buildFile string) error {
+	return &noBuildFnError{d: diag.Diagnostic{
+		ErrorCode: "G5025",
+		Severity:  diag.SeverityError,
+		Message: fmt.Sprintf(
+			"%s defines no build entry point", buildFile),
+		Expected: "(defn build [b] …)",
+		Found:    "no `build` var in the build file",
+		Fixes: []diag.Fix{{
+			Title: "add `(defn build [b] …)` — it receives the builder and declares the artifacts",
+		}},
+	}}
+}
