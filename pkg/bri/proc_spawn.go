@@ -131,26 +131,47 @@ func procSpawnShim(args ...any) any {
 	if err != nil {
 		panic(fmt.Errorf("cljg.process: stdin pipe for %q: %w", argv[0], err))
 	}
-	stdout, err := cmd.StdoutPipe()
+	// os.Pipe, NOT cmd.StdoutPipe/StderrPipe — and this is load-bearing, not a
+	// style choice. os/exec's docs say Wait "will close the pipe after seeing
+	// the command exit, so most callers need not close it themselves; it is
+	// thus incorrect to call Wait before all reads from the pipe have
+	// completed." The reaper below calls Wait from the moment Start returns,
+	// which is exactly that forbidden shape: the child exits, Wait closes the
+	// read end underneath a caller still consuming (st/lines …), and the read
+	// fails with "file already closed".
+	//
+	// Owning the pipes ourselves decouples the two. Wait reaps the process and
+	// touches nothing the caller is holding; the read ends stay open until the
+	// caller closes them or the stream is exhausted. Passing the write ends as
+	// cmd.Stdout/Stderr and closing OUR copies after Start means the child owns
+	// the only remaining writers, so readers still see a real EOF when it exits.
+	stdoutR, stdoutW, err := os.Pipe()
 	if err != nil {
 		panic(fmt.Errorf("cljg.process: stdout pipe for %q: %w", argv[0], err))
 	}
-	stderr, err := cmd.StderrPipe()
+	stderrR, stderrW, err := os.Pipe()
 	if err != nil {
 		panic(fmt.Errorf("cljg.process: stderr pipe for %q: %w", argv[0], err))
 	}
+	cmd.Stdout, cmd.Stderr = stdoutW, stderrW
 
 	if err := cmd.Start(); err != nil {
+		stdoutW.Close()
+		stderrW.Close()
 		panic(fmt.Errorf("cljg.process: spawn %q: %w", argv[0], err))
 	}
+	// The child holds its own duplicates now; drop ours so the reader sees EOF
+	// when the child exits rather than blocking on a writer we forgot about.
+	stdoutW.Close()
+	stderrW.Close()
 
 	h := &spawnHandle{cmd: cmd}
 	h.startReaper()
 
 	return lang.NewMap(
 		lang.NewKeyword("in"), newWritableStream(stdin, stdin),
-		lang.NewKeyword("out"), newReadableStream(stdout, stdout),
-		lang.NewKeyword("err"), newReadableStream(stderr, stderr),
+		lang.NewKeyword("out"), newReadableStream(stdoutR, stdoutR),
+		lang.NewKeyword("err"), newReadableStream(stderrR, stderrR),
 		lang.NewKeyword("-handle"), h,
 	)
 }
