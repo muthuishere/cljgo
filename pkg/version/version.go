@@ -12,7 +12,9 @@
 package version
 
 import (
+	"regexp"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 )
@@ -70,8 +72,111 @@ func GoVersion() string {
 //
 // This is the REPL banner and the `cljgo version` body. All three numbers
 // matter to someone reporting a bug: ours, the host's, the language's.
+//
+// A release binary (IsRelease(), stamped by goreleaser's -ldflags) reports
+// its clean tag and nothing more — that value already identifies the build.
+// Every OTHER build path (`go build`, `go install`, a plain dev binary) never
+// gets that stamp, so Version stays the in-source "0.1.0-dev" default and,
+// before this, told a bug reporter nothing (issue #170). Those builds get a
+// DevSuffix appended instead, built from the VCS data Go's own toolchain
+// already embeds (runtime/debug.ReadBuildInfo) — never a source edit, never
+// a bump of Version.
 func Full() string {
-	return Version + " (Go " + GoVersion() + ", Clojure " + ClojureVersion + ")"
+	base := Version + " (Go " + GoVersion() + ", Clojure " + ClojureVersion + ")"
+	if IsRelease() {
+		return base
+	}
+	if suffix := DevSuffix(); suffix != "" {
+		return base + " " + suffix
+	}
+	return base
+}
+
+// DevSuffix describes a non-release build's provenance for the version
+// line, e.g. "[dev build, module v0.8.2, commit 0b230f2]" or "[dev build,
+// commit 0b230f2, dirty]". Empty when no build info is available at all
+// (e.g. -buildvcs=false), in which case Full() falls back to just the
+// in-source dev version with no further claim.
+//
+// Sourced from runtime/debug.ReadBuildInfo(), which Go's toolchain populates
+// on every module-aware build without any ldflags:
+//   - BuildInfo.Main.Version is the requested module version for
+//     `go install github.com/muthuishere/cljgo/cmd/cljgo@v0.8.2` — the exact
+//     tag a user asked for, even though Version itself was never stamped.
+//   - the "vcs.revision" / "vcs.modified" build settings are the commit (and
+//     dirty-worktree flag) for a local `go build`/`go install` from a git
+//     checkout.
+func DevSuffix() string {
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+	return devSuffixFromBuildInfo(bi)
+}
+
+// devSuffixFromBuildInfo is DevSuffix's pure core, split out so the mapping
+// from a *debug.BuildInfo to the rendered suffix is testable without relying
+// on the test binary's own (VCS-stamping-free, per Go's toolchain) build
+// info — see version_test.go.
+func devSuffixFromBuildInfo(bi *debug.BuildInfo) string {
+	var revision string
+	var dirty bool
+	for _, s := range bi.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			revision = s.Value
+			if len(revision) > 12 {
+				revision = revision[:12]
+			}
+		case "vcs.modified":
+			dirty = s.Value == "true"
+		}
+	}
+	// bi.Main.Version is "(devel)" for a plain local build/install (not
+	// `@<version>`) and "" is never returned by ReadBuildInfo. A plain
+	// `go build`/`go install` run inside cljgo's own module (any git
+	// checkout, not just a fresh clone) also gets a Go-computed PSEUDO-
+	// version instead — "v0.8.3-0.20260731112918-0b230f271bc2[+dirty]" —
+	// built from the very same commit and dirty bit already surfaced below
+	// as "commit"/"dirty", so showing both would just say the same thing
+	// twice in two shapes. Only a real requested tag (`go install
+	// module@v0.8.2`) is worth surfacing as "module".
+	moduleVersion := bi.Main.Version
+	if moduleVersion == "" || moduleVersion == "(devel)" || isPseudoVersion(moduleVersion) {
+		moduleVersion = ""
+	}
+
+	var parts []string
+	parts = append(parts, "dev build")
+	if moduleVersion != "" {
+		parts = append(parts, "module "+moduleVersion)
+	}
+	if revision != "" {
+		parts = append(parts, "commit "+revision)
+	}
+	if dirty {
+		parts = append(parts, "dirty")
+	}
+	if len(parts) == 1 {
+		// Nothing but the plain "dev build" marker — no VCS data at all
+		// (e.g. built with -buildvcs=false, or outside any git checkout).
+		return "[dev build, commit unknown]"
+	}
+	return "[" + strings.Join(parts, ", ") + "]"
+}
+
+// pseudoVersionRE matches Go's module pseudo-version suffix — a 14-digit
+// timestamp and a 12-hex-char commit (optionally preceded by "0." or
+// "<pre>.0." when a prior tag exists, and followed by an optional
+// "+dirty"/"+incompatible" build tag — golang.org/x/mod/module.
+// IsPseudoVersion's documented shape). A synthesized version, not a tag
+// anyone requested.
+var pseudoVersionRE = regexp.MustCompile(`[0-9]{14}-[0-9a-f]{12}(\+[0-9A-Za-z.]+)?$`)
+
+// isPseudoVersion reports whether v is a Go-synthesized pseudo-version
+// rather than a real requested tag.
+func isPseudoVersion(v string) bool {
+	return pseudoVersionRE.MatchString(v)
 }
 
 // Info is the parsed shape of a version string, mirroring Clojure's
