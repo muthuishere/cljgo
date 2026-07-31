@@ -259,16 +259,22 @@ reuse):
   `-s -w`). let-go's lowered binaries retain the VM. Do NOT claim "only
   let-go includes its runtime" and do NOT claim Glojure is interpreter-free.
 - **Size claims:** one corpus per table. Benchmark-suite binaries (re-measured
-  2026-07-31 @ v0.8.1): cljgo **7.0 MB** (7,049,666 B) / Glojure 7.5 MB /
-  let-go 12.8 MB — the pre-v0.7.0 cljgo figure was 6.7 MB, so the lead over
-  Glojure is now ~0.5 MB, not ~0.8. hello-world 5.3 MB is a DIFFERENT
-  program — never mix it into the suite row. Don't attribute the whole size
-  delta to the interpreter; say "it's in theirs, not in ours" and stop.
+  2026-07-31 @ v0.8.2): cljgo **7.0 MB** (7,049,666 B — byte-identical to
+  v0.8.1; ADR 0112 is build-time only and ADR 0113 lives in `pkg/bri`, which
+  a plain AOT program does not link) / Glojure 7.5 MB / let-go 12.8 MB — the
+  pre-v0.7.0 cljgo figure was 6.7 MB, so the lead over Glojure is ~0.5 MB,
+  not ~0.8. hello-world 5.3 MB is a DIFFERENT program — never mix it into
+  the suite row. Don't attribute the whole size delta to the interpreter;
+  say "it's in theirs, not in ours" and stop.
 - **Speed:** Glojure AOT still wins 6 of 8 suite rows (fusion + int64
   specialization); cljgo wins tak/fib. Losses are roadmap gaps, not design
-  costs — never spin them as deliberate trade-offs. **Startup regressed
-  4.7 → 6.6 ms** between pre-v0.7.0 and v0.8.1 (Glojure 3.0, let-go 4.8);
-  report it, don't bury it.
+  costs — never spin them as deliberate trade-offs. **cljgo starts slower
+  than Glojure**: @v0.8.2, 5.1 ms vs 3.9 ms (let-go 4.8) — and slower than
+  the 4.7 ms cljgo itself recorded pre-v0.7.0. Report it, don't bury it.
+- **Never diff a timing across two sessions.** The v0.8.1 run read cljgo
+  6.6 ms / Glojure 3.0 ms and the v0.8.2 run read 5.1 / 3.9 — on the SAME
+  unchanged Glojure binary. The machine moved, not the code. Absolute ms are
+  comparable only within one table; quote the within-table ratio instead.
 - Competitor binaries in `benchmark/.build/aotcmp/` are the 2026-07-24 gloat
   artifacts. Re-timing them is fair; claiming anything about a NEWER Glojure
   or let-go release requires rebuilding them with gloat first.

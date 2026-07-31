@@ -21,6 +21,51 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.8.2](https://github.com/muthuishere/cljgo/releases/tag/v0.8.2) — 2026-07-31
+
+*A silent test-runner failure, a lockfile that dead-ended, and portable date
+patterns.*
+
+- **`cljgo test` silently skipped every `.cljc` file.** It reported
+  `Ran 0 tests containing 0 assertions` and **exited 0** — a green build that
+  had run nothing. If your project keeps its tests in `.cljc` (the portable
+  choice this project recommends), CI has been passing without testing
+  anything. This is the reason to upgrade.
+- **Editing a dependency version no longer dead-ends the build.** Bumping a
+  version in `build.cljgo` used to stop with
+  `note: run resolve with -update to re-pin` — naming a command that has never
+  existed, leaving `rm build.lock.edn` as the only findable remedy, which also
+  discards every unrelated pin. The lock now **refreshes itself**, and does so
+  **minimally**: what you bumped moves, and nothing else does. (ADR 0112)
+- **`cljgo build --locked`** (or `CLJGO_LOCKED=1`) makes a stale lock an error
+  instead of a refresh — the `npm ci` / `cargo --locked` position, for the case
+  where a merge takes `build.cljgo` from one branch and `build.lock.edn` from
+  another. Refuses with `G5021`, naming what diverged, and writes nothing.
+- **`cljg.date/format-pattern` and `parse-pattern`** take a **java.time
+  pattern** — `"yyyy-MM-dd HH:mm:ss"` means the same thing here and on the JVM,
+  so a `.cljc` library's `:clj` branch needs no translation at all. Verified
+  against a 4,000-pattern JVM differential corpus: **0 divergences, 0 patterns
+  accepted that the JVM rejects.** Tokens with no exact equivalent are refused
+  by name (`G5022`), never approximated. The existing Go-layout `format` /
+  `parse` are unchanged. (ADR 0113)
+  - Locale is **ENGLISH**, and the docs say so explicitly — *not* `ROOT`, which
+    collapses `MMMM` to `Jul` and `EEEE` to `Fri` and would diverge silently on
+    exactly the tokens the advice protects.
+- **15 error codes that existed but were undocumented** are now on the
+  [diagnostics page](/cljgo/reference/diagnostics/), with a test that fails if
+  the registry and the published table ever drift apart again.
+- Emit-comment truncation could split a multi-byte rune, producing invalid
+  UTF-8 in generated Go.
+- **Benchmarks re-measured at this version.** The AOT head-to-head was re-run
+  as one fresh session — cljgo and both competitors re-timed together. Glojure
+  still wins 6 of 8 rows; cljgo still takes `tak` and `fib`; the binary is
+  **byte-identical** to v0.8.1 (7,049,666 B), because this release's code is
+  build-time only or lives in `pkg/bri`, which a plain AOT program does not
+  link. cljgo still starts slower than Glojure (5.1 ms vs 3.9 ms). See the
+  [benchmarks page](/cljgo/reference/benchmarks/) — and note the caution
+  there about not diffing timings across sessions. The other tables on that
+  page still predate v0.7.0 and continue to say so.
+
 ## [v0.8.1](https://github.com/muthuishere/cljgo/releases/tag/v0.8.1) — 2026-07-31
 
 *Clojars consumption works, and there is now a test that proves it.*
