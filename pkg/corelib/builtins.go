@@ -534,7 +534,25 @@ func RegisterAll() {
 		}
 		return a.Reset(args[1])
 	})
+	// deref: (deref ref) blocks forever; (deref ref timeout-ms timeout-val)
+	// gives up and yields timeout-val (clojure.core). The 3-arity is the ONLY
+	// portable way to put a deadline on a blocking read — without it, a caller
+	// waiting on a future that never delivers has no way back, and code written
+	// against Clojure fails here with "wrong number of args (3) passed to:
+	// deref". future and Promise already implement IBlockingDeref; only this
+	// entry point was missing. Reported by koine, 2026-07-31.
 	def("deref", func(args ...any) any {
+		if len(args) == 3 {
+			b, ok := args[0].(lang.IBlockingDeref)
+			if !ok {
+				panic(fmt.Errorf("deref with a timeout expects a blocking dereferenceable (future, promise), got: %s", lang.PrintString(args[0])))
+			}
+			ms, ok := lang.AsInt(args[1])
+			if !ok {
+				panic(fmt.Errorf("deref timeout must be a number of milliseconds, got: %s", lang.PrintString(args[1])))
+			}
+			return b.DerefWithTimeout(int64(ms), args[2])
+		}
 		d, ok := oneArg("deref", args).(lang.IDeref)
 		if !ok {
 			panic(fmt.Errorf("deref expects a dereferenceable, got: %s", lang.PrintString(args[0])))
