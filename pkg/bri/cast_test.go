@@ -10,6 +10,8 @@ import "testing"
 func TestBriCoreDataCast(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `(require '[cljg.data.cast :as dd])`)
+	eval(t, d, `(require 'cljx.meta)`)
+	eval(t, d, `(refer 'cljx.meta)`)
 	eval(t, d, `(def schema {:title :string :views :int :done :bool})`)
 
 	// good input: strings coerced to their declared types

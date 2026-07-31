@@ -19,6 +19,8 @@
 ;; precedence principle; same pattern as cljg.net.http/get).
 (clojure.core/in-ns 'cljg.data.cast)
 (clojure.core/refer 'clojure.core :exclude '[cast])
+(require 'cljx.meta)
+(clojure.core/refer 'cljx.meta)
 (require '[clojure.string :as str])
 
 ;; --- handles ----------------------------------------------------------------

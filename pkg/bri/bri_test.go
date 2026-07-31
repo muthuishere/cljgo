@@ -88,6 +88,8 @@ func TestBareResultIsALoud500(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
 (require '[bri.web.http :as http])
+(require 'cljx.meta)
+(refer 'cljx.meta)
 (defn bare [_] (ok {:status 200 :body "x"}))
 (def routes [["GET /b" #'bare]])
 `)
@@ -102,6 +104,8 @@ func TestRenderBridge(t *testing.T) {
 	d := newDriver(t)
 	eval(t, d, `
 (require '[bri.web.http :as http])
+(require 'cljx.meta)
+(refer 'cljx.meta)
 (defn good [_] (http/render (ok {:status 201 :body "made"})))
 (defn bad  [_] (http/render (err {:bri/error :db/not-found})))
 (def routes [["GET /good" #'good] ["GET /bad" #'bad]])

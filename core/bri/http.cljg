@@ -20,6 +20,8 @@
 ;; replace warning at load.
 (clojure.core/in-ns 'bri.web.http)
 (clojure.core/refer 'clojure.core :exclude '[ok])
+(require 'cljx.meta)
+(clojure.core/refer 'cljx.meta :exclude '[ok])
 (require '[clojure.string :as str])
 (require '[clojure.edn :as edn])
 ;; cljg.http (ADR 0103 wave 1) is the raw HTTP server primitive carved out
