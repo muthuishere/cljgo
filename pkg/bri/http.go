@@ -307,8 +307,25 @@ func requestMap(r *http.Request, paramNames []string, pattern string) any {
 	// (chunked), which still has to be read. io.ReadAll on an empty body is
 	// not free — it allocates a 512-byte buffer to discover the emptiness.
 	if r.Body != nil && r.ContentLength != 0 {
-		b, _ := io.ReadAll(io.LimitReader(r.Body, 10<<20)) // 10 MiB request cap
-		body = string(b)
+		const maxBody = 10 << 20 // 10 MiB request cap
+		if n := r.ContentLength; n > 0 && n <= maxBody {
+			// The length is known, so read it in ONE exactly-sized buffer.
+			// io.ReadAll grows by doubling and reallocates log2(n) times on
+			// the way up: a 256 KiB payload cost ~900 KB of allocation to
+			// receive 256 KB (measured, spike s75).
+			b := make([]byte, n)
+			if _, err := io.ReadFull(r.Body, b); err == nil {
+				body = string(b)
+			} else {
+				// A short or failed read means the client lied about the
+				// length or went away; fall back rather than inventing bytes.
+				rest, _ := io.ReadAll(io.LimitReader(r.Body, maxBody))
+				body = string(b) + string(rest)
+			}
+		} else {
+			b, _ := io.ReadAll(io.LimitReader(r.Body, maxBody))
+			body = string(b)
+		}
 	}
 	pm := lang.NewMap(params...)
 	kvs := []any{
@@ -518,7 +535,13 @@ func toJSONValue(v any) any {
 		out := map[string]any{}
 		for s := lang.Seq(m); s != nil; s = lang.Next(s) {
 			entry := lang.First(s)
-			k := lang.First(entry)
+			// lang.Get(entry, 0) — NOT lang.First(entry): First(x) calls
+			// Seq(x), and MapEntry.Seq() (amapentrySeq) builds a throwaway
+			// 2-element lang.Vector just to read index 0 (a real, measured
+			// allocation cost, spike s77). Get(entry, 0) takes MapEntry's
+			// direct Nth/ValAt path (matches the val access below) with no
+			// vector construction at all.
+			k := lang.Get(entry, int64(0))
 			val := lang.Get(entry, int64(1))
 			var key string
 			switch kt := k.(type) {

@@ -16,17 +16,25 @@ type (
 	}
 
 	BitmapIndexedNode struct {
+		// edit is non-nil only while this node is exclusively owned by an
+		// in-progress transient build (hashmap_transient.go), which may then
+		// mutate array in place instead of path-copying it. nil — the zero
+		// value — means an ordinary immutable persistent node, and every
+		// non-transient path ignores the field entirely.
+		edit   *int32
 		bitmap int
 		array  []any
 	}
 
 	HashCollisionNode struct {
+		edit  *int32
 		hash  uint32
 		count int
 		array []any
 	}
 
 	ArrayNode struct {
+		edit  *int32
 		count int
 		array []Node
 	}
@@ -49,6 +57,10 @@ type (
 
 	Node interface {
 		assoc(shift uint, hash uint32, key any, val any, addedLeaf *Box) Node
+		// assocT is the transient-build counterpart of assoc: identical
+		// semantics, but mutates nodes owned by edit in place rather than
+		// path-copying. Only NewPersistentHashMap's bulk build uses it.
+		assocT(edit *int32, shift uint, hash uint32, key any, val any, addedLeaf *Box) Node
 		without(shift uint, hash uint32, key any) Node
 		// find returns the stored key, its value, and whether the key is
 		// present. It deliberately does NOT return a *Pair: allocating an
@@ -103,11 +115,18 @@ var (
 )
 
 func NewPersistentHashMap(keyvals ...any) IPersistentMap {
-	var res Associative = emptyPersistentHashMap
-	for i := 0; i < len(keyvals); i += 2 {
-		res = res.Assoc(keyvals[i], keyvals[i+1])
+	if len(keyvals) == 0 {
+		return emptyPersistentHashMap
 	}
-	return res.(*PersistentHashMap)
+	// Bulk-build through a transient (edit-owned, mutated in place) tree
+	// rather than len(keyvals)/2 successive path-copying Assocs, which is
+	// what clojure.lang.PersistentHashMap.create does and for the same
+	// reason. See hashmap_transient.go; measured in spikes/s73.
+	t := newTransientHashMapBuild()
+	for i := 0; i < len(keyvals); i += 2 {
+		t.assoc(keyvals[i], keyvals[i+1])
+	}
+	return t.persistent()
 }
 
 func (m *PersistentHashMap) Meta() IPersistentMap {
