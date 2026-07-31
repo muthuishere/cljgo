@@ -424,7 +424,7 @@ func Load() {
 	v_cljg_DOT_io_absolute.SealDirect()
 	_ = v_cljg_DOT_io_absolute
 	// (def real-path (clojure.core/fn ([path] (-path-real path))))
-	v_cljg_DOT_io_real_path.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(124), kw_column, int64(7), kw_end_line, int64(124), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "`path` with every symlink resolved, as an absolute cleaned path. Unlike\n  `absolute`, this touches the filesystem — it throws (coded G5023) if `path`\n  does not exist, or on a symlink cycle (ELOOP) rather than looping forever.\n  Use it to canonicalise before comparing paths or guarding a directory walk\n  against symlink cycles."))
+	v_cljg_DOT_io_real_path.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(124), kw_column, int64(7), kw_end_line, int64(124), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_path)), kw_doc, "`path` with every symlink resolved, as an absolute cleaned path. Unlike\n  `absolute`, this touches the filesystem — it throws (coded G5024) if `path`\n  does not exist, or on a symlink cycle (ELOOP) rather than looping forever.\n  Use it to canonicalise before comparing paths or guarding a directory walk\n  against symlink cycles."))
 	tmp105 := lang.FnFunc1(func(path106 any) any {
 		tmp107 := v_cljg_DOT_io_X_path_real.Get()
 		tmp108 := lang.Apply1(tmp107, path106)
