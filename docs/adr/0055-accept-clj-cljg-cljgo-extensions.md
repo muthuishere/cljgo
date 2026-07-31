@@ -26,6 +26,13 @@ remains the canonical default.
 
 ## Decision
 
+> **Narrowed by ADR 0117 (2026-08-01):** decision 2's third probe entry,
+> `build.clj`, was removed. That name is the tools.build convention, and once
+> v0.8.3 put the build file on the `cljgo run` path, claiming it made cljgo
+> evaluate JVM build scripts (issue #176). Decision 1 — `.clj` acceptance for
+> SOURCE resolution — stands unchanged.
+
+
 1. **Source resolution accepts all three**, precedence **most-specific-first:
    `.cljgo` > `.cljg` > `.clj`.** `.cljg`/`.cljgo` (cljgo-native) win over `.clj`
    (portable fallback) — mirroring Clojure's own host-extension pattern (a JVM

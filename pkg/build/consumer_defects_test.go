@@ -209,3 +209,45 @@ func TestTwoExeArtifactsBothWork(t *testing.T) {
 		})
 	}
 }
+
+// TestJVMBuildCljDoesNotBreakTheProject is the regression test for issue #176,
+// reported by koine with a clean-clone bisect: v0.8.2 works, v0.8.3 and v0.8.4
+// fail, and renaming build.clj away is the whole delta.
+//
+// A dual-host library has a root `build.clj` — that is the tools.build
+// convention and the only way it publishes to Clojars. cljgo accepted that
+// name as one of ITS build files (ADR 0055), which was harmless while nothing
+// read the build file on the `run` path. v0.8.3 started reading it (for deps
+// and source roots), so cljgo began EVALUATING the JVM tool's build script;
+// its `(:require [clojure.tools.build.api])` is unresolvable here, and every
+// `cljgo run` in the project died with "could not locate namespace
+// clojure.tools.build.api" — a total block on exactly the dual-host projects
+// cljgo exists to serve.
+//
+// Note koine's proposed mechanism (v0.8.3's source-roots work sweeping in the
+// project root) was NOT the cause: DefaultSourceRoots is ["src","test"] and
+// the root is never added. The cause is the build-file NAME collision, which
+// is why this test pins FindBuildFile rather than the source roots.
+func TestJVMBuildCljDoesNotBreakTheProject(t *testing.T) {
+	bin := cljgoBin(t)
+	proj := t.TempDir()
+	writeTree(t, proj, map[string]string{
+		// The tools.build file, verbatim in shape: a ns requiring a namespace
+		// that exists only on the JVM.
+		"build.clj":         "(ns build\n  (:require [clojure.tools.build.api :as b]))\n(defn jar [_] nil)\n",
+		"src/demo/app.cljc": "(ns demo.app)\n(println \"ok\")\n",
+	})
+
+	out, code := runIn(t, bin, proj, "run", "src/demo/app.cljc")
+	// Name the specific failure first, so a regression is unmistakable rather
+	// than just a non-zero exit.
+	if strings.Contains(out, "clojure.tools.build.api") {
+		t.Fatalf("cljgo evaluated the JVM build.clj as its own build file:\n%s", out)
+	}
+	if code != 0 {
+		t.Fatalf("cljgo run alongside a JVM build.clj: exit %d\n%s", code, out)
+	}
+	if !strings.Contains(out, "ok") {
+		t.Fatalf("cljgo run output = %q, want it to contain \"ok\"", out)
+	}
+}

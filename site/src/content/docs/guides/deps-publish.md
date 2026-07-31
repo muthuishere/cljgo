@@ -231,7 +231,7 @@ Some deliberate properties of the resolver (ADR 0052):
   the same lock hash, for air-gapped or audited builds.
 
 Source files may be `.clj`, `.cljc`, `.cljg`, or `.cljgo`; the build file
-is probed as `build.cljgo` > `build.cljg` > `build.clj`,
+is probed as `build.cljgo` > `build.cljg`,
 most-specific-first (ADR 0055).
 
 ## Publishing: one library, both ecosystems
