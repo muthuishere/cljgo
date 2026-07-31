@@ -130,3 +130,85 @@ func TestDevSuffixFromBuildInfo(t *testing.T) {
 		})
 	}
 }
+
+// TestReleaseVersionFromBuildInfo is the regression test for the defect
+// koine and toolnexus both hit independently: `go install
+// github.com/muthuishere/cljgo/cmd/cljgo@v0.8.4` produced a binary that
+// REFUSED TO BUILD ANY PROJECT — "this is a dev cljgo binary (version
+// 0.1.0-dev), so the generated go.mod needs a local runtime tree" — because
+// IsRelease() consulted only the ldflags-stamped Version, which `go install`
+// never sets. The requested tag was sitting in the binary's own build info
+// the whole time. templates/web/Dockerfile installs cljgo exactly that way,
+// so this broke the shipped web template in Docker (ADR 0116).
+func TestReleaseVersionFromBuildInfo(t *testing.T) {
+	cases := []struct {
+		name string
+		bi   *debug.BuildInfo
+		want string
+	}{
+		{
+			// THE bug: a real requested tag is authoritative — the Go
+			// toolchain resolved and checksum-verified it against the proxy.
+			name: "go install module@v0.8.4 is a release",
+			bi:   &debug.BuildInfo{Main: debug.Module{Version: "v0.8.4"}},
+			want: "0.8.4",
+		},
+		{
+			name: "local build is not a release",
+			bi:   &debug.BuildInfo{Main: debug.Module{Version: "(devel)"}},
+			want: "",
+		},
+		{
+			// A pseudo-version is Go-synthesized from a commit, never a
+			// published tag — pinning it in a generated go.mod would name a
+			// module version nobody released.
+			name: "pseudo-version is not a release",
+			bi:   &debug.BuildInfo{Main: debug.Module{Version: "v0.8.3-0.20260731112918-0b230f271bc2"}},
+			want: "",
+		},
+		{
+			// goreleaser snapshot builds carry a qualifier; they are not
+			// published tags either.
+			name: "prerelease qualifier is not a release",
+			bi:   &debug.BuildInfo{Main: debug.Module{Version: "v0.9.0-rc1"}},
+			want: "",
+		},
+		{
+			name: "no build info version at all",
+			bi:   &debug.BuildInfo{Main: debug.Module{Version: ""}},
+			want: "",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := releaseVersionFromBuildInfo(c.bi); got != c.want {
+				t.Errorf("releaseVersionFromBuildInfo() = %q, want %q", got, c.want)
+			}
+		})
+	}
+}
+
+// TestReleaseVersionPrefersLdflags pins the goreleaser path: when Version IS
+// stamped, that value wins outright and no build info is consulted.
+func TestReleaseVersionPrefersLdflags(t *testing.T) {
+	saved := Version
+	t.Cleanup(func() { Version = saved })
+
+	Version = "0.8.4"
+	if got := ReleaseVersion(); got != "0.8.4" {
+		t.Errorf("ldflags-stamped ReleaseVersion() = %q, want 0.8.4", got)
+	}
+	if !IsRelease() {
+		t.Error("ldflags-stamped IsRelease() = false, want true")
+	}
+	if got := Full(); !strings.HasPrefix(got, "0.8.4 (Go ") {
+		t.Errorf("Full() = %q, want it to lead with the stamped 0.8.4", got)
+	}
+
+	// The in-source default is never a release, and must not become one just
+	// because the test binary has build info of its own.
+	Version = "0.1.0-dev"
+	if got := ReleaseVersion(); got != "" {
+		t.Errorf("dev-default ReleaseVersion() = %q, want \"\"", got)
+	}
+}
