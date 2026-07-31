@@ -182,7 +182,7 @@ arm64, Docker/OrbStack, [`oha`](https://github.com/hatoo/oha) 15 s @ 50
 connections, **one container at a time** (contention skews numbers). Every
 server answers the same two routes with byte-exact bodies (`GET /` → `hello\n`;
 `GET /api/hello` → `{"msg":"hello from <runtime>"}`). Reproduce with
-`spikes/s45-bri-aot-docker/bench/run.sh` (corpus + runner committed).
+[`bash benchmark/web/run.sh`](https://github.com/muthuishere/cljgo/blob/main/benchmark/web/README.md) — corpus, Dockerfiles and runner are all committed, and the bri image builds cljgo from your checkout rather than a release.
 
 | runtime | image | cold-start | `/` req/s | `/api` req/s | p99 | peak RSS |
 |---|--:|--:|--:|--:|--:|--:|

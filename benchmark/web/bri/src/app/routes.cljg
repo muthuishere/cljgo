@@ -1,0 +1,24 @@
+;; app.routes — the two routes every entrant in the corpus answers, with
+;; BYTE-EXACT bodies. Nothing wins here by sending less:
+;;
+;;   GET /            -> "hello\n"                        text/plain
+;;   GET /api/hello   -> {"msg":"hello from bri"}          application/json
+;;
+;; Handlers are plain Clojure and read nothing from the request, so what the
+;; benchmark measures on this side is bri's request path, not app work.
+(ns app.routes
+  (:require [bri.web.http :as http :refer [GET]]))
+
+(defn home [_req]
+  {:status 200
+   :headers {"content-type" "text/plain"}
+   :body "hello\n"})
+
+;; A map body auto-encodes as application/json.
+(defn hello [_req]
+  {:status 200 :body {:msg "hello from bri"}})
+
+(def routes
+  (http/routes
+    (GET "/"          #'home)
+    (GET "/api/hello" #'hello)))

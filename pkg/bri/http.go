@@ -40,6 +40,13 @@ import (
 )
 
 var (
+	kwMethodGet     = lang.NewKeyword("get")
+	kwMethodPost    = lang.NewKeyword("post")
+	kwMethodPut     = lang.NewKeyword("put")
+	kwMethodDelete  = lang.NewKeyword("delete")
+	kwMethodPatch   = lang.NewKeyword("patch")
+	kwMethodHead    = lang.NewKeyword("head")
+	kwMethodOptions = lang.NewKeyword("options")
 	kwStatus        = lang.NewKeyword("status")
 	kwHeaders       = lang.NewKeyword("headers")
 	kwBody          = lang.NewKeyword("body")
@@ -240,29 +247,72 @@ func adapt(pattern string, ifn lang.IFn) http.HandlerFunc {
 	}
 }
 
+// methodKeyword is the request method as a keyword, WITHOUT interning one per
+// request. lang.NewKeyword takes a global registry write-lock, so calling it on
+// every request serialised all cores through one mutex at exactly the point
+// bri is meant to scale. The method set is closed and tiny, so a switch over
+// pre-interned values is both faster and simpler than any cache would be.
+func methodKeyword(m string) lang.Keyword {
+	switch m {
+	case "GET":
+		return kwMethodGet
+	case "POST":
+		return kwMethodPost
+	case "PUT":
+		return kwMethodPut
+	case "DELETE":
+		return kwMethodDelete
+	case "PATCH":
+		return kwMethodPatch
+	case "HEAD":
+		return kwMethodHead
+	case "OPTIONS":
+		return kwMethodOptions
+	}
+	// Anything else (an extension method) still works, at the old cost.
+	return lang.NewKeyword(strings.ToLower(m))
+}
+
 func requestMap(r *http.Request, paramNames []string, pattern string) any {
-	params := []any{}
+	params := make([]any, 0, 2*len(paramNames))
 	for _, p := range paramNames {
 		params = append(params, lang.NewKeyword(p), r.PathValue(p))
 	}
-	headers := []any{}
+	headers := make([]any, 0, 2*len(r.Header))
 	for k, vs := range r.Header {
-		headers = append(headers, strings.ToLower(k), strings.Join(vs, ", "))
+		// One value is the overwhelmingly common case, and strings.Join
+		// allocates a copy even for a single element.
+		v := ""
+		if len(vs) == 1 {
+			v = vs[0]
+		} else if len(vs) > 1 {
+			v = strings.Join(vs, ", ")
+		}
+		headers = append(headers, strings.ToLower(k), v)
 	}
-	query := []any{}
-	for k, vs := range r.URL.Query() {
-		if len(vs) > 0 {
-			query = append(query, lang.NewKeyword(k), vs[0])
+	var query []any
+	// Query() parses AND allocates a url.Values map even when there is no
+	// query string at all, which is every request on a typical API route.
+	if r.URL.RawQuery != "" {
+		q := r.URL.Query()
+		query = make([]any, 0, 2*len(q))
+		for k, vs := range q {
+			if len(vs) > 0 {
+				query = append(query, lang.NewKeyword(k), vs[0])
+			}
 		}
 	}
 	var body string
-	if r.Body != nil {
+	// ContentLength == 0 means there is genuinely no body; -1 means unknown
+	// (chunked), which still has to be read. io.ReadAll on an empty body is
+	// not free — it allocates a 512-byte buffer to discover the emptiness.
+	if r.Body != nil && r.ContentLength != 0 {
 		b, _ := io.ReadAll(io.LimitReader(r.Body, 10<<20)) // 10 MiB request cap
 		body = string(b)
 	}
 	pm := lang.NewMap(params...)
 	kvs := []any{
-		kwRequestMethod, lang.NewKeyword(strings.ToLower(r.Method)),
+		kwRequestMethod, methodKeyword(r.Method),
 		kwURI, r.URL.Path,
 		kwQueryString, r.URL.RawQuery,
 		kwHeaders, lang.NewMap(headers...),

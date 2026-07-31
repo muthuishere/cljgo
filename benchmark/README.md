@@ -8,7 +8,13 @@ hand-edited numbers.
 ```bash
 bash benchmark/run.sh          # full suite → results.md
 WARMUP=1 RUNS=3 bash benchmark/run.sh   # quick smoke
+bash benchmark/web/run.sh      # the web/HTTP table → web/results.md
 ```
+
+Two suites live here. This one is **language** performance (arithmetic, seqs,
+startup) against other Clojure implementations. [`web/`](web/README.md) is the
+**web framework** table — bri against axum, httpkit, bun, deno, Spring Boot and
+the rest, in real Docker containers over real sockets.
 
 Requires `go` + [hyperfine](https://github.com/sharkdp/hyperfine). Auto-detects
 `bb` (babashka), `joker`, `clj` (Clojure JVM), and let-go (via `$LETGO`, or

@@ -1,0 +1,37 @@
+;; app.main — the bri entrant in the web benchmark. AOT-compiles to ONE
+;; static CGO_ENABLED=0 binary (ADR 0071) that serves real HTTP:
+;;
+;;   cljgo build run                   # compile, then run it
+;;   bash benchmark/web/run.sh         # the whole table
+(ns app.main
+  (:require [bri.web.http :as http]
+            [bri.core.config :as config]
+            ;; bri.web.http's default middleware stack reaches cljg.security
+            ;; at request time. An AOT binary links only what is required, so
+            ;; without this the binary BUILDS and then dies on first start.
+            [cljg.security]
+            [cljg.system]
+            [app.routes :as routes]))
+
+(def cfg (config/load!))
+
+;; BRI_STACK selects the middleware stack, so ONE image can measure what the
+;; zero-config defaults actually cost:
+;;   full (default) — http/listen: request-id, logging, recover, cors,
+;;                    metrics, auto-ban, negotiate
+;;   lean           — recover + negotiate only (what a JSON API strictly needs)
+;;   bare           — recover only (the funnel; nothing else)
+(defn -stack []
+  (case (or (cljg.system/getenv "BRI_STACK") "full")
+    "lean" [(http/recover) http/negotiate]
+    "bare" [(http/recover)]
+    nil))
+
+(defn -main [& _args]
+  (let [port  (:port cfg)
+        stack (-stack)]
+    (println "bri hello server on :" port "stack:" (or (cljg.system/getenv "BRI_STACK") "full"))
+    ;; listen = real net/http, production timeouts, graceful SIGTERM drain.
+    (if stack
+      (http/serve #'routes/routes {:port port :middleware stack :ops false})
+      (http/listen #'routes/routes port))))

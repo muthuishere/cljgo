@@ -22,6 +22,15 @@ type Keyword struct {
 	// with the same name share the same canonical underlying string.
 	kw   unique.Handle[string]
 	hash uint32
+	// hashEq is clojure.lang.Keyword.hasheq, computed ONCE at intern time.
+	// A keyword is interned and immutable, so its hasheq is a constant; it
+	// used to be recomputed on every call, and HashEq is what every
+	// persistent map and set uses for bucketing. Recomputing it meant a
+	// murmur3 pass over a freshly UTF-16-encoded copy of the name — an
+	// ALLOCATION — on every single map lookup and assoc with a keyword key.
+	// Caching it costs nothing: the struct was already 16 bytes with 4 of
+	// them padding, so this field is free.
+	hashEq uint32
 }
 
 var (
@@ -36,10 +45,24 @@ func NewKeyword(s string) Keyword {
 	keywordRegistry[s] = struct{}{}
 	keywordRegistryMu.Unlock()
 
+	ns, name := splitKeywordName(s)
 	return Keyword{
-		kw:   unique.Make(s),
-		hash: Hash(s) ^ keywordHashMask,
+		kw:     unique.Make(s),
+		hash:   Hash(s) ^ keywordHashMask,
+		hashEq: symbolHashEq(ns, name) + 0x9e3779b9,
 	}
+}
+
+// splitKeywordName splits an interned keyword's full name into namespace and
+// name at the first '/'. It MIRRORS Namespace()/Name() exactly, including the
+// edge cases: `strings.Index` (not `> 0`), so :/ splits into ns "" and name "",
+// and an unqualified keyword yields ns "" — which is what the old HashEq got
+// when Namespace() returned nil and the string type-assertion failed.
+func splitKeywordName(s string) (ns, name string) {
+	if i := strings.Index(s, "/"); i != -1 {
+		return s[:i], s[i+1:]
+	}
+	return "", s
 }
 
 // FindKeyword returns the keyword named s ONLY when a keyword with that
@@ -139,11 +162,7 @@ func (k Keyword) Hash() uint32 {
 // and hash-map/set bucketing use. Matches JVM 1.12.5 byte-for-byte:
 // the underlying symbol's hasheq plus the golden-ratio constant.
 func (k Keyword) HashEq() uint32 {
-	ns := ""
-	if n, ok := k.Namespace().(string); ok {
-		ns = n
-	}
-	return symbolHashEq(ns, k.Name()) + 0x9e3779b9
+	return k.hashEq
 }
 
 func (k Keyword) Compare(other any) int {
