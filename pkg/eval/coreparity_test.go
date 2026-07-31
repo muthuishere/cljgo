@@ -33,7 +33,20 @@ package eval_test
 // everyone is looking somewhere else.
 //
 // These are DEBT, not a specification. Nothing in either file is endorsed by
-// being there.
+// being there — with ONE documented exception, because getting this wrong
+// wastes someone's afternoon:
+//
+// The ~53 `-`-prefixed helpers in core-parity-extra.txt are public BY
+// NECESSITY, not by oversight. core/protocols.cljg expands defrecord/deftype/
+// reify/defmulti to UNQUALIFIED symbols — (list (quote -new-record) …) — and
+// that expansion is read in the USER's namespace, so the helper has to be
+// referable there. Adding :private to them breaks every one of those forms.
+//
+// Removing them from clojure.core is therefore a MIGRATION, not a flag flip:
+// move the definitions to their own namespace and change every expansion site
+// to emit a qualified symbol. Worth doing — they are cljgo implementation
+// detail sitting in the language's most public namespace — but it is a real
+// change with a real blast radius, not a cleanup.
 
 import (
 	"bufio"

@@ -329,10 +329,15 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// of clojure.core) because macro expansions reference them by
 	// unqualified name in the user namespace; the `-` prefix keeps them out
 	// of the way of ordinary user code.
-	defPrivate := def
+	//
+	// NOTE THE NAME: this used to be called defPrivate, which was a lie — it
+	// has always aliased the PUBLIC definer, and it has to. Renamed so the
+	// next reader is not misled into "fixing" it and breaking every
+	// defrecord/deftype/reify expansion.
+	defExpansionHelper := def
 
 	// (-protocol name-string methods-vector) -> a fresh Protocol.
-	defPrivate("-protocol", func(args ...any) any {
+	defExpansionHelper("-protocol", func(args ...any) any {
 		name := lang.ToString(args[0])
 		methods := stringVals(args[1].(lang.IPersistentVector))
 		return &Protocol{name: name, methods: methods, impls: map[string]map[string]lang.IFn{}}
@@ -343,7 +348,7 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// declared protocol values become the marker's real ancestry (ADR
 	// 0039) and each is told the type implements it — so a METHOD-LESS
 	// protocol in a deftype/defrecord still satisfies (JVM-faithful).
-	defPrivate("-type-marker", func(args ...any) any {
+	defExpansionHelper("-type-marker", func(args ...any) any {
 		m := &TypeMarker{name: lang.ToString(args[0])}
 		if len(args) > 1 {
 			m.kind = lang.ToString(args[1])
@@ -366,13 +371,13 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// the value is not a class. The hierarchy fns (hierarchies.cljg) union
 	// these with derive-established relationships, mirroring clojure.core's
 	// parents/ancestors bases/supers branches.
-	defPrivate("-type-bases", func(args ...any) any {
+	defExpansionHelper("-type-bases", func(args ...any) any {
 		if s := typeBasesOf(args[0]); s != nil {
 			return lang.NewSet(s...)
 		}
 		return nil
 	})
-	defPrivate("-type-supers", func(args ...any) any {
+	defExpansionHelper("-type-supers", func(args ...any) any {
 		if s := typeSupersOf(args[0]); s != nil {
 			return lang.NewSet(s...)
 		}
@@ -382,12 +387,12 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// (-qualified-name simple-name) -> "<current-ns>.<simple-name>", the
 	// stable type/dispatch name, resolved when the def is evaluated (load
 	// time) in the DEFINING namespace.
-	defPrivate("-qualified-name", func(args ...any) any {
+	defExpansionHelper("-qualified-name", func(args ...any) any {
 		return currentNS().Name().Name() + "." + lang.ToString(args[0])
 	})
 
 	// (-extend-key protocol type-key-string method-name-string fn) -> nil.
-	defPrivate("-extend-key", func(args ...any) any {
+	defExpansionHelper("-extend-key", func(args ...any) any {
 		p := asProtocol(args[0], "extend")
 		fn, ok := args[3].(lang.IFn)
 		if !ok {
@@ -406,7 +411,7 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// same table as the bare one (`String`), exactly as classDispatchKey
 	// already does for the functional `extend`. Anything else is used
 	// as-is, matching dispatchKey for built-in values.
-	defPrivate("-type-key", func(args ...any) any {
+	defExpansionHelper("-type-key", func(args ...any) any {
 		sym, ok := args[0].(*lang.Symbol)
 		if !ok {
 			return lang.ToString(args[0])
@@ -427,14 +432,14 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 
 	// (-type-name value) -> its dispatch key (a user-visible `type`-ish
 	// hook; mainly for tests/messages).
-	defPrivate("-type-name", func(args ...any) any {
+	defExpansionHelper("-type-name", func(args ...any) any {
 		return dispatchKey(args[0])
 	})
 
 	// (-invoke-method protocol method-name-string args-seq): dispatch on
 	// the FIRST arg's type and apply the impl, else a Clojure-shaped
 	// "No implementation of method" error.
-	defPrivate("-invoke-method", func(args ...any) any {
+	defExpansionHelper("-invoke-method", func(args ...any) any {
 		p := asProtocol(args[0], "dispatch")
 		method := lang.ToString(args[1])
 		callArgs := seqSlice(args[2])
@@ -459,7 +464,7 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	})
 
 	// (-satisfies? protocol value) -> bool.
-	defPrivate("-satisfies?", func(args ...any) any {
+	defExpansionHelper("-satisfies?", func(args ...any) any {
 		return protocolSatisfiedBy(asProtocol(args[0], "satisfies?"), args[1])
 	})
 
@@ -467,7 +472,7 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// is the declared-protocol vector (for satisfies?); the rest are
 	// (protocol method-name fn) triples. The fns are `fn` closures that
 	// captured the enclosing locals in whichever mode built them (ADR 0049).
-	defPrivate("-reify", func(args ...any) any {
+	defExpansionHelper("-reify", func(args ...any) any {
 		ri := &ReifyInstance{impls: map[*Protocol]map[string]lang.IFn{}}
 		for _, pv := range seqSlice(args[0]) {
 			if p, ok := pv.(*Protocol); ok {
@@ -500,7 +505,7 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	// the class name resolved to a value, e.g. via (def c String)) matches
 	// through the same designator-name table the instance? macro's
 	// literal-symbol fast path uses.
-	defPrivate("-instance?", func(args ...any) any {
+	defExpansionHelper("-instance?", func(args ...any) any {
 		switch m := args[0].(type) {
 		case *TypeMarker:
 			return dispatchKey(args[1]) == m.name
@@ -511,7 +516,7 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 	})
 
 	// (-new-type type-name field-names-vector & vals) -> a deftype instance.
-	defPrivate("-new-type", func(args ...any) any {
+	defExpansionHelper("-new-type", func(args ...any) any {
 		typeName := lang.ToString(args[0])
 		fields := stringVals(args[1].(lang.IPersistentVector))
 		return lang.NewDType(typeName, fields, append([]any(nil), args[2:]...))
@@ -519,7 +524,7 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 
 	// (-new-record type-name field-names-vector & vals) -> a defrecord
 	// instance (positional ->R ctor).
-	defPrivate("-new-record", func(args ...any) any {
+	defExpansionHelper("-new-record", func(args ...any) any {
 		typeName := lang.ToString(args[0])
 		fields := stringVals(args[1].(lang.IPersistentVector))
 		return lang.NewRecord(typeName, fields, append([]any(nil), args[2:]...))
@@ -527,7 +532,7 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 
 	// (-map->record type-name field-names-vector map) -> a defrecord
 	// instance (map->R ctor: declared fields from the map, extra keys kept).
-	defPrivate("-map->record", func(args ...any) any {
+	defExpansionHelper("-map->record", func(args ...any) any {
 		typeName := lang.ToString(args[0])
 		fields := stringVals(args[1].(lang.IPersistentVector))
 		var src lang.IPersistentMap
@@ -539,7 +544,7 @@ func internProtocolBuiltins(def func(string, func(...any) any) *lang.Var) {
 
 	// (-field instance field-name-string) -> the field value (method-body
 	// field locals; also the deftype/record field reader).
-	defPrivate("-field", func(args ...any) any {
+	defExpansionHelper("-field", func(args ...any) any {
 		v, ok := instanceField(args[0], lang.ToString(args[1]))
 		if !ok {
 			panic(fmt.Errorf("no field %s on %s", lang.ToString(args[1]), dispatchKey(args[0])))
