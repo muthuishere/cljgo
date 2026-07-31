@@ -55,6 +55,30 @@ func LookupLibProvider(name string) func() {
 // interpreter's loader through SetLibFileLoader.
 var libFileLoader func(libSym *lang.Symbol)
 
+// libInProgram reports whether a namespace is already part of the program
+// currently being COMPILED. It is nil for `cljgo run`, the REPL, and compiled
+// binaries — the three cases where "the namespace exists" really does mean
+// "it is loaded".
+//
+// It is not nil during `cljgo build`, and that is the whole point. lang's
+// namespace registry is PROCESS-GLOBAL, so when one `build.cljgo` declares two
+// `exe` artifacts, the second build's fresh evaluator still sees every
+// namespace the first build interned. loadLib would then take the
+// already-present branch, never call the file loader, and emit a program with
+// the namespace MISSING — its vars interned as hollow shells and unbound at
+// runtime. The first binary worked, the second died on
+// "cannot call unbound var", and a project shipping an app plus a test runner
+// shipped a working app and a test suite that could not run.
+//
+// So during a build, global existence is not evidence. The module compiler's
+// own done-set is.
+var libInProgram func(name string) bool
+
+// SetLibInProgram installs the build-scoped membership predicate described on
+// libInProgram. Pass nil to clear it; emit's module compiler sets and clears it
+// around each program it compiles.
+func SetLibInProgram(f func(name string) bool) { libInProgram = f }
+
 // SetLibFileLoader installs the source-file half of require (pkg/eval's
 // loadLibFile, bound to an evaluator). Namespaces and vars are
 // process-global, so the most recently constructed evaluator wins — the
@@ -161,7 +185,8 @@ func loadLib(libSym *lang.Symbol, opts lang.ISeq) {
 	// (another package's hoisted lang.InternVarName created it at Go
 	// init), so mere existence does not mean loaded. Providers guard
 	// with a loaded bool, so re-requires are no-ops.
-	if provider := LookupLibProvider(libSym.FullName()); provider != nil {
+	provider := LookupLibProvider(libSym.FullName())
+	if provider != nil {
 		provider()
 	}
 	// A lib whose file is still mid-load is a cycle even though its
@@ -170,6 +195,20 @@ func loadLib(libSym *lang.Symbol, opts lang.ISeq) {
 	// namespace existence, and throws "Cyclic load dependency").
 	CheckCyclicLoad(libSym.FullName())
 	target := lang.FindNamespace(libSym)
+	// During a build, a namespace that exists globally but is not in THIS
+	// program still has to be loaded — see libInProgram. The module
+	// compiler's loader is idempotent per program, so a namespace required
+	// twice is compiled once.
+	//
+	// A PROVIDER-SERVED namespace is exempt, and that exemption is
+	// load-bearing: clojure.string, cljg.*, bri.* and every emitted package
+	// exist because a provider ran, not because a file was read, and there is
+	// no file to re-read. Providers already guard with their own loaded flag,
+	// so they are correct across repeated builds; only file-backed namespaces
+	// need the per-program check.
+	if target != nil && provider == nil && libInProgram != nil && !libInProgram(libSym.FullName()) {
+		target = nil
+	}
 	if target == nil {
 		if libFileLoader == nil {
 			// A compiled binary: no reader, no analyzer, no evaluator. The

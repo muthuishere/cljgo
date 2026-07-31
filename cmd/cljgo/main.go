@@ -217,12 +217,46 @@ func resolveRunDeps(file string) error {
 		if buildFile == "" {
 			continue
 		}
+		// The project's SOURCE ROOTS, always — this is not conditional on
+		// there being dependencies. A project with no deps has no
+		// build.lock.edn, and the old early-`continue` below meant it got no
+		// roots at all: `test/app/core_test.cljg` requiring `app.core` looked
+		// only under test/ and failed, naming the namespace rather than the
+		// paths tried. See build.DefaultSourceRoots.
+		if err := addProjectSourceRoots(buildFile); err != nil {
+			return err
+		}
 		lockPath := filepath.Join(filepath.Dir(buildFile), "build.lock.edn")
 		if _, err := os.Stat(lockPath); err != nil {
 			continue
 		}
 		return build.ResolveProjectDeps(buildFile)
 	}
+	return nil
+}
+
+// addProjectSourceRoots appends the project's source roots to the resolved
+// roots. APPEND, never replace: dependency roots that a previous bootstrap
+// installed stay, and the requiring file's own directory still outranks all
+// of them (eval.ResolveLibPath). Duplicates are skipped so repeated calls in
+// one process cannot grow the list without bound.
+func addProjectSourceRoots(buildFile string) error {
+	plan, err := build.LoadPlan(buildFile)
+	if err != nil {
+		return err
+	}
+	have := map[string]bool{}
+	roots := deps.ResolvedRoots()
+	for _, r := range roots {
+		have[r] = true
+	}
+	for _, r := range plan.SourceRoots(filepath.Dir(buildFile)) {
+		if !have[r] {
+			roots = append(roots, r)
+			have[r] = true
+		}
+	}
+	deps.SetResolvedRoots(roots)
 	return nil
 }
 

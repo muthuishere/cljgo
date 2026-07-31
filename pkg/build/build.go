@@ -85,6 +85,9 @@ type Plan struct {
 	Deps           []deps.Dep
 	AcceptVersions map[string]string // (accept-version …): module -> version
 	MvnRepos       []string          // (mvn-repo …): prepended Maven repositories
+	// Paths is (paths …): the project's source roots, in order. Empty means
+	// the default, DefaultSourceRoots — src and test, whichever exist.
+	Paths []string
 
 	// Frozen is set by `cljgo build --locked` / CLJGO_LOCKED=1 (ADR 0112).
 	// It is not declared in build.cljgo: whether a build may re-pin is a
@@ -171,6 +174,12 @@ func planFromValue(v any) (*Plan, error) {
 			MvnVersion:  str(lang.Get(d, kw("mvn/version"))),
 			MvnDeclared: lang.Get(d, kw("mvn/version")) != nil,
 		})
+	}
+	// (paths b ["src" "test"]) — the project's source roots.
+	for _, r := range lang.ToSlice(lang.Get(m, kw("paths"))) {
+		if d := str(r); d != "" {
+			p.Paths = append(p.Paths, d)
+		}
 	}
 	// (mvn-repo b url) — prepends to the default repository list.
 	for _, r := range lang.ToSlice(lang.Get(m, kw("mvn-repos"))) {
@@ -350,6 +359,12 @@ func (p *Plan) prepareArtifact(art Artifact, opts emit.Options) (string, error) 
 	// (load-path slot 3), and merges their Go-requires with the consumer's own,
 	// hard-erroring on a version conflict here rather than letting `go mod
 	// tidy`'s silent MVS be the arbiter.
+	// The project's own SOURCE ROOTS, published unconditionally — a project
+	// with no declared dependencies never enters resolveDeps below, and used
+	// to get no roots at all, which is why a test/ tree was invisible to
+	// `cljgo build`. Published BEFORE resolveDeps so dependency roots append
+	// after it (see resolveDeps' SetResolvedRoots).
+	p.publishSourceRoots()
 	goReqs := p.GoRequires
 	if len(p.Deps) > 0 {
 		merged, err := p.resolveDeps()
@@ -500,7 +515,10 @@ func (p *Plan) resolveDeps() ([]GoRequire, error) {
 		}
 	}
 	// Slot 3: publish resolved roots so both legs' interpreter loads see them.
-	deps.SetResolvedRoots(resolved.Roots)
+	// The project's own source roots go FIRST: a project namespace must win
+	// over a dependency's namespace of the same name, and this call replaces
+	// the list rather than appending to it.
+	deps.SetResolvedRoots(append(p.SourceRoots(p.ProjectDir), resolved.Roots...))
 	// The per-namespace Java gate (ADR 0054 dec 4 / ADR 0095): classified at
 	// resolve, enforced at require. Publishing it here means BOTH legs — the
 	// interpreter and the emitter, which discovers namespaces by evaluating
@@ -664,4 +682,54 @@ func str(v any) string {
 		return s
 	}
 	return ""
+}
+
+// publishSourceRoots appends the project's source roots to the resolved roots,
+// skipping any already present so repeated calls cannot grow the list.
+func (p *Plan) publishSourceRoots() {
+	roots := deps.ResolvedRoots()
+	have := map[string]bool{}
+	for _, r := range roots {
+		have[r] = true
+	}
+	for _, r := range p.SourceRoots(p.ProjectDir) {
+		if !have[r] {
+			roots = append(roots, r)
+			have[r] = true
+		}
+	}
+	deps.SetResolvedRoots(roots)
+}
+
+// DefaultSourceRoots are the source roots a project gets without declaring
+// any: the code and the tests that sit beside it. `test` is in the default
+// deliberately — dual-host projects keep tests next to the code, and before
+// this existed a `test/` tree was invisible to `cljgo run` and `cljgo build`
+// (a namespace resolved only relative to the requiring file), so the only way
+// to build was to move the suite under `src/`.
+var DefaultSourceRoots = []string{"src", "test"}
+
+// SourceRoots returns the project's source roots as ABSOLUTE paths, in
+// declaration order, keeping only those that exist. dir is the directory
+// holding build.cljgo.
+//
+// These are appended AFTER the requiring file's own directory (see
+// eval.ResolveLibPath), never before, so a sibling namespace still wins and
+// registered providers still outrank every root.
+func (p *Plan) SourceRoots(dir string) []string {
+	want := p.Paths
+	if len(want) == 0 {
+		want = DefaultSourceRoots
+	}
+	var out []string
+	for _, r := range want {
+		abs := r
+		if !filepath.IsAbs(abs) {
+			abs = filepath.Join(dir, r)
+		}
+		if fi, err := os.Stat(abs); err == nil && fi.IsDir() {
+			out = append(out, abs)
+		}
+	}
+	return out
 }

@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/muthuishere/cljgo/pkg/ast"
 	"github.com/muthuishere/cljgo/pkg/bri"
@@ -131,6 +132,33 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 	ev.HostUnlinkedTolerant = true
 	mc := &moduleCompiler{done: map[string]*CompiledNS{}}
 	ev.LibLoader = mc.load
+	// lang's namespace registry is PROCESS-GLOBAL, so a second `exe` in the
+	// same build.cljgo inherits every namespace the first build interned, and
+	// would silently omit them from its own program (unbound vars at runtime).
+	//
+	// The predicate is deliberately NARROW: it answers "not in this program"
+	// only for a namespace a PREVIOUS build in this process compiled from a
+	// file. Everything else — providers, embedded namespaces, namespaces
+	// created by in-ns during evaluation — answers true and is left alone.
+	// A broader predicate (anything not in mc.done) sends namespaces that
+	// have no file down the file loader, which fails.
+	//
+	// Cleared on return, so `cljgo run` and the REPL never see it.
+	corelib.SetLibInProgram(func(name string) bool {
+		if mc.done[name] != nil {
+			return true // compiled into THIS program already
+		}
+		return !createdByAnEarlierBuild(name)
+	})
+	defer corelib.SetLibInProgram(nil)
+	// Snapshot the namespace table now and diff it on the way out: whatever is
+	// new was brought into existence BY THIS BUILD, which is precisely the set
+	// a later build must not mistake for "already loaded". Diffing beats
+	// tracking mc.done plus the entry namespace, because *ns* is restored by
+	// the time the entry finishes compiling and the entry's own name is not
+	// otherwise recoverable here.
+	before := namespaceNameSet()
+	defer func() { rememberCreated(before) }()
 
 	// ADR 0071: register the bri lib providers on this discovery evaluator
 	// so (require '[bri.web.http]) resolves at build time. bri is provider-backed
@@ -164,6 +192,11 @@ func CompileProgram(srcPath string) (p *Program, err error) {
 
 	entry := &CompiledNS{Path: srcPath}
 	mc.stack = []*CompiledNS{entry}
+	// The entry file's own namespace has to be remembered too, and it does not
+	// pass through mc.load — it is compiled directly here. Without it, an
+	// `exe` whose main IS the shared namespace leaves that namespace
+	// unrecorded, and the NEXT exe skips loading it: exactly the second-`exe`
+	// defect, just with the artifacts the other way round.
 	if entry.Forms, err = compileStream(ev, f, srcPath); err != nil {
 		// Mark it as a SOURCE error so the CLI renders it through diag.Render
 		// (issue 8): everything raised in here came from the user's Clojure,
@@ -316,4 +349,48 @@ func pkgFileName(pkg string) string {
 		return pkg + "_ns.go"
 	}
 	return pkg + ".go"
+}
+
+// Cross-build namespace leakage (the second-`exe` defect).
+//
+// lang's namespace registry is process-global and nothing clears it between
+// two CompileProgram calls, so the second build sees the first build's
+// namespaces as already present and skips loading them — emitting a program
+// with those namespaces missing and their vars unbound. The fix needs to know
+// exactly one thing: which namespaces a previous build in this process
+// compiled FROM A FILE. Those, and only those, must be re-loaded rather than
+// assumed present.
+var (
+	createdMu      sync.Mutex
+	createdEarlier = map[string]bool{}
+)
+
+func createdByAnEarlierBuild(name string) bool {
+	createdMu.Lock()
+	defer createdMu.Unlock()
+	return createdEarlier[name]
+}
+
+// namespaceNameSet is the set of namespace names that exist right now.
+func namespaceNameSet() map[string]bool {
+	out := map[string]bool{}
+	for s := lang.AllNamespaces(); s != nil; s = s.Next() {
+		if ns, ok := s.First().(*lang.Namespace); ok && ns != nil {
+			out[ns.Name().FullName()] = true
+		}
+	}
+	return out
+}
+
+// rememberCreated records every namespace that came into existence during this
+// build, so a later build in the same process re-loads it rather than trusting
+// the process-global registry.
+func rememberCreated(before map[string]bool) {
+	createdMu.Lock()
+	defer createdMu.Unlock()
+	for name := range namespaceNameSet() {
+		if !before[name] {
+			createdEarlier[name] = true
+		}
+	}
 }

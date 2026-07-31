@@ -8,6 +8,40 @@ declared as *code* in your project's `build.cljgo` (ADR 0021), resolved
 by one resolver that feeds both execution legs — a dependency resolves
 identically under `cljgo run` and `cljgo build` (ADRs 0052/0053).
 
+## Source roots: where namespaces are found
+
+A project's source roots default to **`src` and `test`**, whichever exist. So a
+test tree beside the code works with no declaration:
+
+```
+src/app/core.cljg        (ns app.core)
+test/app/core_test.cljg  (ns app.core-test (:require [app.core :as c]))
+```
+
+Both `cljgo run` and `cljgo build` resolve `app.core` from `test/`, because
+`src` is a root.
+
+Keeping your suite somewhere else? Say so once:
+
+```clojure
+(defn build [b]
+  (paths b ["src" "spec"])
+  …)
+```
+
+Roots are appended **after** the requiring file's own directory, never before,
+so a sibling namespace still wins — and registered providers outrank every
+root, so `clojure.*` can never be shadowed.
+
+:::note[Fixed in v0.8.3]
+Before v0.8.3 there were no project source roots at all: a namespace resolved
+*only* relative to the requiring file, so `test/app/core_test.cljg` requiring
+`app.core` looked for `test/app/core.cljg` and failed. The error named the
+namespace rather than the paths tried, so the cause was close to unguessable,
+and the only workaround was moving the suite under `src/` — which dual-host
+`.cljc` projects cannot do.
+:::
+
 ## Declaring a dependency
 
 From `examples/build-deps` in the repo — an app depending on a local

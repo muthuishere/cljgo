@@ -24,7 +24,7 @@
 (defn make-builder
   "Returns a fresh builder: an atom over an empty build plan."
   []
-  (atom {:artifacts [] :go-requires [] :deps [] :mvn-repos []
+  (atom {:artifacts [] :go-requires [] :deps [] :mvn-repos [] :paths nil
          :accept-versions {} :allow-caps [] :steps [] :default nil}))
 
 (defn exe
@@ -75,6 +75,26 @@
              (assoc m :deps
                     (conj (get m :deps)
                           (assoc opts :name name)))))
+  b)
+
+(defn paths
+  "Declares the project's SOURCE ROOTS — the directories a namespace is
+  resolved against, in order. Defaults to [\"src\" \"test\"] (whichever
+  exist), which is why a test tree beside the code works with no declaration
+  at all.
+
+  Before this existed, a namespace resolved ONLY relative to the requiring
+  file, so `test/app/core_test.cljg` requiring `app.core` looked for
+  `test/app/core.cljg` and failed — naming the namespace, not the path it
+  tried, so the cause was invisible. Dual-host projects keep tests beside the
+  code, and had to move them under src/ to build at all.
+
+  Declare it to add or reorder roots: (paths b [\"src\" \"test\" \"spec\"]).
+  Roots are appended AFTER the requiring-file's own directory, never before,
+  so a sibling namespace still wins — and registered providers still outrank
+  every root, so clojure.* cannot be shadowed. Returns b."
+  [b roots]
+  (swap! b assoc :paths (vec roots))
   b)
 
 (defn mvn-repo
