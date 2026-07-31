@@ -558,7 +558,13 @@ func sourceFiles(root string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() && (strings.HasSuffix(path, ".clj") || strings.HasSuffix(path, ".cljg")) {
+		// .cljc counts too. Without it a portable project's src/ and test/ were
+		// walked, matched nothing, and `cljgo test` printed "Ran 0 tests
+		// containing 0 assertions. 0 failures" and exited 0 - a green-looking
+		// zero for a suite that never ran. `require` already handles .cljc; only
+		// this walk did not.
+		if !d.IsDir() && (strings.HasSuffix(path, ".clj") || strings.HasSuffix(path, ".cljg") ||
+			strings.HasSuffix(path, ".cljc")) {
 			files = append(files, path)
 		}
 		return nil

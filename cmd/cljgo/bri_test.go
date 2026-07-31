@@ -29,6 +29,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"syscall"
 	"testing"
@@ -462,5 +463,32 @@ func nreplEval(t *testing.T, port, code string) {
 		if err != nil {
 			t.Fatalf("nrepl read: %v (got %q)", err, got.String())
 		}
+	}
+}
+
+// `cljgo test` walks src/ and test/ for source files. .cljc belongs in that set:
+// it is the portable extension, and a project written in it is exactly the kind
+// most likely to be run on cljgo AND another Clojure. Leaving it out did not
+// error — the walk simply matched nothing, so the run reported "Ran 0 tests
+// containing 0 assertions. 0 failures" and exited 0, which reads as a green
+// suite rather than as a suite that never ran.
+func TestSourceFilesIncludesCljc(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"a.clj", "b.cljg", "c.cljc", "d.txt", "e.cljs"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("(ns x)\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := sourceFiles(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, p := range got {
+		names = append(names, filepath.Base(p))
+	}
+	want := []string{"a.clj", "b.cljg", "c.cljc"}
+	if !reflect.DeepEqual(names, want) {
+		t.Fatalf("sourceFiles = %v, want %v", names, want)
 	}
 }

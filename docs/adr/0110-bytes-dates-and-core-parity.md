@@ -215,3 +215,55 @@ the truncation site.
 **koine's workaround meanwhile:** the affected docstring was rewritten to keep
 non-ASCII characters away from the cut, which is luck, not a fix — the next
 docstring to grow past 90 bytes hits it again.
+
+## Addendum 2, 2026-07-31 — two more, found by consuming the release for real
+
+Both surfaced while standing up koine's four-host example projects, and both are
+now FIXED in this repo (tests included). Recorded here because the failure mode
+is the interesting part, not the patch.
+
+### a. `cljgo test` silently skipped `.cljc` — FIXED
+
+`sourceFiles` (`cmd/cljgo/bri.go`) walked `src/` and `test/` for `.clj` and
+`.cljg` only. A project written in `.cljc` — the portable extension, i.e. exactly
+the projects most likely to target cljgo *and* another Clojure — matched nothing,
+so the run printed
+
+```
+Ran 0 tests containing 0 assertions.
+0 failures, 0 errors.
+```
+
+and exited **0**. That is not a missing feature, it is a green light for a suite
+that never ran. `require` already handled `.cljc`; only the walk did not.
+
+Fixed by adding the suffix, with a test asserting `.cljc` is collected. koine's
+example needed two symlinks (`app.cljg -> app.cljc`) to work around this; they
+can go once a release carries the fix.
+
+Related, and NOT fixed: `clojure.core/load-file` **resolves but is unbound** —
+`(load-file "src/demo/app.cljc")` dies with "cannot call nil - this may be an
+unbound var or a function that returned nil". It was the obvious workaround for
+the above and is itself a trap: a var that resolves promises a function that is
+not there. Either bind it or unintern it.
+
+### b. The provenance comment split a rune — FIXED
+
+Already described in Addendum 1. `provenance` (`pkg/emit/program.go`) truncated
+with `s[:90]`, a BYTE slice, so a multi-byte character straddling that offset was
+cut in half and the generated Go stopped being valid UTF-8:
+
+```
+error: namespace koine.host: emit: 73:92: illegal UTF-8 encoding
+```
+
+Fixed by backing off to a rune boundary (`utf8.RuneStart`), with a test that
+walks a multi-byte character across the whole truncation window.
+
+### What these two have in common
+
+Neither is reachable from cljgo's own test suite, because cljgo's own sources are
+`.cljg` and its own docstrings did not happen to land an em dash on byte 90. Both
+took an outside consumer — a `.cljc` library, published to Clojars, resolved back
+in — to surface. That is an argument for keeping such a consumer in the loop, not
+just for these two patches.

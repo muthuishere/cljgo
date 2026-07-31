@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/muthuishere/cljgo/pkg/ast"
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -435,8 +436,18 @@ return n > 0
 func provenance(n *ast.Node) string {
 	s := lang.PrintString(n.Form)
 	s = strings.ReplaceAll(s, "\n", " ")
+	// Truncate on a RUNE boundary, not a byte one. s[:90] cut a multi-byte
+	// character in half whenever one straddled byte 90 - an em dash in a
+	// docstring was enough - and the half-rune made the generated Go invalid
+	// UTF-8, so go/format rejected the whole file with "illegal UTF-8
+	// encoding" pointing at a line the author never wrote. Found building
+	// koine.host, which ran fine interpreted and would not compile.
 	if len(s) > 90 {
-		s = s[:90] + "…"
+		cut := 90
+		for cut > 0 && !utf8.RuneStart(s[cut]) {
+			cut--
+		}
+		s = s[:cut] + "…"
 	}
 	return s
 }
