@@ -50,7 +50,7 @@ func installIOShims(def func(name string, fn func(args ...any) any)) {
 	def("-fs-mkdir", func(args ...any) any {
 		p := asString(one("-fs-mkdir", args))
 		if err := os.MkdirAll(p, 0o755); err != nil {
-			panic(fmt.Errorf("cljg.io: mkdirs %q: %w", p, err))
+			panic(lang.NewIOError("cljg.io/mkdirs", lang.NewKeyword("fs/mkdir"), p, err))
 		}
 		return nil
 	})
@@ -62,7 +62,9 @@ func installIOShims(def func(name string, fn func(args ...any) any)) {
 		}
 		p := asString(args[0])
 		var err error
+		op := "cljg.io/delete!"
 		if args[1] != nil && args[1] != false {
+			op = "cljg.io/delete-tree!"
 			err = os.RemoveAll(p)
 		} else {
 			err = os.Remove(p)
@@ -71,7 +73,7 @@ func installIOShims(def func(name string, fn func(args ...any) any)) {
 			}
 		}
 		if err != nil {
-			panic(fmt.Errorf("cljg.io: delete %q: %w", p, err))
+			panic(lang.NewIOError(op, lang.NewKeyword("fs/delete"), p, err))
 		}
 		return nil
 	})
@@ -202,7 +204,7 @@ func installIOShims(def func(name string, fn func(args ...any) any)) {
 		path := asString(one("-fs-read-bytes", args))
 		b, err := os.ReadFile(path)
 		if err != nil {
-			panic(fmt.Errorf("cljg.io/read-bytes: cannot read %s: %w", path, err))
+			panic(lang.NewIOError("cljg.io/read-bytes", lang.NewKeyword("fs/read"), path, err))
 		}
 		return toClojureBytes(b)
 	})

@@ -73,9 +73,10 @@ func internIOBuiltins(def func(name string, fn func(args ...any) any) *lang.Var)
 			panic(fmt.Errorf("wrong number of args (%d) passed to: slurp", len(args)))
 		}
 		parseIOOpts("slurp", args[1:])
-		data, err := os.ReadFile(ioPath("slurp", args[0]))
+		path := ioPath("slurp", args[0])
+		data, err := os.ReadFile(path)
 		if err != nil {
-			panic(fmt.Errorf("slurp: %w", err))
+			panic(lang.NewIOError("slurp", lang.NewKeyword("fs/read"), path, err))
 		}
 		return string(data)
 	})
