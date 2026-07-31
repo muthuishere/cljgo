@@ -65,7 +65,7 @@ func headSHA(t *testing.T, dir string) string {
 // newCache points CLJGO_CACHE at a throwaway dir and registers a cleanup that
 // restores write bits (the cache publishes 0555 immutable trees, which the test
 // harness could otherwise fail to remove).
-func newCache(t *testing.T) string {
+func newCache(t testing.TB) string {
 	t.Helper()
 	dir := t.TempDir()
 	t.Setenv("CLJGO_CACHE", dir)

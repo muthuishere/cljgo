@@ -27,13 +27,13 @@ import (
 
 // mvnRepoDouble is a Maven repository served over httptest.
 type mvnRepoDouble struct {
-	t     *testing.T
+	t     testing.TB
 	files map[string][]byte // repo-relative path -> bytes
 	srv   *httptest.Server
 	hits  map[string]int
 }
 
-func newMvnRepo(t *testing.T) *mvnRepoDouble {
+func newMvnRepo(t testing.TB) *mvnRepoDouble {
 	t.Helper()
 	r := &mvnRepoDouble{t: t, files: map[string][]byte{}, hits: map[string]int{}}
 	r.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -54,7 +54,7 @@ func (r *mvnRepoDouble) URL() string { return r.srv.URL }
 
 // opts returns ResolveOptions wired to this repository double, with a client
 // that can reach nothing else (see mvnGuardClient).
-func (r *mvnRepoDouble) opts(t *testing.T) ResolveOptions {
+func (r *mvnRepoDouble) opts(t testing.TB) ResolveOptions {
 	return ResolveOptions{
 		MvnRepos:      []string{r.URL()},
 		MvnHTTPClient: mvnGuardClient(t, r.URL()),
@@ -210,7 +210,7 @@ func depsXML(deps ...string) string {
 }
 
 // buildJar builds a jar (a zip) in memory. No binary fixture is committed.
-func buildJar(t *testing.T, files map[string]string) []byte {
+func buildJar(t testing.TB, files map[string]string) []byte {
 	t.Helper()
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
@@ -243,13 +243,13 @@ func withDefault(m map[string]string, k, v string) map[string]string {
 // mvnGuardClient returns an http.Client whose transport refuses every request
 // not aimed at allowed. It is what makes "a committed test that needs the
 // internet is a broken test" enforceable rather than aspirational.
-func mvnGuardClient(t *testing.T, allowed string) *http.Client {
+func mvnGuardClient(t testing.TB, allowed string) *http.Client {
 	t.Helper()
 	return &http.Client{Transport: &guardTransport{t: t, allowed: allowed, base: http.DefaultTransport}}
 }
 
 type guardTransport struct {
-	t       *testing.T
+	t       testing.TB
 	allowed string
 	base    http.RoundTripper
 }

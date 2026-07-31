@@ -20,6 +20,46 @@ For any non-trivial change (new capability, contract change, milestone stage):
 3. **Apply** via tasks; **archive** when done.
 Trivial fixes skip OpenSpec; nothing skips gates.
 
+## What a spike is for (owner, 2026-07-31)
+
+**A spike is not for deciding whether something WORKS. It is for deciding
+whether it SCALES and PERFORMS.**
+
+"Can this be built" is almost never the open question — it usually can, and a
+prototype that only proves feasibility has told the ADR nothing it did not
+already assume. What an ADR cannot decide without measurement is the shape
+under load: cost per unit as N grows, allocation per operation, where the
+work belongs (compile time vs runtime), and which of two designs is the one
+you can still afford at 100×.
+
+So every spike ships **numbers, at more than one size**:
+
+- **Vary the input.** One data point is an anecdote. Measure at 3–4 scales
+  and state the growth — linear, superlinear, flat. "No superlinear blowup"
+  is itself a result, and often the one that makes a simple design
+  affordable.
+- **Report allocation, not just time.** For anything on a server path,
+  B/op and allocs/op decide scalability long before ns/op does. 1440 B/op
+  versus 24 B/op is the finding; the 6× on time is the footnote.
+- **Measure through the production code path**, not a parallel toy. s70 used
+  the same httptest Maven double the correctness tests use, so the thing
+  benchmarked is the thing that ships.
+- **Name what the measurement EXCLUDES.** s70's numbers exclude network
+  entirely, which makes them a floor, not a cost. A benchmark quoted without
+  its exclusions becomes a false claim the moment someone reuses it.
+- **Bracket what you cannot measure directly.** Minimal re-resolve was not
+  implemented, so it was bounded by the warm and full legs — a defensible
+  number beats an unmeasured plan.
+
+Feasibility findings still get recorded when the prototype turns one up (s71
+found a silent mis-format Go's layout language makes structural), but that is
+a by-product. If a spike's verdict contains no numbers and no scaling
+statement, **it has not answered the question it was opened for**.
+
+Reference shape: `spikes/s70-lock-policy/RESULTS.md` (cost per coordinate
+across four graph shapes) and `spikes/s71-date-patterns/RESULTS.md` (three
+strategies, time + allocation, deciding compile-time vs runtime placement).
+
 ## Gates (before every commit)
 
 ```
