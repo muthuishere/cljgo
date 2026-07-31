@@ -18,8 +18,12 @@ were not all measured at the same time.
 - **[AOT vs AOT vs AOT](#aot-vs-aot-vs-aot-the-compiled-clojure-on-go-head-to-head)
   is current** — re-measured 2026-07-31 on cljgo **v0.8.2**. It is the
   like-for-like head-to-head, and it is the table to read.
+- **[bri vs clj-httpkit](#current-bri-vs-clj-httpkit-measured-together) is
+  current** — 2026-07-31, v0.8.2, both entrants in the same session. The
+  eleven-runtime web table beneath it is the 2026-07-24 record and its **bri
+  row is superseded**; it did not reproduce.
 - **Every other table on this page still predates v0.7.0** (`@2026-07-25`),
-  including the interpreted-runtime comparison and the bri/Docker numbers.
+  including the interpreted-runtime comparison.
 
 Two emitter changes shipped in v0.7.0 that those older tables do not
 reflect: **ADR 0067's second numeric op table** (`quot`/`rem`/`bit-*`/
@@ -176,7 +180,51 @@ implemented yet; `lglvm` is its shipping AOT mode. Reproduce:
 
 [bri](/cljgo/bri/http/) (cljgo's web framework) AOT-compiles to a single static
 `CGO_ENABLED=0` binary and deploys as a minimal Docker image, byte-identical to
-the interpreter path (ADR 0071). Measured **2026-07-24** (cljgo **pre-v0.7.0**) on
+the interpreter path (ADR 0071).
+
+:::danger[The 2026-07-24 bri row below is superseded and does not reproduce]
+Re-run on 2026-07-31 at v0.8.2, bri measured **31,404 req/s**, not the 78,126
+in the table below. clj-httpkit re-measured within 6% of its own published
+figure in the same session, so the machine is comparable and **the movement is
+ours** — roughly 2.4× lost since the pre-v0.7.0 run. The image also grew from
+15.5 MB to 20 MB.
+
+The current, same-session numbers are the two-entrant table immediately below.
+The eleven-runtime table after it is kept as the 2026-07-24 record, and its
+bri row should not be quoted.
+:::
+
+## Current: bri vs clj-httpkit, measured together
+
+2026-07-31, cljgo **v0.8.2**, darwin/arm64, OrbStack, `oha` 12 s @ 50
+connections, `GET /api/hello`, one container at a time. Only these two
+entrants were re-run, so this is a separate table rather than a patched row.
+
+| entrant | req/s | p99 | image |
+|---|--:|--:|--:|
+| clj-httpkit (JVM) | **77,706** | 0.93 ms | 847 MB |
+| bri — `serve`, recover only | 58,222 | 2.10 ms | 20 MB |
+| bri — `listen` (zero-config default) | 31,404 | 5.32 ms | 20 MB |
+
+**Read the two bri rows together — that gap is the finding.** `listen` applies
+seven middleware layers by default (request-id, logging, recover, cors,
+metrics, auto-ban, negotiate), and they cost **46% of throughput** and 2.5× the
+p99. No other entrant in the corpus does per-request logging, metrics or abuse
+protection at all, so the comparison is not like-for-like: bri's default is
+doing more work, and paying for it.
+
+Attribution is in spike `s76` (per-layer, in-process) and `s72`. Optimising the
+request path 2.3× moved the end-to-end number by 0–2% — at 58k req/s a request
+has ~17 µs of budget and the request map was ~0.9 µs of it, so that was never
+where the time went. What we have **not** yet explained is the ~25% between
+bri's bare stack and http-kit on the compiled path.
+
+Not re-measured on 2026-07-31: cold-start and peak RSS. Those figures below are
+still the 2026-07-24 ones.
+
+## Historical: the eleven-runtime field, 2026-07-24
+
+Measured **2026-07-24** (cljgo **pre-v0.7.0**) on
 Apple M-series
 arm64, Docker/OrbStack, [`oha`](https://github.com/hatoo/oha) 15 s @ 50
 connections, **one container at a time** (contention skews numbers). Every
@@ -189,7 +237,7 @@ server answers the same two routes with byte-exact bodies (`GET /` → `hello\n`
 | rust-axum | 140 MB | 28 ms | 89,480 | 89,986 | ~1.0 ms | 8 MB |
 | deno | 277 MB | 146 ms | 89,316 | 89,099 | ~0.9 ms | 21 MB |
 | clj-httpkit (JVM) | 847 MB | 1277 ms | 82,837 | 83,669 | ~1.0 ms | 353 MB |
-| **bri (cljgo, compiled)** | **15.5 MB** | **~30 ms** | **78,126** | **77,788** | **1.4 ms** | **~16 MB** |
+| ~~bri (cljgo, compiled)~~ *(superseded — see above)* | 15.5 MB | ~30 ms | 78,126 | 77,788 | 1.4 ms | ~16 MB |
 | bun | 333 MB | 28 ms | 74,798 | 83,535 | ~1.5 ms | 50 MB |
 | clj-ring-jetty (JVM) | 858 MB | 1659 ms | 67,786 | 67,442 | ~1.5 ms | 491 MB |
 | dotnet (ASP.NET) | 359 MB | 172 ms | 62,792 | 67,451 | ~1.9 ms | 47 MB |
@@ -198,14 +246,25 @@ server answers the same two routes with byte-exact bodies (`GET /` → `hello\n`
 | spring-boot (JVM) | 512 MB | 858 ms | 51,002 | 55,056 | ~1.7 ms | 574 MB |
 | fastapi (python) | 220 MB | 381 ms | 8,931 | 8,948 | ~10.5 ms | 38 MB |
 
-**bri vs JVM Clojure** (the design bet): ~55× smaller image, ~40–55× faster
-cold-start, ~22–30× less memory, comparable-or-better throughput. bri also
-out-throughputs Go net/http, Node, .NET, Spring Boot, and FastAPI, sitting in
-the top tier with Rust/Deno/Bun/http-kit. Throughput has run-to-run noise on a
-single arm64 laptop (Go's `/` ranged 66–70k across runs); the image / RAM /
-cold-start figures are stable. The point is not a leaderboard crown — it is
-that a Clojure web app can ship as a ~15 MB, ~30 ms-start, ~16 MB-RAM native
-binary. See [Deploy](/cljgo/guides/deploy/) for the Dockerfile.
+**bri vs JVM Clojure**, restated honestly against the 2026-07-31 re-measure.
+
+What holds, and is structural rather than a tuning result: the image is
+**~42× smaller** (20 MB against http-kit's 847 MB), cold-start is roughly
+40× faster, and memory is an order of magnitude lower. A Clojure web app really
+does ship as a ~20 MB, ~30 ms-start native binary, and that was always the
+design bet.
+
+What does **not** hold: "comparable-or-better throughput" and "top tier with
+Rust/Deno/Bun/http-kit". At its zero-config default bri is 2.5× below
+clj-httpkit, and even with a bare middleware stack it is ~25% below. The
+earlier claim rested on the superseded row. Throughput on a single arm64 laptop
+also has real run-to-run noise (Go's `/` ranged 66–70k across runs), which is
+why cells are only ever comparable **within** one table — never diffed across
+two sessions.
+
+See [Deploy](/cljgo/guides/deploy/) for the Dockerfile, and
+[`benchmark/web/`](https://github.com/muthuishere/cljgo/blob/main/benchmark/web/README.md)
+to re-run any of this yourself.
 
 ## Footprint & density
 
