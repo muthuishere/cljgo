@@ -167,3 +167,51 @@ a JVM-only branch — a seam that throws on a tier-1 host is worse than no seam.
 Separately, **ADR 0095** (Clojars consume + deploy) remains the one distribution
 gap: `dep` takes `{:git …}` / `{:path …}` only, so a library published to Clojars
 needs a second git coordinate for cljgo users. koine 0.1.0 ships both.
+
+---
+
+## Addendum, 2026-07-31 — a sixth ask: the emit-comment truncation splits a rune
+
+Found while building koine 0.4.0's new `koine.host` namespace with `cljgo build`.
+The namespace runs correctly interpreted (`cljgo test` is green on it) and fails
+to COMPILE:
+
+```
+error: namespace koine.host: emit: 73:92: illegal UTF-8 encoding (and 1 more errors)
+```
+
+**Cause.** The emitter writes each top-level form as a `// (def …)` preview
+comment and truncates it at ~90 **bytes**, not runes. When a multi-byte
+character straddles that boundary it is cut in half, and the generated Go is no
+longer valid UTF-8, so `go build` rejects the file. From the emitted source:
+
+```
+// (def tier "koine's support tier for this host (README):\n\n    :supported    JVM, cljgo \xe2\x80…
+                                                                                        ^^^^^^^^
+                                              an em dash (e2 80 94) cut after two bytes
+```
+
+**Minimal repro** — a `def` whose printed form puts a multi-byte character on the
+truncation point:
+
+```clojure
+(ns r.core)
+(def v72 "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx— tail keeps going" 1)
+(defn -main [& _] (println :ok))
+```
+
+`cljgo build` → `emit: NNN:92: illegal UTF-8 encoding`.
+
+**Why it matters more than a cosmetic comment bug.** It is invisible until AOT,
+it is triggered by a *docstring* rather than by code, and the failure names a
+line in generated source the author never wrote. Any namespace whose prose uses
+an em dash, a curly quote or an ellipsis — i.e. most carefully written
+docstrings — can hit it at an offset nobody can predict.
+
+**Ask:** truncate the preview comment on a RUNE boundary (`utf8.DecodeLastRune`
+back off, or cut with `[]rune`), or escape the comment body. A one-line fix at
+the truncation site.
+
+**koine's workaround meanwhile:** the affected docstring was rewritten to keep
+non-ASCII characters away from the cut, which is luck, not a fix — the next
+docstring to grow past 90 bytes hits it again.
