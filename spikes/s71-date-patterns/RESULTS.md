@@ -38,13 +38,27 @@ Three readings, and the second is the one that decides the design:
    comptime ideal's 70.5 — a 5.8 ns / 7.6% gap, and identical allocation
    (1 alloc, 24 B, which is the output string itself and irreducible).
 
-3. Therefore: **comptime translation for literal patterns, runtime cache for
-   computed ones, and no cliff between them.** The zero-cost mandate says a
-   pattern LITERAL is known at compile time and must be translated then,
-   emitting the Go layout as a constant — that is free and it is right. But
-   the measurement says a program that builds its pattern at runtime lands
-   within 8% rather than falling off a 6× cliff. We can honour the mandate
-   without making the dynamic case a trap.
+3. Therefore: **memoise, and stop there.** This is a correction of this
+   document's first conclusion, which proposed comptime translation for
+   literal patterns *plus* a runtime cache for computed ones. Under
+   *simplicity first, then performance* (CLAUDE.md, owner 2026-07-31) that
+   does not survive its own numbers: comptime buys **5.8 ns, 7.6%**, with
+   identical allocation, and its price is a second code path through the
+   analyzer. A measured 8% does not earn a second code path — the operational
+   test is "would you keep this if it were the same speed", and the answer
+   here is no.
+
+   The zero-cost/comptime mandate is not violated by this, because the
+   mandate exists to stop us wrapping things in *runtime machinery*. One
+   memo table consulted by one function is not a layer, and it already lands
+   at 1.08× of the theoretical floor. If the analyzer later grows a
+   constant-folding seam for other reasons, folding a literal pattern through
+   the *same* `Compile` function is then nearly free and can be revisited —
+   but it must not be built as new machinery for 8%.
+
+   What the measurement genuinely settles is the thing that IS worth acting
+   on: **never translate per call.** That is the 6×/60× decision, and it is
+   one line of caching, not an architecture.
 
 ## Correctness — the hazard that would have shipped silently
 
@@ -103,9 +117,12 @@ side, which is a thing to do knowingly rather than discover in production.
   the oracle for the pattern language — and every Go-hosted Clojure translates
   against that same oracle. `strftime` would be more neutral and would oblige
   us to hand-write the oracle, which is worse.
-- Translate **at compile time for literals** (free, per the zero-cost
-  mandate), **cache at runtime for computed patterns** (within 8%, no cliff).
-- Never translate per call: 6× slower and 60× the allocation.
+- **Memoise the translation, and stop there.** One map, consulted by one
+  function, at 1.08× of the theoretical floor. Comptime folding buys 7.6%
+  and costs a second code path, which under *simplicity first* it does not
+  earn; revisit only if the analyzer grows a constant-folding seam anyway.
+- Never translate per call: 6× slower and 60× the allocation. That is the
+  decision worth making, and it is a cache, not an architecture.
 - The existing Go-layout `format`/`parse` are not silently redefined — see
   ADR 0113 for the migration, which must respect the precedence principle.
 

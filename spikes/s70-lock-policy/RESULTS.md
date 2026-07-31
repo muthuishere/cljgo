@@ -72,9 +72,18 @@ avoiding the dominant term, not the measured one.
    reformat or an added comment re-resolves the whole graph — a surprise
    upgrade caused by an edit that declared nothing.
 3. **Re-resolve minimally.** Keep every pin whose declaration did not move.
-   Full re-resolve on a one-line version bump silently drifts every transitive
-   to whatever is newest today, which is the lockfile failing at its one job —
-   and the table above says you pay ~8× for the privilege.
+
+   Note *why* this is in, because it would fail the simplicity test if it
+   were here on the strength of the 8×: full re-resolve on a one-line version
+   bump silently drifts every transitive to whatever is newest today, which
+   is **the lockfile failing at its one job**. It is a correctness
+   requirement that happens also to be faster — the free kind of
+   optimisation, and the ADR must say so rather than let a reader mistake it
+   for perf-driven machinery.
+
+   It is also a set difference, not an engine: pins whose declaration is
+   unchanged are kept, the rest are resolved. No strategy object, no
+   pluggable diff, nothing to configure.
 4. **A frozen mode is required, and it is not `Offline`.** Merges take
    `build.cljgo` from one branch and `build.lock.edn` from another. Today that
    stops. Under auto-refresh it would silently resolve a graph nobody reviewed

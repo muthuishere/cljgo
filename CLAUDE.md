@@ -56,6 +56,11 @@ found a silent mis-format Go's layout language makes structural), but that is
 a by-product. If a spike's verdict contains no numbers and no scaling
 statement, **it has not answered the question it was opened for**.
 
+And read the result the right way round: the numbers exist to say **which
+simple design to pick**, never to license a complicated one — see *Simplicity
+first, then performance* below. A verdict that concludes "therefore add a
+layer" has usually been misread.
+
 Reference shape: `spikes/s70-lock-policy/RESULTS.md` (cost per coordinate
 across four graph shapes) and `spikes/s71-date-patterns/RESULTS.md` (three
 strategies, time + allocation, deciding compile-time vs runtime placement).
@@ -267,6 +272,40 @@ reuse):
 - Competitor binaries in `benchmark/.build/aotcmp/` are the 2026-07-24 gloat
   artifacts. Re-timing them is fair; claiming anything about a NEWER Glojure
   or let-go release requires rebuilding them with gloat first.
+
+## Simplicity first, then performance (owner, 2026-07-31)
+
+**"Scalable" does not mean `EnterpriseBeanAbstractFactory`.** Scaling by
+adding layers, indirection, strategy objects and configurable engines is the
+Java-enterprise failure mode, and it is a *worse* outcome than the slow thing
+it replaced. The order is fixed and it is not negotiable:
+
+1. **Simplicity — which is the hard part.** The design a reader can hold in
+   their head, with the fewest moving parts that can be correct.
+2. **Then performance — and it must not cost simplicity.**
+
+Read that second clause strictly. Performance work is welcome when it makes
+the same simple thing faster (a better algorithm, less allocation, work moved
+to compile time through a seam that already exists). It is **refused** when
+its price is a second code path, a pluggable strategy, a cache with an
+invalidation story, or an abstraction whose only justification is a benchmark.
+
+The operational test, applied to every optimisation:
+
+- **Would you keep this if it were the same speed?** If the only argument is
+  the number, and it adds a mechanism, drop it.
+- **How much does it actually buy?** A measured 8% does not earn a second
+  code path. A measured 6× with 60× the allocation does.
+- **Is it independently justified?** The best optimisations are ones
+  correctness wanted anyway — those are free. Say so explicitly in the ADR,
+  or the reader cannot tell them apart from perf-driven complexity.
+- **Count the moving parts, not the lines.** A 200-line function with one
+  entry point is simpler than three 40-line ones behind an interface.
+
+This binds the spike doctrine above: a spike measures scale so it can tell you
+**which simple design to pick** — not so it can justify a complicated one.
+A spike result that concludes "therefore add a layer" has usually been
+misread.
 
 ## The precedence principle (owner, 2026-07-12)
 
