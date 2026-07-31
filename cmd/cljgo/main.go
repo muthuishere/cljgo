@@ -228,6 +228,16 @@ func resolveRunDeps(file string) error {
 		}
 		lockPath := filepath.Join(filepath.Dir(buildFile), "build.lock.edn")
 		if _, err := os.Stat(lockPath); err != nil {
+			// No lock: a project with no declared dependencies is fine as-is
+			// (nothing was ever meant to be resolved). A project that DOES
+			// declare dependencies but was never built is the fresh-clone
+			// trap (#168) — the require that follows fails on a namespace
+			// that plainly exists in `deps`, naming the wrong problem. Name
+			// the real one here instead.
+			plan, perr := build.LoadPlan(buildFile)
+			if perr == nil && len(plan.Deps) > 0 {
+				return build.ErrNoLock(buildFile, len(plan.Deps))
+			}
 			continue
 		}
 		return build.ResolveProjectDeps(buildFile)

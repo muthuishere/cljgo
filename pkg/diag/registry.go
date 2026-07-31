@@ -101,6 +101,7 @@ var registry = []Entry{
 	{Code: "G5020", Title: "maven dependency namespace failed to compile on cljgo", Since: "M5"},
 	{Code: "G5021", Title: "frozen build: build.lock.edn does not match build.cljgo", Since: "v0.8.2"},
 	{Code: "G5022", Title: "unsupported or unmatched java.time date pattern", Since: "v0.8.2"},
+	{Code: "G5023", Title: "cljgo run: project declares dependencies but has no build.lock.edn", Since: "v0.8.3"},
 }
 
 // Lookup returns the registry entry for code.

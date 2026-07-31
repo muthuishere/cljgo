@@ -30,6 +30,7 @@ G5019 maven dependency source file cannot be read
 G5020 maven dependency namespace failed to compile on cljgo
 G5021 frozen build: build.lock.edn does not match build.cljgo
 G5022 unsupported or unmatched java.time date pattern
+G5023 cljgo run: project declares dependencies but has no build.lock.edn
 I4001 Java class used as a namespace
 I4002 namespace requires Java interop and cannot load on cljgo
 R1001 unterminated form
