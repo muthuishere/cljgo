@@ -213,10 +213,10 @@ func internPredicateBuiltins(def func(string, func(...any) any) *lang.Var) {
 		return false
 	})
 
-	// nan?: is x NaN. Non-floats are not NaN (Clojure coerces then tests).
-	def("nan?", func(args ...any) any {
-		return lang.IsNaN(oneArg("nan?", args))
-	})
+	// NaN? lives in sorted_builtins.go with the JVM's own spelling. There used
+	// to be a lowercase `nan?` alias here too — removed, because both spellings
+	// working on cljgo and only one working on the JVM teaches a spelling that
+	// does not port (the precedence principle). Nothing in the repo used it.
 
 	// ---- value predicates ---------------------------------------------------
 
