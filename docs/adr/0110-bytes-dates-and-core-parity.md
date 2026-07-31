@@ -267,3 +267,38 @@ Neither is reachable from cljgo's own test suite, because cljgo's own sources ar
 took an outside consumer — a `.cljc` library, published to Clojars, resolved back
 in — to surface. That is an argument for keeping such a consumer in the loop, not
 just for these two patches.
+
+### c. The lock-divergence error tells you to run a command that does not exist — NOT fixed
+
+Bumping a dependency's version in `build.cljgo` fails, correctly, with:
+
+```
+error: lock/build divergence for "net.clojars.muthuishere/koine"
+       (expects build.lock.edn pins 0.4.1, got build.cljgo asks for 0.4.0)
+help: run resolve with -update to re-pin
+```
+
+But there is no `resolve` subcommand:
+
+```
+$ cljgo resolve -update
+cljgo: unknown command "resolve"
+```
+
+and no `-update` flag anywhere on the CLI. `pkg/build/build.go:458` sets
+`update := lock == nil` — the lock is rewritten **only when it is absent** — so
+the sole way to re-pin today is to `rm build.lock.edn` by hand and rebuild. Four
+sites emit that advice (`pkg/deps/resolve.go:387,397,401`,
+`pkg/deps/mvnresolve.go:39`).
+
+This one is left for the owner because the fix is a design choice, not a typo:
+either add the affordance the message already promises (`cljgo deps -update`, or
+a `-update` flag on `build`), or change the four messages to say what actually
+works ("delete build.lock.edn and rebuild"). Adding the command is the better
+half of ADR 0052's story — a lock you can only refresh by deleting it is not
+much of a lock — but that is a CLI surface decision, so it is filed rather than
+implemented.
+
+Cost in practice: it stopped a version bump twice during koine's example work,
+and the printed instruction sent the reader looking for a command that has never
+existed.
