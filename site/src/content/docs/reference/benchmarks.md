@@ -8,26 +8,28 @@ run inside plain `go test ./...` and a regression is treated like a
 conformance failure. Every number on this page was **measured, not quoted** —
 and the rows cljgo loses are published alongside the ones it wins.
 
-**Measurement context for everything below:** Apple M5 Pro, go1.26.3, cljgo
-**@2026-07-25, pre-v0.7.0**. `hello.clj` = `(println "hi")`. Every
-competing runtime was installed and measured on the same machine — no
-normalization, no numbers copied from other projects' websites.
+**Measurement context:** Apple M-series, go1.26.3. `hello.clj` =
+`(println "hi")`. Every competing runtime was installed and measured on the
+same machine — no normalization, no numbers copied from other projects'
+websites. **Each table carries its own date and cljgo version**, because they
+were not all measured at the same time.
 
-:::caution[These tables predate v0.7.0 — not yet re-measured]
-**Dated 2026-07-28.** cljgo **v0.7.0** shipped today with two emitter changes
-that are not reflected in any number on this page:
+:::caution[Which tables are current, and which are not]
+- **[AOT vs AOT vs AOT](#aot-vs-aot-vs-aot-the-compiled-clojure-on-go-head-to-head)
+  is current** — re-measured 2026-07-31 on cljgo **v0.8.1**. It is the
+  like-for-like head-to-head, and it is the table to read.
+- **Every other table on this page still predates v0.7.0** (`@2026-07-25`),
+  including the interpreted-runtime comparison and the bri/Docker numbers.
 
-- **ADR 0067, second numeric op table** — `quot`/`rem`/`bit-*`/`unchecked-*`
-  and the numeric predicates now participate in int64 type inference.
-- **ADR 0064, cross-var direct-call emission** — a direct call to a known
-  var in another namespace instead of a var deref, at a ~1.5% binary-size cost.
+Two emitter changes shipped in v0.7.0 that those older tables do not
+reflect: **ADR 0067's second numeric op table** (`quot`/`rem`/`bit-*`/
+`unchecked-*` and the numeric predicates now participate in int64 inference)
+and **ADR 0064's cross-var direct-call emission**. The rows most likely to
+have moved are the **arithmetic/numeric and call-heavy** ones.
 
-Everything below was measured **before** that release, on the commit labelled
-`@2026-07-25, pre-v0.7.0`. The rows most likely to move are the
-**arithmetic/numeric and call-heavy** ones; the rest of the suite is unlikely
-to shift much. We are **not** publishing an estimate: the tables stand as
-measured, and no row here should be read as a v0.7.0 result. They will be
-re-measured and re-dated as a whole.
+We are **not** publishing an estimate to paper over the gap: the older
+tables stand exactly as measured, and no row in them should be read as a
+v0.8.x result.
 :::
 
 ## Core metrics

@@ -1,0 +1,215 @@
+---
+title: Releases & changelog
+description: Every tagged cljgo release, newest first — what shipped, what broke, and what was measured. Sourced from the annotated git tags, so this page and the GitHub release notes cannot drift apart.
+---
+
+Every release is an annotated git tag, built by goreleaser into binaries for
+six platforms (linux/macOS/Windows × amd64/arm64) plus `checksums.txt`. This
+page is the same content as the
+[GitHub releases](https://github.com/muthuishere/cljgo/releases), distilled —
+the tag annotation is the single source, so the two cannot drift apart.
+
+Install the newest with the instructions on [Install](/cljgo/install/), or grab
+a specific version's assets from the release page linked in each heading.
+
+:::note[Versioning, honestly]
+cljgo is pre-1.0 and the version has no stability promise attached yet.
+Minor bumps carry features and may adjust behavior; patch bumps are fixes
+and measurements. What *is* promised, at every version, is the dual-harness
+contract: **a program must behave identically under `cljgo run` and as a
+compiled binary.** REPL-vs-binary divergence is a release blocker, not a
+known issue.
+:::
+
+## [v0.8.1](https://github.com/muthuishere/cljgo/releases/tag/v0.8.1) — 2026-07-31
+
+*Clojars consumption works, and there is now a test that proves it.*
+
+- **Consuming pure-Clojure libraries from Clojars works end to end.** Declare
+  `(dep b "group/artifact" {:mvn/version "V"})` in `build.cljgo`, build in
+  **project mode** (no file argument), and the POM chain, transitive walk,
+  jar extraction and load path all resolve. Proven by running
+  `com.stuartsierra/dependency 1.0.0` as a compiled binary. See
+  [Dependencies & publishing](/cljgo/guides/deps-publish/).
+- **Libraries that genuinely need the JVM are refused per namespace**, with a
+  coded and located diagnostic — `I4002` for real Java interop, `R1012` for a
+  starved reader conditional — rather than half-loading.
+- **A network integration test** (`CLJGO_CLOJARS_IT=1`) now checks both
+  directions against the live repositories, so this class of defect cannot
+  reach a release unnoticed again. It is skipped by default: a green build
+  never depends on Clojars being up.
+- Five defects found only by taking the resolver to real libraries: `defn`
+  attr-map, `defrecord` namespace qualification, nested starved conditionals,
+  doubled error notes, and lockfile write ordering.
+- **Benchmarks re-measured at this version.** Glojure AOT still wins 6 of 8
+  rows; startup regressed 4.7 → 6.6 ms and the binary grew to 7.0 MB. Both
+  are on the [benchmarks page](/cljgo/reference/benchmarks/) rather than
+  buried.
+
+## [v0.8.0](https://github.com/muthuishere/cljgo/releases/tag/v0.8.0) — 2026-07-30
+
+*Clojars, the Go standard library, and bytes/dates.*
+
+- **Consume from Clojars** (ADR 0095). Coordinate → transitive `.pom` walk →
+  jar → extraction → load path → `require`. Pure Go (`net/http` +
+  `archive/zip` + `encoding/xml`) — no JVM, no `mvn`, no Aether. Honest
+  scope, stated in the docs: **pure-Clojure libraries**. The reachable set is
+  utility and algorithm libraries, not the Java-wrapping mainstream. Of seven
+  sampled live: 2 fully consumable, 4 partial, 1 unusable.
+  - Gating is **per namespace**, not per library — one jar routinely mixes
+    both (hiccup is 8 pure + 2 Java), so a whole-library gate is wrong in
+    both directions.
+  - Reader conditionals classify on **reader output**, not a text scan, so
+    they are immune to `#?(` inside strings and comments. A `.cljc` whose
+    real body is `:clj`-only fails loud (`R1012`) instead of silently loading
+    an empty namespace.
+  - Unimplemented Maven features (`${property}`, `dependencyManagement`,
+    parent, ranges, SNAPSHOT, profiles, classifiers) **name-error** rather
+    than half-resolve.
+- **`require-go` reaches the Go standard library** (ADR 0109).
+- **Bytes, dates, base64, and two core parity bugs** (ADR 0110).
+  `cljg.io`/`cljg.stream` byte-level I/O, `cljg.date` ISO format and parse,
+  base64. `(str (random-uuid))` is the bare 36-character form again — it had
+  been leaking the `#uuid` tag into every id on the wire, silently; `pr-str`
+  keeps the tag, and both the split and the round-trip are frozen.
+  `clojure.string/replace` and `replace-first` accept a function
+  replacement, with the JVM's contract for what the fn receives.
+- Fixes: a Windows-only file-handle leak in `cljg.stream` (POSIX unlinks open
+  files, so two platforms hid it and only `windows-latest` caught it);
+  anchored and zero-width regex parity in `str/replace` on both the fn and
+  the `$`-template path; byte routes agree on sign and producers compose with
+  consumers.
+
+Every fix in this cycle was checked by an adversarial verifier that re-derived
+the JVM oracle itself. That caught three defects the fixes introduced, all
+closed before the tag.
+
+## [v0.7.0](https://github.com/muthuishere/cljgo/releases/tag/v0.7.0) — 2026-07-28
+
+*The extensions tier, and all eleven known issues closed.*
+
+- **`cljx.*` — the extensions tier.** `cljx.core` is opt-in ergonomics
+  (`add!`/`bump!`/`del!`/`dbg`) as transparent aliases whose docstrings name
+  the `swap!` form they replace (ADR 0106). `cljx.test` is Bun-flavoured
+  testing layered on `clojure.test`: mocks, spies, stubs, output capture by
+  default (ADR 0105).
+- **`cljg.*` wave 1** (ADR 0103): `cljg.http/serve`, `cljg.socket`,
+  `cljg.net.dns`, `cljg.compress`, `cljg.security`, `cljg.system/sleep`. All
+  pure Go, `CGO_ENABLED=0`, and **lazily registered** — a binary that never
+  requires them pays zero bytes.
+- **Performance.** ADR 0067's numeric inference gained a second op table
+  (`quot`/`rem`/`bit-*`/`unchecked-*`/predicates). One untyped op used to
+  demote an entire carrier graph, so closing the table re-enables whole
+  regions: collatz 1956.6 → 32.3 ms, bitmix 663.6 → 41.0 ms, digit-sum
+  146.0 → 13.9 ms, gcd 343.6 → 33.8 ms — for +192 bytes of binary. ADR 0064
+  added cross-var direct calls (~1.15× on call-heavy code, +1.5% binary).
+  ADR 0108's `--seal-core` is **opt-in only**: it measured ~1–2% on micros
+  and nothing end-to-end, so it is not the default — it exists for the JVM's
+  `:inline` semantics, not for speed.
+- **All 11 known issues closed**: `clojure.core.match` map patterns across
+  differing key sets; `for` `:when`/`:while`; fn metadata; `extend-protocol`
+  on qualified class names; compiled test binaries exiting 0 on a red suite;
+  `.getMessage` on host errors; build-vs-run diagnostic parity; `sleep`; a
+  public `*out*` writer.
+
+## [v0.6.0](https://github.com/muthuishere/cljgo/releases/tag/v0.6.0) — 2026-07-24
+
+*Opt-in OpenTelemetry.*
+
+[`bri.otel`](/cljgo/bri/otel/) (ADR 0074) adds distributed tracing as an
+**opt-in** namespace: a server span per request (named by route pattern), W3C
+`traceparent` adopt and inject, an OTLP exporter driven by the `OTEL_*` env
+vars, `service.name` from config, request-id and subject as span attributes,
+correlated with the existing Prometheus metrics and structured logs.
+
+Zero cost when unused, and proven so: it is linked **only** when the app
+requires `bri.otel`, and a plain `bri.http` binary carries zero OpenTelemetry
+symbols while a `bri.otel` binary carries the SDK. Pure Go, `CGO_ENABLED=0`
+static, dual-mode byte-identical.
+
+## [v0.5.0](https://github.com/muthuishere/cljgo/releases/tag/v0.5.0) — 2026-07-24
+
+*First-class bri — the one-person web framework, end to end.*
+
+```bash
+cljgo new --template web blog && cd blog
+cljgo generate resource Note title:string body:text
+cljgo test        # green: a working, authenticated, DB-backed CRUD
+docker build .    # a ~15 MB static-binary image
+```
+
+- [`bri.db`](/cljgo/bri/db/) (ADR 0072): a pure-Go data layer — modernc
+  SQLite (the zero-install default) plus pgx/Postgres, parametrized queries,
+  transactions, migrations. AOT-compiled and interpreted, byte-identical,
+  `CGO_ENABLED=0` static.
+- [The resource generator](/cljgo/guides/generate/) (ADR 0073):
+  `cljgo generate resource` scaffolds migration + model + handlers + routes +
+  a green CRUD test.
+- The conformance suite got ~5.3× faster (237 s → 45 s) via a batched
+  compiled harness.
+
+## [v0.4.0](https://github.com/muthuishere/cljgo/releases/tag/v0.4.0) — 2026-07-24
+
+*bri goes to production.*
+
+The flagship web framework AOT-compiles to a single static `CGO_ENABLED=0`
+binary, deployable as a ~15 MB Docker image (ADR 0071), while the interpreter
+path stays byte-identical.
+
+Measured against the field (Docker, `oha`): compiled `bri.http` at ~78k req/s,
+p99 1.4 ms, ~16 MB RSS, ~30 ms cold start — top tier alongside Rust/Deno/Bun,
+ahead of Go `net/http`, Node, .NET, Spring Boot and FastAPI; and against JVM
+Clojure web, ~55× smaller image, ~40–55× faster start, ~22–30× less memory.
+Reproduce with `spikes/s45-bri-aot-docker/bench/run.sh`.
+
+## [v0.3.1](https://github.com/muthuishere/cljgo/releases/tag/v0.3.1) — 2026-07-24
+
+*REPL session resume from the command line* (ADR 0070).
+
+`cljgo repl :resume <#|id>` (and a bare `cljgo repl <id>`) resumes a saved
+session on boot — completing the CLI leg ADR 0016 promised but never shipped,
+so the farewell line's command now actually works. With no id,
+`:resume`/`:sessions` list a numbered, newest-first table; resume by the short
+number. Sessions record their working directory and resume `cd`s back into it,
+so `require`/`load` resolve as they did.
+
+## [v0.3.0](https://github.com/muthuishere/cljgo/releases/tag/v0.3.0) — 2026-07-23
+
+*Performance, fundamentals, and the web API tier.*
+
+- **Perf campaign** (ADRs 0063–0067): emitted code went from ~35× to ~4.8× of
+  handwritten Go; the AOT binary won every recursion and data-structure
+  benchmark row outright and tied startup at 5.0 ms.
+- **`clojure.core` complete**: 632/679 oracle vars (93%), with the other 47
+  documented as JVM machinery; every satellite namespace at 100%.
+- **bri's API-first security tier** (ADR 0069): JWT auth, composable guards,
+  a Compojure-style router, CORS, metrics, audit, auto-ban — one blessed way,
+  one static binary.
+- `examples/web-api`: a runnable JWT-secured JSON API to copy.
+
+## [v0.2.0](https://github.com/muthuishere/cljgo/releases/tag/v0.2.0) — 2026-07-16
+
+*The adoption release: a downloaded binary plus the Go toolchain is the whole
+story.*
+
+- `cljgo build` works **from the binary alone** — release binaries pin the
+  published runtime module and interop host facts resolve from the generated
+  module. No checkout, no `CLJGO_SRC` (ADRs 0028/0033).
+- **nREPL**: `cljgo nrepl`, so Calva and CIDER connect (ADR 0031).
+- `format`/`printf` with Java's grammar, corpus-verified (ADR 0030).
+- **BigDecimal rewritten** as unscaled `big.Int` + scale, Java's exact model —
+  killing silent long-literal corruption (ADR 0032).
+- **9.5× faster boot** (211 ms → 22 ms) and faster dynamic-var access
+  everywhere, via goroutine-ID lookup in assembly (ADR 0034).
+- clojure-test-suite: 217/242 (89.7%), up from 57/242.
+
+## [v0.1.0](https://github.com/muthuishere/cljgo/releases/tag/v0.1.0) — 2026-07-16
+
+*First public release.* Clojure hosted on Go: a compiler written in Go that
+AOT-emits plain Go source, plus a tree-walk evaluator that is the REPL and the
+macro engine.
+
+- Zero-ceremony Go interop in both modes — the Go toolchain is the classpath.
+- Real goroutines and channels for `(go …)`, with no CPS rewrite.
+- clojure-test-suite: 102/242 files passing (42.1%).
+- Verified on Linux, macOS and Windows.

@@ -10,6 +10,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **[muthuishere.github.io/cljgo](https://muthuishere.github.io/cljgo/)** — docs, examples, and the live status board.
+**[Releases & changelog](https://muthuishere.github.io/cljgo/reference/releases/)** — what shipped in every version, newest first.
 
 Clojure hosted on Go: a compiler (written in Go) that AOT-emits plain Go
 source — the ClojureScript model with Go as the JavaScript — plus a

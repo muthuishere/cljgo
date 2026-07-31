@@ -103,6 +103,7 @@ export default defineConfig({
 						{ label: 'Error codes & diagnostics', slug: 'reference/diagnostics' },
 						{ label: 'Architecture', slug: 'reference/architecture' },
 						{ label: 'Status & roadmap', slug: 'reference/roadmap' },
+						{ label: 'Releases & changelog', slug: 'reference/releases' },
 					],
 				},
 				{
