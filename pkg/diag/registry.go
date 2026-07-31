@@ -102,6 +102,7 @@ var registry = []Entry{
 	{Code: "G5021", Title: "frozen build: build.lock.edn does not match build.cljgo", Since: "v0.8.2"},
 	{Code: "G5022", Title: "unsupported or unmatched java.time date pattern", Since: "v0.8.2"},
 	{Code: "G5023", Title: "cljgo run: project declares dependencies but has no build.lock.edn", Since: "v0.8.3"},
+	{Code: "G5024", Title: "cannot resolve real-path (missing path or symlink cycle)", Since: "v0.8.3"},
 }
 
 // Lookup returns the registry entry for code.

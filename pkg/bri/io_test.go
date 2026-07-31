@@ -123,6 +123,61 @@ func TestCljgIOPaths(t *testing.T) {
 	}
 }
 
+// TestCljgIORealPath is the regression test for issue #172: `absolute` is
+// purely lexical (filepath.Abs) and cannot resolve symlinks, so it cannot
+// canonicalise a path or guard a directory walk against a symlink cycle.
+// `real-path` (filepath.EvalSymlinks) must: (1) resolve a symlink to its real
+// target, (2) throw on a path that does not exist rather than faking a
+// value, and (3) throw on a symlink cycle (ELOOP) rather than hanging.
+func TestCljgIORealPath(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[cljg.io :as cio])`)
+
+	tmp := t.TempDir()
+	real, err := filepath.EvalSymlinks(tmp) // macOS temp dirs are themselves a symlink (/tmp -> /private/tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// a symlink resolves to its real target, absolute and cleaned
+	target := filepath.Join(real, "target.txt")
+	if err := os.WriteFile(target, []byte("hi"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(real, "link.txt")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	got := evalString(t, d, `(cio/real-path "`+filepath.ToSlash(link)+`")`)
+	if filepath.ToSlash(got) != filepath.ToSlash(target) {
+		t.Errorf("real-path %q = %q, want %q", link, got, target)
+	}
+
+	// a non-existent path throws (coded G5024), not a faked value
+	msg := evalErr(t, d, `(cio/real-path "`+filepath.ToSlash(real)+`/does-not-exist")`)
+	if !strings.Contains(msg, "real-path") {
+		t.Errorf("real-path on a missing path error = %q, want it to mention real-path", msg)
+	}
+
+	// a symlink cycle throws (ELOOP) rather than hanging forever — this is
+	// the case `absolute` cannot detect at all, since it never touches the
+	// filesystem.
+	looped := filepath.Join(real, "loop")
+	if err := os.Symlink(looped, looped); err != nil { // a symlink pointing at itself
+		t.Fatal(err)
+	}
+	done := make(chan string, 1)
+	go func() { done <- evalErr(t, d, `(cio/real-path "`+filepath.ToSlash(looped)+`")`) }()
+	select {
+	case msg := <-done:
+		if msg == "" {
+			t.Errorf("real-path on a symlink cycle did not throw")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("real-path on a symlink cycle hung instead of throwing ELOOP")
+	}
+}
+
 // TestHelperProcess is the standard Go cross-platform subprocess: re-invoked as
 // the child of the exec tests below (guarded by GO_WANT_HELPER_PROCESS so it is
 // inert as a normal test). It reads a mode after "--" and behaves as a tiny,

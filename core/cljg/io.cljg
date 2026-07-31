@@ -20,7 +20,7 @@
 ;; Private Go shims interned before this loads: -fs-stat -fs-list -fs-mkdir
 ;; -fs-delete -fs-copy -fs-move -fs-glob -fs-walk -fs-temp-file -fs-temp-dir
 ;; -fs-home -fs-cwd -fs-read-bytes -fs-write-bytes
-;; -path-abs -path-join -path-base -path-dir -path-ext
+;; -path-abs -path-real -path-join -path-base -path-dir -path-ext
 ;; (pkg/bri/io_fs.go) and -proc-exec (pkg/bri/io_proc.go).
 ;;
 ;; Loaded as an embedded namespace (ADR 0041/0087): NO (ns …) form — the
@@ -120,6 +120,15 @@
   "`path` resolved against the current directory into an absolute, cleaned path."
   [path]
   (-path-abs path))
+
+(defn real-path
+  "`path` with every symlink resolved, as an absolute cleaned path. Unlike
+  `absolute`, this touches the filesystem — it throws (coded G5024) if `path`
+  does not exist, or on a symlink cycle (ELOOP) rather than looping forever.
+  Use it to canonicalise before comparing paths or guarding a directory walk
+  against symlink cycles."
+  [path]
+  (-path-real path))
 
 (defn parent
   "The parent directory of `path` (everything but the final element)."

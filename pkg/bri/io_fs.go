@@ -181,6 +181,24 @@ func installIOShims(def func(name string, fn func(args ...any) any)) {
 		}
 		return abs
 	})
+	// -path-real path -> absolute, cleaned path with every symlink resolved.
+	// Unlike -path-abs this touches the filesystem: EvalSymlinks stats every
+	// path component, so a non-existent path or a symlink cycle is a real
+	// error (ELOOP), not a value to fake. Coded G5024 (ADR 0089 §"real-path").
+	def("-path-real", func(args ...any) any {
+		p := asString(one("-path-real", args))
+		real, err := filepath.EvalSymlinks(p)
+		if err != nil {
+			panic(lang.NewCodedError("G5024",
+				fmt.Sprintf("cljg.io/real-path: cannot resolve %q: %v", p, err)))
+		}
+		abs, err := filepath.Abs(real)
+		if err != nil {
+			panic(lang.NewCodedError("G5024",
+				fmt.Sprintf("cljg.io/real-path: cannot resolve %q: %v", p, err)))
+		}
+		return abs
+	})
 	// -path-join [segments…] -> the segments joined + cleaned with the host separator.
 	def("-path-join", func(args ...any) any {
 		segs := toStringSlice(one("-path-join", args))

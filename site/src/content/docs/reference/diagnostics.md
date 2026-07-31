@@ -124,6 +124,7 @@ reserved but has no registered codes yet.
 | G5021 | frozen build: build.lock.edn does not match build.cljgo | v0.8.2 |
 | G5022 | unsupported or unmatched java.time date pattern | v0.8.2 |
 | G5023 | cljgo run: project declares dependencies but has no build.lock.edn | v0.8.3 |
+| G5024 | cannot resolve real-path (missing path or symlink cycle) | v0.8.3 |
 
 ### The dependency-resolution codes
 
