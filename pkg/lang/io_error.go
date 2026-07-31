@@ -51,7 +51,7 @@ func classifyIOReason(err error) (reason string, phrase string) {
 	// that, verified against os.Remove on a populated directory.
 	case errors.Is(err, syscall.ENOTDIR):
 		return IOReasonNotADirectory, "not a directory"
-	case errors.Is(err, syscall.ENOTEMPTY):
+	case errors.Is(err, syscall.ENOTEMPTY), isDirNotEmpty(err):
 		return IOReasonDirectoryNotEmpty, "directory is not empty"
 	case errors.Is(err, syscall.ELOOP):
 		return IOReasonLoop, "too many levels of symbolic links"

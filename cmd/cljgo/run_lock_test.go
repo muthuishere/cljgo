@@ -93,6 +93,14 @@ func TestResolveRunDepsNoDepsIsANoOp(t *testing.T) {
 	}
 }
 
+// quoted renders a filesystem path as a Clojure string literal.
+//
+// filepath.ToSlash is not cosmetic here: a Windows temp dir is
+// C:\Users\runneradmin\... and \U is an INVALID Clojure escape, so the
+// build.cljgo this produces failed to READ on windows-latest — the test then
+// reported "no G5023" when the real cause was a syntax error it had written
+// itself. Forward slashes are valid path separators on Windows, so the
+// slashed form works on every platform.
 func quoted(s string) string {
-	return `"` + s + `"`
+	return `"` + filepath.ToSlash(s) + `"`
 }
