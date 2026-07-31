@@ -126,13 +126,20 @@ reuse):
   binary (stripped binaries keep the pclntab, so function names survive
   `-s -w`). let-go's lowered binaries retain the VM. Do NOT claim "only
   let-go includes its runtime" and do NOT claim Glojure is interpreter-free.
-- **Size claims:** one corpus per table. Benchmark-suite binaries: cljgo
-  6.7 MB / Glojure 7.5 MB / let-go 12.8 MB. hello-world 5.3 MB is a DIFFERENT
+- **Size claims:** one corpus per table. Benchmark-suite binaries (re-measured
+  2026-07-31 @ v0.8.1): cljgo **7.0 MB** (7,049,666 B) / Glojure 7.5 MB /
+  let-go 12.8 MB — the pre-v0.7.0 cljgo figure was 6.7 MB, so the lead over
+  Glojure is now ~0.5 MB, not ~0.8. hello-world 5.3 MB is a DIFFERENT
   program — never mix it into the suite row. Don't attribute the whole size
   delta to the interpreter; say "it's in theirs, not in ours" and stop.
-- **Speed:** Glojure AOT wins 6 of 8 suite rows (fusion + int64
+- **Speed:** Glojure AOT still wins 6 of 8 suite rows (fusion + int64
   specialization); cljgo wins tak/fib. Losses are roadmap gaps, not design
-  costs — never spin them as deliberate trade-offs.
+  costs — never spin them as deliberate trade-offs. **Startup regressed
+  4.7 → 6.6 ms** between pre-v0.7.0 and v0.8.1 (Glojure 3.0, let-go 4.8);
+  report it, don't bury it.
+- Competitor binaries in `benchmark/.build/aotcmp/` are the 2026-07-24 gloat
+  artifacts. Re-timing them is fair; claiming anything about a NEWER Glojure
+  or let-go release requires rebuilding them with gloat first.
 
 ## The precedence principle (owner, 2026-07-12)
 

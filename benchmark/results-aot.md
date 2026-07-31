@@ -1,13 +1,13 @@
 | Benchmark | cljgo-aot | glojure-aot | letgo-aot |
 |---|---|---|---|
-| `startup` | 4.7 ms | **3.6 ms** | 5.1 ms |
-| `tak` | **36.4 ms** | 50.6 ms | 59.6 ms |
-| `fib` | **24.1 ms** | 37.4 ms | 65.8 ms |
-| `loop-recur` | 5.9 ms | **3.7 ms** | 37.3 ms |
-| `persistent-map` | 10.5 ms | **7.4 ms** | 12.6 ms |
-| `map-filter` | 6.3 ms | **3.8 ms** | 5.3 ms |
-| `transducers` | 17.0 ms | **9.9 ms** | 25.4 ms |
-| `reduce` | 26.8 ms | **23.2 ms** | 39.4 ms |
+| `startup` | 6.6 ms | **3.0 ms** | 4.8 ms |
+| `tak` | **36.2 ms** | 51.5 ms | 58.1 ms |
+| `fib` | **25.4 ms** | 37.4 ms | 66.1 ms |
+| `loop-recur` | 6.0 ms | **4.3 ms** | 37.2 ms |
+| `persistent-map` | 11.4 ms | **7.3 ms** | 12.6 ms |
+| `map-filter` | 6.7 ms | **4.7 ms** | 6.2 ms |
+| `transducers` | 17.7 ms | **9.8 ms** | 25.7 ms |
+| `reduce` | 28.1 ms | **23.6 ms** | 40.0 ms |
 
 All three columns are native binaries compiled from the same programs —
 let-go's own benchmark suite (github.com/nooga/let-go), vendored unmodified
@@ -19,7 +19,13 @@ engine is not implemented yet). Interpreted legs (cljgo run, glj, lg,
 babashka, joker, Clojure JVM) are deliberately absent here; see
 `results.md` for that comparison.
 
-Measured 2026-07-24: cljgo @HEAD (repo Go toolchain) · gloat v0.1.62
-pinning Glojure v0.7.0 and let-go v1.12.2 (gloat builds with its own
-pinned Go toolchain). let-go's `transducers` needed gloat's pure-retry
-fallback (its LG-overrides pass failed to build).
+Measured 2026-07-31 on darwin/arm64: cljgo **v0.8.1** (rebuilt from this
+repo at HEAD with the repo Go toolchain). The `glojure-aot` and `letgo-aot`
+binaries were **not rebuilt** — they are the same artifacts produced on
+2026-07-24 by gloat v0.1.62 pinning Glojure v0.7.0 and let-go v1.12.2
+(gloat builds with its own pinned Go toolchain), re-timed here in the same
+hyperfine session on the same machine. So the timings are directly
+comparable; the competitor *versions* are the 2026-07-24 ones, and a claim
+about a newer Glojure or let-go release would need them rebuilt. let-go's
+`transducers` needed gloat's pure-retry fallback (its LG-overrides pass
+failed to build).

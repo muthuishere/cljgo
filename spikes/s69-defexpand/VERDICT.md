@@ -153,5 +153,38 @@ only for **allocation-dominated** bodies. On a cheap body it is badly wrong:
 **PROCEED to openspec** — mechanism proven, single-seam, ~300 LOC plus tests,
 semantics settled as R1–R7 (see `VERDICT-semantics.md`, adopt verbatim).
 
-**Do not propose until the guarded-inline size number exists**, since R5 and
-R1′ both have emitted-size consequences that must be priced against ADR 0004.
+## The guarded-inline size number (2026-07-31 — gate LIFTED)
+
+Measured with `gen-size.sh`, which writes each call-site SHAPE out longhand
+and compiles it for real (raw table in `evidence.txt`). Marginal cost per
+additional call site, 50 → 500 sites:
+
+| shape | emitted Go | binary | vs `defn` |
+|---|---|---|---|
+| `defn` (baseline) | 13.0 lines | 330 B | — |
+| bare inline (R1–R4 + R1′) | 5.0 lines | 404 B | 0.38× lines, **1.22× bytes** |
+| guarded inline (R5) | 28.0 lines | 2128 B | 2.15× lines, **6.45× bytes** |
+
+Three things this settles:
+
+1. **R1′ elision pays.** Bare inlining emits 38% of `defn`'s Go — the
+   var-call preamble is larger than the spliced body it replaces. Keep R1′
+   mandatory as written.
+2. **Bare inlining is not free in the binary** (1.22× bytes/site) even
+   though it is smaller in lines. Fewer, denser lines. That is an
+   acceptable price for the measured 1.013× vs 3.385× compiled speed.
+3. **R5 is the expensive rule**, and it is expensive by construction: every
+   guarded site carries the inline body *and* the fallback call *and* the
+   `identical?` test. 6.45× the binary growth per site — at 500 sites,
+   +826 KB on a 7.05 MB binary (**+11.7%**).
+
+Consequence for the proposal: R5 must not be the default. `defexpand`
+should inline bare (R1–R4), and emit the guard only where a redefinition
+can actually be observed — the ADR 0066 shape, where a process-global
+dirty flag pays for the guard once rather than at every call site. A
+per-site guard at ADR 0004's size bar is not affordable.
+
+## Verdict (final)
+
+**PROCEED to openspec.** The size gate is measured and lifted; the
+proposal must carry the R5-is-not-default consequence above.

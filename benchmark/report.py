@@ -58,7 +58,13 @@ engine is not implemented yet). Interpreted legs (cljgo run, glj, lg,
 babashka, joker, Clojure JVM) are deliberately absent here; see
 `results.md` for that comparison.
 
-Measured 2026-07-24: cljgo @HEAD (repo Go toolchain) · gloat v0.1.62
-pinning Glojure v0.7.0 and let-go v1.12.2 (gloat builds with its own
-pinned Go toolchain). let-go's `transducers` needed gloat's pure-retry
-fallback (its LG-overrides pass failed to build).""")
+Measured 2026-07-31 on darwin/arm64: cljgo **v0.8.1** (rebuilt from this
+repo at HEAD with the repo Go toolchain). The `glojure-aot` and `letgo-aot`
+binaries were **not rebuilt** — they are the same artifacts produced on
+2026-07-24 by gloat v0.1.62 pinning Glojure v0.7.0 and let-go v1.12.2
+(gloat builds with its own pinned Go toolchain), re-timed here in the same
+hyperfine session on the same machine. So the timings are directly
+comparable; the competitor *versions* are the 2026-07-24 ones, and a claim
+about a newer Glojure or let-go release would need them rebuilt. let-go's
+`transducers` needed gloat's pure-retry fallback (its LG-overrides pass
+failed to build).""")

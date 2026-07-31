@@ -294,3 +294,39 @@ calling (evn 4) ...
                    0  average unshared data size
                    0  average unshared stack size
    elapsed: 30s
+
+================================================================
+== THE GUARDED-INLINE SIZE NUMBER (2026-07-31, gen-size.sh)
+================================================================
+darwin/arm64, go 1.26, cljgo @ 104e780, unstripped `cljgo build`.
+`defexpand` is not implemented; each of the three call-site SHAPES is
+written out longhand and compiled for real, so these are emitted sizes,
+not estimates.
+
+kind          n        main.go         binary
+defn          1      164 lines   7049682 bytes
+defn         50      801 lines   7066194 bytes
+defn        500     6651 lines   7214802 bytes
+inline        1      156 lines   7049682 bytes
+inline       50      401 lines   7066194 bytes
+inline      500     2651 lines   7247826 bytes
+guarded       1      186 lines   7049682 bytes
+guarded      50     1558 lines   7082706 bytes
+guarded     500    14158 lines   8040402 bytes
+
+Marginal cost per additional call site (n=50 -> n=500, 450 sites):
+
+  shape     emitted Go     binary
+  defn      13.0 lines     330 bytes
+  inline     5.0 lines     404 bytes     (0.38x lines, 1.22x bytes)
+  guarded   28.0 lines    2128 bytes     (2.15x lines, 6.45x bytes)
+
+Readings:
+1. R1' elision works. Bare inlining emits 38% of defn's Go, because the
+   var-call preamble is bigger than the spliced (swap! todo conj N).
+2. Bare inlining is NOT free in the binary: 1.22x bytes/site. Fewer lines,
+   denser code.
+3. R5 guarded inlining is the expensive rule: 6.45x the binary growth per
+   call site, because every site carries BOTH the inline body and the
+   fallback call plus the identical? test. At 500 sites that is +826 KB on
+   a 7.05 MB binary (+11.7%).

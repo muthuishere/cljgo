@@ -111,29 +111,34 @@ no interpreted legs. The programs are
 [let-go's own benchmark suite](https://github.com/nooga/let-go/tree/main/benchmark)
 (vendored unmodified — credit nooga). Glojure and let-go binaries were built with
 [gloat](https://github.com/gloathub/gloat) (`-E glj` and `-E lglvm`), the
-official automation tool for both. Measured **2026-07-24** (cljgo
-**pre-v0.7.0**), hyperfine
+official automation tool for both. Re-measured **2026-07-31** on cljgo
+**v0.8.1**, hyperfine
 3 warmup / 10 runs, wall-clock mean, startup included, compile time excluded.
 Best per row in bold.
 
 | Benchmark | cljgo (AOT) | Glojure (AOT) | let-go (AOT) |
 |---|---|---|---|
-| startup | 4.7 ms | **3.6 ms** | 5.1 ms |
-| `tak` | **36.4 ms** | 50.6 ms | 59.6 ms |
-| `fib` | **24.1 ms** | 37.4 ms | 65.8 ms |
-| `loop-recur` | 5.9 ms | **3.7 ms** | 37.3 ms |
-| `persistent-map` | 10.5 ms | **7.4 ms** | 12.6 ms |
-| `map-filter` | 6.3 ms | **3.8 ms** | 5.3 ms |
-| `transducers` | 17.0 ms | **9.9 ms** | 25.4 ms |
-| `reduce` | 26.8 ms | **23.2 ms** | 39.4 ms |
-| binary size | **6.7 MB** | 7.5 MB | 12.8 MB |
+| startup | 6.6 ms | **3.0 ms** | 4.8 ms |
+| `tak` | **36.2 ms** | 51.5 ms | 58.1 ms |
+| `fib` | **25.4 ms** | 37.4 ms | 66.1 ms |
+| `loop-recur` | 6.0 ms | **4.3 ms** | 37.2 ms |
+| `persistent-map` | 11.4 ms | **7.3 ms** | 12.6 ms |
+| `map-filter` | 6.7 ms | **4.7 ms** | 6.2 ms |
+| `transducers` | 17.7 ms | **9.8 ms** | 25.7 ms |
+| `reduce` | 28.1 ms | **23.6 ms** | 40.0 ms |
+| binary size | **7.0 MB** | 7.5 MB | 12.8 MB |
 
 **Honest read: Glojure wins this table** — 6 of 8 rows. Its codegen does
 int64/float64 specialization, direct-call targets, and reduce-pipeline fusion,
 and it shows. cljgo takes the tree-recursion rows (`tak`, `fib` — the ADR 0067
 numeric-inference pass) and the smallest binaries; let-go's lowered leg trails
 because values stay VM-boxed. Binary sizes are the same suite for all three
-(every cljgo binary is 6,684,722 bytes). Where the three still differ
+(every cljgo binary is 7,049,666 bytes). Two things moved against us since
+the pre-v0.7.0 run and we are not going to bury them: **startup regressed
+4.7 → 6.6 ms**, and the binary grew 6.7 → 7.0 MB, narrowing the size lead
+over Glojure to about half a megabyte. Both are the cost of everything
+v0.7.0/v0.8.x added to the linked core; neither is a deliberate trade-off,
+and both are on the roadmap. Where the three still differ
 architecturally: cljgo compiles source forms without evaluating them and links
 **zero interpreter** into the binary (CI-checked); Glojure's shipping AOT mode
 (`glj_aot_runtime`, what gloat builds with) retains the evaluator and reader —
@@ -143,9 +148,14 @@ finds the reader; the same probes on a cljgo binary return nothing. let-go's
 lowered binaries keep the VM runtime linked. We don't claim the interpreter
 accounts for the whole size delta — only that it's in theirs and not in ours.
 
-Versions: cljgo @2026-07-24, pre-v0.7.0 · gloat v0.1.62 pinning Glojure v0.7.0 and let-go
-v1.12.2 (gloat builds with its own pinned Go toolchain; cljgo with the repo
-toolchain). let-go's `transducers` used gloat's pure-retry fallback (its
+Versions: cljgo v0.8.1 (rebuilt 2026-07-31) · gloat v0.1.62 pinning Glojure
+v0.7.0 and let-go v1.12.2 (gloat builds with its own pinned Go toolchain;
+cljgo with the repo toolchain). The Glojure and let-go binaries were **not
+rebuilt** for the 2026-07-31 run — they are the identical artifacts from
+2026-07-24, re-timed in the same hyperfine session on the same machine, so
+the timings are comparable but the competitor *versions* are the July-24
+ones. A claim about a newer Glojure or let-go release would need them
+rebuilt with gloat. let-go's `transducers` used gloat's pure-retry fallback (its
 LG-overrides pass failed to build). gloat's pure `lgl` engine (no VM) is not
 implemented yet; `lglvm` is its shipping AOT mode. Reproduce:
 `bash benchmark/run-aot.sh` after building the three binary sets — steps in

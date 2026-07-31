@@ -157,9 +157,28 @@ guarantee holds by construction rather than by discipline. Free side effect:
   **unguarded**: +1.2 emitted Go lines/site, ~231 B/site — +0.25 % of binary at
   50 sites, +1.71 % at 500. A non-event at `cljx`-shaped usage (small alias
   bodies, tens of sites); real for a big body pasted into hundreds. Keep
-  `defexpand` bodies small (they are aliases by construction). **The guarded
-  shape of rule 5′ costs more and has NOT been measured — that number must
-  exist before openspec ratifies the guard**, priced against ADR 0004.
+  `defexpand` bodies small (they are aliases by construction).
+- **The guarded shape of rule 5′ is now measured** (2026-07-31,
+  `spikes/s69-defexpand/gen-size.sh`, raw table in `evidence.txt`). Marginal
+  cost per call site, 50 → 500 sites, each shape written out longhand and
+  compiled for real:
+
+  | shape | emitted Go | binary | vs `defn` |
+  |---|---|---|---|
+  | `defn` (baseline) | 13.0 lines | 330 B | — |
+  | bare inline (R1–R4 + R1′) | 5.0 lines | 404 B | 0.38× lines, 1.22× bytes |
+  | guarded inline (R5/5′) | 28.0 lines | 2128 B | 2.15× lines, **6.45× bytes** |
+
+  R1′ elision pays (bare inlining emits 38 % of `defn`'s Go — the var-call
+  preamble is bigger than the spliced body), and bare inlining costs 1.22×
+  bytes/site, which the measured 1.013× vs 3.385× compiled speed buys back.
+  The **per-site guard does not clear ADR 0004's size bar**: 6.45× the binary
+  growth per site, +826 KB on a 7.05 MB binary at 500 sites (+11.7 %).
+  **Therefore rule 5′'s guard is NOT emitted per call site by default.**
+  `defexpand` inlines bare, and the guard is emitted only in the ADR 0066
+  dirty-flag shape, where a process-global flag pays for redefinition
+  visibility once instead of at every site. Openspec ratifies the guard on
+  that basis, not on the per-site shape.
 
 ### v1 scope limits (s69, each currently a silent failure)
 
@@ -191,7 +210,8 @@ gate-green working prototype) and semantics (`s69/semantics` @ `aa53861`,
 rules R1–R7 with runnable evidence). Consolidated in
 `spikes/s69-defexpand/VERDICT.md`; rules 3′, 4 and 5′ above are its output.
 
-Next: **measure the guarded-inline size** (the one number blocking proposal) →
+The guarded-inline size number — the one measurement that was blocking the
+proposal — was taken on 2026-07-31 (see Consequences). Next:
 openspec → implement (~300 LOC + tests, single analyzer seam) → port the
 fixed-arity `cljx.core` shapes (ADR 0106) onto it and re-measure to prove the
 tax is gone.
