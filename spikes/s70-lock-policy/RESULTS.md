@@ -52,6 +52,41 @@ a 3-deep chain is ~28 ms + ~2.5 ms, against ~247 ms for a full re-resolve —
 **roughly 8× cheaper**, and the multiple grows with the size of the graph you
 did not touch.
 
+## Stress: the shapes the first table did not have
+
+The table above builds **disjoint chains** — every root reaches its own private
+transitives, nothing is reached twice. Real dependency graphs are nothing like
+that: they are DAGs with heavy sharing, where first-wins dedup does most of the
+work. A linearity claim measured only on disjoint chains is a claim about a
+shape nobody ships, so it was re-measured on the other extreme and at depth.
+
+| shape | edges | distinct coords | total | per coord |
+|---|---|---|---|---|
+| diamond 50 × 40 | 2,000 | 90 | 86.53 ms | 0.96 ms |
+| diamond 100 × 80 | 8,000 | 180 | 187.10 ms | 1.04 ms |
+| chains 20 × 25 | 500 | 500 | 423.23 ms | 0.85 ms |
+| chain 1 × 500 | 500 | 500 | 400.69 ms | 0.80 ms |
+
+**The linearity survives, and it is per DISTINCT COORDINATE, not per edge.**
+8,000 edges over 180 coordinates cost the same per coordinate as 30
+coordinates over 30 edges. `TestDiamondDedupIsByDistinctCoordinate` asserts
+the correctness half directly: 2,000 edges must produce 90 lock rows and no
+jar may be fetched twice.
+
+Across every shape measured — 30 to 500 coordinates, disjoint chains, deep
+chains and shared DAGs — cost stays in a narrow **0.80–1.04 ms per distinct
+coordinate**. The simple policy is affordable on real graph shapes, not just
+on the convenient one.
+
+One honest observation, recorded and deliberately **not acted on**: a single
+500-deep chain (`1 × 500`, fully sequential — no independent work available)
+costs the same as 20 parallel chains of 25. Resolution is not exploiting
+concurrency. Over a real network that would serialise latency down a deep
+chain. It is not worth a concurrency layer: real graphs are wide and shallow
+(depth ~4–6), and adding a scheduler to speed up a shape nobody has is exactly
+the trade *simplicity first, then performance* forbids. Revisit only if a real
+graph ever shows the depth.
+
 ## The caveat that makes minimal re-resolve matter MORE than this table shows
 
 Every number above is against a local `httptest` server. This measures the

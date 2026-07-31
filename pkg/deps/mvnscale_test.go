@@ -21,6 +21,7 @@ package deps
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -109,3 +110,86 @@ func BenchmarkResolveWarm10x3(b *testing.B)  { benchWarm(b, 10, 3) }
 func BenchmarkResolveWarm50x3(b *testing.B)  { benchWarm(b, 50, 3) }
 func BenchmarkResolveWarm100x3(b *testing.B) { benchWarm(b, 100, 3) }
 func BenchmarkResolveWarm50x6(b *testing.B)  { benchWarm(b, 50, 6) }
+
+// --- stress: the shapes the first benchmark did not have -------------------
+//
+// publishGraph builds DISJOINT chains: every root reaches its own private
+// transitives and no coordinate is ever reached twice. Real dependency graphs
+// are nothing like that — they are DAGs with heavy sharing, where first-wins
+// dedup is doing most of the work. A scaling claim measured only on disjoint
+// chains is a claim about a shape nobody ships.
+//
+// publishDiamond gives the other extreme: `width` roots that ALL depend on the
+// same shared `shared` coordinates. If dedup works, cost tracks the number of
+// DISTINCT coordinates, not the number of edges.
+
+func publishDiamond(tb testing.TB, r *mvnRepoDouble, width, shared int) []Dep {
+	tb.Helper()
+	var edges []string
+	for s := 0; s < shared; s++ {
+		c := Coord{Group: "scale", Artifact: fmt.Sprintf("shared%d", s), Version: "1.0.0"}
+		r.publish(c, "", map[string]string{
+			fmt.Sprintf("scale/shared%d.clj", s): fmt.Sprintf("(ns scale.shared%d)\n(def v %d)\n", s, s),
+		})
+		edges = append(edges, depXML("scale", fmt.Sprintf("shared%d", s), "1.0.0"))
+	}
+	body := depsXML(edges...)
+	var roots []Dep
+	for w := 0; w < width; w++ {
+		c := Coord{Group: "scale", Artifact: fmt.Sprintf("root%d", w), Version: "1.0.0"}
+		r.publish(c, body, map[string]string{
+			fmt.Sprintf("scale/root%d.clj", w): fmt.Sprintf("(ns scale.root%d)\n(def v %d)\n", w, w),
+		})
+		roots = append(roots, Dep{Name: fmt.Sprintf("scale/root%d", w), MvnVersion: "1.0.0", MvnDeclared: true})
+	}
+	return roots
+}
+
+// TestDiamondDedupIsByDistinctCoordinate is the correctness half of the stress:
+// 50 roots × 40 shared deps is 2000 EDGES but only 90 distinct coordinates. If
+// the lock carried 2000 rows, or the repo were hit 2000 times, the linear
+// scaling measured on disjoint chains would be a fiction on real graphs.
+func TestDiamondDedupIsByDistinctCoordinate(t *testing.T) {
+	r := newMvnRepo(t)
+	roots := publishDiamond(t, r, 50, 40)
+	newCache(t)
+	o := r.opts(t)
+	o.Update = true
+
+	res, err := Resolve(roots, o)
+	if err != nil {
+		t.Fatalf("resolve: %v", err)
+	}
+	if got, want := len(res.Lock.Deps), 90; got != want {
+		t.Errorf("lock has %d coordinates, want %d distinct (2000 edges must dedup)", got, want)
+	}
+	for path, n := range r.hits {
+		if n > 1 && strings.HasSuffix(path, ".jar") {
+			t.Errorf("refetched %s %d times: dedup is not preventing network work", path, n)
+		}
+	}
+}
+
+func benchDiamond(b *testing.B, width, shared int) {
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		r := newMvnRepo(b)
+		roots := publishDiamond(b, r, width, shared)
+		newCache(b)
+		o := r.opts(b)
+		o.Update = true
+		b.StartTimer()
+		if _, err := Resolve(roots, o); err != nil {
+			b.Fatalf("resolve: %v", err)
+		}
+	}
+}
+
+// 50x40 = 2000 edges / 90 coordinates; 100x80 = 8000 edges / 180 coordinates.
+// Cost must track the second number, not the first.
+func BenchmarkResolveDiamond50x40(b *testing.B)  { benchDiamond(b, 50, 40) }
+func BenchmarkResolveDiamond100x80(b *testing.B) { benchDiamond(b, 100, 80) }
+
+// Deep, to check the BFS does not degrade with chain length.
+func BenchmarkResolveGraph20x25(b *testing.B) { benchResolve(b, 20, 25) }
+func BenchmarkResolveGraph1x500(b *testing.B) { benchResolve(b, 1, 500) }

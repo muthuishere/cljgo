@@ -105,11 +105,21 @@ func isPatternChar(c byte) bool {
 // error naming the exact token it will not approximate.
 //
 // Supported core: numeric date/time fields, fixed-width literals, and the
-// offset forms. Locale text tokens (MMM/MMMM/EEE/EEEE) are supported ONLY as
-// Locale.ROOT (English), which is stated rather than discovered: on a JVM
-// with a non-English default locale, ofPattern("MMM") yields "juil." where Go
-// yields "Jul" and nothing errors. A caller who wants agreement must force
-// Locale.ROOT on the JVM side.
+// offset forms.
+//
+// LOCALE — and this is the correction the differential corpus forced. Text
+// tokens (MMM/MMMM/EEE/EEEE) match Go's names, which are English-only, so the
+// JVM side must pin **Locale.ENGLISH**. It must NOT pin Locale.ROOT, which
+// was this prototype's original advice and is wrong in a way that reads as
+// right (measured, java.time 2026-07-31):
+//
+//	          MMM   MMMM    E     EEEE
+//	ROOT      Jul   Jul     Fri   Fri      <- full forms COLLAPSE to short
+//	ENGLISH   Jul   July    Fri   Friday
+//
+// Locale.ROOT's CLDR data has no distinct full forms, so a caller following
+// the old advice would get "Jul" on the JVM and "July" on cljgo — a silent
+// divergence on precisely the tokens the advice was written to protect.
 func Compile(p string) (Compiled, error) {
 	runs, err := lex(p)
 	if err != nil {
@@ -197,18 +207,32 @@ func token(c byte, n int) (string, error) {
 		}
 		return "", fmt.Errorf("day must be d or dd, got %d d's", n)
 	case 'E':
-		if n >= 4 {
+		// Run length is BOUNDED. Leaving it open ("n >= 4 means full") made
+		// Compile accept EEEEEEE and emit "Monday" for a pattern java.time
+		// itself rejects — found by the differential corpus, not by hand.
+		switch {
+		case n <= 3:
+			return "Mon", nil
+		case n == 4:
 			return "Monday", nil
 		}
-		return "Mon", nil
+		return "", fmt.Errorf("day-of-week must be E..EEE (short) or EEEE (full), got %d E's "+
+			"(EEEEE is java.time's NARROW form and Go has no equivalent)", n)
 	case 'H':
-		switch n {
-		case 1:
-			return "15", nil // Go has no single-digit 24h form; 15 is zero-padded
-		case 2:
+		// Go's layout language has NO unpadded 24-hour form. The prototype
+		// originally mapped H to "15" with a comment admitting the deviation,
+		// and shipped it: java.time's "H" prints 9 where that emits 09. A
+		// wrong hour, silently, in the middle of a timestamp — exactly the
+		// class the design rule forbids, and the hand-written tests never saw
+		// it because they only ever used HH.
+		if n == 2 {
 			return "15", nil
 		}
-		return "", fmt.Errorf("hour must be H or HH, got %d H's", n)
+		if n == 1 {
+			return "", fmt.Errorf("unpadded 24-hour (H) has no Go layout equivalent " +
+				"(java.time prints 9, Go's only 24-hour form is zero-padded); use HH")
+		}
+		return "", fmt.Errorf("hour must be HH, got %d H's", n)
 	case 'h':
 		switch n {
 		case 1:
@@ -234,7 +258,13 @@ func token(c byte, n int) (string, error) {
 		}
 		return "", fmt.Errorf("second must be s or ss, got %d s's", n)
 	case 'a':
-		return "PM", nil
+		// Bounded for the same reason as E: java.time accepts only a single
+		// `a`, and the unbounded version accepted `aa` and emitted "PMPM"'s
+		// worth of nonsense for a pattern the oracle rejects.
+		if n == 1 {
+			return "PM", nil
+		}
+		return "", fmt.Errorf("am/pm must be a single a, got %d a's", n)
 	case 'X':
 		switch n {
 		case 1:

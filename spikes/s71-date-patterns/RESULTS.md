@@ -60,7 +60,76 @@ Three readings, and the second is the one that decides the design:
    on: **never translate per call.** That is the 6×/60× decision, and it is
    one line of caching, not an architecture.
 
-## Correctness — the hazard that would have shipped silently
+## Stress test: 4,000 patterns differentially against the JVM
+
+The hand-written tests above were green. They were also worthless as evidence,
+for the reason the `..000` bug already demonstrated: they assert the cases
+their author thought of. So the prototype was stress-tested against the oracle
+— 4,000 generated patterns, formatted on both hosts, strings diffed
+(`fuzzgen.go` + `oracle.clj` + `differential_test.go`).
+
+**The layout-string design failed on 1,252 of 4,000 (31%).** Four defects, all
+silent mis-formats, none reachable from the hand-written suite:
+
+| # | defect | effect |
+|---|---|---|
+| 1 | `H` mapped to Go's `15` | JVM prints `9`, cljgo printed `09` — a wrong hour. The prototype had a *comment* admitting Go has no unpadded 24-hour form, and shipped anyway. |
+| 2 | `E`/`a` run lengths unbounded | accepted `EEEEEEE` and `aa`, which java.time itself rejects |
+| 3 | **`Locale.ROOT` guidance was wrong** | ROOT collapses `MMMM`→`Jul` and `EEEE`→`Fri`; only `ENGLISH`/`US` give full names. The advice written to protect the text tokens would have caused a silent divergence on exactly those tokens. |
+| 4 | **token/literal adjacency** | see below — the one that killed the design |
+
+Fixing 1–3 took divergence from 1,252 to **108**. It stops there, and defect 4
+is why.
+
+### The defect that invalidated the approach
+
+```
+ref.Format("Mon-at") => "Fri-at"     substitutes
+ref.Format("Monat")  => "Monat"      SILENTLY DOES NOT
+ref.Format("Jandu")  => "Jandu"      same for the month name
+```
+
+**Go's `Format` decides whether to substitute a text token based on the
+literal that FOLLOWS it.** So `EEE'at' Z` — an ordinary pattern — produced
+`Monat +0000` where the JVM gives `Friat +0000`. Not a wrong token: a token
+that *vanished because of the literal next to it*.
+
+No amount of token-level fixing reaches zero, because the translator emits a
+layout string and something else re-parses it under rules the translator
+cannot see.
+
+### The repair is a deletion, not an adjacency rule
+
+The mistake was structural: **we had already parsed the pattern, then
+re-encoded it into a second string language so Go could parse it again.**
+Deleting that second encoding deletes the whole bug class. `direct.go`
+compiles to a small op list and formats each field independently.
+
+| | layout string | direct op list |
+|---|---|---|
+| divergences / 4,000 | **108** | **0** |
+| accepted what the JVM rejects | 6 | **0** |
+| patterns refused | 1,128 | **15** |
+| format | 71.8 ns · 24 B · 1 alloc | 87.9 ns · 24 B · 1 alloc |
+
+Three things to read here, and the third is the point:
+
+1. **Zero divergence.** The design rule is met, and now it is *evidenced*
+   rather than asserted.
+2. **It refuses 15 patterns instead of 1,128.** Most old refusals were limits
+   of Go's *layout language*, not its *calendar* — `H` and bare `SSS` are both
+   fine once you stop emitting a layout string. The correct design is also the
+   far more capable one.
+3. **Correctness costs 16 ns and zero allocation.** Identical B/op and
+   allocs/op — and allocation was the scalability term, per the table above.
+   My prediction that removing Go's per-call layout re-scan would make it
+   *faster* was wrong; it is 22% slower on time. Reported as measured.
+
+The rejected design is retained as `TestLayoutStringDesignIsUnfixable`, which
+asserts a divergence ceiling rather than passing — evidence for the ADR, and a
+guard against anyone "simplifying" back to it.
+
+## The first hazard (found before the stress test)
 
 The design rule, from the exchange with koine: *a pattern language that errors
 on 20% of inputs is fine; one that silently mis-formats on 2% is not.*
