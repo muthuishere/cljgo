@@ -1,28 +1,27 @@
 package bri
 
-// Where a bri request actually spends its time (spike s72).
+// Spike s72 — where a bri request spends its time, AT SCALE.
 //
-// The published Docker table has bri at 78,126 req/s against clj-httpkit's
-// 82,837 on the same two routes, and the obvious question is WHICH LAYER the
-// gap is in — Go's HTTP server, bri's adapter, or the Clojure handler. A
-// container benchmark cannot answer that; it measures all three plus the
-// kernel plus Docker.
+// The container benchmark (benchmark/web/) answers "how fast is the whole
+// thing"; it cannot answer "which layer, and how does that layer grow". This
+// file is the second question, measured through the production adapt() path
+// with the Go server removed (httptest.NewRecorder, no socket), so the only
+// thing varying is the framework.
 //
-// So this measures ONE layer at a time, through the production adapt() path,
-// with the Go server removed (httptest.NewRecorder, no socket):
+// Read ALLOCATION first, not ns/op. At 50k req/s an allocation per request is
+// 50k allocations/second the GC must walk, and it is what separates "fast on
+// an idle laptop" from "fast under sustained load".
 //
-//	BenchmarkRawGoHandler   the floor: a net/http handler that writes the same
-//	                        bytes. Everything above this is framework cost.
-//	BenchmarkBriAdapt*      the real bri path, at four request shapes.
-//
-// Allocation is the number to read, not ns/op. At 78k req/s a per-request
-// allocation is 78k allocations/second of pressure the GC has to walk, and it
-// is what separates "fast on an idle laptop" from "fast under sustained load".
+// WHAT THESE NUMBERS EXCLUDE, so nobody quotes them as throughput: no socket,
+// no HTTP parsing, no TLS, no middleware stack, no Docker, no kernel. They are
+// a FLOOR on framework cost and a shape, never a req/s figure.
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -37,6 +36,8 @@ var briEcho = lang.FnFunc(func(args ...any) any {
 })
 
 // BenchmarkRawGoHandler is the floor — what the compare/go entrant does.
+// Everything above this line is framework cost. Its ~9 allocs are
+// httptest.NewRecorder's, present in every row below too.
 func BenchmarkRawGoHandler(b *testing.B) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
@@ -62,51 +63,93 @@ func benchAdapt(b *testing.B, pattern string, req *http.Request) {
 	}
 }
 
-// The corpus route, exactly as the Docker benchmark drives it: no query, no
-// path params, and oha's own small header set.
-func BenchmarkBriAdaptBare(b *testing.B) {
-	req := httptest.NewRequest("GET", "/", nil)
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("User-Agent", "oha/1.4.5")
-	benchAdapt(b, "/", req)
-}
+// --- scale 1: header count ---------------------------------------------------
+//
+// The handler reads NO headers. This asks whether a request the app ignores
+// still costs in proportion to what the client sent — i.e. whether a browser
+// (many headers) is systematically more expensive than a load generator (few).
 
-// A realistic browser request — 8 headers rather than 2. This is the scale
-// question: does per-request cost track HEADER COUNT, which the handler never
-// reads?
-func BenchmarkBriAdaptRealHeaders(b *testing.B) {
-	req := httptest.NewRequest("GET", "/", nil)
-	for k, v := range map[string]string{
-		"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-		"Accept-Encoding": "gzip, deflate, br",
-		"Accept-Language": "en-GB,en;q=0.9",
-		"Cache-Control":   "no-cache",
-		"Cookie":          "session=abc123; theme=dark",
-		"User-Agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-		"Referer":         "https://example.com/page",
-		"Sec-Fetch-Mode":  "navigate",
-	} {
-		req.Header.Set(k, v)
+func BenchmarkAdaptHeaders(b *testing.B) {
+	for _, n := range []int{0, 2, 8, 20, 50} {
+		b.Run(fmt.Sprintf("n=%d", n), func(b *testing.B) {
+			req := httptest.NewRequest("GET", "/", nil)
+			for i := 0; i < n; i++ {
+				req.Header.Set(fmt.Sprintf("X-Header-%d", i), "some header value here")
+			}
+			benchAdapt(b, "/", req)
+		})
 	}
-	benchAdapt(b, "/", req)
 }
 
-// With a query string the handler also ignores.
-func BenchmarkBriAdaptQuery(b *testing.B) {
-	req := httptest.NewRequest("GET", "/?a=1&b=2&c=3", nil)
-	req.Header.Set("Accept", "*/*")
-	benchAdapt(b, "/", req)
+// --- scale 2: query parameters ------------------------------------------------
+
+func BenchmarkAdaptQueryParams(b *testing.B) {
+	for _, n := range []int{0, 1, 5, 20} {
+		b.Run(fmt.Sprintf("n=%d", n), func(b *testing.B) {
+			var q []string
+			for i := 0; i < n; i++ {
+				q = append(q, fmt.Sprintf("k%d=v%d", i, i))
+			}
+			u := "/"
+			if len(q) > 0 {
+				u += "?" + strings.Join(q, "&")
+			}
+			req := httptest.NewRequest("GET", u, nil)
+			req.Header.Set("Accept", "*/*")
+			benchAdapt(b, "/", req)
+		})
+	}
 }
 
-// With a typed path param — the /api/n/{id} route.
-func BenchmarkBriAdaptPathParam(b *testing.B) {
-	req := httptest.NewRequest("GET", "/api/n/42", nil)
-	req.Header.Set("Accept", "*/*")
-	req.SetPathValue("id", "42")
-	benchAdapt(b, "/api/n/{id}", req)
+// --- scale 3: request body ----------------------------------------------------
+//
+// The body is read eagerly into a string. This prices that decision: an API
+// taking a 64 KiB JSON payload pays for the copy whether or not it parses it.
+
+func BenchmarkAdaptBody(b *testing.B) {
+	for _, size := range []int{0, 1 << 10, 16 << 10, 256 << 10} {
+		b.Run(fmt.Sprintf("bytes=%d", size), func(b *testing.B) {
+			payload := strings.Repeat("x", size)
+			h := adapt("/", briEcho)
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				req := httptest.NewRequest("POST", "/", strings.NewReader(payload))
+				w := httptest.NewRecorder()
+				h(w, req)
+			}
+		})
+	}
 }
 
-// The pieces, so the profile is attributable rather than a single total.
+// --- scale 4: route count -----------------------------------------------------
+//
+// Does dispatch cost track the SIZE OF THE ROUTING TABLE? A framework that is
+// fast with 2 routes and slow with 200 is not usable for a real API. This goes
+// through http.ServeMux, the same mux buildMux produces.
+
+func BenchmarkMuxRouteCount(b *testing.B) {
+	for _, n := range []int{1, 10, 100, 500} {
+		b.Run(fmt.Sprintf("routes=%d", n), func(b *testing.B) {
+			mux := http.NewServeMux()
+			for i := 0; i < n; i++ {
+				mux.HandleFunc(fmt.Sprintf("GET /api/r%d/{id}", i), adapt(fmt.Sprintf("/api/r%d/{id}", i), briEcho))
+			}
+			// Hit the LAST route registered, so no ordering luck helps.
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/r%d/42", n-1), nil)
+			req.Header.Set("Accept", "*/*")
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				w := httptest.NewRecorder()
+				mux.ServeHTTP(w, req)
+			}
+		})
+	}
+}
+
+// --- the pieces, so the profile is attributable ------------------------------
+
 func BenchmarkRequestMapOnly(b *testing.B) {
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("Accept", "*/*")
@@ -126,4 +169,23 @@ func BenchmarkWriteResponseOnly(b *testing.B) {
 		w := httptest.NewRecorder()
 		writeResponse(w, res)
 	}
+}
+
+// BenchmarkAdaptParallel is the contention question the single-goroutine rows
+// cannot answer: bri serves on every core at once, so any shared mutable state
+// on the request path (a global registry lock, a counter, an abuse-guard map)
+// shows up HERE and nowhere else.
+func BenchmarkAdaptParallel(b *testing.B) {
+	h := adapt("/", briEcho)
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("User-Agent", "oha/1.4.5")
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			w := httptest.NewRecorder()
+			h(w, req)
+		}
+	})
 }

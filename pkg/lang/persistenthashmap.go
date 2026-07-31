@@ -50,7 +50,13 @@ type (
 	Node interface {
 		assoc(shift uint, hash uint32, key any, val any, addedLeaf *Box) Node
 		without(shift uint, hash uint32, key any) Node
-		find(shift uint, hash uint32, key any) *Pair
+		// find returns the stored key, its value, and whether the key is
+		// present. It deliberately does NOT return a *Pair: allocating an
+		// entry on the heap for every successful lookup made every hash-map
+		// READ allocate, language-wide, and ValAtDefault — the hot path under
+		// every (get m k) — threw the key away immediately. EntryAt builds a
+		// MapEntry from these values only when a caller actually wants one.
+		find(shift uint, hash uint32, key any) (foundKey, foundVal any, ok bool)
 		nodeSeq() ISeq
 		iter() MapIterator
 	}
@@ -164,12 +170,8 @@ func (m *PersistentHashMap) Without(key any) IPersistentMap {
 
 func (m *PersistentHashMap) EntryAt(key any) IMapEntry {
 	if m.root != nil {
-		p := m.root.find(0, HashEq(key), key)
-		if p != nil {
-			return &MapEntry{
-				key: p.Key,
-				val: p.Value,
-			}
+		if k, v, ok := m.root.find(0, HashEq(key), key); ok {
+			return &MapEntry{key: k, val: v}
 		}
 	}
 	return nil
@@ -194,8 +196,8 @@ func (m *PersistentHashMap) Empty() IPersistentCollection {
 
 func (m *PersistentHashMap) ValAtDefault(key, notFound any) any {
 	if m.root != nil {
-		if res := m.root.find(0, HashEq(key), key); res != nil {
-			return res.Value
+		if _, v, ok := m.root.find(0, HashEq(key), key); ok {
+			return v
 		}
 	}
 	return notFound
@@ -395,24 +397,21 @@ func (b *BitmapIndexedNode) without(shift uint, hash uint32, key any) Node {
 	return b
 }
 
-func (b *BitmapIndexedNode) find(shift uint, hash uint32, key any) *Pair {
+func (b *BitmapIndexedNode) find(shift uint, hash uint32, key any) (any, any, bool) {
 	bit := bitpos(hash, shift)
 	if (b.bitmap & bit) == 0 {
-		return nil
+		return nil, nil, false
 	}
 	idx := b.index(bit)
 	keyOrNull := b.array[2*idx]
 	valOrNode := b.array[2*idx+1]
-	if _, ok := valOrNode.(Node); ok {
-		return valOrNode.(Node).find(shift+5, hash, key)
+	if n, ok := valOrNode.(Node); ok {
+		return n.find(shift+5, hash, key)
 	}
 	if Equiv(key, keyOrNull) {
-		return &Pair{
-			Key:   keyOrNull,
-			Value: valOrNode,
-		}
+		return keyOrNull, valOrNode, true
 	}
-	return nil
+	return nil, nil, false
 }
 
 func (b *BitmapIndexedNode) nodeSeq() ISeq {
@@ -631,11 +630,11 @@ func (n *ArrayNode) without(shift uint, hash uint32, key any) Node {
 	}
 }
 
-func (n *ArrayNode) find(shift uint, hash uint32, key any) *Pair {
+func (n *ArrayNode) find(shift uint, hash uint32, key any) (any, any, bool) {
 	idx := mask(hash, shift)
 	node := n.array[idx]
 	if node == nil {
-		return nil
+		return nil, nil, false
 	}
 	return node.find(shift+5, hash, key)
 }
@@ -734,15 +733,12 @@ func (n *HashCollisionNode) without(shift uint, hash uint32, key any) Node {
 	}
 }
 
-func (n *HashCollisionNode) find(shift uint, hash uint32, key any) *Pair {
+func (n *HashCollisionNode) find(shift uint, hash uint32, key any) (any, any, bool) {
 	idx := n.findIndex(key)
 	if idx == -1 {
-		return nil
+		return nil, nil, false
 	}
-	return &Pair{
-		Key:   n.array[idx],
-		Value: n.array[idx+1],
-	}
+	return n.array[idx], n.array[idx+1], true
 }
 
 func (n *HashCollisionNode) nodeSeq() ISeq {
