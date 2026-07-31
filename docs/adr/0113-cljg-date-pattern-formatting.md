@@ -1,6 +1,6 @@
 # ADR 0113 — `cljg.date` gets java.time pattern formatting, compiled to ops not to a Go layout
 
-Date: 2026-07-31 · Status: **proposed** — spike **s71** CLOSED
+Date: 2026-07-31 · Status: **accepted — implemented 2026-07-31** — spike **s71** CLOSED
 (`spikes/s71-date-patterns/RESULTS.md`, prototype + 4,000-pattern differential
 stress test against the JVM oracle).
 
@@ -148,6 +148,32 @@ with its own migration.
 - The rejected layout-string design is retained in the spike as
   `TestLayoutStringDesignIsUnfixable`, asserting a divergence ceiling, so
   nobody "simplifies" back into it.
+
+## As implemented
+
+Two things the implementation settled that this ADR did not state, both
+recorded here rather than left to the code:
+
+- **Parsing is stricter than formatting, deliberately.** `parse-pattern`
+  refuses a pattern that cannot name a *whole* instant — no year, month or day,
+  or a 12-hour `h` with no `a`. Defaulting a missing year to 1970 or a missing
+  meridiem to AM would be exactly the silently-wrong-on-2% failure decision 4
+  exists to eliminate, so it is a refusal instead. A parsed weekday that
+  contradicts the parsed date is likewise an error, as it is on the JVM. A
+  pattern carrying no offset reads as UTC.
+- **The code lives in `pkg/bri/date_pattern.go`, not `pkg/corelib`.**
+  `cljg.date`'s Go half is already `pkg/bri/cljg_date.go` (ADR 0087's embedded
+  namespace registry); a new package boundary between a compiler and its only
+  caller would be a moving part with no reader benefit. Parsing walks the SAME
+  op list as formatting, so the two cannot drift apart — there is one
+  description of a pattern, not two.
+
+Measured on the shipped code (`BenchmarkDatePattern*`, darwin/arm64):
+**110 ns · 24 B · 1 alloc** to format, and **100 ns · 24 B · 1 alloc** for
+memo-lookup-plus-format — i.e. the memo lookup does not register above noise,
+which is the result decision 3 predicted. The 4,000-pattern corpus scores
+**0 divergences, 0 wrongly accepted, 15 refused** through the shipping code
+path (`TestDatePatternMatchesJVMOracle`), reproducing the spike exactly.
 
 ## Not in scope
 

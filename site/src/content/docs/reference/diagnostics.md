@@ -122,6 +122,7 @@ reserved but has no registered codes yet.
 | G5019 | maven dependency source file cannot be read | v0.8.0 |
 | G5020 | maven dependency namespace failed to compile on cljgo | v0.8.0 |
 | G5021 | frozen build: build.lock.edn does not match build.cljgo | v0.8.2 |
+| G5022 | unsupported or unmatched java.time date pattern | v0.8.2 |
 
 ### The dependency-resolution codes
 

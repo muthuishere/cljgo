@@ -8,49 +8,56 @@ import (
 )
 
 var (
-	kw_arglists                     = lang.InternKeywordString("arglists")
-	kw_column                       = lang.InternKeywordString("column")
-	kw_doc                          = lang.InternKeywordString("doc")
-	kw_end_column                   = lang.InternKeywordString("end-column")
-	kw_end_line                     = lang.InternKeywordString("end-line")
-	kw_exclude                      = lang.InternKeywordString("exclude")
-	kw_file                         = lang.InternKeywordString("file")
-	kw_line                         = lang.InternKeywordString("line")
-	sym_cljg_DOT_date               = lang.NewSymbol("cljg.date")
-	sym_clojure_DOT_core            = lang.NewSymbol("clojure.core")
-	sym_format                      = lang.NewSymbol("format")
-	sym_layout                      = lang.NewSymbol("layout")
-	sym_millis                      = lang.NewSymbol("millis")
-	sym_s                           = lang.NewSymbol("s")
-	sym_t0                          = lang.NewSymbol("t0")
-	sym_t1                          = lang.NewSymbol("t1")
-	v_cljg_DOT_date_X_format_iso    = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-format-iso")).SetPrivate()
-	v_cljg_DOT_date_X_format_layout = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-format-layout")).SetPrivate()
-	v_cljg_DOT_date_X_nano_time     = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-nano-time")).SetPrivate()
-	v_cljg_DOT_date_X_now_millis    = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-now-millis")).SetPrivate()
-	v_cljg_DOT_date_X_parse_iso     = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-parse-iso")).SetPrivate()
-	v_cljg_DOT_date_X_parse_layout  = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-parse-layout")).SetPrivate()
-	v_cljg_DOT_date_format          = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("format"))
-	v_cljg_DOT_date_format_iso      = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("format-iso"))
-	v_cljg_DOT_date_nano_time       = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("nano-time"))
-	v_cljg_DOT_date_now             = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("now"))
-	v_cljg_DOT_date_parse           = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("parse"))
-	v_cljg_DOT_date_parse_iso       = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("parse-iso"))
-	v_cljg_DOT_date_since           = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("since"))
-	v_cljg_DOT_date_since_ms        = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("since-ms"))
-	v_clojure_DOT_core_X_           = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
-	v_clojure_DOT_core_X_SLASH_     = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("/"))
-	v_clojure_DOT_core_double       = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("double"))
-	v_clojure_DOT_core_in_ns        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
-	v_clojure_DOT_core_refer        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
+	kw_arglists                      = lang.InternKeywordString("arglists")
+	kw_column                        = lang.InternKeywordString("column")
+	kw_doc                           = lang.InternKeywordString("doc")
+	kw_end_column                    = lang.InternKeywordString("end-column")
+	kw_end_line                      = lang.InternKeywordString("end-line")
+	kw_exclude                       = lang.InternKeywordString("exclude")
+	kw_file                          = lang.InternKeywordString("file")
+	kw_line                          = lang.InternKeywordString("line")
+	sym_cljg_DOT_date                = lang.NewSymbol("cljg.date")
+	sym_clojure_DOT_core             = lang.NewSymbol("clojure.core")
+	sym_format                       = lang.NewSymbol("format")
+	sym_layout                       = lang.NewSymbol("layout")
+	sym_millis                       = lang.NewSymbol("millis")
+	sym_pattern                      = lang.NewSymbol("pattern")
+	sym_s                            = lang.NewSymbol("s")
+	sym_t0                           = lang.NewSymbol("t0")
+	sym_t1                           = lang.NewSymbol("t1")
+	v_cljg_DOT_date_X_format_iso     = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-format-iso")).SetPrivate()
+	v_cljg_DOT_date_X_format_layout  = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-format-layout")).SetPrivate()
+	v_cljg_DOT_date_X_format_pattern = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-format-pattern")).SetPrivate()
+	v_cljg_DOT_date_X_nano_time      = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-nano-time")).SetPrivate()
+	v_cljg_DOT_date_X_now_millis     = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-now-millis")).SetPrivate()
+	v_cljg_DOT_date_X_parse_iso      = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-parse-iso")).SetPrivate()
+	v_cljg_DOT_date_X_parse_layout   = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-parse-layout")).SetPrivate()
+	v_cljg_DOT_date_X_parse_pattern  = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("-parse-pattern")).SetPrivate()
+	v_cljg_DOT_date_format           = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("format"))
+	v_cljg_DOT_date_format_iso       = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("format-iso"))
+	v_cljg_DOT_date_format_pattern   = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("format-pattern"))
+	v_cljg_DOT_date_nano_time        = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("nano-time"))
+	v_cljg_DOT_date_now              = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("now"))
+	v_cljg_DOT_date_parse            = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("parse"))
+	v_cljg_DOT_date_parse_iso        = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("parse-iso"))
+	v_cljg_DOT_date_parse_pattern    = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("parse-pattern"))
+	v_cljg_DOT_date_since            = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("since"))
+	v_cljg_DOT_date_since_ms         = lang.InternVarName(lang.NewSymbol("cljg.date"), lang.NewSymbol("since-ms"))
+	v_clojure_DOT_core_X_            = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("-"))
+	v_clojure_DOT_core_X_SLASH_      = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("/"))
+	v_clojure_DOT_core_double        = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("double"))
+	v_clojure_DOT_core_in_ns         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("in-ns"))
+	v_clojure_DOT_core_refer         = lang.InternVarName(lang.NewSymbol("clojure.core"), lang.NewSymbol("refer"))
 )
 
 var (
-	fnD_cljg_DOT_date_nano_time lang.FnFunc0
-	fnD_cljg_DOT_date_now       lang.FnFunc0
-	fnD_cljg_DOT_date_parse_iso lang.FnFunc1
-	fnD_cljg_DOT_date_format    lang.FnFunc2
-	fnD_cljg_DOT_date_parse     lang.FnFunc2
+	fnD_cljg_DOT_date_nano_time      lang.FnFunc0
+	fnD_cljg_DOT_date_now            lang.FnFunc0
+	fnD_cljg_DOT_date_parse_iso      lang.FnFunc1
+	fnD_cljg_DOT_date_format         lang.FnFunc2
+	fnD_cljg_DOT_date_parse          lang.FnFunc2
+	fnD_cljg_DOT_date_format_pattern lang.FnFunc2
+	fnD_cljg_DOT_date_parse_pattern  lang.FnFunc2
 )
 
 var loaded = false
@@ -202,7 +209,7 @@ func Load() {
 	v_cljg_DOT_date_parse_iso.SealDirect()
 	_ = v_cljg_DOT_date_parse_iso
 	// (def format (clojure.core/fn ([millis layout] (-format-layout millis layout))))
-	v_cljg_DOT_date_format.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_millis, sym_layout)), kw_doc, "Render an instant (epoch milliseconds) in UTC with `layout`.\n\n  NOTE — no JVM equivalent: `layout` is a GO reference-time layout, spelled by\n  writing the reference instant Mon Jan 2 15:04:05 MST 2006 the way you want\n  the output (\"2006-01-02\", \"15:04:05\", \"Jan 2 2006\"). It is NOT a\n  java.time DateTimeFormatter pattern (\"yyyy-MM-dd\"), and cljgo does not\n  translate one into the other — this is a Go host, and pretending otherwise\n  would silently mis-format. For the portable case use `format-iso`.\n\n  Does NOT shadow clojure.core/format, which is untouched (see the ns header)."))
+	v_cljg_DOT_date_format.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(83), kw_column, int64(7), kw_end_line, int64(83), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_millis, sym_layout)), kw_doc, "Render an instant (epoch milliseconds) in UTC with `layout`.\n\n  NOTE — no JVM equivalent: `layout` is a GO reference-time layout, spelled by\n  writing the reference instant Mon Jan 2 15:04:05 MST 2006 the way you want\n  the output (\"2006-01-02\", \"15:04:05\", \"Jan 2 2006\"). It is NOT a\n  java.time DateTimeFormatter pattern (\"yyyy-MM-dd\"), and cljgo does not\n  translate one into the other — this is a Go host, and pretending otherwise\n  would silently mis-format. For a java.time pattern use `format-pattern`; for\n  the zero-decision portable case use `format-iso`.\n\n  Does NOT shadow clojure.core/format, which is untouched (see the ns header)."))
 	tmp50 := lang.FnFunc2(func(millis51, layout52 any) any {
 		tmp53 := v_cljg_DOT_date_X_format_layout.Get()
 		tmp54 := lang.Apply2(tmp53, millis51, layout52)
@@ -214,7 +221,7 @@ func Load() {
 	v_cljg_DOT_date_format.SealDirect()
 	_ = v_cljg_DOT_date_format
 	// (def parse (clojure.core/fn ([s layout] (-parse-layout s layout))))
-	v_cljg_DOT_date_parse.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(97), kw_column, int64(7), kw_end_line, int64(97), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_layout)), kw_doc, "Parse `s` with `layout` into epoch milliseconds — the inverse of `format`,\n  and likewise a GO reference-time layout, not a java.time pattern. A layout\n  carrying no zone is read as UTC. Throws, naming input and layout, on a\n  mismatch."))
+	v_cljg_DOT_date_parse.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(98), kw_column, int64(7), kw_end_line, int64(98), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_layout)), kw_doc, "Parse `s` with `layout` into epoch milliseconds — the inverse of `format`,\n  and likewise a GO reference-time layout, not a java.time pattern. A layout\n  carrying no zone is read as UTC. Throws, naming input and layout, on a\n  mismatch. For a java.time pattern use `parse-pattern`."))
 	tmp56 := lang.FnFunc2(func(s57, layout58 any) any {
 		tmp59 := v_cljg_DOT_date_X_parse_layout.Get()
 		tmp60 := lang.Apply2(tmp59, s57, layout58)
@@ -225,4 +232,28 @@ func Load() {
 	fnD_cljg_DOT_date_parse = tmp61.F
 	v_cljg_DOT_date_parse.SealDirect()
 	_ = v_cljg_DOT_date_parse
+	// (def format-pattern (clojure.core/fn ([millis pattern] (-format-pattern millis pattern))))
+	v_cljg_DOT_date_format_pattern.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(21), kw_arglists, lang.NewList(lang.NewVector(sym_millis, sym_pattern)), kw_doc, "Render an instant (epoch milliseconds) in UTC with a java.time\n  DateTimeFormatter `pattern` — the portable spelling.\n\n    (format-pattern 0 \"yyyy-MM-dd HH:mm:ss\")  ;=> \"1970-01-01 00:00:00\"\n    (format-pattern 0 \"EEE, d MMM yyyy\")      ;=> \"Thu, 1 Jan 1970\"\n\n  Supported: y M d E H h m s S a X Z, plus 'quoted literals'. Tokens with no\n  exact cljgo equivalent (G Q D w W F k K Y u z V) are REFUSED by name when the\n  pattern is compiled — never approximated, and never part-way through a render,\n  so a program cannot emit half a timestamp. Compiled patterns are memoised.\n\n  LOCALE — text tokens (MMM MMMM EEE EEEE) render ENGLISH names. A .cljc library\n  that must agree across hosts has to pass java.util.Locale/ENGLISH on the :clj\n  side. NOT Locale/ROOT: ROOT has no distinct full forms and yields \"Jul\" for\n  MMMM and \"Fri\" for EEEE, diverging silently on exactly the tokens the advice\n  exists to protect.\n\n  `format` remains a GO reference-time layout and is unchanged."))
+	tmp62 := lang.FnFunc2(func(millis63, pattern64 any) any {
+		tmp65 := v_cljg_DOT_date_X_format_pattern.Get()
+		tmp66 := lang.Apply2(tmp65, millis63, pattern64)
+		return tmp66
+	})
+	tmp67 := &lang.NamedFn2{Name: "cljg.date/format-pattern", Expects: "2: [millis pattern]", F: tmp62}
+	v_cljg_DOT_date_format_pattern.BindRoot(tmp67)
+	fnD_cljg_DOT_date_format_pattern = tmp67.F
+	v_cljg_DOT_date_format_pattern.SealDirect()
+	_ = v_cljg_DOT_date_format_pattern
+	// (def parse-pattern (clojure.core/fn ([s pattern] (-parse-pattern s pattern))))
+	v_cljg_DOT_date_parse_pattern.SetMeta(lang.NewMap(kw_file, "cljg/date.cljg", kw_line, int64(135), kw_column, int64(7), kw_end_line, int64(135), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector(sym_s, sym_pattern)), kw_doc, "Parse `s` with a java.time DateTimeFormatter `pattern` into epoch\n  milliseconds — the inverse of `format-pattern`.\n\n    (parse-pattern \"1970-01-01 00:00:00\" \"yyyy-MM-dd HH:mm:ss\")  ;=> 0\n\n  A pattern carrying no offset is read as UTC. Parsing is deliberately stricter\n  than formatting: a pattern that cannot name a WHOLE instant is refused rather\n  than defaulted — no year, month or day, or a 12-hour clock (h) with no AM/PM\n  (a). A parsed weekday that contradicts the parsed date is an error too, as it\n  is on the JVM. Throws, naming input and pattern, on a mismatch."))
+	tmp68 := lang.FnFunc2(func(s69, pattern70 any) any {
+		tmp71 := v_cljg_DOT_date_X_parse_pattern.Get()
+		tmp72 := lang.Apply2(tmp71, s69, pattern70)
+		return tmp72
+	})
+	tmp73 := &lang.NamedFn2{Name: "cljg.date/parse-pattern", Expects: "2: [s pattern]", F: tmp68}
+	v_cljg_DOT_date_parse_pattern.BindRoot(tmp73)
+	fnD_cljg_DOT_date_parse_pattern = tmp73.F
+	v_cljg_DOT_date_parse_pattern.SealDirect()
+	_ = v_cljg_DOT_date_parse_pattern
 }

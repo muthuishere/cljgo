@@ -88,7 +88,8 @@
   the output (\"2006-01-02\", \"15:04:05\", \"Jan 2 2006\"). It is NOT a
   java.time DateTimeFormatter pattern (\"yyyy-MM-dd\"), and cljgo does not
   translate one into the other — this is a Go host, and pretending otherwise
-  would silently mis-format. For the portable case use `format-iso`.
+  would silently mis-format. For a java.time pattern use `format-pattern`; for
+  the zero-decision portable case use `format-iso`.
 
   Does NOT shadow clojure.core/format, which is untouched (see the ns header)."
   [millis layout]
@@ -98,6 +99,49 @@
   "Parse `s` with `layout` into epoch milliseconds — the inverse of `format`,
   and likewise a GO reference-time layout, not a java.time pattern. A layout
   carrying no zone is read as UTC. Throws, naming input and layout, on a
-  mismatch."
+  mismatch. For a java.time pattern use `parse-pattern`."
   [s layout]
   (-parse-layout s layout))
+
+;; --- java.time patterns (ADR 0113) -------------------------------------------
+;;
+;; The PORTABLE spelling. "yyyy-MM-dd HH:mm:ss" means the same thing here and on
+;; the JVM, so a .cljc library's :clj branch is DateTimeFormatter/ofPattern with
+;; no translation at all — one reference implementation, and every Go-hosted
+;; Clojure translates against it.
+
+(defn format-pattern
+  "Render an instant (epoch milliseconds) in UTC with a java.time
+  DateTimeFormatter `pattern` — the portable spelling.
+
+    (format-pattern 0 \"yyyy-MM-dd HH:mm:ss\")  ;=> \"1970-01-01 00:00:00\"
+    (format-pattern 0 \"EEE, d MMM yyyy\")      ;=> \"Thu, 1 Jan 1970\"
+
+  Supported: y M d E H h m s S a X Z, plus 'quoted literals'. Tokens with no
+  exact cljgo equivalent (G Q D w W F k K Y u z V) are REFUSED by name when the
+  pattern is compiled — never approximated, and never part-way through a render,
+  so a program cannot emit half a timestamp. Compiled patterns are memoised.
+
+  LOCALE — text tokens (MMM MMMM EEE EEEE) render ENGLISH names. A .cljc library
+  that must agree across hosts has to pass java.util.Locale/ENGLISH on the :clj
+  side. NOT Locale/ROOT: ROOT has no distinct full forms and yields \"Jul\" for
+  MMMM and \"Fri\" for EEEE, diverging silently on exactly the tokens the advice
+  exists to protect.
+
+  `format` remains a GO reference-time layout and is unchanged."
+  [millis pattern]
+  (-format-pattern millis pattern))
+
+(defn parse-pattern
+  "Parse `s` with a java.time DateTimeFormatter `pattern` into epoch
+  milliseconds — the inverse of `format-pattern`.
+
+    (parse-pattern \"1970-01-01 00:00:00\" \"yyyy-MM-dd HH:mm:ss\")  ;=> 0
+
+  A pattern carrying no offset is read as UTC. Parsing is deliberately stricter
+  than formatting: a pattern that cannot name a WHOLE instant is refused rather
+  than defaulted — no year, month or day, or a 12-hour clock (h) with no AM/PM
+  (a). A parsed weekday that contradicts the parsed date is an error too, as it
+  is on the JVM. Throws, naming input and pattern, on a mismatch."
+  [s pattern]
+  (-parse-pattern s pattern))

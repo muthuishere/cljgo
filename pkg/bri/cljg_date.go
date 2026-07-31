@@ -97,6 +97,43 @@ func installDateShims(def func(name string, fn func(args ...any) any)) {
 		}
 		return t.UnixMilli()
 	})
+
+	// --- java.time patterns (ADR 0113) ---------------------------------------
+	// The portable spelling: "yyyy-MM-dd HH:mm:ss" means the same thing here
+	// and on the JVM, so a .cljc library's :clj branch is DateTimeFormatter/
+	// ofPattern with NO translation. Compiled to an op list (date_pattern.go),
+	// memoised, and refusing by name anything it cannot render exactly.
+
+	// -format-pattern (millis pattern) -> the UTC instant rendered with a
+	// java.time DateTimeFormatter pattern.
+	def("-format-pattern", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -format-pattern (expects 2: [millis pattern])", len(args)))
+		}
+		ms := asInt64("cljg.date/format-pattern", args[0])
+		d, err := dpLookup(asString(args[1]))
+		if err != nil {
+			panic(err)
+		}
+		return d.format(time.UnixMilli(ms).UTC())
+	})
+	// -parse-pattern (s pattern) -> epoch milliseconds. A pattern that cannot
+	// name a whole instant (no year, no month, no day, or a 12-hour clock with
+	// no AM/PM) is refused rather than silently defaulted.
+	def("-parse-pattern", func(args ...any) any {
+		if len(args) != 2 {
+			panic(fmt.Errorf("wrong number of args (%d) passed to: -parse-pattern (expects 2: [s pattern])", len(args)))
+		}
+		d, err := dpLookup(asString(args[1]))
+		if err != nil {
+			panic(err)
+		}
+		t, err := d.parse(asString(args[0]))
+		if err != nil {
+			panic(err)
+		}
+		return t.UnixMilli()
+	})
 }
 
 // formatISO renders epoch millis the way java.time.Instant.toString() does at
