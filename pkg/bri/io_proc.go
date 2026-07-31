@@ -8,11 +8,12 @@ package bri
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 
 	"github.com/muthuishere/cljgo/pkg/lang"
@@ -24,6 +25,13 @@ func installProcShims(def func(name string, fn func(args ...any) any)) {
 	def("-proc-exec", procExecShim)
 }
 
+// procDrainGrace bounds how long a timed-out exec waits for its own copy
+// goroutines to notice their pipe was closed (issue #175) before giving up on
+// them entirely. It exists only to make procExecShim's own return provably
+// bounded even if closing a pipe were ever slow to unblock a Read — the
+// ordinary path (killed process, closed pipe) returns almost immediately.
+const procDrainGrace = 200 * time.Millisecond
+
 // procExecShim runs one subprocess: (argv opts) -> {:out :err :exit :timed-out?}.
 //
 //	argv  a non-empty vector [cmd arg…]
@@ -34,6 +42,27 @@ func installProcShims(def func(name string, fn func(args ...any) any)) {
 // exits non-zero is a NORMAL result ({:exit n}), not a panic — the Clojure `sh`
 // wrapper surfaces it, and `sh!` is the throwing variant. A timeout kills the
 // process, sets :timed-out? true and :exit -1.
+//
+// :timeout-ms bounds the CALL, not just the process (issue #175 fix). The
+// naive approach — os/exec.CommandContext + cmd.Stdout/Stderr set to a
+// Writer — makes cmd.Wait() block until stdout/stderr reach EOF, and EOF never
+// comes while ANY process holds the pipe's write end open: a forking command
+// (`sh -c "sleep 5; echo x"`) leaves the write end inherited by the
+// grandchild, which outlives the killed immediate child. So Wait — and the
+// whole call — blocked for the child's full runtime regardless of the
+// timeout, returning the right answer 16x too late.
+//
+// The fix reads stdout/stderr through our OWN goroutines over manually opened
+// pipes (StdoutPipe/StderrPipe, exactly as cljg.process/spawn already does),
+// so cmd.Wait() only waits for the process itself to exit — not for the
+// pipes to reach EOF. On a timeout: kill the process, then close OUR read
+// ends of the pipes. Closing a pipe out from under a blocked Read unblocks it
+// immediately with an error, so the copy goroutines stop within microseconds
+// even though a grandchild is still holding the far end open — output on the
+// timeout path is necessarily best-effort (whatever was captured before the
+// kill), matching what the JVM effectively does. The normal (non-timeout)
+// path is unchanged: wait for the copies to finish normally, so a full run
+// still returns full output.
 func procExecShim(args ...any) any {
 	if len(args) != 2 {
 		panic(fmt.Errorf("-proc-exec expects 2 args (argv opts), got %d", len(args)))
@@ -44,14 +73,7 @@ func procExecShim(args ...any) any {
 	}
 
 	opts, _ := args[1].(lang.IPersistentMap)
-	ctx := context.Background()
-	var cancel context.CancelFunc
-	if ms := optInt(opts, "timeout-ms"); ms > 0 {
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(ms)*time.Millisecond)
-		defer cancel()
-	}
-
-	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
+	cmd := exec.Command(argv[0], argv[1:]...)
 	if s := optStr(opts, "in"); s != "" {
 		cmd.Stdin = bytes.NewReader([]byte(s))
 	}
@@ -67,12 +89,58 @@ func procExecShim(args ...any) any {
 		cmd.Env = merged
 	}
 
-	var outBuf, errBuf bytes.Buffer
-	cmd.Stdout = &outBuf
-	cmd.Stderr = &errBuf
-	runErr := cmd.Run()
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(fmt.Errorf("cljg.io: exec %q: %w", argv[0], err))
+	}
+	stderrPipe, err := cmd.StderrPipe()
+	if err != nil {
+		panic(fmt.Errorf("cljg.io: exec %q: %w", argv[0], err))
+	}
 
-	timedOut := ctx.Err() == context.DeadlineExceeded
+	if err := cmd.Start(); err != nil {
+		// could not start (binary not found, permission) — a real error
+		panic(fmt.Errorf("cljg.io: exec %q: %w", argv[0], err))
+	}
+
+	var mu sync.Mutex
+	var outBuf, errBuf bytes.Buffer
+	var copyWG sync.WaitGroup
+	copyWG.Add(2)
+	go func() { defer copyWG.Done(); drainPipe(&mu, &outBuf, stdoutPipe) }()
+	go func() { defer copyWG.Done(); drainPipe(&mu, &errBuf, stderrPipe) }()
+
+	waitDone := make(chan error, 1)
+	go func() { waitDone <- cmd.Wait() }()
+
+	var timedOut bool
+	var runErr error
+	if ms := optInt(opts, "timeout-ms"); ms > 0 {
+		select {
+		case runErr = <-waitDone:
+			copyWG.Wait() // finished within the deadline: capture full output
+		case <-time.After(time.Duration(ms) * time.Millisecond):
+			timedOut = true
+			if cmd.Process != nil {
+				_ = cmd.Process.Kill()
+			}
+			runErr = <-waitDone // returns once the process itself exits (not EOF)
+			// Do not wait for EOF from a surviving grandchild — close our own
+			// read ends, which unblocks any goroutine still blocked in Read.
+			_ = stdoutPipe.Close()
+			_ = stderrPipe.Close()
+			drained := make(chan struct{})
+			go func() { copyWG.Wait(); close(drained) }()
+			select {
+			case <-drained:
+			case <-time.After(procDrainGrace):
+			}
+		}
+	} else {
+		runErr = <-waitDone
+		copyWG.Wait()
+	}
+
 	exit := 0
 	switch {
 	case timedOut:
@@ -87,12 +155,34 @@ func procExecShim(args ...any) any {
 		}
 	}
 
+	mu.Lock()
+	outStr, errStr := outBuf.String(), errBuf.String()
+	mu.Unlock()
+
 	return lang.NewMap(
-		lang.NewKeyword("out"), outBuf.String(),
-		lang.NewKeyword("err"), errBuf.String(),
+		lang.NewKeyword("out"), outStr,
+		lang.NewKeyword("err"), errStr,
 		lang.NewKeyword("exit"), int64(exit),
 		lang.NewKeyword("timed-out?"), timedOut,
 	)
+}
+
+// drainPipe copies r into buf, one read at a time, holding mu only around
+// each buffer write (never around the blocking Read) so the timeout path can
+// safely read buf's partial contents concurrently under the same mutex.
+func drainPipe(mu *sync.Mutex, buf *bytes.Buffer, r io.Reader) {
+	tmp := make([]byte, 32*1024)
+	for {
+		n, err := r.Read(tmp)
+		if n > 0 {
+			mu.Lock()
+			buf.Write(tmp[:n])
+			mu.Unlock()
+		}
+		if err != nil {
+			return
+		}
+	}
 }
 
 // --- small opt accessors over a (possibly nil) cljgo opts map ---------------

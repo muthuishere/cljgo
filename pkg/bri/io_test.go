@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -232,6 +233,33 @@ func TestHelperProcess(t *testing.T) {
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 	case "printenv":
 		fmt.Fprint(os.Stdout, os.Getenv(rest[1]))
+	case "fork":
+		// Reproduces issue #175's actual shape: `sh -c "sleep 5; echo x"`
+		// does NOT exit early — sh blocks the whole time waiting on its own
+		// foreground child, so a 300ms deadline has to KILL sh. Killing sh
+		// (SIGKILL to the one direct child, exactly what os/exec's Kill
+		// does) does not touch sh's own child ("sleep"), which is now an
+		// orphan that keeps running — and keeps the inherited stdout pipe's
+		// write end open — for the rest of its natural life. So: spawn a
+		// grandchild that inherits our stdout (holding the pipe open), then
+		// block OURSELVES for the same duration so we are the one the
+		// timeout has to kill, exactly mirroring sh.
+		ms := 5000
+		if len(rest) > 1 {
+			if n, err := strconv.Atoi(rest[1]); err == nil {
+				ms = n
+			}
+		}
+		self := os.Args[0]
+		gc := exec.Command(self, "-test.run=TestHelperProcess", "--", "sleep", strconv.Itoa(ms))
+		gc.Env = append(os.Environ(), "GO_WANT_HELPER_PROCESS=1")
+		gc.Stdout = os.Stdout
+		gc.Stderr = os.Stderr
+		if err := gc.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "fork: grandchild start error: %v\n", err)
+		}
+		fmt.Fprint(os.Stdout, "forked")
+		time.Sleep(time.Duration(ms) * time.Millisecond) // killed by the timeout under test, not by exiting
 	}
 	os.Exit(0)
 }
@@ -299,6 +327,47 @@ func TestCljgIOExec(t *testing.T) {
 	// a missing binary THROWS (it never ran) — distinct from a non-zero exit
 	if msg := evalErr(t, d, `(cio/exec ["cljgo-no-such-binary-xyzzy"] {})`); !strings.Contains(msg, "exec") {
 		t.Errorf("missing binary error = %q, want it to mention exec", msg)
+	}
+}
+
+// TestCljgIOExecTimeoutBoundsTheCallNotJustTheProcess is the regression test
+// for issue #175: a forking command's grandchild keeps exec's stdout/stderr
+// pipe open long after the killed immediate child is gone, so a naive
+// implementation (cmd.Wait() blocking on pipe EOF) returns the right
+// :timed-out? answer 16x too late — the CALL was not bounded by :timeout-ms,
+// only the process was. Uses the portable "fork" helper mode above instead of
+// `sh -c` so this runs identically on macOS/Linux/Windows.
+func TestCljgIOExecTimeoutBoundsTheCallNotJustTheProcess(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[cljg.io :as cio])`)
+
+	self := filepath.ToSlash(os.Args[0])
+	cmd := func(parts ...string) string {
+		var b strings.Builder
+		b.WriteString("[")
+		for _, p := range append([]string{self, "-test.run=TestHelperProcess", "--"}, parts...) {
+			fmt.Fprintf(&b, " %q", p)
+		}
+		b.WriteString("]")
+		return b.String()
+	}
+	// the grandchild holds the pipe open for 5s; the deadline asks for 300ms.
+	toOpts := `{:env {"GO_WANT_HELPER_PROCESS" "1"} :timeout-ms 300}`
+
+	start := time.Now()
+	res := evalString(t, d, `(let [r (cio/exec `+cmd("fork", "5000")+` `+toOpts+`)] (str (:timed-out? r) "|" (:exit r)))`)
+	elapsed := time.Since(start)
+
+	if res != "true|-1" {
+		t.Fatalf("exec fork-timeout result = %q, want %q", res, "true|-1")
+	}
+	// Bound generously (2s) to absorb CI scheduling noise, while staying far
+	// tighter than the grandchild's full 5s lifetime the unfixed code waited
+	// out. A timeout that bounds the process but not the call would fail this
+	// by roughly 5s, not by a scheduling jitter margin.
+	if elapsed > 2*time.Second {
+		t.Fatalf("cio/exec with :timeout-ms 300 against a forking command took %v to return — "+
+			"the CALL is not bounded by the timeout (issue #175)", elapsed)
 	}
 }
 
