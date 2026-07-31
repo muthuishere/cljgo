@@ -166,6 +166,54 @@ func ResolveLibPath(libSym *lang.Symbol) string {
 	return ""
 }
 
+// loadFile is the interpreter implementation of load-file (issue 167):
+// sequentially read and evaluate every top-level form in an arbitrary file
+// path, the same load frame evalLibFile pushes for a required namespace,
+// but keyed off the path the caller gave rather than a resolved lib symbol
+// -- load-file is not a namespace operation, it never consults the provider
+// registry or CLJGO_PATH.
+//
+// Oracled against Clojure 1.12.5 (2026-07-31): *file* is bound to the
+// file absolute path only while it loads and *ns* is restored to whatever
+// it was on entry, even when the file itself calls (in-ns ...) -- both
+// revert once load-file returns. The return value is the value of the
+// LAST top-level form ((load-file "empty.clj") => nil for an empty file,
+// same as the JVM).
+func loadFile(e *Evaluator, path string) any {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		panic(fmt.Errorf("load-file: %s: %w", path, err))
+	}
+	f, err := os.Open(abs)
+	if err != nil {
+		panic(fmt.Errorf("load-file: %s: %w", path, err))
+	}
+	defer f.Close()
+
+	lang.PushThreadBindings(lang.NewMap(
+		lang.VarCurrentNS, e.CurrentNS(),
+		lang.VarFile, abs,
+	))
+	defer lang.PopThreadBindings()
+
+	rd := reader.New(bufio.NewReader(f), reader.WithFilename(abs),
+		reader.WithResolver(e.ReaderResolver()))
+	var result any
+	for {
+		form, err := rd.ReadOne()
+		if errors.Is(err, reader.ErrEOF) {
+			return result
+		}
+		if err != nil {
+			panic(fmt.Errorf("load-file: %s: %w", path, err))
+		}
+		result, err = e.EvalForm(form)
+		if err != nil {
+			panic(fmt.Errorf("load-file: %s: %w", path, err))
+		}
+	}
+}
+
 // evalLibFile is the interpreter's lib loader: read and evaluate the
 // file form by form under a pushed *ns*/*file* frame (the same load
 // frame as repl.Driver.EvalReader), so the file's in-ns is undone

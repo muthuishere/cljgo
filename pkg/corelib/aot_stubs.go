@@ -1,9 +1,9 @@
 // aot_stubs.go — what the interpreter-coupled builtins do in a binary
 // that has no interpreter (ADR 0046 §5).
 //
-// Four clojure.core names need the analyzer: macroexpand-1, macroexpand,
-// eval, require-go. RegisterAll interns these definitions; pkg/eval
-// OVERWRITES all four with the real ones through the same Def seam when
+// Five clojure.core names need the reader and/or analyzer: macroexpand-1,
+// macroexpand, eval, require-go, load-file. RegisterAll interns these
+// definitions; pkg/eval OVERWRITES all five with the real ones through the same Def seam when
 // an Evaluator is constructed (internBuiltins), so an interpreted
 // session — REPL, `cljgo run`, the conformance eval half — is completely
 // unchanged. Only an AOT binary, which never constructs an Evaluator,
@@ -21,7 +21,7 @@
 // So this is a documented DEVIATION, and it is spelled out rather than
 // papered over:
 //
-//   - eval / macroexpand / macroexpand-1 are BOUND to a stub that throws
+//   - eval / macroexpand / macroexpand-1 / load-file are BOUND to a stub that throws
 //     "… is not available in an AOT-compiled binary". Bound-and-throwing
 //     beats unbound: an unbound var reports "cannot call unbound var:
 //     Unbound: #'clojure.core/eval", which reads like a broken boot,
@@ -48,12 +48,12 @@ import (
 
 // registerAOTStubs interns the AOT behavior of the interpreter-coupled
 // builtins. Called from RegisterAll (i.e. in BOTH modes); pkg/eval
-// overwrites all four when an evaluator exists.
+// overwrites all five when an evaluator exists.
 func registerAOTStubs(def func(string, func(...any) any) *lang.Var) {
-	for _, name := range []string{"eval", "macroexpand", "macroexpand-1"} {
+	for _, name := range []string{"eval", "macroexpand", "macroexpand-1", "load-file"} {
 		name := name
 		def(name, func(args ...any) any {
-			panic(fmt.Errorf("%s is not available in an AOT-compiled binary: it needs the analyzer, and a compiled cljgo binary is plain Go with no compiler linked (ADR 0046; the CLJS model — run this through the cljgo REPL or `cljgo run` instead)", name))
+			panic(fmt.Errorf("%s is not available in an AOT-compiled binary: it needs the reader and analyzer, and a compiled cljgo binary is plain Go with no compiler linked (ADR 0046; the CLJS model -- run this through the cljgo REPL or cljgo run instead)", name))
 		})
 	}
 

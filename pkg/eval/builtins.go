@@ -7,25 +7,16 @@ import (
 	"github.com/muthuishere/cljgo/pkg/lang"
 )
 
-// internBuiltins pre-interns the native IFns into clojure.core. Since
-// ADR 0043 (AOT-core piece 2) the interpreter-independent set lives in
-// pkg/corelib (corelib.RegisterAll); this shell layers the FOUR
-// evaluator-coupled builtins on top of the same corelib.Def seam:
-// macroexpand-1 / macroexpand (the macro engine, design/03 §4),
-// require-go (per-evaluator host aliases, ADR 0010) and `eval`
-// (Evaluator.EvalForm). In an AOT-compiled binary rt.Boot calls
-// corelib.RegisterAll and these four stay UNBOUND — a compiled binary
-// has no analyzer, so they cannot exist (ADR 0046 §5); touching one
-// throws "Unable to resolve symbol", exactly as Clojure does for a name
-// that is not there. `require` is no longer among them: ADR 0046 moved
-// it to corelib, with the interpreter installing only its file-loading
-// hook below.
+// internBuiltins pre-interns the native IFns into clojure.core. The four
+// evaluator-coupled builtins layered on corelib.Def are macroexpand-1,
+// macroexpand, eval and load-file; require-go registers per-evaluator host
+// aliases. In an AOT-compiled binary these stay bound to the corelib stubs
+// (aot_stubs.go), since a compiled binary has no reader or analyzer linked
+// (ADR 0046).
 func (e *Evaluator) internBuiltins() {
 	corelib.RegisterAll()
 	def := corelib.Def
 
-	// macroexpand-1 / macroexpand expose the compiler's expander
-	// (design/03 §4) — same code path the analyzer uses, &env = nil.
 	def("macroexpand-1", func(args ...any) any {
 		res, err := e.macroexpand1(oneArg("macroexpand-1", args), nil)
 		if err != nil {
@@ -41,31 +32,13 @@ func (e *Evaluator) internBuiltins() {
 		return res
 	})
 
-	// require itself is corelib's (ADR 0046: a compiled binary replays
-	// every (require …) and must reach the provider registry without an
-	// interpreter). What only the interpreter can do — make a namespace
-	// exist by READING ITS SOURCE FILE — is installed here as corelib's
-	// lib-file hook, bound to this evaluator (libload.go, ADR 0042 §4).
 	corelib.SetLibFileLoader(func(libSym *lang.Symbol) { loadLibFile(e, libSym) })
 
-	// require-go registers Go import aliases for the interpreted interop
-	// path (ADR 0010, design/05 §1): (require-go '[strings]),
-	// (require-go '[strconv :as sc]), (require-go '["net/http" :as http]).
-	// Each libspec is a vector whose head is the path (a symbol — one
-	// segment — or a string that may contain slashes) with an optional
-	// `:as alias`; the default alias is the path's last `/`-segment. The
-	// mapping is scoped to the current namespace. A precedence-safe
-	// addition (CLAUDE.md): resolveHost yields to Clojure namespaces.
 	def("require-go", func(args ...any) any {
 		e.registerRequireGo(args)
 		return nil
 	})
 
-	// eval: analyze + evaluate an already-read form through the SAME
-	// Read→Analyze→Eval path the REPL uses (Evaluator.EvalForm). The argument
-	// is data, not text, so there is no reader step here — this is the
-	// value-level eval the suite exercises ((eval (list '+ 1 2)) => 3).
-	// A read-string→eval combo composes the two, matching clojure.core.
 	def("eval", func(args ...any) any {
 		res, err := e.EvalForm(oneArg("eval", args))
 		if err != nil {
@@ -73,10 +46,21 @@ func (e *Evaluator) internBuiltins() {
 		}
 		return res
 	})
+
+	// load-file (issue 167): read and evaluate every top-level form in an
+	// arbitrary file path, exactly the load frame libload.go pushes for a
+	// required namespace, keyed off the given path directly instead of a
+	// resolved lib symbol. See loadFile in libload.go.
+	def("load-file", func(args ...any) any {
+		path, ok := oneArg("load-file", args).(string)
+		if !ok {
+			panic(fmt.Errorf("load-file: cannot coerce %s to a file path", lang.PrintString(args[0])))
+		}
+		return loadFile(e, path)
+	})
 }
 
-// oneArg asserts a 1-arg builtin's arity and returns the argument.
-// (corelib keeps its own copy — the two packages' builtins are disjoint.)
+// oneArg asserts a 1-arg builtin arity and returns the argument.
 func oneArg(op string, args []any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("wrong number of args (%d) passed to: %s", len(args), op))

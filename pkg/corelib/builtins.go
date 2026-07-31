@@ -731,28 +731,44 @@ func RegisterAll() {
 	//
 	// Constructors, predicates and combinators over the pkg/lang tagged
 	// types (result.go). Registered as Go builtins so BOTH modes have them
-	// identically — rt.Boot() interns these into clojure.core before an
-	// emitted binary's Load() runs. `none` is a VALUE (a var bound to the
-	// shared sentinel), not a call; `let?` is a core.clj macro over these.
-	def("ok", func(args ...any) any { return lang.NewOk(oneArg("ok", args)) })
-	def("err", func(args ...any) any { return lang.NewErr(oneArg("err", args)) })
-	def("just", func(args ...any) any { return lang.NewJust(oneArg("just", args)) })
+	// identically — rt.Boot() interns these into cljx.meta before an
+	// emitted binary's Load() runs.
+	//
+	// ISSUE #171 / precedence principle (CLAUDE.md): these are cljgo-only
+	// additions with no JVM clojure.core counterpart, so they do NOT live
+	// in clojure.core (a real `(defn ok ...)`/`(defn err ...)` in user code
+	// must not warn about shadowing a core var the JVM does not have).
+	// They live in cljx.meta instead — required and referred deliberately,
+	// never auto-referred, never mentioned as the default error-handling
+	// story (try/catch/throw stays that, matching JVM Clojure — see ADR
+	// 0115). `none` is a VALUE (a var bound to the shared sentinel), not a
+	// call; `let?` is a core.clj macro over these, defined in cljx.meta
+	// alongside them (core.clj, the let? section).
+	metaNS := lang.FindOrCreateNamespace(lang.NewSymbol("cljx.meta"))
+	defMeta := func(name string, fn func(args ...any) any) *lang.Var {
+		v := metaNS.Intern(lang.NewSymbol(name))
+		v.BindRoot(&nativeFn{nm: name, fn: fn})
+		return v
+	}
+	defMeta("ok", func(args ...any) any { return lang.NewOk(oneArg("ok", args)) })
+	defMeta("err", func(args ...any) any { return lang.NewErr(oneArg("err", args)) })
+	defMeta("just", func(args ...any) any { return lang.NewJust(oneArg("just", args)) })
 
 	// none: the single Option-absence value (not a function).
-	noneVar := lang.NSCore.Intern(lang.NewSymbol("none"))
+	noneVar := metaNS.Intern(lang.NewSymbol("none"))
 	noneVar.BindRoot(lang.None)
 
-	def("result?", func(args ...any) any { return lang.IsResult(oneArg("result?", args)) })
-	def("ok?", func(args ...any) any { return lang.IsOk(oneArg("ok?", args)) })
-	def("err?", func(args ...any) any { return lang.IsErr(oneArg("err?", args)) })
-	def("option?", func(args ...any) any { return lang.IsOption(oneArg("option?", args)) })
-	def("just?", func(args ...any) any { return lang.IsJust(oneArg("just?", args)) })
-	def("none?", func(args ...any) any { return lang.IsNone(oneArg("none?", args)) })
+	defMeta("result?", func(args ...any) any { return lang.IsResult(oneArg("result?", args)) })
+	defMeta("ok?", func(args ...any) any { return lang.IsOk(oneArg("ok?", args)) })
+	defMeta("err?", func(args ...any) any { return lang.IsErr(oneArg("err?", args)) })
+	defMeta("option?", func(args ...any) any { return lang.IsOption(oneArg("option?", args)) })
+	defMeta("just?", func(args ...any) any { return lang.IsJust(oneArg("just?", args)) })
+	defMeta("none?", func(args ...any) any { return lang.IsNone(oneArg("none?", args)) })
 
 	// unwrap: the bridge to the exception world. ok/just -> payload;
 	// err/none -> throw an ex-info carrying the failure payload (so a
 	// railway value can escape into try/catch). Anything else is an error.
-	def("unwrap", func(args ...any) any {
+	defMeta("unwrap", func(args ...any) any {
 		x := oneArg("unwrap", args)
 		switch {
 		case lang.IsOk(x), lang.IsJust(x):
@@ -768,7 +784,7 @@ func RegisterAll() {
 
 	// unwrap-or: payload of ok/just, else the supplied default (err/none
 	// and non-tagged values yield the default — never throws).
-	def("unwrap-or", func(args ...any) any {
+	defMeta("unwrap-or", func(args ...any) any {
 		if len(args) != 2 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: unwrap-or", len(args)))
 		}
@@ -781,7 +797,7 @@ func RegisterAll() {
 
 	// map-ok: apply f to an ok/just payload, re-wrapping in the same tag;
 	// err/none pass through unchanged (railway happy-path map).
-	def("map-ok", func(args ...any) any {
+	defMeta("map-ok", func(args ...any) any {
 		if len(args) != 2 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: map-ok", len(args)))
 		}
@@ -797,7 +813,7 @@ func RegisterAll() {
 
 	// map-err: apply f to an err payload, re-wrapping as err; everything
 	// else (ok/just/none) passes through unchanged.
-	def("map-err", func(args ...any) any {
+	defMeta("map-err", func(args ...any) any {
 		if len(args) != 2 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: map-err", len(args)))
 		}
@@ -810,7 +826,7 @@ func RegisterAll() {
 
 	// and-then: railway bind. f receives the UNWRAPPED ok/just payload and
 	// must itself return a Result/Option; err/none short-circuit unchanged.
-	def("and-then", func(args ...any) any {
+	defMeta("and-then", func(args ...any) any {
 		if len(args) != 2 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: and-then", len(args)))
 		}

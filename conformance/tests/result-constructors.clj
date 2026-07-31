@@ -1,3 +1,9 @@
+;; ISSUE #171: ok/err/just/none/etc. moved OUT of clojure.core into
+;; cljx.meta (ADR 0115, precedence principle) -- required and referred
+;; here explicitly, exactly as real user code must.
+(require (quote cljx.meta))
+(clojure.core/refer (quote cljx.meta))
+
 ;; Result/Option constructors (ADR 0014, spike S11): (ok v) (err e)
 ;; (just v) are calls; `none` is a VALUE (the shared sentinel). A nil
 ;; payload — (just nil) — stays distinct from none (type-per-tag nil

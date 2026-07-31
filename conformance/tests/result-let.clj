@@ -1,3 +1,9 @@
+;; ISSUE #171: ok/err/just/none/etc. moved OUT of clojure.core into
+;; cljx.meta (ADR 0115, precedence principle) -- required and referred
+;; here explicitly, exactly as real user code must.
+(require (quote cljx.meta))
+(clojure.core/refer (quote cljx.meta))
+
 ;; let? — railway binding (ADR 0014 D5). Bindings run left to right: an
 ;; ok/just binds its UNWRAPPED payload, a plain value binds unchanged,
 ;; and the FIRST err/none short-circuits the whole form to that value

@@ -1,3 +1,9 @@
+;; ISSUE #171: ok/err/just/none/etc. moved OUT of clojure.core into
+;; cljx.meta (ADR 0115, precedence principle) -- required and referred
+;; here explicitly, exactly as real user code must.
+(require (quote cljx.meta))
+(clojure.core/refer (quote cljx.meta))
+
 ;; Result/Option combinators (ADR 0014): unwrap returns the ok/just
 ;; payload; unwrap-or falls back on err/none; map-ok maps the happy
 ;; payload (re-wrapping the same tag) and passes err/none through;

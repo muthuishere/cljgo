@@ -128,6 +128,13 @@
             (-illegal-argument "cond requires an even number of forms"))
           (cons 'clojure.core/cond (next (next clauses))))))
 
+;; let? (issue #171 / precedence principle, CLAUDE.md): part of the
+;; ADR 0014 Result/Option family, so it lives in cljx.meta, not
+;; clojure.core -- it has no JVM oracle and cljgo-only names do not
+;; belong in clojure.core (see ADR 0115, pkg/corelib/builtins.go).
+(in-ns (quote cljx.meta))
+(clojure.core/refer (quote clojure.core))
+
 ;; let? — railway binding (ADR 0014 D5; cljgo extension, no JVM oracle).
 ;; Bindings evaluate left to right: a value satisfying err?/none? short-
 ;; circuits the WHOLE form to that value; an ok/just value binds its
@@ -149,6 +156,7 @@
 
 (defmacro let? [bindings & body]
   (-let?-expand bindings body))
+(in-ns (quote clojure.core))
 
 ;; ===========================================================================
 ;; Destructuring (design/03 §5) — faithful port of clojure.core/destructure.

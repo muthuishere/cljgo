@@ -1,3 +1,9 @@
+;; ISSUE #171: ok/err/just/none/etc. moved OUT of clojure.core into
+;; cljx.meta (ADR 0115, precedence principle) -- required and referred
+;; here explicitly, exactly as real user code must.
+(require (quote cljx.meta))
+(clojure.core/refer (quote cljx.meta))
+
 ;; Result/Option predicates (ADR 0014): result?/ok?/err? classify the
 ;; Result family, option?/just?/none? the Option family — Go type
 ;; switches under the hood, so a just is not a result and none is not ok.
