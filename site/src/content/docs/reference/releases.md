@@ -21,6 +21,59 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.8.3](https://github.com/muthuishere/cljgo/releases/tag/v0.8.3) — 2026-07-31
+
+*Two build defects that shipped green-looking wrong answers, and a benchmark
+claim that did not reproduce.*
+
+- **A `test/` tree was invisible to `cljgo run` and `cljgo build`.** A namespace
+  resolved only relative to the requiring file, so `test/app/core_test.cljg`
+  requiring `app.core` looked for `test/app/core.cljg` and failed — and the
+  error named the *namespace*, not the paths tried, so the cause was close to
+  unguessable. The only workaround was moving the suite under `src/`, which
+  dual-host `.cljc` projects cannot do.
+
+  Projects now have **source roots**, defaulting to `src` and `test` (whichever
+  exist), declarable with `(paths b ["src" "spec"])`. They are published even
+  when a project has no dependencies — the old code bailed before setting any
+  roots if there was no `build.lock.edn`. Roots append *after* the requiring
+  file's own directory, and providers still outrank every root, so `clojure.*`
+  can never be shadowed.
+- **Two `(exe …)` artifacts in one `build.cljgo` corrupted the second binary**,
+  whichever it was. cljgo's namespace registry is process-global, so the second
+  build saw the first build's namespaces already interned, never loaded them,
+  and emitted a program with those namespaces **missing** — their vars interned
+  as hollow shells and unbound at runtime. The first binary was fine, so a
+  project building an app plus a test runner shipped a **working app and a test
+  suite that could not run**. Both declaration orders are now covered by tests
+  that drive the real binary against real project trees.
+- **The published bri web-framework benchmark did not reproduce, and the page
+  now says so.** It claimed 78,126 req/s; re-run at v0.8.2 on the same machine
+  class bri measures **31,404**. clj-httpkit re-measured within 6% of its own
+  published figure in the same session, so the ~2.4× movement is ours. The
+  claims of "comparable-or-better throughput" and "top tier with
+  Rust/Deno/Bun/http-kit" are withdrawn; the structural wins (~42× smaller
+  image, ~40× faster cold-start, an order of magnitude less memory) stand.
+  See [benchmarks](/cljgo/reference/benchmarks/).
+- **Performance, language-wide.** Hash-map reads no longer allocate (`find`
+  was heap-allocating an entry per lookup, and the hot `get` path discarded
+  the key immediately); keyword hashes are cached at intern time rather than
+  recomputed on every map operation (**2.3×** on keyword map lookup); and
+  bulk hash-map construction now builds through a transient like Clojure's own
+  `PersistentHashMap.create` (**3.4×** faster with **5.7×** fewer allocations
+  at 128 entries).
+- Request-path work in bri — a pre-sized body read (256 KiB: 2× faster, 41%
+  less memory, allocations now flat regardless of payload) and a needless
+  vector construction removed from JSON encoding. Worth knowing: this made
+  `requestMap` 2.3× faster and moved end-to-end throughput **0–2%**. The
+  request path was never the bottleneck, and the benchmarks page says that
+  too.
+- The web benchmark suite is now in the repo at
+  [`benchmark/web/`](https://github.com/muthuishere/cljgo/blob/main/benchmark/web/README.md)
+  — runner, corpus and Dockerfiles — and the bri image builds cljgo from your
+  checkout rather than a release. Promoting it revealed the old corpus no
+  longer compiled at all.
+
 ## [v0.8.2](https://github.com/muthuishere/cljgo/releases/tag/v0.8.2) — 2026-07-31
 
 *A silent test-runner failure, a lockfile that dead-ended, and portable date
