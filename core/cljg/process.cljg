@@ -13,10 +13,15 @@
 ;;
 ;; The handle is {:in <writable> :out <readable> :err <readable>
 ;;                :wait (fn [] -> exit-code) :kill (fn [] -> nil)
-;;                :alive? (fn [] -> boolean)}.
+;;                :alive? (fn [] -> boolean)
+;;                :exit-code (fn [] -> int or nil)}.
 ;; :in / :out / :err are cljg.stream handles (require cljg.stream to read/write
 ;; them); :wait blocks until the process exits and returns its exit code (a
-;; non-zero exit is a normal result); :kill force-terminates it; :alive? is a
+;; non-zero exit is a normal result); :kill force-terminates it; :exit-code is
+;; the non-blocking counterpart of :wait — the exit status once the child has
+;; finished, nil while it is still running, so (if ((:exit-code p)) …) reads as
+;; "has it finished". It distinguishes "exited with status N" from "still
+;; running" without blocking, which a closed stdout alone cannot. :alive? is a
 ;; NON-BLOCKING liveness check (issue #173) — false once the child has
 ;; exited, whether or not anything ever called :wait or :kill.
 ;;
@@ -28,7 +33,8 @@
 ;; so :wait / :alive? both just read its result — no caller-side reaper is
 ;; needed, unlike before this fix. Everything here is portable Clojure, so it
 ;; runs identically interpreted and AOT-compiled. Private Go shims interned
-;; before this loads: -proc-spawn -proc-wait -proc-kill -proc-alive?.
+;; before this loads: -proc-spawn -proc-wait -proc-kill -proc-alive?
+;; -proc-exit-code.
 ;;
 ;; (cljg.io's run-to-completion exec/sh/sh! stay in cljg.io — ADR 0101 makes
 ;; cljg.process the home for the STREAMING capability; folding exec/sh here is a
@@ -61,4 +67,5 @@
       :err    err
       :wait   (fn [] (-proc-wait -handle))
       :kill   (fn [] (-proc-kill -handle))
-      :alive? (fn [] (-proc-alive? -handle))})))
+      :alive? (fn [] (-proc-alive? -handle))
+      :exit-code (fn [] (-proc-exit-code -handle))})))

@@ -94,6 +94,29 @@ func installProcSpawnShims(def func(name string, fn func(args ...any) any)) {
 		}
 		return nil
 	})
+	// -proc-exit-code (handle) -> exit code, or nil while still running. The
+	// NON-BLOCKING counterpart of -proc-wait, and strictly more informative
+	// than -proc-alive?: a caller can tell "exited with status N" from "still
+	// running" without committing to block, which is what lets a consumer
+	// distinguish a child that finished from a stdout that merely hit EOF —
+	// two states that look identical when all you have is a closed stream.
+	//
+	// koine offered :alive? OR :exit-code when filing issue #173 and noted
+	// this one answers strictly more; shipping only :alive? left that gap
+	// open, so both exist. nil-while-running is deliberate: it is falsey, so
+	// (if (exit-code p) …) reads as "has it finished".
+	def("-proc-exit-code", func(args ...any) any {
+		h := asSpawnHandle("-proc-exit-code", args)
+		select {
+		case <-h.doneCh:
+			if h.waitErr != nil {
+				panic(fmt.Errorf("cljg.process: exit-code: %w", h.waitErr))
+			}
+			return h.exitCode
+		default:
+			return nil
+		}
+	})
 	// -proc-alive? (handle) -> boolean. Non-blocking: false once the child has
 	// exited (observed by the reaper), true while it is still running. Closes
 	// the gap issue #173 found: koine had to run its own reaper thread to

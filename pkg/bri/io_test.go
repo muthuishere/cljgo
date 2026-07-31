@@ -204,6 +204,12 @@ func TestHelperProcess(t *testing.T) {
 	switch mode {
 	case "echo":
 		fmt.Fprint(os.Stdout, strings.Join(rest[1:], " "))
+	// exit N — terminate immediately with a chosen status, producing no
+	// output. Lets a test observe an exit CODE without also having to reason
+	// about stream draining.
+	case "exit":
+		n, _ := strconv.Atoi(rest[1])
+		os.Exit(n)
 	case "toerr":
 		fmt.Fprint(os.Stderr, strings.Join(rest[1:], " "))
 		os.Exit(3)

@@ -216,3 +216,31 @@ func TestCljgNetHTTPStream(t *testing.T) {
 		t.Errorf("default buffered body = %q", got)
 	}
 }
+
+// TestCljgProcessExitCode — the non-blocking counterpart of :wait, and the
+// half of issue #173 that shipping only :alive? left open. koine offered
+// either predicate and noted this one answers strictly more: it separates
+// "exited with status N" from "still running" without blocking, which a
+// closed stdout alone cannot express.
+func TestCljgProcessExitCode(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[cljg.process :as proc] '[cljg.stream :as st])`)
+
+	// nil WHILE RUNNING — falsey on purpose, so (if ((:exit-code p)) ...)
+	// reads as "has it finished".
+	if got := eval(t, d, `
+    (let [p (proc/spawn `+helperCmd("sleep", "60000")+` `+helperEnv+`)]
+      ((:exit-code p)))`); got != nil {
+		t.Errorf("exit-code on a running child = %v, want nil", got)
+	}
+
+	// Once it has exited, the real status — and :wait must agree, since both
+	// read the same reaper result and so cannot drift apart.
+	if got := evalString(t, d, `
+    (let [p (proc/spawn `+helperCmd("exit", "3")+` `+helperEnv+`)]
+      (st/close (:in p))
+      (let [w ((:wait p))]
+        (pr-str [w ((:exit-code p)) ((:alive? p))])))`); got != "[3 3 false]" {
+		t.Errorf("after exit 3: got %s, want [3 3 false]", got)
+	}
+}
