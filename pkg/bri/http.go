@@ -413,7 +413,13 @@ func serveShim(args ...any) any {
 		}
 	}
 
-	fmt.Printf("bri: listening on http://localhost:%d\n", actual)
+	// STDERR, not stdout: this is a library, and the host program's stdout
+	// may be its data. A serve that prints a PORT-BEARING line there makes
+	// the program's output unstable AND host-specific — the JVM side of a
+	// dual-host program prints nothing here, so any byte-for-byte comparison
+	// across hosts fails on a line the program never wrote. Reported by
+	// koine's consumer after four independent spikes worked around it.
+	fmt.Fprintf(os.Stderr, "bri: listening on http://localhost:%d\n", actual)
 
 	if block, ok := lang.Get(opts, kwBlock).(bool); ok && !block {
 		go func() { _ = srv.Serve(ln) }()
@@ -430,7 +436,7 @@ func serveShim(args ...any) any {
 	select {
 	case <-sigCh:
 		signal.Stop(sigCh)
-		fmt.Println("bri: shutting down (draining in-flight requests, then :drain handles)")
+		fmt.Fprintln(os.Stderr, "bri: shutting down (draining in-flight requests, then :drain handles)")
 		drain()
 	case err := <-errCh:
 		if err != nil && err != http.ErrServerClosed {

@@ -431,3 +431,50 @@ func TestInterpretedHandlerOverhead(t *testing.T) {
 		t.Fatalf("interpreted handler overhead %.2fx exceeds the %.1fx ceiling (CLJGO_BRI_PERF_MAX)", ratio, max)
 	}
 }
+
+// Scenario: a library serve must not write to the host program's STDOUT.
+//
+// bri printed "bri: listening on http://localhost:NNNNN" with fmt.Printf, so
+// any cljgo program whose stdout is its data — a JSON-emitting CLI, an MCP
+// stdio server — had that line spliced into its output. Worse for a dual-host
+// program: the JVM side prints nothing, so the two hosts could never be
+// compared byte for byte. Four independent koine spikes worked around it with
+// a grep before it was reported.
+//
+// Diagnostics belong on stderr. This asserts stdout stays EMPTY across a
+// serve, and (loosely) that the line still exists somewhere for the human.
+func TestServeWritesNothingToStdout(t *testing.T) {
+	realOut, realErr := os.Stdout, os.Stderr
+	outR, outW, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	errR, errW, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout, os.Stderr = outW, errW
+	restore := func() { os.Stdout, os.Stderr = realOut, realErr }
+	defer restore()
+
+	d := newDriver(t)
+	eval(t, d, `
+(require '[bri.web.http :as http])
+(defn ok [req] {:status 200 :body "ok"})
+(def routes [["GET /ok" #'ok]])
+(def srv (http/serve routes {:port 0 :block? false}))`)
+	eval(t, d, `((:stop srv))`)
+
+	outW.Close()
+	errW.Close()
+	stdout, _ := io.ReadAll(outR)
+	stderr, _ := io.ReadAll(errR)
+	restore()
+
+	if len(stdout) != 0 {
+		t.Fatalf("serve wrote %q to STDOUT; a library must leave the program's stdout alone", stdout)
+	}
+	if !strings.Contains(string(stderr), "listening on") {
+		t.Fatalf("the listening line should still reach the human on stderr; stderr = %q", stderr)
+	}
+}
