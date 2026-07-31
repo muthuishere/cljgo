@@ -23,9 +23,88 @@ Trivial fixes skip OpenSpec; nothing skips gates.
 ## Gates (before every commit)
 
 ```
-go build ./... && go vet ./... && gofmt -l pkg cmd conformance templates && go test ./...
+CGO_ENABLED=0 go build ./... && go vet ./... \
+  && gofmt -l pkg cmd conformance templates core \
+  && go test ./... -timeout 1800s -p 1
 ```
 All green, no exceptions. `refs/` is fenced with a stub go.mod — leave it.
+
+`-p 1` and the long timeout are not optional: the emit/conformance packages
+build real binaries and both deadlock the default 10 m and thrash when run
+in parallel.
+
+**Never pipe `go test` into `head`/`grep` and read `$?`.** That is the
+pipeline's exit code, not the tests' — and the SIGPIPE can kill the test
+binary mid-run. It has already produced one false green here. Redirect and
+capture the real code:
+
+```
+go test ./... -timeout 1800s -p 1 > /tmp/gate.txt 2>&1; echo "EXIT=$?"
+```
+
+The gate is macOS-local; **CI is the real gate** and runs ubuntu + macos +
+windows. Windows finds what POSIX hides (open-file-handle deletes, path
+separators, file modes). A green local gate is necessary, never sufficient.
+
+## Releasing — what changes when a version ships
+
+**The version is the git tag.** `pkg/version.Version` stays `"0.1.0-dev"` in
+source forever; goreleaser injects the real value at build time and fires on
+any `v*` tag. Never "bump" that constant.
+
+Three files hardcode the *previous* release and must be bumped by hand — they
+are what a user's `docker build` actually downloads, so a missed bump ships a
+template pinned to a stale binary:
+
+- `templates/web/Dockerfile` (`ARG CLJGO_VERSION=`)
+- `site/src/content/docs/guides/deploy.md` (the same ARG, quoted)
+- `docs/guides/bri-deploy.md` (prose: "default `vX.Y.Z`")
+
+Order of operations, every time:
+
+1. **Gate green locally, then CI green on all three platforms** for the exact
+   commit you are about to tag. Do not tag a commit whose CI is still
+   `in_progress`.
+2. Bump the three files above → commit → push → wait for CI again.
+3. `git tag -a vX.Y.Z <sha> -m "<the release notes>"`. **The annotation IS
+   the changelog** — GitHub renders it as the release body and
+   `site/src/content/docs/reference/releases.md` is distilled from it. Write
+   it for a user: what shipped, what broke, what was measured. Name the
+   regressions.
+4. Push the tag; wait for the Release workflow; confirm **7 assets** (six
+   platform archives + `checksums.txt`).
+5. **Add the release to `site/src/content/docs/reference/releases.md`** —
+   newest first, heading linked to the GitHub tag. Keep it distilled from the
+   annotation so the two cannot drift. There is deliberately **no root
+   `CHANGELOG.md`**: a third copy would just rot.
+6. Re-check the docs claims the release invalidates — see below.
+
+### Claims that go stale on a release, and must be re-checked
+
+- **`benchmark/` + `site/.../reference/benchmarks.md`.** Rebuild the cljgo
+  column and re-run; obey *Competitive claims discipline* below. Each table
+  carries its OWN date and cljgo version — they are not all measured at once,
+  and the caution banner must say exactly which are current. Publishing an
+  estimate instead of a measurement is never acceptable.
+- **`CLAUDE.md`'s own competitive-claims numbers** (binary size, startup,
+  win/loss count). They are quoted by agents into public copy, so a stale
+  figure here becomes a false public claim.
+- Any doc stating a capability the release changed — and `openspec archive`
+  for whatever the cycle applied.
+
+### Before a release that touches dependency resolution
+
+Run the network integration test. It is skipped by default so a green build
+never depends on Clojars being up, which also means **nothing runs it for
+you**:
+
+```
+CLJGO_CLOJARS_IT=1 go test ./pkg/deps/ -run TestClojarsIT -v
+```
+
+It asserts both directions against the live repositories: a pure library
+resolves and classifies clean, and a Java-dependent one is refused with a
+coded, located diagnostic. A gate that only ever says yes is not a gate.
 
 ## Conformance discipline
 
@@ -107,8 +186,16 @@ the extra detail is added at the render layer by `diag.Render`.
 `pkg/briloader` · `cmd/genbri` · `cmd/cljgo` ·
 `core/` (core.clj, Clojure-in-Clojure) · `core/bri/` (bri namespaces —
 http/db/auth/otel/html/config/audit) ·
+`pkg/deps` (dependency resolution: git · local path · Maven/Clojars
+coordinates, ADR 0095) · `pkg/diag` (diagnostics + the append-only code
+registry) · `pkg/coreaot` (AOT core twin; its `imports_test.go` is the
+CI proof that a compiled binary links zero interpreter) · `pkg/version` ·
 `templates/` (real, runnable project templates `cljgo new` embeds —
 lib (default) / cli / web; never string literals) · `conformance/` · `design/` · `docs/adr/` · `openspec/` ·
+`site/` (the Astro/Starlight docs book published to GitHub Pages — the
+release notes live at `site/src/content/docs/reference/releases.md`) ·
+`benchmark/` (the measured suite + `report.py`; `.build/` is gitignored and
+holds the competitor binaries) ·
 `spikes/` (frozen) · `refs/` (gitignored clones).
 
 ## Competitive claims discipline (owner, 2026-07-25)
