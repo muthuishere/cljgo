@@ -89,19 +89,38 @@ func procExecShim(args ...any) any {
 		cmd.Env = merged
 	}
 
-	stdoutPipe, err := cmd.StdoutPipe()
+	// os.Pipe, NOT cmd.StdoutPipe — and the reason is a race, not taste.
+	// os/exec closes a StdoutPipe when Wait returns, and Wait runs here in its
+	// own goroutine so a timeout can preempt it. That puts Wait's close in a
+	// race with the drain goroutines below: on a fast machine the drain wins
+	// and everything looks fine, on a slower one Wait wins and the output is
+	// silently TRUNCATED — which is how `exec cat` with :in came back empty on
+	// CI while passing every local run.
+	//
+	// Owning the pipes fixes it by construction. We hand the write ends to the
+	// child and close our copies after Start, so the child holds the only
+	// writers and the readers still see a real EOF on exit — but nothing except
+	// this function ever closes the read ends.
+	stdoutPipe, stdoutW, err := os.Pipe()
 	if err != nil {
 		panic(fmt.Errorf("cljg.io: exec %q: %w", argv[0], err))
 	}
-	stderrPipe, err := cmd.StderrPipe()
+	stderrPipe, stderrW, err := os.Pipe()
 	if err != nil {
 		panic(fmt.Errorf("cljg.io: exec %q: %w", argv[0], err))
 	}
+	cmd.Stdout, cmd.Stderr = stdoutW, stderrW
 
 	if err := cmd.Start(); err != nil {
+		stdoutW.Close()
+		stderrW.Close()
 		// could not start (binary not found, permission) — a real error
 		panic(fmt.Errorf("cljg.io: exec %q: %w", argv[0], err))
 	}
+	// Drop our write ends: the child owns the only remaining writers, so the
+	// drains below get EOF exactly when it exits.
+	stdoutW.Close()
+	stderrW.Close()
 
 	var mu sync.Mutex
 	var outBuf, errBuf bytes.Buffer
