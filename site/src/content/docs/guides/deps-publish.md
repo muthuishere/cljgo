@@ -149,9 +149,33 @@ The first `cljgo build` writes **`build.lock.edn`** next to
 `build.cljgo`. Commit it. Per dependency it records identity
 (`:git/url`, `:git/ref`, `:git/sha`), a merkle `:tree/hash` verified on
 every read (a git SHA alone is not a content hash), the dep's source
-`:paths`, its transitive `:requires`, and whether it is `:pure?`. The
-lock is authoritative: a `build.cljgo` ref that disagrees with the
-locked SHA is an error naming both — never a silent re-pin.
+`:paths`, its transitive `:requires`, and whether it is `:pure?`.
+
+### Changing a dependency, and freezing one
+
+Edit a version in `build.cljgo` and the next `cljgo build` **re-pins it
+for you**. The lock records a hash of the declared set, so cljgo can see
+that the manifest moved (ADR 0112).
+
+The re-pin is **minimal**: only the declarations that actually changed,
+and whatever is reachable only from them, are resolved again. Every
+other pin is kept exactly as it was — so bumping one library cannot
+quietly drift every unrelated transitive to whatever is newest today.
+Cosmetic edits — a comment, a reformat, renaming your `exe` — declare
+nothing, so they re-resolve nothing.
+
+For CI, that default is wrong, and there is a flag for it:
+
+```bash
+cljgo build --locked      # or CLJGO_LOCKED=1
+```
+
+**Frozen mode** turns a stale lock into an error (`G5021`) and never
+rewrites it. The case it exists for is a merge — one branch's
+`build.cljgo` landing beside another branch's `build.lock.edn` — which
+would otherwise build green against a dependency graph nobody reviewed.
+This is not the same as `--offline`: you can be perfectly online and
+still want the lock to be the authority.
 
 Once locked, `cljgo run` resolves the same dependencies the same way —
 one resolver, both legs, so the interpreter and the binary can never see

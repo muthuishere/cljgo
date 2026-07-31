@@ -51,9 +51,16 @@ func (d Dep) isMvn() bool { return d.MvnVersion != "" }
 
 // ResolveOptions configures a resolution pass.
 type ResolveOptions struct {
-	ProjectDir     string
-	Lock           *Lock
-	Update         bool              // allow lock (re)generation from remotes
+	ProjectDir string
+	Lock       *Lock
+	Update     bool // allow lock (re)generation from remotes
+	// Frozen makes a stale lock an ERROR instead of a refresh (ADR 0112
+	// decision 4). It is NOT Offline: a build may be online and still require
+	// the lock to be the authority — the npm-ci / cargo --locked position.
+	// The case it exists for is a merge that takes build.cljgo from one
+	// branch and build.lock.edn from another, which auto-refresh would
+	// silently resolve into a graph nobody reviewed.
+	Frozen         bool
 	Offline        bool              // never touch the network
 	AllowCaps      map[string]bool   // consumer-acknowledged capabilities
 	AcceptVersions map[string]string // module path -> accepted version
@@ -114,6 +121,24 @@ func Resolve(deps []Dep, opts ResolveOptions) (*Resolved, error) {
 	root, err := CacheRoot()
 	if err != nil {
 		return nil, err
+	}
+
+	// ADR 0112: frozen means the lock is the authority even though we are
+	// online. A declared set that does not match the lock is an error here,
+	// BEFORE anything is fetched and before the lock can be rewritten.
+	if opts.Frozen {
+		if opts.Lock == nil {
+			return nil, codedf("G5021", "--locked was requested but there is no build.lock.edn").
+				withFix("build once without --locked to generate it, and commit it")
+		}
+		if want := DeclaredSetHash(deps); opts.Lock.BuildHash != want {
+			names := staleNames(deps, opts.Lock)
+			return nil, codedf("G5021",
+				"--locked was requested but build.lock.edn does not match build.cljgo").
+				withExpectedFound("a lock for "+want, "a lock for "+opts.Lock.BuildHash).
+				withFix("commit the regenerated build.lock.edn, or rebuild without --locked" + names)
+		}
+		opts.Update = false
 	}
 
 	seen := map[string]*rdep{}
@@ -381,10 +406,10 @@ func resolveGit(rd *rdep, root string, opts ResolveOptions) ([]Dep, error) {
 
 	// Pin the identity.
 	switch {
-	case lk != nil && !opts.Update:
+	case pinIsCurrent(lk, rd, opts):
 		if rd.GitURL != "" && lk.GitURL != "" && rd.GitURL != lk.GitURL {
 			return nil, fmt.Errorf(
-				"lock/build divergence for %q:\n  build.cljgo :git %s\n  build.lock.edn  %s\n  run resolve with -update to re-pin",
+				"lock/build divergence for %q:\n  build.cljgo :git %s\n  build.lock.edn  %s",
 				rd.Name, rd.GitURL, lk.GitURL)
 		}
 		if rd.GitRef != "" && lk.GitRef != rd.GitRef {
@@ -394,11 +419,11 @@ func resolveGit(rd *rdep, root string, opts ResolveOptions) ([]Dep, error) {
 			decl := rd.GitRef
 			if len(decl) == 40 && isHex(decl) {
 				return nil, fmt.Errorf(
-					"lock/build divergence for %q:\n  build.cljgo pins sha %s\n  build.lock.edn pins sha %s (ref %q)\n  run resolve with -update to re-pin",
+					"lock/build divergence for %q:\n  build.cljgo pins sha %s\n  build.lock.edn pins sha %s (ref %q)",
 					rd.Name, decl, lk.GitSHA, lk.GitRef)
 			}
 			return nil, fmt.Errorf(
-				"lock/build divergence for %q:\n  build.cljgo asks for ref %q\n  build.lock.edn pins ref %q (sha %s)\n  run resolve with -update to re-pin",
+				"lock/build divergence for %q:\n  build.cljgo asks for ref %q\n  build.lock.edn pins ref %q (sha %s)",
 				rd.Name, rd.GitRef, lk.GitRef, shortSHA(lk.GitSHA))
 		}
 		rd.sha, rd.GitURL, rd.GitRef = lk.GitSHA, lk.GitURL, lk.GitRef
@@ -560,6 +585,7 @@ func buildLock(order []*rdep, prev *Lock) *Lock {
 	for _, rd := range order {
 		d := LockedDep{
 			Name:     rd.Name,
+			DeclHash: DeclHash(rd.Dep),
 			Paths:    rd.paths,
 			Requires: rd.reqs,
 			Impure:   rd.imp,
@@ -588,4 +614,26 @@ func buildLock(order []*rdep, prev *Lock) *Lock {
 	}
 	sort.Slice(l.Deps, func(i, j int) bool { return l.Deps[i].Name < l.Deps[j].Name })
 	return l
+}
+
+// staleNames renders the declarations that disagree with the lock, so the
+// frozen-mode error names what actually moved instead of only saying that
+// something did. A merge that took build.cljgo from one branch and
+// build.lock.edn from another is the case this has to be readable for.
+func staleNames(deps []Dep, lock *Lock) string {
+	var out []string
+	for _, d := range deps {
+		lk := lock.find(d.Name)
+		if lk == nil {
+			out = append(out, d.Name+" (declared, not in the lock)")
+			continue
+		}
+		if lk.DeclHash != "" && lk.DeclHash != DeclHash(d) {
+			out = append(out, d.Name+" (declared differently from the pin)")
+		}
+	}
+	if len(out) == 0 {
+		return ""
+	}
+	return "\n  diverged: " + strings.Join(out, ", ")
 }

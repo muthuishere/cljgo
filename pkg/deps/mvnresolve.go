@@ -32,11 +32,11 @@ func resolveMvn(rd *rdep, root string, opts ResolveOptions) ([]Dep, error) {
 	// Lock/build divergence is a hard error naming both versions — the lock is
 	// authoritative and is never silently re-pinned (same shape as git).
 	pinnedRepo := ""
-	if lk != nil && !opts.Update {
+	if pinIsCurrent(lk, rd, opts) {
 		if lk.MvnVersion != "" && lk.MvnVersion != c.Version {
 			return nil, codedf("G5013", "lock/build divergence for %q", rd.Name).
 				withExpectedFound("build.lock.edn pins "+lk.MvnVersion, "build.cljgo asks for "+c.Version).
-				withFix("run resolve with -update to re-pin")
+				withFix("edit build.cljgo to agree, or rebuild without --locked to re-pin")
 		}
 		pinnedRepo = lk.MvnRepo
 	}

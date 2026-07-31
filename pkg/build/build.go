@@ -85,9 +85,15 @@ type Plan struct {
 	Deps           []deps.Dep
 	AcceptVersions map[string]string // (accept-version …): module -> version
 	MvnRepos       []string          // (mvn-repo …): prepended Maven repositories
-	AllowCaps      map[string]bool   // (allow-capability …): acknowledged capabilities
-	Steps          []Step
-	Default        string // default step type when `cljgo build` gets no step arg
+
+	// Frozen is set by `cljgo build --locked` / CLJGO_LOCKED=1 (ADR 0112).
+	// It is not declared in build.cljgo: whether a build may re-pin is a
+	// property of WHERE it runs (a developer machine vs CI), not of the
+	// project.
+	Frozen    bool
+	AllowCaps map[string]bool // (allow-capability …): acknowledged capabilities
+	Steps     []Step
+	Default   string // default step type when `cljgo build` gets no step arg
 }
 
 // LoadPlan evaluates buildFile's (defn build [b] …) through a fresh
@@ -455,11 +461,22 @@ func (p *Plan) resolveDeps() ([]GoRequire, error) {
 	if err != nil {
 		return nil, err
 	}
-	update := lock == nil // absent lock → generate it
+	// ADR 0112: the lock is stale when the DECLARED SET moved, and a stale
+	// lock refreshes itself. Before this, `update` was `lock == nil` and the
+	// BuildHash field the lock has always carried was compared by nothing —
+	// so a version bump dead-ended on an error naming a `resolve -update`
+	// command that does not exist, and `rm build.lock.edn` was the only
+	// remedy a user could find.
+	//
+	// The hash covers the declared set only, never build.cljgo's bytes: a
+	// comment or a reformat declares nothing and must not re-resolve.
+	setHash := deps.DeclaredSetHash(p.Deps)
+	update := lock == nil || lock.BuildHash != setHash
 	opts := deps.ResolveOptions{
 		ProjectDir:     p.ProjectDir,
 		Lock:           lock,
 		Update:         update,
+		Frozen:         p.Frozen,
 		AllowCaps:      p.AllowCaps,
 		AcceptVersions: p.AcceptVersions,
 		VendorDir:      filepath.Join(p.ProjectDir, "vendor"),
@@ -477,6 +494,7 @@ func (p *Plan) resolveDeps() ([]GoRequire, error) {
 	// populated with NO manifest — the build was not reproducible and the
 	// warm-cache offline story had nothing to work from.
 	if update {
+		resolved.Lock.BuildHash = setHash
 		if err := deps.WriteLock(lockPath, resolved.Lock); err != nil {
 			return nil, err
 		}

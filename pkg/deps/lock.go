@@ -70,6 +70,12 @@ type LockedDep struct {
 	// :local/unlocked? true, never hashed (decision 3).
 	LocalUnlocked bool
 
+	// DeclHash is the hash of the DECLARATION that produced this pin (ADR
+	// 0112). It is what makes a re-resolve minimal: a declaration whose hash
+	// is unchanged keeps its pin, so bumping one root cannot drift unrelated
+	// transitives. Empty on locks written before ADR 0112.
+	DeclHash string
+
 	// --- Maven/Clojars coordinate deps (ADR 0095) -------------------------
 	// MvnVersion is non-empty exactly when this is a coordinate dep.
 	MvnGroup    string
@@ -130,6 +136,7 @@ func LoadLock(path string) (*Lock, error) {
 	for _, e := range ednSlice(ednGet(form, "deps")) {
 		d := LockedDep{
 			Name:     ednStr(ednGet(e, "name")),
+			DeclHash: ednStr(ednGet(e, "decl/hash")),
 			GitURL:   ednStr(ednGet(e, "git/url")),
 			GitRef:   ednStr(ednGet(e, "git/ref")),
 			GitSHA:   ednStr(ednGet(e, "git/sha")),
@@ -195,6 +202,9 @@ func WriteLock(path string, l *Lock) error {
 	out := make([]ednVal, 0, len(deps))
 	for _, d := range deps {
 		m := map[kw]ednVal{"name": d.Name}
+		if d.DeclHash != "" {
+			m["decl/hash"] = d.DeclHash
+		}
 		switch {
 		case d.LocalUnlocked:
 			// A :path dep is a NAMED HOLE — its name and contributed roots,

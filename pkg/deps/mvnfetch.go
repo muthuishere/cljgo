@@ -79,7 +79,7 @@ func fetchArtifact(root string, c Coord, ext, pinnedRepo string, opts ResolveOpt
 	if opts.Offline {
 		return nil, "", codedf("G5014", "offline: maven coordinate %s is not in the cache (%s)",
 			c, mvnBlobPath(root, repos[0], c, ext)).
-			withFix("drop -offline, or run resolve with -update while online")
+			withFix("build once while online to populate the cache, then --offline works")
 	}
 
 	client := httpClientFor(opts)
