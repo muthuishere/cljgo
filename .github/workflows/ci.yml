@@ -4,6 +4,19 @@
 #
 # All green, no exceptions. Kept as separate steps so a red badge points at
 # which gate failed without opening the log.
+#
+# WINDOWS IS WEEKLY, NOT PER-PUSH (owner call, 2026-07-31). The Windows leg
+# takes several times as long as the other two — pkg/emit alone runs ~450 s
+# there against ~90 s on Linux — and it was gating every release on a runner
+# whose perf-budget test is measurably flaky. So it runs on a Monday schedule
+# and on demand, while ubuntu and macos run on every push and PR.
+#
+# Know what this costs, because it is not free: Windows is where open-file-
+# handle deletes, path separators and file modes surface, and the v0.8.0 cycle
+# shipped a file-handle leak that POSIX hid on both other platforms and only
+# windows-latest caught. Under this schedule that class of bug can land on main
+# and sit for up to a week. Run this workflow manually before tagging a release
+# if the change touched paths, file handles or process spawning.
 name: CI
 
 on:
@@ -11,6 +24,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    # Mondays 06:00 UTC — the weekly Windows sweep.
+    - cron: "0 6 * * 1"
 
 permissions:
   contents: read
@@ -27,11 +43,16 @@ jobs:
       fail-fast: false
       matrix:
         # cljgo shells out to the Go toolchain to build, and emits Go that
-        # must compile everywhere we ship a binary — so the suite runs on all
-        # three, not just Linux. A REPL-vs-binary divergence is a release
-        # blocker (CLAUDE.md), and it would most likely show up as a
-        # platform difference.
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # must compile everywhere we ship a binary, so the suite is not
+        # Linux-only. A REPL-vs-binary divergence is a release blocker
+        # (CLAUDE.md) and would most likely show up as a platform difference.
+        #
+        # Windows joins only on the weekly schedule and on workflow_dispatch —
+        # see the note at the top of this file for what that trades away.
+        os: >-
+          ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+              && fromJSON('["ubuntu-latest","macos-latest","windows-latest"]')
+              || fromJSON('["ubuntu-latest","macos-latest"]') }}
     steps:
       - uses: actions/checkout@v4
 

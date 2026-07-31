@@ -87,9 +87,22 @@ capture the real code:
 go test ./... -timeout 1800s -p 1 > /tmp/gate.txt 2>&1; echo "EXIT=$?"
 ```
 
-The gate is macOS-local; **CI is the real gate** and runs ubuntu + macos +
-windows. Windows finds what POSIX hides (open-file-handle deletes, path
-separators, file modes). A green local gate is necessary, never sufficient.
+The gate is macOS-local; **CI is the real gate**. On every push and PR it runs
+**ubuntu + macos**. **Windows is WEEKLY** (Mondays 06:00 UTC) and on
+`workflow_dispatch` — owner call, 2026-07-31: the Windows leg takes several
+times as long as the other two and its perf-budget test is measurably flaky.
+
+That trade is real and you should know its shape: Windows finds what POSIX
+hides (open-file-handle deletes, path separators, file modes), and the v0.8.0
+cycle shipped a leak only `windows-latest` caught. Under a weekly schedule that
+class of bug can sit on main for a week. **Run CI manually on Windows before
+tagging** when a change touched paths, file handles or process spawning:
+
+```
+gh workflow run CI --ref main
+```
+
+A green local gate is necessary, never sufficient.
 
 ## Releasing — what changes when a version ships
 
@@ -107,9 +120,11 @@ template pinned to a stale binary:
 
 Order of operations, every time:
 
-1. **Gate green locally, then CI green on all three platforms** for the exact
-   commit you are about to tag. Do not tag a commit whose CI is still
-   `in_progress`.
+1. **Gate green locally, then CI green** for the exact commit you are about to
+   tag — do not tag a commit whose CI is still `in_progress`. Push/PR CI covers
+   ubuntu + macos only; if the release touched paths, file handles or process
+   spawning, trigger the Windows leg by hand (`gh workflow run CI --ref main`)
+   and wait for it too.
 2. Bump the three files above → commit → push → wait for CI again.
 3. `git tag -a vX.Y.Z <sha> -m "<the release notes>"`. **The annotation IS
    the changelog** — GitHub renders it as the release body and
