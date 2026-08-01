@@ -21,6 +21,54 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.8.9](https://github.com/muthuishere/cljgo/releases/tag/v0.8.9) — 2026-08-01
+
+*A dev build claimed to be a release — and quietly built against the
+published runtime instead of your working tree.*
+
+- **A local `go build` reported as a release, and `cljgo build` then compiled
+  against the PUBLISHED runtime.** Go stamps `BuildInfo.Main.Version` from the
+  nearest VCS tag even for a plain local build inside the repo, so once
+  v0.8.5 was tagged, `IsRelease()` was true for every dev build (a regression
+  from ADR 0116, v0.8.5).
+
+  The wrong version line was the visible half. The other: a true `IsRelease()`
+  makes the generated `go.mod` pin `require …/cljgo v0.8.5` with **no
+  `replace`** — so anyone building a project with their own locally-built
+  cljgo silently compiled against the released runtime, with changes to
+  `pkg/lang`, `pkg/emit` and everything else ignored and nothing to indicate
+  it. It stayed hidden because CI and normal development set `CLJGO_SRC`,
+  which outranks the pin.
+
+  The discriminator is exact: `go install module@vX.Y.Z` resolves through the
+  module proxy and records a checksum but **no** `vcs.*` settings, while any
+  build from a checkout records `vcs=git`. VCS data means built-from-source,
+  which is what a release is not. (#189)
+- **`cljgo version` in a git worktree — an honest hook, not a fake fix.** This
+  cannot be fixed at runtime: `debug.BuildInfo` records no build directory,
+  the binary may run anywhere, and a worktree build is indistinguishable from
+  a main-checkout build from the inside. The truth exists only at build time,
+  so there is now a hook for it:
+
+  ```bash
+  go build -ldflags "-X github.com/muthuishere/cljgo/pkg/version.DevCommit=$(git rev-parse HEAD)"
+  ```
+
+  Set, it wins over buildvcs; unset, nothing changes. Releases are unaffected.
+  The misleading `module vX.Y.Z` fragment is also gone for source builds — it
+  means *"the user asked for @vX.Y.Z"*, and Go's nearest-tag stamp is a
+  different claim. (#180)
+- **Non-UTF-8 Maven POMs parse.** `parsePOM` had no `CharsetReader`, so
+  `encoding/xml` refused any declared encoding other than UTF-8 and the Go
+  error leaked verbatim into a `G5011` saying *"the repository served
+  something that is not a Maven POM"*. It is one — cljgo simply refused to
+  read it, and nothing about the coordinate was wrong. Real artifacts hit
+  this (`commons-parent`).
+
+Worth recording how #189 survived: the test fixture paired a module version
+**with** `vcs.revision` — a combination that never occurs. The two cases are
+told apart by exactly the VCS data that fiction gave to both.
+
 ## [v0.8.8](https://github.com/muthuishere/cljgo/releases/tag/v0.8.8) — 2026-08-01
 
 *One fix, and it is the kind you cannot see.*
