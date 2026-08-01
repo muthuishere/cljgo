@@ -35,8 +35,12 @@ package deps
 // message says which library, not "a pom failed".
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/xml"
+	"io"
 	"strings"
+	"unicode/utf8"
 )
 
 // maxParentDepth caps the <parent> chain walk. Real chains are 1 deep
@@ -125,11 +129,66 @@ var skippedScopes = map[string]bool{
 // parsePOM parses raw .pom bytes.
 func parsePOM(b []byte, c Coord) (*pomXML, error) {
 	var p pomXML
-	if err := xml.Unmarshal(b, &p); err != nil {
+	// A decoder with a CharsetReader, not xml.Unmarshal: encoding/xml refuses
+	// any declared encoding other than UTF-8 unless one is supplied, and it
+	// fails with "xml: encoding \"ISO-8859-1\" declared but Decoder.CharsetReader
+	// is nil" — a Go implementation detail that leaked verbatim into a G5011
+	// telling the user "the repository served something that is not a Maven
+	// POM". It IS a Maven POM; we simply refused to read it. Real ones hit
+	// this (commons-parent, ~1.4% of the poms cached on one machine — spike
+	// s79), and it is unrecoverable for the user: nothing about their
+	// coordinate is wrong.
+	//
+	// Latin-1 is decoded properly (each byte is the code point of the same
+	// number); anything else is passed through as-is rather than mangled,
+	// which for the ASCII-range text a POM actually contains — coordinates,
+	// versions, property names — reads correctly. Only prose in <description>
+	// could garble, and no resolution decision reads it.
+	dec := xml.NewDecoder(bytes.NewReader(b))
+	dec.CharsetReader = pomCharsetReader
+	if err := dec.Decode(&p); err != nil {
 		return nil, codedf("G5011", "cannot parse the POM of %s: %v", c, err).
 			withFix("the repository served something that is not a Maven POM; check the coordinate, or depend via :git")
 	}
 	return &p, nil
+}
+
+// pomCharsetReader supplies encoding/xml with a reader for a non-UTF-8 POM.
+// Latin-1 is converted correctly; every other declared encoding is passed
+// through unchanged, on the grounds that failing to resolve a dependency is a
+// worse outcome than possibly garbling prose in a field no resolution
+// decision reads.
+func pomCharsetReader(charset string, input io.Reader) (io.Reader, error) {
+	switch strings.ToLower(charset) {
+	case "iso-8859-1", "latin1", "iso_8859-1", "windows-1252":
+		return &latin1Reader{r: bufio.NewReader(input)}, nil
+	default:
+		return input, nil
+	}
+}
+
+// latin1Reader converts ISO-8859-1 to UTF-8 one byte at a time: in Latin-1
+// every byte IS the code point of the same number, so the conversion is a
+// rune cast and needs no table.
+type latin1Reader struct {
+	r   *bufio.Reader
+	buf []byte
+}
+
+func (l *latin1Reader) Read(p []byte) (int, error) {
+	for len(l.buf) < len(p) {
+		b, err := l.r.ReadByte()
+		if err != nil {
+			if len(l.buf) == 0 {
+				return 0, err
+			}
+			break
+		}
+		l.buf = utf8.AppendRune(l.buf, rune(b))
+	}
+	n := copy(p, l.buf)
+	l.buf = l.buf[n:]
+	return n, nil
 }
 
 // ---- effective POM (the <parent> merge) -----------------------------------
