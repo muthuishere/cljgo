@@ -145,6 +145,25 @@ func runREPL(args []string) int {
 		fmt.Fprintln(os.Stderr, "usage: cljgo repl [:resume [<#-or-id>]]")
 		return exit
 	}
+	// Resolve the project the SAME way `cljgo run` does (main.go's run path
+	// calls this too). Without it the REPL booted with no project source
+	// roots and no dependency roots, so `(require 'myproj.core)` failed in a
+	// project whose own `cljgo run` and `cljgo build` resolve it fine —
+	// including in a freshly generated `cljgo new` project, which could not
+	// require its own namespace in its own REPL. That is a REPL-vs-run
+	// divergence, the class ADR 0007 calls unforgivable (issue #185).
+	//
+	// Reported as an error and CONTINUED, where `run` exits 1. The reason is
+	// not laxity: for `run`, unresolved deps mean the program cannot execute,
+	// so there is nothing to proceed to. A REPL still has a usable prompt,
+	// and the diagnostic is on screen where the user can act on it — refusing
+	// to start would take away the one tool for investigating the problem it
+	// is reporting. Resolution behavior itself is identical; only what
+	// happens after a failure differs, because the two commands have
+	// different things left to do.
+	if err := resolveRunDeps(""); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+	}
 	d := repl.New(os.Stdin, os.Stdout, os.Stderr)
 	d.Prompts = isTerminal(os.Stdin)
 	d.Interactive = d.Prompts
