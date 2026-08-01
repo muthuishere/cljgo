@@ -44,6 +44,8 @@ cljgo build [-o out] [-gen dir] [-runtime dir] <file.clj>
   binaries pin the published module instead).
 
 Source files may be `.clj`, `.cljc`, `.cljg`, or `.cljgo` (ADR 0055).
+For a project that targets JVM Clojure **and** cljgo from one `.cljc` tree,
+see [Dual-host `.cljc` projects](/cljgo/guides/dual-host/).
 
 The build strips by default (`-trimpath -ldflags="-s -w"`), and a
 compiled binary links the **compiled** `clojure.core` — never the

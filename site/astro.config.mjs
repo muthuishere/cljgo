@@ -93,6 +93,7 @@ export default defineConfig({
 						{ label: 'Dependencies & publishing', slug: 'guides/deps-publish' },
 						{ label: 'Compile & ship binaries', slug: 'guides/compile' },
 						{ label: 'The REPL', slug: 'guides/repl' },
+						{ label: 'Dual-host `.cljc` projects', slug: 'guides/dual-host' },
 					],
 				},
 				{

@@ -20,6 +20,20 @@
       b (agent 10 :error-handler (fn [_ _] (deliver p :x)) :error-mode :fail)
       _ (send b (fn [_] (throw (ex-info "boom" {})) nil))
       _ @p
+      ;; The promise says the ERROR HANDLER ran, which is NOT the same as
+      ;; "the agent is now failed" — on the JVM the handler is invoked
+      ;; before the error is published to the action queue
+      ;; (Agent.java:130-142), and cljgo matches that ordering. Using the
+      ;; handler as a synchronisation point for a state transition that
+      ;; happens after it is racy on BOTH hosts: clear-agent-errors below
+      ;; then throws "Agent does not need a restart" whenever the reader
+      ;; wins. That is what made this file fail roughly one full run in N
+      ;; while passing 12/12 when hunted in isolation.
+      ;; A bounded spin, not a sleep: Thread/sleep is JVM interop and this
+      ;; file must read identically on both hosts.
+      _ (loop [n 0]
+          (when (and (nil? (agent-error b)) (< n 10000000))
+            (recur (inc n))))
       errs (agent-errors b)
       errs-count (count errs)
       cleared (clear-agent-errors b)
