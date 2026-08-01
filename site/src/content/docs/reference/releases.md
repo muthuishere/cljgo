@@ -21,6 +21,44 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.8.6](https://github.com/muthuishere/cljgo/releases/tag/v0.8.6) — 2026-08-01
+
+*The AOT test path did not work for dual-host projects, and the docs
+recommended an unsafe idiom. Both found by consumers.*
+
+- **`cljgo test --compiled` could not run a `.cljc` suite.** `nsNameFor`
+  derived a namespace symbol by dropping the file extension using its own
+  hand-written list, which trimmed only `.cljg` and `.clj`. So
+  `test/demo/core_test.cljc` became the namespace `demo.core-test.cljc` — the
+  extension turned into a name segment — and the compiled leg required a name
+  that cannot exist. It failed in the direction that looks fine: `cljgo test`
+  green, `--compiled` unable to build, so **anyone treating `--compiled` as
+  their AOT test path silently had no AOT coverage at all.** That is the
+  REPL-vs-binary divergence ADR 0007 calls unforgivable, occurring in the
+  harness meant to detect it. `.cljgo` was broken identically — found by the
+  regression test, reported by nobody. `pkg/eval.SourceExts` is now the single
+  list both the resolver and the test harness read. (#182)
+- **`:exit-code` had an EOF race, and cljgo's own comment taught it.** The
+  docs said `nil` is falsey so `(if ((:exit-code p)) …)` reads as "has it
+  finished". It does not: `nil` means **not yet reaped**, and reaping happens
+  strictly after the child's stdout reaches EOF. Draining `:out` then reading
+  `:exit-code` reports `nil` for a process that has already exited — measured
+  at 5 runs of 5 on `sh -c 'echo hi >&2; exit 3'`, correct on all 5 after
+  250 ms. The framing had already propagated into a consumer library's
+  docstring. The semantics were always right; the recommended *read* was not.
+  **Use `:wait` after draining** — it returns as soon as the reaper has the
+  status and cannot report `nil`. `:exit-code` is for polling a child you are
+  not draining.
+- **`G5026`** replaces `namespace X not found after loading its source`, which
+  named the wrong condition: the file *was* found and evaluated, it just never
+  defined the namespace (no `ns` form, or one disagreeing with its path).
+  "Not found" sent readers hunting for a file sitting right where it should be.
+- **Release notes no longer contradict the release.** `.goreleaser.yaml`'s
+  Install footer is injected into every release body and claimed `cljgo build`
+  needs a checkout of this repo and `CLJGO_SRC` — the exact opposite of what
+  v0.8.5 fixed. The published v0.8.5 body is corrected in place with a visible
+  note rather than silently overwritten.
+
 ## [v0.8.5](https://github.com/muthuishere/cljgo/releases/tag/v0.8.5) — 2026-08-01
 
 *Two defects that made a released cljgo unusable, both found by consumers
