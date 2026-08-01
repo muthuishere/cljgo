@@ -222,7 +222,21 @@ func loadLib(libSym *lang.Symbol, opts lang.ISeq) {
 		libFileLoader(libSym)
 		target = lang.FindNamespace(libSym)
 		if target == nil {
-			panic(fmt.Errorf("namespace %s not found after loading its source", libSym.FullName()))
+			// The file WAS found and evaluated; it just never created this
+			// namespace. Say that, because "not found after loading its
+			// source" — the old wording — names the wrong condition and
+			// sends the reader hunting for a missing file that is right
+			// there. In practice it means the file has no `(ns …)` form at
+			// all, or declares a name that disagrees with its path.
+			//
+			// Found by the toolnexus Clojure port while confirming the #182
+			// fix: their repro turned out to be two problems wearing one
+			// error message, and only the first was #182.
+			panic(lang.NewCodedError("G5026", fmt.Sprintf(
+				"%s: the file was loaded but did not define this namespace "+
+					"(expected a top-level (ns %s …) matching its path; found none) — "+
+					"add the ns form, or rename the file to match the ns it declares",
+				libSym.FullName(), libSym.FullName())))
 		}
 	}
 	for s := opts; s != nil; s = s.Next() {

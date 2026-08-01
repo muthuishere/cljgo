@@ -104,6 +104,7 @@ var registry = []Entry{
 	{Code: "G5023", Title: "cljgo run: project declares dependencies but has no build.lock.edn", Since: "v0.8.3"},
 	{Code: "G5024", Title: "cannot resolve real-path (missing path or symlink cycle)", Since: "v0.8.3"},
 	{Code: "G5025", Title: "build file defines no build entry point", Since: "v0.8.5"},
+	{Code: "G5026", Title: "file loaded but did not define the required namespace", Since: "v0.8.6"},
 }
 
 // Lookup returns the registry entry for code.

@@ -103,8 +103,23 @@ func installProcSpawnShims(def func(name string, fn func(args ...any) any)) {
 	//
 	// koine offered :alive? OR :exit-code when filing issue #173 and noted
 	// this one answers strictly more; shipping only :alive? left that gap
-	// open, so both exist. nil-while-running is deliberate: it is falsey, so
-	// (if (exit-code p) …) reads as "has it finished".
+	// open, so both exist.
+	//
+	// nil means "NOT YET REAPED", not "still running", and the difference
+	// is observable. doneCh closes after cmd.Wait() returns, which is
+	// strictly after the child's stdout reaches EOF — so a caller that
+	// drains :out and then reads exit-code sees nil for a process that has
+	// ALREADY exited. Measured on `sh -c 'echo hi >&2; exit 3'`: nil on 5
+	// runs out of 5 read immediately at EOF, the correct 3 on all 5 after
+	// 250ms.
+	//
+	// This comment used to say nil-while-running "is falsey, so
+	// (if (exit-code p) ...) reads as 'has it finished'". That idiom is wrong
+	// at exactly the moment callers reach for it, and it propagated: koine's
+	// docstring inherited the framing from here, and toolnexus measured the
+	// consequence. The semantics are right; the recommended READ was not.
+	// After draining, use -proc-wait — it returns as soon as the reaper has
+	// the status and cannot report nil.
 	def("-proc-exit-code", func(args ...any) any {
 		h := asSpawnHandle("-proc-exit-code", args)
 		select {
