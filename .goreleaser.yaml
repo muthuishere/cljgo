@@ -87,10 +87,17 @@ release:
 
     `cljgo repl`, `cljgo run` and Go interop work from the binary alone, with
     no Go toolchain installed. **`cljgo build` additionally needs the Go
-    toolchain and a checkout of this repo** — the generated module `replace`s
-    the runtime to a local source tree, so set `CLJGO_SRC` to your clone or run
-    inside it. Known v0 limitation (ADR 0013); publishing the runtime as a real
-    Go module retires it.
+    toolchain** — it emits Go and calls `go build`. It does NOT need a checkout
+    of this repo: a release binary pins the published module in the generated
+    `go.mod` and never writes a `replace` (ADR 0028), so binary + Go toolchain
+    is the whole story.
+
+    `CLJGO_SRC` is now only for pointing a build at a LOCAL cljgo tree on
+    purpose — developing cljgo itself, or testing an unreleased change.
+
+    Note for anything before v0.8.5: a binary from `go install …@vX.Y.Z` was
+    not recognised as a release and demanded a source tree anyway. That was
+    #177, fixed in v0.8.5 by ADR 0116.
 
     ---
 
