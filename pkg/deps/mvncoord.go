@@ -82,11 +82,25 @@ func mvnSrcDir(root, repo string, c Coord) string {
 }
 
 // DefaultMvnRepos is the repository list used when a project declares none:
-// Clojars first, then Maven Central — the tools.deps default set. (mvn-repo …)
-// PREPENDS to this list.
+// **Maven Central first, then Clojars** — matching tools.deps, which returns
+// "central, then clojars, then other repos" unconditionally
+// (org.clojure/tools.deps 0.22.1492, clojure/tools/deps/util/maven.clj:161-165).
+// (mvn-repo …) PREPENDS to this list.
+//
+// The order is not cosmetic and this list used to be the other way round,
+// with a comment claiming Clojars-first WAS the tools.deps default. It is
+// not. Fetching takes the first repository that answers, so a coordinate
+// published to BOTH resolved to a different artifact on cljgo than on the
+// JVM — silently, with no conflict, no diagnostic, and nothing in the project
+// files to hint at it. That is the one failure mode a dual-host `.cljc`
+// project cannot tolerate: the whole promise is identical behaviour on both
+// hosts, and this broke it below the level anyone would think to look.
+//
+// Found by spike s79 while surveying what `deps.edn` `:deps` translation
+// would cost. Reading `:deps` does not cause this — it only exposes it.
 var DefaultMvnRepos = []string{
-	"https://repo.clojars.org",
 	"https://repo1.maven.org/maven2",
+	"https://repo.clojars.org",
 }
 
 // clojureItself is the set of coordinates pruned from every transitive graph

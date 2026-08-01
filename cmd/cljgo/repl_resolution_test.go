@@ -22,6 +22,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -235,5 +236,52 @@ func TestBuildCljgoWinsOverDepsEdn(t *testing.T) {
 	out := replEval(t, bin, proj, "(require 'demo.core)\n(println demo.core/marker)\n")
 	if !strings.Contains(out, ":from-build-cljgo") {
 		t.Fatalf("build.cljgo must win over deps.edn:\n%s", out)
+	}
+}
+
+// TestBuildCljgoWinsFromAnyDirectoryInTheSearch pins the owner's rule at its
+// sharpest: if a cljgo build file exists ANYWHERE in the search, deps.edn is
+// not consulted AT ALL.
+//
+// The first cut got this wrong. Resolution looped over [dir-of-file, "."]
+// and fell back to deps.edn per directory, so `cljgo run /elsewhere/foo.cljc`
+// took /elsewhere's deps.edn and returned before ever reaching a build.cljgo
+// in the working directory — reading deps.edn for a project that HAS a cljgo
+// build file. Two passes, build file first, is what the rule actually
+// requires.
+func TestBuildCljgoWinsFromAnyDirectoryInTheSearch(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+
+	// The project: a build.cljgo, and the namespace under its src/.
+	proj := t.TempDir()
+	writeCljcProject(t, proj, map[string]string{
+		"build.cljgo":        "(defn build [b])\n",
+		"src/demo/core.cljc": "(ns demo.core)\n(def marker :from-build-cljgo)\n",
+	})
+
+	// Somewhere else entirely: a deps.edn pointing at a DECOY that also
+	// defines demo.core, plus the script we will run.
+	elsewhere := t.TempDir()
+	writeCljcProject(t, elsewhere, map[string]string{
+		"deps.edn":             "{:paths [\"decoy\"]}\n",
+		"decoy/demo/core.cljc": "(ns demo.core)\n(def marker :from-decoy-deps-edn)\n",
+		"probe.cljc":           "(require 'demo.core)\n(println demo.core/marker)\n",
+	})
+
+	cmd := exec.Command(bin, "run", filepath.Join(elsewhere, "probe.cljc"))
+	cmd.Dir = proj // build.cljgo is HERE; deps.edn is next to the script
+	cmd.Env = append(os.Environ(), "CLJGO_SRC="+repoRoot(t))
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("cljgo run: %v\n%s", err, out)
+	}
+	if strings.Contains(string(out), ":from-decoy-deps-edn") {
+		t.Fatalf("deps.edn was consulted while a build.cljgo existed:\n%s", out)
+	}
+	if !strings.Contains(string(out), ":from-build-cljgo") {
+		t.Fatalf("build.cljgo did not win:\n%s", out)
 	}
 }
