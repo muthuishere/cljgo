@@ -328,6 +328,16 @@ func resolveRunDeps(file string) error {
 	for _, dir := range dirs {
 		buildFile := build.FindBuildFile(dir)
 		if buildFile == "" {
+			// No cljgo build file — but a dual-host project may still declare
+			// its source roots in Clojure's own deps.edn (ADR 0119). Honour
+			// `:paths` and nothing else. `.cljc` is THE dual-host mechanism,
+			// so these projects are not a corner case; they are the ones cljgo
+			// most needs to work with, and they have no reason to carry a
+			// second project file.
+			if roots := deps.DepsEDNPaths(dir); len(roots) > 0 {
+				addSourceRoots(roots)
+				return nil
+			}
 			continue
 		}
 		// The project's SOURCE ROOTS, always — this is not conditional on
@@ -374,19 +384,29 @@ func resolveRunDeps(file string) error {
 // of them (eval.ResolveLibPath). Duplicates are skipped so repeated calls in
 // one process cannot grow the list without bound.
 func addProjectSourceRootsFromPlan(buildFile string, plan *build.Plan) error {
-	have := map[string]bool{}
+	addSourceRoots(plan.SourceRoots(filepath.Dir(buildFile)))
+	return nil
+}
+
+// addSourceRoots appends roots to the resolved set. APPEND, never replace:
+// dependency roots installed by an earlier bootstrap stay, and the requiring
+// file's own directory still outranks all of them (eval.ResolveLibPath).
+// Duplicates are skipped so repeated calls in one process cannot grow the
+// list without bound. Shared by the build.cljgo and deps.edn paths so the two
+// cannot drift in how they publish.
+func addSourceRoots(add []string) {
 	roots := deps.ResolvedRoots()
+	have := make(map[string]bool, len(roots))
 	for _, r := range roots {
 		have[r] = true
 	}
-	for _, r := range plan.SourceRoots(filepath.Dir(buildFile)) {
+	for _, r := range add {
 		if !have[r] {
 			roots = append(roots, r)
 			have[r] = true
 		}
 	}
 	deps.SetResolvedRoots(roots)
-	return nil
 }
 
 // runCache implements `cljgo cache <subcommand>` (ADR 0052 decision 1). The

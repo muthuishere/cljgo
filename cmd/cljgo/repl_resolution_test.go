@@ -180,3 +180,60 @@ func waitForPortFile(t *testing.T, dir string) string {
 	t.Fatal("nrepl never wrote .nrepl-port")
 	return ""
 }
+
+// TestREPLResolvesADepsEdnOnlyProject — ADR 0119. A dual-host library
+// declares its source roots in Clojure's deps.edn and has no reason to carry
+// a cljgo build file too: it publishes to Clojars with tools.build and is
+// consumed as a library. Before this, cljgo had NO declared roots for such a
+// project.
+//
+// The failure was invisible in CI and obvious to a human: `cljgo run
+// src/foo.cljc` resolves relative to the file being run, so a whole
+// conformance suite passes, while opening a REPL at the project root — where
+// there is no requiring file to be relative to — resolves nothing. Found
+// against koine, whose 13 checks (271 assertions) pass on the release while
+// its own REPL could not require koine.json from the project root.
+func TestREPLResolvesADepsEdnOnlyProject(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+	proj := t.TempDir()
+	writeCljcProject(t, proj, map[string]string{
+		// deps.edn ONLY — deliberately no build.cljgo, which is koine's shape.
+		"deps.edn":           "{:paths [\"src\"]\n :deps {org.clojure/clojure {:mvn/version \"1.12.5\"}}}\n",
+		"src/demo/core.cljc": "(ns demo.core)\n(def marker :resolved)\n",
+	})
+
+	out := replEval(t, bin, proj, "(require 'demo.core)\n(println demo.core/marker)\n")
+	if strings.Contains(out, "could not locate namespace") {
+		t.Fatalf("deps.edn :paths was not honoured:\n%s", out)
+	}
+	if !strings.Contains(out, ":resolved") {
+		t.Fatalf("REPL did not resolve through deps.edn :paths:\n%s", out)
+	}
+}
+
+// TestBuildCljgoWinsOverDepsEdn pins the precedence: a project carrying BOTH
+// gets its cljgo build file, which is cljgo's own and more specific
+// declaration. deps.edn is the fallback, never an override — otherwise a
+// project could not opt out of a stale or JVM-only :paths.
+func TestBuildCljgoWinsOverDepsEdn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+	proj := t.TempDir()
+	writeCljcProject(t, proj, map[string]string{
+		// deps.edn points ONLY at a decoy that does not hold the namespace.
+		"deps.edn":           "{:paths [\"jvm-only\"]}\n",
+		"jvm-only/keep.txt":  "not a source root cljgo should prefer\n",
+		"build.cljgo":        "(defn build [b])\n",
+		"src/demo/core.cljc": "(ns demo.core)\n(def marker :from-build-cljgo)\n",
+	})
+
+	out := replEval(t, bin, proj, "(require 'demo.core)\n(println demo.core/marker)\n")
+	if !strings.Contains(out, ":from-build-cljgo") {
+		t.Fatalf("build.cljgo must win over deps.edn:\n%s", out)
+	}
+}
