@@ -36,6 +36,7 @@ import (
 
 	"github.com/muthuishere/cljgo/pkg/deps"
 	"github.com/muthuishere/cljgo/pkg/emit"
+	"github.com/muthuishere/cljgo/pkg/eval"
 	"github.com/muthuishere/cljgo/pkg/lang"
 	"github.com/muthuishere/cljgo/pkg/nrepl"
 	"github.com/muthuishere/cljgo/pkg/repl"
@@ -582,7 +583,22 @@ func nsNameFor(path, root string) string {
 	if err != nil {
 		return ""
 	}
-	stem := strings.TrimSuffix(strings.TrimSuffix(rel, ".cljg"), ".clj")
+	// eval.SourceExts, never a local list: this had its own hand-written copy
+	// that trimmed only ".cljg" and ".clj", so a `.cljc` file produced the
+	// namespace `demo.core.cljc` — the extension became a name segment. The
+	// interpreted leg never noticed (it loads the file directly); the
+	// compiled leg emitted a require for a namespace that cannot exist and
+	// died with "could not locate namespace demo.core.cljc". A `.cljc` suite
+	// therefore ran green under `cljgo test` and could not build under
+	// `cljgo test --compiled`, so anyone treating --compiled as their AOT
+	// test path silently had NO AOT coverage (issue #182).
+	stem := rel
+	for _, ext := range eval.SourceExts {
+		if s := strings.TrimSuffix(stem, ext); s != stem {
+			stem = s
+			break
+		}
+	}
 	return strings.ReplaceAll(strings.ReplaceAll(filepath.ToSlash(stem), "/", "."), "_", "-")
 }
 

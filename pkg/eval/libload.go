@@ -105,6 +105,20 @@ func libPathStem(libSym *lang.Symbol) string {
 
 // ResolveLibPath resolves a namespace symbol to an existing source file
 // relative to the requiring file (ADR 0042 §4), or "" when none exists.
+// SourceExts are cljgo's source-file extensions, most-specific-first:
+// cljgo-native extensions win over the portable `.clj` fallback (ADR 0055),
+// mirroring Clojure's host-extension order, with `.cljc` the portable
+// dual-host form (ADR 0068).
+//
+// Exported because it is a CONVENTION two subsystems must agree on, not a
+// resolver detail. `cljgo test --compiled` derives a namespace symbol by
+// stripping the extension from a path, and it carried its own hand-written
+// copy of this list that had never been updated for `.cljc` — so a `.cljc`
+// suite compiled to a require for `demo.core.cljc`, which resolves to
+// nothing. The interpreted leg passed and the compiled leg failed, which is
+// the divergence ADR 0007 calls unforgivable. One list, one owner.
+var SourceExts = []string{".cljgo", ".cljg", ".clj", ".cljc"}
+
 func ResolveLibPath(libSym *lang.Symbol) string {
 	file, _ := lang.VarFile.Deref().(string)
 	roots := []string{}
@@ -156,7 +170,7 @@ func ResolveLibPath(libSym *lang.Symbol) string {
 	for _, root := range roots {
 		// Most-specific-first: cljgo-native extensions win over the portable
 		// `.clj` fallback (ADR 0055), mirroring Clojure's host-extension order.
-		for _, ext := range []string{".cljgo", ".cljg", ".clj", ".cljc"} {
+		for _, ext := range SourceExts {
 			cand := filepath.Join(root, stem+ext)
 			if fi, err := os.Stat(cand); err == nil && !fi.IsDir() {
 				return cand
