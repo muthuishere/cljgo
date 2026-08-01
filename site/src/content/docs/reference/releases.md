@@ -21,6 +21,53 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.8.7](https://github.com/muthuishere/cljgo/releases/tag/v0.8.7) — 2026-08-01
+
+*The REPL could not see your project. Both halves of that, plus the design
+change that stops it recurring.*
+
+- **`cljgo repl` and `cljgo nrepl` resolved nothing from the project.**
+  `(require 'myproj.core)` failed in a project whose own `cljgo run` and
+  `cljgo build` resolved it — including in a freshly generated `cljgo new`
+  project, which could not require its own namespace in its own REPL. A
+  REPL-vs-run divergence, the class ADR 0007 calls unforgivable. `require`
+  was never broken: it was searching an empty list, because neither entry
+  point established the load path. The nREPL case is the worse one — that is
+  the editor path, so it was invisible from a shell and landed on anyone
+  using an IDE. (#185)
+- **Resolution now happens once, before the subcommand dispatch** — five
+  scattered call sites became one, so a new entry point cannot forget it.
+  The shape is taken from reading the alternatives: JVM Clojure has no
+  in-process bootstrap at all (the classpath is fixed by an external launcher
+  before the JVM starts, and `clojure.main/repl` touches the classloader only
+  to *widen* it, never to establish it); let-go installs one resolver before
+  mode dispatch; Glojure drains its classpath into one global load path as
+  the first statement of `main`. (ADR 0118)
+- **`deps.edn`'s `:paths` is honoured when a project has no cljgo build
+  file.** `.cljc` is the dual-host mechanism, so the projects cljgo most
+  needs to work with declare their roots in Clojure's own file and have no
+  reason to carry a second one. `build.cljgo` still wins where both exist.
+  Narrow on purpose: `:paths` only, vector form only, parsed as data — not
+  `:deps`, not aliases, which carry tools.deps semantics cljgo does not
+  implement. (ADR 0119)
+- **A conformance test was racy, not flaky.** `agent-lifecycle` failed about
+  one full run in N on the interpreted leg and passed 12/12 when hunted in
+  isolation. The cause was the test using an error handler as a
+  synchronisation point for a state transition that happens *after* it —
+  racy on both hosts. cljgo's ordering matches the JVM exactly
+  (`Agent.java:130-142`); the first hypothesis, that this was a runtime
+  divergence, was wrong.
+- **Two pieces of pure waste deleted**, both independent of the above:
+  `filepath.Dir("")` and `filepath.Dir("rel.clj")` are *both* `"."`, so the
+  common shapes resolved the same directory twice (74 ms on the `cljgo new`
+  layout), and `build.LoadPlan` ran twice per pass for a plan that was
+  discarded. Measured: `cljgo run` in a dep-free project 202.7 ms → 89.4 ms.
+
+Measured and recorded, not acted on: project resolution boots a whole
+tree-walking interpreter (38 ms, 54 MB, 875k allocs) to read a build file,
+and that constant does not scale with dependency count — a dep-free project
+is the *worst* case. Spikes `s72` and `s78`.
+
 ## [v0.8.6](https://github.com/muthuishere/cljgo/releases/tag/v0.8.6) — 2026-08-01
 
 *The AOT test path did not work for dual-host projects, and the docs

@@ -23,7 +23,7 @@ never links the OTel SDK.
 
 `cljgo new --template web` ships `templates/web/Dockerfile` — a multi-stage
 build that `go install`s the cljgo compiler at a pinned `CLJGO_VERSION`
-(default `v0.8.6`), AOT-compiles, and copies the binary into a `scratch`
+(default `v0.8.7`), AOT-compiles, and copies the binary into a `scratch`
 image with config + static assets:
 
 ```dockerfile
