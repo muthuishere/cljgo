@@ -3,6 +3,14 @@ title: The REPL
 description: A tree-walk evaluator that is also the macro engine, session journals with resume, an nREPL server for Calva and CIDER, and the dual-harness guarantee that REPL and binary never diverge.
 ---
 
+:::note[Your project on the load path]
+`cljgo repl` resolves the project you start it in: source roots come from
+`build.cljgo`, or from `deps.edn`'s `:paths` when there is no cljgo build
+file. Start it at the project root, not inside `src/`. Dual-host `.cljc`
+projects have a few more wrinkles — see
+[Dual-host `.cljc` projects](/cljgo/guides/dual-host/).
+:::
+
 `cljgo repl` starts a terminal REPL on stdin/stdout. Under it is a
 tree-walk evaluator (`pkg/eval`) fed by the same reader, analyzer, and
 AST as the compiler — the evaluator **is** the macro engine, for both
