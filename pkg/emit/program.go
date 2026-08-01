@@ -519,7 +519,11 @@ func SynthGoMod(dir, moduleName, runtimeDir string, requires []GoModRequire) err
 	}
 	runtimeVersion := "v0.0.0" // placeholder; the replace below wins
 	if runtimeDir == "" {
-		runtimeVersion = "v" + version.Version
+		// ReleaseVersion, not Version: a `go install …@vX.Y.Z` binary is a
+		// release whose Version was never ldflags-stamped (ADR 0116), so
+		// pinning Version here would emit "v0.1.0-dev" — a tag that does
+		// not exist.
+		runtimeVersion = "v" + version.ReleaseVersion()
 	}
 	// ADR 0071: a replace-based (dev/override) build resolves the runtime
 	// LOCALLY, but Go does not inherit a replaced module's own external

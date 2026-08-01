@@ -34,8 +34,21 @@ import (
 const BuildFileName = "build.cljgo"
 
 // BuildFileNames are the accepted build-description names, most-specific-first
-// (ADR 0055): cljgo-native `.cljgo`/`.cljg` before the portable `.clj`.
-var BuildFileNames = []string{"build.cljgo", "build.cljg", "build.clj"}
+// (ADR 0055, narrowed by ADR 0117): cljgo-native `.cljgo` before `.cljg`.
+//
+// `build.clj` is deliberately NOT here. In the Clojure ecosystem that name is
+// not generic — it is the tools.build convention, and it is the only way a
+// dual-host library publishes to Clojars, so a project that targets both JVM
+// Clojure and cljgo necessarily has one. Claiming it made cljgo evaluate
+// another tool's build script: koine's root `build.clj` requires
+// `clojure.tools.build.api`, which cljgo cannot resolve, so every `cljgo run`
+// in the project died with "could not locate namespace
+// clojure.tools.build.api" (issue #176).
+//
+// Harmless while nothing read the build file on the `run` path; v0.8.3 started
+// reading it (for deps and source roots) and turned a latent name collision
+// into a total block on exactly the dual-host projects cljgo exists to serve.
+var BuildFileNames = []string{"build.cljgo", "build.cljg"}
 
 // FindBuildFile returns the first accepted build file present in dir (ADR 0055
 // precedence), or "" if none exists.
@@ -119,6 +132,16 @@ func LoadPlan(buildFile string) (*Plan, error) {
 	// exactly as a file load — *ns*/*file* bound for the duration.
 	if err := loadFileForms(ev, buildFile); err != nil {
 		return nil, err
+	}
+
+	// Check the entry point BEFORE evaluating the driver. Without this, a
+	// build file with no `build` fn failed inside the driver string, and the
+	// error named `<build-driver>` with a column into that synthesized
+	// string — a file the user never wrote — while never naming their
+	// build file or the missing `(defn build [b] …)`. Found by koine while
+	// bisecting #176.
+	if fn, rerr := evalString(ev, "(clojure.core/resolve 'build)"); rerr != nil || fn == nil {
+		return nil, ErrNoBuildFn(buildFile)
 	}
 
 	// Construct a fresh builder, run the user's build fn against it, hand

@@ -44,7 +44,10 @@ func internVersionBuiltins(def func(name string, fn func(args ...any) any) *lang
 	//   (cljgo-version) => "0.1.0"
 	//   *cljgo-version* => {:major 0, :minor 1, :incremental 0, :qualifier nil,
 	//                       :go "1.26.3", :clojure "1.12.5"}
-	ourInfo := version.Parse(version.Version)
+	// version.Self, not version.Version: a `go install …@vX.Y.Z` binary
+	// reports its resolved tag (ADR 0116), and (cljgo-version) must agree
+	// with `cljgo version`.
+	ourInfo := version.Parse(version.Self())
 	ourMap := lang.NewMap(
 		lang.NewKeyword("major"), int64(ourInfo.Major),
 		lang.NewKeyword("minor"), int64(ourInfo.Minor),
@@ -58,7 +61,7 @@ func internVersionBuiltins(def func(name string, fn func(args ...any) any) *lang
 		if len(args) != 0 {
 			panic(fmt.Errorf("wrong number of args (%d) passed to: cljgo-version", len(args)))
 		}
-		return version.Version
+		return version.Self()
 	})
 }
 

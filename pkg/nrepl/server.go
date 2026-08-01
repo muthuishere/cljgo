@@ -266,7 +266,7 @@ func (s *Server) dispatch(c *conn, msg map[string]any) {
 		c.send(resp(msg, str(msg, "session"),
 			"ops", ops,
 			"versions", map[string]any{
-				"cljgo":   map[string]any{"version-string": version.Version},
+				"cljgo":   map[string]any{"version-string": version.Self()},
 				"clojure": map[string]any{"version-string": version.ClojureVersion},
 				"nrepl":   map[string]any{"version-string": "1.0", "major": int64(1), "minor": int64(0)},
 			},

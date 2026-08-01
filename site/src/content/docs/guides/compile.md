@@ -54,7 +54,7 @@ in ~5 ms instead of the interpreter's ~32 ms boot.
 ## Project mode
 
 With no source-file argument, `cljgo build [step]` loads the project's
-`build.cljgo` (probed as `build.cljgo` > `build.cljg` > `build.clj`),
+`build.cljgo` (probed as `build.cljgo` > `build.cljg`),
 evaluates its `(defn build [b] …)` plan, and runs the requested step —
 the zig-build model (ADR 0021):
 

@@ -30,15 +30,85 @@ import (
 // whether the generated go.mod may pin the published module at Version).
 var Version = "0.1.0-dev"
 
-// IsRelease reports whether this binary is a release build: Version is a
-// plain "major.minor.patch" SemVer tag with no prerelease qualifier. Only
-// release ldflags stamp such a value (the in-source default carries "-dev";
-// goreleaser snapshot builds carry a qualifier too), so a true result means
-// "v"+Version is a published module tag the generated go.mod may require
-// (ADR 0028).
+// ReleaseVersion is the published module tag this binary is PROVABLY built
+// from, as plain SemVer without the "v" ("0.8.4"), or "" when there is no
+// such proof (ADR 0116).
+//
+// Two build paths produce a genuine release, and only one of them was ever
+// recognized:
+//
+//   - goreleaser stamps Version via -ldflags. That is the tagged-archive
+//     path, and it is what IsRelease() originally meant.
+//   - `go install github.com/muthuishere/cljgo/cmd/cljgo@v0.8.4` compiles
+//     from the module proxy with NO ldflags, so Version keeps its in-source
+//     "0.1.0-dev" default. The requested tag is still authoritative — the Go
+//     toolchain resolved and checksum-verified it — and it is recorded in
+//     the binary as BuildInfo.Main.Version.
+//
+// Missing the second path is what made a `go install`ed cljgo refuse to
+// build anything: SynthGoMod saw IsRelease() == false, fell through to the
+// walk-up runtime search, and failed with "needs a local runtime tree" on a
+// binary whose whole promise is that it needs no source checkout. That path
+// is not a corner case — templates/web/Dockerfile installs cljgo exactly
+// that way, so the shipped web template could not build in Docker.
+//
+// Only a real requested tag counts. "(devel)" (a plain local build) and
+// Go-synthesized pseudo-versions are rejected, as is any tag carrying a
+// prerelease qualifier (a goreleaser snapshot), so nothing here can invent
+// a module version that was never published.
+func ReleaseVersion() string {
+	if isPlainSemVer(Version) {
+		return Version // ldflags-stamped: the tagged-archive path
+	}
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+	return releaseVersionFromBuildInfo(bi)
+}
+
+// releaseVersionFromBuildInfo is ReleaseVersion's pure core over the
+// module version Go recorded, split out for the same reason
+// devSuffixFromBuildInfo is: the test binary's own build info carries no
+// requested tag, so the mapping is untestable through the real thing.
+func releaseVersionFromBuildInfo(bi *debug.BuildInfo) string {
+	v := strings.TrimPrefix(bi.Main.Version, "v")
+	if v == "" || bi.Main.Version == "(devel)" || isPseudoVersion(bi.Main.Version) {
+		return ""
+	}
+	if !isPlainSemVer(v) {
+		return ""
+	}
+	return v
+}
+
+// isPlainSemVer reports whether s is exactly "major.minor.patch" with no
+// prerelease qualifier — the shape a published module tag has.
+func isPlainSemVer(s string) bool {
+	in := Parse(s)
+	return in.Qualifier == "" && in.String() == s
+}
+
+// Self is the version this binary should REPORT: the published tag when
+// there is one, else the in-source Version. Every reporter goes through
+// here — `cljgo version` (Full), (cljgo-version) / *cljgo-version*, and the
+// nREPL handshake — so they cannot disagree, which is the promise this
+// package's doc comment makes and which a `go install …@v0.8.4` binary would
+// otherwise break: Full() would say 0.8.4 while (cljgo-version) still said
+// 0.1.0-dev (ADR 0116).
+func Self() string {
+	if rv := ReleaseVersion(); rv != "" {
+		return rv
+	}
+	return Version
+}
+
+// IsRelease reports whether this binary may pin the published module: true
+// exactly when ReleaseVersion() found a tag, so "v"+ReleaseVersion() names a
+// module the generated go.mod can require without a local replace
+// (ADR 0028, widened by ADR 0116).
 func IsRelease() bool {
-	in := Parse(Version)
-	return in.Qualifier == "" && in.String() == Version
+	return ReleaseVersion() != ""
 }
 
 // ClojureVersion is the Clojure language level cljgo targets — the version
@@ -82,7 +152,7 @@ func GoVersion() string {
 // already embeds (runtime/debug.ReadBuildInfo) — never a source edit, never
 // a bump of Version.
 func Full() string {
-	base := Version + " (Go " + GoVersion() + ", Clojure " + ClojureVersion + ")"
+	base := Self() + " (Go " + GoVersion() + ", Clojure " + ClojureVersion + ")"
 	if IsRelease() {
 		return base
 	}

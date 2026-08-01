@@ -29,6 +29,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/muthuishere/cljgo/pkg/build"
 )
 
 // cljgoBin builds the CLI once per test binary and returns its path.
@@ -207,5 +209,89 @@ func TestTwoExeArtifactsBothWork(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestJVMBuildCljDoesNotBreakTheProject is the regression test for issue #176,
+// reported by koine with a clean-clone bisect: v0.8.2 works, v0.8.3 and v0.8.4
+// fail, and renaming build.clj away is the whole delta.
+//
+// A dual-host library has a root `build.clj` — that is the tools.build
+// convention and the only way it publishes to Clojars. cljgo accepted that
+// name as one of ITS build files (ADR 0055), which was harmless while nothing
+// read the build file on the `run` path. v0.8.3 started reading it (for deps
+// and source roots), so cljgo began EVALUATING the JVM tool's build script;
+// its `(:require [clojure.tools.build.api])` is unresolvable here, and every
+// `cljgo run` in the project died with "could not locate namespace
+// clojure.tools.build.api" — a total block on exactly the dual-host projects
+// cljgo exists to serve.
+//
+// Note koine's proposed mechanism (v0.8.3's source-roots work sweeping in the
+// project root) was NOT the cause: DefaultSourceRoots is ["src","test"] and
+// the root is never added. The cause is the build-file NAME collision, which
+// is why this test pins FindBuildFile rather than the source roots.
+func TestJVMBuildCljDoesNotBreakTheProject(t *testing.T) {
+	bin := cljgoBin(t)
+	proj := t.TempDir()
+	writeTree(t, proj, map[string]string{
+		// The tools.build file, verbatim in shape: a ns requiring a namespace
+		// that exists only on the JVM.
+		"build.clj":         "(ns build\n  (:require [clojure.tools.build.api :as b]))\n(defn jar [_] nil)\n",
+		"src/demo/app.cljc": "(ns demo.app)\n(println \"ok\")\n",
+	})
+
+	out, code := runIn(t, bin, proj, "run", "src/demo/app.cljc")
+	// Name the specific failure first, so a regression is unmistakable rather
+	// than just a non-zero exit.
+	if strings.Contains(out, "clojure.tools.build.api") {
+		t.Fatalf("cljgo evaluated the JVM build.clj as its own build file:\n%s", out)
+	}
+	if code != 0 {
+		t.Fatalf("cljgo run alongside a JVM build.clj: exit %d\n%s", code, out)
+	}
+	if !strings.Contains(out, "ok") {
+		t.Fatalf("cljgo run output = %q, want it to contain \"ok\"", out)
+	}
+}
+
+// TestMissingBuildFnNamesTheBuildFile — a build file with no `build` entry
+// point must name the user's file and the missing form, not cljgo's
+// internals. Before G5025 it surfaced from inside the driver string:
+//
+//	error: evaluating build fn: compiler error at <build-driver>:1:38:
+//	unable to resolve symbol: build in this context
+//
+// `<build-driver>` is a string cljgo synthesizes, so that named a file the
+// user never wrote and gave a column INTO that nonexistent file, while never
+// mentioning their build.cljgo or the missing (defn build [b] …).
+//
+// Found by koine while black-box bisecting #176: stripping the require from a
+// root build.clj left this behind, which is how it surfaced as a defect in
+// its own right rather than an artifact of that bug.
+func TestMissingBuildFnNamesTheBuildFile(t *testing.T) {
+	bin := cljgoBin(t)
+	proj := t.TempDir()
+	writeTree(t, proj, map[string]string{
+		// A plausible near-miss: the fn exists but is not called `build`.
+		build.BuildFileName: "(defn jar [_] nil)\n",
+		"src/demo/app.cljc": "(ns demo.app)\n(println \"ok\")\n",
+	})
+
+	out, code := runIn(t, bin, proj, "build")
+	if code == 0 {
+		t.Fatalf("cljgo build with no build fn succeeded:\n%s", out)
+	}
+	// The internals must not leak.
+	if strings.Contains(out, "<build-driver>") {
+		t.Fatalf("error names cljgo's synthesized driver:\n%s", out)
+	}
+	if strings.Contains(out, "unable to resolve symbol") {
+		t.Fatalf("error describes cljgo's internals:\n%s", out)
+	}
+	// It must name the user's file, the missing form, and carry the code.
+	for _, want := range []string{build.BuildFileName, "defn build", "G5025"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("error does not mention %q:\n%s", want, out)
+		}
 	}
 }
