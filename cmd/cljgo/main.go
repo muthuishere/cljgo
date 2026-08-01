@@ -325,57 +325,68 @@ func resolveRunDeps(file string) error {
 	if dirs[0] != "." {
 		dirs = append(dirs, ".")
 	}
+	// A cljgo build file ANYWHERE in the search wins over a deps.edn
+	// ANYWHERE in it. Two passes, not one interleaved loop: a per-directory
+	// fallback would let `cljgo run /elsewhere/foo.clj` take /elsewhere's
+	// deps.edn and return before ever reaching a build.cljgo in the working
+	// directory — reading deps.edn for a project that HAS a cljgo build file,
+	// which is exactly what ADR 0119's precedence forbids.
 	for _, dir := range dirs {
-		buildFile := build.FindBuildFile(dir)
-		if buildFile == "" {
-			// No cljgo build file — but a dual-host project may still declare
-			// its source roots in Clojure's own deps.edn (ADR 0119). Honour
-			// `:paths` and nothing else. `.cljc` is THE dual-host mechanism,
-			// so these projects are not a corner case; they are the ones cljgo
-			// most needs to work with, and they have no reason to carry a
-			// second project file.
-			if roots := deps.DepsEDNPaths(dir); len(roots) > 0 {
-				addSourceRoots(roots)
-				return nil
-			}
-			continue
+		if build.FindBuildFile(dir) != "" {
+			return resolveFromBuildFile(build.FindBuildFile(dir))
 		}
-		// The project's SOURCE ROOTS, always — this is not conditional on
-		// there being dependencies. A project with no deps has no
-		// build.lock.edn, and the old early-`continue` below meant it got no
-		// roots at all: `test/app/core_test.cljg` requiring `app.core` looked
-		// only under test/ and failed, naming the namespace rather than the
-		// paths tried. See build.DefaultSourceRoots.
-		// LoadPlan ONCE. It used to run here and again in the no-lock
-		// branch below, and each run boots a fresh tree-walking interpreter
-		// to read the build file — 39.1 ms and 54 MB per boot, of which
-		// evaluating the user's actual build form is under 2 ms (s72). Two
-		// boots for a project with deps, and the dep-free default template
-		// paid four. Deleting the duplicate is simplification, not
-		// optimisation: the second plan was thrown away.
-		plan, planErr := build.LoadPlan(buildFile)
-		if planErr != nil {
-			return planErr
+	}
+	// Only now, with no cljgo build file anywhere in the search: a dual-host
+	// project may declare its source roots in Clojure's own deps.edn
+	// (ADR 0119). `:paths` and nothing else. `.cljc` is THE dual-host
+	// mechanism, so these projects are not a corner case — they are the ones
+	// cljgo most needs to work with, and they have no reason to carry a
+	// second project file describing roots they have already described.
+	for _, dir := range dirs {
+		if roots := deps.DepsEDNPaths(dir); len(roots) > 0 {
+			addSourceRoots(roots)
+			return nil
 		}
-		if err := addProjectSourceRootsFromPlan(buildFile, plan); err != nil {
-			return err
-		}
-		lockPath := filepath.Join(filepath.Dir(buildFile), "build.lock.edn")
-		if _, err := os.Stat(lockPath); err != nil {
-			// No lock: a project with no declared dependencies is fine as-is
-			// (nothing was ever meant to be resolved). A project that DOES
-			// declare dependencies but was never built is the fresh-clone
-			// trap (#168) — the require that follows fails on a namespace
-			// that plainly exists in `deps`, naming the wrong problem. Name
-			// the real one here instead.
-			if len(plan.Deps) > 0 {
-				return build.ErrNoLock(buildFile, len(plan.Deps))
-			}
-			continue
-		}
-		return build.ResolveProjectDeps(buildFile)
 	}
 	return nil
+}
+
+// resolveFromBuildFile publishes a cljgo build file's source roots and, when
+// the project is locked, its dependency roots.
+func resolveFromBuildFile(buildFile string) error {
+	// LoadPlan ONCE. It used to run here and again in the no-lock branch
+	// below, and each run boots a fresh tree-walking interpreter to read the
+	// build file — 39.1 ms and 54 MB per boot, of which evaluating the user's
+	// actual build form is under 2 ms (spike s72). Two boots for a project
+	// with deps, and the dep-free default template paid four. Deleting the
+	// duplicate is simplification, not optimisation: the second plan was
+	// thrown away.
+	plan, err := build.LoadPlan(buildFile)
+	if err != nil {
+		return err
+	}
+	// The project's SOURCE ROOTS, always — not conditional on there being
+	// dependencies. A project with no deps has no build.lock.edn, and an
+	// early return here would leave it with no roots at all:
+	// `test/app/core_test.cljg` requiring `app.core` looked only under test/
+	// and failed, naming the namespace rather than the paths tried. See
+	// build.DefaultSourceRoots.
+	if err := addProjectSourceRootsFromPlan(buildFile, plan); err != nil {
+		return err
+	}
+	lockPath := filepath.Join(filepath.Dir(buildFile), "build.lock.edn")
+	if _, err := os.Stat(lockPath); err != nil {
+		// No lock: a project with no declared dependencies is fine as-is
+		// (nothing was ever meant to be resolved). A project that DOES
+		// declare dependencies but was never built is the fresh-clone trap
+		// (#168) — the require that follows fails on a namespace that plainly
+		// exists in `deps`, naming the wrong problem. Name the real one here.
+		if len(plan.Deps) > 0 {
+			return build.ErrNoLock(buildFile, len(plan.Deps))
+		}
+		return nil
+	}
+	return build.ResolveProjectDeps(buildFile)
 }
 
 // addProjectSourceRoots appends the project's source roots to the resolved

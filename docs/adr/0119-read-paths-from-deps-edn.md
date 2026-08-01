@@ -52,11 +52,24 @@ Deliberately the narrowest possible reading:
   load path that agrees with neither host — worse than reading nothing.
 - **Only a vector of strings.** tools.deps also permits a map form; that is
   skipped rather than guessed at.
-- **Only when there is no `build.cljgo`/`build.cljg`.** A cljgo build file is
-  our own, more specific declaration and always wins. This is ADR 0055's
-  most-specific-first, applied to the project description rather than the file
-  extension — and it means a project can always opt out of a stale or
-  JVM-only `:paths` by declaring its own.
+- **Only when there is no `build.cljgo`/`build.cljg` ANYWHERE in the search.**
+  A cljgo build file is cljgo's own declaration and wins absolutely: where one
+  exists, `deps.edn` is **not consulted at all** — not merged, not consulted
+  for keys the build file omits, not used as a fallback for anything. If you
+  run cljgo and you want cljgo to read your project, you declare it to cljgo.
+
+  This is ADR 0055's most-specific-first applied to the project description
+  rather than the file extension, and it means a project can always opt out of
+  a stale or JVM-only `:paths` by declaring its own.
+
+  "Anywhere in the search" is load-bearing and was got wrong in the first cut.
+  Resolution looks in the directory of the file being run and then in the
+  working directory; a per-directory fallback let
+  `cljgo run /elsewhere/foo.cljc` take `/elsewhere`'s `deps.edn` and return
+  before ever reaching a `build.cljgo` in the working directory — reading
+  `deps.edn` for a project that HAS a cljgo build file. Resolution therefore
+  makes TWO passes: every directory is checked for a build file first, and
+  only if none exists anywhere is `deps.edn` considered.
 - **Errors are swallowed to nil.** A malformed or exotic `deps.edn` belongs to
   the JVM toolchain; cljgo refusing to start over a form it was never going to
   use would be worse than cljgo not learning anything from it. Nothing here
@@ -108,7 +121,10 @@ file".
   (koine's shape: `deps.edn` with `:paths`, no build file) and
   `TestBuildCljgoWinsOverDepsEdn`, which points `deps.edn` at a decoy
   directory and asserts the cljgo build file wins, so the precedence cannot
-  silently invert.
+  silently invert; and `TestBuildCljgoWinsFromAnyDirectoryInTheSearch`, which
+  puts the decoy `deps.edn` beside the script and the `build.cljgo` in the
+  working directory — the exact shape the per-directory fallback got wrong.
+  Confirmed to fail (reading the decoy) when the two-pass order is reverted.
 - Manual, against the real koine at 0.9.0: `run-conformance.sh` green on both
   hosts before and after, and `cljgo repl` at the project root now resolves
   `koine.json`.
