@@ -47,10 +47,101 @@ func main() {
 	os.Exit(run(os.Args[1:]))
 }
 
+// commandsThatSkipProjectResolution are the subcommands that must NOT resolve
+// the surrounding project before running. Everything else does, once, in run()
+// below.
+//
+// The list is deliberately a DENY-list, and the direction matters more than
+// the contents: a new subcommand added tomorrow resolves by default, so the
+// cost of forgetting this list is a few milliseconds of stat calls. Under an
+// allow-list, forgetting means a silently broken command — which is exactly
+// what happened twice (issue #185: `cljgo repl` and `cljgo nrepl` both booted
+// evaluators with no project source roots and no dependency roots).
+//
+//   - new: creates a project; resolving the directory it is called FROM is
+//     both useless and able to fail on an unrelated neighbouring project.
+//   - version/help/explain: pure output, no evaluation, and must stay usable
+//     inside a broken project — `cljgo explain <CODE>` is what you reach for
+//     when the project does not build.
+var commandsThatSkipProjectResolution = map[string]bool{
+	"new": true, "version": true, "--version": true, "-v": true,
+	"-version": true, "help": true, "--help": true, "-h": true,
+	"explain": true,
+	// build/dist/publish CREATE the lock this resolution reads. Resolving
+	// first makes `cljgo build` in an unbuilt project print "no
+	// build.lock.edn" and then succeed anyway, having just written it —
+	// an error message contradicted two lines later by the same command
+	// (measured in spike s78).
+	"build": true, "dist": true, "publish": true,
+	// Commands that never evaluate project code. Measured in s72: resolution
+	// costs a fixed ~78 ms (locked) to ~153 ms (dep-free) and 111-221 MB,
+	// against a ~10 ms baseline — 8.7x to 16.6x startup, for work whose
+	// result they never read. `cljgo cache help` also printed a spurious
+	// "no build.lock.edn" before doing its unrelated job.
+	"cache": true, "config": true, "generate": true, "g": true,
+	"routes": true, "migrate": true,
+}
+
+// commandsThatTolerateResolutionFailure keep running when project resolution
+// fails; everything else treats it as fatal.
+//
+// Two lists is worse than one and it is still the honest encoding, because
+// the policy genuinely differs. For `run`, `test`, `dev` a failure means the
+// program cannot work, and continuing would surface it later as a bare
+// "could not locate namespace" — the exact unnamed failure G5023 exists to
+// replace (#168). For a REPL, the prompt is still the tool you would use to
+// investigate, so refusing to start removes the only thing that could help.
+var commandsThatTolerateResolutionFailure = map[string]bool{
+	"repl": true, "nrepl": true,
+}
+
+// resolveProjectForCommand performs the ONE project resolution for this
+// process, before the command dispatch below. Anchor it on `run`'s script
+// path, because resolveRunDeps looks next to the source file as well as in
+// the working directory — `cljgo run /elsewhere/foo.clj` must still find
+// /elsewhere's project.
+//
+// Resolution failures are reported and NOT fatal here; commands that cannot
+// proceed without it fail on their own terms afterwards (`cljgo run` still
+// exits 1 via its own call). A REPL, by contrast, keeps its prompt — see
+// runREPL.
+func resolveProjectForCommand(args []string) (exit int, stop bool) {
+	if len(args) == 0 || commandsThatSkipProjectResolution[args[0]] {
+		return 0, false
+	}
+	anchor := ""
+	if args[0] == "run" && len(args) > 1 {
+		anchor = args[1]
+	}
+	if err := resolveRunDeps(anchor); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		if !commandsThatTolerateResolutionFailure[args[0]] {
+			return 1, true
+		}
+	}
+	return 0, false
+}
+
 func run(args []string) int {
 	if len(args) == 0 {
 		usage(os.Stderr)
 		return 2
+	}
+	// ONE bootstrap for every command that evaluates, before dispatch — the
+	// shape let-go and Glojure both use, and the reason neither can have a
+	// REPL that forgets what its run path does. let-go builds one NSResolver
+	// and installs it with rt.SetNSLoader before any mode branch
+	// (lg.go:440-442); Glojure drains GLJ_CLASSPATH into one global load path
+	// as the first statement of gljmain.Main, ahead of REPL / -e / --nrepl /
+	// file (gljmain.go:58-62).
+	//
+	// cljgo used to resolve at each call site, so each new entry point could
+	// forget independently — and two of eight did (#185). Hoisting it here
+	// removes four scattered calls in favour of one, which is fewer moving
+	// parts, not more: this change would be worth making even if it fixed
+	// nothing.
+	if code, stop := resolveProjectForCommand(args); stop {
+		return code
 	}
 	switch args[0] {
 	case "repl":
@@ -161,9 +252,6 @@ func runREPL(args []string) int {
 	// is reporting. Resolution behavior itself is identical; only what
 	// happens after a failure differs, because the two commands have
 	// different things left to do.
-	if err := resolveRunDeps(""); err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
-	}
 	d := repl.New(os.Stdin, os.Stdout, os.Stderr)
 	d.Prompts = isTerminal(os.Stdin)
 	d.Interactive = d.Prompts
@@ -203,10 +291,6 @@ func runFile(path string, cliArgs []string) int {
 	// ADR 0052: if the project is locked (build.lock.edn present), resolve its
 	// dependencies and publish their roots before evaluating, so a `cljgo run`
 	// of a project with deps resolves them the same way `cljgo build` does.
-	if err := resolveRunDeps(path); err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
-		return 1
-	}
 	d := repl.New(nil, os.Stdout, os.Stderr)
 	if _, err := d.EvalReader(f, path); err != nil {
 		// Same renderer as the REPL (spike s28): named + located + expected/
@@ -231,7 +315,17 @@ func runFile(path string, cliArgs []string) int {
 // roots for the interpreter load path. No lock means nothing has been resolved
 // yet — `cljgo build` creates the lock — so run stays a no-op there.
 func resolveRunDeps(file string) error {
-	for _, dir := range []string{filepath.Dir(file), "."} {
+	// Dedupe: filepath.Dir("") and filepath.Dir("rel.clj") are BOTH ".", so
+	// the two-entry list resolved the same directory twice — the whole
+	// pipeline, including booting an interpreter to evaluate build.cljgo.
+	// Measured at 74 ms of pure waste on the layout `cljgo new` emits
+	// (spike s78: `cljgo run tiny.clj` 196.9 ms vs an absolute path 123.0 ms),
+	// which is larger than the entire hoist costs.
+	dirs := []string{filepath.Dir(file)}
+	if dirs[0] != "." {
+		dirs = append(dirs, ".")
+	}
+	for _, dir := range dirs {
 		buildFile := build.FindBuildFile(dir)
 		if buildFile == "" {
 			continue
@@ -242,7 +336,18 @@ func resolveRunDeps(file string) error {
 		// roots at all: `test/app/core_test.cljg` requiring `app.core` looked
 		// only under test/ and failed, naming the namespace rather than the
 		// paths tried. See build.DefaultSourceRoots.
-		if err := addProjectSourceRoots(buildFile); err != nil {
+		// LoadPlan ONCE. It used to run here and again in the no-lock
+		// branch below, and each run boots a fresh tree-walking interpreter
+		// to read the build file — 39.1 ms and 54 MB per boot, of which
+		// evaluating the user's actual build form is under 2 ms (s72). Two
+		// boots for a project with deps, and the dep-free default template
+		// paid four. Deleting the duplicate is simplification, not
+		// optimisation: the second plan was thrown away.
+		plan, planErr := build.LoadPlan(buildFile)
+		if planErr != nil {
+			return planErr
+		}
+		if err := addProjectSourceRootsFromPlan(buildFile, plan); err != nil {
 			return err
 		}
 		lockPath := filepath.Join(filepath.Dir(buildFile), "build.lock.edn")
@@ -253,8 +358,7 @@ func resolveRunDeps(file string) error {
 			// trap (#168) — the require that follows fails on a namespace
 			// that plainly exists in `deps`, naming the wrong problem. Name
 			// the real one here instead.
-			plan, perr := build.LoadPlan(buildFile)
-			if perr == nil && len(plan.Deps) > 0 {
+			if len(plan.Deps) > 0 {
 				return build.ErrNoLock(buildFile, len(plan.Deps))
 			}
 			continue
@@ -269,11 +373,7 @@ func resolveRunDeps(file string) error {
 // installed stay, and the requiring file's own directory still outranks all
 // of them (eval.ResolveLibPath). Duplicates are skipped so repeated calls in
 // one process cannot grow the list without bound.
-func addProjectSourceRoots(buildFile string) error {
-	plan, err := build.LoadPlan(buildFile)
-	if err != nil {
-		return err
-	}
+func addProjectSourceRootsFromPlan(buildFile string, plan *build.Plan) error {
 	have := map[string]bool{}
 	roots := deps.ResolvedRoots()
 	for _, r := range roots {

@@ -248,13 +248,10 @@ func runDev(args []string) int {
 
 `, appName, os.Getenv("APP_PROFILE"), actual)
 
-	// ADR 0052: resolve declared dependencies (if the project is locked) and
-	// publish their roots before loading any namespace, so `cljgo dev` resolves
-	// deps the same way `cljgo run`/`build` do — one resolver, no divergence.
-	if err := resolveRunDeps(appMain); err != nil {
-		fmt.Fprintln(os.Stderr, "cljgo dev:", err)
-		return 1
-	}
+	// Project resolution happened once in run() before dispatch (ADR 0118).
+	// `cljgo dev` used to anchor on appMain; that resolved the same directory
+	// the hoisted call does, because a build file never sits beside the entry
+	// source — it is at the project root, which both reach via ".".
 	d := repl.New(nil, os.Stdout, os.Stderr)
 	if code := evalAppFile(d, appMain); code != 0 {
 		return code
@@ -361,10 +358,8 @@ func testPreflight() int {
 	if os.Getenv("APP_PROFILE") == "" {
 		os.Setenv("APP_PROFILE", "test")
 	}
-	if err := resolveRunDeps("."); err != nil {
-		fmt.Fprintln(os.Stderr, "cljgo test:", err)
-		return 1
-	}
+	// Resolution already happened in run() before dispatch (ADR 0118); this
+	// call anchored on "." and so was exactly the hoisted one, run twice.
 	return 0
 }
 
