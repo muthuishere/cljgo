@@ -76,15 +76,34 @@ func TestDevSuffixFromBuildInfo(t *testing.T) {
 		want string
 	}{
 		{
-			name: "go install module@version, clean",
+			// A real `go install module@vX.Y.Z` binary carries NO vcs.*
+			// settings — it is resolved through the module proxy, not built
+			// from a checkout. Verified with `go version -m` on an actual
+			// `go install …/cmd/cljgo@v0.8.6` binary.
+			//
+			// This fixture used to pair a module version WITH vcs.revision, a
+			// combination that never occurs, and that fiction is what let the
+			// release-detection bug through: Go also stamps Main.Version from
+			// the nearest tag for a plain local build, so the two cases are
+			// told apart by exactly the VCS data this fixture wrongly gave to
+			// both.
+			name: "go install module@version",
+			bi:   &debug.BuildInfo{Main: debug.Module{Version: "v0.8.2"}},
+			want: "[dev build, module v0.8.2]",
+		},
+		{
+			// The local build Go stamps with the nearest tag: report the
+			// COMMIT, never "module", because nobody requested that version.
+			name: "local build in a tagged repo",
 			bi: &debug.BuildInfo{
-				Main: debug.Module{Version: "v0.8.2"},
+				Main: debug.Module{Version: "v0.8.5"},
 				Settings: []debug.BuildSetting{
+					{Key: "vcs", Value: "git"},
 					{Key: "vcs.revision", Value: "0b230f271bc21ad8e66740cba2488e58c78cfc8"},
 					{Key: "vcs.modified", Value: "false"},
 				},
 			},
-			want: "[dev build, module v0.8.2, commit 0b230f271bc2]",
+			want: "[dev build, commit 0b230f271bc2]",
 		},
 		{
 			name: "local go build from a dirty git checkout",
@@ -210,5 +229,39 @@ func TestReleaseVersionPrefersLdflags(t *testing.T) {
 	Version = "0.1.0-dev"
 	if got := ReleaseVersion(); got != "" {
 		t.Errorf("dev-default ReleaseVersion() = %q, want \"\"", got)
+	}
+}
+
+// TestBuildFromCheckoutIsNeverARelease is the regression test for a defect
+// ADR 0116 shipped: Go stamps BuildInfo.Main.Version from the nearest VCS tag
+// even for a plain local `go build` inside the repo, so once v0.8.5 was
+// tagged every dev build reported v0.8.5 and IsRelease() went true.
+//
+// The visible half was a version line that lied. The serious half was silent:
+// SynthGoMod took the release-pin branch and wrote `require …/cljgo v0.8.5`
+// with NO replace, so a developer building a project with their own cljgo
+// compiled against the PUBLISHED runtime instead of their working tree —
+// local changes ignored, with nothing to indicate it.
+//
+// The discriminator is the presence of VCS settings: `go install
+// module@vX.Y.Z` resolves through the module proxy and records none, while
+// any build from a checkout records vcs=git plus vcs.revision.
+func TestBuildFromCheckoutIsNeverARelease(t *testing.T) {
+	fromCheckout := &debug.BuildInfo{
+		Main: debug.Module{Version: "v0.8.5"}, // Go's nearest-tag stamp
+		Settings: []debug.BuildSetting{
+			{Key: "vcs", Value: "git"},
+			{Key: "vcs.revision", Value: "f05506f33a3a012e2cf859588c8f919a69727bf6"},
+			{Key: "vcs.modified", Value: "false"},
+		},
+	}
+	if got := releaseVersionFromBuildInfo(fromCheckout); got != "" {
+		t.Errorf("a build from a git checkout reported release %q; it must never be a release", got)
+	}
+
+	// The go-install path is unchanged: a proxy-resolved module, no VCS data.
+	fromProxy := &debug.BuildInfo{Main: debug.Module{Version: "v0.8.5"}}
+	if got := releaseVersionFromBuildInfo(fromProxy); got != "0.8.5" {
+		t.Errorf("go install …@v0.8.5 = %q, want 0.8.5", got)
 	}
 }

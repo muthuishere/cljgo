@@ -72,6 +72,33 @@ func ReleaseVersion() string {
 // devSuffixFromBuildInfo is: the test binary's own build info carries no
 // requested tag, so the mapping is untestable through the real thing.
 func releaseVersionFromBuildInfo(bi *debug.BuildInfo) string {
+	// A build from a source CHECKOUT is never a release, whatever Main.Version
+	// says. This is not defensive — it is load-bearing, and ADR 0116 shipped
+	// without it.
+	//
+	// Go stamps Main.Version from the nearest VCS tag even for a plain local
+	// `go build` inside the repo. So after v0.8.5 was tagged, every dev build
+	// of cljgo reported Main.Version = v0.8.5 and IsRelease() went TRUE. Two
+	// consequences, the second serious:
+	//
+	//   - `cljgo version` on a working tree claimed to be the release.
+	//   - SynthGoMod took the release-pin branch and wrote `require
+	//     github.com/muthuishere/cljgo v0.8.5` with NO replace — so a
+	//     developer building a project with their own cljgo silently compiled
+	//     against the PUBLISHED runtime instead of their working tree. Local
+	//     changes to pkg/lang, pkg/emit and everything else were ignored, with
+	//     nothing to indicate it.
+	//
+	// The discriminator is exact: `go install module@vX.Y.Z` resolves through
+	// the module proxy and records a checksum on Main but NO vcs.* settings,
+	// while any build from a checkout records vcs=git plus vcs.revision. The
+	// presence of VCS data therefore means "built from source", which is
+	// precisely what a release is not.
+	for _, s := range bi.Settings {
+		if strings.HasPrefix(s.Key, "vcs.") || s.Key == "vcs" {
+			return ""
+		}
+	}
 	v := strings.TrimPrefix(bi.Main.Version, "v")
 	if v == "" || bi.Main.Version == "(devel)" || isPseudoVersion(bi.Main.Version) {
 		return ""
@@ -162,6 +189,29 @@ func Full() string {
 	return base
 }
 
+// DevCommit is an optional build-time override for the commit reported in a
+// dev build's provenance line, set with
+//
+//	go build -ldflags "-X github.com/muthuishere/cljgo/pkg/version.DevCommit=$(git rev-parse HEAD)"
+//
+// It exists because issue #180 CANNOT be fixed at runtime, and it is worth
+// being precise about why rather than shipping a fix that only looks like
+// one. Go's buildvcs resolves the MAIN repository's HEAD when building inside
+// a linked git worktree, so a worktree build reports a commit it did not
+// build. The binary cannot correct that afterwards: runtime/debug.BuildInfo
+// records no build directory, and the binary may be run from anywhere, so
+// there is nothing left to re-read. Nor can it DETECT the situation — a
+// worktree build and a main-checkout build are indistinguishable from the
+// inside.
+//
+// So the only place the truth is available is at build time, where `git
+// rev-parse HEAD` already knows it. This var is that hook. When set it wins
+// over vcs.revision; when unset nothing changes.
+//
+// Release builds are unaffected either way — they take the ldflags path and
+// never render a dev suffix at all.
+var DevCommit = ""
+
 // DevSuffix describes a non-release build's provenance for the version
 // line, e.g. "[dev build, module v0.8.2, commit 0b230f2]" or "[dev build,
 // commit 0b230f2, dirty]". Empty when no build info is available at all
@@ -191,9 +241,20 @@ func DevSuffix() string {
 func devSuffixFromBuildInfo(bi *debug.BuildInfo) string {
 	var revision string
 	var dirty bool
+	// An explicit build-time commit wins: it is the only value that is
+	// trustworthy inside a git worktree (see DevCommit).
+	if DevCommit != "" {
+		revision = DevCommit
+		if len(revision) > 12 {
+			revision = revision[:12]
+		}
+	}
 	for _, s := range bi.Settings {
 		switch s.Key {
 		case "vcs.revision":
+			if DevCommit != "" {
+				continue // an explicit build-time commit outranks buildvcs
+			}
 			revision = s.Value
 			if len(revision) > 12 {
 				revision = revision[:12]
@@ -213,6 +274,15 @@ func devSuffixFromBuildInfo(bi *debug.BuildInfo) string {
 	// module@v0.8.2`) is worth surfacing as "module".
 	moduleVersion := bi.Main.Version
 	if moduleVersion == "" || moduleVersion == "(devel)" || isPseudoVersion(moduleVersion) {
+		moduleVersion = ""
+	}
+	// "module vX.Y.Z" is meant to say "the user asked for @vX.Y.Z". Go also
+	// stamps Main.Version from the nearest VCS tag for a plain local build,
+	// which is a different claim entirely — reporting it here made a working
+	// tree look like it had been installed at a tag. Same discriminator as
+	// releaseVersionFromBuildInfo: VCS data means built-from-source, and a
+	// source build never requested a module version.
+	if revision != "" || dirty {
 		moduleVersion = ""
 	}
 
