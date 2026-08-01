@@ -33,6 +33,7 @@ G5022 unsupported or unmatched java.time date pattern
 G5023 cljgo run: project declares dependencies but has no build.lock.edn
 G5024 cannot resolve real-path (missing path or symlink cycle)
 G5025 build file defines no build entry point
+G5026 file loaded but did not define the required namespace
 I4001 Java class used as a namespace
 I4002 namespace requires Java interop and cannot load on cljgo
 R1001 unterminated form

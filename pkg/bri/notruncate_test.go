@@ -166,3 +166,38 @@ func TestSpawnExitsPromptlyAfterOutput(t *testing.T) {
 		}
 	})
 }
+
+// TestWaitIsTheReliableReadAfterDraining pins the contract the docs now
+// state, after toolnexus measured that the old advice was unsafe.
+//
+// :exit-code returns nil until the child is REAPED, and reaping happens
+// strictly after its stdout reaches EOF (doneCh closes after cmd.Wait()
+// returns). So draining :out and then reading :exit-code returns nil for a
+// process that has already exited — measured at 5 of 5 runs on
+// `sh -c 'echo hi >&2; exit 3'`.
+//
+// cljgo's own comment recommended exactly that unsafe read — "nil-while-
+// running is falsey, so (if (exit-code p) …) reads as 'has it finished'" —
+// and the framing propagated into koine's docstring before anyone measured
+// it. The semantics were never wrong; the documented READ was.
+//
+// This asserts the SAFE contract rather than the race: after draining,
+// :wait yields the real status, and :exit-code agrees once :wait has
+// returned. Asserting "nil at EOF" instead would freeze the race itself
+// and go flaky the moment the reaper won.
+func TestWaitIsTheReliableReadAfterDraining(t *testing.T) {
+	d := newDriver(t)
+	eval(t, d, `(require '[cljg.process :as proc] '[cljg.stream :as st])`)
+
+	withinBudget(t, 60*time.Second, "drain then :wait", func() {
+		got := evalString(t, d, `
+    (let [p (proc/spawn `+helperCmd("exit", "3")+` `+helperEnv+`)]
+      (st/close (:in p))
+      (st/read-all (:out p))
+      (let [w ((:wait p))]
+        (pr-str [w ((:exit-code p)) ((:alive? p))])))`)
+		if got != "[3 3 false]" {
+			t.Errorf("drain then :wait = %s, want [3 3 false]", got)
+		}
+	})
+}

@@ -19,9 +19,22 @@
 ;; them); :wait blocks until the process exits and returns its exit code (a
 ;; non-zero exit is a normal result); :kill force-terminates it; :exit-code is
 ;; the non-blocking counterpart of :wait — the exit status once the child has
-;; finished, nil while it is still running, so (if ((:exit-code p)) …) reads as
-;; "has it finished". It distinguishes "exited with status N" from "still
-;; running" without blocking, which a closed stdout alone cannot. :alive? is a
+;; been REAPED, nil before that. It distinguishes "exited with status N" from
+;; "not yet reaped" without blocking, which a closed stdout alone cannot.
+;;
+;; READ THAT PRECISELY: nil means "no status recorded YET", NOT "still
+;; running". Those differ by a real window. A child's stdout reaching EOF and
+;; the reaper recording its status are separate events, and EOF happens first
+;; — so :exit-code read immediately after draining :out returns nil for a
+;; process that has already exited. Measured on `sh -c 'echo hi >&2; exit 3'`:
+;; nil on 5 runs of 5 immediately at EOF, the correct 3 on all 5 after 250ms.
+;;
+;; So DO NOT write (if ((:exit-code p)) …) to mean "has it finished" — that
+;; is the idiom this docstring used to recommend, and it is wrong at exactly
+;; the moment callers reach for it. After draining the streams, call :wait:
+;; it returns as soon as the reaper has the status (microseconds once the
+;; child is gone) and cannot report nil. Use :exit-code for polling a child
+;; you are NOT draining to EOF. :alive? is a
 ;; NON-BLOCKING liveness check (issue #173) — false once the child has
 ;; exited, whether or not anything ever called :wait or :kill.
 ;;
@@ -58,6 +71,12 @@
   :kill. :alive? never blocks — it answers false once the child has exited,
   whether or not :wait or :kill was ever called, and is safe to call any
   number of times alongside :wait.
+  :exit-code never blocks either, and returns nil until the child has been
+  REAPED — which is NOT the same instant it exits. Draining :out to EOF then
+  reading :exit-code returns nil for an already-exited child (measured: 5 of
+  5 runs). To get the status after draining, call :wait; it returns
+  immediately once the child is gone. Reach for :exit-code when polling a
+  child you are not draining.
   A missing/unrunnable binary throws (it never started)."
   ([command] (spawn command {}))
   ([command opts]
