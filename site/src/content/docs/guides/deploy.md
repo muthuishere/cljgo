@@ -21,7 +21,7 @@ The binary links the **compiled** core (never the interpreter), so it starts in 
 
 ```dockerfile
 # syntax=docker/dockerfile:1
-ARG CLJGO_VERSION=v0.8.4
+ARG CLJGO_VERSION=v0.8.5
 
 FROM golang:1.26 AS build
 ARG CLJGO_VERSION

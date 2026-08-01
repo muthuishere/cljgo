@@ -21,6 +21,51 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.8.5](https://github.com/muthuishere/cljgo/releases/tag/v0.8.5) — 2026-08-01
+
+*Two defects that made a released cljgo unusable, both found by consumers
+while the gate stayed green.*
+
+- **A `go install`ed cljgo refused to build anything.**
+  `go install github.com/muthuishere/cljgo/cmd/cljgo@v0.8.4` produced a binary
+  that failed on every project with *"this is a dev cljgo binary (version
+  0.1.0-dev), so the generated go.mod needs a local runtime tree"*.
+  `IsRelease()` consulted only the version goreleaser stamps via ldflags, which
+  `go install` never sets — so the release-pin path was skipped and a binary
+  whose whole promise is needing no source checkout demanded one.
+  **`templates/web/Dockerfile` installs cljgo exactly that way, so the shipped
+  web template could not build in Docker at any release.** The requested tag was
+  never missing: Go records it in the binary, and `pkg/version` already read
+  that field to print the provenance line — the line was right, the gate was
+  wrong. (ADR 0116)
+- **A JVM `build.clj` broke every `cljgo run` in the project.** cljgo accepted
+  `build.clj` as one of *its own* build-file names. That was harmless while only
+  `cljgo build` read the build file; v0.8.3 put it on the `cljgo run` path, so
+  cljgo began **evaluating another tool's build script**, and its
+  `(:require [clojure.tools.build.api])` is unresolvable here. `build.clj` is
+  the tools.build convention and the only way a dual-host library publishes to
+  Clojars — so this blocked exactly the projects cljgo exists to serve, across
+  v0.8.3 and v0.8.4. cljgo now probes `build.cljgo` then `build.cljg` only.
+  **Breaking** if you named a cljgo build file `build.clj`: rename it.
+  (ADR 0117)
+- **`:exit-code` on `cljg.process/spawn`** — the non-blocking counterpart of
+  `:wait`, and the half of the #173 report that shipping only `:alive?` left
+  open. It separates *"exited with status N"* from *"still running"* without
+  blocking, which a closed stdout alone cannot express. `nil` while running, so
+  `(if ((:exit-code p)) …)` reads as "has it finished".
+- **`G5025`** — a build file with no `(defn build [b] …)` reported
+  `compiler error at <build-driver>:1:38`, naming a file cljgo synthesizes and
+  giving a column *into that nonexistent file*, while never naming the build
+  file the user wrote. It now names the file, the missing form, and a fix.
+- **Subprocess output is now asserted complete and prompt.** Two truncation
+  bugs shipped this cycle because nothing checked either property. New tests
+  drive output far past any pipe buffer through `cljg.io/exec` and
+  `cljg.process/spawn` and assert exact byte counts. Measured limitation,
+  recorded in the test file: reverting the fix, they **pass** on fast hardware —
+  only with a slowed reader (what a slower machine amounts to) do they fail, at
+  `167936` bytes against `208894` expected. A green local gate is necessary and
+  never sufficient here.
+
 ## [v0.8.4](https://github.com/muthuishere/cljgo/releases/tag/v0.8.4) — 2026-07-31
 
 *Eight consumer-reported defects, and a `clojure.core` that is now measured
