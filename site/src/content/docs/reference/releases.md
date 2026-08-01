@@ -21,6 +21,40 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.8.8](https://github.com/muthuishere/cljgo/releases/tag/v0.8.8) — 2026-08-01
+
+*One fix, and it is the kind you cannot see.*
+
+- **Maven Central is now searched before Clojars, matching tools.deps.** The
+  default list was Clojars-then-Central, with a comment claiming that *was*
+  the tools.deps default. It is not: tools.deps returns "central, then
+  clojars, then other repos" unconditionally
+  (`clojure/tools/deps/util/maven.clj:161-165`).
+
+  cljgo fetches from the first repository that answers, so a coordinate
+  published to **both** resolved to a **different artifact** on cljgo than on
+  the JVM — with no conflict, no diagnostic, and nothing in the project files
+  to hint at it. For a dual-host `.cljc` library this is the worst possible
+  failure: the promise is identical behaviour on both hosts, and this broke it
+  *below the level anyone would think to look*. You would be debugging a
+  behavioural difference in your own code while the cause was which jar got
+  fetched.
+
+  `(mvn-repo …)` still prepends, so a project can override. The order is now
+  pinned by a test citing the tools.deps source, so it cannot drift back.
+  (#187)
+- **`build.cljgo` beats `deps.edn` from anywhere in the search.** ADR 0119's
+  precedence was applied per directory, so `cljgo run /elsewhere/foo.cljc`
+  could take `/elsewhere`'s `deps.edn` and return before reaching a
+  `build.cljgo` in the working directory. Where a cljgo build file exists,
+  `deps.edn` is now not consulted at all.
+
+Found by spike `s79` while surveying what `deps.edn` `:deps` translation
+would cost — reading `:deps` does not cause it, it only exposes it. The
+consequence is fetch-time and needs the network to demonstrate, so this
+shipped as a source-to-source argument plus a pinned invariant, not an
+observed mis-resolution.
+
 ## [v0.8.7](https://github.com/muthuishere/cljgo/releases/tag/v0.8.7) — 2026-08-01
 
 *The REPL could not see your project. Both halves of that, plus the design
