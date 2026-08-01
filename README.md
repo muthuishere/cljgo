@@ -8,6 +8,7 @@
 [![core.async](https://img.shields.io/badge/core.async-1.6.681-5881d8?logo=clojure&logoColor=white)](https://github.com/clojure/core.async)
 [![clojure-test-suite](https://img.shields.io/badge/clojure--test--suite-238%2F242%20(98.3%25)-brightgreen)](#status)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Discord](https://img.shields.io/badge/AgentNexus-join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/V9C2kvHC8D)
 
 **[muthuishere.github.io/cljgo](https://muthuishere.github.io/cljgo/)** — docs, examples, and the live status board.
 **[Releases & changelog](https://muthuishere.github.io/cljgo/reference/releases/)** — what shipped in every version, newest first.
@@ -287,6 +288,11 @@ cljgo stands on work by people who solved the hard parts first.
 - **[gloat](https://github.com/gloathub/gloat)** — Ingy döt Net's automation
   tool for Glojure/let-go AOT builds. Used directly (not vendored) to build
   the Glojure and let-go binaries in `benchmark/results-aot.md`.
+
+## Community
+
+Questions, ideas, or built something with this? Join **[AgentNexus](https://discord.gg/V9C2kvHC8D)** — a Discord
+for people building with AI agents and open tools. This project lives in **#cljgo**.
 
 ## License
 
