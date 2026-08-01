@@ -36,6 +36,14 @@ func runNREPL(args []string) int {
 		return 2
 	}
 
+	// Same project resolution as `cljgo run` and `cljgo repl` (#185). An
+	// nREPL that cannot require the project's own namespaces is worse than a
+	// broken REPL, because this is the EDITOR path: every editor connected to
+	// it saw "could not locate namespace" for the project it was editing.
+	if err := resolveRunDeps(""); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+	}
+
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", *port))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)

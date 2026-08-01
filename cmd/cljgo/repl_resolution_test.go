@@ -18,10 +18,13 @@
 package main
 
 import (
+	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 )
 
 // replEval pipes src into `cljgo repl` in dir and returns combined output.
@@ -93,4 +96,87 @@ func TestREPLAndRunAgreeOnResolution(t *testing.T) {
 		t.Fatalf("cljgo run resolved demo.core but cljgo repl did not:\nrun:\n%s\nrepl:\n%s",
 			runOut, replOut)
 	}
+}
+
+// TestNREPLResolvesTheProjectsOwnNamespace — the SECOND instance of #185,
+// found by auditing the other entry points rather than by a report.
+//
+// `cljgo nrepl` had the identical gap: it never called resolveRunDeps, so an
+// editor connected to it saw "could not locate namespace" for the very
+// project it was editing. This one matters more than the terminal REPL,
+// because nREPL IS the editor path — the failure is invisible in a shell and
+// lands directly on anyone using an IDE.
+//
+// That two of eight evaluator bootstrap sites were wrong the same way is the
+// finding, not the fix: resolution lives at each call site, so every new
+// entry point can forget it independently.
+func TestNREPLResolvesTheProjectsOwnNamespace(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping binary build in -short mode")
+	}
+	bin := buildCljgo(t)
+	proj := t.TempDir()
+	writeCljcProject(t, proj, map[string]string{
+		"src/demo/core.cljc": "(ns demo.core)\n(def marker :resolved)\n",
+		"build.cljgo":        "(defn build [b])\n",
+	})
+
+	// Port 0 → the server picks one and writes it to .nrepl-port in its cwd.
+	cmd := exec.Command(bin, "nrepl", "--port", "0")
+	cmd.Dir = proj
+	cmd.Env = append(os.Environ(), "CLJGO_SRC="+repoRoot(t))
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("starting nrepl: %v", err)
+	}
+	t.Cleanup(func() { _ = cmd.Process.Kill(); _, _ = cmd.Process.Wait() })
+
+	port := waitForPortFile(t, proj)
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%s", port), 5*time.Second)
+	if err != nil {
+		t.Fatalf("dialing nrepl: %v", err)
+	}
+	defer conn.Close()
+
+	code := "(do (require 'demo.core) demo.core/marker)"
+	msg := fmt.Sprintf("d2:op4:eval4:code%d:%s2:id1:1e", len(code), code)
+	if _, err := conn.Write([]byte(msg)); err != nil {
+		t.Fatalf("writing eval: %v", err)
+	}
+	// Read until the "done" status: nREPL replies in several bencode frames
+	// and the value can arrive after the first. A single Read caught only
+	// `d2:id1:1` and reported a false failure.
+	_ = conn.SetReadDeadline(time.Now().Add(15 * time.Second))
+	var sb strings.Builder
+	buf := make([]byte, 65536)
+	for {
+		n, err := conn.Read(buf)
+		if n > 0 {
+			sb.Write(buf[:n])
+		}
+		if err != nil || strings.Contains(sb.String(), "4:done") {
+			break
+		}
+	}
+	got := sb.String()
+
+	if strings.Contains(got, "could not locate namespace") {
+		t.Fatalf("nrepl could not resolve the project's own namespace:\n%s", got)
+	}
+	if !strings.Contains(got, ":resolved") {
+		t.Fatalf("nrepl did not evaluate demo.core/marker:\n%s", got)
+	}
+}
+
+// waitForPortFile polls for the .nrepl-port file the server writes on boot.
+func waitForPortFile(t *testing.T, dir string) string {
+	t.Helper()
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		if b, err := os.ReadFile(dir + "/.nrepl-port"); err == nil && len(b) > 0 {
+			return strings.TrimSpace(string(b))
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Fatal("nrepl never wrote .nrepl-port")
+	return ""
 }
