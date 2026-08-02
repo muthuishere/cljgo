@@ -51,9 +51,21 @@ func applyUnknownOpt(d *Diagnostic) {
 	}
 }
 
-// nearestOpt returns the known key closest to bad within edit distance 2, or
-// "" when nothing is that close. Ties break on the lexicographically smaller
-// name so the suggestion is deterministic.
+// nearestOpt returns the known key closest to bad, or "" when nothing is
+// close enough. Ties break on the lexicographically smaller name so the
+// suggestion is deterministic.
+//
+// Two rules, because edit distance alone misses the case this diagnostic
+// exists for. `timeout` -> `timeout-ms` is distance 3 and would score no
+// suggestion at all — yet it is the exact mistake that motivated ADR 0121
+// (the koine port used the majority spelling of a unit-suffixed key). A
+// prefix relationship is therefore accepted regardless of distance: a
+// unit or qualifier suffix is a deliberate, guessable variation, not a
+// typo, and `timeout`/`timeout-ms` is the whole family — `ttl`/`ttl-ms`,
+// `deadline`/`deadline-ms`.
+//
+// Distance still wins when both apply, so a true typo is not out-ranked by
+// a coincidental prefix.
 func nearestOpt(bad string, known []string) string {
 	const maxDist = 2
 	best, bestDist := "", maxDist+1
@@ -64,7 +76,15 @@ func nearestOpt(bad string, known []string) string {
 			best, bestDist = k, dp
 		}
 	}
-	return best
+	if best != "" {
+		return best
+	}
+	for _, k := range sorted {
+		if strings.HasPrefix(k, bad) || strings.HasPrefix(bad, k) {
+			return k
+		}
+	}
+	return ""
 }
 
 // optEditDistance is the Levenshtein distance between a and b, abandoned
