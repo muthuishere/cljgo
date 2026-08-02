@@ -36,33 +36,27 @@ arguing with them. But koine's surface is not concurrent the way this runtime wi
 
 **What would help most, in order:**
 
-1. **Test whether #197 is load-sensitive.** This is the specific thing I would check first, and
-   the reason is our own data. toolnexus has carried a cljgo-only intermittent for weeks:
-
-   - named test: `concurrent-suspensions-halt-on-the-first-in-call-order`
-   - fails with `ExceptionInfo`; never on either JVM mode
-   - separately, the `cljgo-run` leg has failed ~1 in 8 with `"error":1` and a **short assertion
-     count** (704 and 700 of 708) — one test aborting partway, so it is timing-dependent rather
-     than a fixed wrong answer
-   - hunted directly it would not reproduce: **0 in 10, 0 in 12, 0 in 6-concurrent**
-   - it appears **under load**, when the whole matrix is running
-
-   If #197 shares that shape, then "1 in 4" is a load artifact rather than a fixed rate, and a
-   quiet-machine sample understates it — which would also mean koine's 18 clean runs are weaker
-   evidence than `0.75^18 ≈ 0.6%` suggests. Worth knowing before anyone treats that number as a
-   bound.
-
-2. **A root cause, or a determination that it cannot reach a pure-Clojure library** that uses
+1. **A root cause, or a determination that it cannot reach a pure-Clojure library** that uses
    only `atom`, `promise`/`deref`, and goroutines through `koine.process/run-async!`. Either
    answer unblocks me. "It only affects X" is as useful as a fix, because I can then attribute
    my own flakes honestly.
 
-3. If it stays open, **a way to tell it apart from a caller's bug** — a marker, a diagnostic
+2. If it stays open, **a way to tell it apart from a caller's bug** — a marker, a diagnostic
    code, anything that says "this is #197" rather than leaving me to guess.
 
-**Differences from our flake, stated so nobody over-reads the similarity:** ours is *not*
-AOT-only (both captured failures came from `cljgo-run`, the interpreted leg), and ours involves
-concurrency, which #197 may not. This is "possibly the same family", not "the same bug".
+**WITHDRAWN (2026-08-02, same day): the load-sensitivity hypothesis.** The first version of
+this file asked you to test whether #197 is load-sensitive, on the strength of toolnexus's own
+"cljgo-only intermittent under load". That flake is now ROOT-CAUSED and it was ours: a test
+fixture pinned at a fixed relative path (`test-fixtures/skills`), so two suite runs in one cwd
+trampled each other — one run's `delete-tree!` mid-rebuild while the other read, which is also
+exactly what produced our short assertion counts (a run dying on `cljg.io/delete!: directory is
+not empty` partway through). It reproduced with a JVM run in the mix, so it was never
+cljgo-only; your host just lost the race more often because Go's delete errors where the JVM
+silently no-ops. My datapoint therefore says NOTHING about #197, koine's 18 clean quiet-machine
+runs stand exactly as stated, and the ask above shrinks to root-cause-or-bound. One transferable
+lesson survives: a fixed writable path in a test reports itself as a runtime flake and will not
+reproduce in isolation, because isolation removes the collision — if your #197 reproduction
+environment ever runs suites concurrently in one directory, check that first.
 
 ---
 
