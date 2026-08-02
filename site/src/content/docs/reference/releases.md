@@ -21,6 +21,63 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.9.0](https://github.com/muthuishere/cljgo/releases/tag/v0.9.0) — 2026-08-02
+
+*Three ways to fail silently, closed. And three of our own published
+performance claims withdrawn.*
+
+**Breaking:** a `cljg.*` options map is now closed. An unrecognised key raises
+`G5027` instead of being ignored.
+
+- **A descending `range` was a one-element seq to `first`/`rest`.**
+  `(range 6 1 -1)` returned `(6)` while `count` said `5` and `map` gave all
+  five — one value, three answers, and nothing threw. `LongRange.Next`
+  terminated on `start+step >= end`, which is correct only for a positive
+  step. `count` and the chunked path walk by `count`, computed correctly for
+  both signs, so **every path a test normally checks looked right** while
+  `first`/`rest` was wrong. A backwards scan such as
+  `(some f (range (dec n) 0 -1))` silently returned `nil`. Found by the
+  toolnexus Clojure port, whose JVM legs passed and cljgo legs failed.
+  ([#195](https://github.com/muthuishere/cljgo/issues/195))
+- **A misspelled option was ignored.** `cljg.net.http` read `:timeout` while
+  `cljg.socket`, `cljg.io` and `cljg.process` read `:timeout-ms` — and so does
+  net.http's own Go shim. The unknown key fell through to the 30 s default
+  with no error, so the request still succeeded and only the caller's timeout
+  budget vanished; **every test passes on fast hardware**. Found by toolnexus
+  tracing a dead timeout in koine, whose suite was green throughout.
+  `:timeout-ms` is now the name and `:timeout` remains accepted — removing it
+  would not fail loudly, it would silently restore the default.
+  ([ADR 0120](https://github.com/muthuishere/cljgo/blob/main/docs/adr/0120-timeout-ms-is-the-name.md),
+  [#192](https://github.com/muthuishere/cljgo/issues/192))
+- **So unknown option keys are now refused across `cljg.*`** — new diagnostic
+  `G5027` names the function, the offending key, every key it does know, and a
+  did-you-mean. This is the **breaking** change in this release.
+  `cljg.os/job` and `cljg.os/service` stay open: they merge the caller's map,
+  so extra keys are the documented idiom there.
+  ([ADR 0121](https://github.com/muthuishere/cljgo/blob/main/docs/adr/0121-a-cljg-opts-map-is-closed.md))
+
+**Measured, and three claims withdrawn.** The whole benchmark suite was
+rebuilt and re-run on 2026-08-02, competitors included:
+
+- *"Glojure wins 6 of 8 AOT rows"* — **retired**. With σ at 0.3–1.0 ms four
+  rows are ties; outside the noise it is two clear wins each. Glojure's
+  `reduce` win is real and large (3.67×).
+- *"cljgo starts slower than Glojure"* — a three-way tie. Recorded as an
+  absence of difference, not converted into a win.
+- *"a cljgo AOT binary links zero interpreter"* — **imprecise**. It links no
+  evaluator, analyzer, AST or REPL (0 symbols each, CI-enforced) but does link
+  `pkg/reader`. The honest claim is **evaluator-free**, not interpreter-free.
+
+Regressions in this release, named: interpreter boot 31.7 → 38.8 ms, compiled
+binary 6.7 → 7.1 MB, interpreted startup 38.5 → 47.0 ms. On the web suite bri
+is tenth of eleven on throughput; the "top tier" claim has been retracted.
+Full tables and exclusions: [Benchmarks](/cljgo/reference/benchmarks/).
+
+**Still unfixed:** [#180](https://github.com/muthuishere/cljgo/issues/180) —
+`cljgo version` reports the wrong commit when built inside a git worktree. Go's
+`buildvcs` resolves the main repository's HEAD and `BuildInfo` records no build
+directory, so this is not fixable at runtime.
+
 ## [v0.8.9](https://github.com/muthuishere/cljgo/releases/tag/v0.8.9) — 2026-08-01
 
 *A dev build claimed to be a release — and quietly built against the
