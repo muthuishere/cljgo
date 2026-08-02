@@ -76,6 +76,25 @@ concurrency, which #197 may not. This is "possibly the same family", not "the sa
   correct — so *any* seq type with two termination paths could carry the same split without ever
   throwing.
 
+  **A layering note worth having, because it caught me out.** At the **Go** level all three
+  methods were broken, and the test in #194 measured `ReduceInit` returning `init` over a
+  non-empty range. At the **Clojure** level, though, the seeded `(reduce f init coll)` was
+  *correct* on v0.8.9 and it is the 2-arity `(reduce f coll)` that returned `6` — the first
+  element. `clojure.core` does not route the 3-arity through that method for this type, so a
+  broken Go method was unreachable from the surface that matters to users. koine caught me
+  describing the Clojure behaviour wrongly on the strength of the Go finding. If you sweep other
+  seq types, worth measuring **both layers**: a broken method is not automatically a reachable
+  bug, and a correct-looking method is not automatically a safe surface.
+
+  Measured on a v0.8.9 release binary, `dr` = `(range 6 1 -1)`:
+
+  | form | v0.8.9 | JVM |
+  |---|---|---|
+  | `(count dr)` | 5 ✓ | 5 |
+  | `(reduce + 0 dr)` | 20 ✓ | 20 |
+  | `(reduce + dr)` | **6** ✗ | 20 |
+  | `(vec dr)` | **[6]** ✗ | [6 5 4 3 2] |
+
 ---
 
 ## 3. What I verified is already fine (so you do not build it)
