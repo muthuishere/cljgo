@@ -39,6 +39,19 @@ performance claims withdrawn.*
   `(some f (range (dec n) 0 -1))` silently returned `nil`. Found by the
   toolnexus Clojure port, whose JVM legs passed and cljgo legs failed.
   ([#195](https://github.com/muthuishere/cljgo/issues/195))
+- **…and `Reduce`/`ReduceInit` carried the same bug, one layer deeper.** The
+  first fix corrected only the seq path. `LongRange.Reduce` and `ReduceInit`
+  had the identical ascending-only loop test, so over a descending range
+  `Reduce` returned the first element alone and `ReduceInit` handed back its
+  init value untouched — and `CreateLazilyPersistentVector` matches
+  `IReduceInit` *first*, making it a reachable path that returned an **empty
+  vector for a non-empty range**. Seventeen Clojure-level forms (`reduce`,
+  `transduce`, `into` with an xf, `run!`, `doseq`, `filter`, `sort`, …) stayed
+  byte-identical to the JVM with only the seq fix, because Clojure-level
+  `reduce` does not route through `IReduceInit` for a `LongRange` — so no
+  conformance test could have found it and a Go-level test was the only thing
+  that could. Also found by toolnexus, who checked all three methods after we
+  had fixed one. ([#194](https://github.com/muthuishere/cljgo/pull/194))
 - **A misspelled option was ignored.** `cljg.net.http` read `:timeout` while
   `cljg.socket`, `cljg.io` and `cljg.process` read `:timeout-ms` — and so does
   net.http's own Go shim. The unknown key fell through to the 30 s default
@@ -73,10 +86,29 @@ binary 6.7 → 7.1 MB, interpreted startup 38.5 → 47.0 ms. On the web suite br
 is tenth of eleven on throughput; the "top tier" claim has been retracted.
 Full tables and exclusions: [Benchmarks](/cljgo/reference/benchmarks/).
 
+**Who verified what.** Every defect above was reported by a downstream port,
+and it is worth being exact about which fixes those reporters have confirmed:
+
+- **Confirmed by the reporter:** the descending-`range` `Reduce`/`ReduceInit`
+  half — toolnexus found it *after* our first fix and supplied the patch and
+  the test.
+- **Verified by us only:** the descending-`range` seq fix, the `:timeout-ms`
+  rename, `G5027`, and the v0.8.7 `deps.edn` `:paths` REPL fix. No consumer has
+  re-run their suite against a build carrying these. The `deps.edn` fix in
+  particular exists *because* of koine's project shape and has never been
+  confirmed at koine's project root.
+
+That distinction is not modesty — a fix verified only by its author is exactly
+how the timeout bug survived a green suite on both hosts.
+
 **Still unfixed:** [#180](https://github.com/muthuishere/cljgo/issues/180) —
 `cljgo version` reports the wrong commit when built inside a git worktree. Go's
 `buildvcs` resolves the main repository's HEAD and `BuildInfo` records no build
 directory, so this is not fixable at runtime.
+
+**Known flaky:** `TestChanOpBudget` has been seen at 1.51× against a 1.50×
+ceiling under parallel load, passing in isolation — the same load-sensitivity
+as the known macOS perf-budget flake, not a regression in this release.
 
 ## [v0.8.9](https://github.com/muthuishere/cljgo/releases/tag/v0.8.9) — 2026-08-01
 
