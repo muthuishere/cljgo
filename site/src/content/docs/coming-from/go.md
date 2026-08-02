@@ -245,7 +245,7 @@ Output:
 Hello from a static binary!
 ```
 
-That binary was 6.7 MB on this machine, links no interpreter, and runs
+That binary was 7.1 MB on this machine, links no evaluator, and runs
 anywhere the Go toolchain can target — `cljgo dist` cross-compiles for
 every platform in one go.
 

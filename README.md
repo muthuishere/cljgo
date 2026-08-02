@@ -31,7 +31,7 @@ binary, with byte-identical output on both paths.
 4. **High performance in both modes** — a feature, gated in CI like tests,
    not asserted.
 5. **Single-file deployment** — `cljgo build` produces one static binary
-   (6.7 MB for hello, ~5 ms startup), no JVM, no runtime install.
+   (7.1 MB for hello, ~5 ms startup), no JVM, no runtime install.
 
 ## Install
 
@@ -194,34 +194,38 @@ linked only when required). It runs both **interpreted** (`cljgo dev`, live
 re-`def`, nREPL) and **AOT-compiled** to a single static `CGO_ENABLED=0` binary,
 byte-identical (ADR 0071) — so the dev loop is a REPL and the deploy artifact is
 a scratch-image binary. `cljgo new --template web` ships a `Dockerfile`;
-`docker build` gives you a ~15 MB image.
+`docker build` gives you a ~20 MB image.
 
-Benchmarked against the field (Docker, [`oha`](https://github.com/hatoo/oha)
-15 s @ 50 conn, one container at a time — **reproduce it yourself** with
-[`spikes/s45-bri-aot-docker/bench/run.sh`](spikes/s45-bri-aot-docker); don't
-take our word for it):
+Benchmarked against the field, whole corpus re-measured **2026-08-02** (Docker,
+[`oha`](https://github.com/hatoo/oha) 20 s @ 50 conn, one benchmark container
+at a time — **reproduce it yourself** with
+[`bash benchmark/web/run.sh`](benchmark/web); don't take our word for it):
 
-| runtime | image | cold-start | req/s | p99 | peak RSS |
+| runtime | image | cold-start | `/api` req/s | p99 | peak RSS |
 |---|--:|--:|--:|--:|--:|
-| rust-axum | 140 MB | 28 ms | ~89k | 1.0 ms | 8 MB |
-| deno | 277 MB | 146 ms | ~89k | 0.9 ms | 21 MB |
-| clojure http-kit (JVM) | 847 MB | 1277 ms | ~82k | 1.0 ms | 353 MB |
-| **bri (cljgo, compiled)** | **15.5 MB** | **~30 ms** | **~78k** | **1.4 ms** | **~16 MB** |
-| bun | 333 MB | 28 ms | ~75k | 1.5 ms | 50 MB |
-| clojure ring+jetty (JVM) | 858 MB | 1659 ms | ~67k | 1.5 ms | 491 MB |
-| .NET (ASP.NET) | 359 MB | 172 ms | ~67k | 1.9 ms | 47 MB |
-| go net/http | 7.6 MB | 30 ms | ~66k | 2.6 ms | 16 MB |
-| node | 228 MB | 147 ms | ~62k | 1.8 ms | 134 MB |
-| spring-boot (JVM) | 512 MB | 858 ms | ~55k | 1.7 ms | 574 MB |
-| fastapi (python) | 220 MB | 381 ms | ~9k | 10 ms | 38 MB |
+| rust-axum | 140 MB | 27 ms | 79,878 | 0.92 ms | 8.6 MB |
+| bun | 333 MB | 138 ms | 76,165 | 1.63 ms | 16.6 MB |
+| clojure http-kit (JVM) | 847 MB | 1364 ms | 75,941 | 0.99 ms | 321.7 MB |
+| deno | 277 MB | 258 ms | 75,230 | 1.39 ms | 41.7 MB |
+| spring-boot (JVM) | 512 MB | 958 ms | 69,722 | 1.28 ms | 660.5 MB |
+| go net/http | 7.6 MB | 26 ms | 66,425 | 2.33 ms | 14.7 MB |
+| .NET (ASP.NET) | 359 MB | 169 ms | 66,015 | 1.62 ms | 46.7 MB |
+| node | 228 MB | 59 ms | 61,782 | 1.57 ms | 71.1 MB |
+| clojure ring+jetty (JVM) | 858 MB | 1656 ms | 56,757 | 1.63 ms | 440.2 MB |
+| **bri (cljgo, compiled)** | **20.1 MB** | **29 ms** | **38,206** | **4.56 ms** | **34.7 MB** |
+| fastapi (python) | 220 MB | 480 ms | 9,616 | 8.34 ms | 41.0 MB |
 
-Throughput sits in the top tier (Rust/Deno/Bun/http-kit) and ahead of Go
-net/http, Node, .NET, Spring Boot, and FastAPI — while carrying a native-Go
-footprint. Against **JVM Clojure web** specifically: ~55× smaller image,
-~40–55× faster cold-start, ~22–30× less memory, at comparable-or-better
-throughput. Single-machine arm64/OrbStack, so throughput carries run-to-run
-noise (the image/RAM/startup figures are stable) — which is exactly why the
-runner is committed for you to re-run on your own hardware.
+Read that as it is. **bri wins on footprint and loses on throughput.** Against
+JVM Clojure web: ~42× smaller image, ~47× faster cold-start, ~9× less memory —
+and ~2× *fewer* requests per second. bri is tenth of eleven on throughput here,
+ahead of only FastAPI. An earlier version of this README claimed "top tier
+(Rust/Deno/Bun/http-kit)" and "comparable-or-better throughput"; that rested on
+a 2026-07-24 measurement that has never reproduced, and it is retracted. Note
+also that bri's row runs its zero-config default, which applies seven
+middleware layers (logging, metrics, auto-ban, …) that no other entrant runs at
+all — real work, honestly counted against it. Single-machine arm64/OrbStack, so
+throughput carries run-to-run noise, which is exactly why the runner is
+committed for you to re-run on your own hardware.
 
 ## Development
 

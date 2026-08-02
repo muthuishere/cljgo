@@ -1,6 +1,6 @@
 ---
 title: Compile & ship binaries
-description: cljgo build AOT-emits plain Go source and produces one static native binary — 6.7 MB, ~5 ms startup for hello — with cross-compilation via the standard Go toolchain.
+description: cljgo build AOT-emits plain Go source and produces one static native binary — 7.1 MB, ~5 ms startup for hello — with cross-compilation via the standard Go toolchain.
 ---
 
 `cljgo build` is the ClojureScript model with Go as the JavaScript: the
@@ -15,9 +15,9 @@ $ cljgo build hello.clj      # -> ./hello, a static native binary
 $ ./hello                    # byte-identical output
 ```
 
-Measured on the reference machine (Apple M5 Pro, go1.26.3): a hello
-binary is **6.7 MB stripped**, starts in **~5 ms**, peaks at **11.5 MB
-RSS**. Numbers, methodology, and head-to-head comparisons are on the
+Measured 2026-08-02 on the reference machine (Apple M5 Pro, go1.26.3): a
+hello binary is **7.1 MB stripped**, starts in **~5 ms**, peaks at
+**12.4 MB RSS**. Numbers, methodology, and head-to-head comparisons are on the
 [benchmarks page](/cljgo/reference/benchmarks/).
 
 `cljgo build` is the one command that needs the Go toolchain on `PATH`

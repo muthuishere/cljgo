@@ -31,7 +31,7 @@ judged against them, Clojure-first.
 4. **High performance in both modes.** A feature, gated in CI like tests, not
    asserted. A perf regression is treated like a conformance failure.
 5. **Single-file deployment.** `cljgo build` produces one static binary
-   (6.7 MB for hello, ~5 ms startup) — no JVM, no runtime install. cgo
+   (7.1 MB for hello, ~5 ms startup) — no JVM, no runtime install. cgo
    projects are supported, not tolerated: cgo-based Go modules (sqlite
    drivers, sensors, GUI/audio) import like anything else.
 

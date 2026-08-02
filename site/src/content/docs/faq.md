@@ -28,10 +28,12 @@ binaries keep the VM runtime linked. **The rest is product surface** —
 conformance frozen against JVM Clojure 1.12.5 through both REPL and binary,
 the bri batteries, the toolchain — positioning, not architecture.
 
-And measured head-to-head, AOT vs AOT vs AOT on the same programs, **Glojure
-wins 6 of 8 rows** (cljgo takes the tree-recursion rows and has the smaller
-binaries). The table is published as-is on the
-[benchmarks page](/cljgo/reference/benchmarks/).
+And measured head-to-head, AOT vs AOT vs AOT on the same programs
+(2026-08-02), it is **two clear wins each and four ties**: cljgo takes `tak`
+and `fib` and ships far smaller binaries; Glojure takes `transducers` and, by
+3.7×, `reduce`; the other four rows sit inside the run-to-run noise. The
+table — including the `reduce` loss and how it was checked — is published
+as-is on the [benchmarks page](/cljgo/reference/benchmarks/).
 
 </details>
 
@@ -60,7 +62,7 @@ independent compiler and product on top.
 
 Web APIs and CLIs, shipped as one small static binary — the kind of thing you
 run on a cheap VPS or in a minimal container without a JVM, a runtime install,
-or a fat base image. Hello-world is a 6.7 MB static binary with ~5 ms startup;
+or a fat base image. Hello-world is a 7.1 MB static binary with ~5 ms startup;
 `cljgo dist` cross-compiles it for every OS/arch in one command.
 
 The batteries follow the Bun model (included and curated, not assembled from
@@ -244,12 +246,14 @@ import like any other module. Direct C FFI without cgo (purego,
 <details class="faq" open>
 <summary>How big and how fast are the binaries?</summary>
 
-Hello-world compiles to a 6.7 MB static binary that starts in ~5 ms — the
-smallest binary of the three Clojure-on-Go AOT compilers (Glojure's start is
-~1 ms quicker; all three are single-digit ms), no JVM, no runtime install.
-Emitted code currently
-runs within ~5× of hand-written Go on the worst measured hot loop, and that
-gap is CI-gated so it only shrinks. Full tables on the
+Hello-world compiles to a 7.1 MB static binary that starts in ~5 ms — the
+smallest binary of the three Clojure-on-Go AOT compilers (Glojure 19.0 MB,
+let-go 12.8 MB, all rebuilt and measured 2026-08-02), no JVM, no runtime
+install. Startup is a three-way tie in single-digit milliseconds; the
+2026-07-31 claim that Glojure started ~1 ms quicker did not reproduce against
+freshly built binaries and has been withdrawn. Emitted code currently runs
+within ~3.8× of hand-written Go on the worst measured hot loop, and that gap
+is CI-gated so it only shrinks. Full tables on the
 [benchmarks page](/cljgo/reference/benchmarks/).
 
 </details>

@@ -3,8 +3,9 @@
 A bri app AOT-compiles to a single static `CGO_ENABLED=0` binary,
 byte-identical to the interpreter path (ADR 0071). The dev loop is a REPL
 (`cljgo dev`); the artifact is one file with no runtime to distribute
-(~15 MB image, ~30 ms cold-start, ~16 MB RSS — measured, see
-`docs/performance.md`).
+(~20 MB image, ~30 ms cold-start, ~35 MB RSS under load — measured
+2026-08-02, see the
+[benchmarks page](https://muthuishere.github.io/cljgo/reference/benchmarks/)).
 
 Full guide on the site: https://muthuishere.github.io/cljgo/guides/deploy/
 
@@ -71,4 +72,4 @@ boot (the delay pattern) or one-shot before rollout. The API stack serves
 ## See also
 
 - `docs/guides/bri-db.md` · `docs/guides/bri-config.md`
-- `docs/performance.md` — the measured web-framework benchmark table
+- the [benchmarks page](https://muthuishere.github.io/cljgo/reference/benchmarks/) — the measured web-framework benchmark table
