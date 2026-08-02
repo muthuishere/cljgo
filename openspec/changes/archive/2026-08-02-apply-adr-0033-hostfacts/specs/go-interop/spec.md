@@ -1,4 +1,9 @@
-## MODIFIED Requirements
+> Reclassified MODIFIED → ADDED before archiving: the `go-interop` capability
+> spec was created later (by `apply-adr-0053-host-parity`) and never carried a
+> host-fact-resolution requirement, so there is nothing to modify. The
+> requirement below is new to the capability; its content is unchanged.
+
+## ADDED Requirements
 
 ### Requirement: Host fact resolution needs no source checkout
 The system SHALL resolve Go-interop host type facts (design/05 §2) against

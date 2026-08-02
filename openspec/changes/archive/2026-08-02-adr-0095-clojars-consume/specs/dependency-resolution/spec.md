@@ -10,7 +10,11 @@ the existing ADR 0052 load path (slot 3) as an ordinary source root, so
 `pkg/emit` is unchanged and the REPL and AOT legs resolve identically. Declaring
 `:mvn/version` together with `:git` or `:path` MUST raise `G5015`.
 `(mvn-repo b url)` MUST prepend to the default repository list, which MUST be
-Clojars then Maven Central.
+Maven Central then Clojars — the order `tools.deps` itself returns
+(`pkg/deps/mvncoord.go` `DefaultMvnRepos`). (This clause originally read
+"Clojars then Maven Central"; the shipped order is the tools.deps one, already
+frozen as its own requirement in this capability, and the delta is corrected
+here rather than merged as a contradiction.)
 
 #### Scenario: a pure library resolves and its namespace is requirable
 

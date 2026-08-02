@@ -1,9 +1,14 @@
+> Namespace reconciled before archiving: ADR 0074 shipped as `bri.otel`; the
+> namespace is now `bri.core.telemetry` (`core/bri/otel.cljg`, `pkg/bri/bri.go`
+> Specs row, shims in `pkg/bri/otel`, twin `pkg/briaot/briotel`). The
+> requirements below name the namespace that exists today.
+
 ## ADDED Requirements
 
-### Requirement: bri.otel is an opt-in tracing namespace, both modes identical
+### Requirement: bri.core.telemetry is an opt-in tracing namespace, both modes identical
 
-`bri.otel` SHALL be a bri namespace loaded through the ADR 0071 lib-provider
-mechanism, requireable as `(require '[bri.otel])` and behaving identically
+`bri.core.telemetry` SHALL be a bri namespace loaded through the ADR 0071 lib-provider
+mechanism, requireable as `(require '[bri.core.telemetry])` and behaving identically
 interpreted (`cljgo dev`) and AOT-compiled to a `CGO_ENABLED=0` static binary.
 It SHALL NOT be part of `bri.http/api-defaults` and SHALL never be applied
 unless the application explicitly adds it. Its Go half SHALL be pure Go so a
@@ -17,13 +22,13 @@ tracing app still compiles to a static binary.
 
 #### Scenario: a tracing app AOT-compiles static
 
-- **WHEN** a bri app that requires `bri.otel` is built with `CGO_ENABLED=0`
+- **WHEN** a bri app that requires `bri.core.telemetry` is built with `CGO_ENABLED=0`
 - **THEN** it produces a single static binary that opens/ends spans at runtime
 
 ### Requirement: opt-in means zero cost when unused
 
 The OpenTelemetry SDK SHALL live in an isolated Go package that no
-always-linked bri package imports. A bri binary that does not require `bri.otel`
+always-linked bri package imports. A bri binary that does not require `bri.core.telemetry`
 SHALL contain ZERO OpenTelemetry packages in its dependency closure and zero
 OpenTelemetry symbols/strings; a binary that requires it SHALL link the SDK. The
 emitter SHALL blank-import the opt-in sub-package into `main` only when the app
@@ -31,14 +36,14 @@ required the namespace during discovery.
 
 #### Scenario: a non-tracing app carries no SDK
 
-- **WHEN** a bri.http app (no `bri.otel`) is AOT-compiled
+- **WHEN** a bri.http app (no `bri.core.telemetry`) is AOT-compiled
 - **THEN** `pkg/briaot`, `pkg/bri`, and its always-linked sub-packages link no
   `go.opentelemetry.io` package, and the binary contains no OpenTelemetry
   strings
 
 #### Scenario: a tracing app links the SDK
 
-- **WHEN** a bri app requires `bri.otel` and is AOT-compiled
+- **WHEN** a bri app requires `bri.core.telemetry` and is AOT-compiled
 - **THEN** `pkg/briaot/briotel` (linked into that binary only) carries the SDK
   and the binary can export spans
 
@@ -66,7 +71,7 @@ into `:trace/id` and the shared `:bri/ctx` so logs/metrics/traces correlate.
 
 ### Requirement: W3C trace-context propagation
 
-bri.otel SHALL use the standard OTel `TraceContext` propagator. An inbound
+bri.core.telemetry SHALL use the standard OTel `TraceContext` propagator. An inbound
 `traceparent`/`tracestate` SHALL be extracted so the server span joins the
 caller's trace (same trace-id, parent = the caller's remote span-id); the span's
 own `traceparent` SHALL be renderable for injection into outbound requests and
@@ -86,7 +91,7 @@ echoed on the response.
 
 ### Requirement: OTLP exporter, config surface, graceful shutdown
 
-bri.otel SHALL configure an OTLP exporter with a batch span processor from
+bri.core.telemetry SHALL configure an OTLP exporter with a batch span processor from
 `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_EXPORTER_OTLP_PROTOCOL` (with `APP_OTEL_*`
 overrides). `service.name` SHALL come from the `:service-name` option, else the
 bri.config app name, else `APP_OTEL_SERVICE_NAME`/`OTEL_SERVICE_NAME`, else

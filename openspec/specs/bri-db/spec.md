@@ -1,9 +1,12 @@
-## ADDED Requirements
+# bri-db Specification
 
+## Purpose
+TBD - created by archiving change apply-adr-0072-bri-db. Update Purpose after archive.
+## Requirements
 ### Requirement: one connection API over two drivers
 
-`(bri.db/connect opts)` SHALL return a plain-map handle usable by every other
-bri.db verb, backed by a `database/sql` pool. The driver SHALL be pure-Go
+`(cljg.data.cast/connect opts)` SHALL return a plain-map handle usable by every other
+cljg.data.cast verb, backed by a `database/sql` pool. The driver SHALL be pure-Go
 `modernc.org/sqlite` by default (zero install) and `github.com/jackc/pgx/v5`
 when a Postgres URL is given, selected by `opts` or by `APP_DB_URL` when `opts`
 omits a driver — with no application-code change to swap. The SQLite path SHALL
@@ -12,13 +15,13 @@ support an in-memory database (`":memory:"`). No cgo driver is permitted (the
 
 #### Scenario: connect defaults to zero-install SQLite
 
-- **WHEN** `(bri.db/connect {:driver :sqlite :database ":memory:"})` is called
+- **WHEN** `(cljg.data.cast/connect {:driver :sqlite :database ":memory:"})` is called
 - **THEN** a usable handle is returned and subsequent `query`/`exec!` run
   against a private in-memory SQLite database
 
 #### Scenario: the same code targets Postgres by URL
 
-- **WHEN** `APP_DB_URL=postgres://…` is set and `(bri.db/connect)` is called
+- **WHEN** `APP_DB_URL=postgres://…` is set and `(cljg.data.cast/connect)` is called
   with no explicit driver
 - **THEN** the handle drives pgx, and the identical query/write verbs apply
 
@@ -26,16 +29,16 @@ support an in-memory database (`":memory:"`). No cgo driver is permitted (the
 
 Every read/write verb SHALL take a SQL string plus positional parameters; there
 SHALL be no string-concatenation query surface on the blessed path.
-Placeholders SHALL be written as `?` and bri.db SHALL rewrite them to `$n` for
+Placeholders SHALL be written as `?` and cljg.data.cast SHALL rewrite them to `$n` for
 Postgres (quote-aware) so one SQL string runs on both drivers. `query` SHALL
 return a vector of maps; `one` SHALL return the first row map or `nil`; `one!`
-SHALL return the first row or throw an `ex-info` tagged `:bri.db/not-found`;
+SHALL return the first row or throw an `ex-info` tagged `:cljg.data.cast/not-found`;
 `exec!` SHALL return `{:rows-affected n :last-insert-id id}`. Column names SHALL
 map `snake_case` → `kebab-case` keyword keys.
 
 #### Scenario: params bind, never interpolate
 
-- **WHEN** `(bri.db/query db "select * from t where name = ?" "a'; drop table t")`
+- **WHEN** `(cljg.data.cast/query db "select * from t where name = ?" "a'; drop table t")`
   runs
 - **THEN** the value is bound as a parameter (no SQL injection) and rows whose
   `name` equals that literal string are returned
@@ -47,29 +50,29 @@ map `snake_case` → `kebab-case` keyword keys.
 
 #### Scenario: one! signals absence as a tagged error
 
-- **WHEN** `(bri.db/one! db "select * from t where id = ?" 999)` matches no row
-- **THEN** it throws an `ex-info` whose data is tagged `:bri.db/not-found`
+- **WHEN** `(cljg.data.cast/one! db "select * from t where id = ?" 999)` matches no row
+- **THEN** it throws an `ex-info` whose data is tagged `:cljg.data.cast/not-found`
   (fundable to a 404 by the ADR 0041 funnel)
 
 ### Requirement: data-shaped writers
 
-`(bri.db/insert! db :table row-map)`, `(bri.db/update! db :table set-map
-where-map)`, and `(bri.db/delete! db :table where-map)` SHALL build parametrized
+`(cljg.data.cast/insert! db :table row-map)`, `(cljg.data.cast/update! db :table set-map
+where-map)`, and `(cljg.data.cast/delete! db :table where-map)` SHALL build parametrized
 SQL from the maps (kebab keys → snake columns), never string-concatenating
 values. These names carry a trailing `!` and SHALL NOT reuse any `clojure.core`
 name (precedence principle).
 
 #### Scenario: insert! returns the last insert id
 
-- **WHEN** `(bri.db/insert! db :notes {:title "hi" :body "there"})` runs against
+- **WHEN** `(cljg.data.cast/insert! db :notes {:title "hi" :body "there"})` runs against
   SQLite
 - **THEN** a row is inserted and the result carries its `:last-insert-id`
 
 ### Requirement: transactions are a function boundary
 
-`(bri.db/tx db (fn [t] …))` SHALL begin a transaction, bind a tx handle usable
+`(cljg.data.cast/tx db (fn [t] …))` SHALL begin a transaction, bind a tx handle usable
 by the identical read/write verbs, COMMIT on normal return, and ROLL BACK on any
-thrown error (re-raising it). `(bri.db/with-rollback db (fn [t] …))` SHALL run
+thrown error (re-raising it). `(cljg.data.cast/with-rollback db (fn [t] …))` SHALL run
 its body in a transaction that is ALWAYS rolled back (the per-test sandbox).
 
 #### Scenario: tx commits on success
@@ -85,9 +88,9 @@ its body in a transaction that is ALWAYS rolled back (the per-test sandbox).
 ### Requirement: versioned forward-only migrations
 
 Migration files named `<utc-timestamp>_<slug>.sql` in a directory SHALL be
-applied by `(bri.db/migrate! db dir)` in ascending version order, each in its
+applied by `(cljg.data.cast/migrate! db dir)` in ascending version order, each in its
 own transaction, recorded in a `schema_migrations` table, and the operation
-SHALL be idempotent (re-running applies nothing new). `(bri.db/migrate-status
+SHALL be idempotent (re-running applies nothing new). `(cljg.data.cast/migrate-status
 db dir)` SHALL return `{:applied [...] :pending [...]}`.
 
 #### Scenario: migrate applies pending then is idempotent
@@ -96,15 +99,16 @@ db dir)` SHALL return `{:applied [...] :pending [...]}`.
 - **THEN** the first run applies both (schema present); the second run applies
   nothing and `migrate-status` reports both as `:applied`, none `:pending`
 
-### Requirement: interpreted and compiled bri.db are byte-identical
+### Requirement: interpreted and compiled cljg.data.cast are byte-identical
 
-A bri.db application run interpreted (`cljgo dev`) and AOT-compiled
+A cljg.data.cast application run interpreted (`cljgo dev`) and AOT-compiled
 (`CGO_ENABLED=0`) SHALL return identical results for the same operations —
 connect, query, insert, transaction, migration. A divergence SHALL fail the
 build (dual-harness discipline; a REPL↔binary divergence is a release blocker).
 
-#### Scenario: a bri.db app agrees across modes
+#### Scenario: a cljg.data.cast app agrees across modes
 
 - **WHEN** the same connect → migrate → insert → query program is run
   interpreted and compiled
 - **THEN** the query results are byte-identical between the two modes
+
