@@ -224,8 +224,13 @@ func (r *LongRange) WithMeta(meta IPersistentMap) any {
 ////////////////////////////////////////////////////////////////////////////////
 
 func (r *LongRange) Reduce(f IFn) any {
+	// `i < r.end` is the same ascending-only assumption Next() carried: over a
+	// descending range the loop never ran and reduce returned the first element
+	// alone. Counted iteration is sign-agnostic.
 	var ret any = r.start
-	for i := r.start + r.step; i < r.end; i += r.step {
+	i := r.start
+	for n := 1; n < r.count; n++ {
+		i += r.step
 		ret = f.Invoke(ret, i)
 		if IsReduced(ret) {
 			return ret.(IDeref).Deref()
@@ -235,12 +240,16 @@ func (r *LongRange) Reduce(f IFn) any {
 }
 
 func (r *LongRange) ReduceInit(f IFn, init any) any {
+	// Same fix as Reduce: with a negative step `i < r.end` was false on entry,
+	// so reduce-with-init returned `init` untouched over a non-empty range.
 	var ret any = init
-	for i := r.start; i < r.end; i += r.step {
+	i := r.start
+	for n := 0; n < r.count; n++ {
 		ret = f.Invoke(ret, i)
 		if IsReduced(ret) {
 			return ret.(IDeref).Deref()
 		}
+		i += r.step
 	}
 	return ret
 }
