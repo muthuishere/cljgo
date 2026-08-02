@@ -1,0 +1,60 @@
+---
+// SiteTitle override — the site title plus the CURRENT RELEASE, in the header
+// of every page.
+//
+// Why: a reader landing on any doc page could not tell which cljgo version it
+// described without going to the changelog. The version is the one fact that
+// dates everything else on the page.
+//
+// The version is hardcoded here, so it is on the release checklist
+// (docs/release-process.md step 4) next to the Dockerfile, the two deploy
+// guides and the Homebrew formula. If it ever disagrees with the newest entry
+// in reference/releases.md, THIS is the wrong one.
+const VERSION = 'v0.9.0';
+const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+---
+
+<a href={siteTitleHref} class="site-title sl-flex">
+	<span translate="no">{siteTitle}</span>
+	<a class="version-badge" href="/cljgo/reference/releases/" title={`cljgo ${VERSION} — what changed`}>
+		{VERSION}
+	</a>
+</a>
+
+<style>
+	@layer starlight.core {
+		.site-title {
+			align-items: center;
+			gap: 0.5rem;
+			overflow: hidden;
+			font-weight: 600;
+			color: var(--sl-color-text-accent);
+			text-decoration: none;
+			white-space: nowrap;
+		}
+		.version-badge {
+			font-size: var(--sl-text-xs);
+			font-weight: 500;
+			line-height: 1;
+			padding: 0.2em 0.5em;
+			border: 1px solid var(--sl-color-gray-5);
+			border-radius: 999px;
+			color: var(--sl-color-gray-2);
+			text-decoration: none;
+			/* The badge is a link inside a link; keep it from inheriting the
+			   title's accent colour so it reads as metadata, not as the title. */
+			background: var(--sl-color-gray-6);
+		}
+		.version-badge:hover {
+			color: var(--sl-color-white);
+			border-color: var(--sl-color-gray-3);
+		}
+		/* On narrow screens the header is tight — the title matters more than
+		   the version, so the badge is the thing that goes. */
+		@media (max-width: 30rem) {
+			.version-badge {
+				display: none;
+			}
+		}
+	}
+</style>

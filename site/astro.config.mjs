@@ -32,6 +32,11 @@ export default defineConfig({
 			],
 			components: {
 				Footer: './src/components/Footer.astro',
+				// Header shows the current release next to the title, so a
+				// reader can tell WHICH cljgo a page describes without going
+				// to the changelog. The version string lives in that file and
+				// is on the release checklist.
+				SiteTitle: './src/components/SiteTitle.astro',
 			},
 			editLink: {
 				baseUrl: 'https://github.com/muthuishere/cljgo/edit/main/site/',
