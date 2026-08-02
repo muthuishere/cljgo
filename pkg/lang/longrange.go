@@ -100,11 +100,18 @@ func (r *LongRange) First() any {
 }
 
 func (r *LongRange) Next() ISeq {
-	next := r.start + r.step
-	if next >= r.end {
+	// Terminate on the precomputed count, not on a comparison against `end`.
+	// `next >= r.end` is an ASCENDING test: with a negative step the very first
+	// `next` already sits below `end`, so a descending range ended after one
+	// element while Count() and the chunked path — which both use r.count —
+	// still reported every element. That split is what made
+	// `(count (range 6 1 -1))` = 5 while `(vec (range 6 1 -1))` = [6], with no
+	// error anywhere. r.count is computed for both signs in rangeCount, so
+	// using it here makes the seq path agree with the other two by construction.
+	if r.count <= 1 {
 		return nil
 	}
-	return &LongRange{start: next, end: r.end, step: r.step, count: r.count - 1}
+	return &LongRange{start: r.start + r.step, end: r.end, step: r.step, count: r.count - 1}
 }
 
 func (r *LongRange) More() ISeq {
@@ -209,8 +216,13 @@ func (r *LongRange) WithMeta(meta IPersistentMap) any {
 ////////////////////////////////////////////////////////////////////////////////
 
 func (r *LongRange) Reduce(f IFn) any {
+	// `i < r.end` is the same ascending-only assumption Next() carried: over a
+	// descending range the loop never ran and reduce returned the first element
+	// alone. Counted iteration is sign-agnostic.
 	var ret any = r.start
-	for i := r.start + r.step; i < r.end; i += r.step {
+	i := r.start
+	for n := 1; n < r.count; n++ {
+		i += r.step
 		ret = f.Invoke(ret, i)
 		if IsReduced(ret) {
 			return ret.(IDeref).Deref()
@@ -220,12 +232,16 @@ func (r *LongRange) Reduce(f IFn) any {
 }
 
 func (r *LongRange) ReduceInit(f IFn, init any) any {
+	// Same fix as Reduce: with a negative step `i < r.end` was false on entry,
+	// so reduce-with-init returned `init` untouched over a non-empty range.
 	var ret any = init
-	for i := r.start; i < r.end; i += r.step {
+	i := r.start
+	for n := 0; n < r.count; n++ {
 		ret = f.Invoke(ret, i)
 		if IsReduced(ret) {
 			return ret.(IDeref).Deref()
 		}
+		i += r.step
 	}
 	return ret
 }
