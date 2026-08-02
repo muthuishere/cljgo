@@ -307,8 +307,13 @@ hyperfine session (re-verify before reuse):
   The cljgo tool itself is 28.6 MB stripped. **The old 7.5 MB Glojure figure
   does not reproduce** — same gloat v0.1.62, same pinned glj v0.7.0, same
   strip flags, and it now measures 19.0 MB; the 2026-07-24 artifacts are gone
-  so the discrepancy cannot be resolved. Quote 19.0 MB, and say it is a
-  fresh build, not a re-time. **The hello-vs-suite caveat is now obsolete**:
+  so it cannot be fully resolved. **But let-go is the control and it
+  reproduces** — 12,838,082 B against the previously recorded 12.8 MB, same
+  run, same tooling. That points at the 7.5 MB figure as the outlier rather
+  than at this run, most likely a Glojure build without
+  `-tags glj_aot_runtime` (hypothesis, not a measurement). Quote 19.0 MB, say
+  it is a fresh build rather than a re-time, and **never say Glojure's binary
+  grew** — nothing here measured a change over time. **The hello-vs-suite caveat is now obsolete**:
   `(println "hi")` compiles to 7,083,298 B — byte-identical to the suite
   binaries, because the linked AOT core dominates. The old 5.3 / 6.7 MB
   hello figures are dead; do not quote them.

@@ -183,9 +183,24 @@ not silently updated:
   pinning the same glj v0.7.0, with the same `-tags glj_aot_runtime -ldflags
   "-s -w"`, it measures **19.0 MB** (19,021,826 bytes). The 2026-07-24
   artifacts that produced the 7.5 MB figure no longer exist, so the
-  discrepancy cannot be diagnosed. Only the 19.0 MB was actually measured, so
-  only 19.0 MB is quoted. cljgo's own suite binaries are 7,083,298 bytes
-  (`tak` 7,099,810), up from 7,049,666 at v0.8.2.
+  discrepancy cannot be fully diagnosed — but it can be narrowed, and the
+  narrowing matters:
+
+  **let-go, rebuilt in the same run with the same tooling, reproduces its
+  previously recorded figure to the byte-ish: 12,838,082 B against 12.8 MB.**
+  A control that lands on the old number is strong evidence the current
+  measurement setup is sound, and therefore that the 7.5 MB Glojure figure —
+  not this 19.0 MB one — is the outlier. The likeliest explanation is that
+  the older Glojure artifact was built without `-tags glj_aot_runtime`, the
+  tag that retains the evaluator and reader; that would explain both a much
+  smaller binary and why it was ever believed. It is a hypothesis, not a
+  measurement, and it is labelled as one.
+
+  What follows for public claims: quote 19.0 MB because it is what was
+  measured, say the earlier figure is unreproducible, and do **not** claim
+  "Glojure's binary grew 2.5×" — nothing here measured a change over time.
+  cljgo's own suite binaries are 7,083,298 bytes (`tak` 7,099,810), up from
+  7,049,666 at v0.8.2.
 
 Where the three differ architecturally — and this is where the previous
 wording overclaimed. A cljgo AOT binary links **no evaluator and no
