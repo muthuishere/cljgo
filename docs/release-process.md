@@ -74,14 +74,33 @@ If a job fails, do not reason past it:
   platform. Combined green across two runs is weaker evidence than one clean
   run; prefer the clean run.
 
-## 4. Bump the three hardcoded files
+## 4. Bump the hardcoded versions — in the repo AND outside it
 
-These are what a user's `docker build` actually downloads, so a missed bump
-ships a template pinned to a stale binary:
+These are what a user actually downloads, so a missed bump ships a stale
+binary to someone who thinks they installed the new one.
+
+**In this repo:**
 
 - `templates/web/Dockerfile` — `ARG CLJGO_VERSION=`
 - `site/src/content/docs/guides/deploy.md` — the same ARG, quoted
 - `docs/guides/bri-deploy.md` — prose: "default `vX.Y.Z`"
+- `site/astro.config.mjs` — the Starlight `banner`, shown on every page
+
+**Outside this repo — nothing here reminds you, and nothing automates it:**
+
+- **`muthuishere/homebrew-tap`, `Formula/cljgo.rb`** — `version` plus **four**
+  `sha256` values, taken from the release's `checksums.txt`.
+
+`.goreleaser.yaml` has **no `brews:` block**, so a tag does not update the
+formula. *(Happened: the formula sat at 0.8.9 after v0.9.0 shipped, so
+`brew install muthuishere/tap/cljgo` silently served the previous release. It
+also carried a comment claiming `cljgo build` needs a cljgo source tree —
+false since v0.8.5.)* Automating it needs a cross-repo token; until that
+exists, this step is manual and load-bearing.
+
+```bash
+gh release download vX.Y.Z -p checksums.txt -D /tmp/cs && cat /tmp/cs/checksums.txt
+```
 
 Then re-run the gate and push.
 
