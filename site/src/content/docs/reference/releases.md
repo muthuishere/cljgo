@@ -117,13 +117,15 @@ directory, so this is not fixable at runtime.
 
 **Known flaky, and pre-existing:**
 
-- [#197](https://github.com/muthuishere/cljgo/issues/197) — a downstream
-  suite's **AOT** leg fails intermittently (~1 run in 4) where the interpreted
-  cljgo legs and both JVM legs are 14/14. Measured at the same rate on
-  released v0.8.9, so nothing in this release caused it, but the asymmetry is
-  unexplained and it is ours to explain: a failure that appears only in
-  compiled code is the shape ADR 0007 treats as unforgivable, even when the
-  cause turns out to be a test-side race that compiled speed exposes.
+- [#197](https://github.com/muthuishere/cljgo/issues/197) — **resolved after
+  this release was written, and not a cljgo defect.** A downstream suite's
+  AOT leg was failing ~1 run in 4 while the interpreted cljgo legs and both
+  JVM legs stayed green. The reporter traced it to a race in their own test
+  fixture; their gate has been green since. The asymmetry is explained by the
+  thing worth carrying forward: **a compiled binary is fast enough to expose
+  races in test fixtures that the tree-walking interpreter hides.** If you
+  adopt `cljgo build` for a suite that has only ever run interpreted, expect
+  to find fixture races — they were always there.
 - `TestChanOpBudget` at 1.51× against a 1.50× ceiling under parallel load,
   passing in isolation — the same load-sensitivity as the known macOS
   perf-budget flake.
