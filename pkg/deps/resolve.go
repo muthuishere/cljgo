@@ -68,7 +68,8 @@ type ResolveOptions struct {
 	VendorDir      string            // project vendor/ base ("" = none)
 
 	// MvnRepos is the Maven repository list, in order. Empty means the
-	// defaults (Clojars, then Maven Central); (mvn-repo …) PREPENDS.
+	// defaults (DefaultMvnRepos: Maven Central, then Clojars);
+	// (mvn-repo …) PREPENDS.
 	MvnRepos []string
 	// MvnHTTPClient overrides the HTTP client. Tests point MvnRepos at an
 	// httptest.Server and inject its client, so the code path under test is

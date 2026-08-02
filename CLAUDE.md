@@ -106,6 +106,14 @@ A green local gate is necessary, never sufficient.
 
 ## Releasing — what changes when a version ships
 
+> **The full checklist is [`docs/release-process.md`](docs/release-process.md).
+> Follow it, do not work from memory or from the summary below.** It is the
+> authority; this section is orientation. It carries the conditional gates
+> that are easiest to skip (the Clojars network IT, the Windows leg, the
+> conformance oracle) and the post-release claims re-check — every one of
+> which has been missed at least once, and the claims re-check five releases
+> running.
+
 **The version is the git tag.** `pkg/version.Version` stays `"0.1.0-dev"` in
 source forever; goreleaser injects the real value at build time and fires on
 any `v*` tag. Never "bump" that constant.
@@ -133,10 +141,20 @@ Order of operations, every time:
    regressions.
 4. Push the tag; wait for the Release workflow; confirm **7 assets** (six
    platform archives + `checksums.txt`).
-5. **Add the release to `site/src/content/docs/reference/releases.md`** —
-   newest first, heading linked to the GitHub tag. Keep it distilled from the
-   annotation so the two cannot drift. There is deliberately **no root
-   `CHANGELOG.md`**: a third copy would just rot.
+5. **Update the published docs site, and confirm it deployed.** Add the
+   release to `site/src/content/docs/reference/releases.md` — newest first,
+   heading linked to the GitHub tag, distilled from the annotation so the two
+   cannot drift (there is deliberately **no root `CHANGELOG.md`**: a third
+   copy would just rot). Then re-read every *other* page the release changed:
+   the site at <https://muthuishere.github.io/cljgo/> is what users read, and
+   **an ADR is not a docs update** — `docs/adr/` is unpublished decision
+   history, so a decision that changes behaviour has to be re-said on the page
+   a user would look at. Build it (`cd site && npm run build`) before pushing;
+   a new page under `guides/` or `reference/` also needs a hand-added sidebar
+   entry in `site/astro.config.mjs`. The Pages workflow fires only on a push
+   to `main` touching `site/**` — tagging does not deploy the site, and a doc
+   change driven by a non-`site/` edit deploys nothing at all
+   (`gh workflow run "Deploy Pages" --ref main`).
 6. Re-check the docs claims the release invalidates — see below.
 
 ### Claims that go stale on a release, and must be re-checked
@@ -149,8 +167,12 @@ Order of operations, every time:
 - **`CLAUDE.md`'s own competitive-claims numbers** (binary size, startup,
   win/loss count). They are quoted by agents into public copy, so a stale
   figure here becomes a false public claim.
-- Any doc stating a capability the release changed — and `openspec archive`
-  for whatever the cycle applied.
+- Any doc stating a capability the release changed — **on the published site,
+  not only in `docs/`**. v0.8.7 taught cljgo to read `deps.edn` `:paths` while
+  `reference/roadmap.md` went on telling users cljgo reads "no `deps.edn` in
+  either direction (shipped)". Grep the site for what the release *changed*,
+  not for a version number: a stale claim rarely names one.
+- `openspec archive` for whatever the cycle applied.
 
 ### Before a release that touches dependency resolution
 

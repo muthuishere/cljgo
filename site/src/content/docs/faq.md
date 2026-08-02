@@ -110,7 +110,8 @@ it's a direct typed Go call. That is where the lower overhead comes from.
 
 Yes — live re-`def`, `defmacro` at the prompt, nREPL for CIDER/Calva. Session
 resume is form replay, not a heap snapshot: successful top-level forms are
-saved (under `~/.config/cljgo/sessions`) and replayed on `--resume`. See
+saved (under `~/.config/cljgo/sessions`) and replayed by
+`cljgo repl :resume <id>` (or `:resume <id>` at the prompt). See
 [the REPL guide](/cljgo/guides/repl/).
 
 </details>

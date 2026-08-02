@@ -89,7 +89,11 @@ cljgo's "batteries" follow Zig's shape, not Leiningen's / deps.edn's
 
 - **`build.cljgo`** — the build is a program, not a data file (shipped).
 - **Dependencies as code** — `(dep …)` in `build.cljgo`, content-addressed and
-  lockfile-pinned, no `deps.edn` in either direction (shipped).
+  lockfile-pinned; cljgo never reads `deps.edn`'s `:deps`, and never writes a
+  `deps.edn` (shipped). Since v0.8.7 it does read `deps.edn`'s **`:paths`** —
+  source roots only, and only when a project has no `build.cljgo` at all
+  (ADR 0119), so a dual-host `.cljc` library needs no second project file. See
+  [Dual-host `.cljc` projects](/cljgo/guides/dual-host/).
 - **Publish both ways** — one pure-Clojure library reaches Go developers and
   JVM-Clojure developers, gated on purity at publish time (shipped).
 - **comptime** — Zig-style compile-time value execution alongside macros:

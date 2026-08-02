@@ -3,7 +3,8 @@ title: Dependencies & publishing
 description: Declare dependencies as code in build.cljgo, pin them with a committed lockfile, and publish one library to both the Go and Clojure ecosystems with cljgo publish.
 ---
 
-cljgo has no `deps.edn` and no separate manifest. Dependencies are
+cljgo has no separate dependency manifest, and never reads `deps.edn`'s
+`:deps`. Dependencies are
 declared as *code* in your project's `build.cljgo` (ADR 0021), resolved
 by one resolver that feeds both execution legs — a dependency resolves
 identically under `cljgo run` and `cljgo build` (ADRs 0052/0053).
@@ -32,6 +33,12 @@ Keeping your suite somewhere else? Say so once:
 Roots are appended **after** the requiring file's own directory, never before,
 so a sibling namespace still wins — and registered providers outrank every
 root, so `clojure.*` can never be shadowed.
+
+A project with **no `build.cljgo` at all** gets its roots from `deps.edn`'s
+`:paths` instead (ADR 0119, v0.8.7) — `:paths` only, and only in that case; a
+`build.cljgo` anywhere in the search wins absolutely. That is what lets a
+dual-host `.cljc` library work on cljgo with no second project file. See
+[Dual-host `.cljc` projects](/cljgo/guides/dual-host/).
 
 :::note[Fixed in v0.8.3]
 Before v0.8.3 there were no project source roots at all: a namespace resolved
@@ -76,6 +83,12 @@ A **Clojars/Maven coordinate** is the third form (ADR 0095):
 (dep b "medley"                {:mvn/version "1.4.0"})   ; group == artifact
 (mvn-repo b "https://nexus.internal/repository/maven-public") ; optional
 ```
+
+Repositories are shopped in order and the first one that answers serves the
+artifact. The default list is **Maven Central, then Clojars** — the same order
+tools.deps uses, so a coordinate published to both resolves to the same
+artifact on cljgo as on the JVM (it was the other way round before v0.8.8).
+`(mvn-repo …)` prepends to that list.
 
 The dependency **name is the coordinate** (`group/artifact`; a single
 segment means group == artifact), so a Maven dep and a git dep can never
