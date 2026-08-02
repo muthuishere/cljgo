@@ -1,21 +1,27 @@
 ---
 title: Install
-description: Install cljgo via Homebrew, go install, or a prebuilt release binary — and what needs the Go toolchain (only cljgo build does).
+description: Install cljgo with go install or a prebuilt release binary — and what needs the Go toolchain (only cljgo build does).
 ---
 
-## Homebrew (macOS & Linux)
-
-```bash
-brew install muthuishere/tap/cljgo
-```
-
-## go install
+## go install (recommended)
 
 With a Go 1.26+ toolchain:
 
 ```bash
 go install github.com/muthuishere/cljgo/cmd/cljgo@latest
 ```
+
+This is the recommended path, and not only for convenience: **`cljgo build`
+needs the Go toolchain anyway** (see below), so anyone compiling a binary
+already has the one prerequisite `go install` asks for.
+
+:::note[No Homebrew formula]
+There was a `muthuishere/tap/cljgo` formula. It is retired, because it was
+hand-maintained and nothing published it on a release — so it silently served
+the *previous* version while the release page offered the current one. A
+package manager that installs the wrong version is worse than no package
+manager. Use `go install` or a prebuilt binary below.
+:::
 
 ## Prebuilt binaries
 

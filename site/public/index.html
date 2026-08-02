@@ -618,17 +618,18 @@ error: cannot publish to the JVM — greet.core
           <p class="label">1 · Install cljgo</p>
           <div class="codecard">
             <button class="copy" data-copy>Copy</button>
-            <pre><span class="c"># Homebrew — macOS &amp; Linux</span>
-brew install muthuishere/tap/cljgo
-
-<span class="c"># …or with a Go 1.26+ toolchain</span>
+            <pre><span class="c"># with a Go 1.26+ toolchain</span>
 go install github.com/muthuishere/cljgo/cmd/cljgo@latest</pre>
           </div>
           <div class="note">
-            That gets you the REPL, <code>cljgo run</code> and Go interop straight away — no Go toolchain needed.
-            Compiling to a native binary (<code>cljgo build</code>) additionally needs the Go toolchain on
-            <code>PATH</code>: the binary pins the published runtime module in the generated <code>go.mod</code>,
-            and the first build fetches it from the Go module proxy once per machine (~1 MB, a few seconds).
+            That gets you the REPL, <code>cljgo run</code> and Go interop straight away — those work from the
+            binary alone, with no Go toolchain on <code>PATH</code>. Compiling to a native binary
+            (<code>cljgo build</code>) does need the toolchain: it emits Go source and invokes
+            <code>go build</code>. The binary pins the published runtime module in the generated
+            <code>go.mod</code>, so the first build fetches it from the module proxy once per machine
+            (~1 MB, a few seconds) — no cljgo checkout required.
+            Prefer a prebuilt binary? Grab one from the
+            <a href="https://github.com/muthuishere/cljgo/releases/latest">latest release</a>.
           </div>
         </div>
 

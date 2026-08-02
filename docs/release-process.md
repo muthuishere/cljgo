@@ -86,21 +86,21 @@ binary to someone who thinks they installed the new one.
 - `docs/guides/bri-deploy.md` — prose: "default `vX.Y.Z`"
 - `site/astro.config.mjs` — the Starlight `banner`, shown on every page
 
-**Outside this repo — nothing here reminds you, and nothing automates it:**
+**Nothing outside this repo.** That is deliberate, and it is why the list above
+is short enough to be trusted.
 
-- **`muthuishere/homebrew-tap`, `Formula/cljgo.rb`** — `version` plus **four**
-  `sha256` values, taken from the release's `checksums.txt`.
+There was a Homebrew formula in `muthuishere/homebrew-tap`. It was retired
+2026-08-02 rather than kept, because it was hand-maintained in another
+repository and `.goreleaser.yaml` has no `brews:` block — so tagging updated
+nothing. *(Happened: it sat at 0.8.9 while v0.9.0 was the release, so
+`brew install` silently served the previous version, and it carried a comment
+claiming `cljgo build` needs a cljgo source tree — false since v0.8.5.)*
 
-`.goreleaser.yaml` has **no `brews:` block**, so a tag does not update the
-formula. *(Happened: the formula sat at 0.8.9 after v0.9.0 shipped, so
-`brew install muthuishere/tap/cljgo` silently served the previous release. It
-also carried a comment claiming `cljgo build` needs a cljgo source tree —
-false since v0.8.5.)* Automating it needs a cross-repo token; until that
-exists, this step is manual and load-bearing.
-
-```bash
-gh release download vX.Y.Z -p checksums.txt -D /tmp/cs && cat /tmp/cs/checksums.txt
-```
+A distribution channel that has to be remembered will eventually be forgotten,
+and one that serves the wrong version is worse than one that does not exist.
+`go install` needs no release-time step at all: the module proxy serves the tag
+you just pushed. If Homebrew comes back, it comes back as a `brews:` block that
+a tag drives — never as another file to remember.
 
 Then re-run the gate and push.
 
