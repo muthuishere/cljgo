@@ -1,13 +1,13 @@
 | Benchmark | cljgo-aot | glojure-aot | letgo-aot |
 |---|---|---|---|
-| `startup` | 6.1 ms | 6.5 ms | **6.0 ms** |
-| `tak` | **36.6 ms** | 53.1 ms | 58.8 ms |
-| `fib` | **25.6 ms** | 39.5 ms | 65.4 ms |
-| `loop-recur` | **6.5 ms** | 6.7 ms | 36.6 ms |
-| `persistent-map` | **10.8 ms** | 10.9 ms | 12.6 ms |
-| `map-filter` | 6.4 ms | 6.3 ms | **5.8 ms** |
-| `transducers` | 17.2 ms | **11.7 ms** | 24.7 ms |
-| `reduce` | 27.2 ms | **7.4 ms** | 40.6 ms |
+| `startup` | 5.1 ms | 6.2 ms | **4.8 ms** |
+| `tak` | **35.7 ms** | 52.1 ms | 61.4 ms |
+| `fib` | **25.8 ms** | 38.9 ms | 67.0 ms |
+| `loop-recur` | **5.7 ms** | 6.2 ms | 41.6 ms |
+| `persistent-map` | 12.7 ms | **9.0 ms** | 11.3 ms |
+| `map-filter` | 5.4 ms | 5.6 ms | **4.8 ms** |
+| `transducers` | 17.8 ms | **11.4 ms** | 25.6 ms |
+| `reduce` | 27.5 ms | **6.9 ms** | 40.3 ms |
 
 All three columns are native binaries compiled from the same programs —
 let-go's own benchmark suite (github.com/nooga/let-go), vendored unmodified

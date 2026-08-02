@@ -1,114 +1,150 @@
 ---
 title: Why cljgo
-description: What cljgo is, the five priorities it is built against, where it is headed — and an honest list of what it is not yet.
+description: Write Clojure, ship a single Go binary. What cljgo is, what is measured and tested today, and an honest list of what is not done yet.
 ---
 
-cljgo is Clojure hosted on Go: a compiler, written in Go, that AOT-emits plain
-Go source — the ClojureScript model, with Go playing the part of JavaScript —
-plus a tree-walk evaluator that is the REPL and the macro engine. The same
-source runs interpreted at the prompt and compiles to a single static native
-binary, with byte-identical output on both paths.
+**You write Clojure. It compiles to plain Go, and you ship one binary.**
 
-That last clause is enforced, not aspired to: a dual-harness conformance suite
-runs every semantic test both interpreted and compiled on every commit, and a
-REPL↔binary divergence is a release blocker.
+No JVM on the server. No runtime to install. No `java -jar`. A `cljgo build`
+produces a single static executable you can `scp` anywhere — the same way a Go
+program is delivered — and the same code you just typed at the REPL is what
+runs inside it.
 
-## Five priorities, in order
+## If you're new to Clojure
 
-These are not a wishlist — they are the design contract. Everything in cljgo is
-judged against them, Clojure-first.
+Clojure is a small, practical Lisp built around immutable data and a REPL that
+stays live while you work. The usual objection is deployment: the JVM, the
+startup time, the ops story.
 
-1. **Universal interop.** Any Go module is importable and callable with zero
-   hand-written bindings — the Go ecosystem *is* the standard library. C
-   reaches in via cgo modules and purego FFI.
-2. **Full REPL-driven development.** The tree-walk evaluator is a real Clojure
-   REPL: live re-`def`, `defmacro` at the prompt, namespaces, `eval`,
-   `resolve`, and nREPL for CIDER/Calva.
-3. **Faithful Clojure principles.** Persistent data structures with real
-   structural sharing, transients, a numeric tower, macros as plain fns, seqs,
-   and vars as the indirection layer. Clojure is first-class: nothing cljgo
-   adds may shadow or change `clojure.core` semantics.
-4. **High performance in both modes.** A feature, gated in CI like tests, not
-   asserted. A perf regression is treated like a conformance failure.
-5. **Single-file deployment.** `cljgo build` produces one static binary
-   (7.1 MB for hello, ~5 ms startup) — no JVM, no runtime install. cgo
-   projects are supported, not tolerated: cgo-based Go modules (sqlite
-   drivers, sensors, GUI/audio) import like anything else.
+cljgo removes that objection by targeting Go instead. You get Clojure's
+interactive development, and Go's deployment story — one file, starts in
+milliseconds.
 
-## Priority #1 in practice: zero-binding interop
+```clojure
+(require '[cljg.http :as http])
 
-`require-go` pulls in any Go package and calls it directly — no wrappers, no
-generated stubs. The Go toolchain is the classpath, and it runs identically
-interpreted and compiled:
+(http/serve {:port 8080
+             :handler (fn [req] {:status 200 :body "hello"})})
+```
+
+That's a complete web server. `cljgo run` it now, `cljgo build` it when you're
+done. Start at the [quickstart](/cljgo/quickstart/) or the
+[by-example course](/cljgo/by-example/01-hello-world/).
+
+## If you're leaving Clojure because of where the jobs are
+
+This is the honest reason many people move to Go, and it's worth naming.
+
+cljgo doesn't ask you to choose. What it emits is **plain Go source**, built by
+the ordinary Go toolchain into an ordinary Go binary. Your artifact is one your
+team's existing Go infrastructure already knows how to build, scan, deploy and
+run. And the Go ecosystem is directly callable — not through a bridge, but as
+if you'd imported it in Go:
 
 ```clojure
 (require-go '[strings])
 (require-go '[strconv])
 
-(println (strings/ToUpper "hello"))
-(println (strconv/Atoi "123"))    ; (T, error) → [v err] — errors as values
-(println (strconv/Atoi! "456"))   ; ! suffix unwraps, or throws
+(println (strings/ToUpper "hello"))   ; => HELLO
+(println (strconv/Atoi "123"))        ; => [123 nil]   (T, error) → a vector
+(println (strconv/Atoi! "456"))       ; => 456         ! unwraps, or throws
 ```
 
-Members (`(.Method r …)`, `(.-Field r)`), constructors (`(pkg/T. {…})`), and
-core.async over **real goroutines** (no CPS rewrite) round it out. Third-party
-modules are one line in `build.cljgo` —
-`(go-require app "github.com/gorilla/websocket" "v1.5.3")` — with no
-hand-written bindings. See the [interop guide](/cljgo/guides/interop/).
+No wrappers, no generated stubs, no hand-written bindings. Third-party modules
+are one line in `build.cljgo`:
 
-## Where it stands
+```clojure
+(go-require app "github.com/gorilla/websocket" "v1.5.3")
+```
 
-Working REPL **and** native compiler. Against the jank
-[clojure-test-suite](https://github.com/jank-lang/clojure-test-suite)
-(unmodified upstream): **238/242 files passing (98.3%)**, 242/242 vars
-resolved, 0 failures — the 4 errors are missing `:cljgo` reader-conditional
+`core.async` runs on real goroutines — no CPS rewrite. So the skills stay
+Clojure and the output stays Go. See the
+[interop guide](/cljgo/guides/interop/).
+
+## What is actually true today
+
+Every number here was measured on the current release. Where something is not
+done, it is in [what's not done](#whats-not-done-yet) below rather than
+softened here.
+
+**Clojure compatibility.** Against the jank
+[clojure-test-suite](https://github.com/jank-lang/clojure-test-suite),
+unmodified upstream: **238/242 files passing (98.3%)**, **242/242 vars
+resolved**, **0 failures**. The 4 errors are missing `:cljgo` reader-conditional
 branches in the suite itself, not broken semantics. Run `cljgo suite` to
-reproduce. Details on the [compatibility page](/cljgo/reference/compatibility/)
-and [benchmarks](/cljgo/reference/benchmarks/).
+reproduce it yourself.
 
-## Where it's headed
+**One binary, fast start.** `(println "hi")` compiles to a **7.1 MB** static
+binary that starts in **5.5 ms** — against let-go 5.51 ms, babashka 10.9 ms,
+and Clojure on the JVM 302 ms. Measured 2026-08-02; the full table, including
+the rows cljgo *loses*, is on [benchmarks](/cljgo/reference/benchmarks/).
 
-**The Bun of Clojure** — one fast native binary, batteries included,
-zero-config: Bun's ergonomics with Go's delivery and no runtime to distribute.
-This is the direction (roadmap, not yet shipped): a data layer with pure-Go
-SQLite as the zero-install default, a durable Postgres job queue plus
-in-process cache, a curated Go-native stdlib, and Spring-Boot-style layered
-config.
+**The REPL and the binary agree.** Every semantic test runs twice, interpreted
+and compiled, on every commit. A REPL↔binary divergence is a release blocker,
+not a known issue.
 
-**The Zig model** — cljgo's "batteries" follow Zig's design, not
-Leiningen's/deps.edn's: the build is a program (`build.cljgo` defines an
-artifact DAG, not a data file), dependencies are code in that same file
-(content-addressed, lockfile-pinned, one resolver for both the interpreted and
-compiled legs), one library publishes to both the Go module ecosystem and
-Clojars from one build description, and cross-compilation falls out of
-emitting plain Go — pure-Go programs build for any OS/arch with no target
-toolchain.
+**Web apps compile too.** `cljgo new -template web` then `cljgo build` produces
+a **15 MB** static binary that serves HTTP on its own — no JVM, no app server,
+nothing else installed. That is what the
+[deploy guide](/cljgo/guides/deploy/)'s scratch-image Dockerfile ships.
 
-## What cljgo is NOT (yet)
+## bri: the batteries, and they compile
 
-Honest gaps, from the project's own status ledger:
+`bri` is cljgo's application framework — HTTP, routing, HTML, config, auth,
+tracing, a data layer — and it is **first-class, not a side project**. It AOT-
+compiles to the same single static binary everything else does, verified by
+building and running one.
 
-- **`clojure.core` is not complete.** The suite score is 98.3% and climbing;
-  the honest per-namespace ledger is `docs/fundamentals-audit-2026-07.md` in
-  the repo. The satellite namespaces (`clojure.string`, `set`, `edn`, `walk`,
-  `zip`, `data`, `repl`, `pprint`, `test`) are complete against the 1.12.5
-  oracle; core itself is early and moving fast.
-- **Not the fastest at everything.** Compiled cljgo wins the recursion and
-  data-structure benchmark rows outright, but `reduce` and `transducers` are
-  still honestly lost to babashka and let-go. The interpreter is a
-  tree-walker and loses everywhere except against joker — that is what
-  `cljgo build` is for.
-- **The batteries are decisions, not code.** The Bun-direction items above
-  (data layer, jobs/cache, curated stdlib, vault/i18n) are ratified ADRs and
-  spikes, **not shipped**.
-- **C FFI via purego is proposed** (ADR 0044, spiked), not landed. cgo-based
-  Go modules work today; direct C FFI does not.
-- **comptime** (Zig-style compile-time value execution) is on the roadmap,
-  not implemented.
-- **bri web apps don't AOT-compile yet.** The app framework's dev loop is
-  `cljgo dev` / `cljgo test`; AOT compilation of bri apps lands with a later
-  tier.
+```
+cljgo new -template web myapp
+cd myapp && cljgo build && ./myapp
+bri: listening on http://localhost:3000
+```
 
-The full picture is on [status & roadmap](/cljgo/reference/roadmap/). Ready to
-try it? [Install](/cljgo/install/), then the
-[quickstart](/cljgo/quickstart/).
+Start with [your first app](/cljgo/bri/tutorial/) (15 minutes).
+
+## The design contract
+
+Five priorities, in order. Everything is judged against them, Clojure-first.
+
+1. **Universal interop.** Any Go module is importable and callable with zero
+   hand-written bindings — the Go ecosystem *is* the standard library.
+2. **Full REPL-driven development.** Live re-`def`, `defmacro` at the prompt,
+   namespaces, `eval`, `resolve`, and nREPL for CIDER/Calva.
+3. **Faithful Clojure.** Persistent data structures with real structural
+   sharing, transients, a numeric tower, macros as plain fns, seqs, vars.
+   Nothing cljgo adds may shadow or change `clojure.core` semantics.
+4. **Performance in both modes**, gated in CI like tests. A perf regression is
+   treated like a conformance failure.
+5. **Single-file deployment.** One static binary. cgo-based Go modules (sqlite
+   drivers, sensors, GUI/audio) import like anything else.
+
+## What's not done yet
+
+- **`clojure.core` is not complete.** 98.3% on the suite and climbing; the
+  per-namespace ledger is `docs/fundamentals-audit-2026-07.md` in the repo. The
+  satellite namespaces (`clojure.string`, `set`, `edn`, `walk`, `zip`, `data`,
+  `repl`, `pprint`, `test`) are complete against the 1.12.5 oracle; core itself
+  is younger.
+- **Not the fastest at everything.** Compiled cljgo wins `tak`, `fib`,
+  `loop-recur`, `persistent-map` and startup, and **loses** `map-filter` to
+  let-go and `reduce` and `transducers` to babashka. Those are roadmap gaps,
+  not deliberate trade-offs. The interpreter is a tree-walker and is slow — that
+  is what `cljgo build` is for.
+- **We need more testers.** Nearly every defect fixed in the last release cycle
+  was found by a downstream project, not by our own gate — including a
+  descending `range` that returned one element to `first`/`rest` while `count`
+  said five, and an HTTP timeout option that was silently ignored. Both passed
+  green test suites on both hosts. If you try cljgo and something behaves
+  differently from JVM Clojure, that is the most valuable thing you can send
+  us: [open an issue](https://github.com/muthuishere/cljgo/issues).
+- **Some batteries are decisions, not code.** The pure-Go SQLite default,
+  durable job queue and curated stdlib are ratified ADRs and spikes, **not
+  shipped**.
+- **C FFI via purego is proposed** (ADR 0044, spiked), not landed. cgo-based Go
+  modules work today; direct C FFI does not.
+- **comptime** (Zig-style compile-time value execution) is on the roadmap, not
+  implemented.
+
+The full ledger is on [status & roadmap](/cljgo/reference/roadmap/). Ready?
+[Install](/cljgo/install/), then the [quickstart](/cljgo/quickstart/).

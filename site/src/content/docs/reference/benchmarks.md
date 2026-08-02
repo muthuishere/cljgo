@@ -15,26 +15,34 @@ websites. **Each table carries its own date and cljgo version**, because they
 were not all measured at the same time.
 
 :::caution[Which tables are current, and which are not]
-Everything on this page was re-measured on **2026-08-02** against cljgo
-**post-v0.8.9** (commit `f46b9a8` — v0.8.9 plus eight commits), *except* the
-one table explicitly marked historical:
+All measurements are from **2026-08-02**, but they are **not all from the same
+cljgo commit**, and that distinction is kept rather than smoothed over:
 
-- **Current, 2026-08-02:** [core metrics](#core-metrics),
+- **Measured at the released `v0.9.0` tag** (`1de8c14`):
+  [AOT vs AOT vs AOT](#aot-vs-aot-vs-aot-the-compiled-clojure-on-go-head-to-head).
+  Re-run specifically because v0.9.0 rewrote `LongRange.Reduce`/`ReduceInit`,
+  the loop the `reduce` row walks. The fix proved perf-neutral, but that was
+  something to *find out*, not assume.
+- **Measured at `f46b9a8`** — v0.8.9 plus eight commits, i.e. v0.9.0 minus its
+  last three: [core metrics](#core-metrics),
   [the interpreted-runtime comparison](#head-to-head-let-gos-own-suite-unmodified),
-  [AOT vs AOT vs AOT](#aot-vs-aot-vs-aot-the-compiled-clojure-on-go-head-to-head),
   [the web table](#web-framework-bri-vs-the-field), and
-  [footprint & density](#footprint--density).
+  [footprint & density](#footprint--density). The commits between are a Go
+  comment, release notes, and the `Reduce` fix that the AOT re-run showed
+  changes nothing measurable — so these stand, but they are not literally
+  "v0.9.0 numbers" and are not labelled as such.
 - **Historical, kept as a record:** [the 2026-07-23 campaign
-  table](#the-2026-07-23-campaign-adrs-00630067). It is a before/after of one
-  day's work and is dated as such; do not read its "after" column as a
-  current number.
+  table](#the-2026-07-23-campaign-adrs-00630067). A before/after of one day's
+  work; do not read its "after" column as a current number.
 
-Two things in the AOT head-to-head changed shape this round and are called out
-where they appear. First, the Glojure and let-go binaries were **rebuilt**,
-not re-timed — the previous artifacts no longer existed — and the rebuild does
-not reproduce the older Glojure figures on the same pinned version. Second,
-run-to-run σ was 0.3–1.0 ms, which makes four of the eight rows ties rather
-than wins.
+Three cautions that apply to the AOT head-to-head specifically. The Glojure
+and let-go binaries were **rebuilt**, not re-timed — the previous artifacts no
+longer existed — and the rebuild does **not** reproduce the older Glojure
+figures on the same pinned version. Run-to-run σ was 0.3–1.0 ms, which makes
+several rows ties rather than wins. And one row, `persistent-map`, gave
+**contradictory readings minutes apart** on the same binaries; it is published
+with that fact attached rather than resolved in whichever direction flattered
+us.
 :::
 
 ## Core metrics
@@ -141,22 +149,41 @@ official automation tool for both. Re-measured **2026-08-02** on cljgo
 **All three binary sets were rebuilt for this run.** Bold marks the
 arithmetic minimum — read it with the σ column, because four rows are ties.
 
-| Benchmark | cljgo (AOT) | Glojure (AOT) | let-go (AOT) | σ (worst leg) | verdict |
-|---|---|---|---|---|---|
-| startup | 6.1 ms | 6.5 ms | **6.0 ms** | 1.0 ms | tie |
-| `tak` | **36.6 ms** | 53.1 ms | 58.8 ms | 2.5 ms | cljgo, 1.45× |
-| `fib` | **25.6 ms** | 39.5 ms | 65.4 ms | 1.2 ms | cljgo, 1.54× |
-| `loop-recur` | **6.5 ms** | 6.7 ms | 36.6 ms | 0.9 ms | tie (vs Glojure) |
-| `persistent-map` | **10.8 ms** | 10.9 ms | 12.6 ms | 1.0 ms | tie |
-| `map-filter` | 6.4 ms | 6.3 ms | **5.8 ms** | 0.9 ms | tie |
-| `transducers` | 17.2 ms | **11.7 ms** | 24.7 ms | 0.6 ms | Glojure, 1.47× |
-| `reduce` | 27.2 ms | **7.4 ms** | 40.6 ms | 1.0 ms | **Glojure, 3.67×** |
-| binary size | **7.1 MB** | 19.0 MB | 12.8 MB | — | cljgo |
+| Benchmark | cljgo (AOT) | Glojure (AOT) | let-go (AOT) | verdict |
+|---|---|---|---|---|
+| startup | 5.1 ms | 6.2 ms | **4.8 ms** | tie |
+| `tak` | **35.7 ms** | 52.1 ms | 61.4 ms | cljgo, 1.46× |
+| `fib` | **25.8 ms** | 38.9 ms | 67.0 ms | cljgo, 1.51× |
+| `loop-recur` | **5.7 ms** | 6.2 ms | 41.6 ms | tie (vs Glojure) |
+| `persistent-map` | 12.7 ms | **9.0 ms** | 11.3 ms | **unstable — see below** |
+| `map-filter` | 5.4 ms | 5.6 ms | **4.8 ms** | tie |
+| `transducers` | 17.8 ms | **11.4 ms** | 24.7 ms | Glojure, 1.56× |
+| `reduce` | 27.5 ms | **6.9 ms** | 40.3 ms | **Glojure, 3.99×** |
+| binary size | **7.1 MB** | 19.0 MB | 12.8 MB | cljgo |
 
-**Honest read: it is two clear wins each, four ties, and one bad loss.** The
-old "Glojure wins 6 of 8" summary does not survive a run that reports its own
-noise — `startup`, `loop-recur`, `persistent-map` and `map-filter` all sit
-inside σ between cljgo and Glojure and should be read as level. cljgo takes
+**Re-measured 2026-08-02 at the released v0.9.0 tag** (`1de8c14`), because
+v0.9.0 rewrote `LongRange.Reduce`/`ReduceInit` — the exact loop this page's
+`reduce` row walks (`(reduce + 0 (range 1000000))` calls `ReduceInit`). Publishing
+a number measured on code that no longer exists would have been the easiest
+kind of dishonesty to miss. **The fix turned out to be perf-neutral: 27.5 ms
+against the 27.2 ms measured before it**, inside run-to-run noise.
+
+**One row is not trustworthy and is labelled rather than published as a win.**
+`persistent-map` read cljgo 12.7 / Glojure 9.0 in the suite run — a 1.41×
+Glojure win — but an immediate isolated re-run of the same two binaries read
+**10.8 vs 10.1, a 1.07× tie**. Same machine, minutes apart. The suite-run cell
+is contention, not a result. It is left in the table with its real reading and
+this warning attached, because deleting an inconvenient measurement is worse
+than publishing an unstable one and saying so.
+
+Everything else is stable across both readings: the recursion wins and the
+`reduce`/`transducers` losses reproduce.
+
+**Honest read: two clear wins each, three ties, one unstable row, and one bad
+loss.** The old "Glojure wins 6 of 8" summary does not survive a run that
+reports its own noise — `startup`, `loop-recur` and `map-filter` sit inside σ
+between cljgo and Glojure and should be read as level, and `persistent-map`
+disagreed with itself between two readings minutes apart. cljgo takes
 the tree-recursion rows (`tak`, `fib` — the ADR 0067 numeric-inference pass
 lifts them to raw typed Go). Glojure takes `transducers` and, decisively,
 **`reduce`: 7.4 ms against 27.2**.
