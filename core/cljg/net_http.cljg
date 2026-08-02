@@ -4,7 +4,7 @@
 ;;
 ;;   (require '[cljg.net.http :as http])
 ;;   (http/get  "https://api.x/things")
-;;   (http/get  url {:headers {"Authorization" "Bearer …"} :query {"q" "x"} :timeout 5000})
+;;   (http/get  url {:headers {"Authorization" "Bearer …"} :query {"q" "x"} :timeout-ms 5000})
 ;;   (http/post url {:json {:name "x"}})          ; JSON-encode + content-type
 ;;   (http/post url {:form {"a" "b"}})            ; x-www-form-urlencoded
 ;;   (http/request {:method :put :url url :edn {…} :retry 2})
@@ -74,7 +74,8 @@
     :method  keyword/string (default :get)   :url  the URL (or pass as 1st arg via the verbs)
     :headers map {name value}                :query map → query string
     :body    raw string | :json data | :edn data | :form map   (one; that precedence)
-    :timeout ms (default 30000)              :retry n (default 0), backoff on transport error + 5xx
+    :timeout-ms ms (default 30000)           :retry n (default 0), backoff on transport error + 5xx
+                                             (:timeout is accepted as the older alias)
     :as      :stream → :body is a cljg.stream readable handle over the live body
              (opt-in; buffered string is the default)
   Returns {:status :headers :body :ok?} — :body a string, or a cljg.stream
@@ -86,7 +87,12 @@
         url     (str (:url opts) (encode-query (:query opts)))
         [b ct]  (body+type opts)
         headers (with-content-type (or (:headers opts) {}) ct)
-        timeout (:timeout opts default-timeout)
+        ;; :timeout-ms is the name (issue #192): cljg.socket, cljg.io and
+        ;; cljg.process all spell it that way, and so does this namespace's own
+        ;; Go shim. :timeout is the ORIGINAL spelling of this one namespace and
+        ;; stays accepted — it is released API, and dropping it would not fail
+        ;; loudly, it would silently restore the 30 s default.
+        timeout (or (:timeout-ms opts) (:timeout opts) default-timeout)
         as      (:as opts)
         tries   (inc (:retry opts 0))]
     (loop [n tries]

@@ -38,6 +38,7 @@ var (
 	kw_status                                 = lang.InternKeywordString("status")
 	kw_stream                                 = lang.InternKeywordString("stream")
 	kw_timeout                                = lang.InternKeywordString("timeout")
+	kw_timeout_ms                             = lang.InternKeywordString("timeout-ms")
 	kw_url                                    = lang.InternKeywordString("url")
 	kw_v                                      = lang.InternKeywordString("v")
 	sym_as                                    = lang.NewSymbol("as")
@@ -422,7 +423,7 @@ func Load() {
 	v_cljg_DOT_net_DOT_http_do_once.BindRoot(tmp126)
 	_ = v_cljg_DOT_net_DOT_http_do_once
 	// (def request (clojure.core/fn ([opts] (let [method (:method opts :get) url (str (:url opts…
-	v_cljg_DOT_net_DOT_http_request.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(72), kw_column, int64(7), kw_end_line, int64(72), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_opts)), kw_doc, "Perform an HTTP request. opts:\n    :method  keyword/string (default :get)   :url  the URL (or pass as 1st arg via the verbs)\n    :headers map {name value}                :query map → query string\n    :body    raw string | :json data | :edn data | :form map   (one; that precedence)\n    :timeout ms (default 30000)              :retry n (default 0), backoff on transport error + 5xx\n    :as      :stream → :body is a cljg.stream readable handle over the live body\n             (opt-in; buffered string is the default)\n  Returns {:status :headers :body :ok?} — :body a string, or a cljg.stream\n  readable handle when :as :stream (the caller closes it). Retries re-raise the\n  last error / return the last 5xx after n attempts; a streaming response is not\n  retried on 5xx (its body handle is live), only on a transport error."))
+	v_cljg_DOT_net_DOT_http_request.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(72), kw_column, int64(7), kw_end_line, int64(72), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_opts)), kw_doc, "Perform an HTTP request. opts:\n    :method  keyword/string (default :get)   :url  the URL (or pass as 1st arg via the verbs)\n    :headers map {name value}                :query map → query string\n    :body    raw string | :json data | :edn data | :form map   (one; that precedence)\n    :timeout-ms ms (default 30000)           :retry n (default 0), backoff on transport error + 5xx\n                                             (:timeout is accepted as the older alias)\n    :as      :stream → :body is a cljg.stream readable handle over the live body\n             (opt-in; buffered string is the default)\n  Returns {:status :headers :body :ok?} — :body a string, or a cljg.stream\n  readable handle when :as :stream (the caller closes it). Retries re-raise the\n  last error / return the last 5xx after n attempts; a streaming response is not\n  retried on 5xx (its body handle is live), only on a transport error."))
 	tmp154 := lang.FnFunc1(func(opts155 any) any {
 		var tmp156 any
 		_ = tmp156
@@ -497,390 +498,419 @@ func Load() {
 			}
 			var headers185 any = tmp184
 			_ = headers185
-			tmp186 := v_cljg_DOT_net_DOT_http_default_timeout.Get()
-			tmp187 := lang.Apply2(kw_timeout, opts155, tmp186)
-			var timeout188 any = tmp187
-			_ = timeout188
-			tmp189 := lang.Apply1(kw_as, opts155)
-			var as190 any = tmp189
-			_ = as190
-			tmp191 := v_clojure_DOT_core_inc.Get()
-			tmp192 := lang.Apply2(kw_retry, opts155, int64(0))
-			tmp193 := lang.Apply1(tmp191, tmp192)
-			var tries194 any = tmp193
-			_ = tries194
-			var tmp195 any
-			_ = tmp195
+			var tmp186 any
+			_ = tmp186
 			{
-				var n196 any = tries194
-				_ = n196
-			loop197:
-				for {
-					var tmp198 any
-					_ = tmp198
+				tmp187 := lang.Apply1(kw_timeout_ms, opts155)
+				var or__2__auto__188 any = tmp187
+				_ = or__2__auto__188
+				var tmp189 any
+				_ = tmp189
+				if lang.IsTruthy(or__2__auto__188) {
+					tmp189 = or__2__auto__188
+				} else {
+					var tmp190 any
+					_ = tmp190
 					{
-						var tmp199 any
-						_ = tmp199
+						tmp191 := lang.Apply1(kw_timeout, opts155)
+						var or__2__auto__192 any = tmp191
+						_ = or__2__auto__192
+						var tmp193 any
+						_ = tmp193
+						if lang.IsTruthy(or__2__auto__192) {
+							tmp193 = or__2__auto__192
+						} else {
+							tmp194 := v_cljg_DOT_net_DOT_http_default_timeout.Get()
+							tmp193 = tmp194
+						}
+						tmp190 = tmp193
+					}
+					tmp189 = tmp190
+				}
+				tmp186 = tmp189
+			}
+			var timeout195 any = tmp186
+			_ = timeout195
+			tmp196 := lang.Apply1(kw_as, opts155)
+			var as197 any = tmp196
+			_ = as197
+			tmp198 := v_clojure_DOT_core_inc.Get()
+			tmp199 := lang.Apply2(kw_retry, opts155, int64(0))
+			tmp200 := lang.Apply1(tmp198, tmp199)
+			var tries201 any = tmp200
+			_ = tries201
+			var tmp202 any
+			_ = tmp202
+			{
+				var n203 any = tries201
+				_ = n203
+			loop204:
+				for {
+					var tmp205 any
+					_ = tmp205
+					{
+						var tmp206 any
+						_ = tmp206
 						func() {
 							defer func() {
 								if r := recover(); r != nil {
 									thrown := rt.Recover(r)
 									if rt.CatchMatches("Throwable", thrown) {
-										var e200 any = thrown
-										_ = e200
-										tmp201 := lang.NewMap(kw_err, e200)
-										tmp199 = tmp201
+										var e207 any = thrown
+										_ = e207
+										tmp208 := lang.NewMap(kw_err, e207)
+										tmp206 = tmp208
 										return
 									}
 									panic(r)
 								}
 							}()
-							tmp202 := v_cljg_DOT_net_DOT_http_do_once.Get()
-							tmp203 := lang.Apply(tmp202, []any{method158, url166, headers185, b173, timeout188, as190})
-							tmp204 := lang.NewMap(kw_v, tmp203)
-							tmp199 = tmp204
+							tmp209 := v_cljg_DOT_net_DOT_http_do_once.Get()
+							tmp210 := lang.Apply(tmp209, []any{method158, url166, headers185, b173, timeout195, as197})
+							tmp211 := lang.NewMap(kw_v, tmp210)
+							tmp206 = tmp211
 						}()
-						var res205 any = tmp199
-						_ = res205
-						tmp206 := lang.Apply1(kw_err, res205)
-						var tmp207 any
-						_ = tmp207
-						if lang.IsTruthy(tmp206) {
-							tmp208 := rt.GTBool(v_clojure_DOT_core_X_GT_, n196, int64(1))
-							var tmp209 any
-							_ = tmp209
-							if tmp208 {
-								tmp210 := v_clojure_DOT_core_dec.Get()
-								tmp211 := lang.Apply1(tmp210, n196)
-								var tmp212 any = tmp211
-								n196 = tmp212
-								continue loop197
+						var res212 any = tmp206
+						_ = res212
+						tmp213 := lang.Apply1(kw_err, res212)
+						var tmp214 any
+						_ = tmp214
+						if lang.IsTruthy(tmp213) {
+							tmp215 := rt.GTBool(v_clojure_DOT_core_X_GT_, n203, int64(1))
+							var tmp216 any
+							_ = tmp216
+							if tmp215 {
+								tmp217 := v_clojure_DOT_core_dec.Get()
+								tmp218 := lang.Apply1(tmp217, n203)
+								var tmp219 any = tmp218
+								n203 = tmp219
+								continue loop204
 							} else {
-								tmp213 := lang.Apply1(kw_err, res205)
-								panic(rt.Throw(tmp213))
+								tmp220 := lang.Apply1(kw_err, res212)
+								panic(rt.Throw(tmp220))
 							}
 						} else {
-							var tmp214 any
-							_ = tmp214
+							var tmp221 any
+							_ = tmp221
 							{
-								tmp215 := v_clojure_DOT_core_not_EQ_.Get()
-								tmp216 := lang.Apply2(tmp215, as190, kw_stream)
-								var and__1__auto__217 any = tmp216
-								_ = and__1__auto__217
-								var tmp218 any
-								_ = tmp218
-								if lang.IsTruthy(and__1__auto__217) {
-									var tmp219 any
-									_ = tmp219
+								tmp222 := v_clojure_DOT_core_not_EQ_.Get()
+								tmp223 := lang.Apply2(tmp222, as197, kw_stream)
+								var and__1__auto__224 any = tmp223
+								_ = and__1__auto__224
+								var tmp225 any
+								_ = tmp225
+								if lang.IsTruthy(and__1__auto__224) {
+									var tmp226 any
+									_ = tmp226
 									{
-										tmp220 := lang.Apply1(kw_v, res205)
-										tmp221 := lang.Apply1(kw_status, tmp220)
-										tmp222 := rt.GE2(v_clojure_DOT_core_X_GT__EQ_, tmp221, int64(500))
-										var and__1__auto__223 any = tmp222
-										_ = and__1__auto__223
-										var tmp224 any
-										_ = tmp224
-										if lang.IsTruthy(and__1__auto__223) {
-											tmp225 := rt.GT2(v_clojure_DOT_core_X_GT_, n196, int64(1))
-											tmp224 = tmp225
+										tmp227 := lang.Apply1(kw_v, res212)
+										tmp228 := lang.Apply1(kw_status, tmp227)
+										tmp229 := rt.GE2(v_clojure_DOT_core_X_GT__EQ_, tmp228, int64(500))
+										var and__1__auto__230 any = tmp229
+										_ = and__1__auto__230
+										var tmp231 any
+										_ = tmp231
+										if lang.IsTruthy(and__1__auto__230) {
+											tmp232 := rt.GT2(v_clojure_DOT_core_X_GT_, n203, int64(1))
+											tmp231 = tmp232
 										} else {
-											tmp224 = and__1__auto__223
+											tmp231 = and__1__auto__230
 										}
-										tmp219 = tmp224
+										tmp226 = tmp231
 									}
-									tmp218 = tmp219
+									tmp225 = tmp226
 								} else {
-									tmp218 = and__1__auto__217
+									tmp225 = and__1__auto__224
 								}
-								tmp214 = tmp218
+								tmp221 = tmp225
 							}
-							var tmp226 any
-							_ = tmp226
-							if lang.IsTruthy(tmp214) {
-								tmp227 := v_clojure_DOT_core_dec.Get()
-								tmp228 := lang.Apply1(tmp227, n196)
-								var tmp229 any = tmp228
-								n196 = tmp229
-								continue loop197
+							var tmp233 any
+							_ = tmp233
+							if lang.IsTruthy(tmp221) {
+								tmp234 := v_clojure_DOT_core_dec.Get()
+								tmp235 := lang.Apply1(tmp234, n203)
+								var tmp236 any = tmp235
+								n203 = tmp236
+								continue loop204
 							} else {
-								var tmp230 any
-								_ = tmp230
+								var tmp237 any
+								_ = tmp237
 								if lang.IsTruthy(kw_else_) {
-									tmp231 := lang.Apply1(kw_v, res205)
-									tmp230 = tmp231
+									tmp238 := lang.Apply1(kw_v, res212)
+									tmp237 = tmp238
 								} else {
-									tmp230 = nil
+									tmp237 = nil
 								}
-								tmp226 = tmp230
+								tmp233 = tmp237
 							}
-							tmp207 = tmp226
+							tmp214 = tmp233
 						}
-						tmp198 = tmp207
+						tmp205 = tmp214
 					}
-					tmp195 = tmp198
-					break loop197
+					tmp202 = tmp205
+					break loop204
 				}
 			}
-			tmp156 = tmp195
+			tmp156 = tmp202
 		}
 		return tmp156
 	})
-	tmp232 := &lang.NamedFn1{Name: "cljg.net.http/request", Expects: "1: [opts]", F: tmp154}
-	v_cljg_DOT_net_DOT_http_request.BindRoot(tmp232)
-	fnD_cljg_DOT_net_DOT_http_request = tmp232.F
+	tmp239 := &lang.NamedFn1{Name: "cljg.net.http/request", Expects: "1: [opts]", F: tmp154}
+	v_cljg_DOT_net_DOT_http_request.BindRoot(tmp239)
+	fnD_cljg_DOT_net_DOT_http_request = tmp239.F
 	v_cljg_DOT_net_DOT_http_request.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_request
 	// (def verb (clojure.core/fn ([method url opts] (request (assoc opts :method method :url url…
-	v_cljg_DOT_net_DOT_http_verb.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(104), kw_column, int64(8), kw_end_line, int64(104), kw_end_column, int64(12), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_method, sym_url, sym_opts))))
-	tmp233 := lang.FnFunc3(func(method234, url235, opts236 any) any {
-		tmp237 := v_cljg_DOT_net_DOT_http_request.Direct()
-		var tmp238 any
-		if !tmp237 {
-			tmp238 = v_cljg_DOT_net_DOT_http_request.Get()
+	v_cljg_DOT_net_DOT_http_verb.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(110), kw_column, int64(8), kw_end_line, int64(110), kw_end_column, int64(12), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_method, sym_url, sym_opts))))
+	tmp240 := lang.FnFunc3(func(method241, url242, opts243 any) any {
+		tmp244 := v_cljg_DOT_net_DOT_http_request.Direct()
+		var tmp245 any
+		if !tmp244 {
+			tmp245 = v_cljg_DOT_net_DOT_http_request.Get()
 		}
-		tmp239 := v_clojure_DOT_core_assoc.Get()
-		tmp240 := lang.Apply(tmp239, []any{opts236, kw_method, method234, kw_url, url235})
-		var tmp241 any
-		if tmp237 {
-			tmp241 = fnD_cljg_DOT_net_DOT_http_request(tmp240)
+		tmp246 := v_clojure_DOT_core_assoc.Get()
+		tmp247 := lang.Apply(tmp246, []any{opts243, kw_method, method241, kw_url, url242})
+		var tmp248 any
+		if tmp244 {
+			tmp248 = fnD_cljg_DOT_net_DOT_http_request(tmp247)
 		} else {
-			tmp241 = lang.Apply1(tmp238, tmp240)
+			tmp248 = lang.Apply1(tmp245, tmp247)
 		}
-		return tmp241
+		return tmp248
 	})
-	tmp242 := &lang.NamedFn3{Name: "cljg.net.http/verb", Expects: "3: [method url opts]", F: tmp233}
-	v_cljg_DOT_net_DOT_http_verb.BindRoot(tmp242)
-	fnD_cljg_DOT_net_DOT_http_verb = tmp242.F
+	tmp249 := &lang.NamedFn3{Name: "cljg.net.http/verb", Expects: "3: [method url opts]", F: tmp240}
+	v_cljg_DOT_net_DOT_http_verb.BindRoot(tmp249)
+	fnD_cljg_DOT_net_DOT_http_verb = tmp249.F
 	v_cljg_DOT_net_DOT_http_verb.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_verb
 	// (def get (clojure.core/fn ([url] (get url {})) ([url opts] (verb :get url opts))))
-	v_cljg_DOT_net_DOT_http_get.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(106), kw_column, int64(7), kw_end_line, int64(106), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
-	tmp243 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_net_DOT_http_get.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(112), kw_column, int64(7), kw_end_line, int64(112), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
+	tmp250 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			url244 := args[0]
-			_ = url244
-			tmp245 := v_cljg_DOT_net_DOT_http_get.Get()
-			tmp246 := lang.NewMap()
-			tmp247 := lang.Apply2(tmp245, url244, tmp246)
-			return tmp247
+			url251 := args[0]
+			_ = url251
+			tmp252 := v_cljg_DOT_net_DOT_http_get.Get()
+			tmp253 := lang.NewMap()
+			tmp254 := lang.Apply2(tmp252, url251, tmp253)
+			return tmp254
 		case 2:
-			url248 := args[0]
-			_ = url248
-			opts249 := args[1]
-			_ = opts249
-			tmp250 := v_cljg_DOT_net_DOT_http_verb.Direct()
-			var tmp251 any
-			if !tmp250 {
-				tmp251 = v_cljg_DOT_net_DOT_http_verb.Get()
+			url255 := args[0]
+			_ = url255
+			opts256 := args[1]
+			_ = opts256
+			tmp257 := v_cljg_DOT_net_DOT_http_verb.Direct()
+			var tmp258 any
+			if !tmp257 {
+				tmp258 = v_cljg_DOT_net_DOT_http_verb.Get()
 			}
-			var tmp252 any
-			if tmp250 {
-				tmp252 = fnD_cljg_DOT_net_DOT_http_verb(kw_get, url248, opts249)
+			var tmp259 any
+			if tmp257 {
+				tmp259 = fnD_cljg_DOT_net_DOT_http_verb(kw_get, url255, opts256)
 			} else {
-				tmp252 = lang.Apply3(tmp251, kw_get, url248, opts249)
+				tmp259 = lang.Apply3(tmp258, kw_get, url255, opts256)
 			}
-			return tmp252
+			return tmp259
 		default:
 			panic(lang.NewArityError(len(args), "cljg.net.http/get", "1: [url] or 2: [url opts]"))
 		}
 	})
-	v_cljg_DOT_net_DOT_http_get.BindRoot(tmp243)
+	v_cljg_DOT_net_DOT_http_get.BindRoot(tmp250)
 	_ = v_cljg_DOT_net_DOT_http_get
 	// (def post (clojure.core/fn ([url] (post url {})) ([url opts] (verb :post url opts))))
-	v_cljg_DOT_net_DOT_http_post.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(107), kw_column, int64(7), kw_end_line, int64(107), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
-	tmp253 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_net_DOT_http_post.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(113), kw_column, int64(7), kw_end_line, int64(113), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
+	tmp260 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			url254 := args[0]
-			_ = url254
-			tmp255 := v_cljg_DOT_net_DOT_http_post.Get()
-			tmp256 := lang.NewMap()
-			tmp257 := lang.Apply2(tmp255, url254, tmp256)
-			return tmp257
+			url261 := args[0]
+			_ = url261
+			tmp262 := v_cljg_DOT_net_DOT_http_post.Get()
+			tmp263 := lang.NewMap()
+			tmp264 := lang.Apply2(tmp262, url261, tmp263)
+			return tmp264
 		case 2:
-			url258 := args[0]
-			_ = url258
-			opts259 := args[1]
-			_ = opts259
-			tmp260 := v_cljg_DOT_net_DOT_http_verb.Direct()
-			var tmp261 any
-			if !tmp260 {
-				tmp261 = v_cljg_DOT_net_DOT_http_verb.Get()
+			url265 := args[0]
+			_ = url265
+			opts266 := args[1]
+			_ = opts266
+			tmp267 := v_cljg_DOT_net_DOT_http_verb.Direct()
+			var tmp268 any
+			if !tmp267 {
+				tmp268 = v_cljg_DOT_net_DOT_http_verb.Get()
 			}
-			var tmp262 any
-			if tmp260 {
-				tmp262 = fnD_cljg_DOT_net_DOT_http_verb(kw_post, url258, opts259)
+			var tmp269 any
+			if tmp267 {
+				tmp269 = fnD_cljg_DOT_net_DOT_http_verb(kw_post, url265, opts266)
 			} else {
-				tmp262 = lang.Apply3(tmp261, kw_post, url258, opts259)
+				tmp269 = lang.Apply3(tmp268, kw_post, url265, opts266)
 			}
-			return tmp262
+			return tmp269
 		default:
 			panic(lang.NewArityError(len(args), "cljg.net.http/post", "1: [url] or 2: [url opts]"))
 		}
 	})
-	v_cljg_DOT_net_DOT_http_post.BindRoot(tmp253)
+	v_cljg_DOT_net_DOT_http_post.BindRoot(tmp260)
 	_ = v_cljg_DOT_net_DOT_http_post
 	// (def put (clojure.core/fn ([url] (put url {})) ([url opts] (verb :put url opts))))
-	v_cljg_DOT_net_DOT_http_put.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(108), kw_column, int64(7), kw_end_line, int64(108), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
-	tmp263 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_net_DOT_http_put.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(114), kw_column, int64(7), kw_end_line, int64(114), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
+	tmp270 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			url264 := args[0]
-			_ = url264
-			tmp265 := v_cljg_DOT_net_DOT_http_put.Get()
-			tmp266 := lang.NewMap()
-			tmp267 := lang.Apply2(tmp265, url264, tmp266)
-			return tmp267
+			url271 := args[0]
+			_ = url271
+			tmp272 := v_cljg_DOT_net_DOT_http_put.Get()
+			tmp273 := lang.NewMap()
+			tmp274 := lang.Apply2(tmp272, url271, tmp273)
+			return tmp274
 		case 2:
-			url268 := args[0]
-			_ = url268
-			opts269 := args[1]
-			_ = opts269
-			tmp270 := v_cljg_DOT_net_DOT_http_verb.Direct()
-			var tmp271 any
-			if !tmp270 {
-				tmp271 = v_cljg_DOT_net_DOT_http_verb.Get()
+			url275 := args[0]
+			_ = url275
+			opts276 := args[1]
+			_ = opts276
+			tmp277 := v_cljg_DOT_net_DOT_http_verb.Direct()
+			var tmp278 any
+			if !tmp277 {
+				tmp278 = v_cljg_DOT_net_DOT_http_verb.Get()
 			}
-			var tmp272 any
-			if tmp270 {
-				tmp272 = fnD_cljg_DOT_net_DOT_http_verb(kw_put, url268, opts269)
+			var tmp279 any
+			if tmp277 {
+				tmp279 = fnD_cljg_DOT_net_DOT_http_verb(kw_put, url275, opts276)
 			} else {
-				tmp272 = lang.Apply3(tmp271, kw_put, url268, opts269)
+				tmp279 = lang.Apply3(tmp278, kw_put, url275, opts276)
 			}
-			return tmp272
+			return tmp279
 		default:
 			panic(lang.NewArityError(len(args), "cljg.net.http/put", "1: [url] or 2: [url opts]"))
 		}
 	})
-	v_cljg_DOT_net_DOT_http_put.BindRoot(tmp263)
+	v_cljg_DOT_net_DOT_http_put.BindRoot(tmp270)
 	_ = v_cljg_DOT_net_DOT_http_put
 	// (def delete (clojure.core/fn ([url] (delete url {})) ([url opts] (verb :delete url opts)))…
-	v_cljg_DOT_net_DOT_http_delete_.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(109), kw_column, int64(7), kw_end_line, int64(109), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
-	tmp273 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_net_DOT_http_delete_.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(115), kw_column, int64(7), kw_end_line, int64(115), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
+	tmp280 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			url274 := args[0]
-			_ = url274
-			tmp275 := v_cljg_DOT_net_DOT_http_delete_.Get()
-			tmp276 := lang.NewMap()
-			tmp277 := lang.Apply2(tmp275, url274, tmp276)
-			return tmp277
+			url281 := args[0]
+			_ = url281
+			tmp282 := v_cljg_DOT_net_DOT_http_delete_.Get()
+			tmp283 := lang.NewMap()
+			tmp284 := lang.Apply2(tmp282, url281, tmp283)
+			return tmp284
 		case 2:
-			url278 := args[0]
-			_ = url278
-			opts279 := args[1]
-			_ = opts279
-			tmp280 := v_cljg_DOT_net_DOT_http_verb.Direct()
-			var tmp281 any
-			if !tmp280 {
-				tmp281 = v_cljg_DOT_net_DOT_http_verb.Get()
+			url285 := args[0]
+			_ = url285
+			opts286 := args[1]
+			_ = opts286
+			tmp287 := v_cljg_DOT_net_DOT_http_verb.Direct()
+			var tmp288 any
+			if !tmp287 {
+				tmp288 = v_cljg_DOT_net_DOT_http_verb.Get()
 			}
-			var tmp282 any
-			if tmp280 {
-				tmp282 = fnD_cljg_DOT_net_DOT_http_verb(kw_delete_, url278, opts279)
+			var tmp289 any
+			if tmp287 {
+				tmp289 = fnD_cljg_DOT_net_DOT_http_verb(kw_delete_, url285, opts286)
 			} else {
-				tmp282 = lang.Apply3(tmp281, kw_delete_, url278, opts279)
+				tmp289 = lang.Apply3(tmp288, kw_delete_, url285, opts286)
 			}
-			return tmp282
+			return tmp289
 		default:
 			panic(lang.NewArityError(len(args), "cljg.net.http/delete", "1: [url] or 2: [url opts]"))
 		}
 	})
-	v_cljg_DOT_net_DOT_http_delete_.BindRoot(tmp273)
+	v_cljg_DOT_net_DOT_http_delete_.BindRoot(tmp280)
 	_ = v_cljg_DOT_net_DOT_http_delete_
 	// (def patch (clojure.core/fn ([url] (patch url {})) ([url opts] (verb :patch url opts))))
-	v_cljg_DOT_net_DOT_http_patch.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(110), kw_column, int64(7), kw_end_line, int64(110), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
-	tmp283 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_net_DOT_http_patch.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(116), kw_column, int64(7), kw_end_line, int64(116), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
+	tmp290 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			url284 := args[0]
-			_ = url284
-			tmp285 := v_cljg_DOT_net_DOT_http_patch.Get()
-			tmp286 := lang.NewMap()
-			tmp287 := lang.Apply2(tmp285, url284, tmp286)
-			return tmp287
+			url291 := args[0]
+			_ = url291
+			tmp292 := v_cljg_DOT_net_DOT_http_patch.Get()
+			tmp293 := lang.NewMap()
+			tmp294 := lang.Apply2(tmp292, url291, tmp293)
+			return tmp294
 		case 2:
-			url288 := args[0]
-			_ = url288
-			opts289 := args[1]
-			_ = opts289
-			tmp290 := v_cljg_DOT_net_DOT_http_verb.Direct()
-			var tmp291 any
-			if !tmp290 {
-				tmp291 = v_cljg_DOT_net_DOT_http_verb.Get()
+			url295 := args[0]
+			_ = url295
+			opts296 := args[1]
+			_ = opts296
+			tmp297 := v_cljg_DOT_net_DOT_http_verb.Direct()
+			var tmp298 any
+			if !tmp297 {
+				tmp298 = v_cljg_DOT_net_DOT_http_verb.Get()
 			}
-			var tmp292 any
-			if tmp290 {
-				tmp292 = fnD_cljg_DOT_net_DOT_http_verb(kw_patch, url288, opts289)
+			var tmp299 any
+			if tmp297 {
+				tmp299 = fnD_cljg_DOT_net_DOT_http_verb(kw_patch, url295, opts296)
 			} else {
-				tmp292 = lang.Apply3(tmp291, kw_patch, url288, opts289)
+				tmp299 = lang.Apply3(tmp298, kw_patch, url295, opts296)
 			}
-			return tmp292
+			return tmp299
 		default:
 			panic(lang.NewArityError(len(args), "cljg.net.http/patch", "1: [url] or 2: [url opts]"))
 		}
 	})
-	v_cljg_DOT_net_DOT_http_patch.BindRoot(tmp283)
+	v_cljg_DOT_net_DOT_http_patch.BindRoot(tmp290)
 	_ = v_cljg_DOT_net_DOT_http_patch
 	// (def head (clojure.core/fn ([url] (head url {})) ([url opts] (verb :head url opts))))
-	v_cljg_DOT_net_DOT_http_head.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(111), kw_column, int64(7), kw_end_line, int64(111), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
-	tmp293 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_net_DOT_http_head.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(117), kw_column, int64(7), kw_end_line, int64(117), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_url), lang.NewVector(sym_url, sym_opts))))
+	tmp300 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			url294 := args[0]
-			_ = url294
-			tmp295 := v_cljg_DOT_net_DOT_http_head.Get()
-			tmp296 := lang.NewMap()
-			tmp297 := lang.Apply2(tmp295, url294, tmp296)
-			return tmp297
+			url301 := args[0]
+			_ = url301
+			tmp302 := v_cljg_DOT_net_DOT_http_head.Get()
+			tmp303 := lang.NewMap()
+			tmp304 := lang.Apply2(tmp302, url301, tmp303)
+			return tmp304
 		case 2:
-			url298 := args[0]
-			_ = url298
-			opts299 := args[1]
-			_ = opts299
-			tmp300 := v_cljg_DOT_net_DOT_http_verb.Direct()
-			var tmp301 any
-			if !tmp300 {
-				tmp301 = v_cljg_DOT_net_DOT_http_verb.Get()
+			url305 := args[0]
+			_ = url305
+			opts306 := args[1]
+			_ = opts306
+			tmp307 := v_cljg_DOT_net_DOT_http_verb.Direct()
+			var tmp308 any
+			if !tmp307 {
+				tmp308 = v_cljg_DOT_net_DOT_http_verb.Get()
 			}
-			var tmp302 any
-			if tmp300 {
-				tmp302 = fnD_cljg_DOT_net_DOT_http_verb(kw_head, url298, opts299)
+			var tmp309 any
+			if tmp307 {
+				tmp309 = fnD_cljg_DOT_net_DOT_http_verb(kw_head, url305, opts306)
 			} else {
-				tmp302 = lang.Apply3(tmp301, kw_head, url298, opts299)
+				tmp309 = lang.Apply3(tmp308, kw_head, url305, opts306)
 			}
-			return tmp302
+			return tmp309
 		default:
 			panic(lang.NewArityError(len(args), "cljg.net.http/head", "1: [url] or 2: [url opts]"))
 		}
 	})
-	v_cljg_DOT_net_DOT_http_head.BindRoot(tmp293)
+	v_cljg_DOT_net_DOT_http_head.BindRoot(tmp300)
 	_ = v_cljg_DOT_net_DOT_http_head
 	// (def json-body (clojure.core/fn ([resp] (-json-decode (:body resp)))))
-	v_cljg_DOT_net_DOT_http_json_body.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(117), kw_column, int64(7), kw_end_line, int64(117), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_resp)), kw_doc, "Parse a response's :body as JSON (object keys → keywords, ints → longs)."))
-	tmp303 := lang.FnFunc1(func(resp304 any) any {
-		tmp305 := v_cljg_DOT_net_DOT_http_X_json_decode.Get()
-		tmp306 := lang.Apply1(kw_body, resp304)
-		tmp307 := lang.Apply1(tmp305, tmp306)
-		return tmp307
+	v_cljg_DOT_net_DOT_http_json_body.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(123), kw_column, int64(7), kw_end_line, int64(123), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(sym_resp)), kw_doc, "Parse a response's :body as JSON (object keys → keywords, ints → longs)."))
+	tmp310 := lang.FnFunc1(func(resp311 any) any {
+		tmp312 := v_cljg_DOT_net_DOT_http_X_json_decode.Get()
+		tmp313 := lang.Apply1(kw_body, resp311)
+		tmp314 := lang.Apply1(tmp312, tmp313)
+		return tmp314
 	})
-	tmp308 := &lang.NamedFn1{Name: "cljg.net.http/json-body", Expects: "1: [resp]", F: tmp303}
-	v_cljg_DOT_net_DOT_http_json_body.BindRoot(tmp308)
-	fnD_cljg_DOT_net_DOT_http_json_body = tmp308.F
+	tmp315 := &lang.NamedFn1{Name: "cljg.net.http/json-body", Expects: "1: [resp]", F: tmp310}
+	v_cljg_DOT_net_DOT_http_json_body.BindRoot(tmp315)
+	fnD_cljg_DOT_net_DOT_http_json_body = tmp315.F
 	v_cljg_DOT_net_DOT_http_json_body.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_json_body
 	// (def edn-body (clojure.core/fn ([resp] (clojure.edn/read-string (:body resp)))))
-	v_cljg_DOT_net_DOT_http_edn_body.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(122), kw_column, int64(7), kw_end_line, int64(122), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_resp)), kw_doc, "Parse a response's :body as EDN."))
-	tmp309 := lang.FnFunc1(func(resp310 any) any {
-		tmp311 := v_clojure_DOT_edn_read_string.Get()
-		tmp312 := lang.Apply1(kw_body, resp310)
-		tmp313 := lang.Apply1(tmp311, tmp312)
-		return tmp313
+	v_cljg_DOT_net_DOT_http_edn_body.SetMeta(lang.NewMap(kw_file, "cljg/net_http.cljg", kw_line, int64(128), kw_column, int64(7), kw_end_line, int64(128), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(sym_resp)), kw_doc, "Parse a response's :body as EDN."))
+	tmp316 := lang.FnFunc1(func(resp317 any) any {
+		tmp318 := v_clojure_DOT_edn_read_string.Get()
+		tmp319 := lang.Apply1(kw_body, resp317)
+		tmp320 := lang.Apply1(tmp318, tmp319)
+		return tmp320
 	})
-	tmp314 := &lang.NamedFn1{Name: "cljg.net.http/edn-body", Expects: "1: [resp]", F: tmp309}
-	v_cljg_DOT_net_DOT_http_edn_body.BindRoot(tmp314)
-	fnD_cljg_DOT_net_DOT_http_edn_body = tmp314.F
+	tmp321 := &lang.NamedFn1{Name: "cljg.net.http/edn-body", Expects: "1: [resp]", F: tmp316}
+	v_cljg_DOT_net_DOT_http_edn_body.BindRoot(tmp321)
+	fnD_cljg_DOT_net_DOT_http_edn_body = tmp321.F
 	v_cljg_DOT_net_DOT_http_edn_body.SealDirect()
 	_ = v_cljg_DOT_net_DOT_http_edn_body
 }
