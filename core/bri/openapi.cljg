@@ -93,6 +93,8 @@
                  (the ADR 0080 login seam)."
   ([spec] (client spec {}))
   ([spec opts]
+   (-check-opts "bri.web.openapi/client" opts
+                [:base-url :headers :timeout-ms :timeout :retry :token :api-key :auth-fn])
    (let [parsed (parse-spec spec)
          base   (or (:base-url opts)
                     (get-in parsed [:servers 0 :url])

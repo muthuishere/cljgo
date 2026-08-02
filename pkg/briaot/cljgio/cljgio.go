@@ -8,22 +8,27 @@ import (
 )
 
 var (
+	kw_append_                                      = lang.InternKeywordString("append")
 	kw_arglists                                     = lang.InternKeywordString("arglists")
 	kw_as                                           = lang.InternKeywordString("as")
 	kw_column                                       = lang.InternKeywordString("column")
 	kw_command                                      = lang.InternKeywordString("command")
+	kw_dir                                          = lang.InternKeywordString("dir")
 	kw_dir_QMARK_                                   = lang.InternKeywordString("dir?")
 	kw_doc                                          = lang.InternKeywordString("doc")
 	kw_end_column                                   = lang.InternKeywordString("end-column")
 	kw_end_line                                     = lang.InternKeywordString("end-line")
+	kw_env                                          = lang.InternKeywordString("env")
 	kw_err                                          = lang.InternKeywordString("err")
 	kw_exit                                         = lang.InternKeywordString("exit")
 	kw_file                                         = lang.InternKeywordString("file")
 	kw_file_QMARK_                                  = lang.InternKeywordString("file?")
+	kw_in                                           = lang.InternKeywordString("in")
 	kw_line                                         = lang.InternKeywordString("line")
 	kw_modified                                     = lang.InternKeywordString("modified")
 	kw_size                                         = lang.InternKeywordString("size")
 	kw_timed_out_QMARK_                             = lang.InternKeywordString("timed-out?")
+	kw_timeout_ms                                   = lang.InternKeywordString("timeout-ms")
 	sym_X_AMP_                                      = lang.NewSymbol("&")
 	sym_cljg_DOT_io                                 = lang.NewSymbol("cljg.io")
 	sym_clojure_DOT_core                            = lang.NewSymbol("clojure.core")
@@ -41,6 +46,7 @@ var (
 	sym_str                                         = lang.NewSymbol("str")
 	sym_suffix                                      = lang.NewSymbol("suffix")
 	sym_w                                           = lang.NewSymbol("w")
+	v_cljg_DOT_io_X_check_opts                      = lang.InternVarName(lang.NewSymbol("cljg.io"), lang.NewSymbol("-check-opts")).SetPrivate()
 	v_cljg_DOT_io_X_fs_copy                         = lang.InternVarName(lang.NewSymbol("cljg.io"), lang.NewSymbol("-fs-copy")).SetPrivate()
 	v_cljg_DOT_io_X_fs_cwd                          = lang.InternVarName(lang.NewSymbol("cljg.io"), lang.NewSymbol("-fs-cwd")).SetPrivate()
 	v_cljg_DOT_io_X_fs_delete                       = lang.InternVarName(lang.NewSymbol("cljg.io"), lang.NewSymbol("-fs-delete")).SetPrivate()
@@ -502,9 +508,13 @@ func Load() {
 			_ = data136
 			opts137 := args[2]
 			_ = opts137
-			tmp138 := v_cljg_DOT_io_X_fs_write_bytes.Get()
-			tmp139 := lang.Apply3(tmp138, path135, data136, opts137)
-			return tmp139
+			tmp138 := v_cljg_DOT_io_X_check_opts.Get()
+			tmp139 := lang.NewVector(kw_append_)
+			tmp140 := lang.Apply3(tmp138, "cljg.io/write-bytes", opts137, tmp139)
+			_ = tmp140
+			tmp141 := v_cljg_DOT_io_X_fs_write_bytes.Get()
+			tmp142 := lang.Apply3(tmp141, path135, data136, opts137)
+			return tmp142
 		default:
 			panic(lang.NewArityError(len(args), "cljg.io/write-bytes", "2: [path data] or 3: [path data opts]"))
 		}
@@ -512,245 +522,249 @@ func Load() {
 	v_cljg_DOT_io_write_bytes.BindRoot(tmp130)
 	_ = v_cljg_DOT_io_write_bytes
 	// (def home (clojure.core/fn ([] (-fs-home))))
-	v_cljg_DOT_io_home.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(182), kw_column, int64(7), kw_end_line, int64(182), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The current user's home directory."))
-	tmp140 := lang.FnFunc0(func() any {
-		tmp141 := v_cljg_DOT_io_X_fs_home.Get()
-		tmp142 := lang.Apply0(tmp141)
-		return tmp142
+	v_cljg_DOT_io_home.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(184), kw_column, int64(7), kw_end_line, int64(184), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The current user's home directory."))
+	tmp143 := lang.FnFunc0(func() any {
+		tmp144 := v_cljg_DOT_io_X_fs_home.Get()
+		tmp145 := lang.Apply0(tmp144)
+		return tmp145
 	})
-	tmp143 := &lang.NamedFn0{Name: "cljg.io/home", Expects: "0: []", F: tmp140}
-	v_cljg_DOT_io_home.BindRoot(tmp143)
-	fnD_cljg_DOT_io_home = tmp143.F
+	tmp146 := &lang.NamedFn0{Name: "cljg.io/home", Expects: "0: []", F: tmp143}
+	v_cljg_DOT_io_home.BindRoot(tmp146)
+	fnD_cljg_DOT_io_home = tmp146.F
 	v_cljg_DOT_io_home.SealDirect()
 	_ = v_cljg_DOT_io_home
 	// (def cwd (clojure.core/fn ([] (-fs-cwd))))
-	v_cljg_DOT_io_cwd.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(183), kw_column, int64(7), kw_end_line, int64(183), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The current working directory."))
-	tmp144 := lang.FnFunc0(func() any {
-		tmp145 := v_cljg_DOT_io_X_fs_cwd.Get()
-		tmp146 := lang.Apply0(tmp145)
-		return tmp146
+	v_cljg_DOT_io_cwd.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(185), kw_column, int64(7), kw_end_line, int64(185), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "The current working directory."))
+	tmp147 := lang.FnFunc0(func() any {
+		tmp148 := v_cljg_DOT_io_X_fs_cwd.Get()
+		tmp149 := lang.Apply0(tmp148)
+		return tmp149
 	})
-	tmp147 := &lang.NamedFn0{Name: "cljg.io/cwd", Expects: "0: []", F: tmp144}
-	v_cljg_DOT_io_cwd.BindRoot(tmp147)
-	fnD_cljg_DOT_io_cwd = tmp147.F
+	tmp150 := &lang.NamedFn0{Name: "cljg.io/cwd", Expects: "0: []", F: tmp147}
+	v_cljg_DOT_io_cwd.BindRoot(tmp150)
+	fnD_cljg_DOT_io_cwd = tmp150.F
 	v_cljg_DOT_io_cwd.SealDirect()
 	_ = v_cljg_DOT_io_cwd
 	// (def temp-file (clojure.core/fn ([] (temp-file "cljg" "")) ([prefix] (temp-file prefix "")…
-	v_cljg_DOT_io_temp_file.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(185), kw_column, int64(7), kw_end_line, int64(185), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_prefix), lang.NewVector(sym_prefix, sym_suffix)), kw_doc, "Create a fresh temporary file and return its path. Optional `prefix`/`suffix`\n  shape the name (e.g. (temp-file \"build-\" \".log\"))."))
-	tmp148 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_io_temp_file.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(187), kw_column, int64(7), kw_end_line, int64(187), kw_end_column, int64(16), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_prefix), lang.NewVector(sym_prefix, sym_suffix)), kw_doc, "Create a fresh temporary file and return its path. Optional `prefix`/`suffix`\n  shape the name (e.g. (temp-file \"build-\" \".log\"))."))
+	tmp151 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp149 := v_cljg_DOT_io_temp_file.Get()
-			tmp150 := lang.Apply2(tmp149, "cljg", "")
-			return tmp150
-		case 1:
-			prefix151 := args[0]
-			_ = prefix151
 			tmp152 := v_cljg_DOT_io_temp_file.Get()
-			tmp153 := lang.Apply2(tmp152, prefix151, "")
+			tmp153 := lang.Apply2(tmp152, "cljg", "")
 			return tmp153
-		case 2:
+		case 1:
 			prefix154 := args[0]
 			_ = prefix154
-			suffix155 := args[1]
-			_ = suffix155
-			tmp156 := v_cljg_DOT_io_X_fs_temp_file.Get()
-			tmp157 := lang.Apply2(tmp156, prefix154, suffix155)
-			return tmp157
+			tmp155 := v_cljg_DOT_io_temp_file.Get()
+			tmp156 := lang.Apply2(tmp155, prefix154, "")
+			return tmp156
+		case 2:
+			prefix157 := args[0]
+			_ = prefix157
+			suffix158 := args[1]
+			_ = suffix158
+			tmp159 := v_cljg_DOT_io_X_fs_temp_file.Get()
+			tmp160 := lang.Apply2(tmp159, prefix157, suffix158)
+			return tmp160
 		default:
 			panic(lang.NewArityError(len(args), "cljg.io/temp-file", "0: [] or 1: [prefix] or 2: [prefix suffix]"))
 		}
 	})
-	v_cljg_DOT_io_temp_file.BindRoot(tmp148)
+	v_cljg_DOT_io_temp_file.BindRoot(tmp151)
 	_ = v_cljg_DOT_io_temp_file
 	// (def temp-dir (clojure.core/fn ([] (temp-dir "cljg")) ([prefix] (-fs-temp-dir prefix))))
-	v_cljg_DOT_io_temp_dir.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(192), kw_column, int64(7), kw_end_line, int64(192), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_prefix)), kw_doc, "Create a fresh temporary directory and return its path. Optional `prefix`\n  shapes the name."))
-	tmp158 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_io_temp_dir.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(194), kw_column, int64(7), kw_end_line, int64(194), kw_end_column, int64(15), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_prefix)), kw_doc, "Create a fresh temporary directory and return its path. Optional `prefix`\n  shapes the name."))
+	tmp161 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
-			tmp159 := v_cljg_DOT_io_temp_dir.Get()
-			tmp160 := lang.Apply1(tmp159, "cljg")
-			return tmp160
-		case 1:
-			prefix161 := args[0]
-			_ = prefix161
-			tmp162 := v_cljg_DOT_io_X_fs_temp_dir.Get()
-			tmp163 := lang.Apply1(tmp162, prefix161)
+			tmp162 := v_cljg_DOT_io_temp_dir.Get()
+			tmp163 := lang.Apply1(tmp162, "cljg")
 			return tmp163
+		case 1:
+			prefix164 := args[0]
+			_ = prefix164
+			tmp165 := v_cljg_DOT_io_X_fs_temp_dir.Get()
+			tmp166 := lang.Apply1(tmp165, prefix164)
+			return tmp166
 		default:
 			panic(lang.NewArityError(len(args), "cljg.io/temp-dir", "0: [] or 1: [prefix]"))
 		}
 	})
-	v_cljg_DOT_io_temp_dir.BindRoot(tmp158)
+	v_cljg_DOT_io_temp_dir.BindRoot(tmp161)
 	_ = v_cljg_DOT_io_temp_dir
-	// (def exec (clojure.core/fn ([command] (exec command {})) ([command opts] (-proc-exec (vec …
-	v_cljg_DOT_io_exec.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(201), kw_column, int64(7), kw_end_line, int64(201), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_command), lang.NewVector(sym_command, sym_opts)), kw_doc, "Run a subprocess and return {:out :err :exit :timed-out?} — never throwing on\n  a non-zero exit (that's a normal result; use `sh!` to throw). `command` is a\n  vector [cmd arg…]. opts (optional):\n    :in         a string fed to the process's stdin\n    :env        {name value} merged onto the current environment\n    :dir        the working directory\n    :timeout-ms kill the process after n ms (:timed-out? true, :exit -1)\n  A missing/unrunnable binary throws (it never ran)."))
-	tmp164 := lang.FnFunc(func(args ...any) any {
+	// (def exec (clojure.core/fn ([command] (exec command {})) ([command opts] (-check-opts "clj…
+	v_cljg_DOT_io_exec.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(203), kw_column, int64(7), kw_end_line, int64(203), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_command), lang.NewVector(sym_command, sym_opts)), kw_doc, "Run a subprocess and return {:out :err :exit :timed-out?} — never throwing on\n  a non-zero exit (that's a normal result; use `sh!` to throw). `command` is a\n  vector [cmd arg…]. opts (optional):\n    :in         a string fed to the process's stdin\n    :env        {name value} merged onto the current environment\n    :dir        the working directory\n    :timeout-ms kill the process after n ms (:timed-out? true, :exit -1)\n  A missing/unrunnable binary throws (it never ran)."))
+	tmp167 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			command165 := args[0]
-			_ = command165
-			tmp166 := v_cljg_DOT_io_exec.Get()
-			tmp167 := lang.NewMap()
-			tmp168 := lang.Apply2(tmp166, command165, tmp167)
-			return tmp168
+			command168 := args[0]
+			_ = command168
+			tmp169 := v_cljg_DOT_io_exec.Get()
+			tmp170 := lang.NewMap()
+			tmp171 := lang.Apply2(tmp169, command168, tmp170)
+			return tmp171
 		case 2:
-			command169 := args[0]
-			_ = command169
-			opts170 := args[1]
-			_ = opts170
-			tmp171 := v_cljg_DOT_io_X_proc_exec.Get()
-			tmp172 := v_clojure_DOT_core_vec.Get()
-			tmp173 := lang.Apply1(tmp172, command169)
-			tmp174 := lang.Apply2(tmp171, tmp173, opts170)
-			return tmp174
+			command172 := args[0]
+			_ = command172
+			opts173 := args[1]
+			_ = opts173
+			tmp174 := v_cljg_DOT_io_X_check_opts.Get()
+			tmp175 := lang.NewVector(kw_in, kw_env, kw_dir, kw_timeout_ms)
+			tmp176 := lang.Apply3(tmp174, "cljg.io/exec", opts173, tmp175)
+			_ = tmp176
+			tmp177 := v_cljg_DOT_io_X_proc_exec.Get()
+			tmp178 := v_clojure_DOT_core_vec.Get()
+			tmp179 := lang.Apply1(tmp178, command172)
+			tmp180 := lang.Apply2(tmp177, tmp179, opts173)
+			return tmp180
 		default:
 			panic(lang.NewArityError(len(args), "cljg.io/exec", "1: [command] or 2: [command opts]"))
 		}
 	})
-	v_cljg_DOT_io_exec.BindRoot(tmp164)
+	v_cljg_DOT_io_exec.BindRoot(tmp167)
 	_ = v_cljg_DOT_io_exec
 	// (def sh (clojure.core/fn ([& command] (exec (vec command)))))
-	v_cljg_DOT_io_sh.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(213), kw_column, int64(7), kw_end_line, int64(213), kw_end_column, int64(9), kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_command)), kw_doc, "Convenience over `exec` for the common shape: pass the command + args as\n  varargs, get the same {:out :err :exit :timed-out?} map back.\n    (sh \"git\" \"rev-parse\" \"HEAD\")\n  For stdin/env/dir/timeout use `exec` with an opts map."))
-	tmp175 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_io_sh.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(217), kw_column, int64(7), kw_end_line, int64(217), kw_end_column, int64(9), kw_arglists, lang.NewList(lang.NewVector(sym_X_AMP_, sym_command)), kw_doc, "Convenience over `exec` for the common shape: pass the command + args as\n  varargs, get the same {:out :err :exit :timed-out?} map back.\n    (sh \"git\" \"rev-parse\" \"HEAD\")\n  For stdin/env/dir/timeout use `exec` with an opts map."))
+	tmp181 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		default:
 			if len(args) < 0 {
 				panic(lang.NewArityError(len(args), "cljg.io/sh", "0+: [command & more]"))
 			}
-			var command176 any
+			var command182 any
 			if len(args) > 0 {
-				command176 = lang.NewList(args[0:]...)
+				command182 = lang.NewList(args[0:]...)
 			}
-			_ = command176
-			tmp177 := v_cljg_DOT_io_exec.Get()
-			tmp178 := v_clojure_DOT_core_vec.Get()
-			tmp179 := lang.Apply1(tmp178, command176)
-			tmp180 := lang.Apply1(tmp177, tmp179)
-			return tmp180
+			_ = command182
+			tmp183 := v_cljg_DOT_io_exec.Get()
+			tmp184 := v_clojure_DOT_core_vec.Get()
+			tmp185 := lang.Apply1(tmp184, command182)
+			tmp186 := lang.Apply1(tmp183, tmp185)
+			return tmp186
 		}
 	})
-	v_cljg_DOT_io_sh.BindRoot(tmp175)
+	v_cljg_DOT_io_sh.BindRoot(tmp181)
 	_ = v_cljg_DOT_io_sh
 	// (def sh! (clojure.core/fn ([command] (sh! command {})) ([command opts] (let [{:keys [exit …
-	v_cljg_DOT_io_sh_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(221), kw_column, int64(7), kw_end_line, int64(221), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_command), lang.NewVector(sym_command, sym_opts)), kw_doc, "Like `sh`, but THROWS (ex-info) if the command exits non-zero or times out —\n  for the script style where a failed step should abort. Returns the same result\n  map on success. Takes a command vector + optional opts (like `exec`)."))
-	tmp181 := lang.FnFunc(func(args ...any) any {
+	v_cljg_DOT_io_sh_BANG_.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(225), kw_column, int64(7), kw_end_line, int64(225), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_command), lang.NewVector(sym_command, sym_opts)), kw_doc, "Like `sh`, but THROWS (ex-info) if the command exits non-zero or times out —\n  for the script style where a failed step should abort. Returns the same result\n  map on success. Takes a command vector + optional opts (like `exec`)."))
+	tmp187 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
-			command182 := args[0]
-			_ = command182
-			tmp183 := v_cljg_DOT_io_sh_BANG_.Get()
-			tmp184 := lang.NewMap()
-			tmp185 := lang.Apply2(tmp183, command182, tmp184)
-			return tmp185
+			command188 := args[0]
+			_ = command188
+			tmp189 := v_cljg_DOT_io_sh_BANG_.Get()
+			tmp190 := lang.NewMap()
+			tmp191 := lang.Apply2(tmp189, command188, tmp190)
+			return tmp191
 		case 2:
-			command186 := args[0]
-			_ = command186
-			opts187 := args[1]
-			_ = opts187
-			var tmp188 any
-			_ = tmp188
+			command192 := args[0]
+			_ = command192
+			opts193 := args[1]
+			_ = opts193
+			var tmp194 any
+			_ = tmp194
 			{
-				tmp189 := v_cljg_DOT_io_exec.Get()
-				tmp190 := lang.Apply2(tmp189, command186, opts187)
-				var map__165191 any = tmp190
-				_ = map__165191
-				tmp192 := v_clojure_DOT_core_seq_QMARK_.Get()
-				tmp193 := lang.Apply1(tmp192, map__165191)
-				var tmp194 any
-				_ = tmp194
-				if lang.IsTruthy(tmp193) {
-					tmp195 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-					tmp196 := lang.Apply1(tmp195, map__165191)
-					tmp194 = tmp196
-				} else {
-					tmp194 = map__165191
-				}
-				var map__165197 any = tmp194
+				tmp195 := v_cljg_DOT_io_exec.Get()
+				tmp196 := lang.Apply2(tmp195, command192, opts193)
+				var map__165197 any = tmp196
 				_ = map__165197
-				var r198 any = map__165197
-				_ = r198
-				tmp199 := v_clojure_DOT_core_get.Get()
-				tmp200 := lang.Apply2(tmp199, map__165197, kw_exit)
-				var exit201 any = tmp200
-				_ = exit201
-				tmp202 := v_clojure_DOT_core_get.Get()
-				tmp203 := lang.Apply2(tmp202, map__165197, kw_err)
-				var err204 any = tmp203
-				_ = err204
-				tmp205 := v_clojure_DOT_core_get.Get()
-				tmp206 := lang.Apply2(tmp205, map__165197, kw_timed_out_QMARK_)
-				var timed_out_QMARK_207 any = tmp206
-				_ = timed_out_QMARK_207
-				tmp208 := v_clojure_DOT_core_not_EQ_.Get()
-				tmp209 := lang.Apply2(tmp208, int64(0), exit201)
-				var tmp210 any
-				_ = tmp210
-				if lang.IsTruthy(tmp209) {
-					tmp211 := v_clojure_DOT_core_ex_info.Get()
-					tmp212 := v_clojure_DOT_core_str.Get()
-					var tmp213 any
-					_ = tmp213
-					if lang.IsTruthy(timed_out_QMARK_207) {
-						tmp213 = " (timed out)"
-					} else {
-						tmp213 = nil
-					}
-					tmp214 := v_clojure_DOT_string_join.Get()
-					tmp215 := lang.Apply2(tmp214, " ", command186)
-					tmp216 := v_clojure_DOT_core_seq.Get()
-					tmp217 := lang.Apply1(tmp216, err204)
-					var tmp218 any
-					_ = tmp218
-					if lang.IsTruthy(tmp217) {
-						tmp219 := v_clojure_DOT_core_str.Get()
-						tmp220 := lang.Apply2(tmp219, "\n", err204)
-						tmp218 = tmp220
-					} else {
-						tmp218 = nil
-					}
-					tmp221 := lang.Apply(tmp212, []any{"cljg.io: command failed", tmp213, " (exit ", exit201, "): ", tmp215, tmp218})
-					tmp222 := v_clojure_DOT_core_assoc.Get()
-					tmp223 := v_clojure_DOT_core_vec.Get()
-					tmp224 := lang.Apply1(tmp223, command186)
-					tmp225 := lang.Apply3(tmp222, r198, kw_command, tmp224)
-					tmp226 := lang.Apply2(tmp211, tmp221, tmp225)
-					panic(rt.Throw(tmp226))
+				tmp198 := v_clojure_DOT_core_seq_QMARK_.Get()
+				tmp199 := lang.Apply1(tmp198, map__165197)
+				var tmp200 any
+				_ = tmp200
+				if lang.IsTruthy(tmp199) {
+					tmp201 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+					tmp202 := lang.Apply1(tmp201, map__165197)
+					tmp200 = tmp202
 				} else {
-					tmp210 = nil
+					tmp200 = map__165197
 				}
-				_ = tmp210
-				tmp188 = r198
+				var map__165203 any = tmp200
+				_ = map__165203
+				var r204 any = map__165203
+				_ = r204
+				tmp205 := v_clojure_DOT_core_get.Get()
+				tmp206 := lang.Apply2(tmp205, map__165203, kw_exit)
+				var exit207 any = tmp206
+				_ = exit207
+				tmp208 := v_clojure_DOT_core_get.Get()
+				tmp209 := lang.Apply2(tmp208, map__165203, kw_err)
+				var err210 any = tmp209
+				_ = err210
+				tmp211 := v_clojure_DOT_core_get.Get()
+				tmp212 := lang.Apply2(tmp211, map__165203, kw_timed_out_QMARK_)
+				var timed_out_QMARK_213 any = tmp212
+				_ = timed_out_QMARK_213
+				tmp214 := v_clojure_DOT_core_not_EQ_.Get()
+				tmp215 := lang.Apply2(tmp214, int64(0), exit207)
+				var tmp216 any
+				_ = tmp216
+				if lang.IsTruthy(tmp215) {
+					tmp217 := v_clojure_DOT_core_ex_info.Get()
+					tmp218 := v_clojure_DOT_core_str.Get()
+					var tmp219 any
+					_ = tmp219
+					if lang.IsTruthy(timed_out_QMARK_213) {
+						tmp219 = " (timed out)"
+					} else {
+						tmp219 = nil
+					}
+					tmp220 := v_clojure_DOT_string_join.Get()
+					tmp221 := lang.Apply2(tmp220, " ", command192)
+					tmp222 := v_clojure_DOT_core_seq.Get()
+					tmp223 := lang.Apply1(tmp222, err210)
+					var tmp224 any
+					_ = tmp224
+					if lang.IsTruthy(tmp223) {
+						tmp225 := v_clojure_DOT_core_str.Get()
+						tmp226 := lang.Apply2(tmp225, "\n", err210)
+						tmp224 = tmp226
+					} else {
+						tmp224 = nil
+					}
+					tmp227 := lang.Apply(tmp218, []any{"cljg.io: command failed", tmp219, " (exit ", exit207, "): ", tmp221, tmp224})
+					tmp228 := v_clojure_DOT_core_assoc.Get()
+					tmp229 := v_clojure_DOT_core_vec.Get()
+					tmp230 := lang.Apply1(tmp229, command192)
+					tmp231 := lang.Apply3(tmp228, r204, kw_command, tmp230)
+					tmp232 := lang.Apply2(tmp217, tmp227, tmp231)
+					panic(rt.Throw(tmp232))
+				} else {
+					tmp216 = nil
+				}
+				_ = tmp216
+				tmp194 = r204
 			}
-			return tmp188
+			return tmp194
 		default:
 			panic(lang.NewArityError(len(args), "cljg.io/sh!", "1: [command] or 2: [command opts]"))
 		}
 	})
-	v_cljg_DOT_io_sh_BANG_.BindRoot(tmp181)
+	v_cljg_DOT_io_sh_BANG_.BindRoot(tmp187)
 	_ = v_cljg_DOT_io_sh_BANG_
 	// (def string-writer (clojure.core/fn ([] (clojure.core/-string-writer))))
-	v_cljg_DOT_io_string_writer.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(256), kw_column, int64(7), kw_end_line, int64(256), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "A fresh in-memory writer *out* can be bound to — the java.io.StringWriter\n  analog. Read what has been written to it with `writer-str`."))
-	tmp227 := lang.FnFunc0(func() any {
-		tmp228 := v_clojure_DOT_core_X_string_writer.Get()
-		tmp229 := lang.Apply0(tmp228)
-		return tmp229
+	v_cljg_DOT_io_string_writer.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(260), kw_column, int64(7), kw_end_line, int64(260), kw_end_column, int64(20), kw_arglists, lang.NewList(lang.NewVector()), kw_doc, "A fresh in-memory writer *out* can be bound to — the java.io.StringWriter\n  analog. Read what has been written to it with `writer-str`."))
+	tmp233 := lang.FnFunc0(func() any {
+		tmp234 := v_clojure_DOT_core_X_string_writer.Get()
+		tmp235 := lang.Apply0(tmp234)
+		return tmp235
 	})
-	tmp230 := &lang.NamedFn0{Name: "cljg.io/string-writer", Expects: "0: []", F: tmp227}
-	v_cljg_DOT_io_string_writer.BindRoot(tmp230)
-	fnD_cljg_DOT_io_string_writer = tmp230.F
+	tmp236 := &lang.NamedFn0{Name: "cljg.io/string-writer", Expects: "0: []", F: tmp233}
+	v_cljg_DOT_io_string_writer.BindRoot(tmp236)
+	fnD_cljg_DOT_io_string_writer = tmp236.F
 	v_cljg_DOT_io_string_writer.SealDirect()
 	_ = v_cljg_DOT_io_string_writer
 	// (def writer-str (clojure.core/fn ([w] (clojure.core/-string-writer-str w))))
-	v_cljg_DOT_io_writer_str.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(262), kw_column, int64(7), kw_end_line, int64(262), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_w)), kw_doc, "Everything written to `w` (a `string-writer`) so far, as a String — the\n  (str a-StringWriter) analog. Non-destructive: the writer keeps accumulating."))
-	tmp231 := lang.FnFunc1(func(w232 any) any {
-		tmp233 := v_clojure_DOT_core_X_string_writer_str.Get()
-		tmp234 := lang.Apply1(tmp233, w232)
-		return tmp234
+	v_cljg_DOT_io_writer_str.SetMeta(lang.NewMap(kw_file, "cljg/io.cljg", kw_line, int64(266), kw_column, int64(7), kw_end_line, int64(266), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_w)), kw_doc, "Everything written to `w` (a `string-writer`) so far, as a String — the\n  (str a-StringWriter) analog. Non-destructive: the writer keeps accumulating."))
+	tmp237 := lang.FnFunc1(func(w238 any) any {
+		tmp239 := v_clojure_DOT_core_X_string_writer_str.Get()
+		tmp240 := lang.Apply1(tmp239, w238)
+		return tmp240
 	})
-	tmp235 := &lang.NamedFn1{Name: "cljg.io/writer-str", Expects: "1: [w]", F: tmp231}
-	v_cljg_DOT_io_writer_str.BindRoot(tmp235)
-	fnD_cljg_DOT_io_writer_str = tmp235.F
+	tmp241 := &lang.NamedFn1{Name: "cljg.io/writer-str", Expects: "1: [w]", F: tmp237}
+	v_cljg_DOT_io_writer_str.BindRoot(tmp241)
+	fnD_cljg_DOT_io_writer_str = tmp241.F
 	v_cljg_DOT_io_writer_str.SealDirect()
 	_ = v_cljg_DOT_io_writer_str
 }

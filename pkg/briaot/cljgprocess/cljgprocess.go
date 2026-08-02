@@ -11,9 +11,11 @@ var (
 	kw_alive_QMARK_                                 = lang.InternKeywordString("alive?")
 	kw_arglists                                     = lang.InternKeywordString("arglists")
 	kw_column                                       = lang.InternKeywordString("column")
+	kw_dir                                          = lang.InternKeywordString("dir")
 	kw_doc                                          = lang.InternKeywordString("doc")
 	kw_end_column                                   = lang.InternKeywordString("end-column")
 	kw_end_line                                     = lang.InternKeywordString("end-line")
+	kw_env                                          = lang.InternKeywordString("env")
 	kw_err                                          = lang.InternKeywordString("err")
 	kw_exit_code                                    = lang.InternKeywordString("exit-code")
 	kw_file                                         = lang.InternKeywordString("file")
@@ -26,6 +28,7 @@ var (
 	sym_clojure_DOT_core                            = lang.NewSymbol("clojure.core")
 	sym_command                                     = lang.NewSymbol("command")
 	sym_opts                                        = lang.NewSymbol("opts")
+	v_cljg_DOT_process_X_check_opts                 = lang.InternVarName(lang.NewSymbol("cljg.process"), lang.NewSymbol("-check-opts")).SetPrivate()
 	v_cljg_DOT_process_X_proc_alive_QMARK_          = lang.InternVarName(lang.NewSymbol("cljg.process"), lang.NewSymbol("-proc-alive?")).SetPrivate()
 	v_cljg_DOT_process_X_proc_exit_code             = lang.InternVarName(lang.NewSymbol("cljg.process"), lang.NewSymbol("-proc-exit-code")).SetPrivate()
 	v_cljg_DOT_process_X_proc_kill                  = lang.InternVarName(lang.NewSymbol("cljg.process"), lang.NewSymbol("-proc-kill")).SetPrivate()
@@ -58,7 +61,7 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def spawn (clojure.core/fn ([command] (spawn command {})) ([command opts] (let [{:keys [i…
+	// (def spawn (clojure.core/fn ([command] (spawn command {})) ([command opts] (-check-opts "c…
 	v_cljg_DOT_process_spawn.SetMeta(lang.NewMap(kw_file, "cljg/process.cljg", kw_line, int64(61), kw_column, int64(7), kw_end_line, int64(61), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_command), lang.NewVector(sym_command, sym_opts)), kw_doc, "Start a subprocess and return a live handle:\n    {:in <writable> :out <readable> :err <readable>\n     :wait (fn [] -> exit-code) :kill (fn [] -> nil)\n     :alive? (fn [] -> boolean)}\n  `command` is a vector [cmd arg…]. opts (optional):\n    :env {name value}  merged onto the current environment\n    :dir path          the working directory\n  The child runs concurrently; stream into :in and out of :out/:err with\n  cljg.stream, then call :wait (blocks for exit, returns the exit code) or\n  :kill. :alive? never blocks — it answers false once the child has exited,\n  whether or not :wait or :kill was ever called, and is safe to call any\n  number of times alongside :wait.\n  :exit-code never blocks either, and returns nil until the child has been\n  REAPED — which is NOT the same instant it exits. Draining :out to EOF then\n  reading :exit-code returns nil for an already-exited child (measured: 5 of\n  5 runs). To get the status after draining, call :wait; it returns\n  immediately once the child is gone. Reach for :exit-code when polling a\n  child you are not draining.\n  A missing/unrunnable binary throws (it never started)."))
 	tmp5 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
@@ -74,72 +77,76 @@ func Load() {
 			_ = command10
 			opts11 := args[1]
 			_ = opts11
-			var tmp12 any
-			_ = tmp12
+			tmp12 := v_cljg_DOT_process_X_check_opts.Get()
+			tmp13 := lang.NewVector(kw_env, kw_dir)
+			tmp14 := lang.Apply3(tmp12, "cljg.process/spawn", opts11, tmp13)
+			_ = tmp14
+			var tmp15 any
+			_ = tmp15
 			{
-				tmp13 := v_cljg_DOT_process_X_proc_spawn.Get()
-				tmp14 := v_clojure_DOT_core_vec.Get()
-				tmp15 := lang.Apply1(tmp14, command10)
-				tmp16 := lang.Apply2(tmp13, tmp15, opts11)
-				var map__34217 any = tmp16
-				_ = map__34217
-				tmp18 := v_clojure_DOT_core_seq_QMARK_.Get()
-				tmp19 := lang.Apply1(tmp18, map__34217)
-				var tmp20 any
-				_ = tmp20
-				if lang.IsTruthy(tmp19) {
-					tmp21 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-					tmp22 := lang.Apply1(tmp21, map__34217)
-					tmp20 = tmp22
+				tmp16 := v_cljg_DOT_process_X_proc_spawn.Get()
+				tmp17 := v_clojure_DOT_core_vec.Get()
+				tmp18 := lang.Apply1(tmp17, command10)
+				tmp19 := lang.Apply2(tmp16, tmp18, opts11)
+				var map__34220 any = tmp19
+				_ = map__34220
+				tmp21 := v_clojure_DOT_core_seq_QMARK_.Get()
+				tmp22 := lang.Apply1(tmp21, map__34220)
+				var tmp23 any
+				_ = tmp23
+				if lang.IsTruthy(tmp22) {
+					tmp24 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
+					tmp25 := lang.Apply1(tmp24, map__34220)
+					tmp23 = tmp25
 				} else {
-					tmp20 = map__34217
+					tmp23 = map__34220
 				}
-				var map__34223 any = tmp20
-				_ = map__34223
-				tmp24 := v_clojure_DOT_core_get.Get()
-				tmp25 := lang.Apply2(tmp24, map__34223, kw_in)
-				var in26 any = tmp25
-				_ = in26
+				var map__34226 any = tmp23
+				_ = map__34226
 				tmp27 := v_clojure_DOT_core_get.Get()
-				tmp28 := lang.Apply2(tmp27, map__34223, kw_out)
-				var out29 any = tmp28
-				_ = out29
+				tmp28 := lang.Apply2(tmp27, map__34226, kw_in)
+				var in29 any = tmp28
+				_ = in29
 				tmp30 := v_clojure_DOT_core_get.Get()
-				tmp31 := lang.Apply2(tmp30, map__34223, kw_err)
-				var err32 any = tmp31
-				_ = err32
+				tmp31 := lang.Apply2(tmp30, map__34226, kw_out)
+				var out32 any = tmp31
+				_ = out32
 				tmp33 := v_clojure_DOT_core_get.Get()
-				tmp34 := lang.Apply2(tmp33, map__34223, kw_X_handle)
-				var X_handle35 any = tmp34
-				_ = X_handle35
-				tmp36 := lang.FnFunc0(func() any {
-					tmp37 := v_cljg_DOT_process_X_proc_wait.Get()
-					tmp38 := lang.Apply1(tmp37, X_handle35)
-					return tmp38
+				tmp34 := lang.Apply2(tmp33, map__34226, kw_err)
+				var err35 any = tmp34
+				_ = err35
+				tmp36 := v_clojure_DOT_core_get.Get()
+				tmp37 := lang.Apply2(tmp36, map__34226, kw_X_handle)
+				var X_handle38 any = tmp37
+				_ = X_handle38
+				tmp39 := lang.FnFunc0(func() any {
+					tmp40 := v_cljg_DOT_process_X_proc_wait.Get()
+					tmp41 := lang.Apply1(tmp40, X_handle38)
+					return tmp41
 				})
-				tmp39 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp36}
-				tmp40 := lang.FnFunc0(func() any {
-					tmp41 := v_cljg_DOT_process_X_proc_kill.Get()
-					tmp42 := lang.Apply1(tmp41, X_handle35)
-					return tmp42
+				tmp42 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp39}
+				tmp43 := lang.FnFunc0(func() any {
+					tmp44 := v_cljg_DOT_process_X_proc_kill.Get()
+					tmp45 := lang.Apply1(tmp44, X_handle38)
+					return tmp45
 				})
-				tmp43 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp40}
-				tmp44 := lang.FnFunc0(func() any {
-					tmp45 := v_cljg_DOT_process_X_proc_alive_QMARK_.Get()
-					tmp46 := lang.Apply1(tmp45, X_handle35)
-					return tmp46
+				tmp46 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp43}
+				tmp47 := lang.FnFunc0(func() any {
+					tmp48 := v_cljg_DOT_process_X_proc_alive_QMARK_.Get()
+					tmp49 := lang.Apply1(tmp48, X_handle38)
+					return tmp49
 				})
-				tmp47 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp44}
-				tmp48 := lang.FnFunc0(func() any {
-					tmp49 := v_cljg_DOT_process_X_proc_exit_code.Get()
-					tmp50 := lang.Apply1(tmp49, X_handle35)
-					return tmp50
+				tmp50 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp47}
+				tmp51 := lang.FnFunc0(func() any {
+					tmp52 := v_cljg_DOT_process_X_proc_exit_code.Get()
+					tmp53 := lang.Apply1(tmp52, X_handle38)
+					return tmp53
 				})
-				tmp51 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp48}
-				tmp52 := lang.NewMap(kw_in, in26, kw_out, out29, kw_err, err32, kw_wait, tmp39, kw_kill, tmp43, kw_alive_QMARK_, tmp47, kw_exit_code, tmp51)
-				tmp12 = tmp52
+				tmp54 := &lang.NamedFn0{Name: "fn", Expects: "0: []", F: tmp51}
+				tmp55 := lang.NewMap(kw_in, in29, kw_out, out32, kw_err, err35, kw_wait, tmp42, kw_kill, tmp46, kw_alive_QMARK_, tmp50, kw_exit_code, tmp54)
+				tmp15 = tmp55
 			}
-			return tmp12
+			return tmp15
 		default:
 			panic(lang.NewArityError(len(args), "cljg.process/spawn", "1: [command] or 2: [command opts]"))
 		}

@@ -51,6 +51,7 @@
   One call is the common case: (sign {:sub \"u\" :role \"admin\"})."
   ([claims] (sign claims {}))
   ([claims opts]
+   (-check-opts "cljg.security/sign" opts [:exp-seconds :secret :now])
    (let [now (now-seconds opts)
          body (assoc claims :iat now :exp (+ now (or (:exp-seconds opts) 3600)))]
      (-jwt-sign (resolve-secret opts) body))))
@@ -62,6 +63,7 @@
   seconds, default wall-clock) so tests freeze the clock."
   ([token] (verify token {}))
   ([token opts]
+   (-check-opts "cljg.security/verify" opts [:secret :now])
    (let [claims (and (string? token) (-jwt-verify (resolve-secret opts) token))]
      (when (map? claims)
        (let [exp (:exp claims)]
@@ -87,6 +89,7 @@
   ([sub] (issue sub {} {}))
   ([sub claims] (issue sub claims {}))
   ([sub claims opts]
+   (-check-opts "cljg.security/issue" opts [:exp-seconds :secret :now])
    (let [tok (sign (assoc claims :sub sub) opts)]
      (audit/record {:action :auth/token-issued :actor sub :severity :info})
      tok)))
@@ -194,12 +197,14 @@
   or logged."
   ([service account value] (save-to-keychain service account value {}))
   ([service account value opts]
+   (-check-opts "cljg.security/save-to-keychain" opts [:backend])
    (keyword (-keychain-set (str service) (str account) (str value) (backend-name opts)))))
 
 (defn get-from-keychain
   "The secret for (service, account), or nil when absent."
   ([service account] (get-from-keychain service account {}))
   ([service account opts]
+   (-check-opts "cljg.security/get-from-keychain" opts [:backend])
    (-keychain-get (str service) (str account) (backend-name opts))))
 
 (defn delete-from-keychain
@@ -207,6 +212,7 @@
   keyword that handled it (:native or :file)."
   ([service account] (delete-from-keychain service account {}))
   ([service account opts]
+   (-check-opts "cljg.security/delete-from-keychain" opts [:backend])
    (keyword (-keychain-del (str service) (str account) (backend-name opts)))))
 
 ;; --- guards (composable Ring middleware) -------------------------------
@@ -297,6 +303,8 @@
   :clock ((fn [] millis), for tests), :store (atom, for test isolation)."
   ([] (auto-ban {}))
   ([opts]
+   (-check-opts "cljg.security/auto-ban" opts
+                [:threshold :window-ms :cooldown-ms :key :should-ban? :clock :store])
    (let [threshold  (or (:threshold opts) 5)
          window     (or (:window-ms opts) 60000)
          cooldown   (or (:cooldown-ms opts) 300000)
