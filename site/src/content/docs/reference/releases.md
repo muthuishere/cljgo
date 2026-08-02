@@ -90,25 +90,43 @@ Full tables and exclusions: [Benchmarks](/cljgo/reference/benchmarks/).
 and it is worth being exact about which fixes those reporters have confirmed:
 
 - **Confirmed by the reporter:** the descending-`range` `Reduce`/`ReduceInit`
-  half — toolnexus found it *after* our first fix and supplied the patch and
+  half — toolnexus found it *after* our first fix, and supplied the patch and
   the test.
-- **Verified by us only:** the descending-`range` seq fix, the `:timeout-ms`
-  rename, `G5027`, and the v0.8.7 `deps.edn` `:paths` REPL fix. No consumer has
-  re-run their suite against a build carrying these. The `deps.edn` fix in
-  particular exists *because* of koine's project shape and has never been
-  confirmed at koine's project root.
+- **Verified against the consumers' own suites, by us, on this build:** koine's
+  full dual-host gate (13 checks, both hosts green) and toolnexus's five-mode
+  gate (291 tests / 1100 assertions on jvm-main, jvm-repl, cljgo-aot,
+  cljgo-run, cljgo-repl). This is what establishes that **`G5027`'s breaking
+  change does not break them** — koine passes `{:dir :env}` to
+  `cljg.process/spawn` and `{:method :url :timeout :headers :body}` to
+  `cljg.net.http/request`, all known keys. It is also why `:timeout` had to
+  stay accepted: koine's cljgo branch passes it, so dropping it would have
+  silently restored the default for them.
+- **Also verified here:** the v0.8.7 `deps.edn` `:paths` REPL fix, at koine's
+  real project root — `deps.edn` with `:paths ["src"]`, no `build.cljgo`,
+  `(require 'koine.json)` resolves. That fix existed *because* of koine's
+  project shape and had never been confirmed there until now.
 
-That distinction is not modesty — a fix verified only by its author is exactly
-how the timeout bug survived a green suite on both hosts.
+A fix verified only by its author is exactly how the silent timeout survived a
+green suite on both hosts, so the distinction is kept even when it is
+flattering.
 
 **Still unfixed:** [#180](https://github.com/muthuishere/cljgo/issues/180) —
 `cljgo version` reports the wrong commit when built inside a git worktree. Go's
 `buildvcs` resolves the main repository's HEAD and `BuildInfo` records no build
 directory, so this is not fixable at runtime.
 
-**Known flaky:** `TestChanOpBudget` has been seen at 1.51× against a 1.50×
-ceiling under parallel load, passing in isolation — the same load-sensitivity
-as the known macOS perf-budget flake, not a regression in this release.
+**Known flaky, and pre-existing:**
+
+- [#197](https://github.com/muthuishere/cljgo/issues/197) — a downstream
+  suite's **AOT** leg fails intermittently (~1 run in 4) where the interpreted
+  cljgo legs and both JVM legs are 14/14. Measured at the same rate on
+  released v0.8.9, so nothing in this release caused it, but the asymmetry is
+  unexplained and it is ours to explain: a failure that appears only in
+  compiled code is the shape ADR 0007 treats as unforgivable, even when the
+  cause turns out to be a test-side race that compiled speed exposes.
+- `TestChanOpBudget` at 1.51× against a 1.50× ceiling under parallel load,
+  passing in isolation — the same load-sensitivity as the known macOS
+  perf-budget flake.
 
 ## [v0.8.9](https://github.com/muthuishere/cljgo/releases/tag/v0.8.9) — 2026-08-01
 
