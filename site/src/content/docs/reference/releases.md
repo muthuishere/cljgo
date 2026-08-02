@@ -21,6 +21,113 @@ compiled binary.** REPL-vs-binary divergence is a release blocker, not a
 known issue.
 :::
 
+## [v0.9.0](https://github.com/muthuishere/cljgo/releases/tag/v0.9.0) — 2026-08-02
+
+*Three ways to fail silently, closed. And three of our own published
+performance claims withdrawn.*
+
+**Breaking:** a `cljg.*` options map is now closed. An unrecognised key raises
+`G5027` instead of being ignored.
+
+- **A descending `range` was a one-element seq to `first`/`rest`.**
+  `(range 6 1 -1)` returned `(6)` while `count` said `5` and `map` gave all
+  five — one value, three answers, and nothing threw. `LongRange.Next`
+  terminated on `start+step >= end`, which is correct only for a positive
+  step. `count` and the chunked path walk by `count`, computed correctly for
+  both signs, so **every path a test normally checks looked right** while
+  `first`/`rest` was wrong. A backwards scan such as
+  `(some f (range (dec n) 0 -1))` silently returned `nil`. Found by the
+  toolnexus Clojure port, whose JVM legs passed and cljgo legs failed.
+  ([#195](https://github.com/muthuishere/cljgo/issues/195))
+- **…and `Reduce`/`ReduceInit` carried the same bug, one layer deeper.** The
+  first fix corrected only the seq path. `LongRange.Reduce` and `ReduceInit`
+  had the identical ascending-only loop test, so over a descending range
+  `Reduce` returned the first element alone and `ReduceInit` handed back its
+  init value untouched — and `CreateLazilyPersistentVector` matches
+  `IReduceInit` *first*, making it a reachable path that returned an **empty
+  vector for a non-empty range**. Seventeen Clojure-level forms (`reduce`,
+  `transduce`, `into` with an xf, `run!`, `doseq`, `filter`, `sort`, …) stayed
+  byte-identical to the JVM with only the seq fix, because Clojure-level
+  `reduce` does not route through `IReduceInit` for a `LongRange` — so no
+  conformance test could have found it and a Go-level test was the only thing
+  that could. Also found by toolnexus, who checked all three methods after we
+  had fixed one. ([#194](https://github.com/muthuishere/cljgo/pull/194))
+- **A misspelled option was ignored.** `cljg.net.http` read `:timeout` while
+  `cljg.socket`, `cljg.io` and `cljg.process` read `:timeout-ms` — and so does
+  net.http's own Go shim. The unknown key fell through to the 30 s default
+  with no error, so the request still succeeded and only the caller's timeout
+  budget vanished; **every test passes on fast hardware**. Found by toolnexus
+  tracing a dead timeout in koine, whose suite was green throughout.
+  `:timeout-ms` is now the name and `:timeout` remains accepted — removing it
+  would not fail loudly, it would silently restore the default.
+  ([ADR 0120](https://github.com/muthuishere/cljgo/blob/main/docs/adr/0120-timeout-ms-is-the-name.md),
+  [#192](https://github.com/muthuishere/cljgo/issues/192))
+- **So unknown option keys are now refused across `cljg.*`** — new diagnostic
+  `G5027` names the function, the offending key, every key it does know, and a
+  did-you-mean. This is the **breaking** change in this release.
+  `cljg.os/job` and `cljg.os/service` stay open: they merge the caller's map,
+  so extra keys are the documented idiom there.
+  ([ADR 0121](https://github.com/muthuishere/cljgo/blob/main/docs/adr/0121-a-cljg-opts-map-is-closed.md))
+
+**Measured, and three claims withdrawn.** The whole benchmark suite was
+rebuilt and re-run on 2026-08-02, competitors included:
+
+- *"Glojure wins 6 of 8 AOT rows"* — **retired**. With σ at 0.3–1.0 ms four
+  rows are ties; outside the noise it is two clear wins each. Glojure's
+  `reduce` win is real and large (3.67×).
+- *"cljgo starts slower than Glojure"* — a three-way tie. Recorded as an
+  absence of difference, not converted into a win.
+- *"a cljgo AOT binary links zero interpreter"* — **imprecise**. It links no
+  evaluator, analyzer, AST or REPL (0 symbols each, CI-enforced) but does link
+  `pkg/reader`. The honest claim is **evaluator-free**, not interpreter-free.
+
+Regressions in this release, named: interpreter boot 31.7 → 38.8 ms, compiled
+binary 6.7 → 7.1 MB, interpreted startup 38.5 → 47.0 ms. On the web suite bri
+is tenth of eleven on throughput; the "top tier" claim has been retracted.
+Full tables and exclusions: [Benchmarks](/cljgo/reference/benchmarks/).
+
+**Who verified what.** Every defect above was reported by a downstream port,
+and it is worth being exact about which fixes those reporters have confirmed:
+
+- **Confirmed by the reporter:** the descending-`range` `Reduce`/`ReduceInit`
+  half — toolnexus found it *after* our first fix, and supplied the patch and
+  the test.
+- **Verified against the consumers' own suites, by us, on this build:** koine's
+  full dual-host gate (13 checks, both hosts green) and toolnexus's five-mode
+  gate (291 tests / 1100 assertions on jvm-main, jvm-repl, cljgo-aot,
+  cljgo-run, cljgo-repl). This is what establishes that **`G5027`'s breaking
+  change does not break them** — koine passes `{:dir :env}` to
+  `cljg.process/spawn` and `{:method :url :timeout :headers :body}` to
+  `cljg.net.http/request`, all known keys. It is also why `:timeout` had to
+  stay accepted: koine's cljgo branch passes it, so dropping it would have
+  silently restored the default for them.
+- **Also verified here:** the v0.8.7 `deps.edn` `:paths` REPL fix, at koine's
+  real project root — `deps.edn` with `:paths ["src"]`, no `build.cljgo`,
+  `(require 'koine.json)` resolves. That fix existed *because* of koine's
+  project shape and had never been confirmed there until now.
+
+A fix verified only by its author is exactly how the silent timeout survived a
+green suite on both hosts, so the distinction is kept even when it is
+flattering.
+
+**Still unfixed:** [#180](https://github.com/muthuishere/cljgo/issues/180) —
+`cljgo version` reports the wrong commit when built inside a git worktree. Go's
+`buildvcs` resolves the main repository's HEAD and `BuildInfo` records no build
+directory, so this is not fixable at runtime.
+
+**Known flaky, and pre-existing:**
+
+- [#197](https://github.com/muthuishere/cljgo/issues/197) — a downstream
+  suite's **AOT** leg fails intermittently (~1 run in 4) where the interpreted
+  cljgo legs and both JVM legs are 14/14. Measured at the same rate on
+  released v0.8.9, so nothing in this release caused it, but the asymmetry is
+  unexplained and it is ours to explain: a failure that appears only in
+  compiled code is the shape ADR 0007 treats as unforgivable, even when the
+  cause turns out to be a test-side race that compiled speed exposes.
+- `TestChanOpBudget` at 1.51× against a 1.50× ceiling under parallel load,
+  passing in isolation — the same load-sensitivity as the known macOS
+  perf-budget flake.
+
 ## [v0.8.9](https://github.com/muthuishere/cljgo/releases/tag/v0.8.9) — 2026-08-01
 
 *A dev build claimed to be a release — and quietly built against the
