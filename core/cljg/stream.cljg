@@ -65,7 +65,9 @@
   append and flush; `close` flushes and closes (and the handle works with
   `with-open`). Throws if the file cannot be opened."
   ([path] (to-file path nil))
-  ([path opts] (-stream-to-file path opts)))
+  ([path opts]
+   (-check-opts "cljg.stream/to-file" opts [:append])
+   (-stream-to-file path opts)))
 
 ;; --- reading ----------------------------------------------------------------
 

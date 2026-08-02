@@ -69,6 +69,13 @@
         resp (shim (str/upper-case (name method)) url (or headers {}) body timeout)]
     (assoc resp :ok? (<= 200 (:status resp) 299))))
 
+;; The closed option set of `request` — and so of every verb, which forwards
+;; its opts map here (ADR 0121). A top-level def, not an inline literal: this
+;; is read once per request, and it sits next to the docstring that documents
+;; the same keys so the two cannot drift.
+(def ^:private request-opts
+  [:method :url :headers :query :body :json :edn :form :timeout-ms :timeout :retry :as])
+
 (defn request
   "Perform an HTTP request. opts:
     :method  keyword/string (default :get)   :url  the URL (or pass as 1st arg via the verbs)
@@ -83,6 +90,7 @@
   last error / return the last 5xx after n attempts; a streaming response is not
   retried on 5xx (its body handle is live), only on a transport error."
   [opts]
+  (-check-opts "cljg.net.http/request" opts request-opts)
   (let [method  (:method opts :get)
         url     (str (:url opts) (encode-query (:query opts)))
         [b ct]  (body+type opts)

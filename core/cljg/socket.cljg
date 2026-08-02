@@ -50,7 +50,9 @@
   the real one, so :port 0 composes with dial), or {:path <s> :addr <s>
   :-listener} for unix. Call `accept` to take connections, `close` to stop."
   ([] (listen {}))
-  ([opts] (-socket-listen opts)))
+  ([opts]
+   (-check-opts "cljg.socket/listen" opts [:port :host :unix :tls])
+   (-socket-listen opts)))
 
 (defn accept
   "Block until a client connects to `listener`, then return the connection:
@@ -72,6 +74,7 @@
                    (defaults to :host)
     :timeout-ms n  connect timeout (default: none)"
   [opts]
+  (-check-opts "cljg.socket/dial" opts [:host :port :unix :tls :timeout-ms])
   (-socket-dial opts))
 
 (defn close
@@ -89,7 +92,9 @@
   socket both sends (udp-send) and receives (udp-recv) — bind two for a
   client/server pair. Close with `close`."
   ([] (udp-listen {}))
-  ([opts] (-udp-listen opts)))
+  ([opts]
+   (-check-opts "cljg.socket/udp-listen" opts [:port :host])
+   (-udp-listen opts)))
 
 (defn udp-send
   "Send one datagram from `sock` (a udp-listen handle) to the destination
@@ -102,4 +107,6 @@
   {:data <string> :host <sender-host> :port <sender-port>}.
   opts: {:timeout-ms n} — throw if nothing arrives in time (default: block)."
   ([sock] (udp-recv sock {}))
-  ([sock opts] (-udp-recv (:-socket sock) opts)))
+  ([sock opts]
+   (-check-opts "cljg.socket/udp-recv" opts [:timeout-ms])
+   (-udp-recv (:-socket sock) opts)))

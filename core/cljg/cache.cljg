@@ -65,7 +65,8 @@
   "The built-in in-process cache: a TTL map with singleflight. opts:
     :ttl seconds each entry lives (default 60). Returns a `Cache`."
   ([] (local {}))
-  ([{:keys [ttl] :or {ttl 60}}]
+  ([{:keys [ttl] :or {ttl 60} :as opts}]
+   (-check-opts "cljg.cache/local" opts [:ttl])
    (let [store    (atom {})
          inflight (atom {})
          ttl-ms   (* 1000 ttl)]                ; seconds → ms (fractional ttl ok)

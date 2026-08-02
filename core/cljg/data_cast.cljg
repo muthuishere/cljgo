@@ -38,6 +38,7 @@
    SQLite — the zero-install default (ADR 0057). Returns a handle map."
   ([] (connect {}))
   ([opts]
+   (-check-opts "cljg.data.cast/connect" opts [:driver :database :url])
    (let [url    (or (:url opts) (-getenv "APP_DB_URL"))
          driver (cond
                   (:driver opts)                             (:driver opts)

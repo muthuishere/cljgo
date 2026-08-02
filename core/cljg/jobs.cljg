@@ -52,7 +52,8 @@
     :buffer   channel buffer (default 1024)
   Returns a `Queue`."
   ([handlers] (local handlers {}))
-  ([handlers {:keys [workers buffer] :or {workers 4 buffer 1024}}]
+  ([handlers {:keys [workers buffer] :or {workers 4 buffer 1024} :as opts}]
+   (-check-opts "cljg.jobs/local" opts [:workers :buffer])
    (let [ch      (a/chan buffer)
          pending (atom 0)
          errs    (atom [])]
