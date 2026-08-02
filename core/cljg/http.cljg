@@ -37,6 +37,7 @@
   — the Ring-shaped contract above. Never blocks; :port 0 binds a free
   port (read it back with `addr`). Stop gracefully with `stop`."
   [opts]
+  (-check-opts "cljg.http/serve" opts [:handler :port :host :tls])
   (let [handler (:handler opts)]
     (when-not (ifn? handler)
       (throw (ex-info (str "cljg.http/serve: :handler must be a function "

@@ -80,6 +80,7 @@
   A missing/unrunnable binary throws (it never started)."
   ([command] (spawn command {}))
   ([command opts]
+   (-check-opts "cljg.process/spawn" opts [:env :dir])
    (let [{:keys [in out err -handle]} (-proc-spawn (vec command) opts)]
      {:in     in
       :out    out

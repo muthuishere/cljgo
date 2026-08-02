@@ -16,13 +16,17 @@ var (
 	kw_end_line                   = lang.InternKeywordString("end-line")
 	kw_file                       = lang.InternKeywordString("file")
 	kw_handler                    = lang.InternKeywordString("handler")
+	kw_host                       = lang.InternKeywordString("host")
 	kw_line                       = lang.InternKeywordString("line")
 	kw_opts                       = lang.InternKeywordString("opts")
+	kw_port                       = lang.InternKeywordString("port")
 	kw_stop                       = lang.InternKeywordString("stop")
+	kw_tls                        = lang.InternKeywordString("tls")
 	sym_cljg_DOT_http             = lang.NewSymbol("cljg.http")
 	sym_clojure_DOT_core          = lang.NewSymbol("clojure.core")
 	sym_opts                      = lang.NewSymbol("opts")
 	sym_server                    = lang.NewSymbol("server")
+	v_cljg_DOT_http_X_check_opts  = lang.InternVarName(lang.NewSymbol("cljg.http"), lang.NewSymbol("-check-opts")).SetPrivate()
 	v_cljg_DOT_http_X_http_serve  = lang.InternVarName(lang.NewSymbol("cljg.http"), lang.NewSymbol("-http-serve")).SetPrivate()
 	v_cljg_DOT_http_addr          = lang.InternVarName(lang.NewSymbol("cljg.http"), lang.NewSymbol("addr"))
 	v_cljg_DOT_http_serve         = lang.InternVarName(lang.NewSymbol("cljg.http"), lang.NewSymbol("serve"))
@@ -60,69 +64,73 @@ func Load() {
 	tmp3 := v_clojure_DOT_core_refer.Get()
 	tmp4 := lang.Apply1(tmp3, sym_clojure_DOT_core)
 	_ = tmp4
-	// (def serve (clojure.core/fn ([opts] (let [handler (:handler opts)] (when-not (ifn? handler…
+	// (def serve (clojure.core/fn ([opts] (-check-opts "cljg.http/serve" opts [:handler :port :h…
 	v_cljg_DOT_http_serve.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(34), kw_column, int64(7), kw_end_line, int64(34), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_opts)), kw_doc, "Start the raw HTTP server: {:port p :host h :handler f :tls {…}} → a\n  server handle {:port :addr :stop}. `f` is (fn [request-map] response-map)\n  — the Ring-shaped contract above. Never blocks; :port 0 binds a free\n  port (read it back with `addr`). Stop gracefully with `stop`."))
 	tmp5 := lang.FnFunc1(func(opts6 any) any {
-		var tmp7 any
-		_ = tmp7
+		tmp7 := v_cljg_DOT_http_X_check_opts.Get()
+		tmp8 := lang.NewVector(kw_handler, kw_port, kw_host, kw_tls)
+		tmp9 := lang.Apply3(tmp7, "cljg.http/serve", opts6, tmp8)
+		_ = tmp9
+		var tmp10 any
+		_ = tmp10
 		{
-			tmp8 := lang.Apply1(kw_handler, opts6)
-			var handler9 any = tmp8
-			_ = handler9
-			tmp10 := v_clojure_DOT_core_ifn_QMARK_.Get()
-			tmp11 := lang.Apply1(tmp10, handler9)
-			var tmp12 any
-			_ = tmp12
-			if lang.IsTruthy(tmp11) {
-				tmp12 = nil
+			tmp11 := lang.Apply1(kw_handler, opts6)
+			var handler12 any = tmp11
+			_ = handler12
+			tmp13 := v_clojure_DOT_core_ifn_QMARK_.Get()
+			tmp14 := lang.Apply1(tmp13, handler12)
+			var tmp15 any
+			_ = tmp15
+			if lang.IsTruthy(tmp14) {
+				tmp15 = nil
 			} else {
-				tmp13 := v_clojure_DOT_core_ex_info.Get()
-				tmp14 := v_clojure_DOT_core_str.Get()
-				tmp15 := v_clojure_DOT_core_pr_str.Get()
-				tmp16 := lang.Apply1(tmp15, handler9)
-				tmp17 := lang.Apply3(tmp14, "cljg.http/serve: :handler must be a function ", "(request-map -> response-map), got: ", tmp16)
-				tmp18 := v_clojure_DOT_core_dissoc.Get()
-				tmp19 := lang.Apply2(tmp18, opts6, kw_handler)
-				tmp20 := lang.NewMap(kw_opts, tmp19)
-				tmp21 := lang.Apply2(tmp13, tmp17, tmp20)
-				panic(rt.Throw(tmp21))
+				tmp16 := v_clojure_DOT_core_ex_info.Get()
+				tmp17 := v_clojure_DOT_core_str.Get()
+				tmp18 := v_clojure_DOT_core_pr_str.Get()
+				tmp19 := lang.Apply1(tmp18, handler12)
+				tmp20 := lang.Apply3(tmp17, "cljg.http/serve: :handler must be a function ", "(request-map -> response-map), got: ", tmp19)
+				tmp21 := v_clojure_DOT_core_dissoc.Get()
+				tmp22 := lang.Apply2(tmp21, opts6, kw_handler)
+				tmp23 := lang.NewMap(kw_opts, tmp22)
+				tmp24 := lang.Apply2(tmp16, tmp20, tmp23)
+				panic(rt.Throw(tmp24))
 			}
-			_ = tmp12
-			tmp22 := v_cljg_DOT_http_X_http_serve.Get()
-			tmp23 := v_clojure_DOT_core_dissoc.Get()
-			tmp24 := lang.Apply2(tmp23, opts6, kw_handler)
-			tmp25 := lang.Apply2(tmp22, handler9, tmp24)
-			tmp7 = tmp25
+			_ = tmp15
+			tmp25 := v_cljg_DOT_http_X_http_serve.Get()
+			tmp26 := v_clojure_DOT_core_dissoc.Get()
+			tmp27 := lang.Apply2(tmp26, opts6, kw_handler)
+			tmp28 := lang.Apply2(tmp25, handler12, tmp27)
+			tmp10 = tmp28
 		}
-		return tmp7
+		return tmp10
 	})
-	tmp26 := &lang.NamedFn1{Name: "cljg.http/serve", Expects: "1: [opts]", F: tmp5}
-	v_cljg_DOT_http_serve.BindRoot(tmp26)
-	fnD_cljg_DOT_http_serve = tmp26.F
+	tmp29 := &lang.NamedFn1{Name: "cljg.http/serve", Expects: "1: [opts]", F: tmp5}
+	v_cljg_DOT_http_serve.BindRoot(tmp29)
+	fnD_cljg_DOT_http_serve = tmp29.F
 	v_cljg_DOT_http_serve.SealDirect()
 	_ = v_cljg_DOT_http_serve
 	// (def addr (clojure.core/fn ([server] (:addr server))))
-	v_cljg_DOT_http_addr.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(47), kw_column, int64(7), kw_end_line, int64(47), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_server)), kw_doc, "The bound \"host:port\" of a server handle — with {:port 0} this is how\n  you learn the actual port."))
-	tmp27 := lang.FnFunc1(func(server28 any) any {
-		tmp29 := lang.Apply1(kw_addr, server28)
-		return tmp29
+	v_cljg_DOT_http_addr.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(48), kw_column, int64(7), kw_end_line, int64(48), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_server)), kw_doc, "The bound \"host:port\" of a server handle — with {:port 0} this is how\n  you learn the actual port."))
+	tmp30 := lang.FnFunc1(func(server31 any) any {
+		tmp32 := lang.Apply1(kw_addr, server31)
+		return tmp32
 	})
-	tmp30 := &lang.NamedFn1{Name: "cljg.http/addr", Expects: "1: [server]", F: tmp27}
-	v_cljg_DOT_http_addr.BindRoot(tmp30)
-	fnD_cljg_DOT_http_addr = tmp30.F
+	tmp33 := &lang.NamedFn1{Name: "cljg.http/addr", Expects: "1: [server]", F: tmp30}
+	v_cljg_DOT_http_addr.BindRoot(tmp33)
+	fnD_cljg_DOT_http_addr = tmp33.F
 	v_cljg_DOT_http_addr.SealDirect()
 	_ = v_cljg_DOT_http_addr
 	// (def stop (clojure.core/fn ([server] ((:stop server)) nil)))
-	v_cljg_DOT_http_stop.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(53), kw_column, int64(7), kw_end_line, int64(53), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_server)), kw_doc, "Gracefully stop a server handle: the listener closes, in-flight requests\n  finish (deadline), then the server is down. Returns nil."))
-	tmp31 := lang.FnFunc1(func(server32 any) any {
-		tmp33 := lang.Apply1(kw_stop, server32)
-		tmp34 := lang.Apply0(tmp33)
-		_ = tmp34
+	v_cljg_DOT_http_stop.SetMeta(lang.NewMap(kw_file, "cljg/http.cljg", kw_line, int64(54), kw_column, int64(7), kw_end_line, int64(54), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(sym_server)), kw_doc, "Gracefully stop a server handle: the listener closes, in-flight requests\n  finish (deadline), then the server is down. Returns nil."))
+	tmp34 := lang.FnFunc1(func(server35 any) any {
+		tmp36 := lang.Apply1(kw_stop, server35)
+		tmp37 := lang.Apply0(tmp36)
+		_ = tmp37
 		return nil
 	})
-	tmp35 := &lang.NamedFn1{Name: "cljg.http/stop", Expects: "1: [server]", F: tmp31}
-	v_cljg_DOT_http_stop.BindRoot(tmp35)
-	fnD_cljg_DOT_http_stop = tmp35.F
+	tmp38 := &lang.NamedFn1{Name: "cljg.http/stop", Expects: "1: [server]", F: tmp34}
+	v_cljg_DOT_http_stop.BindRoot(tmp38)
+	fnD_cljg_DOT_http_stop = tmp38.F
 	v_cljg_DOT_http_stop.SealDirect()
 	_ = v_cljg_DOT_http_stop
 }

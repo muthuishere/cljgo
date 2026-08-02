@@ -3,7 +3,7 @@ title: "Deploy: one static binary"
 description: "A bri app AOT-compiles to a single CGO_ENABLED=0 binary and deploys as a ~15 MB scratch Docker image — the dev loop is a REPL, the artifact is one file."
 ---
 
-A bri app AOT-compiles to a single static `CGO_ENABLED=0` binary, byte-identical to the interpreter path (ADR 0071). The dev loop is a REPL (`cljgo dev`, live re-`def`, nREPL); the deploy artifact is one file with no runtime to distribute — the design bet the [benchmarks](/cljgo/reference/benchmarks/) measure (~15 MB image, ~30 ms cold-start, ~16 MB RSS).
+A bri app AOT-compiles to a single static `CGO_ENABLED=0` binary, byte-identical to the interpreter path (ADR 0071). The dev loop is a REPL (`cljgo dev`, live re-`def`, nREPL); the deploy artifact is one file with no runtime to distribute — the design bet the [benchmarks](/cljgo/reference/benchmarks/) measure (~20 MB image, ~30 ms cold-start, ~35 MB RSS under load — and ~2x fewer req/s than JVM http-kit, which the benchmarks page reports too).
 
 ## Build a binary
 

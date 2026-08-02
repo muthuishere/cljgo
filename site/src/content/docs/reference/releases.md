@@ -213,6 +213,8 @@ while the gate stayed green.*
   the tools.build convention and the only way a dual-host library publishes to
   Clojars — so this blocked exactly the projects cljgo exists to serve, across
   v0.8.3 and v0.8.4. cljgo now probes `build.cljgo` then `build.cljg` only.
+  This is about the **build file's name only** — `.clj` remains a fully
+  accepted *source* extension (ADR 0055), unchanged.
   **Breaking** if you named a cljgo build file `build.clj`: rename it.
   (ADR 0117)
 - **`:exit-code` on `cljg.process/spawn`** — the non-blocking counterpart of

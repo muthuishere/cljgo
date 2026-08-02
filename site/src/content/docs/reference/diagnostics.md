@@ -127,6 +127,7 @@ reserved but has no registered codes yet.
 | G5024 | cannot resolve real-path (missing path or symlink cycle) | v0.8.3 |
 | G5025 | build file defines no build entry point | v0.8.5 |
 | G5026 | file loaded but did not define the required namespace | v0.8.6 |
+| G5027 | unknown option in a cljg.* opts map | v0.8.10 |
 
 ### The dependency-resolution codes
 

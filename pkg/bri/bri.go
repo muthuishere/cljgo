@@ -261,17 +261,22 @@ func InstallShimsInto(s Spec) {
 	// package is linked (ADR 0074), or — cljg.security (ADR 0103) — BOTH: its
 	// crypto/JWT shims are stdlib-cheap and stay in pkg/bri while its keychain
 	// trio rides the opt-in registry. Run every installer present; a
-	// pure-Clojure namespace (bri.web.html) has neither — a no-op.
+	// pure-Clojure namespace (bri.web.html) has neither — but it still gets
+	// -check-opts below, so this is no longer an early return.
 	direct, registered := s.install, installers[s.Name]
-	if direct == nil && registered == nil {
-		return
-	}
 	ns := lang.FindOrCreateNamespace(lang.NewSymbol(s.Name))
 	def := func(name string, fn func(args ...any) any) {
 		v := ns.Intern(lang.NewSymbol(name))
 		v.BindRoot(lang.NewFnFunc(fn))
 		v.SetMeta(v.Meta().Assoc(lang.KWPrivate, true).(lang.IPersistentMap))
 	}
+	// -check-opts is interned into EVERY namespace, not just the ones with a
+	// Go half (ADR 0121). An unknown option is silently defaulted in pure
+	// Clojure exactly as it is behind a shim, so cljg.cache and cljg.jobs need
+	// the same guard cljg.socket does — and giving them a whole installer each
+	// to carry one shared function would be a moving part per namespace where
+	// one line here does.
+	def("-check-opts", checkOptsShim)
 	if direct != nil {
 		direct(def)
 	}

@@ -62,6 +62,7 @@
   Returns the number of ticks run."
   ([jobs] (run jobs {}))
   ([jobs opts]
+   (-check-opts "cljg.os/run" opts [:max-ticks])
    (let [maxt (:max-ticks opts)]
      (loop [ticks 0]
        (if (and maxt (>= ticks maxt))

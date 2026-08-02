@@ -85,13 +85,16 @@
   and `opts`. opts:
     :base-url  override the spec's servers[0].url
     :headers   {name value} sent on every request
-    :timeout   ms (default cljg.net.http's 30000)     :retry n
+    :timeout-ms ms (default cljg.net.http's 30000)    :retry n
+               (:timeout is accepted as the older alias)
     :token     string → Authorization: Bearer <token>
     :api-key   {:name :in(:header|:query) :value}
     :auth-fn   (fn [] auth-value) → Authorization header, evaluated PER request
                  (the ADR 0080 login seam)."
   ([spec] (client spec {}))
   ([spec opts]
+   (-check-opts "bri.web.openapi/client" opts
+                [:base-url :headers :timeout-ms :timeout :retry :token :api-key :auth-fn])
    (let [parsed (parse-spec spec)
          base   (or (:base-url opts)
                     (get-in parsed [:servers 0 :url])
@@ -198,7 +201,9 @@
                            :headers (merge (:headers opts) (auth-headers opts) (:headers groups))
                            :query   (merge (:query groups) (api-key-query opts))}
                     body            (assoc :json body)
-                    (:timeout opts) (assoc :timeout (:timeout opts))
+                    ;; both spellings forwarded under the canonical name (#192)
+                    (or (:timeout-ms opts) (:timeout opts))
+                    (assoc :timeout-ms (or (:timeout-ms opts) (:timeout opts)))
                     (:retry opts)   (assoc :retry (:retry opts)))]
        (http/request req)))))
 

@@ -96,6 +96,7 @@ func FromError(err error) Diagnostic {
 		if code := dc.DiagCode(); code != "" {
 			d := Diagnostic{Severity: SeverityError, Message: humanizeGoTypes(err.Error()), ErrorCode: code}
 			setExplainURL(&d)
+			applyUnknownOpt(&d)
 			return d
 		}
 	}

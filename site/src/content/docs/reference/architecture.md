@@ -61,6 +61,42 @@ The interpreter uses a generated registry plus reflection; the emitter uses
 `go/packages` type facts and direct calls — with the same shaping rules
 (`[v err]` vectors, nil-normalization, coercions) on both.
 
+## Finding your project, once
+
+Every command that evaluates — `repl`, `nrepl`, `run`, `test`, `build` — needs
+the same answer to "what is on the load path?". cljgo resolves it **once, in
+`main`, before the subcommand dispatch** (ADR 0118), which is the shape both
+let-go and Glojure use. It used to resolve at each call site, so each new
+entry point could forget independently, and two of eight did — `repl` and
+`nrepl` saw no project at all.
+
+The resolution itself (ADR 0119):
+
+- **`build.cljgo` wins absolutely.** cljgo probes `build.cljgo`, then
+  `build.cljg` — and nothing else. `build.clj` is **tools.build's** name, not
+  cljgo's (ADR 0117); a cljgo that claimed it broke every dual-host project.
+- **`deps.edn`'s `:paths` is the fallback**, used only when no cljgo build
+  file exists anywhere in the search. `:paths` and nothing else — not `:deps`,
+  not `:aliases`, not `:extra-paths`, which carry tools.deps semantics cljgo
+  does not implement.
+- Roots are **appended**, never replaced, and the requiring file's own
+  directory still outranks all of them.
+- A resolution failure is fatal for commands that cannot proceed without it,
+  but **never for a REPL** — the prompt is the tool you would use to
+  investigate.
+
+The compiler's own runtime is resolved separately, by precedence: the
+`-runtime` flag › `$CLJGO_SRC` › the **release pin** › a walk-up search for a
+repo checkout. A release binary takes the pin and writes a bare
+`require github.com/muthuishere/cljgo v<version>` with no `replace`
+(ADRs 0028, 0116) — so a downloaded binary plus the Go toolchain is the whole
+`cljgo build` story, with no checkout of this repo anywhere in it. A binary
+built from a source checkout is deliberately never treated as a release, so
+your working tree is what you compile against.
+
+See [Dual-host `.cljc` projects](/cljgo/guides/dual-host/) for the practical
+version.
+
 ## Package layout
 
 | Path | What it is |
@@ -73,7 +109,7 @@ The interpreter uses a generated registry plus reflection; the emitter uses
 | `pkg/eval` | The tree-walk evaluator — the REPL engine. |
 | `pkg/emit` | AST → Go source → `go/format` → `go build`. |
 | `pkg/coreaot` | Generated: cljgo's own core AOT-compiled. Linked by emitted binaries, never by the interpreter (ADR 0046). |
-| `pkg/deps` | Dependency resolution + lockfile (ADR 0052). |
+| `pkg/deps` | Dependency resolution + lockfile (ADR 0052), and the project's source roots — `build.cljgo`, or `deps.edn`'s `:paths` when there is no cljgo build file (ADR 0119). |
 | `pkg/repl` | REPL driver; nREPL sits on it. |
 | `cmd/cljgo` | The CLI: `repl` · `nrepl` · `run` · `build` · `new` · `test` · `publish` · `suite` · `check` · `explain` · … |
 | `core/` | `core.clj` + satellite namespaces — the Clojure-in-Clojure standard library. |

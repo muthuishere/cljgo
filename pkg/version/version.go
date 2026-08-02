@@ -91,9 +91,20 @@ func releaseVersionFromBuildInfo(bi *debug.BuildInfo) string {
 	//
 	// The discriminator is exact: `go install module@vX.Y.Z` resolves through
 	// the module proxy and records a checksum on Main but NO vcs.* settings,
-	// while any build from a checkout records vcs=git plus vcs.revision. The
-	// presence of VCS data therefore means "built from source", which is
-	// precisely what a release is not.
+	// while any build from a checkout records vcs=git plus vcs.revision.
+	//
+	// Read that scope narrowly. VCS data does NOT mean "not a release" in
+	// general — a goreleaser archive is built from a checkout and carries
+	// vcs=git alongside a clean tag, and it IS the release. It is not a
+	// counter-example to this function: ReleaseVersion returns at its FIRST
+	// branch when Version was ldflags-stamped, so a tagged archive never
+	// reaches this code. Within the only case that does reach it — no
+	// ldflags — VCS data does mean built-from-source.
+	//
+	// (Reported by the toolnexus port, which ran `go version -m` on three
+	// downloaded release archives and found exactly the tag+vcs pairing an
+	// earlier draft of this comment called impossible. The observation was
+	// right and the comment was wrong; the code was never reached.)
 	for _, s := range bi.Settings {
 		if strings.HasPrefix(s.Key, "vcs.") || s.Key == "vcs" {
 			return ""

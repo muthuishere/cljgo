@@ -32,12 +32,14 @@ var (
 	sym_inflight                                    = lang.NewSymbol("inflight")
 	sym_key                                         = lang.NewSymbol("key")
 	sym_now                                         = lang.NewSymbol("now")
+	sym_opts                                        = lang.NewSymbol("opts")
 	sym_os                                          = lang.NewSymbol("os")
 	sym_store                                       = lang.NewSymbol("store")
 	sym_ttl                                         = lang.NewSymbol("ttl")
 	sym_ttl_ms                                      = lang.NewSymbol("ttl-ms")
 	sym_v                                           = lang.NewSymbol("v")
 	v_cljg_DOT_cache_Cache                          = lang.InternVarName(lang.NewSymbol("cljg.cache"), lang.NewSymbol("Cache"))
+	v_cljg_DOT_cache_X_check_opts                   = lang.InternVarName(lang.NewSymbol("cljg.cache"), lang.NewSymbol("-check-opts")).SetPrivate()
 	v_cljg_DOT_cache_X_clear                        = lang.InternVarName(lang.NewSymbol("cljg.cache"), lang.NewSymbol("-clear"))
 	v_cljg_DOT_cache_X_evict                        = lang.InternVarName(lang.NewSymbol("cljg.cache"), lang.NewSymbol("-evict"))
 	v_cljg_DOT_cache_X_fetch                        = lang.InternVarName(lang.NewSymbol("cljg.cache"), lang.NewSymbol("-fetch"))
@@ -438,8 +440,8 @@ func Load() {
 	})
 	v_cljg_DOT_cache_fill_once.BindRoot(tmp42)
 	_ = v_cljg_DOT_cache_fill_once
-	// (def local (clojure.core/fn ([] (local {})) ([{:keys [ttl], :or {ttl 60}}] (let [store (at…
-	v_cljg_DOT_cache_local.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(lang.NewMap(kw_keys, lang.NewVector(sym_ttl), kw_or, lang.NewMap(sym_ttl, int64(60))))), kw_doc, "The built-in in-process cache: a TTL map with singleflight. opts:\n    :ttl seconds each entry lives (default 60). Returns a `Cache`."))
+	// (def local (clojure.core/fn ([] (local {})) ([{:keys [ttl], :or {ttl 60}, :as opts}] (-che…
+	v_cljg_DOT_cache_local.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(64), kw_column, int64(7), kw_end_line, int64(64), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(lang.NewMap(kw_keys, lang.NewVector(sym_ttl), kw_or, lang.NewMap(sym_ttl, int64(60)), kw_as, sym_opts))), kw_doc, "The built-in in-process cache: a TTL map with singleflight. opts:\n    :ttl seconds each entry lives (default 60). Returns a `Cache`."))
 	tmp135 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -468,71 +470,77 @@ func Load() {
 				}
 				var map__191147 any = tmp144
 				_ = map__191147
-				tmp148 := v_clojure_DOT_core_get.Get()
-				tmp149 := lang.Apply3(tmp148, map__191147, kw_ttl, int64(60))
-				var ttl150 any = tmp149
-				_ = ttl150
-				var tmp151 any
-				_ = tmp151
+				var opts148 any = map__191147
+				_ = opts148
+				tmp149 := v_clojure_DOT_core_get.Get()
+				tmp150 := lang.Apply3(tmp149, map__191147, kw_ttl, int64(60))
+				var ttl151 any = tmp150
+				_ = ttl151
+				tmp152 := v_cljg_DOT_cache_X_check_opts.Get()
+				tmp153 := lang.NewVector(kw_ttl)
+				tmp154 := lang.Apply3(tmp152, "cljg.cache/local", opts148, tmp153)
+				_ = tmp154
+				var tmp155 any
+				_ = tmp155
 				{
-					tmp152 := v_clojure_DOT_core_atom.Get()
-					tmp153 := lang.NewMap()
-					tmp154 := lang.Apply1(tmp152, tmp153)
-					var store155 any = tmp154
-					_ = store155
 					tmp156 := v_clojure_DOT_core_atom.Get()
 					tmp157 := lang.NewMap()
 					tmp158 := lang.Apply1(tmp156, tmp157)
-					var inflight159 any = tmp158
-					_ = inflight159
-					tmp160 := rt.Mul2(v_clojure_DOT_core_X_STAR_, int64(1000), ttl150)
-					var ttl_ms161 any = tmp160
-					_ = ttl_ms161
-					tmp162 := v_clojure_DOT_core_X_reify.Get()
-					tmp163 := v_cljg_DOT_cache_Cache.Get()
-					tmp164 := lang.NewVector(tmp163)
-					tmp165 := v_cljg_DOT_cache_Cache.Get()
-					tmp166 := lang.FnFunc3(func(X_167, key168, f169 any) any {
-						tmp170 := v_cljg_DOT_cache_fill_once.Get()
-						tmp171 := lang.Apply(tmp170, []any{store155, inflight159, ttl_ms161, key168, f169})
-						return tmp171
+					var store159 any = tmp158
+					_ = store159
+					tmp160 := v_clojure_DOT_core_atom.Get()
+					tmp161 := lang.NewMap()
+					tmp162 := lang.Apply1(tmp160, tmp161)
+					var inflight163 any = tmp162
+					_ = inflight163
+					tmp164 := rt.Mul2(v_clojure_DOT_core_X_STAR_, int64(1000), ttl151)
+					var ttl_ms165 any = tmp164
+					_ = ttl_ms165
+					tmp166 := v_clojure_DOT_core_X_reify.Get()
+					tmp167 := v_cljg_DOT_cache_Cache.Get()
+					tmp168 := lang.NewVector(tmp167)
+					tmp169 := v_cljg_DOT_cache_Cache.Get()
+					tmp170 := lang.FnFunc3(func(X_171, key172, f173 any) any {
+						tmp174 := v_cljg_DOT_cache_fill_once.Get()
+						tmp175 := lang.Apply(tmp174, []any{store159, inflight163, ttl_ms165, key172, f173})
+						return tmp175
 					})
-					tmp172 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ key f]", F: tmp166}
-					tmp173 := v_cljg_DOT_cache_Cache.Get()
-					tmp174 := lang.FnFunc3(func(X_175, key176, v177 any) any {
-						tmp178 := v_clojure_DOT_core_swap_BANG_.Get()
-						tmp179 := v_clojure_DOT_core_assoc.Get()
-						tmp180 := v_cljg_DOT_os_now.Get()
-						tmp181 := lang.Apply0(tmp180)
-						tmp182 := rt.Add2(v_clojure_DOT_core_X_PLUS_, tmp181, ttl_ms161)
-						tmp183 := lang.NewMap(kw_v, v177, kw_exp, tmp182)
-						tmp184 := lang.Apply4(tmp178, store155, tmp179, key176, tmp183)
-						_ = tmp184
-						return v177
+					tmp176 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ key f]", F: tmp170}
+					tmp177 := v_cljg_DOT_cache_Cache.Get()
+					tmp178 := lang.FnFunc3(func(X_179, key180, v181 any) any {
+						tmp182 := v_clojure_DOT_core_swap_BANG_.Get()
+						tmp183 := v_clojure_DOT_core_assoc.Get()
+						tmp184 := v_cljg_DOT_os_now.Get()
+						tmp185 := lang.Apply0(tmp184)
+						tmp186 := rt.Add2(v_clojure_DOT_core_X_PLUS_, tmp185, ttl_ms165)
+						tmp187 := lang.NewMap(kw_v, v181, kw_exp, tmp186)
+						tmp188 := lang.Apply4(tmp182, store159, tmp183, key180, tmp187)
+						_ = tmp188
+						return v181
 					})
-					tmp185 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ key v]", F: tmp174}
-					tmp186 := v_cljg_DOT_cache_Cache.Get()
-					tmp187 := lang.FnFunc2(func(X_188, key189 any) any {
-						tmp190 := v_clojure_DOT_core_swap_BANG_.Get()
-						tmp191 := v_clojure_DOT_core_dissoc.Get()
-						tmp192 := lang.Apply3(tmp190, store155, tmp191, key189)
-						_ = tmp192
+					tmp189 := &lang.NamedFn3{Name: "fn", Expects: "3: [_ key v]", F: tmp178}
+					tmp190 := v_cljg_DOT_cache_Cache.Get()
+					tmp191 := lang.FnFunc2(func(X_192, key193 any) any {
+						tmp194 := v_clojure_DOT_core_swap_BANG_.Get()
+						tmp195 := v_clojure_DOT_core_dissoc.Get()
+						tmp196 := lang.Apply3(tmp194, store159, tmp195, key193)
+						_ = tmp196
 						return nil
 					})
-					tmp193 := &lang.NamedFn2{Name: "fn", Expects: "2: [_ key]", F: tmp187}
-					tmp194 := v_cljg_DOT_cache_Cache.Get()
-					tmp195 := lang.FnFunc1(func(X_196 any) any {
-						tmp197 := v_clojure_DOT_core_reset_BANG_.Get()
-						tmp198 := lang.NewMap()
-						tmp199 := lang.Apply2(tmp197, store155, tmp198)
-						_ = tmp199
+					tmp197 := &lang.NamedFn2{Name: "fn", Expects: "2: [_ key]", F: tmp191}
+					tmp198 := v_cljg_DOT_cache_Cache.Get()
+					tmp199 := lang.FnFunc1(func(X_200 any) any {
+						tmp201 := v_clojure_DOT_core_reset_BANG_.Get()
+						tmp202 := lang.NewMap()
+						tmp203 := lang.Apply2(tmp201, store159, tmp202)
+						_ = tmp203
 						return nil
 					})
-					tmp200 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp195}
-					tmp201 := lang.Apply(tmp162, []any{tmp164, tmp165, "-fetch", tmp172, tmp173, "-put", tmp185, tmp186, "-evict", tmp193, tmp194, "-clear", tmp200})
-					tmp151 = tmp201
+					tmp204 := &lang.NamedFn1{Name: "fn", Expects: "1: [_]", F: tmp199}
+					tmp205 := lang.Apply(tmp166, []any{tmp168, tmp169, "-fetch", tmp176, tmp177, "-put", tmp189, tmp190, "-evict", tmp197, tmp198, "-clear", tmp204})
+					tmp155 = tmp205
 				}
-				tmp140 = tmp151
+				tmp140 = tmp155
 			}
 			return tmp140
 		default:
@@ -542,51 +550,51 @@ func Load() {
 	v_cljg_DOT_cache_local.BindRoot(tmp135)
 	_ = v_cljg_DOT_cache_local
 	// (def fetch (clojure.core/fn ([c key f] (-fetch c key f))))
-	v_cljg_DOT_cache_fetch.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(81), kw_column, int64(7), kw_end_line, int64(81), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_c, sym_key, sym_f)), kw_doc, "Return the cached value for `key`; on a miss, fill it via (f) exactly once\n  even under a concurrent stampede, cache it, and return it."))
-	tmp202 := lang.FnFunc3(func(c203, key204, f205 any) any {
-		tmp206 := v_cljg_DOT_cache_X_fetch.Get()
-		tmp207 := lang.Apply3(tmp206, c203, key204, f205)
-		return tmp207
+	v_cljg_DOT_cache_fetch.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(82), kw_column, int64(7), kw_end_line, int64(82), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_c, sym_key, sym_f)), kw_doc, "Return the cached value for `key`; on a miss, fill it via (f) exactly once\n  even under a concurrent stampede, cache it, and return it."))
+	tmp206 := lang.FnFunc3(func(c207, key208, f209 any) any {
+		tmp210 := v_cljg_DOT_cache_X_fetch.Get()
+		tmp211 := lang.Apply3(tmp210, c207, key208, f209)
+		return tmp211
 	})
-	tmp208 := &lang.NamedFn3{Name: "cljg.cache/fetch", Expects: "3: [c key f]", F: tmp202}
-	v_cljg_DOT_cache_fetch.BindRoot(tmp208)
-	fnD_cljg_DOT_cache_fetch = tmp208.F
+	tmp212 := &lang.NamedFn3{Name: "cljg.cache/fetch", Expects: "3: [c key f]", F: tmp206}
+	v_cljg_DOT_cache_fetch.BindRoot(tmp212)
+	fnD_cljg_DOT_cache_fetch = tmp212.F
 	v_cljg_DOT_cache_fetch.SealDirect()
 	_ = v_cljg_DOT_cache_fetch
 	// (def put (clojure.core/fn ([c key v] (-put c key v))))
-	v_cljg_DOT_cache_put.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(86), kw_column, int64(7), kw_end_line, int64(86), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_c, sym_key, sym_v)), kw_doc, "Write `v` through under `key`; returns `v`."))
-	tmp209 := lang.FnFunc3(func(c210, key211, v212 any) any {
-		tmp213 := v_cljg_DOT_cache_X_put.Get()
-		tmp214 := lang.Apply3(tmp213, c210, key211, v212)
-		return tmp214
+	v_cljg_DOT_cache_put.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(87), kw_column, int64(7), kw_end_line, int64(87), kw_end_column, int64(10), kw_arglists, lang.NewList(lang.NewVector(sym_c, sym_key, sym_v)), kw_doc, "Write `v` through under `key`; returns `v`."))
+	tmp213 := lang.FnFunc3(func(c214, key215, v216 any) any {
+		tmp217 := v_cljg_DOT_cache_X_put.Get()
+		tmp218 := lang.Apply3(tmp217, c214, key215, v216)
+		return tmp218
 	})
-	tmp215 := &lang.NamedFn3{Name: "cljg.cache/put", Expects: "3: [c key v]", F: tmp209}
-	v_cljg_DOT_cache_put.BindRoot(tmp215)
-	fnD_cljg_DOT_cache_put = tmp215.F
+	tmp219 := &lang.NamedFn3{Name: "cljg.cache/put", Expects: "3: [c key v]", F: tmp213}
+	v_cljg_DOT_cache_put.BindRoot(tmp219)
+	fnD_cljg_DOT_cache_put = tmp219.F
 	v_cljg_DOT_cache_put.SealDirect()
 	_ = v_cljg_DOT_cache_put
 	// (def evict (clojure.core/fn ([c key] (-evict c key))))
-	v_cljg_DOT_cache_evict.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(90), kw_column, int64(7), kw_end_line, int64(90), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_c, sym_key)), kw_doc, "Drop `key` from the cache."))
-	tmp216 := lang.FnFunc2(func(c217, key218 any) any {
-		tmp219 := v_cljg_DOT_cache_X_evict.Get()
-		tmp220 := lang.Apply2(tmp219, c217, key218)
-		return tmp220
+	v_cljg_DOT_cache_evict.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(91), kw_column, int64(7), kw_end_line, int64(91), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_c, sym_key)), kw_doc, "Drop `key` from the cache."))
+	tmp220 := lang.FnFunc2(func(c221, key222 any) any {
+		tmp223 := v_cljg_DOT_cache_X_evict.Get()
+		tmp224 := lang.Apply2(tmp223, c221, key222)
+		return tmp224
 	})
-	tmp221 := &lang.NamedFn2{Name: "cljg.cache/evict", Expects: "2: [c key]", F: tmp216}
-	v_cljg_DOT_cache_evict.BindRoot(tmp221)
-	fnD_cljg_DOT_cache_evict = tmp221.F
+	tmp225 := &lang.NamedFn2{Name: "cljg.cache/evict", Expects: "2: [c key]", F: tmp220}
+	v_cljg_DOT_cache_evict.BindRoot(tmp225)
+	fnD_cljg_DOT_cache_evict = tmp225.F
 	v_cljg_DOT_cache_evict.SealDirect()
 	_ = v_cljg_DOT_cache_evict
 	// (def clear (clojure.core/fn ([c] (-clear c))))
-	v_cljg_DOT_cache_clear_.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(94), kw_column, int64(7), kw_end_line, int64(94), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_c)), kw_doc, "Drop every entry."))
-	tmp222 := lang.FnFunc1(func(c223 any) any {
-		tmp224 := v_cljg_DOT_cache_X_clear.Get()
-		tmp225 := lang.Apply1(tmp224, c223)
-		return tmp225
+	v_cljg_DOT_cache_clear_.SetMeta(lang.NewMap(kw_file, "cljg/cache.cljg", kw_line, int64(95), kw_column, int64(7), kw_end_line, int64(95), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_c)), kw_doc, "Drop every entry."))
+	tmp226 := lang.FnFunc1(func(c227 any) any {
+		tmp228 := v_cljg_DOT_cache_X_clear.Get()
+		tmp229 := lang.Apply1(tmp228, c227)
+		return tmp229
 	})
-	tmp226 := &lang.NamedFn1{Name: "cljg.cache/clear", Expects: "1: [c]", F: tmp222}
-	v_cljg_DOT_cache_clear_.BindRoot(tmp226)
-	fnD_cljg_DOT_cache_clear_ = tmp226.F
+	tmp230 := &lang.NamedFn1{Name: "cljg.cache/clear", Expects: "1: [c]", F: tmp226}
+	v_cljg_DOT_cache_clear_.BindRoot(tmp230)
+	fnD_cljg_DOT_cache_clear_ = tmp230.F
 	v_cljg_DOT_cache_clear_.SealDirect()
 	_ = v_cljg_DOT_cache_clear_
 }

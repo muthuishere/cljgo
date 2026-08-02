@@ -106,6 +106,14 @@ A green local gate is necessary, never sufficient.
 
 ## Releasing — what changes when a version ships
 
+> **The full checklist is [`docs/release-process.md`](docs/release-process.md).
+> Follow it, do not work from memory or from the summary below.** It is the
+> authority; this section is orientation. It carries the conditional gates
+> that are easiest to skip (the Clojars network IT, the Windows leg, the
+> conformance oracle) and the post-release claims re-check — every one of
+> which has been missed at least once, and the claims re-check five releases
+> running.
+
 **The version is the git tag.** `pkg/version.Version` stays `"0.1.0-dev"` in
 source forever; goreleaser injects the real value at build time and fires on
 any `v*` tag. Never "bump" that constant.
@@ -133,10 +141,20 @@ Order of operations, every time:
    regressions.
 4. Push the tag; wait for the Release workflow; confirm **7 assets** (six
    platform archives + `checksums.txt`).
-5. **Add the release to `site/src/content/docs/reference/releases.md`** —
-   newest first, heading linked to the GitHub tag. Keep it distilled from the
-   annotation so the two cannot drift. There is deliberately **no root
-   `CHANGELOG.md`**: a third copy would just rot.
+5. **Update the published docs site, and confirm it deployed.** Add the
+   release to `site/src/content/docs/reference/releases.md` — newest first,
+   heading linked to the GitHub tag, distilled from the annotation so the two
+   cannot drift (there is deliberately **no root `CHANGELOG.md`**: a third
+   copy would just rot). Then re-read every *other* page the release changed:
+   the site at <https://muthuishere.github.io/cljgo/> is what users read, and
+   **an ADR is not a docs update** — `docs/adr/` is unpublished decision
+   history, so a decision that changes behaviour has to be re-said on the page
+   a user would look at. Build it (`cd site && npm run build`) before pushing;
+   a new page under `guides/` or `reference/` also needs a hand-added sidebar
+   entry in `site/astro.config.mjs`. The Pages workflow fires only on a push
+   to `main` touching `site/**` — tagging does not deploy the site, and a doc
+   change driven by a non-`site/` edit deploys nothing at all
+   (`gh workflow run "Deploy Pages" --ref main`).
 6. Re-check the docs claims the release invalidates — see below.
 
 ### Claims that go stale on a release, and must be re-checked
@@ -149,8 +167,12 @@ Order of operations, every time:
 - **`CLAUDE.md`'s own competitive-claims numbers** (binary size, startup,
   win/loss count). They are quoted by agents into public copy, so a stale
   figure here becomes a false public claim.
-- Any doc stating a capability the release changed — and `openspec archive`
-  for whatever the cycle applied.
+- Any doc stating a capability the release changed — **on the published site,
+  not only in `docs/`**. v0.8.7 taught cljgo to read `deps.edn` `:paths` while
+  `reference/roadmap.md` went on telling users cljgo reads "no `deps.edn` in
+  either direction (shipped)". Grep the site for what the release *changed*,
+  not for a version number: a stale claim rarely names one.
+- `openspec archive` for whatever the cycle applied.
 
 ### Before a release that touches dependency resolution
 
@@ -262,37 +284,67 @@ holds the competitor binaries) ·
 
 Any public claim about Glojure / let-go / gloat (FAQ, benchmarks page, Slack)
 must be verified against their SOURCE or the actual measured binaries — never
-READMEs, never memory. Verified facts as of 2026-07-25 (re-verify before
-reuse):
+READMEs, never memory. Verified facts as of **2026-08-02**, cljgo
+**post-v0.8.9** (commit `f46b9a8`), all three columns rebuilt and timed in one
+hyperfine session (re-verify before reuse):
 
-- **What ships in an AOT binary:** cljgo links zero interpreter (CI:
-  `pkg/coreaot/imports_test.go` TestNoInterpreterInCompiledBinary). Glojure's
-  shipping AOT mode (`-tags glj_aot_runtime`, what gloat uses) RETAINS the
-  evaluator and reader — its README says "retains evaluation", and
-  `strings <bin> | grep EvalAST` / `grep glojure/pkg/reader` proves it on the
-  binary (stripped binaries keep the pclntab, so function names survive
-  `-s -w`). let-go's lowered binaries retain the VM. Do NOT claim "only
-  let-go includes its runtime" and do NOT claim Glojure is interpreter-free.
-- **Size claims:** one corpus per table. Benchmark-suite binaries (re-measured
-  2026-07-31 @ v0.8.2): cljgo **7.0 MB** (7,049,666 B — byte-identical to
-  v0.8.1; ADR 0112 is build-time only and ADR 0113 lives in `pkg/bri`, which
-  a plain AOT program does not link) / Glojure 7.5 MB / let-go 12.8 MB — the
-  pre-v0.7.0 cljgo figure was 6.7 MB, so the lead over Glojure is ~0.5 MB,
-  not ~0.8. hello-world 5.3 MB is a DIFFERENT program — never mix it into
-  the suite row. Don't attribute the whole size delta to the interpreter;
-  say "it's in theirs, not in ours" and stop.
-- **Speed:** Glojure AOT still wins 6 of 8 suite rows (fusion + int64
-  specialization); cljgo wins tak/fib. Losses are roadmap gaps, not design
-  costs — never spin them as deliberate trade-offs. **cljgo starts slower
-  than Glojure**: @v0.8.2, 5.1 ms vs 3.9 ms (let-go 4.8) — and slower than
-  the 4.7 ms cljgo itself recorded pre-v0.7.0. Report it, don't bury it.
+- **What ships in an AOT binary — say "evaluator", not "interpreter".** A
+  cljgo AOT binary links zero `pkg/eval` / `pkg/analyzer` / `pkg/ast` /
+  `pkg/repl` (CI: `pkg/coreaot/imports_test.go`
+  TestNoInterpreterInCompiledBinary; `strings aot_fib | grep -c cljgo/pkg/eval`
+  → 0). It DOES link **`pkg/reader`** — 121 symbols in a measured binary,
+  because `read`/`read-string` are runtime core fns — plus `pkg/emit/rt` (the
+  allowed bootstrap, 26). So "cljgo links zero interpreter" is too strong:
+  the correct claim is **no evaluator, no analyzer; the reader is there**.
+  Glojure's shipping AOT mode (`-tags glj_aot_runtime -ldflags "-s -w"`, what
+  gloat uses) retains BOTH — measured on `fib-glj`, `grep -c EvalAST` → 57,
+  `grep -c glojure/pkg/reader` → 61 (stripped binaries keep the pclntab).
+  let-go's lowered binaries retain the VM (`let-go/pkg/vm` → 1939). Do NOT
+  claim "only let-go includes its runtime".
+- **Size claims:** one corpus per table. Benchmark-suite binaries, all three
+  rebuilt 2026-08-02: cljgo **7.1 MB** (7,083,298 B; `tak` 7,099,810) /
+  Glojure **19.0 MB** (19,021,826 B) / let-go **12.8 MB** (12,838,082 B).
+  The cljgo tool itself is 28.6 MB stripped. **The old 7.5 MB Glojure figure
+  does not reproduce** — same gloat v0.1.62, same pinned glj v0.7.0, same
+  strip flags, and it now measures 19.0 MB; the 2026-07-24 artifacts are gone
+  so it cannot be fully resolved. **But let-go is the control and it
+  reproduces** — 12,838,082 B against the previously recorded 12.8 MB, same
+  run, same tooling. That points at the 7.5 MB figure as the outlier rather
+  than at this run, most likely a Glojure build without
+  `-tags glj_aot_runtime` (hypothesis, not a measurement). Quote 19.0 MB, say
+  it is a fresh build rather than a re-time, and **never say Glojure's binary
+  grew** — nothing here measured a change over time. **The hello-vs-suite caveat is now obsolete**:
+  `(println "hi")` compiles to 7,083,298 B — byte-identical to the suite
+  binaries, because the linked AOT core dominates. The old 5.3 / 6.7 MB
+  hello figures are dead; do not quote them.
+- **Speed:** the "Glojure wins 6 of 8" line is **retired — it no longer
+  holds**. With σ at 0.3–1.0 ms in-session, four rows are ties inside the
+  noise (`startup`, `loop-recur`, `persistent-map`, `map-filter`). Outside
+  the noise it is **2 clear wins each**: cljgo takes `tak` (36.6 vs 53.1 ms,
+  1.45×) and `fib` (25.6 vs 39.5, 1.54×); Glojure takes `transducers`
+  (11.7 vs 17.2, 1.47×) and **`reduce` (7.4 vs 27.2, 3.67×)**. `reduce` is
+  the one real hole: hand-checked at N = 1M/4M/16M with printing variants,
+  both give the correct sum and both scale linearly — Glojure ~1.0 ns per
+  element, cljgo ~21.8 ns. That is a ~21× per-element loss and a roadmap gap,
+  never a deliberate trade-off.
+- **Startup is no longer a measured loss to Glojure.** 2026-08-02:
+  cljgo 6.1 ms · Glojure 6.5 · let-go 6.0, σ 0.5–1.0 — a three-way tie, and
+  a confirmation re-run read 5.0 / 5.4 / 4.6 with the same ordering. The
+  v0.8.2-era "5.1 vs 3.9, cljgo loses" claim is **not reproduced** against
+  freshly built binaries. Do not resurrect it, and do not upgrade the tie
+  into a win either.
 - **Never diff a timing across two sessions.** The v0.8.1 run read cljgo
   6.6 ms / Glojure 3.0 ms and the v0.8.2 run read 5.1 / 3.9 — on the SAME
   unchanged Glojure binary. The machine moved, not the code. Absolute ms are
   comparable only within one table; quote the within-table ratio instead.
-- Competitor binaries in `benchmark/.build/aotcmp/` are the 2026-07-24 gloat
-  artifacts. Re-timing them is fair; claiming anything about a NEWER Glojure
-  or let-go release requires rebuilding them with gloat first.
+- **Competitor binaries are rebuildable — rebuild them, don't estimate.**
+  `benchmark/.build/aotcmp/` is gitignored and starts empty. gloat lives at
+  `~/muthu/gitworkspace/clojure-workspace/references/gloat/bin/gloat`
+  (v0.1.62, pinning glj v0.7.0 / lg v1.12.2) and the entry-point sources it
+  needs are `references/let-go/benchmark/gloat/*.clj`:
+  `gloat -E glj -o <n>-glj <src>` and `gloat -E lglvm -o <n>-lg <src>`.
+  Claiming anything about a NEWER Glojure or let-go release still requires a
+  newer gloat.
 
 ## Simplicity first, then performance (owner, 2026-07-31)
 

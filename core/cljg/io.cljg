@@ -175,7 +175,9 @@
   non-map is rejected rather than quietly truncating. Throws if the file
   cannot be written."
   ([path data] (write-bytes path data nil))
-  ([path data opts] (-fs-write-bytes path data opts)))
+  ([path data opts]
+   (-check-opts "cljg.io/write-bytes" opts [:append])
+   (-fs-write-bytes path data opts)))
 
 ;; --- locations / temp --------------------------------------------------------
 
@@ -208,7 +210,9 @@
     :timeout-ms kill the process after n ms (:timed-out? true, :exit -1)
   A missing/unrunnable binary throws (it never ran)."
   ([command] (exec command {}))
-  ([command opts] (-proc-exec (vec command) opts)))
+  ([command opts]
+   (-check-opts "cljg.io/exec" opts [:in :env :dir :timeout-ms])
+   (-proc-exec (vec command) opts)))
 
 (defn sh
   "Convenience over `exec` for the common shape: pass the command + args as
