@@ -99,12 +99,27 @@ func (r *LongRange) First() any {
 	return r.start
 }
 
+// Next walks by COUNT, not by comparing the next value against end.
+//
+// The comparison form (`next >= r.end`) is only correct for a positive step:
+// for `(range 6 1 -1)` the second element 5 is already >= end 1, so the seq
+// terminated after ONE element while Count() still said 5. Nothing errored —
+// `first`/`rest` consumers silently saw a one-element seq, while `count` and
+// the chunked path (`map`, `vec`, `reduce`) walked all five and looked
+// correct. A backwards scan such as `(some f (range (dec n) 0 -1))` therefore
+// returned nil instead of a hit, with no diagnostic anywhere.
+//
+// count is computed once by rangeCount, which handles both signs, and is
+// already what ChunkedNext and Drop trust. Using it here makes the three
+// paths agree by construction rather than by two separate sign analyses.
+//
+// Reported by the toolnexus Clojure port, whose JVM legs passed and whose
+// cljgo legs failed on exactly this branch.
 func (r *LongRange) Next() ISeq {
-	next := r.start + r.step
-	if next >= r.end {
+	if r.count <= 1 {
 		return nil
 	}
-	return &LongRange{start: next, end: r.end, step: r.step, count: r.count - 1}
+	return &LongRange{start: r.start + r.step, end: r.end, step: r.step, count: r.count - 1}
 }
 
 func (r *LongRange) More() ISeq {
