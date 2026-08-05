@@ -180,6 +180,7 @@ var (
 	v_bri_DOT_web_DOT_http_X_hmac_sign             = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("-hmac-sign")).SetPrivate()
 	v_bri_DOT_web_DOT_http_X_json_decode           = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("-json-decode")).SetPrivate()
 	v_bri_DOT_web_DOT_http_X_json_encode           = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("-json-encode")).SetPrivate()
+	v_bri_DOT_web_DOT_http_X_log_line              = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("-log-line")).SetPrivate()
 	v_bri_DOT_web_DOT_http_X_metrics_observe       = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("-metrics-observe")).SetPrivate()
 	v_bri_DOT_web_DOT_http_X_metrics_render        = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("-metrics-render")).SetPrivate()
 	v_bri_DOT_web_DOT_http_X_now_millis            = lang.InternVarName(lang.NewSymbol("bri.web.http"), lang.NewSymbol("-now-millis")).SetPrivate()
@@ -4528,7 +4529,7 @@ func Load() {
 	fnD_bri_DOT_web_DOT_http_set_log_sink_BANG_ = tmp1686.F
 	v_bri_DOT_web_DOT_http_set_log_sink_BANG_.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_set_log_sink_BANG_
-	// (def default-log-sink (clojure.core/fn ([ev] (if (dev?) (println (pr-str ev)) (println (-j…
+	// (def default-log-sink (clojure.core/fn ([ev] (if (dev?) (println (pr-str ev)) (-log-line (…
 	v_bri_DOT_web_DOT_http_default_log_sink.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(708), kw_column, int64(7), kw_end_line, int64(708), kw_end_column, int64(33), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_ev))))
 	tmp1687 := lang.FnFunc1(func(ev1688 any) any {
 		tmp1689 := v_bri_DOT_web_DOT_http_dev_QMARK_.Direct()
@@ -4551,7 +4552,7 @@ func Load() {
 			tmp1696 := lang.Apply1(tmp1693, tmp1695)
 			tmp1692 = tmp1696
 		} else {
-			tmp1697 := v_clojure_DOT_core_println_.Get()
+			tmp1697 := v_bri_DOT_web_DOT_http_X_log_line.Get()
 			tmp1698 := v_bri_DOT_web_DOT_http_X_json_encode.Get()
 			tmp1699 := lang.Apply1(tmp1698, ev1688)
 			tmp1700 := lang.Apply1(tmp1697, tmp1699)
@@ -4565,7 +4566,7 @@ func Load() {
 	v_bri_DOT_web_DOT_http_default_log_sink.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_default_log_sink
 	// (def emit-log (clojure.core/fn ([ev] ((or *log-sink* (clojure.core/deref log-sink-fn) defa…
-	v_bri_DOT_web_DOT_http_emit_log.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(710), kw_column, int64(7), kw_end_line, int64(710), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_ev))))
+	v_bri_DOT_web_DOT_http_emit_log.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(714), kw_column, int64(7), kw_end_line, int64(714), kw_end_column, int64(25), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_ev))))
 	tmp1702 := lang.FnFunc1(func(ev1703 any) any {
 		var tmp1704 any
 		_ = tmp1704
@@ -4609,7 +4610,7 @@ func Load() {
 	v_bri_DOT_web_DOT_http_emit_log.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_emit_log
 	// (def logging "Default middleware: one STRUCTURED line per request (JSON in prod,\n  readab…
-	v_bri_DOT_web_DOT_http_logging.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(713), kw_column, int64(6), kw_end_line, int64(713), kw_end_column, int64(13), kw_doc, "Default middleware: one STRUCTURED line per request (JSON in prod,\n  readable in dev) — method, path, status, ms, request-id, and the\n  authenticated subject when a guard resolved one."))
+	v_bri_DOT_web_DOT_http_logging.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(717), kw_column, int64(6), kw_end_line, int64(717), kw_end_column, int64(13), kw_doc, "Default middleware: one STRUCTURED line per request (JSON in prod,\n  readable in dev) — method, path, status, ms, request-id, and the\n  authenticated subject when a guard resolved one."))
 	tmp1717 := lang.FnFunc1(func(handler1718 any) any {
 		tmp1719 := lang.FnFunc1(func(req1720 any) any {
 			var tmp1721 any
@@ -4687,7 +4688,7 @@ func Load() {
 	v_bri_DOT_web_DOT_http_logging.BindRoot(tmp1756)
 	_ = v_bri_DOT_web_DOT_http_logging
 	// (def metrics "Default middleware: count + latency histogram + status-class per route\n  in…
-	v_bri_DOT_web_DOT_http_metrics.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(732), kw_column, int64(6), kw_end_line, int64(732), kw_end_column, int64(13), kw_doc, "Default middleware: count + latency histogram + status-class per route\n  into the atomic registry (rendered at GET /metrics). Route label is the\n  matched PATTERN (low cardinality), not the raw path."))
+	v_bri_DOT_web_DOT_http_metrics.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(736), kw_column, int64(6), kw_end_line, int64(736), kw_end_column, int64(13), kw_doc, "Default middleware: count + latency histogram + status-class per route\n  into the atomic registry (rendered at GET /metrics). Route label is the\n  matched PATTERN (low cardinality), not the raw path."))
 	tmp1757 := lang.FnFunc1(func(handler1758 any) any {
 		tmp1759 := lang.FnFunc1(func(req1760 any) any {
 			var tmp1761 any
@@ -4760,7 +4761,7 @@ func Load() {
 	v_bri_DOT_web_DOT_http_metrics.BindRoot(tmp1793)
 	_ = v_bri_DOT_web_DOT_http_metrics
 	// (def cors (clojure.core/fn ([] (cors {})) ([opts] (let [origins (or (:origins opts) (let […
-	v_bri_DOT_web_DOT_http_cors.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(748), kw_column, int64(7), kw_end_line, int64(748), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "CORS middleware. THE DEV DEFAULT IS PERMISSIVE (origin *) — convenient\n  and LOUD; in prod set :origins (or APP_HTTP__CORS_ORIGINS) to an\n  allowlist. Adds ACAO/ACAM/ACAH + Vary:Origin; an OPTIONS preflight\n  short-circuits 204."))
+	v_bri_DOT_web_DOT_http_cors.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(752), kw_column, int64(7), kw_end_line, int64(752), kw_end_column, int64(11), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "CORS middleware. THE DEV DEFAULT IS PERMISSIVE (origin *) — convenient\n  and LOUD; in prod set :origins (or APP_HTTP__CORS_ORIGINS) to an\n  allowlist. Adds ACAO/ACAM/ACAH + Vary:Origin; an OPTIONS preflight\n  short-circuits 204."))
 	tmp1794 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -5005,14 +5006,14 @@ func Load() {
 	v_bri_DOT_web_DOT_http_cors.BindRoot(tmp1794)
 	_ = v_bri_DOT_web_DOT_http_cors
 	// (def rl-store (atom {}))
-	v_bri_DOT_web_DOT_http_rl_store.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(780), kw_column, int64(6), kw_end_line, int64(780), kw_end_column, int64(24), kw_private, true))
+	v_bri_DOT_web_DOT_http_rl_store.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(784), kw_column, int64(6), kw_end_line, int64(784), kw_end_column, int64(24), kw_private, true))
 	tmp1885 := v_clojure_DOT_core_atom.Get()
 	tmp1886 := lang.NewMap()
 	tmp1887 := lang.Apply1(tmp1885, tmp1886)
 	v_bri_DOT_web_DOT_http_rl_store.BindRoot(tmp1887)
 	_ = v_bri_DOT_web_DOT_http_rl_store
 	// (def rate-limit (clojure.core/fn ([n] (rate-limit n {})) ([n opts] (let [window (or (:wind…
-	v_bri_DOT_web_DOT_http_rate_limit.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(781), kw_column, int64(7), kw_end_line, int64(781), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_n), lang.NewVector(sym_n, sym_opts)), kw_doc, "Plain throughput limiter: at most n requests per :window-ms (default\n  60000) per client key; over → 429 + Retry-After. :key via client-key\n  (:ip default | :subject | fn). In-process store (single-instance; swap\n  :store for a shared backing). auth/auto-ban is the escalating\n  DENIAL-abuse guard — this is raw throughput."))
+	v_bri_DOT_web_DOT_http_rate_limit.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(785), kw_column, int64(7), kw_end_line, int64(785), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(sym_n), lang.NewVector(sym_n, sym_opts)), kw_doc, "Plain throughput limiter: at most n requests per :window-ms (default\n  60000) per client key; over → 429 + Retry-After. :key via client-key\n  (:ip default | :subject | fn). In-process store (single-instance; swap\n  :store for a shared backing). auth/auto-ban is the escalating\n  DENIAL-abuse guard — this is raw throughput."))
 	tmp1888 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 1:
@@ -5181,7 +5182,7 @@ func Load() {
 	v_bri_DOT_web_DOT_http_rate_limit.BindRoot(tmp1888)
 	_ = v_bri_DOT_web_DOT_http_rate_limit
 	// (def ops-routes (clojure.core/fn ([] (ops-routes {})) ([opts] (let [mpath (or (:metrics-pa…
-	v_bri_DOT_web_DOT_http_ops_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(807), kw_column, int64(7), kw_end_line, int64(807), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "Default ops endpoints as route values (default-on via serve/listen):\n  GET /healthz (liveness), GET /readyz (runs :ready-checks fns → 200/503),\n  GET /metrics (Prometheus text). Options: :metrics-path, :metrics-guard\n  (e.g. (auth/admin-only) — DEFAULT IS OPEN; GUARD IT IN PROD),\n  :ready-checks (vector of zero-arg fns)."))
+	v_bri_DOT_web_DOT_http_ops_routes.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(811), kw_column, int64(7), kw_end_line, int64(811), kw_end_column, int64(17), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "Default ops endpoints as route values (default-on via serve/listen):\n  GET /healthz (liveness), GET /readyz (runs :ready-checks fns → 200/503),\n  GET /metrics (Prometheus text). Options: :metrics-path, :metrics-guard\n  (e.g. (auth/admin-only) — DEFAULT IS OPEN; GUARD IT IN PROD),\n  :ready-checks (vector of zero-arg fns)."))
 	tmp1970 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -5376,7 +5377,7 @@ func Load() {
 	v_bri_DOT_web_DOT_http_ops_routes.BindRoot(tmp1970)
 	_ = v_bri_DOT_web_DOT_http_ops_routes
 	// (def api-defaults (clojure.core/fn ([] (api-defaults {})) ([opts] (require (quote cljg.sec…
-	v_bri_DOT_web_DOT_http_api_defaults.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(834), kw_column, int64(7), kw_end_line, int64(834), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "The API-first default middleware stack (outermost first, a plain\n  vector you can conj/without): request-id, structured logging, recover\n  (the funnel), CORS, metrics, auto-ban (default-on abuse guard), JSON\n  negotiation. Zero-config gives logs + request-ids + metrics + abuse\n  protection out of the box. Options thread down: :cors, :auto-ban (map\n  of opts, or false to drop it)."))
+	v_bri_DOT_web_DOT_http_api_defaults.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(838), kw_column, int64(7), kw_end_line, int64(838), kw_end_column, int64(19), kw_arglists, lang.NewList(lang.NewVector(), lang.NewVector(sym_opts)), kw_doc, "The API-first default middleware stack (outermost first, a plain\n  vector you can conj/without): request-id, structured logging, recover\n  (the funnel), CORS, metrics, auto-ban (default-on abuse guard), JSON\n  negotiation. Zero-config gives logs + request-ids + metrics + abuse\n  protection out of the box. Options thread down: :cors, :auto-ban (map\n  of opts, or false to drop it)."))
 	tmp2047 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 0:
@@ -5465,7 +5466,7 @@ func Load() {
 	v_bri_DOT_web_DOT_http_api_defaults.BindRoot(tmp2047)
 	_ = v_bri_DOT_web_DOT_http_api_defaults
 	// (def serve (clojure.core/fn ([rts opts] (let [stack (or (:middleware opts) (defaults)) rts…
-	v_bri_DOT_web_DOT_http_serve.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(852), kw_column, int64(7), kw_end_line, int64(852), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_opts)), kw_doc, "Start the server and (by default) BLOCK until SIGTERM/SIGINT, then\n  drain: in-flight requests finish (deadline), then each handle in\n  :drain is invoked. Omitting :middleware applies (defaults). Options:\n  :port (required), :middleware, :drain, :ping (zero-arg fns called\n  before accepting traffic), :block? (false → returns {:port :stop}\n  for tests; :stop is a zero-arg fn). Production timeouts are DEFAULT\n  ON in the Go adapter; the raw mux/server stay reachable there as the\n  escape hatch."))
+	v_bri_DOT_web_DOT_http_serve.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(856), kw_column, int64(7), kw_end_line, int64(856), kw_end_column, int64(12), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_opts)), kw_doc, "Start the server and (by default) BLOCK until SIGTERM/SIGINT, then\n  drain: in-flight requests finish (deadline), then each handle in\n  :drain is invoked. Omitting :middleware applies (defaults). Options:\n  :port (required), :middleware, :drain, :ping (zero-arg fns called\n  before accepting traffic), :block? (false → returns {:port :stop}\n  for tests; :stop is a zero-arg fn). Production timeouts are DEFAULT\n  ON in the Go adapter; the raw mux/server stay reachable there as the\n  escape hatch."))
 	tmp2091 := lang.FnFunc2(func(rts2092, opts2093 any) any {
 		var tmp2094 any
 		_ = tmp2094
@@ -5662,7 +5663,7 @@ func Load() {
 	v_bri_DOT_web_DOT_http_serve.SealDirect()
 	_ = v_bri_DOT_web_DOT_http_serve
 	// (def listen (clojure.core/fn ([rts port] (listen rts port {})) ([rts port opts] (serve rts…
-	v_bri_DOT_web_DOT_http_listen.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(874), kw_column, int64(7), kw_end_line, int64(874), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_port), lang.NewVector(sym_rts, sym_port, sym_opts)), kw_doc, "The API-first entry point: sugar over serve that defaults the\n  middleware to (api-defaults) — logs, request-ids, metrics, CORS, abuse\n  protection, JSON — and the ops endpoints. (listen app 3000). Override\n  or extend via the same opts serve takes."))
+	v_bri_DOT_web_DOT_http_listen.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(878), kw_column, int64(7), kw_end_line, int64(878), kw_end_column, int64(13), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_port), lang.NewVector(sym_rts, sym_port, sym_opts)), kw_doc, "The API-first entry point: sugar over serve that defaults the\n  middleware to (api-defaults) — logs, request-ids, metrics, CORS, abuse\n  protection, JSON — and the ops endpoints. (listen app 3000). Override\n  or extend via the same opts serve takes."))
 	tmp2156 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:
@@ -5706,7 +5707,7 @@ func Load() {
 	v_bri_DOT_web_DOT_http_listen.BindRoot(tmp2156)
 	_ = v_bri_DOT_web_DOT_http_listen
 	// (def request (clojure.core/fn ([rts req] (request rts req {})) ([rts req opts] (let [stack…
-	v_bri_DOT_web_DOT_http_request.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(884), kw_column, int64(7), kw_end_line, int64(884), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_req), lang.NewVector(sym_rts, sym_req, sym_opts)), kw_doc, "The in-process http test client (no socket): runs one request map\n  {:method \"GET\" :path \"/\" :headers {} :body \"...\"} through the\n  same mount + middleware path as serve and returns the response map.\n  Ops endpoints are appended unless :ops false (so /healthz etc. are\n  testable in-process too)."))
+	v_bri_DOT_web_DOT_http_request.SetMeta(lang.NewMap(kw_file, "bri/http.cljg", kw_line, int64(888), kw_column, int64(7), kw_end_line, int64(888), kw_end_column, int64(14), kw_arglists, lang.NewList(lang.NewVector(sym_rts, sym_req), lang.NewVector(sym_rts, sym_req, sym_opts)), kw_doc, "The in-process http test client (no socket): runs one request map\n  {:method \"GET\" :path \"/\" :headers {} :body \"...\"} through the\n  same mount + middleware path as serve and returns the response map.\n  Ops endpoints are appended unless :ops false (so /healthz etc. are\n  testable in-process too)."))
 	tmp2174 := lang.FnFunc(func(args ...any) any {
 		switch len(args) {
 		case 2:

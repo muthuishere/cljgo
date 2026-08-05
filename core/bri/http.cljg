@@ -706,7 +706,11 @@
 (def ^:private log-sink-fn (atom nil))
 (defn set-log-sink! [f] (reset! log-sink-fn f))
 (defn ^:private default-log-sink [ev]
-  (if (dev?) (println (pr-str ev)) (println (-json-encode ev))))
+  ;; prod goes through the BUFFERED sink (-log-line: whole lines, periodic
+  ;; + on-drain flush — ADR 0122): an unbuffered per-request stdout write
+  ;; measured as the single largest cost of the default stack (s80). dev
+  ;; keeps println — a REPL wants the line now, not 250ms from now.
+  (if (dev?) (println (pr-str ev)) (-log-line (-json-encode ev))))
 (defn ^:private emit-log [ev]
   ((or *log-sink* @log-sink-fn default-log-sink) ev))
 
