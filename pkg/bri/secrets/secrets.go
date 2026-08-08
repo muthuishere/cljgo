@@ -15,7 +15,7 @@
 //
 // This package holds ONLY the fetch/store host shims (scalar strings in, raw
 // value or nil out). All policy — masking, the reveal seam, the fallback
-// chain — lives in portable Clojure (core/bri/secrets.cljg), so a secret's
+// chain — lives in portable Clojure (core/cljg/secrets.cljg), so a secret's
 // value is masked at every print surface and only an explicit `reveal`
 // unwraps it (ADR 0086).
 package secrets

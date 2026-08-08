@@ -1,0 +1,434 @@
+# Downstream consumer gate — issue #200.
+#
+# THE PROBLEM THIS EXISTS FOR. Across the v0.8.5–v0.9.0 cycle nearly every
+# headline defect was found by a downstream project, not by our gate, and our
+# gate was green throughout. Two ports found all of them. That is not luck: they
+# are the only real usage cljgo has. `ci.yml` tests cljgo the way its authors
+# imagine it being used; this tests it the way two real projects actually use
+# it. It is a different KIND of coverage, not more of the same — cljgo's own
+# sources are .cljg and its process tests are Go-level, so nothing in ci.yml
+# exercises a .cljc consumer hammering subprocess pipes, HTTP, MCP and parallel
+# futures, and nothing in ci.yml compares cljgo against real JVM Clojure on a
+# whole library surface.
+#
+# WHAT EACH LEG IS GOOD AT, because they are not interchangeable:
+#
+#   toolnexus  cross-leg AOT-vs-interpreted DIVERGENCE. Both legs run the same
+#              395 tests / 1614 assertions and their JSON verdicts must be
+#              byte-identical. REPL-vs-binary divergence is cljgo's own release
+#              blocker (CLAUDE.md, ADR 0007) and this is the best-placed check
+#              for it. It is STRUCTURALLY BLIND to anything both legs get
+#              identically wrong — two legs agreeing is evidence about cljgo,
+#              never evidence about correctness.
+#
+#   koine      the EXTERNAL ORACLE, and therefore the more valuable of the two.
+#              It runs 14 check files on BOTH real JVM Clojure 1.12.5 and cljgo
+#              and requires both to pass, so it closes exactly the class
+#              toolnexus cannot see: a behaviour cljgo gets wrong the same way
+#              everywhere. koine 0.7.2 shipped a key-ordering bug that was
+#              consistent across cljgo hosts and every cross-host check stayed
+#              green.
+#
+# SCHEDULED + PUSH-TO-MAIN, DELIBERATELY NOT ON PULL_REQUEST. This gate needs
+# the network (Clojars for koine 0.11.0, Maven Central for Clojure), a JVM, the
+# clojure CLI and python3. A Clojars blip would then red every open PR through
+# no fault of the PR, and the first time that happens someone deletes the gate —
+# which is the actual failure mode we are guarding against, since a gate nobody
+# trusts is worse than no gate. So it does NOT run on pull_request and is NOT a
+# required check — it informs main and the release rather than blocking them.
+#
+# Say that precisely, because the tempting phrasing ("it blocks the release")
+# would be false: nothing here prevents a tag while this workflow is red. The
+# enforcement is procedural and lives in docs/release-process.md — run it before
+# tagging (`gh workflow run Downstream`) and read the nightly. If we later want
+# it to genuinely block, that is a branch-protection / required-check change,
+# and this comment must change with it.
+#
+# COST, MEASURED not guessed (owner's laptop, warm Maven cache, 2026-08-08,
+# current source):
+#   toolnexus  32.5s of gate work  (cljgo build ~2s, 2 legs, 395 tests)
+#   koine      84.4s of gate work  (14 checks x 2 hosts, incl. a JVM leg)
+# Plus toolchain setup and a cold ~/.m2 on the first run. Both are cached.
+#
+# CONSUMERS ARE PINNED BY SHA, never a floating branch — toolnexus'
+# cljgo-gate.sh asks for this in its own wiring notes, and it is right: a gate
+# that follows someone else's main turns their refactor into our red build.
+# Bump the pins deliberately (workflow_dispatch takes overrides for a one-off).
+# Both repos are PUBLIC (verified 2026-08-08 via `gh repo view`), so the clone
+# below needs no credentials. If either ever goes private this workflow fails
+# LOUDLY at the clone step rather than silently skipping — see "no-op" note in
+# the clone step.
+name: Downstream
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # 05:00 UTC daily — before the Monday 06:00 CI Windows sweep, so a red
+    # nightly is already visible when the weekly gate starts.
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+    inputs:
+      toolnexus_ref:
+        description: "toolnexus commit SHA (default: the pin in this file)"
+        required: false
+        type: string
+      koine_ref:
+        description: "koine commit SHA (default: the pin in this file)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: downstream-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Pinned 2026-08-08. Both verified green against cljgo at this worktree.
+  # toolnexus: origin/main. The tree actually exercised locally was 510262e,
+  # which differs from this SHA by README.md only (`git diff --stat` = 1 file,
+  # 4 insertions), so the clojure/ suite is identical.
+  TOOLNEXUS_REPO: https://github.com/muthuishere/toolnexus.git
+  TOOLNEXUS_REF: e8e27b848b8a57aa1b3504ae76d98354b9fe5923
+  KOINE_REPO: https://github.com/muthuishere/koine.git
+  KOINE_REF: 969883073b15c8e0fdd3100855cee6d7363b65d9
+
+jobs:
+  # ---------------------------------------------------------------- toolnexus
+  toolnexus:
+    name: toolnexus (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both hosts, because runner slowness is itself the instrument: the two
+        # v0.8.4 silent-truncation bugs were caught only because CI runners are
+        # slower than a laptop, and the pipe/subprocess paths this suite hammers
+        # are where macOS and Linux differ.
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # A source-built cljgo reports version 0.1.0-dev, and cljgo REFUSES to
+      # generate a go.mod for a dev binary unless it can locate its own runtime
+      # tree. Without CLJGO_SRC the gate dies at `cljgo build` with
+      #   "cannot locate the github.com/muthuishere/cljgo source tree"
+      # — reproduced here on 2026-08-08. toolnexus' own wiring snippet omits
+      # this, so it is the single most likely way to mis-wire this workflow.
+      - name: Build cljgo from THIS source
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          go build -o "$RUNNER_TEMP/bin/cljgo" ./cmd/cljgo
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          echo "CLJGO_SRC=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+
+      # Cloned rather than actions/checkout'd for two reasons: the consumer tree
+      # must stay OUTSIDE cljgo's module (actions/checkout cannot write above
+      # the workspace), and an explicit clone of a public URL fails visibly if
+      # the repo ever stops being public. There is no silent-skip path here — if
+      # this step cannot clone, the job is red, which is the honest outcome.
+      - name: Clone toolnexus (pinned)
+        run: |
+          ref="${{ inputs.toolnexus_ref || env.TOOLNEXUS_REF }}"
+          echo "::notice::toolnexus pinned at $ref"
+          git clone --filter=blob:none "$TOOLNEXUS_REPO" "$RUNNER_TEMP/toolnexus"
+          git -C "$RUNNER_TEMP/toolnexus" checkout --detach "$ref"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: m2-${{ runner.os }}-toolnexus-${{ env.TOOLNEXUS_REF }}
+          restore-keys: m2-${{ runner.os }}-
+
+      # cljgo-gate.sh is the consumer's OWN gate (it describes itself as "a
+      # downstream gate for cljgo CI"), so we run it unmodified and trust its
+      # exit code. It hard-sets TN_EXAMPLES itself — do not set it here, a stale
+      # value in the environment is a bug it was specifically hardened against.
+      #
+      # It exits 2 on fixtures-missing / build failure and 1 on a test failure
+      # or an aot-vs-interp divergence, and it refuses a leg that produced no
+      # verdict line ("Ran 0 tests" green-forever is the failure mode it was
+      # built to kill).
+      # RETRIED ONCE, AND HERE IS THE EVIDENCE FOR IT — do not remove the retry
+      # without re-measuring, and do not raise it above 2.
+      #
+      # Measured 2026-08-08 on the owner's laptop, same pinned tree, same cljgo:
+      #   idle machine   1614/1614 assertions, 0 errors  (twice, both legs, clean)
+      #   under load     1613 assertions / 1 error
+      #                  1599 assertions / 6 errors / 8 fails
+      #                  1611 assertions / 2 errors
+      # The failing assertions are NOT stable — a different set each run — and
+      # every one of them lands in tests that spin up a local `bri` HTTP server
+      # on an ephemeral port (the log is full of "bri: listening on
+      # http://localhost:600xx"). That is port/timing sensitivity under CPU
+      # contention, and a CI runner is a contended machine by definition.
+      #
+      # This matters more than it looks, because the flake corrupts the gate's
+      # HEADLINE signal: when the two legs flake differently they also
+      # disagree, so the gate reports `"divergence":"aot != interp"` — cljgo's
+      # release blocker — for what is actually noise. A gate that cries
+      # "release blocker" at random is a gate that gets muted, which is the
+      # exact failure mode issue #200 is about.
+      #
+      # So: one retry, and BOTH attempts' verdicts are kept and reported. That
+      # is what makes a real regression legible against the noise — a genuine
+      # break reproduces with the SAME counts, a flake produces different ones.
+      # Read the two attempts before believing a red.
+      #
+      # The right fix is upstream (bind-then-hand-off instead of pick-a-port,
+      # or serialise those suites). Until then this is the honest compromise:
+      # it does not hide a reproducible failure, it only absorbs a
+      # non-reproducible one.
+      #
+      # `set +e` is load-bearing: GitHub runs every `run` block under
+      # `bash -eo pipefail`, so without it a non-zero gate would abort the
+      # step before we ever capture the code or print the log — a red build
+      # with no evidence in it.
+      - name: cljgo-gate.sh (AOT + interpreted, cross-compared)
+        id: gate
+        working-directory: ${{ runner.temp }}/toolnexus/clojure
+        run: |
+          set +e
+          status=1
+          : > gate.log
+          for attempt in 1 2; do
+            echo "===== attempt $attempt =====" >> gate.log
+            ./cljgo-gate.sh > "verdict-$attempt.json" 2>> gate.log
+            status=$?
+            cp "verdict-$attempt.json" verdict.json
+            [ $status -eq 0 ] && { echo "attempt $attempt: PASS" >> gate.log; break; }
+            echo "attempt $attempt: FAIL (exit $status)" >> gate.log
+          done
+          cat gate.log
+          if [ $status -ne 0 ]; then
+            echo "::error::toolnexus gate failed BOTH attempts — compare the two verdicts below; identical counts mean a real regression, differing counts mean the known ephemeral-port flake."
+            for f in verdict-1.json verdict-2.json; do
+              [ -f "$f" ] && { printf '%s: ' "$f"; cat "$f"; echo; }
+            done
+          fi
+          exit $status
+
+      # Runs even on failure: the JSON verdict IS the actionable artifact, and a
+      # divergence is only legible next to both legs' numbers.
+      - name: Report verdict
+        if: always()
+        working-directory: ${{ runner.temp }}/toolnexus/clojure
+        run: |
+          {
+            echo "### toolnexus — ${{ matrix.os }}"
+            echo
+            echo '```json'
+            cat verdict.json 2>/dev/null || echo '{"gate":"NO VERDICT — the gate died before writing one"}'
+            echo '```'
+            echo
+            echo "<details><summary>full log</summary>"
+            echo
+            echo '```'
+            tail -n 200 gate.log 2>/dev/null || echo "(no log)"
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: toolnexus-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/toolnexus/clojure/verdict-*.json
+            ${{ runner.temp }}/toolnexus/clojure/gate.log
+          if-no-files-found: warn
+
+  # -------------------------------------------------------------------- koine
+  koine:
+    name: koine (jvm vs cljgo)
+    # ubuntu only, on purpose: run-conformance.sh uses `timeout(1)`, which is
+    # not present on a stock macOS runner, and the value here is the JVM oracle
+    # rather than platform coverage. toolnexus above carries the macOS leg.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # Installed from the official clojure/brew-install release rather than a
+      # third-party action, and pinned: koine's conformance compares cljgo
+      # against a SPECIFIC Clojure, and "whatever latest is" would let the
+      # oracle move under us. 1.12.5.1645 is what the local green run used.
+      - name: Install Clojure CLI 1.12.5.1645
+        run: |
+          curl -fsSL -o /tmp/linux-install.sh \
+            https://github.com/clojure/brew-install/releases/download/1.12.5.1645/linux-install.sh
+          chmod +x /tmp/linux-install.sh
+          sudo /tmp/linux-install.sh
+          clojure -Sdescribe | head -5
+
+      - name: Build cljgo from THIS source
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          go build -o "$RUNNER_TEMP/bin/cljgo" ./cmd/cljgo
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          echo "CLJGO_SRC=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+
+      - name: Clone koine (pinned)
+        run: |
+          ref="${{ inputs.koine_ref || env.KOINE_REF }}"
+          echo "::notice::koine pinned at $ref"
+          git clone --filter=blob:none "$KOINE_REPO" "$RUNNER_TEMP/koine"
+          git -C "$RUNNER_TEMP/koine" checkout --detach "$ref"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: m2-${{ runner.os }}-koine-${{ env.KOINE_REF }}
+          restore-keys: m2-${{ runner.os }}-
+
+      # run-conformance.sh prints "cljgo SKIP (not installed)" and stays GREEN
+      # when cljgo is missing from PATH. That is reasonable for a human running
+      # it on a laptop and catastrophic for a gate — it would pass forever while
+      # testing nothing. Assert it here so the skip path can never be reached
+      # silently. (koine also warns "NOT release evidence" for a checkout build
+      # and still exits 0; that warning is correct and expected — we are
+      # deliberately testing unreleased source.)
+      - name: Assert cljgo is the one we just built
+        run: |
+          command -v cljgo || { echo "::error::cljgo not on PATH — the gate would SKIP silently"; exit 1; }
+          test "$(command -v cljgo)" = "$RUNNER_TEMP/bin/cljgo" \
+            || { echo "::error::cljgo on PATH is not the freshly built one: $(command -v cljgo)"; exit 1; }
+
+      # 14 check files x {JVM Clojure, cljgo}. A check's last line must read
+      # "<n>/<n> pass"; a crash, a timeout or an empty run counts as a FAILURE,
+      # not a skip. Exit 1 = at least one host-check failed or did not report.
+      # UPSTREAM GAP, found while validating this workflow (2026-08-08) — read
+      # this before deleting the step, because it looks like pointless setup.
+      #
+      # koine's COMMITTED run-conformance.sh starts the SSE server but never
+      # writes /tmp/koine-stream-base, and stream_check does
+      # `(slurp "/tmp/koine-stream-base")` to learn the base URL. So from a
+      # CLEAN CLONE stream_check fails on BOTH hosts with
+      # "error: slurp: no such file or directory" — reproduced here at pin
+      # 9698830. It passes on the owner's laptop only because his working tree
+      # carries an UNCOMMITTED one-line fix adding that printf. CI has no such
+      # working tree, so without this step the koine leg is red forever and the
+      # other 13 checks never get read.
+      #
+      # We do exactly what that uncommitted line does, and no more:
+      # run-conformance.sh skips its own server start when the marker already
+      # exists, so this is deterministic rather than racing it.
+      #
+      # DELETE THIS STEP once koine commits the fix, and bump KOINE_REF in the
+      # same commit. Until then a red stream_check here means a real cljgo
+      # regression, not this gap.
+      - name: Start the SSE fixture server (works around koine's missing marker)
+        working-directory: ${{ runner.temp }}/koine/src
+        run: |
+          rm -f /tmp/koine-stream-base
+          nohup python3 ../test/sse_server.py > /tmp/koine-sse.log 2>&1 &
+          sleep 3
+          printf 'http://127.0.0.1:8791' > /tmp/koine-stream-base
+          curl -fsS --max-time 5 -o /dev/null http://127.0.0.1:8791/ \
+            || { echo "::error::SSE fixture server did not come up"; cat /tmp/koine-sse.log; exit 1; }
+
+      - name: run-conformance.sh (JVM oracle vs cljgo)
+        working-directory: ${{ runner.temp }}/koine
+        run: ./run-conformance.sh 2>&1 | tee conformance.log
+
+      - name: Report verdict
+        if: always()
+        working-directory: ${{ runner.temp }}/koine
+        run: |
+          {
+            echo "### koine — JVM Clojure vs cljgo"
+            echo
+            echo '```'
+            tail -n 120 conformance.log 2>/dev/null || echo "(no log — the run died before producing one)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: koine-conformance
+          path: ${{ runner.temp }}/koine/conformance.log
+          if-no-files-found: warn
+
+  # ------------------------------------------------------------------- report
+  # A scheduled workflow going red is invisible — nobody watches the Actions tab
+  # at 05:00 UTC, and an unnoticed red gate decays into a deleted gate. So a
+  # failure files itself. One tracking issue, reopened and commented rather than
+  # duplicated, so a week of nightly failures is one thread and not seven
+  # issues.
+  report:
+    name: file a tracking issue on failure
+    needs: [toolnexus, koine]
+    if: failure() && github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      # `gh issue` resolves the repo from git remotes, so without a checkout
+      # (or GH_REPO) every call here dies with "not a git repository" and,
+      # under bash -e, takes the step with it — filing nothing. Setting
+      # GH_REPO is the cheaper of the two fixes: no clone needed.
+      - name: Open or update the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: "Downstream consumer gate is red"
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          body=$(printf '%s\n' \
+            "The downstream consumer gate failed on \`${{ github.sha }}\`." \
+            "" \
+            "- run: $RUN_URL" \
+            "- toolnexus: \`$TOOLNEXUS_REF\` · koine: \`$KOINE_REF\`" \
+            "" \
+            "Read the job summary for the JSON verdicts. What each failure means:" \
+            "" \
+            "- **toolnexus \`\"divergence\":\"aot != interp\"\`** — the AOT binary and the" \
+            "  interpreter disagree. Release blocker (CLAUDE.md / ADR 0007)." \
+            "- **toolnexus \`FAILED: no verdict line\`** — a leg produced no output at all;" \
+            "  suspect a crash or a build that emitted nothing, not a test failure." \
+            "- **toolnexus \`FAILED: build\`** — usually \`CLJGO_SRC\` (a dev cljgo cannot" \
+            "  generate a go.mod without its runtime tree), not the consumer's deps." \
+            "- **koine \`conformance RED\`** — cljgo disagrees with real JVM Clojure on a" \
+            "  named check. This is the external oracle; treat it as a cljgo bug until" \
+            "  proven otherwise." \
+            "" \
+            "If the consumer repo moved rather than cljgo breaking, bump the pin in" \
+            "\`.github/workflows/downstream.yml\` in its own commit and say why.")
+
+          # Search ALL states, not just open: a gate that went green, got the
+          # issue closed, then went red again must reopen that issue rather
+          # than mint a duplicate — otherwise the tracking issue is exactly
+          # as noisy as no tracking issue.
+          existing=$(gh issue list --state all --search "$TITLE in:title" \
+                       --json number,title,state --jq \
+                       "map(select(.title == \"$TITLE\")) | .[0] // empty")
+          number=$(printf '%s' "$existing" | jq -r '.number // empty')
+          state=$(printf '%s' "$existing" | jq -r '.state // empty')
+          if [ -n "$number" ]; then
+            if [ "$state" = "CLOSED" ]; then
+              gh issue reopen "$number"
+              echo "::notice::reopened #$number"
+            fi
+            gh issue comment "$number" --body "$body"
+            echo "::notice::commented on #$number"
+          else
+            gh issue create --title "$TITLE" --body "$body"
+          fi

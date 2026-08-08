@@ -1,9 +1,22 @@
 # ADR 0041 — keel: a batteries-included application framework, library style
-Date: 2026-07-17 · Status: proposed (owner mandate 2026-07-17; evidence: spike S20)
+Date: 2026-07-17 · Status: proposed (owner mandate 2026-07-17; evidence: spike S20) ·
+**Superseded in part by ADR 0093 (cache) and ADR 0094 (jobs)**
 
 > 2026-07-17: renamed keel → bri (owner). The rest of this ADR keeps the
 > original name "keel" throughout its body, as the historical record of
 > the decision; the code, docs, and templates now use "bri".
+
+> **Superseded in part — the T3 Jobs & Cache designs below did NOT ship as
+> written.** ADR 0094 (jobs) and ADR 0093 (cache) scoped the dependency-backed
+> backends out by owner directive (*"we dont need dependencies as they will cost
+> more than what we need … we will just give fundamentals"*). What shipped is
+> the dependency-free fundamental behind a protocol: `cljg.jobs` — an
+> in-process core.async worker pool, **no Postgres rows, no LISTEN/NOTIFY, no
+> retry/cron table** — and `cljg.cache` — in-process TTL + singleflight, **no
+> redis backend** (both renamed from `bri.core.*` by ADR 0102). Users who want
+> a durable/distributed backend implement the same protocol. The §"Jobs (T3)"
+> and §"Cache (T3)" paragraphs below stay as the historical record of the
+> original decision; read ADRs 0093/0094 for what is true today.
 
 ## Context
 

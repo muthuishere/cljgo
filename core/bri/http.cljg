@@ -40,13 +40,31 @@
 (defn ^:private dev? [] (= "1" (-getenv "BRI_DEV")))
 
 ;; --- the error funnel table (shipped, documented DATA) ----------------
-;; recover maps a thrown ex-info's :bri/error through this table;
-;; override per app via (recover {:error-map ...}).
+;; recover maps a thrown ex-info through this table; override per app via
+;; (recover {:error-map ...}).
+;;
+;; TWO tag keys reach the funnel, and the table covers both (ADR 0124):
+;;   :bri/error             — bri's own framework errors (http/param!, cli, config)
+;;   :cljg.data.cast/error  — cljg.data.cast, the MECHANISM layer below bri
+;; cljg.* is deliberately ignorant of bri's key (ADR 0102 taxonomy), so the
+;; translation lives HERE, on bri's side, and cljg keeps throwing its own
+;; namespaced keyword. :bri/error wins when both are present.
+;;
+;; Rows :cast/invalid, :db/not-found and :db/constraint are the ABSTRACT
+;; names an app may throw itself; the concrete cljg.data.cast keywords land
+;; on the same statuses. There is NO constraint-violation keyword in
+;; cljg.data.cast today — a UNIQUE/FK violation surfaces as the driver's own
+;; error, so :db/constraint fires only when application code throws it.
 (def default-error-map
   {:http/bad-param 400
    :cast/invalid   422
    :db/not-found   404
    :db/constraint  409
+
+   :cljg.data.cast/cast      422
+   :cljg.data.cast/not-found 404
+   :cljg.data.cast/no-url    500
+
    :else           500})
 
 ;; --- response helpers --------------------------------------------------
@@ -283,11 +301,12 @@
 
 ;; --- recover (THE funnel) ------------------------------------------------
 (defn recover
-  "The error funnel: catches anything a handler throws and maps
-  (:bri/error (ex-data t)) through the table — 400 bad param, 422
-  invalid cast, 404 not found, 409 constraint, else 500. Bodies name
-  the error kind; messages appear in dev only. Override rows with
-  (recover {:error-map {...}})."
+  "The error funnel: catches anything a handler throws and maps its tag —
+  (:bri/error (ex-data t)), else (:cljg.data.cast/error (ex-data t)) —
+  through the table: 400 bad param, 422 invalid cast, 404 not found,
+  409 constraint, else 500. So (db/one! …) is a 404 and (db/cast! …) a
+  422 with no handler code. Bodies name the error kind; messages appear
+  in dev only. Override rows with (recover {:error-map {...}})."
   ([] (recover {}))
   ([opts]
    (let [table (merge default-error-map (:error-map opts))]
@@ -297,7 +316,9 @@
                 (try
                   (handler req)
                   (catch Throwable t
-                    (let [kind   (:bri/error (ex-data t))
+                    (let [data   (ex-data t)
+                          kind   (or (:bri/error data)
+                                     (:cljg.data.cast/error data))
                           status (get table kind (get table :else 500))]
                       {:status status
                        :headers {"content-type" "application/json"}

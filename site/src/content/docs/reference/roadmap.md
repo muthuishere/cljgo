@@ -28,7 +28,7 @@ The original build-order roadmap
 | publish | ✅ | `cljgo publish go` (go-gettable module) + `publish clojars` (pure Clojure source), purity-gated at `file:line` |
 | build.cljgo | ✅ | Zig-style build graph — `exe`/`install`/`run` + `go-require` for third-party Go modules, zero bindings |
 | bri T0–T1 | ✅ | The app framework — `cljgo new`/`cljgo dev`, HTTP + hiccup HTML + routes/middleware, sessions + CSRF, layered config |
-| bri security | ✅ | API-first security ([bri.core.security](/cljgo/bri/auth/), ADR 0069): pinned HS256 JWT, argon2id passwords, composable guards, rate-limit + auto-ban, CORS, audited decisions, Compojure-style router |
+| security | ✅ | API-first security ([cljg.security](/cljgo/bri/auth/), ADR 0069; renamed from `bri.core.security` by ADR 0103): pinned HS256 JWT, argon2id passwords, composable guards, rate-limit + auto-ban, CORS, audited decisions, Compojure-style router |
 | bri AOT + Docker | ✅ | bri AOT-compiles to one static `CGO_ENABLED=0` binary, byte-identical to interpreted; `cljgo new --template web` ships a scratch-image [Dockerfile](/cljgo/guides/deploy/) (~15 MB) (ADR 0071) |
 | bri T2 — data | ✅ | [cljg.data.cast](/cljgo/bri/db/) (ADR 0072): pure-Go SQLite (zero-install default) + Postgres (pgx), parametrized queries, data-shaped writers, transactions, forward-only migrations — one API, driver swap |
 | resource generator | ✅ | [`cljgo generate resource`](/cljgo/guides/generate/) (ADR 0073): migration + model + handlers + routes + a green CRUD test, spliced into `main` at markers |
@@ -72,9 +72,12 @@ batteries stay native-fast and keep the single static binary:
   0074)*
 - **Deploy** — AOT to one static binary in a ~15 MB scratch image. *(shipped,
   ADR 0071 — see [Deploy](/cljgo/guides/deploy/))*
-- **Jobs & cache** — a durable Postgres queue (`FOR UPDATE SKIP LOCKED`) +
-  in-process TTL/singleflight cache. *(ADR 0075 catalog — `bri.jobs` /
-  `bri.cache`, not yet shipped)*
+- **Jobs & cache** — an in-process job queue (core.async worker pool) +
+  in-process TTL/singleflight cache, both behind a protocol so you can plug a
+  durable backend. *(shipped as `cljg.jobs` / `cljg.cache` — ADRs
+  0094 / 0093, renamed from `bri.core.*` by ADR 0102. The dependency-backed
+  Postgres/redis backends of the ADR 0075 catalog were scoped out by owner
+  directive: cljgo ships the fundamentals, users bring the backend.)*
 - **A curated Go-native stdlib** — mail, outbound http-client, websockets,
   object storage, cron, validation — opt-in `bri.*` batteries, each linked
   only when required (ADR 0075).

@@ -236,6 +236,16 @@ constraint violation → 409, otherwise 500), overridable via
 - **THEN** the funnel renders the mapped status (JSON or HTML per
   negotiation) with no error-handling code in the handler
 
+> **NOT YET TRUE — see ADR 0124 (2026-08-08).** The funnel now maps the
+> errors `cljg.data.cast` actually raises (`:cljg.data.cast/not-found` →
+> 404, `:cljg.data.cast/cast` → 422), but a unique-constraint violation is
+> **not** among them: the driver error propagates untagged and falls
+> through to `:else` → 500. Closing this scenario requires
+> `cljg.data.cast` to classify constraint violations per driver (SQLite
+> and pgx report them differently) and raise a tagged error. Left open
+> deliberately rather than marked done — this scenario is exactly the kind
+> of spec text that made the 404 gap invisible for so long.
+
 #### Scenario: the railway crosses on a visible bridge
 - **WHEN** a handler wraps a `let?` chain in `http/render` and a
   binding yields `(err e)`

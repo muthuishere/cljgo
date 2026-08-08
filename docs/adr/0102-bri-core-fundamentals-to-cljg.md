@@ -1,6 +1,11 @@
 # ADR 0102 — Fundamentals move to `cljg.*`; `bri.*` is framework + template only
 
-Date: 2026-07-27 · Status: **proposed** (owner-directed, 2026-07-27: *"fundamentals
+Date: 2026-07-27 · Status: **accepted (implemented 2026-08-08 — the four namespaces live at
+`core/cljg/{cache,jobs,secrets,data_cast}.cljg`, and this ADR's own grep-gate condition is now met
+by `pkg/briaot/stale_namespace_test.go`. The second condition below — freezing the moved
+namespaces' conformance under the new names — is still OUTSTANDING: no `conformance/tests/` file
+exercises `cljg.jobs`, `cljg.cache` or `cljg.secrets`, so the move is gated against stale *names*
+but not against behavioural regression.)** — was proposed (owner-directed, 2026-07-27: *"fundamentals
 will be in cljg while bri is just framework and template stuff"*). Refines
 **ADR 0085** (namespace taxonomy) by sharpening the `cljg.*` / `bri.*` boundary and
 relocating four recently-shipped namespaces that landed on the wrong side of it.
