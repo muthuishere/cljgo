@@ -637,16 +637,16 @@ func Load() {
 		var tmp162 any
 		_ = tmp162
 		{
-			var case__118163 any = type_160
-			_ = case__118163
-			tmp164 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118163, kw_any_)
+			var case__120163 any = type_160
+			_ = case__120163
+			tmp164 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__120163, kw_any_)
 			var tmp165 any
 			_ = tmp165
 			if tmp164 {
 				tmp166 := lang.NewVector(kw_ok, v161)
 				tmp165 = tmp166
 			} else {
-				tmp167 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118163, kw_string_)
+				tmp167 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__120163, kw_string_)
 				var tmp168 any
 				_ = tmp168
 				if tmp167 {
@@ -664,7 +664,7 @@ func Load() {
 					tmp174 := lang.NewVector(kw_ok, tmp171)
 					tmp168 = tmp174
 				} else {
-					tmp175 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118163, kw_keyword)
+					tmp175 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__120163, kw_keyword)
 					var tmp176 any
 					_ = tmp176
 					if tmp175 {
@@ -685,7 +685,7 @@ func Load() {
 						var tmp183 any
 						_ = tmp183
 						{
-							tmp184 := rt.EQ2(v_clojure_DOT_core_X_EQ_, case__118163, kw_int_)
+							tmp184 := rt.EQ2(v_clojure_DOT_core_X_EQ_, case__120163, kw_int_)
 							var or__2__auto__185 any = tmp184
 							_ = or__2__auto__185
 							var tmp186 any
@@ -693,7 +693,7 @@ func Load() {
 							if lang.IsTruthy(or__2__auto__185) {
 								tmp186 = or__2__auto__185
 							} else {
-								tmp187 := rt.EQ2(v_clojure_DOT_core_X_EQ_, case__118163, kw_long)
+								tmp187 := rt.EQ2(v_clojure_DOT_core_X_EQ_, case__120163, kw_long)
 								tmp186 = tmp187
 							}
 							tmp183 = tmp186
@@ -771,7 +771,7 @@ func Load() {
 							}
 							tmp188 = tmp191
 						} else {
-							tmp217 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118163, kw_double)
+							tmp217 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__120163, kw_double)
 							var tmp218 any
 							_ = tmp218
 							if tmp217 {
@@ -833,7 +833,7 @@ func Load() {
 								}
 								tmp218 = tmp221
 							} else {
-								tmp241 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__118163, kw_bool_)
+								tmp241 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__120163, kw_bool_)
 								var tmp242 any
 								_ = tmp242
 								if tmp241 {
@@ -881,18 +881,18 @@ func Load() {
 	v_cljg_DOT_data_DOT_cast_cast_STAR_.SetMeta(lang.NewMap(kw_file, "cljg/data_cast.cljg", kw_line, int64(138), kw_column, int64(7), kw_end_line, int64(138), kw_end_column, int64(22), kw_private, true, kw_arglists, lang.NewList(lang.NewVector(sym_row, sym_schema)), kw_doc, "The engine: reduce `row` against `schema`, dropping undeclared keys. Returns\n  [clean-row errors-map]."))
 	tmp253 := lang.FnFunc2(func(row254, schema255 any) any {
 		tmp256 := v_clojure_DOT_core_reduce.Get()
-		tmp257 := lang.FnFunc2(func(p__119258, f259 any) any {
+		tmp257 := lang.FnFunc2(func(p__121258, f259 any) any {
 			var tmp260 any
 			_ = tmp260
 			{
-				var vec__120261 any = p__119258
-				_ = vec__120261
+				var vec__122261 any = p__121258
+				_ = vec__122261
 				tmp262 := v_clojure_DOT_core_nth.Get()
-				tmp263 := lang.Apply3(tmp262, vec__120261, int64(0), nil)
+				tmp263 := lang.Apply3(tmp262, vec__122261, int64(0), nil)
 				var clean264 any = tmp263
 				_ = clean264
 				tmp265 := v_clojure_DOT_core_nth.Get()
-				tmp266 := lang.Apply3(tmp265, vec__120261, int64(1), nil)
+				tmp266 := lang.Apply3(tmp265, vec__122261, int64(1), nil)
 				var errs267 any = tmp266
 				_ = errs267
 				tmp268 := v_clojure_DOT_core_contains_QMARK_.Get()
@@ -918,14 +918,14 @@ func Load() {
 						} else {
 							tmp278 = lang.Apply2(tmp273, tmp275, tmp277)
 						}
-						var vec__123279 any = tmp278
-						_ = vec__123279
+						var vec__125279 any = tmp278
+						_ = vec__125279
 						tmp280 := v_clojure_DOT_core_nth.Get()
-						tmp281 := lang.Apply3(tmp280, vec__123279, int64(0), nil)
+						tmp281 := lang.Apply3(tmp280, vec__125279, int64(0), nil)
 						var tag282 any = tmp281
 						_ = tag282
 						tmp283 := v_clojure_DOT_core_nth.Get()
-						tmp284 := lang.Apply3(tmp283, vec__123279, int64(1), nil)
+						tmp284 := lang.Apply3(tmp283, vec__125279, int64(1), nil)
 						var v285 any = tmp284
 						_ = v285
 						tmp286 := rt.EQBool(v_clojure_DOT_core_X_EQ_, tag282, kw_ok)
@@ -953,7 +953,7 @@ func Load() {
 			}
 			return tmp260
 		})
-		tmp295 := &lang.NamedFn2{Name: "fn", Expects: "2: [p__119 f]", F: tmp257}
+		tmp295 := &lang.NamedFn2{Name: "fn", Expects: "2: [p__121 f]", F: tmp257}
 		tmp296 := lang.NewMap()
 		tmp297 := lang.NewMap()
 		tmp298 := lang.NewVector(tmp296, tmp297)
@@ -984,14 +984,14 @@ func Load() {
 			} else {
 				tmp309 = lang.Apply2(tmp308, row304, schema305)
 			}
-			var vec__126310 any = tmp309
-			_ = vec__126310
+			var vec__128310 any = tmp309
+			_ = vec__128310
 			tmp311 := v_clojure_DOT_core_nth.Get()
-			tmp312 := lang.Apply3(tmp311, vec__126310, int64(0), nil)
+			tmp312 := lang.Apply3(tmp311, vec__128310, int64(0), nil)
 			var clean313 any = tmp312
 			_ = clean313
 			tmp314 := v_clojure_DOT_core_nth.Get()
-			tmp315 := lang.Apply3(tmp314, vec__126310, int64(1), nil)
+			tmp315 := lang.Apply3(tmp314, vec__128310, int64(1), nil)
 			var errs316 any = tmp315
 			_ = errs316
 			tmp317 := v_clojure_DOT_core_empty_QMARK_.Get()
@@ -1033,14 +1033,14 @@ func Load() {
 			} else {
 				tmp331 = lang.Apply2(tmp330, row326, schema327)
 			}
-			var vec__129332 any = tmp331
-			_ = vec__129332
+			var vec__131332 any = tmp331
+			_ = vec__131332
 			tmp333 := v_clojure_DOT_core_nth.Get()
-			tmp334 := lang.Apply3(tmp333, vec__129332, int64(0), nil)
+			tmp334 := lang.Apply3(tmp333, vec__131332, int64(0), nil)
 			var clean335 any = tmp334
 			_ = clean335
 			tmp336 := v_clojure_DOT_core_nth.Get()
-			tmp337 := lang.Apply3(tmp336, vec__129332, int64(1), nil)
+			tmp337 := lang.Apply3(tmp336, vec__131332, int64(1), nil)
 			var errs338 any = tmp337
 			_ = errs338
 			tmp339 := v_clojure_DOT_core_empty_QMARK_.Get()

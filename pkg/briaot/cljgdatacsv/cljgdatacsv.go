@@ -523,18 +523,18 @@ func Load() {
 					{
 						tmp187 := v_clojure_DOT_data_DOT_csv_read_cell.Get()
 						tmp188 := lang.Apply(tmp187, []any{s176, n177, i182, sep179, quote180})
-						var vec__335189 any = tmp188
-						_ = vec__335189
+						var vec__337189 any = tmp188
+						_ = vec__337189
 						tmp190 := v_clojure_DOT_core_nth.Get()
-						tmp191 := lang.Apply3(tmp190, vec__335189, int64(0), nil)
+						tmp191 := lang.Apply3(tmp190, vec__337189, int64(0), nil)
 						var cell192 any = tmp191
 						_ = cell192
 						tmp193 := v_clojure_DOT_core_nth.Get()
-						tmp194 := lang.Apply3(tmp193, vec__335189, int64(1), nil)
+						tmp194 := lang.Apply3(tmp193, vec__337189, int64(1), nil)
 						var sentinel195 any = tmp194
 						_ = sentinel195
 						tmp196 := v_clojure_DOT_core_nth.Get()
-						tmp197 := lang.Apply3(tmp196, vec__335189, int64(2), nil)
+						tmp197 := lang.Apply3(tmp196, vec__337189, int64(2), nil)
 						var next_i198 any = tmp197
 						_ = next_i198
 						tmp199 := rt.EQBool(v_clojure_DOT_core_X_EQ_, sentinel195, kw_sep)
@@ -589,26 +589,26 @@ func Load() {
 				{
 					tmp217 := v_clojure_DOT_data_DOT_csv_read_record.Get()
 					tmp218 := lang.Apply(tmp217, []any{s209, n210, i211, sep212, quote213})
-					var vec__338219 any = tmp218
-					_ = vec__338219
+					var vec__340219 any = tmp218
+					_ = vec__340219
 					tmp220 := v_clojure_DOT_core_nth.Get()
-					tmp221 := lang.Apply3(tmp220, vec__338219, int64(0), nil)
+					tmp221 := lang.Apply3(tmp220, vec__340219, int64(0), nil)
 					var record222 any = tmp221
 					_ = record222
 					tmp223 := v_clojure_DOT_core_nth.Get()
-					tmp224 := lang.Apply3(tmp223, vec__338219, int64(1), nil)
+					tmp224 := lang.Apply3(tmp223, vec__340219, int64(1), nil)
 					var sentinel225 any = tmp224
 					_ = sentinel225
 					tmp226 := v_clojure_DOT_core_nth.Get()
-					tmp227 := lang.Apply3(tmp226, vec__338219, int64(2), nil)
+					tmp227 := lang.Apply3(tmp226, vec__340219, int64(2), nil)
 					var next_i228 any = tmp227
 					_ = next_i228
 					var tmp229 any
 					_ = tmp229
 					{
-						var case__341230 any = sentinel225
-						_ = case__341230
-						tmp231 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__341230, kw_eol)
+						var case__343230 any = sentinel225
+						_ = case__343230
+						tmp231 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__343230, kw_eol)
 						var tmp232 any
 						_ = tmp232
 						if tmp231 {
@@ -618,7 +618,7 @@ func Load() {
 							tmp236 := lang.Apply2(tmp233, record222, tmp235)
 							tmp232 = tmp236
 						} else {
-							tmp237 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__341230, kw_eof)
+							tmp237 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__343230, kw_eof)
 							var tmp238 any
 							_ = tmp238
 							if tmp237 {
@@ -637,7 +637,7 @@ func Load() {
 							} else {
 								tmp244 := v_clojure_DOT_core_X_illegal_argument.Get()
 								tmp245 := v_clojure_DOT_core_str.Get()
-								tmp246 := lang.Apply2(tmp245, "No matching clause: ", case__341230)
+								tmp246 := lang.Apply2(tmp245, "No matching clause: ", case__343230)
 								tmp247 := lang.Apply1(tmp244, tmp246)
 								tmp238 = tmp247
 							}

@@ -767,21 +767,34 @@
 
 ;; --- CORS (default-on in the API stack) -------------------------------------
 (defn cors
-  "CORS middleware. THE DEV DEFAULT IS PERMISSIVE (origin *) — convenient
-  and LOUD; in prod set :origins (or APP_HTTP__CORS_ORIGINS) to an
-  allowlist. Adds ACAO/ACAM/ACAH + Vary:Origin; an OPTIONS preflight
-  short-circuits 204."
+  "CORS middleware, CONFIGURABLE and safe by default (ADR 0126).
+
+  :origins (or APP_HTTP__CORS_ORIGINS, comma-separated) is an allowlist.
+  With neither set the behaviour depends on where you are running:
+
+    dev (BRI_DEV=1)   permissive `*`, convenient and loud.
+    anywhere else     CORS headers are NOT emitted at all. A browser is
+                      then refused by its own same-origin policy, which
+                      is the correct answer for an API that never
+                      declared which origins it trusts. Server-to-server
+                      and CLI callers are unaffected — they ignore CORS.
+
+  Pass :origins \"*\" explicitly if you really do want any origin in prod.
+  Adds ACAO/ACAM/ACAH + Vary:Origin; an OPTIONS preflight short-circuits 204."
   ([] (cors {}))
   ([opts]
    (let [origins (or (:origins opts)
                      (let [e (-getenv "APP_HTTP__CORS_ORIGINS")]
                        (when-not (str/blank? e) (mapv str/trim (str/split e #","))))
-                     "*")
+                     (when (dev?) "*"))
          methods (or (:methods opts) "GET,POST,PUT,PATCH,DELETE,OPTIONS")
          hdrs    (or (:headers opts) "Content-Type,Authorization,X-CSRF-Token,X-Request-Id")]
      {:name :cors
       :wrap (fn [handler]
-              (fn [req]
+              (if (nil? origins)
+                ;; No allowlist and not dev: emit nothing, stay out of the way.
+                handler
+                (fn [req]
                 (let [origin (get (:headers req) "origin")
                       allow  (cond (= origins "*") "*"
                                    (and origin (some #(= % origin) origins)) origin
@@ -795,7 +808,7 @@
                     (let [res (handler req)]
                       (if (map? res)
                         (update res :headers (fn [h] (merge cors-h (or h {}))))
-                        res))))))})))
+                        res)))))))})))
 
 ;; --- rate-limit (plain throughput; distinct from auth/auto-ban) -------------
 (def ^:private rl-store (atom {}))
@@ -825,16 +838,54 @@
                     (handler req)))))})))
 
 ;; --- ops endpoints (health / readiness / metrics) ---------------------------
+(defn ^:private bearer-token-guard
+  "The built-in /metrics guard: requires `Authorization: Bearer <token>`
+  matching APP_METRICS_TOKEN, compared in constant time. Returns 404 —
+  not 401 — on a miss, so an unauthenticated scan cannot even confirm the
+  endpoint exists."
+  [expected]
+  {:name :metrics-token
+   :wrap (fn [handler]
+           (fn [req]
+             (let [given (get (:headers req) "authorization")
+                   given (when (and (string? given) (str/starts-with? given "Bearer "))
+                           (subs given 7))]
+               (if (and (string? given) (-const-eq expected given))
+                 (handler req)
+                 {:status 404
+                  :headers {"content-type" "application/json"}
+                  :body (-json-encode {:error "not-found"})}))))})
+
 (defn ops-routes
   "Default ops endpoints as route values (default-on via serve/listen):
   GET /healthz (liveness), GET /readyz (runs :ready-checks fns → 200/503),
-  GET /metrics (Prometheus text). Options: :metrics-path, :metrics-guard
-  (e.g. (auth/admin-only) — DEFAULT IS OPEN; GUARD IT IN PROD),
-  :ready-checks (vector of zero-arg fns)."
+  GET /metrics (Prometheus text).
+
+  /metrics is SECURE BY DEFAULT and CONFIGURABLE (ADR 0126). It exposes
+  route-level traffic and latency, so it is not open unless you say so.
+  :metrics-guard picks the posture:
+
+    (absent)          APP_METRICS_TOKEN set → require `Authorization:
+                      Bearer <it>`. Unset → the route is NOT MOUNTED
+                      outside dev (BRI_DEV=1), and a line says why.
+                      Fails CLOSED: an unconfigured prod exposes nothing.
+    <a middleware>    your own gate, e.g. (auth/admin-only). Unchanged.
+    :public           mount it open, deliberately. For a private network
+                      or a sidecar scrape. You had to type it.
+
+  Other options: :metrics-path, :ready-checks (vector of zero-arg fns)."
   ([] (ops-routes {}))
   ([opts]
    (let [mpath    (or (:metrics-path opts) "/metrics")
-         guard    (:metrics-guard opts)
+         token    (let [t (-getenv "APP_METRICS_TOKEN")] (when-not (str/blank? t) t))
+         guard-in (:metrics-guard opts)
+         ;; nil here means "do not mount /metrics at all".
+         guard    (cond
+                    (= :public guard-in) nil
+                    (some? guard-in)     guard-in
+                    (some? token)        (bearer-token-guard token)
+                    (dev?)               nil
+                    :else                ::unmounted)
          checks   (or (:ready-checks opts) [])
          health-h (managed (fn [_] {:status 200 :body {:status "ok"}}))
          ready-h  (managed (fn [_]
@@ -844,12 +895,19 @@
          metrics-fn (fn [_] {:status 200
                              :headers {"content-type" "text/plain; version=0.0.4; charset=utf-8"}
                              :body (-metrics-render)})
-         metrics-h  (if guard
-                      (managed ((:wrap (->mw guard)) metrics-fn))
-                      (managed metrics-fn))]
-     [["GET /healthz" health-h]
-      ["GET /readyz" ready-h]
-      [(str "GET " mpath) metrics-h]])))
+         unmounted? (= ::unmounted guard)
+         metrics-h  (cond
+                      unmounted? nil
+                      guard      (managed ((:wrap (->mw guard)) metrics-fn))
+                      :else      (managed metrics-fn))]
+     (when unmounted?
+       (println (str "bri.web.http: " mpath " NOT mounted — it exposes route traffic and latency."
+                     " Set APP_METRICS_TOKEN to serve it behind a bearer token, pass"
+                     " :metrics-guard <middleware> for your own gate, or :metrics-guard :public"
+                     " to serve it openly on a private network.")))
+     (cond-> [["GET /healthz" health-h]
+              ["GET /readyz" ready-h]]
+       (not unmounted?) (conj [(str "GET " mpath) metrics-h])))))
 
 ;; --- api-defaults (the API-first stack, inspectable DATA) -------------------
 (defn api-defaults

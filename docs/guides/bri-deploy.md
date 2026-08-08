@@ -65,9 +65,18 @@ docker run -p 3000:3000 -e APP_PROFILE=prod -e APP_DB_URL=postgres://… \
 
 `(db/migrate! conn "migrations")` is idempotent + forward-only — run on
 boot (the delay pattern) or one-shot before rollout. The API stack serves
-`GET /healthz`, `GET /readyz` (`:ready-checks` → 200/503), and `GET /metrics`
-(Prometheus) by default — wire into probes; guard `/metrics` in prod with
-`:metrics-guard (auth/admin-only)`.
+`GET /healthz`, `GET /readyz` (`:ready-checks` → 200/503) by default — wire into probes.
+
+`GET /metrics` is **closed unless you configure it** (ADR 0126), because it
+exposes per-route traffic and latency. Pick one:
+
+- `APP_METRICS_TOKEN=…` — served behind `Authorization: Bearer <token>`.
+- `:metrics-guard (auth/admin-only)` — your own gate.
+- `:metrics-guard :public` — open, for a private network or sidecar scrape.
+
+With none of them set, the route is not mounted outside dev and a line on
+stdout tells you so. A miss returns 404, not 401, so a scan cannot confirm
+the endpoint exists.
 
 ## See also
 

@@ -301,14 +301,14 @@ func Load() {
 								})
 								tmp76 := &lang.NamedFn1{Name: "fn", Expects: "1: [m]", F: tmp69}
 								tmp77 := lang.Apply2(tmp68, inflight44, tmp76)
-								var vec__18778 any = tmp77
-								_ = vec__18778
+								var vec__18978 any = tmp77
+								_ = vec__18978
 								tmp79 := v_clojure_DOT_core_nth.Get()
-								tmp80 := lang.Apply3(tmp79, vec__18778, int64(0), nil)
+								tmp80 := lang.Apply3(tmp79, vec__18978, int64(0), nil)
 								var X_81 any = tmp80
 								_ = X_81
 								tmp82 := v_clojure_DOT_core_nth.Get()
-								tmp83 := lang.Apply3(tmp82, vec__18778, int64(1), nil)
+								tmp83 := lang.Apply3(tmp82, vec__18978, int64(1), nil)
 								var after84 any = tmp83
 								_ = after84
 								tmp85 := v_clojure_DOT_core_identical_QMARK_.Get()
@@ -450,30 +450,30 @@ func Load() {
 			tmp138 := lang.Apply1(tmp136, tmp137)
 			return tmp138
 		case 1:
-			p__190139 := args[0]
-			_ = p__190139
+			p__192139 := args[0]
+			_ = p__192139
 			var tmp140 any
 			_ = tmp140
 			{
-				var map__191141 any = p__190139
-				_ = map__191141
+				var map__193141 any = p__192139
+				_ = map__193141
 				tmp142 := v_clojure_DOT_core_seq_QMARK_.Get()
-				tmp143 := lang.Apply1(tmp142, map__191141)
+				tmp143 := lang.Apply1(tmp142, map__193141)
 				var tmp144 any
 				_ = tmp144
 				if lang.IsTruthy(tmp143) {
 					tmp145 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-					tmp146 := lang.Apply1(tmp145, map__191141)
+					tmp146 := lang.Apply1(tmp145, map__193141)
 					tmp144 = tmp146
 				} else {
-					tmp144 = map__191141
+					tmp144 = map__193141
 				}
-				var map__191147 any = tmp144
-				_ = map__191147
-				var opts148 any = map__191147
+				var map__193147 any = tmp144
+				_ = map__193147
+				var opts148 any = map__193147
 				_ = opts148
 				tmp149 := v_clojure_DOT_core_get.Get()
-				tmp150 := lang.Apply3(tmp149, map__191147, kw_ttl, int64(60))
+				tmp150 := lang.Apply3(tmp149, map__193147, kw_ttl, int64(60))
 				var ttl151 any = tmp150
 				_ = ttl151
 				tmp152 := v_cljg_DOT_cache_X_check_opts.Get()
@@ -544,7 +544,7 @@ func Load() {
 			}
 			return tmp140
 		default:
-			panic(lang.NewArityError(len(args), "cljg.cache/local", "0: [] or 1: [p__190]"))
+			panic(lang.NewArityError(len(args), "cljg.cache/local", "0: [] or 1: [p__192]"))
 		}
 	})
 	v_cljg_DOT_cache_local.BindRoot(tmp135)

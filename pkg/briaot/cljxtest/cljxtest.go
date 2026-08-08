@@ -340,23 +340,23 @@ func Load() {
 					var tmp25 any
 					_ = tmp25
 					{
-						var map__34326 any = f16
-						_ = map__34326
+						var map__34526 any = f16
+						_ = map__34526
 						tmp27 := v_clojure_DOT_core_seq_QMARK_.Get()
-						tmp28 := lang.Apply1(tmp27, map__34326)
+						tmp28 := lang.Apply1(tmp27, map__34526)
 						var tmp29 any
 						_ = tmp29
 						if lang.IsTruthy(tmp28) {
 							tmp30 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-							tmp31 := lang.Apply1(tmp30, map__34326)
+							tmp31 := lang.Apply1(tmp30, map__34526)
 							tmp29 = tmp31
 						} else {
-							tmp29 = map__34326
+							tmp29 = map__34526
 						}
-						var map__34332 any = tmp29
-						_ = map__34332
+						var map__34532 any = tmp29
+						_ = map__34532
 						tmp33 := v_clojure_DOT_core_get.Get()
-						tmp34 := lang.Apply2(tmp33, map__34332, kw_returns)
+						tmp34 := lang.Apply2(tmp33, map__34532, kw_returns)
 						var returns35 any = tmp34
 						_ = returns35
 						tmp36 := lang.FnFunc(func(args ...any) any {

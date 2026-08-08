@@ -667,33 +667,33 @@ func Load() {
 			{
 				tmp195 := v_cljg_DOT_io_exec.Get()
 				tmp196 := lang.Apply2(tmp195, command192, opts193)
-				var map__165197 any = tmp196
-				_ = map__165197
+				var map__167197 any = tmp196
+				_ = map__167197
 				tmp198 := v_clojure_DOT_core_seq_QMARK_.Get()
-				tmp199 := lang.Apply1(tmp198, map__165197)
+				tmp199 := lang.Apply1(tmp198, map__167197)
 				var tmp200 any
 				_ = tmp200
 				if lang.IsTruthy(tmp199) {
 					tmp201 := v_clojure_DOT_core_seq_to_map_for_destructuring.Get()
-					tmp202 := lang.Apply1(tmp201, map__165197)
+					tmp202 := lang.Apply1(tmp201, map__167197)
 					tmp200 = tmp202
 				} else {
-					tmp200 = map__165197
+					tmp200 = map__167197
 				}
-				var map__165203 any = tmp200
-				_ = map__165203
-				var r204 any = map__165203
+				var map__167203 any = tmp200
+				_ = map__167203
+				var r204 any = map__167203
 				_ = r204
 				tmp205 := v_clojure_DOT_core_get.Get()
-				tmp206 := lang.Apply2(tmp205, map__165203, kw_exit)
+				tmp206 := lang.Apply2(tmp205, map__167203, kw_exit)
 				var exit207 any = tmp206
 				_ = exit207
 				tmp208 := v_clojure_DOT_core_get.Get()
-				tmp209 := lang.Apply2(tmp208, map__165203, kw_err)
+				tmp209 := lang.Apply2(tmp208, map__167203, kw_err)
 				var err210 any = tmp209
 				_ = err210
 				tmp211 := v_clojure_DOT_core_get.Get()
-				tmp212 := lang.Apply2(tmp211, map__165203, kw_timed_out_QMARK_)
+				tmp212 := lang.Apply2(tmp211, map__167203, kw_timed_out_QMARK_)
 				var timed_out_QMARK_213 any = tmp212
 				_ = timed_out_QMARK_213
 				tmp214 := v_clojure_DOT_core_not_EQ_.Get()

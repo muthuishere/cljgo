@@ -526,9 +526,9 @@ func Load() {
 		var tmp182 any
 		_ = tmp182
 		{
-			var case__186183 any = strategy179
-			_ = case__186183
-			tmp184 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__186183, kw_token)
+			var case__188183 any = strategy179
+			_ = case__188183
+			tmp184 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__188183, kw_token)
 			var tmp185 any
 			_ = tmp185
 			if tmp184 {
@@ -536,7 +536,7 @@ func Load() {
 				tmp187 := lang.Apply2(tmp186, service178, opts181)
 				tmp185 = tmp187
 			} else {
-				tmp188 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__186183, kw_password)
+				tmp188 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__188183, kw_password)
 				var tmp189 any
 				_ = tmp189
 				if tmp188 {
@@ -618,7 +618,7 @@ func Load() {
 					}
 					tmp189 = tmp190
 				} else {
-					tmp239 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__186183, kw_device)
+					tmp239 := rt.EQBool(v_clojure_DOT_core_X_EQ_, case__188183, kw_device)
 					var tmp240 any
 					_ = tmp240
 					if tmp239 {
