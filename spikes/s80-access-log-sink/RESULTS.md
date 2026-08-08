@@ -16,7 +16,12 @@ the Docker image exposes, so the thing measured is the thing that ships.
 
 ## 1. The engine is not the gap
 
-10s, c=50, logs to /dev/null unless stated:
+10s, c=50, logs to /dev/null unless stated. **These are single-shot
+cells, not repeated** — treat them as the decomposition that pointed at
+the sink, not as precision figures. Only §4's table is interleaved and
+repeated. Given the ~2–3% run-to-run spread measured there, the three
+top rows (110.5 / 111.0 / 109.3k) are inside each other's noise, which
+is the basis for calling it a TIE and not a win:
 
 | variant                          | req/s   | vs Go bare |
 |----------------------------------|--------:|-----------:|
@@ -49,7 +54,10 @@ unbuffered fd write per request.
 
 ## 3. Scaling — the gap grows with concurrency
 
-8s per cell, logs to a real file (the honest configuration):
+8s per cell, logs to a real file (the honest configuration). Single-shot
+again; the *direction* (relative cost worsening with concurrency) is
+what this table is for, and §4's repeated run independently reproduces
+that direction on the real before/after pair:
 
 | c   | full (unbuffered) | lean    | full/lean |
 |----:|------------------:|--------:|----------:|
@@ -66,24 +74,42 @@ volume is real; the synchronous discipline is what's optional.
 
 `-log-line`: whole lines appended under one mutex into a 64 KiB
 `bufio.Writer`, flushed every 250 ms, on high water, and on server drain.
-Same app, same file sink, lines verified complete (valid JSON, count
-matches requests; SIGTERM flushes the tail — 3 requests → 3 lines):
 
-| c   | full unbuffered | full buffered | gain  | vs lean |
-|----:|----------------:|--------------:|------:|--------:|
-|  10 |           52.4k |         59.5k |  +14% |    0.73 |
-|  50 |           64.8k |     **93.6k** | +44%  |    0.85 |
-| 200 |           72.5k |    **113.1k** | +56%  |    0.91 |
+**Method (corrected).** The first pass of this spike measured the two
+arms in separate runs, one cell each — which is exactly the
+cross-session diff this repo's own benchmarks discipline forbids, and it
+reported no spread. Redone properly: both arms built from ONE source
+state differing only in the `default-log-sink` line (the `after` binary
+is the branch; the `before` binary is that tree with just that line
+reverted, regenerated and rebuilt), then run **interleaved**
+before/after/before/after, 5 repeats at c=50 and 3 at c=10/200, 6 s each,
+logs to a real file. Medians below, with the observed range.
 
-At c=200 the full zero-config stack now clears the bare Go mux's c=50
-number. The remaining full-vs-lean gap (~9–27%, shrinking with load) is
-the sum of the small honest costs above (request-id crypto/rand, JSON
-encode, thread bindings) — no single lever left worth a mechanism.
+| c   | before (median) | after (median) | ratio | before range | after range |
+|----:|----------------:|---------------:|------:|-------------:|------------:|
+|  10 |          46,676 |         52,192 | 1.12x | 46.0–47.2k   | 51.0–52.9k  |
+|  50 |          59,694 |     **88,317** | **1.48x** | 58.5–60.0k | 86.9–89.4k |
+| 200 |          68,424 |    **109,048** | **1.59x** | 67.1–69.3k | 109.0–110.6k |
+
+Run-to-run spread is ~2–3% within each arm — the gain at c≥50 is an
+order of magnitude outside it. The gain **grows with concurrency**,
+which is the signature of removing a contention point rather than a
+fixed per-request cost, and it is the same signature the unbuffered
+arm showed in §3.
+
+Correctness verified on the shipped binary: lines arrive whole and in
+order (valid JSON, count matches requests), and SIGTERM flushes the tail
+(3 requests -> 3 lines, nothing lost).
 
 ## What this excludes
 
-- Docker (json-file log driver makes the unbuffered write *worse*, so
-  these host gains are a floor for the container story, not a ceiling).
+- **Docker — entirely.** Every number here is host + loopback, and the
+  PUBLISHED bri figure this work revises is a Docker figure. Whether a
+  container's json-file log driver moves the result up or down is
+  **unmeasured**; an earlier draft of this file asserted it would make
+  the gains a floor, which was reasoning, not measurement, and has been
+  removed. The Docker table must be re-run before any of this is quoted
+  against it.
 - Network: oha over loopback, same exclusion as s45.
 - Cross-platform: darwin/arm64 only; absolute ms are this-session-only
   per the benchmarks discipline — only within-table ratios travel.
@@ -94,8 +120,8 @@ encode, thread bindings) — no single lever left worth a mechanism.
 
 The AOT gap was never the engine (parity with bare Go) and no longer the
 interpreter (s76's finding, retired by ADR 0071) — it was one unbuffered
-`fmt.Fprintln` per request. Buffering the sink recovers **+44–56%**
-throughput at c≥50 while keeping "logs by default" (s76's flagged owner
+`fmt.Fprintln` per request. Buffering the sink recovers **+48% at c=50 and
++59% at c=200** (+12% at c=10) while keeping "logs by default" (s76's flagged owner
 decision resolves as *keep the logs, fix the write*). One mechanism
 (bufio + ticker + drain flush), no second code path, no config surface.
 → ADR 0122.

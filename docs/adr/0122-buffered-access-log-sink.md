@@ -33,10 +33,26 @@ at c=200). The logging logic is cheap; the write discipline was the cost.
 4. **Tests are untouched.** `*log-sink*` / `set-log-sink!` capture before
    the sink is reached; a custom sink bypasses the buffer entirely.
 
-Measured (s80, host, logs to a real file): +14% req/s at c=10, **+44% at
-c=50, +56% at c=200**; the full stack at c=200 (113.1k) clears the bare
-Go mux comparator. Lines verified whole and in order; SIGTERM loses
-nothing.
+Measured (s80, host + loopback, logs to a real file, two binaries from
+one source state differing only in this line, run **interleaved** with
+5 repeats at c=50 / 3 at c=10 and c=200; medians, ~2–3% run-to-run
+spread within each arm):
+
+| c   | before | after | ratio |
+|----:|-------:|------:|------:|
+|  10 | 46,676 | 52,192 | 1.12x |
+|  50 | 59,694 | 88,317 | **1.48x** |
+| 200 | 68,424 | 109,048 | **1.59x** |
+
+The gain grows with concurrency — the signature of removing a contention
+point, not a fixed per-request cost. Lines verified whole and in order;
+SIGTERM loses nothing.
+
+**What is NOT measured: Docker.** The published bri figure this revises
+is a container figure, and every number above is host + loopback. The
+container result could differ in either direction (the json-file log
+driver is a different write path); it must be re-run, not extrapolated,
+before this is quoted against the published table.
 
 ## Consequences
 
@@ -47,9 +63,10 @@ nothing.
 - Log lines can trail the host program's own stdout writes by up to
   250 ms. Lines never tear — whole lines enter the buffer under the
   mutex, and flushes write whole-line prefixes of it.
-- The s45/benchmark web table understates current bri throughput until
-  re-measured; the benchmarks page must not quote the old bri row
-  against the new binary (competitive-claims discipline).
+- The s45/benchmark web table is now unsafe to quote for bri either way:
+  the old row measured a binary that no longer exists, and the new
+  numbers are host-side, so they are not a substitute for it. It must be
+  RE-MEASURED in Docker, not edited (competitive-claims discipline).
 - Passed the simplicity test: one mechanism, no second code path, no
   config surface, and the same-speed question is answered by
   correctness itself — a per-request synchronous fd write was never a
