@@ -379,9 +379,17 @@ func TestOpsEndpoints(t *testing.T) {
 	if v := eval(t, d, `(:status (http/request rts {:method "GET" :path "/readyz"} {:ready-checks [(fn [] false)]}))`); v != int64(503) {
 		t.Fatalf("/readyz failing check = %v, want 503", v)
 	}
-	body := evalString(t, d, `(:body (http/request rts {:method "GET" :path "/metrics"} {}))`)
+	// ADR 0126: /metrics is no longer mounted by default — serving it is an
+	// explicit choice. :public is the "yes, openly" one.
+	body := evalString(t, d, `(:body (http/request rts {:method "GET" :path "/metrics"}
+                                     {:metrics-guard :public}))`)
 	if !strings.Contains(body, "bri_http_requests_total") || !strings.Contains(body, "bri_http_request_duration_ms_bucket") {
 		t.Fatalf("metrics body missing Prometheus series:\n%s", body)
+	}
+	// ... and with nothing configured it is absent, not open. This is the
+	// assertion that would have caught the old default being wrong.
+	if v := eval(t, d, `(:status (http/request rts {:method "GET" :path "/metrics"} {}))`); v != int64(404) {
+		t.Fatalf("unconfigured /metrics = %v, want 404 (not mounted — ADR 0126)", v)
 	}
 	// metrics guardable: a guard yields 401 without a token.
 	if v := eval(t, d, `(:status (http/request rts {:method "GET" :path "/metrics"}

@@ -96,7 +96,8 @@ binary that never requires `cljg.security` links none of it.
 ## From bri.web.http (default-on in the relevant stack)
 
 - `(http/rate-limit n opts)` — plain throughput cap → 429 + Retry-After.
-- CORS — `(http/cors {:origins […]})`; permissive `*` in dev, allowlist via
+- CORS — `(http/cors {:origins […]})`; permissive `*` in dev, NO headers at
+  all outside dev unless you set an allowlist (ADR 0126), via
   `:origins` / `APP_HTTP__CORS_ORIGINS` in prod.
 - CSRF — gates session-bearing mutating requests; sessionless JSON passes.
 - Sessions — signed cookies (HMAC-SHA256; key from `APP_SESSION_KEY`).

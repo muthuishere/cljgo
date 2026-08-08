@@ -78,13 +78,20 @@ It is a plain **vector** of `{:name kw :wrap fn}` entries — inspect it, `conj`
 
 App handlers use `!` forms and let the funnel answer. The funnel's mapping is shipped **data**:
 
-| `:bri/error` in ex-data | status |
+The funnel reads two tag keys off the thrown ex-info's data — `:bri/error` (bri's own errors, e.g. `http/param!`) and, failing that, `:cljg.data.cast/error` (the [`cljg.data.cast`](/cljgo/bri/db/) layer below bri). Both land in the same table:
+
+| tag in ex-data | status |
 |---|---|
 | `:http/bad-param` | 400 |
 | `:cast/invalid`   | 422 |
 | `:db/not-found`   | 404 |
 | `:db/constraint`  | 409 |
+| `:cljg.data.cast/cast` — `(db/cast! …)` | 422 |
+| `:cljg.data.cast/not-found` — `(db/one! …)` | 404 |
+| `:cljg.data.cast/no-url` | 500 |
 | anything else     | 500 |
+
+So `(db/one! …)` in a handler is a 404 and `(db/cast! …)` a 422 with no handler code. Note there is **no** constraint-violation keyword in `cljg.data.cast`: a UNIQUE/FK violation arrives untagged from the driver and falls to 500, so `:db/constraint` fires only when your own code throws it.
 
 Override rows: `(http/recover {:error-map {:app/teapot 418}})` in a custom stack. Error bodies name the kind; messages appear in dev only.
 

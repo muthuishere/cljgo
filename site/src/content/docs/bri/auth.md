@@ -85,7 +85,8 @@ Keys on client IP by default (proxy-aware `http/client-ip`), or `:subject`, or a
 These live in [bri.web.http](/cljgo/bri/http/) and are on by default in the relevant stack:
 
 - **`(http/rate-limit n opts)`** — plain throughput: at most `n` requests per `:window-ms` per client key; over → 429 + Retry-After. Raw throughput, not denial-abuse.
-- **CORS** — `(http/cors {:origins […]})`; permissive (`*`) and loud in dev, allowlist in prod via `:origins` or `APP_HTTP__CORS_ORIGINS`. Default-on in `api-defaults`.
+- **CORS** — `(http/cors {:origins […]})`; permissive (`*`) in dev. Outside dev it emits **no CORS headers at all** until you set an allowlist via `:origins` or `APP_HTTP__CORS_ORIGINS` (ADR 0126) — permissive on request, never by omission. Default-on in `api-defaults`.
+- **`/metrics`** — closed unless configured: `APP_METRICS_TOKEN` (bearer), `:metrics-guard <middleware>` (your gate), or `:metrics-guard :public` (deliberately open). Unconfigured, it is not mounted outside dev.
 - **CSRF** — gates session-bearing mutating requests on a token `bri.web.html/form` mints (or the `x-csrf-token` header). Sessionless JSON requests pass — a curl with no cookie has nothing to forge. Default-on in `(http/defaults)`.
 - **Sessions** — signed cookies (HMAC-SHA256; key from `APP_SESSION_KEY`, else per-process random). Read as `:session`; attach with `(http/start-session res {…})`.
 

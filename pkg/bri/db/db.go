@@ -10,7 +10,7 @@
 // cljg.data.cast) do — so the linker keeps the drivers exactly when, and only when,
 // an app uses the database.
 //
-// The Clojure half is core/bri/db.cljg (ns cljg.data.cast); this file interns the
+// The Clojure half is core/cljg/data_cast.cljg (ns cljg.data.cast); this file interns the
 // private `-db-*` primitives it leans on, driving database/sql over two
 // PURE-GO drivers so a compiled bri app still links CGO_ENABLED=0:
 //

@@ -76,10 +76,10 @@ cljgo new --template web myapp     # a bri web app
 ```
 
 The web template scaffolds the bri stack — config, HTTP, HTML, auth, db,
-otel — with `cljgo dev` / `cljgo test` as the dev loop. Honest caveat: bri
-web apps run interpreted today; their AOT-to-static-binary tier is in
-progress (the compiler spike already produced a ~15 MB scratch Docker image
-with ~30 ms cold start).
+otel — with `cljgo dev` / `cljgo test` as the dev loop. `cljgo dev` runs the
+app interpreted for the fast edit loop; `cljgo build` AOT-compiles the same
+app to one static `CGO_ENABLED=0` binary (ADR 0071), and the template ships a
+scratch-image Dockerfile for it.
 
 </details>
 

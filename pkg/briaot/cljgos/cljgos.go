@@ -335,14 +335,14 @@ func Load() {
 									} else {
 										tmp95 = lang.Apply2(tmp94, jobs71, from92)
 									}
-									var vec__16296 any = tmp95
-									_ = vec__16296
+									var vec__16496 any = tmp95
+									_ = vec__16496
 									tmp97 := v_clojure_DOT_core_nth.Get()
-									tmp98 := lang.Apply3(tmp97, vec__16296, int64(0), nil)
+									tmp98 := lang.Apply3(tmp97, vec__16496, int64(0), nil)
 									var X_99 any = tmp98
 									_ = X_99
 									tmp100 := v_clojure_DOT_core_nth.Get()
-									tmp101 := lang.Apply3(tmp100, vec__16296, int64(1), nil)
+									tmp101 := lang.Apply3(tmp100, vec__16496, int64(1), nil)
 									var due_ms102 any = tmp101
 									_ = due_ms102
 									tmp103 := v_clojure_DOT_core_max_.Get()
@@ -492,14 +492,14 @@ func Load() {
 									} else {
 										tmp149 = lang.Apply2(tmp148, jobs71, from146)
 									}
-									var vec__162150 any = tmp149
-									_ = vec__162150
+									var vec__164150 any = tmp149
+									_ = vec__164150
 									tmp151 := v_clojure_DOT_core_nth.Get()
-									tmp152 := lang.Apply3(tmp151, vec__162150, int64(0), nil)
+									tmp152 := lang.Apply3(tmp151, vec__164150, int64(0), nil)
 									var X_153 any = tmp152
 									_ = X_153
 									tmp154 := v_clojure_DOT_core_nth.Get()
-									tmp155 := lang.Apply3(tmp154, vec__162150, int64(1), nil)
+									tmp155 := lang.Apply3(tmp154, vec__164150, int64(1), nil)
 									var due_ms156 any = tmp155
 									_ = due_ms156
 									tmp157 := v_clojure_DOT_core_max_.Get()

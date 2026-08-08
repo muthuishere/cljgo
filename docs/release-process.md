@@ -48,6 +48,13 @@ CGO_ENABLED=0 go build ./... && go vet ./... \
 | **any conformance test's expectations** | verify against the real `clojure` CLI and cite it |
 | **`core/**` or `core/bri/**`** | `go generate ./pkg/briaot` and commit the regenerated twin |
 | **a diagnostic code** | explain page in `docs/diagnostics/`, row in the site table, `CLJGO_WRITE_REGISTRY_LOCK=1 go test ./pkg/diag/ -run TestRegistryLockMatches` |
+| **anything at all — every release** | `gh workflow run Downstream --ref main`, then read it. This is the consumer gate (koine + the toolnexus Clojure port). It is deliberately NOT a required check and blocks nothing by itself — this line is the only thing that makes it binding. |
+
+**The downstream gate is the one that has historically caught what ours did
+not.** Issue #200 records the shape: across v0.8.5–v0.9.0 nearly every headline
+defect was found by a downstream port while our own gate stayed green
+throughout. Running it before a tag is the difference between finding that in
+CI and finding it in a user's release.
 
 **The network integration test is skipped by default, so nothing runs it for
 you.** It asserts both directions against live repositories: a pure library

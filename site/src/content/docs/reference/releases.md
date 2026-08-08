@@ -607,7 +607,8 @@ cljgo test        # green: a working, authenticated, DB-backed CRUD
 docker build .    # a ~15 MB static-binary image
 ```
 
-- [`bri.db`](/cljgo/bri/db/) (ADR 0072): a pure-Go data layer — modernc
+- [`cljg.data.cast`](/cljgo/bri/db/) (ADR 0072; shipped in this release as
+  `bri.db`, renamed later by ADR 0102): a pure-Go data layer — modernc
   SQLite (the zero-install default) plus pgx/Postgres, parametrized queries,
   transactions, migrations. AOT-compiled and interpreted, byte-identical,
   `CGO_ENABLED=0` static.
