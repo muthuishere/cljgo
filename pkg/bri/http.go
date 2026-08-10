@@ -101,6 +101,7 @@ func installHTTPShims(def func(name string, fn func(args ...any) any)) {
 	})
 	def("-now-millis", func(args ...any) any { return time.Now().UnixMilli() })
 	def("-getenv", getenvShim)
+	def("-log-line", func(args ...any) any { logLine(asString(one("-log-line", args))); return nil })
 	def("-result-payload", func(args ...any) any { return lang.ResultPayload(one("-result-payload", args)) })
 	// observability: metrics registry (observability.go)
 	def("-metrics-observe", func(args ...any) any {
@@ -428,6 +429,7 @@ func serveShim(args ...any) any {
 				h.Invoke()
 			}
 		}
+		logFlush() // buffered access-log lines reach the fd before exit
 	}
 
 	// STDERR, not stdout: this is a library, and the host program's stdout
